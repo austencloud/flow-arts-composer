@@ -9,6 +9,7 @@ import type {
 import { pointsToSVGPath } from "$lib/shared/mandala/services/mandala-geometry-calculator";
 import { parsePoints } from "$lib/shared/mandala/services/mandala-fingerprint";
 import {
+  createMandalaMorph,
   interpolateMandalaPaths,
   mandalaPathsEqual,
 } from "$lib/shared/mandala/services/mandala-path-interpolator";
@@ -117,6 +118,41 @@ describe("mandala path interpolation", () => {
     expect(interpolateMandalaPaths(from, to, 1)).toBe(to);
     expect(mandalaPathsEqual(from, from)).toBe(true);
     expect(mandalaPathsEqual(from, to)).toBe(false);
+  });
+
+  it("leaves earlier frames intact while later frames are drawn", () => {
+    const from = paths(
+      [
+        path(0, [
+          { x: 0, y: 0 },
+          { x: 40, y: 0 },
+        ]),
+      ],
+      []
+    );
+    const to = paths(
+      [
+        path(0, [
+          { x: 0, y: 40 },
+          { x: 40, y: 40 },
+        ]),
+      ],
+      []
+    );
+    const morph = createMandalaMorph(from, to);
+
+    const quarter = morph(0.25);
+    const threeQuarters = morph(0.75);
+
+    expect(parsePoints(quarter.left[0]!.d)).toEqual([
+      { x: 0, y: 10 },
+      { x: 40, y: 10 },
+    ]);
+    expect(parsePoints(threeQuarters.left[0]!.d)).toEqual([
+      { x: 0, y: 30 },
+      { x: 40, y: 30 },
+    ]);
+    expect(morph(0.25)).toEqual(interpolateMandalaPaths(from, to, 0.25));
   });
 
   it("opts the Create workspace into component-owned morphing", () => {
