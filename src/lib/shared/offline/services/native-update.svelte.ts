@@ -10,6 +10,7 @@
  *
  * The plugin is imported dynamically so web builds never load it.
  */
+import { Capacitor } from "@capacitor/core";
 import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
 import { t } from "$lib/shared/i18n/i18n.svelte";
 
@@ -82,7 +83,8 @@ function settleCheck(status: "up-to-date" | "failed"): void {
  * listening for updates. Call once, inside the phone app only.
  */
 export async function startNativeUpdates(): Promise<void> {
-  if (updater) return;
+  // window.Capacitor exists in plain browsers too, so ask the real question.
+  if (updater || !Capacitor.isNativePlatform()) return;
   const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
   updater = CapacitorUpdater;
   await CapacitorUpdater.notifyAppReady();

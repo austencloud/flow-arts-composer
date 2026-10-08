@@ -16,9 +16,11 @@ const plugin = {
   }),
 };
 const showToast = vi.fn();
+const isNativePlatform = vi.fn(() => true);
 
 vi.mock("@capgo/capacitor-updater", () => ({ CapacitorUpdater: plugin }));
 vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({ showToast }));
+vi.mock("@capacitor/core", () => ({ Capacitor: { isNativePlatform } }));
 
 type ToastCall = { action: { label: string; onClick: () => Promise<void> } };
 const toastAt = (i: number) => showToast.mock.calls[i]![0] as ToastCall;
@@ -57,6 +59,13 @@ describe("phone app updates", () => {
     expect(plugin.notifyAppReady).toHaveBeenCalledTimes(1);
     expect(nativeUpdate.available).toBe(true);
     expect(nativeUpdate.currentVersion).toBe("1.0.899");
+  });
+
+  it("does nothing in a web browser, where window.Capacitor also exists", async () => {
+    isNativePlatform.mockReturnValueOnce(false);
+    const { nativeUpdate } = await load();
+    expect(nativeUpdate.available).toBe(false);
+    expect(plugin.notifyAppReady).not.toHaveBeenCalled();
   });
 
   it("shows no update version while the APK's own bundle runs", async () => {
