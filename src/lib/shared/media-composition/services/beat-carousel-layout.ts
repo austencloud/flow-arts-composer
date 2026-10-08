@@ -24,7 +24,7 @@ import {
   continuousCellScale,
   stripHeroScale,
 } from "$lib/shared/timeline/strip-window";
-import { clamp01, easeInOut } from "./frame-evaluator";
+import { clamp01, easeInOut } from "@austencloud/video-editor/render";
 
 export interface BeatCarouselRect {
   x: number;

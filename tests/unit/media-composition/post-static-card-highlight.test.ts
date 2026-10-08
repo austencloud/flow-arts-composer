@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { compilePostProject } from "$lib/shared/post-studio-plugin";
+import {
+  compilePostProject,
+  evaluatePresetFrame,
+} from "$lib/shared/post-studio-plugin";
 import { POST_STUDIO_PRESETS } from "@austencloud/video-editor/core";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { postCardHighlightedStepIndex } from "$lib/shared/share/components/post-studio/post-card-highlight";
 import { NOW, card, project, video } from "./post-project-fixtures";

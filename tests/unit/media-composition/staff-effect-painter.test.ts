@@ -7,9 +7,9 @@ import {
   POST_STAFF_EFFECTS,
   compilePostProject,
   staffEffectRole,
+  evaluatePresetFrame,
 } from "$lib/shared/post-studio-plugin";
 import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import type {
   PaintFrame,

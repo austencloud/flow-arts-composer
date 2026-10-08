@@ -18,7 +18,7 @@ import {
   takeRole,
   BREAKDOWN_GEOMETRY,
 } from "@austencloud/video-editor/core";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+import { evaluatePresetFrame } from "$lib/shared/post-studio-plugin";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
 const fast: PostTake = {

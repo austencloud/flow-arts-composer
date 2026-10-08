@@ -21,6 +21,7 @@ import {
   type PostAnimationItem,
   normalizeProject,
   compilePostProject,
+  evaluatePresetLayers,
 } from "$lib/shared/post-studio-plugin";
 import {
   addOverlayItem,
@@ -60,13 +61,12 @@ import {
   type TakeTimingStatus,
 } from "$lib/shared/media-composition/domain/take-timing";
 import {
-  evaluatePresetLayers,
   evaluateRegionRects,
   isVisibleLayer,
   type EvaluatedFrameLayer,
   type RegionRect,
   type TakeClock,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+} from "@austencloud/video-editor/render";
 import {
   projectDraftRecord,
   resolvePostStudioDraft,

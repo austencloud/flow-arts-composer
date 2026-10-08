@@ -17,6 +17,7 @@ import {
   PostProjectSchema,
   normalizeProject,
   compilePostProject,
+  evaluatePresetLayers,
 } from "$lib/shared/post-studio-plugin";
 import {
   type PostProject,
@@ -31,10 +32,7 @@ import {
   takeTimingMoveBeats,
   type TakeTiming,
 } from "$lib/shared/media-composition/domain/take-timing";
-import {
-  evaluatePresetLayers,
-  type TakeClock,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+import type { TakeClock } from "@austencloud/video-editor/render";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
 const args = process.argv.slice(2);

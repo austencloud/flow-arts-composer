@@ -7,7 +7,7 @@ import {
   fadeBlackOpacityAt,
   regionRectIsOnFrame,
   type EvaluatedFrameLayer,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+} from "@austencloud/video-editor/render";
 import {
   paintSurfaceGeometry,
   toPaintFrame,

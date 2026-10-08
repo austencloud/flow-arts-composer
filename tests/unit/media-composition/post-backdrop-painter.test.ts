@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import type { MediaCompositionPreset } from "@austencloud/video-editor/core";
-import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+import type { EvaluatedFrameLayer } from "@austencloud/video-editor/render";
 import {
   backdropLayer,
   paintBlurredBackdrop,

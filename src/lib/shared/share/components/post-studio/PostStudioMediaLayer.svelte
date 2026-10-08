@@ -4,7 +4,7 @@
     LayoutRegion,
     TunnelHook,
   } from "@austencloud/video-editor/core";
-  import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+  import type { EvaluatedFrameLayer } from "@austencloud/video-editor/render";
   import { tryGetMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";

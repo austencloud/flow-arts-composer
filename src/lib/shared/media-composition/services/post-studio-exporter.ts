@@ -3,7 +3,7 @@ import {
   BackgroundVideoEncoder,
   CanvasFrameCapturer,
 } from "@austencloud/video-editor/encoder";
-import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+import type { EvaluatedFrameLayer } from "@austencloud/video-editor/render";
 import type { MediaCompositionPreset } from "@austencloud/video-editor/core";
 import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";

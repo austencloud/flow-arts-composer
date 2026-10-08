@@ -8,8 +8,10 @@ import {
   waitForPictographMotion,
   type RenderPostStudioFrameInput,
 } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
-import { compilePostProject } from "$lib/shared/post-studio-plugin";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+import {
+  compilePostProject,
+  evaluatePresetFrame,
+} from "$lib/shared/post-studio-plugin";
 import {
   NOW,
   card,

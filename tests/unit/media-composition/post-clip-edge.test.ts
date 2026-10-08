@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { POST_MAX_EDGE_BORDER, POST_PLAIN_EDGE, type PostProject, type PostVideoItem, POST_EDGE_COLOR_HEX, mergeEdge, regionEdge } from "@austencloud/video-editor/core";
-import { PostProjectSchema, compilePostProject, staffEffectRole } from "$lib/shared/post-studio-plugin";
+import { PostProjectSchema, compilePostProject, staffEffectRole, evaluatePresetFrame } from "$lib/shared/post-studio-plugin";
 import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import {
   paintEdgeBorder,

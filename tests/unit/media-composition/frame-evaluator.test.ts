@@ -10,7 +10,7 @@ import {
 import {
   evaluatePresetFrame,
   evaluatePresetLayers,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+} from "$lib/shared/post-studio-plugin";
 import type {
   SequenceTimeMap,
   PresetEasing,

@@ -6,7 +6,7 @@ import {
   type StaffColor,
   type StaffTipTrack,
 } from "$lib/shared/media-composition/domain/staff-tip-track";
-import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+import type { EvaluatedFrameLayer } from "@austencloud/video-editor/render";
 import {
   calculateMediaFit,
   calculateSourceCropFit,

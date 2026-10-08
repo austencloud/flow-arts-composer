@@ -5,11 +5,11 @@ import type {
   LayoutRegion,
   SequenceTimeMap,
 } from "@austencloud/video-editor/core";
+import { evaluatePresetFrame } from "$lib/shared/post-studio-plugin";
 import {
-  evaluatePresetFrame,
   evaluateRegionRects,
   resolvePresetTimePoint,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+} from "@austencloud/video-editor/render";
 import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {

@@ -20,13 +20,13 @@ import {
   type PostTitlesItem,
   normalizeProject,
   compilePostProject,
+  evaluatePresetFrame,
 } from "$lib/shared/post-studio-plugin";
 import {
   addTitlesItem,
   findTunnelHook,
   updateItem,
 } from "$lib/shared/media-composition/domain/post-project-edits";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import {
   titlesPlanOf,
   tunnelTitlesLook,

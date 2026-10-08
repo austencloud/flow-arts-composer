@@ -11,10 +11,12 @@ import type {
   PostAnimationItem,
   PostMovesItem,
 } from "$lib/shared/post-studio-plugin";
-import { compilePostProject } from "$lib/shared/post-studio-plugin";
+import {
+  compilePostProject,
+  evaluatePresetFrame,
+} from "$lib/shared/post-studio-plugin";
 import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
 import type { TakeSample } from "$lib/shared/media-composition/domain/take-timing";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
 

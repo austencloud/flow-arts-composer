@@ -23,12 +23,12 @@ import {
   movesAnimationRole,
   staffEffectRole,
   PostProjectSchema,
+  evaluatePresetFrame,
 } from "$lib/shared/post-studio-plugin";
 import {
-  evaluatePresetFrame,
   fadeBlackOpacityAt,
   resolvePresetTimePoint,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+} from "@austencloud/video-editor/render";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
 import {

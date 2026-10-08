@@ -8,6 +8,7 @@ import {
   normalizeProject,
   compilePostProject,
   itemIdFromMovesAnimationRole,
+  evaluatePresetLayers,
 } from "$lib/shared/post-studio-plugin";
 import {
   type PostProject,
@@ -21,11 +22,10 @@ import {
   takeSampleAt,
 } from "$lib/shared/media-composition/domain/take-timing";
 import {
-  evaluatePresetLayers,
   isVisibleLayer,
   type EvaluatedFrameLayer,
   type TakeClock,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+} from "@austencloud/video-editor/render";
 import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
 import { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
 import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";

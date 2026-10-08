@@ -4,6 +4,7 @@ import {
   type PostAnimationItem,
   normalizeProject as finishProject,
   compilePostProject,
+  evaluatePresetFrame,
 } from "$lib/shared/post-studio-plugin";
 import {
   POST_BOX,
@@ -37,7 +38,6 @@ import {
   takeTimingMovesKey,
   type TakeTiming,
 } from "$lib/shared/media-composition/domain/take-timing";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   NOW,

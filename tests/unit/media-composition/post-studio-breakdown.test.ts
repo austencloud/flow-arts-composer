@@ -11,10 +11,8 @@ import {
   withBreakdownMarker,
 } from "$lib/shared/media-composition/domain/post-studio-breakdown";
 import { normalizePresetToSlots } from "$lib/shared/media-composition/domain/post-studio-slots";
-import {
-  evaluatePresetFrame,
-  evaluateRegionRects,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+import { evaluatePresetFrame } from "$lib/shared/post-studio-plugin";
+import { evaluateRegionRects } from "@austencloud/video-editor/render";
 
 const DURATION = 100;
 

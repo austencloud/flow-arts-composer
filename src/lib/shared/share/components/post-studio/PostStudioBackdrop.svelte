@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+  import type { EvaluatedFrameLayer } from "@austencloud/video-editor/render";
   import { paintBlurredBackdrop } from "$lib/shared/media-composition/services/post-backdrop-painter";
   import {
     mediaDimensions,
