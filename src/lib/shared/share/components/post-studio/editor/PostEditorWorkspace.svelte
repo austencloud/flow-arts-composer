@@ -87,15 +87,13 @@
     createTextItemPainter,
     exportPostStudioVideo,
     type PostStudioExportProgress,
+    AudioDownloadStalledError,
+    buildMixedAudioTrack,
   } from "@austencloud/video-editor/render";
   import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
   import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
   import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
-  import {
-    AudioDownloadStalledError,
-    buildMixedAudioTrack,
-  } from "$lib/shared/media-composition/services/post-audio-track";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";

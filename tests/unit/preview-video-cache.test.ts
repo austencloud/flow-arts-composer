@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   PreviewVideoCache,
   type PreviewVideoDependencies,
-} from "../../src/lib/shared/media-composition/services/implementations/PreviewVideoCache";
+} from "@austencloud/video-editor/render";
 import {
   previewVideoCacheKey,
   previewVideoDimensions,

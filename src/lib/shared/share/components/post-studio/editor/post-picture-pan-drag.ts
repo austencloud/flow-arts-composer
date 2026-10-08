@@ -8,11 +8,12 @@ import {
  * framing in the preview (Picture mode, as opposed to dragging its box).
  *
  * Pan is stored as a -0.5..0.5 share of however far the picture overflows its
- * box - see `resolvePanOffset` in media-fit.ts, which resolves a stored pan
- * into pixels the same way this resolves a pixel drag back into pan. Dragging
- * by `deltaPx` moves the pan by `deltaPx / overscanPx` on that axis, and an
- * axis with no overscan (the picture doesn't overflow there, as with a
- * `contain` fit) does not move at all.
+ * box - see `resolvePanOffset` in the package's `render/media-fit.ts`, which
+ * resolves a stored pan into pixels the same way this resolves a pixel drag
+ * back into pan. Dragging by `deltaPx` moves the pan by
+ * `deltaPx / overscanPx` on that axis, and an axis with no overscan (the
+ * picture doesn't overflow there, as with a `contain` fit) does not move at
+ * all.
  */
 
 const PAN_LIMIT = 0.5;

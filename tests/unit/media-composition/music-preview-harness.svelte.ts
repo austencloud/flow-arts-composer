@@ -1,5 +1,5 @@
 import { flushSync, mount } from "svelte";
-import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
+import type { PreviewVideoController } from "@austencloud/video-editor/render";
 import type { PostMusic } from "@austencloud/video-editor/core";
 import PostMusicPreview from "$lib/shared/share/components/post-studio/editor/PostMusicPreview.svelte";
 

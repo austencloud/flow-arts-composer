@@ -24,7 +24,8 @@ export function plainProject(): PostProject {
       }),
       // The fade-black sits on the cut into the end card: a transitionOut on the
       // last main item has no incoming item, so the compiler emits nothing for it.
-      // The edge (rounded corners, a border and a shadow) runs region-edge-painter.
+      // The edge (rounded corners, a border and a shadow) runs the package's
+      // `render/region-edge-painter.ts`.
       video("v2", {
         takeId: "b",
         sourceIn: 2,

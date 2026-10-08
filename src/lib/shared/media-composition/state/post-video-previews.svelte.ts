@@ -3,7 +3,7 @@ import { getPreviewVideoCache } from "../get-preview-video-cache";
 import type {
   IPreviewVideoCache,
   PreviewVideoHandle,
-} from "../services/contracts/IPreviewVideoCache";
+} from "@austencloud/video-editor/render";
 import type { PreviewVideoState } from "@austencloud/video-editor/core";
 
 interface PreviewSource {

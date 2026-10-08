@@ -6,7 +6,7 @@ import {
   rememberFollowLead,
   shouldSeekPreviewVideo,
   type FollowLead,
-} from "$lib/shared/media-composition/services/video-preview-seek";
+} from "@austencloud/video-editor/render";
 
 const playingState = {
   currentTime: 3,

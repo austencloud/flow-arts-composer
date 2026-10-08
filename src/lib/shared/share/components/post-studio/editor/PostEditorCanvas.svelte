@@ -20,12 +20,12 @@
     backdropLayer,
     regionEdgePixels,
     shadowDropInRegion,
-  } from "@austencloud/video-editor/render";
-  import {
     previewClockLeads,
     previewClockStep,
     type PreviewVideoController,
-  } from "$lib/shared/media-composition/services/post-preview-clock";
+    musicClockBoundaries,
+    musicClockMedia,
+  } from "@austencloud/video-editor/render";
   import type {
     PresetClip,
     LayoutRegion,
@@ -58,10 +58,6 @@
     framingAt,
   } from "@austencloud/video-editor/core";
   import { itemIdFromStaffEffectRole } from "$lib/shared/post-studio-plugin";
-  import {
-    musicClockBoundaries,
-    musicClockMedia,
-  } from "$lib/shared/media-composition/services/music-preview-sync";
   import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
   import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
+  import type { PreviewVideoController } from "@austencloud/video-editor/render";
   import {
     planMusicAudio,
     segmentGainAt,
@@ -10,7 +10,7 @@
     musicPreviewTarget,
     musicSoundsAt,
     shouldSeekMusic,
-  } from "$lib/shared/media-composition/services/music-preview-sync";
+  } from "@austencloud/video-editor/render";
 
   /**
    * Plays the post's music under the preview. The canvas drives it the way

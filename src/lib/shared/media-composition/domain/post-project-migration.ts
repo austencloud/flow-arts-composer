@@ -108,7 +108,7 @@ export function migratePostPlan(
       sourceIn,
       sourceOut,
       // A slowed act's take would play back detuned if reused as-is, so
-      // only a full-speed act keeps its sound (see `post-audio-plan.ts`).
+      // only a full-speed act keeps its sound (see the package's `core/music/audio-plan.ts`).
       speed: act.speed,
       fit: act.framing.fit,
       zoom: act.framing.zoom,

@@ -4,7 +4,10 @@
     LayoutRegion,
     TunnelHook,
   } from "@austencloud/video-editor/core";
-  import type { EvaluatedFrameLayer } from "@austencloud/video-editor/render";
+  import type {
+    EvaluatedFrameLayer,
+    PreviewVideoController,
+  } from "@austencloud/video-editor/render";
   import { tryGetMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
@@ -24,17 +27,14 @@
     calculateMediaFit,
     calculateSourceCropFit,
     resolvePanOffset,
-  } from "@austencloud/video-editor/render";
-  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
-  import { onDestroy, untrack } from "svelte";
-  import {
     previewPlaybackRate,
     rememberFollowLead,
     shouldSeekPreviewVideo,
     type FollowLead,
-  } from "$lib/shared/media-composition/services/video-preview-seek";
-  import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
-  import { PreviewVideoFrameRecovery } from "$lib/shared/media-composition/services/preview-video-frame-recovery";
+    PreviewVideoFrameRecovery,
+  } from "@austencloud/video-editor/render";
+  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
+  import { onDestroy, untrack } from "svelte";
   import {
     videoColorFilter,
     type PostVideoColorGrade,

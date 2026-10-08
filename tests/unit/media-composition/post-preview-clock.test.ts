@@ -3,12 +3,10 @@ import {
   previewClockLeads,
   previewClockStep,
   type PreviewClockMedia,
-} from "$lib/shared/media-composition/services/post-preview-clock";
-import {
   previewPlaybackRate,
   rememberFollowLead,
   type FollowLead,
-} from "$lib/shared/media-composition/services/video-preview-seek";
+} from "@austencloud/video-editor/render";
 
 const footage: PreviewClockMedia = {
   currentTime: 8.04,

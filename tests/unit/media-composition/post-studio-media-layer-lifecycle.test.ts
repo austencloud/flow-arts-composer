@@ -1,8 +1,10 @@
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountPlaybackMediaLayer } from "./post-studio-media-layer-harness.svelte";
-import { previewClockStep } from "$lib/shared/media-composition/services/post-preview-clock";
-import { FOLLOW_AHEAD_SECONDS } from "$lib/shared/media-composition/services/video-preview-seek";
+import {
+  previewClockStep,
+  FOLLOW_AHEAD_SECONDS,
+} from "@austencloud/video-editor/render";
 
 vi.mock(
   "$lib/shared/media-composition/state/media-composition-context",

@@ -1,4 +1,4 @@
-import type { IPreviewVideoCache } from "$lib/shared/media-composition/services/contracts/IPreviewVideoCache";
+import type { IPreviewVideoCache } from "@austencloud/video-editor/render";
 import { createPostVideoPreviews } from "$lib/shared/media-composition/state/post-video-previews.svelte";
 
 export interface HarnessVideoSource {

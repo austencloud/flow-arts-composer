@@ -2,7 +2,7 @@ import { flushSync, mount, unmount } from "svelte";
 import PostStudioMediaLayer from "$lib/shared/share/components/post-studio/PostStudioMediaLayer.svelte";
 import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
+import type { PreviewVideoController } from "@austencloud/video-editor/render";
 
 export function mountPlaybackMediaLayer() {
   let binding = $state.raw<CompositionSourceBinding>({

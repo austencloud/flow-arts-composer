@@ -4,7 +4,7 @@ import type { PreviewVideoState } from "@austencloud/video-editor/core";
 import type {
   IPreviewVideoCache,
   PreviewVideoHandle,
-} from "$lib/shared/media-composition/services/contracts/IPreviewVideoCache";
+} from "@austencloud/video-editor/render";
 import {
   createPostVideoPreviewsHarness,
   type HarnessVideoSource,
