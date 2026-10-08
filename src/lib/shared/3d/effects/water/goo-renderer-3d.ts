@@ -20,6 +20,7 @@ import {
   isTrackedTip,
   type GooTipSource3D,
 } from "../scene-effects/scene-effect-source-3d";
+import { GooPuddleRenderer3D } from "./goo-puddle-renderer-3d";
 
 const STRANDS = 64;
 const DROPS = 512;
@@ -45,6 +46,7 @@ interface Strand {
   viscosity: number;
   radius: number;
   gravity: number;
+  floorY: number;
   tail: Vector3;
   bend: Vector3;
   head: Vector3;
@@ -61,6 +63,9 @@ interface Drop {
   maxAge: number;
   radius: number;
   gravity: number;
+  floorY: number;
+  viscosity: number;
+  tension: number;
   position: Vector3;
   velocity: Vector3;
   color: Color;
@@ -214,6 +219,7 @@ export class GooRenderer3D {
     viscosity: 0,
     radius: 0,
     gravity: -9.8,
+    floorY: -Infinity,
     tail: new Vector3(),
     bend: new Vector3(),
     head: new Vector3(),
@@ -229,6 +235,9 @@ export class GooRenderer3D {
     maxAge: 0,
     radius: 0,
     gravity: -9.8,
+    floorY: -Infinity,
+    viscosity: 0,
+    tension: 0.5,
     position: new Vector3(),
     velocity: new Vector3(),
     color: new Color(),
@@ -238,6 +247,7 @@ export class GooRenderer3D {
   private readonly tubeGeometry = makeTubeGeometry();
   private readonly studioMap = createStudioMap();
   private readonly wetMaterial = createWetMaterial(this.studioMap);
+  private readonly puddles = new GooPuddleRenderer3D(this.wetMaterial);
   private readonly tubeMesh = new Mesh(this.tubeGeometry, this.wetMaterial);
   private readonly sphereGeometry = new SphereGeometry(1, 12, 8);
   private readonly dropAlphas = new InstancedBufferAttribute(
@@ -291,9 +301,9 @@ export class GooRenderer3D {
 
   initialize(parent: Object3D): void {
     if (this.parent === parent) return;
-    this.parent?.remove(this.tubeMesh, this.dropMesh);
+    this.parent?.remove(this.tubeMesh, this.dropMesh, this.puddles.mesh);
     this.parent = parent;
-    parent.add(this.tubeMesh, this.dropMesh);
+    parent.add(this.tubeMesh, this.dropMesh, this.puddles.mesh);
   }
 
   update(sources: readonly GooTipSource3D[], delta: number): void {
@@ -316,6 +326,7 @@ export class GooRenderer3D {
     }
     this.advanceStrands(sources, dt);
     this.advanceDrops(dt);
+    this.puddles.update(dt);
     if (!this.hasActiveStrands() && !this.hasActiveDrops()) {
       this.tubeMesh.visible = false;
       this.dropMesh.visible = false;
@@ -330,6 +341,7 @@ export class GooRenderer3D {
     for (const strand of this.strands) strand.active = false;
     for (const drop of this.drops) drop.active = false;
     this.sources.clear();
+    this.puddles.clear();
     this.dropMesh.count = 0;
     this.dropMesh.visible = false;
     this.tubeMesh.visible = false;
@@ -342,11 +354,12 @@ export class GooRenderer3D {
 
   dispose(): void {
     this.clear();
-    this.parent?.remove(this.tubeMesh, this.dropMesh);
+    this.parent?.remove(this.tubeMesh, this.dropMesh, this.puddles.mesh);
     this.parent = null;
     this.tubeGeometry.dispose();
     this.sphereGeometry.dispose();
-    // Each renderer owns the material lifetime, even though both meshes share it.
+    this.puddles.dispose();
+    // This renderer owns the material shared by its strands, drops, and puddles.
     this.wetMaterial.dispose();
     this.studioMap.dispose();
   }
@@ -384,7 +397,16 @@ export class GooRenderer3D {
           p.resolvedPalette.edge,
           p.palette === "mercury" ? 0.88 : 0,
           0.94 - p.clarity * 0.12,
-          0.34
+          this.dropLifetime(
+            source.position.y,
+            source.collisionFloorY,
+            source.velocity.y,
+            p.worldGravity * 0.35,
+            0.34
+          ),
+          source.collisionFloorY,
+          p.viscosity,
+          p.surfaceTension
         );
       }
     } else if (
@@ -417,6 +439,7 @@ export class GooRenderer3D {
       (0.55 + 0.35 * p.intensity) *
       (p.spewStyle === "flow" ? 0.86 : 0.7);
     strand.gravity = p.worldGravity;
+    strand.floorY = source.collisionFloorY;
     strand.tail.set(source.position.x, source.position.y, source.position.z);
     strand.bend.copy(strand.tail);
     strand.head.copy(strand.tail);
@@ -446,6 +469,7 @@ export class GooRenderer3D {
       if (source) {
         strand.gravity = source.params.worldGravity;
         strand.viscosity = source.params.viscosity;
+        strand.floorY = source.collisionFloorY;
       }
       if (strand.attached && strand.releaseAge < 0) {
         if (source) {
@@ -469,8 +493,34 @@ export class GooRenderer3D {
           } else strand.attached = false;
         } else strand.attached = false;
       }
+      this.center.copy(strand.head);
       strand.velocity.y += strand.gravity * dt;
       strand.head.addScaledVector(strand.velocity, dt);
+      if (
+        Number.isFinite(strand.floorY) &&
+        strand.head.y <= strand.floorY + strand.radius
+      ) {
+        if (!strand.dropReleased) {
+          const crossing = this.groundCrossing(
+            this.center.y,
+            strand.head.y,
+            strand.floorY + strand.radius
+          );
+          this.puddles.deposit(
+            this.center.x + (strand.head.x - this.center.x) * crossing,
+            this.center.z + (strand.head.z - this.center.z) * crossing,
+            strand.floorY,
+            strand.radius,
+            strand.viscosity,
+            strand.tension,
+            strand.edge,
+            strand.metalness,
+            strand.alpha
+          );
+        }
+        strand.active = false;
+        continue;
+      }
       const reach = strand.head.distanceTo(strand.tail);
       strand.bend.copy(strand.tail).add(strand.head).multiplyScalar(0.5);
       strand.bend.y -=
@@ -512,7 +562,16 @@ export class GooRenderer3D {
               strand.edge,
               strand.metalness,
               strand.alpha,
-              0.32
+              this.dropLifetime(
+                this.next.y,
+                strand.floorY,
+                strand.velocity.y,
+                strand.gravity,
+                0.32
+              ),
+              strand.floorY,
+              strand.viscosity,
+              strand.tension
             );
             // The bead takes the old bulb's place; only its neck remains.
             strand.head.copy(this.next);
@@ -536,7 +595,10 @@ export class GooRenderer3D {
     color: string | Color,
     metalness: number,
     alpha: number,
-    maxAge: number
+    maxAge: number,
+    floorY: number,
+    viscosity: number,
+    tension: number
   ): void {
     const index = this.takeDrop();
     if (index < 0) return;
@@ -546,6 +608,9 @@ export class GooRenderer3D {
     drop.maxAge = maxAge;
     drop.radius = radius;
     drop.gravity = gravity;
+    drop.floorY = floorY;
+    drop.viscosity = viscosity;
+    drop.tension = tension;
     drop.position.set(position.x, position.y, position.z);
     drop.velocity.set(velocity.x, velocity.y, velocity.z);
     drop.color.set(color);
@@ -557,13 +622,66 @@ export class GooRenderer3D {
     for (const drop of this.drops) {
       if (!drop.active) continue;
       drop.age += dt;
-      if (drop.age >= drop.maxAge) {
-        drop.active = false;
-        continue;
-      }
+      this.next.copy(drop.position);
       drop.velocity.y += drop.gravity * dt;
       drop.position.addScaledVector(drop.velocity, dt);
+      if (
+        Number.isFinite(drop.floorY) &&
+        drop.position.y <= drop.floorY + drop.radius
+      ) {
+        const crossing = this.groundCrossing(
+          this.next.y,
+          drop.position.y,
+          drop.floorY + drop.radius
+        );
+        this.puddles.deposit(
+          this.next.x + (drop.position.x - this.next.x) * crossing,
+          this.next.z + (drop.position.z - this.next.z) * crossing,
+          drop.floorY,
+          drop.radius,
+          drop.viscosity,
+          drop.tension,
+          drop.color,
+          drop.metalness,
+          drop.alpha
+        );
+        drop.active = false;
+      } else if (drop.age >= drop.maxAge) {
+        drop.active = false;
+      }
     }
+  }
+
+  private dropLifetime(
+    startY: number,
+    floorY: number,
+    launchVelocityY: number,
+    gravity: number,
+    minimum: number
+  ): number {
+    if (!Number.isFinite(floorY)) return minimum;
+    const fall = Math.max(0, startY - floorY);
+    const fallTime =
+      gravity < 0
+        ? (launchVelocityY +
+            Math.sqrt(launchVelocityY ** 2 + 2 * -gravity * fall)) /
+          -gravity
+        : launchVelocityY < 0
+          ? fall / -launchVelocityY
+          : 0;
+    return Math.min(6, Math.max(minimum, fallTime + 0.8));
+  }
+
+  private groundCrossing(
+    previousY: number,
+    currentY: number,
+    contactY: number
+  ): number {
+    if (previousY <= contactY || previousY === currentY) return 0;
+    return Math.max(
+      0,
+      Math.min(1, (previousY - contactY) / (previousY - currentY))
+    );
   }
 
   private writeStrands(): void {
