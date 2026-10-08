@@ -125,6 +125,7 @@
           ? studioCard.handLabeling
           : labeledCard.labeling}
         qrSequence={studioCard ? studioCard.qrSequence : sequence}
+        qrUrl={studioCard?.qrUrl}
         customTitleText={sequence.sequenceKind === "hand-path"
           ? sequence.displayName || sequence.name
           : undefined}

@@ -2438,6 +2438,9 @@
                     !!layer.tunnelHook
                   )}
                   {qrSequence}
+                  qrUrl={sourceItem?.kind === "card"
+                    ? sourceItem.qrUrl
+                    : undefined}
                   tunnelHook={layer.tunnelHook ?? null}
                   chromeOpacity={hookChromeOpacity(region.id)}
                   mandalaIn={!layer.tunnelHook &&

@@ -398,6 +398,20 @@ changes only through `post-project.mjs link-capture`, which sends
 Scripts read a feature video media URL with `featureMediaUrlParts` in
 `align-take.mjs`. Do not add a second recorder; extend these.
 
+A feature video's end card keeps its scan link as `qrUrl` on the card item
+(`domain/post-project.ts`); the canvas hands it to the Choreo Card's own
+`qrUrl`, so the code opens that link for anyone, signed in or not. Renders use
+the editor's own exporter: `post-project.mjs render` queues a job on the dev
+bridge (`server/post-project-dev-bridge.ts`), the editor's
+`services/post-project-dev-client.ts` runs it, and
+`services/feature-video-client.ts` sends the MP4 to
+`server/feature-video-exports.ts`, which saves it in `exports/` under a name
+from `domain/feature-video-export.ts`. `scripts/feature-video/render.mjs`
+finds or opens the editor, `stills.mjs` writes stills and contact sheets, and
+`render-check.mjs` checks a render end to end. Do not add a second renderer or
+a server-side encode; extend these. Searches: render, export, exports folder,
+end card, QR, scan link, stills, contact sheet.
+
 Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
 content time, sampling, the auto-key rule, easing presets and every keyframe
 edit, and the compiler turns them into the preset's `motion` and
