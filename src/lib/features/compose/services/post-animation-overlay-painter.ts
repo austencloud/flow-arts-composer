@@ -7,7 +7,7 @@ import type {
   PaintFrame,
   PaintRect,
   PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "@austencloud/video-editor/render";
 import { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
 import { getSvgImageConverter } from "$lib/shared/foundation/get-svg-image-converter";
 import { renderStepNumberToCanvas } from "./canvas-renderer";

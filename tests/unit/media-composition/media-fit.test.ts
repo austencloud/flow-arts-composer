@@ -4,7 +4,7 @@ import {
   resolvePanOffset,
   turnOf,
   turnedExtent,
-} from "$lib/shared/media-composition/services/media-fit";
+} from "@austencloud/video-editor/render";
 
 describe("calculateMediaFit", () => {
   it("centers a landscape source inside a portrait region", () => {

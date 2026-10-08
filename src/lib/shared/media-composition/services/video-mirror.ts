@@ -1,6 +1,6 @@
 import type { Attachment } from "svelte/attachments";
 import type { LayoutRegion } from "@austencloud/video-editor/core";
-import { calculateMediaFit } from "$lib/shared/media-composition/services/media-fit";
+import { calculateMediaFit } from "@austencloud/video-editor/render";
 
 /**
  * A copy of a preview video, painted into a canvas laid over it.

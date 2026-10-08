@@ -11,7 +11,7 @@ import {
   resolvePanOffset,
   turnOf,
   turnedExtent,
-} from "$lib/shared/media-composition/services/media-fit";
+} from "@austencloud/video-editor/render";
 
 /**
  * The crop screen's geometry: where the stage shows the whole picture and the

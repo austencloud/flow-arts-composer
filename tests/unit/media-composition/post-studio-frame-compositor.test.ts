@@ -5,12 +5,14 @@ import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/s
 import {
   resolveFrameLayerGeometry,
   renderPostStudioFrame,
-  waitForPictographMotion,
   type RenderPostStudioFrameInput,
-} from "$lib/shared/media-composition/services/post-studio-frame-compositor";
+  createTextItemPainter,
+} from "@austencloud/video-editor/render";
 import {
+  waitForPictographMotion,
   compilePostProject,
   evaluatePresetFrame,
+  createTkaSurfaces,
 } from "$lib/shared/post-studio-plugin";
 import {
   NOW,
@@ -20,10 +22,18 @@ import {
   text,
   video,
 } from "./post-project-fixtures";
-import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
 
 const { captureMotion } = vi.hoisted(() => ({ captureMotion: vi.fn() }));
-vi.mock("modern-screenshot", () => ({ domToCanvas: captureMotion }));
+// The sequence animation surface captures through a reused context, the card
+// surface straight from its element; both reach domToCanvas.
+vi.mock("modern-screenshot", () => ({
+  domToCanvas: captureMotion,
+  createContext: vi.fn(async (node: unknown, options: object) => ({
+    node,
+    ...options,
+  })),
+  destroyContext: vi.fn(),
+}));
 
 const preset = POST_STUDIO_PRESETS.find(
   (candidate) => candidate.id === "performance-breakdown"
@@ -69,7 +79,7 @@ describe("decoded video export surfaces", () => {
         compiled.durationSeconds,
         3.5
       ),
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
       timeSeconds: 3.5,
     });
     expect(fills.at(-1)).toEqual({ color: "#000", alpha: 1 });
@@ -142,7 +152,7 @@ describe("decoded video export surfaces", () => {
         root,
         preset: compiled.preset,
         layers,
-        cardFrameCache: new Map(),
+        surfaceCache: new Map(),
         videoFrames: {
           has: () => true,
           frameFor,
@@ -227,7 +237,8 @@ describe("split animation export", () => {
       root,
       preset: compiled.preset,
       layers,
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
+      surfaces: createTkaSurfaces(),
     });
     expect(fillRect).toHaveBeenCalledTimes(2);
   });
@@ -312,7 +323,8 @@ describe("split animation export", () => {
       root,
       preset: compiled.preset,
       layers,
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
+      surfaces: createTkaSurfaces(),
     });
 
     expect(drawImage).toHaveBeenCalledWith(captured, ...expected);
@@ -367,7 +379,8 @@ describe("export capture options", () => {
         root,
         preset: compiled.preset,
         layers,
-        cardFrameCache: new Map(),
+        surfaceCache: new Map(),
+        surfaces: createTkaSurfaces(),
       });
     return { choreo, cardRoot, captured, render };
   }
@@ -485,7 +498,7 @@ describe("painted title overflow", () => {
         root: document.createElement("div"),
         preset: compiled.preset,
         layers,
-        cardFrameCache: new Map(),
+        surfaceCache: new Map(),
         painters: new Map([[title.role, painter]]),
         timeSeconds: seconds,
       });
@@ -826,14 +839,17 @@ describe("scoped Moves export", () => {
         root,
         preset: compiled.preset,
         layers,
-        cardFrameCache: new Map(),
+        surfaceCache: new Map(),
+        surfaces: createTkaSurfaces(),
       });
 
       expect(drawImage).toHaveBeenCalledTimes(1);
       expect(drawImage.mock.calls[0]![0]).toBe(captured);
       expect(captureMotion).toHaveBeenCalledTimes(1);
-      expect(captureMotion.mock.calls[0]![0]).toBe(animation);
-      expect(captureMotion.mock.calls[0]![1]).toMatchObject({
+      // The surface hands domToCanvas the context it made for the animation.
+      const captureContext = captureMotion.mock.calls[0]![0];
+      expect(captureContext.node).toBe(animation);
+      expect(captureContext).toMatchObject({
         width: 200,
         height: 250,
         onCreateForeignObjectSvg:

@@ -4,7 +4,7 @@ import type { EvaluatedFrameLayer } from "@austencloud/video-editor/render";
 import {
   backdropLayer,
   paintBlurredBackdrop,
-} from "$lib/shared/media-composition/services/post-backdrop-painter";
+} from "@austencloud/video-editor/render";
 
 function layer(clipId: string): EvaluatedFrameLayer {
   return {

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { vi } from "vitest";
-import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
+import type { PostStudioExportVideoFrames } from "@austencloud/video-editor/render";
 
 export const NL = String.fromCharCode(10);
 

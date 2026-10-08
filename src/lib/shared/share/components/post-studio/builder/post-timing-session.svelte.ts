@@ -1,4 +1,4 @@
-import type { PaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import type { PaintFrame } from "@austencloud/video-editor/render";
 import {
   MIN_MOVE_SECONDS,
   TAKE_MAX_BPM,

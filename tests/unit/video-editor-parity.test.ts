@@ -9,12 +9,12 @@ import {
   compilePostProject,
   itemIdFromMovesAnimationRole,
   evaluatePresetLayers,
+  createTkaSurfaces,
 } from "$lib/shared/post-studio-plugin";
 import {
   type PostProject,
   POST_STUDIO_ROLE,
   takeRole,
-  textRole,
   type CompiledPostProject,
 } from "@austencloud/video-editor/core";
 import {
@@ -22,14 +22,14 @@ import {
   takeSampleAt,
 } from "$lib/shared/media-composition/domain/take-timing";
 import {
+  createPainterRegistry,
   isVisibleLayer,
+  textPainterFactory,
   type EvaluatedFrameLayer,
   type TakeClock,
+  renderPostStudioFrame,
 } from "@austencloud/video-editor/render";
-import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
-import { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
-import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
-import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   NL,
@@ -126,7 +126,10 @@ function alignmentFor(project: PostProject) {
   return { steps, startPlacementDuration: 1, sequencePeriod: 1, clocks };
 }
 
+const coreRegistry = createPainterRegistry([textPainterFactory]);
+
 function paintersFor(
+  project: PostProject,
   compiled: CompiledPostProject
 ): Map<string, PostStudioLayerPainter> {
   if (compiled.titles.length > 0) {
@@ -134,16 +137,7 @@ function paintersFor(
       "fixture has titles: build titles painters as PostEditorWorkspace.svelte titlesPainterFor does"
     );
   }
-  const painters = new Map<string, PostStudioLayerPainter>();
-  for (const entry of compiled.texts) {
-    painters.set(
-      textRole(entry.itemId),
-      createTextItemPainter(
-        () => compiled.texts.find((t) => t.itemId === entry.itemId) ?? null
-      )
-    );
-  }
-  return painters;
+  return coreRegistry.paintersFor({ project, compiled });
 }
 
 function renderModeFor(
@@ -171,7 +165,7 @@ async function run(name: FixtureName): Promise<FixtureRun> {
     throw new Error(`${name}: compilePostProject returned null (no clips)`);
   const { preset } = compiled;
   const alignment = alignmentFor(project);
-  const painters = paintersFor(compiled);
+  const painters = paintersFor(project, compiled);
   const size =
     project.canvas === "4:5"
       ? { width: 1080, height: 1350 }
@@ -213,8 +207,8 @@ async function run(name: FixtureName): Promise<FixtureRun> {
       capture.log = log;
       capture.contexts = 0;
       const restore = installRecordingCanvas(log);
-      // The exporter's own capture for sequence-animation surfaces.
-      const pictographCapture = new PostStudioPictographCapture();
+      // The exporter's surfaces, fresh for each frame as the capture was.
+      const surfaces = createTkaSurfaces();
       try {
         const mediaRoles = new Set(
           visible
@@ -232,15 +226,15 @@ async function run(name: FixtureName): Promise<FixtureRun> {
           ),
           preset,
           layers: visible,
-          cardFrameCache: new Map(),
-          pictographCapture,
+          surfaceCache: new Map(),
+          surfaces,
           painters,
           videoFrames: createVideoFrameStandIns(log, mediaRoles) as never,
           timeSeconds: time,
         });
       } finally {
-        // As the exporter disposes it once its frames are drawn.
-        pictographCapture.dispose();
+        // As the exporter releases them once its frames are drawn.
+        for (const surface of surfaces) surface.release?.();
         restore();
         vi.restoreAllMocks();
         // Written even when the render throws, to show how far it got.

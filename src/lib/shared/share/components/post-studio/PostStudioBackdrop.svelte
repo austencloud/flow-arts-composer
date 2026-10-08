@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { EvaluatedFrameLayer } from "@austencloud/video-editor/render";
-  import { paintBlurredBackdrop } from "$lib/shared/media-composition/services/post-backdrop-painter";
   import {
+    paintBlurredBackdrop,
     mediaDimensions,
     mediaForClip,
-  } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
+  } from "@austencloud/video-editor/render";
 
   /**
    * The blurred background under the preview's items, painted by the export's

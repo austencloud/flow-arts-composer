@@ -1,15 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
+import { createTextItemPainter } from "@austencloud/video-editor/render";
 import type { CompiledTextItem } from "@austencloud/video-editor/core";
 import {
   TEXT_BOX_WIDTH,
   CAPTION_LINE_HEIGHT_FRACTION,
   CAPTION_SIZE_FRACTION,
 } from "@austencloud/video-editor/core";
-import type {
-  PaintFrame,
-  PaintRect,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import type { PaintFrame, PaintRect } from "@austencloud/video-editor/render";
 
 const FRAME: PaintFrame = { projectProgress: 0, sourceTimeSeconds: 0 };
 

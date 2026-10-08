@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateMediaFit } from "$lib/shared/media-composition/services/media-fit";
+import { calculateMediaFit } from "@austencloud/video-editor/render";
 import {
   PICTURE_NUDGE,
   dragPicturePan,

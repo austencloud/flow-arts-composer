@@ -4,4 +4,6 @@ export * from "./project-extension";
 export * from "./normalize-hooks";
 export * from "./compile-hooks";
 export * from "./alignment";
+export * from "./surfaces";
+export * from "./painters";
 export * from "./bound";

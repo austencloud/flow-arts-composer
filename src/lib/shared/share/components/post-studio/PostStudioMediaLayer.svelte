@@ -24,7 +24,7 @@
     calculateMediaFit,
     calculateSourceCropFit,
     resolvePanOffset,
-  } from "$lib/shared/media-composition/services/media-fit";
+  } from "@austencloud/video-editor/render";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import { onDestroy, untrack } from "svelte";
   import {

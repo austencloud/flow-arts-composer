@@ -16,7 +16,7 @@ import type {
   PaintFrame,
   PaintRect,
   PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "@austencloud/video-editor/render";
 
 /** InShot-style caption ink: heavy dark outline under a solid white fill. */
 const FILL_COLOR = "#ffffff";

@@ -1,5 +1,5 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PostStudioLayerPainter } from "./post-studio-layer-painter";
+import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
 
 /**
  * The Animate/compose module's video export already bakes the beat number,

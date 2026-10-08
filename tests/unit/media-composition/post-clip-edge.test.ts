@@ -2,14 +2,8 @@ import { describe, expect, it } from "vitest";
 import { POST_MAX_EDGE_BORDER, POST_PLAIN_EDGE, type PostProject, type PostVideoItem, POST_EDGE_COLOR_HEX, mergeEdge, regionEdge } from "@austencloud/video-editor/core";
 import { PostProjectSchema, compilePostProject, staffEffectRole, evaluatePresetFrame } from "$lib/shared/post-studio-plugin";
 import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
-import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
-import {
-  paintEdgeBorder,
-  paintEdgeShadow,
-  regionEdgePixels,
-} from "$lib/shared/media-composition/services/region-edge-painter";
-import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
-import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import { renderPostStudioFrame, paintEdgeBorder, paintEdgeShadow, regionEdgePixels, traceRoundedRect } from "@austencloud/video-editor/render";
+import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
 import { NOW, project, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };
@@ -329,7 +323,7 @@ describe("the export", () => {
       root: {} as HTMLElement,
       preset: result.preset,
       layers,
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
       painters: new Map([[staffEffectRole("v1"), painter]]),
       timeSeconds: 1,
     });
@@ -382,7 +376,7 @@ describe("the export", () => {
       root: {} as HTMLElement,
       preset: result.preset,
       layers,
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
       painters: new Map([[staffEffectRole("v1"), painter]]),
       timeSeconds: 1,
     });

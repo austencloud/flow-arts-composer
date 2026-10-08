@@ -10,11 +10,11 @@ import {
   evaluatePresetFrame,
 } from "$lib/shared/post-studio-plugin";
 import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
-import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
+import { renderPostStudioFrame } from "@austencloud/video-editor/render";
 import type {
   PaintFrame,
   PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "@austencloud/video-editor/render";
 import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
 import {
   EFFECT_ICONS,
@@ -353,7 +353,7 @@ describe("the staff effect painter", () => {
         root: {} as HTMLElement,
         preset: result.preset,
         layers,
-        cardFrameCache: new Map(),
+        surfaceCache: new Map(),
         painters: new Map([[staffEffectRole("v1"), record(owns)]]),
         timeSeconds: 1,
       });
@@ -408,7 +408,7 @@ describe("the staff effect painter", () => {
       root: {} as HTMLElement,
       preset: result.preset,
       layers: [layer],
-      cardFrameCache: new Map(),
+      surfaceCache: new Map(),
       painters: new Map([[staffEffectRole("v1"), painter]]),
       timeSeconds: 1,
     });

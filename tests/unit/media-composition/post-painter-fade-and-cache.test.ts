@@ -65,7 +65,7 @@ import { createSequenceStripPainter } from "$lib/shared/media-composition/servic
 import {
   paintSizeBucket,
   type PaintFrame,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "@austencloud/video-editor/render";
 import { PostAnimationOverlayPainter } from "$lib/features/compose/services/post-animation-overlay-painter";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 

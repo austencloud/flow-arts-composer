@@ -57,6 +57,7 @@
     planProjectAudio,
   } from "@austencloud/video-editor/core";
   import {
+    createTkaSurfaces,
     itemIdFromMovesAnimationRole,
     itemIdFromStaffEffectRole,
     staffEffectRole,
@@ -78,11 +79,15 @@
     type CatalogTakeSource,
     type PostEdit,
   } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
   import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
   import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
+  import {
+    createTextItemPainter,
+    exportPostStudioVideo,
+    type PostStudioExportProgress,
+  } from "@austencloud/video-editor/render";
   import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
   import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
   import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
@@ -91,10 +96,6 @@
     AudioDownloadStalledError,
     buildMixedAudioTrack,
   } from "$lib/shared/media-composition/services/post-audio-track";
-  import {
-    exportPostStudioVideo,
-    type PostStudioExportProgress,
-  } from "$lib/shared/media-composition/services/post-studio-exporter";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -2417,6 +2418,7 @@
         getLayers: () => editor.frameLayers,
         seek: editor.seek,
         painters: exportPainters(),
+        surfaces: createTkaSurfaces(),
         videoSources,
         originalAudioUrl: audioUrl,
         originalAudioStartSeconds: 0,

@@ -11,7 +11,7 @@ import type {
   PaintFrame,
   PaintRect,
   PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "@austencloud/video-editor/render";
 import { textRenderer } from "$lib/shared/render/services/text-renderer";
 
 /** Same ink as a caption, so the opening reads as one family with the post's words. */

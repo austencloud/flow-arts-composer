@@ -6,17 +6,17 @@ import {
   type StaffColor,
   type StaffTipTrack,
 } from "$lib/shared/media-composition/domain/staff-tip-track";
-import type { EvaluatedFrameLayer } from "@austencloud/video-editor/render";
+import type {
+  EvaluatedFrameLayer,
+  PaintRect,
+  PostStudioLayerPainter,
+} from "@austencloud/video-editor/render";
 import {
   calculateMediaFit,
   calculateSourceCropFit,
   resolvePanOffset,
   turnOf,
-} from "$lib/shared/media-composition/services/media-fit";
-import type {
-  PaintRect,
-  PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "@austencloud/video-editor/render";
 import { Canvas2DTrailRenderer } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer";
 import {
   DEFAULT_TRAIL_SETTINGS,

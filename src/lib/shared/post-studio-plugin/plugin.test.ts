@@ -1,17 +1,29 @@
+import fs from "node:fs";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type {
-  PluginItemKinds,
-  PostItem,
-  PostItemKind,
+import {
+  POST_STUDIO_ROLE,
+  stripModeFromRole,
+  type PluginItemKinds,
+  type PostItem,
+  type PostItemKind,
 } from "@austencloud/video-editor/core";
+import {
+  createPainterRegistry,
+  textPainterFactory,
+} from "@austencloud/video-editor/render";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   PostProjectSchema,
   TKA_COMPILE_HOOKS,
   TKA_COMPILE_OUTPUTS,
   TKA_ITEM_KINDS,
   TKA_NORMALIZE,
+  compilePostProject,
   createEmptyPostProject,
+  createTkaPainters,
   createTkaPlugin,
+  normalizeProject,
+  staffEffectRole,
 } from "$lib/shared/post-studio-plugin";
 
 describe("tka plugin", () => {
@@ -60,5 +72,47 @@ describe("tka plugin", () => {
     });
     const parsed = PostProjectSchema.parse(project);
     expect(JSON.stringify(parsed)).toBe(JSON.stringify(project));
+  });
+
+  it("builds tka painters only for roles the compiled preset uses", () => {
+    const file = "tests/fixtures/video-editor-parity/dck.project.json";
+    const project = normalizeProject(
+      PostProjectSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")))
+    );
+    const compiled = compilePostProject(project, {
+      now: project.updatedAt,
+      animationOverlay: false,
+    });
+    if (!compiled) throw new Error("dck fixture compiled to null");
+    const sequence = { word: "", steps: [] } as unknown as SequenceData;
+    const painters = createPainterRegistry([
+      textPainterFactory,
+      ...createTkaPainters({
+        getSequence: () => sequence,
+        showProgressBar: () => false,
+        getTakes: () => [],
+        staffTrack: () => null,
+        getOverlayPainter: () => null,
+      }),
+    ]).paintersFor({ project, compiled });
+    const roles = new Set(compiled.preset.clips.map((clip) => clip.sourceRole));
+    for (const role of painters.keys()) expect(roles.has(role)).toBe(true);
+    // The overlay stub has no painter and the compile leaves the overlay out.
+    const staffRoles = project.tracks.flatMap((track) =>
+      track.items.flatMap((item) =>
+        item.kind === "video" && item.staffEffect
+          ? [staffEffectRole(item.id)]
+          : []
+      )
+    );
+    const owned = [...roles].filter(
+      (role) =>
+        compiled.texts.some((text) => text.role === role) ||
+        role === POST_STUDIO_ROLE.carousel ||
+        stripModeFromRole(role) !== null ||
+        compiled.titles.some((plan) => plan.role === role) ||
+        staffRoles.includes(role)
+    );
+    expect(painters.size).toBe(owned.length);
   });
 });

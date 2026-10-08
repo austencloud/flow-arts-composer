@@ -15,6 +15,11 @@
     resolvePresetTimePoint,
     fadeBlackOpacityAt,
     type EvaluatedFrameLayer,
+    paintSurfaceGeometry,
+    toPaintFrame,
+    backdropLayer,
+    regionEdgePixels,
+    shadowDropInRegion,
   } from "@austencloud/video-editor/render";
   import {
     previewClockLeads,
@@ -26,15 +31,6 @@
     LayoutRegion,
   } from "@austencloud/video-editor/core";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import {
-    paintSurfaceGeometry,
-    toPaintFrame,
-  } from "$lib/shared/media-composition/services/post-studio-layer-painter";
-  import { backdropLayer } from "$lib/shared/media-composition/services/post-backdrop-painter";
-  import {
-    regionEdgePixels,
-    shadowDropInRegion,
-  } from "$lib/shared/media-composition/services/region-edge-painter";
   import {
     itemIdFromClipId,
     planMusicAudio,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { ITEM_KIND_ICON } from "../editor/post-editor-labels";

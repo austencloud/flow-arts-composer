@@ -10,7 +10,7 @@ import {
   evaluateRegionRects,
   resolvePresetTimePoint,
 } from "@austencloud/video-editor/render";
-import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   MediaCompositionPresetSchema,
