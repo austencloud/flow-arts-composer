@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BufferGeometry,
+  Color,
   InstancedMesh,
   Matrix4,
   MeshPhysicalMaterial,
@@ -9,6 +10,7 @@ import {
   Vector3,
 } from "three";
 import { GooRenderer3D } from "$lib/shared/3d/effects/water/goo-renderer-3d";
+import { GooPuddleRenderer3D } from "$lib/shared/3d/effects/water/goo-puddle-renderer-3d";
 import type { GooTipSource3D } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
 import { resolveGoo3D } from "$lib/shared/effects/translators/webgl3d-translator";
 
@@ -25,6 +27,7 @@ function source(overrides: Partial<GooTipSource3D> = {}): GooTipSource3D {
     velocity: { x: 1, y: 0, z: 0 },
     speed: 3,
     currentStep: 0,
+    collisionFloorY: 0,
     propColor: "#ffffff",
     params: resolveGoo3D({
       ambientEmission: 1,
@@ -79,11 +82,168 @@ function ringCenter(geometry: BufferGeometry, ring: number): Vector3 {
 }
 
 describe("GooRenderer3D", () => {
+  it("lands a falling mist bead once on its own source floor", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source({
+      position: { x: 1, y: 1.4, z: 3 },
+      velocity: { x: 0, y: 0, z: 0 },
+      collisionFloorY: -0.7,
+    });
+    tip.params.spewStyle = "mist";
+    tip.params.ambientSpawnRate = 60;
+    for (let frame = 0; frame < 4; frame++) renderer.update([tip], 1 / 60);
+    tip.params.ambientEmission = 0;
+    tip.params.motionEmission = 0;
+    for (let frame = 0; frame < 100; frame++) renderer.update([tip], 1 / 60);
+    const puddle = parent.children[2] as {
+      geometry: BufferGeometry;
+      visible: boolean;
+    };
+    expect(puddle.visible).toBe(true);
+    const positions = puddle.geometry.getAttribute("position") as {
+      array: Float32Array;
+    };
+    const nonzero = Array.from({ length: 72 }, (_, index) => [
+      positions.array[index * 3]!,
+      positions.array[index * 3 + 1]!,
+      positions.array[index * 3 + 2]!,
+    ]);
+    expect(
+      Math.min(...nonzero.map((point) => point[1]!))
+    ).toBeGreaterThanOrEqual(-0.7);
+    expect(Math.max(...nonzero.map((point) => point[1]!))).toBeLessThan(-0.66);
+    const before = positions.array.slice(0, 72 * 3);
+    for (let frame = 0; frame < 10; frame++) renderer.update([tip], 0);
+    expect(positions.array.slice(0, 72 * 3)).toEqual(before);
+    expect((parent.children[1] as InstancedMesh).count).toBe(0);
+    renderer.clear();
+    expect(puddle.visible).toBe(false);
+    renderer.dispose();
+    expect(parent.children).toHaveLength(0);
+  });
+
+  it("keeps stationary zero-gravity mist airborne instead of inventing a landing", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source({ velocity: { x: 0, y: 0, z: 0 }, collisionFloorY: 0 });
+    tip.params.spewStyle = "mist";
+    tip.params.worldGravity = 0;
+    tip.params.ambientSpawnRate = 60;
+    renderer.update([tip], 1 / 60);
+    tip.params.ambientEmission = 0;
+    for (let frame = 0; frame < 100; frame++) renderer.update([tip], 1 / 60);
+    expect(parent.children[2]!.visible).toBe(false);
+    renderer.dispose();
+  });
+
+  it("merges nearby deposits with bounded volume and respects viscosity and floor", () => {
+    const material = new MeshPhysicalMaterial({ vertexColors: true });
+    const thin = new GooPuddleRenderer3D(material);
+    const thick = new GooPuddleRenderer3D(material);
+    const color = new Color("#4a9dde");
+    thin.deposit(1, 2, -1, 0.05, 0, 0.5, color, 0, 1);
+    thick.deposit(1, 2, -1, 0.05, 1, 0.5, color, 0, 1);
+    for (let i = 0; i < 200; i++) {
+      thin.deposit(1.01, 2, -1, 0.05, 0, 0.5, color, 0, 1);
+      thick.deposit(1.01, 2, -1, 0.05, 1, 0.5, color, 0, 1);
+    }
+    thin.update(1);
+    thick.update(1);
+    const thinX = (
+      thin.geometry.getAttribute("position") as { array: Float32Array }
+    ).array;
+    const thickX = (
+      thick.geometry.getAttribute("position") as { array: Float32Array }
+    ).array;
+    expect(thinX[24 * 3]!).toBeGreaterThan(thickX[24 * 3]!);
+    expect(Math.max(...thinX)).toBeLessThan(3);
+    expect(Array.from(thinX).every(Number.isFinite)).toBe(true);
+    thin.deposit(1, 2, 1, 0.05, 0, 0.5, color, 0, 1);
+    thin.update(0);
+    expect(thinX[72 * 3 + 1]!).toBeGreaterThan(1);
+    thin.clear();
+    expect(thin.mesh.visible).toBe(false);
+    thin.dispose();
+    thick.dispose();
+    material.dispose();
+  });
+
+  it("caps the top surface, joins pools as they spread, and fades idle liquid", () => {
+    const material = new MeshPhysicalMaterial({ vertexColors: true });
+    const puddles = new GooPuddleRenderer3D(material);
+    const color = new Color("#4389bb");
+    puddles.deposit(1, 2, 0, 0.05, 0, 0.5, color, 0, 1);
+    puddles.deposit(1.145, 2, 0, 0.05, 0, 0.5, color, 0, 1);
+    puddles.update(1);
+    const positions = puddles.geometry.getAttribute("position");
+    const normals = puddles.geometry.getAttribute("normal");
+    expect(positions.getX(0)).toBeCloseTo(positions.getX(1));
+    expect(positions.getZ(0)).toBeCloseTo(positions.getZ(1));
+    expect(normals.getY(24)).toBeGreaterThan(0);
+    expect(positions.getX(72)).toBe(0);
+    const alpha = puddles.geometry.getAttribute("aAlpha");
+    puddles.update(15);
+    expect(alpha.getX(0)).toBeLessThan(1);
+    expect(alpha.getX(0)).toBeGreaterThan(0);
+    puddles.update(3);
+    expect(puddles.mesh.visible).toBe(false);
+    puddles.dispose();
+    material.dispose();
+  });
+
+  it("keeps upward-launched mist alive until it can fall to the floor", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source({
+      position: { x: 0.7, y: 1, z: 0.9 },
+      velocity: { x: 0, y: 3, z: 0 },
+      collisionFloorY: 0,
+    });
+    tip.params.spewStyle = "mist";
+    tip.params.ambientSpawnRate = 60;
+    for (let frame = 0; frame < 4; frame++) renderer.update([tip], 1 / 60);
+    tip.params.ambientEmission = 0;
+    tip.params.motionEmission = 0;
+    for (let frame = 0; frame < 220; frame++) renderer.update([tip], 1 / 60);
+    expect(parent.children[2]!.visible).toBe(true);
+    renderer.dispose();
+  });
   it("resolves legacy liquid values and gravity in Earth multiples", () => {
-    const legacy = { ...source().params, viscosity: undefined, gravity: undefined } as unknown as Parameters<typeof resolveGoo3D>[0];
-    expect(resolveGoo3D(legacy)).toMatchObject({ viscosity: 0, gravity: 1, worldGravity: -9.8 });
-    expect(resolveGoo3D({ ...legacy, viscosity: Infinity, gravity: -1, surfaceTension: NaN })).toMatchObject({ viscosity: 0, gravity: 0, surfaceTension: 0.45, worldGravity: -0 });
-    expect(resolveGoo3D({ ...legacy, viscosity: 3, gravity: 3, surfaceTension: 3 })).toMatchObject({ viscosity: 1, gravity: 2, surfaceTension: 1, worldGravity: -19.6 });
+    const legacy = {
+      ...source().params,
+      viscosity: undefined,
+      gravity: undefined,
+    } as unknown as Parameters<typeof resolveGoo3D>[0];
+    expect(resolveGoo3D(legacy)).toMatchObject({
+      viscosity: 0,
+      gravity: 1,
+      worldGravity: -9.8,
+    });
+    expect(
+      resolveGoo3D({
+        ...legacy,
+        viscosity: Infinity,
+        gravity: -1,
+        surfaceTension: NaN,
+      })
+    ).toMatchObject({
+      viscosity: 0,
+      gravity: 0,
+      surfaceTension: 0.45,
+      worldGravity: -0,
+    });
+    expect(
+      resolveGoo3D({ ...legacy, viscosity: 3, gravity: 3, surfaceTension: 3 })
+    ).toMatchObject({
+      viscosity: 1,
+      gravity: 2,
+      surfaceTension: 1,
+      worldGravity: -19.6,
+    });
   });
 
   it("makes connected liquid resist stretch at high viscosity", () => {
@@ -97,10 +257,20 @@ describe("GooRenderer3D", () => {
       tip.params.ambientSpawnRate = 60;
       renderer.update([tip], 1 / 60);
       tip.params.ambientEmission = 0;
-      const internal = renderer as unknown as { strands: Array<{ active: boolean; attached: boolean; head: Vector3; tail: Vector3 }> };
+      const internal = renderer as unknown as {
+        strands: Array<{
+          active: boolean;
+          attached: boolean;
+          head: Vector3;
+          tail: Vector3;
+        }>;
+      };
       for (let frame = 0; frame < 20; frame++) renderer.update([tip], 1 / 60);
       const strand = internal.strands.find((item) => item.active)!;
-      const result = { attached: strand.attached, reach: strand.head.distanceTo(strand.tail) };
+      const result = {
+        attached: strand.attached,
+        reach: strand.head.distanceTo(strand.tail),
+      };
       renderer.dispose();
       return result;
     };
