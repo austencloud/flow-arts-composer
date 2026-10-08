@@ -30,7 +30,7 @@
     fuseFrames,
     fuseSources,
   } from "./method-preview-fuse";
-  import type { SceneRun } from "./method-preview-run";
+  import { waitUntil, type SceneRun } from "./method-preview-run";
   import { playSceneTurns } from "./method-preview-scene-turns.svelte";
   import type { MethodPreviewSceneProps } from "./method-preview-scenes";
 
@@ -153,8 +153,16 @@
     const host = root;
     const fused = fusedRow;
     if (!host || !fused) return;
-    const pieces = [...host.querySelectorAll<HTMLElement>(".source")];
-    if (pieces.length === 0 || pieces.length !== sources.length) return;
+    // Each source's element, found by its key. A missing one skips the turn.
+    const elements = new Map<string, HTMLElement>();
+    for (const element of host.querySelectorAll<HTMLElement>(".source")) {
+      if (element.dataset.key) elements.set(element.dataset.key, element);
+    }
+    const halves = sources.flatMap((source) => {
+      const piece = elements.get(source.key);
+      return piece ? [{ source, piece }] : [];
+    });
+    if (sources.length === 0 || halves.length !== sources.length) return;
     const timing = FUSE_PREVIEW_TIMING;
     phase = "fusing";
     sliding = false;
@@ -170,7 +178,7 @@
     progress = frames.map(() => 0);
 
     // The blue path and the red path appear apart, one hand each.
-    for (const piece of pieces) {
+    for (const { piece } of halves) {
       track(piece, [{ opacity: 0 }, { opacity: 1 }], {
         duration: timing.sourcesInMs,
         easing: "ease-out",
@@ -181,32 +189,51 @@
 
     // They slide together: the blue and red half of each step land on one cell.
     sliding = true;
-    for (const [index, piece] of pieces.entries()) {
-      const slide = sources[index]?.slide;
-      if (!slide) continue;
-      track(piece, [{ transform: "none" }, { transform: slide }], {
-        duration: timing.slideMs,
-        easing: EASE,
-        fill: "forwards",
-      });
+    const slides: Animation[] = [];
+    for (const { source, piece } of halves) {
+      const slide = track(
+        piece,
+        [{ transform: "none" }, { transform: source.slide }],
+        { duration: timing.slideMs, easing: EASE, fill: "forwards" }
+      );
+      if (slide) slides.push(slide);
     }
     if (!(await run.wait(timing.slideMs))) return;
+    // A stalled main thread can leave the slides short of their cells when
+    // the timer fires. Merging then would jump, so wait for them to land.
+    // Not animation.finished: settle() cancels it, which rejects.
+    await waitUntil(
+      run,
+      () => slides.every((slide) => slide.playState === "finished"),
+      250,
+      16
+    );
+    if (run.aborted) return;
 
-    // The halves become the fused steps.
-    track(fused, [{ opacity: 0 }, { opacity: 1 }], {
+    // The halves become the fused steps: the fused row fades in under the
+    // halves, which cover it (it comes first in the markup, so it stacks
+    // below). Once it is fully in, the halves are hidden at once, so the card
+    // never shows through two half-faded layers.
+    const merge = track(fused, [{ opacity: 0 }, { opacity: 1 }], {
       duration: timing.mergeMs,
       easing: "ease-out",
       fill: "forwards",
     });
     out?.cancel();
-    for (const piece of pieces) {
-      track(piece, [{ opacity: 1 }, { opacity: 0 }], {
-        duration: timing.mergeMs,
-        easing: "ease-in",
+    if (!(await run.wait(timing.mergeMs))) return;
+    await waitUntil(
+      run,
+      () => !merge || merge.playState === "finished",
+      250,
+      16
+    );
+    if (run.aborted) return;
+    for (const { piece } of halves) {
+      track(piece, [{ opacity: 0 }, { opacity: 0 }], {
+        duration: 0,
         fill: "forwards",
       });
     }
-    if (!(await run.wait(timing.mergeMs))) return;
 
     // The fused steps play once.
     for (const index of frames.keys()) {
@@ -259,6 +286,7 @@
         <div
           class="cell source"
           class:on-top={source.onTop}
+          data-key={source.key}
           style:left="{source.rect.x}px"
           style:top="{source.rect.y}px"
           style:width="{source.rect.size}px"
@@ -305,7 +333,12 @@
      --dm-pictograph-bg), under its pictograph in the cell's own stacking
      context. It dissolves while the halves slide, so the other half's props
      show through as they meet; resetting it when the sources are hidden is
-     instant. */
+     instant.
+
+     --dm-pictograph-bg and the renderer's TORCH_CONTRAST_PALETTE background
+     are two sources for one color. setDarkMode keeps them in sync: it
+     toggles the .dark class that switches the token (app.css: #d8d8d2 light,
+     #0a0a0f dark), and the renderer follows the same mode. */
   .source.on-top {
     isolation: isolate;
   }

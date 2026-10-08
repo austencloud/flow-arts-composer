@@ -94,6 +94,42 @@ describe("Fuse preview sources", () => {
   });
 });
 
+describe("Fuse preview slides", () => {
+  const SLIDE = /^translate\((-?[\d.]+)px, (-?[\d.]+)px\) scale\(([\d.]+)\)$/;
+
+  // The hard-coded strings above copy the arithmetic, so this checks what a
+  // slide must do: carry each source's cell onto its fused cell.
+  it.each([
+    ["strip", 146, 48],
+    ["strip", 308, 96],
+    ["square", 144, 144],
+    ["square", 200, 200],
+  ] as const)(
+    "carries every %s %ix%i source onto its fused cell",
+    (shape, width, height) => {
+      const layout = fuseLayout(shape, width, height)!;
+      const sources = fuseSources(layout);
+      expect(sources).toHaveLength(4);
+      for (const source of sources) {
+        const target = layout.combined[source.step]!;
+        const match = SLIDE.exec(source.slide);
+        expect(match, `${source.key} slide ${source.slide}`).not.toBeNull();
+        const [tx, ty, scale] = match!.slice(1).map(Number) as [
+          number,
+          number,
+          number,
+        ];
+        expect(source.rect.x + tx, `${source.key} x`).toBeCloseTo(target.x, 5);
+        expect(source.rect.y + ty, `${source.key} y`).toBeCloseTo(target.y, 5);
+        expect(
+          Math.abs(source.rect.size * scale - target.size),
+          `${source.key} size`
+        ).toBeLessThanOrEqual(0.5);
+      }
+    }
+  );
+});
+
 describe("Fuse preview beats", () => {
   it("plays both fused steps with half a second of the turn to spare", () => {
     const timing = FUSE_PREVIEW_TIMING;

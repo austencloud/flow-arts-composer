@@ -56,6 +56,14 @@ describe("Fuse scene readiness", () => {
     expect(onready).toHaveBeenCalledTimes(1);
   });
 
+  it("marks each source with its key, which a turn finds it by", () => {
+    scene = mountFuseScene(host, STRIP, vi.fn());
+    const keys = [...host.querySelectorAll<HTMLElement>(".source")].map(
+      (source) => source.dataset.key
+    );
+    expect(keys).toEqual(["left:0", "left:1", "right:0", "right:1"]);
+  });
+
   it("waits while a cell is still drawing, then reports once", () => {
     fakePictograph.reportBudget = 4;
     const onready = vi.fn();
