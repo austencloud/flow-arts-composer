@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import cloudflareAdapter from "@sveltejs/adapter-cloudflare";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 import { shareCloudflareDevPlatform } from "./src/config/cloudflare-dev-platform.js";
@@ -7,6 +8,16 @@ import { shareCloudflareDevPlatform } from "./src/config/cloudflare-dev-platform
 /** @param {import("@sveltejs/adapter-cloudflare").AdapterOptions} options */
 const adapter = (options) =>
   shareCloudflareDevPlatform(cloudflareAdapter(options));
+
+// Svelte's exports map, read from this app's installed copy, so the TypeScript
+// pin below covers every subpath (svelte/store, svelte/elements, ...) and not
+// only the bare specifier.
+const sveltePackage = JSON.parse(
+  readFileSync(
+    new URL("./node_modules/svelte/package.json", import.meta.url),
+    "utf8"
+  )
+);
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -93,9 +104,19 @@ const config = {
     // TypeScript's svelte to this app's copy. Vite already dedupes at runtime.
     // Remove with the aliases in step 4.
     typescript: {
-      config(config) {
-        config.compilerOptions.paths.svelte = ["../node_modules/svelte"];
-        return config;
+      config(tsconfig) {
+        for (const [subpath, entry] of Object.entries(sveltePackage.exports)) {
+          if (
+            !entry ||
+            typeof entry !== "object" ||
+            typeof entry.types !== "string"
+          )
+            continue;
+          tsconfig.compilerOptions.paths["svelte" + subpath.slice(1)] = [
+            "../node_modules/svelte/" + entry.types.slice(2),
+          ];
+        }
+        return tsconfig;
       },
     },
 
