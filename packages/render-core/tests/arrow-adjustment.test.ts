@@ -135,14 +135,15 @@ describe("arrow mirroring and quadrants", () => {
     ]);
   });
 
-  it("matches the app's float tuples, which index the other grid's locations", () => {
-    // The app's directional-tuple-processor looks a diamond float up in the
-    // diagonal list (and a box float in the cardinal list), so the step is
-    // never found and every float takes the reflected tuples.
-    const clockwisePath = motion({ motionType: "float", startLocation: "s", endLocation: "w" });
-    const counterPath = motion({ motionType: "float", startLocation: "w", endLocation: "s" });
-    expect(arrowDirectionalTuples(clockwisePath, 10, 20)[0]).toEqual([-20, -10]);
-    expect(arrowDirectionalTuples(counterPath, 10, 20)[0]).toEqual([-20, -10]);
+  it("turns a clockwise float nudge and reflects a counter-clockwise one", () => {
+    // The hand path is read on the motion's own grid: cardinal points for a
+    // diamond, diagonal points for a box.
+    const float = (startLocation: string, endLocation: string) =>
+      motion({ motionType: "float", startLocation, endLocation });
+    expect(arrowDirectionalTuples(float("s", "w"), 10, 20)[0]).toEqual([10, 20]);
+    expect(arrowDirectionalTuples(float("w", "s"), 10, 20)[0]).toEqual([-20, -10]);
+    expect(arrowDirectionalTuples(float("ne", "se"), 10, 20)[0]).toEqual([10, 20]);
+    expect(arrowDirectionalTuples(float("se", "ne"), 10, 20)[0]).toEqual([-20, -10]);
   });
 });
 

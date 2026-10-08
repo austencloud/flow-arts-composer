@@ -71,8 +71,9 @@ export class DirectionalTupleCalculator {
     // SHIFT (pro/anti/float)
     const shiftDiamond = () => {
       if (mt === "float") {
-        // Handpath-based mapping; approximate via start/end step direction
-        const order: GridLocation[] = [NE, SE, SW, NW];
+        // Hand path decides the mapping. Diamond motions travel the
+        // cardinal points, so the step is read around N, E, S, W.
+        const order: GridLocation[] = [N, E, S, W];
         const idxStart = order.indexOf(motion.startLocation as GridLocation);
         const idxEnd = order.indexOf(motion.endLocation as GridLocation);
         // Determine cw vs ccw step (1 step cw => cw; else ccw)
@@ -131,8 +132,8 @@ export class DirectionalTupleCalculator {
 
     const shiftBox = () => {
       if (mt === "float") {
-        // Use box cw/ccw from start->end around N,E,S,W order
-        const order: GridLocation[] = [N, E, S, W];
+        // Box motions travel the diagonal points: NE, SE, SW, NW.
+        const order: GridLocation[] = [NE, SE, SW, NW];
         const idxStart = order.indexOf(motion.startLocation as GridLocation);
         const idxEnd = order.indexOf(motion.endLocation as GridLocation);
         const cwStep = (idxStart + 1) % 4 === idxEnd;
