@@ -66,6 +66,16 @@ function ringRadius(geometry: BufferGeometry, ring: number): number {
   return a.distanceTo(b) / 2;
 }
 
+function ringCenter(geometry: BufferGeometry, ring: number): Vector3 {
+  const positions = geometry.getAttribute("position");
+  const a = new Vector3().fromBufferAttribute(positions, ring * SIDES);
+  const b = new Vector3().fromBufferAttribute(
+    positions,
+    ring * SIDES + SIDES / 2
+  );
+  return a.add(b).multiplyScalar(0.5);
+}
+
 describe("GooRenderer3D", () => {
   it("keeps tube geometry finite through movement, retirement, and clearing", () => {
     const renderer = new GooRenderer3D();
@@ -344,8 +354,11 @@ describe("GooRenderer3D", () => {
     expect(drops.count).toBe(0);
     expect(ringRadius(tube.geometry, 13)).toBeLessThan(unpinchedNeck * 0.8);
     expect(ringRadius(tube.geometry, 17)).toBeGreaterThan(earlyBulb * 0.8);
-    for (let frame = 0; frame < 4 && drops.count === 0; frame++)
+    let previousBulbCenter = ringCenter(tube.geometry, 17);
+    for (let frame = 0; frame < 4 && drops.count === 0; frame++) {
+      previousBulbCenter = ringCenter(tube.geometry, 17);
       renderer.update([tip], 1 / 60);
+    }
     expect(tube.visible).toBe(true);
     expect(drops.count).toBeGreaterThan(0);
     const tipPosition = new Vector3().fromBufferAttribute(
@@ -356,9 +369,11 @@ describe("GooRenderer3D", () => {
     drops.getMatrixAt(0, dropMatrix);
     const dropPosition = new Vector3().setFromMatrixPosition(dropMatrix);
     expect(dropPosition.distanceTo(tipPosition)).toBeLessThan(0.04);
+    expect(dropPosition.distanceTo(previousBulbCenter)).toBeLessThan(0.03);
     const dropSize = new Vector3();
     dropMatrix.decompose(new Vector3(), new Quaternion(), dropSize);
     expect(dropSize.x).toBeGreaterThan(earlyBulb * 0.6);
+    expect(ringRadius(tube.geometry, 22)).toBeLessThan(dropSize.x * 0.4);
     const initialStretch = dropSize.y / dropSize.x;
     for (let frame = 0; frame < 4; frame++) renderer.update([tip], 1 / 60);
     drops.getMatrixAt(0, dropMatrix);
@@ -366,6 +381,23 @@ describe("GooRenderer3D", () => {
     expect(dropSize.y / dropSize.x).toBeLessThan(initialStretch);
     for (let frame = 0; frame < 8; frame++) renderer.update([tip], 1 / 60);
     expect(tube.visible).toBe(false);
+    renderer.dispose();
+  });
+
+  it("keeps a fully collapsed strand finite through release", () => {
+    const renderer = new GooRenderer3D();
+    const parent = new Object3D();
+    renderer.initialize(parent);
+    const tip = source({ velocity: { x: 0, y: 0.6, z: 0 }, speed: 0 });
+    tip.params.worldGravity = 0;
+    tip.params.ambientSpawnRate = 60;
+    renderer.update([tip], 1 / 60);
+    tip.params.ambientEmission = 0;
+    for (let frame = 0; frame < 60; frame++) renderer.update([tip], 1 / 60);
+    expect(Array.from(renderedPositions(parent)).every(Number.isFinite)).toBe(
+      true
+    );
+    expect((parent.children[1] as InstancedMesh).count).toBe(0);
     renderer.dispose();
   });
 
