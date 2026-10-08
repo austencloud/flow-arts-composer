@@ -15,6 +15,7 @@ import { QualityTier, type TipPositionData3D } from "../../effects/types";
 import type {
   Charcoal3DParams,
   Fire3DParams,
+  Goo3DParams,
 } from "$lib/shared/effects/translators/webgl3d-types";
 import type { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 import { MOON_FAN_LED_COUNT } from "../../effects/led/moon-fan-diffuser-renderer-3d";
@@ -137,7 +138,7 @@ function pooledSource(
       return {
         ...base,
         effect,
-        params,
+        params: params as Goo3DParams,
         collisionFloorY: input.collisionFloorY,
       };
     case "bubbles":
