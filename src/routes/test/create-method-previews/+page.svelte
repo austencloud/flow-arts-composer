@@ -10,6 +10,8 @@
    */
   import { onMount } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
+  import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
   import { CREATE_TABS } from "$lib/shared/navigation/config/tab-definitions";
   import CreateMethodPreview from "$lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
   import { methodPreviewHold } from "$lib/features/create/shared/components/method-previews/method-preview-hold";
@@ -48,6 +50,25 @@
   let cardShape = $state<CardShape>("portrait");
   let reduce = $state(false);
   let initialPreference: string | undefined;
+  /** The front door marks the last used method; Generate stands in for it. */
+  const LAST_USED = "generate";
+  let guest = $state(false);
+  /**
+   * A portrait board's height: its card rows and the 16px gaps between them.
+   * The front door's rows share their board's height the same way. A
+   * landscape board sizes by its cards.
+   */
+  const portraitBoardHeight = $derived(
+    cardShape === "portrait"
+      ? Math.ceil(methods.length / 2) * CARDS.portrait.height +
+          (Math.ceil(methods.length / 2) - 1) * 16
+      : undefined
+  );
+
+  /** As a guest, methods outside the guest tier carry the Free account badge. */
+  function lockedFor(id: string): boolean {
+    return guest && !isTabAccessible("create", id, "guest");
+  }
 
   const readyIds = new Set<string>();
   const turns = createMethodPreviewTurns({
@@ -93,6 +114,12 @@
   }
 
   onMount(() => {
+    // This route renders outside the app shell, so nothing has set the theme
+    // variables the cards paint with. Reading the device's saved background
+    // keeps the cards in the app's palette.
+    void import("$lib/shared/settings/utils/background-theme-calculator").then(
+      ({ ensureThemeApplied }) => ensureThemeApplied()
+    );
     initialPreference = document.documentElement.dataset.motionPreference;
     reduce = previewMotionReduced();
     turns.start();
@@ -179,14 +206,25 @@
           onclick={() => showCardShape(key as CardShape)}>{card.label}</button
         >
       {/each}
+      <button
+        type="button"
+        aria-pressed={guest}
+        onclick={() => (guest = !guest)}>Guest</button
+      >
     </div>
     <div class="compositions">
       {#each ["inset", "edge"] as composition (composition)}
-        <section>
-          <h2>
+        <section aria-labelledby={`composition-${composition}`}>
+          <h2 id={`composition-${composition}`}>
             {composition === "inset" ? "A: inset stage" : "B: edge to edge"}
           </h2>
-          <div class="mock-board">
+          <div
+            class="mock-board"
+            class:landscape={cardShape === "landscape"}
+            style:height={portraitBoardHeight === undefined
+              ? undefined
+              : `${portraitBoardHeight}px`}
+          >
             {#each methods as method (method.id)}
               <button
                 type="button"
@@ -195,9 +233,16 @@
                 class:square={cardShape === "landscape"}
                 style:--method-color={method.color ?? "#8b8cff"}
                 style:width="{CARDS[cardShape].width}px"
-                style:height="{CARDS[cardShape].height}px"
+                style:height={cardShape === "landscape"
+                  ? `${CARDS.landscape.height}px`
+                  : undefined}
                 use:methodPreviewHold={{ turns, id: method.id }}
               >
+                {#if lockedFor(method.id)}
+                  <LastUsedBadge label={t("create_ui_account_badge")} />
+                {:else if method.id === LAST_USED}
+                  <LastUsedBadge />
+                {/if}
                 <span class="mock-stage">
                   <CreateMethodPreview
                     methodId={method.id}
@@ -296,18 +341,33 @@
     gap: 32px;
   }
 
+  /* A portrait card takes two rows, its stage and its words. Cards side by
+     side share both, so their names line up. The rows share the board's
+     height, as on the front door: a row whose description wraps runs a
+     little taller, and the average card keeps the Fold's measured height. */
   .mock-board {
     display: grid;
     grid-template-columns: repeat(2, max-content);
+    grid-auto-rows: minmax(0, 1fr) auto;
     gap: 16px 8px;
   }
 
-  /* Mirrors .method-card in the 480-1199px tier of CreateFrontDoor.svelte. */
+  /* A landscape card sets its square beside its words, one row each. */
+  .mock-board.landscape {
+    grid-auto-rows: minmax(min-content, 1fr);
+  }
+
+  /* Mirrors the front door card Task 18 plans (.method-item and
+     .method-card), at the bench's fixed card width. */
   .mock-card {
+    --last-used-badge-accent: var(--method-color);
+
     position: relative;
     box-sizing: border-box;
+    grid-row: span 2;
     display: grid;
-    grid-template-rows: minmax(44px, 1fr) auto;
+    grid-template-rows: subgrid;
+    grid-template-columns: minmax(0, 1fr);
     row-gap: 12px;
     padding: 14px;
     border: 1px solid
@@ -332,19 +392,23 @@
 
   .mock-stage {
     position: relative;
+    grid-row: 1;
     display: block;
-    min-height: 0;
+    min-height: 44px;
     border-radius: var(--radius-2026-sm, 10px);
   }
 
+  /* The badge overhangs the top border by 11px each way, so B's strip
+     starts just below it and runs to the side borders. */
   .mock-card.edge .mock-stage {
-    margin: -14px -14px 0;
-    border-radius: 13px 13px 0 0;
+    margin: -2px -14px 0;
+    border-radius: 0;
   }
 
   .mock-card.square {
+    grid-row: auto;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 14px;
   }
 
@@ -361,6 +425,7 @@
   }
 
   .mock-copy {
+    grid-row: 2;
     min-width: 0;
     display: flex;
     flex-direction: column;

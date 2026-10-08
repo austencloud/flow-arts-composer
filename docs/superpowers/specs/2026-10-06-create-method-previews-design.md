@@ -109,6 +109,31 @@ These rules hold everywhere:
   scene is ready. `Crossfade` then brings in the scene's finished picture.
   Nothing around it moves.
 
+### Composition
+
+**A, inset stage.** The preview sits inside the card's padding with the small
+corner radius, like the icon box it replaces. The card's tint and border frame
+it, and the badge never touches it.
+
+Review: separate reviewer, rubric VR-1, research checked 2026-09-21, reviewer
+not calibrated. Frames: the bench at 707×823 and 823×707, DPR 2.625, resting
+and mid-turn, signed out and as a guest. Two rounds; both chose A. The table
+records the second, after each scene got its own resting steps and the bench
+cards lined up their names.
+
+| Dimension                   | A                                                                                  | B                                                                              |
+| --------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Project specificity         | supported                                                                          | supported                                                                      |
+| Hierarchy                   | concern: the green dice tile outweighs the Generate title                          | concern: a larger dice tile; Generate's landscape 3x3 grid is the busiest card |
+| Grouping and spacing        | supported                                                                          | concern: only some cards bleed, so tiles read as a card inside a card          |
+| Real evidence and artifacts | concern: Fuse, Assemble, and Tunnel rest pictures do not show their method         | concern: the same rest pictures; Generate's landscape cells shrink             |
+| Craft                       | concern: the dice tiles read as controls; Assemble's description breaks after "(6" | concern: art presses against the border and its glow is cut off                |
+| Product continuity          | supported                                                                          | concern: art runs into the method-colored border                               |
+
+A frames all six cards the same way and keeps the full method border, at the
+cost of somewhat smaller pictographs; if size matters on the Fold, trim A's
+inset rather than going edge to edge.
+
 ## Scenes
 
 Every scene follows one contract:
@@ -130,7 +155,9 @@ Every scene follows one contract:
 Data is local. Scenes use the 16-step demo sequence the home page already
 ships (`demo-sequence.json`) and `drawMatrixRealization()`, the Firebase-free
 source of real Shape Matrix sequences behind the home hero. No Firestore
-reads, no workers.
+reads, no workers. Construct, Fuse, and Generate each start at their own step
+of the demo sequence (`DEMO_STEP_START`), so cards resting side by side never
+show the same pictograph.
 
 ### Construct
 
@@ -152,7 +179,8 @@ CSS animation delay. Each turn rolls a different real sequence from
 sequence instead. The dice is drawn as a plain glyph for `GhostPointer` to
 press, never a real button.
 
-Before its first turn, the card rests on the demo sequence's opening steps.
+Before its first turn, the card rests on the demo sequence half a turn on,
+from its ninth step.
 After each turn it rests on the latest roll, so its second turn shows a new
 one. A strip shows the dice and three or four steps. A square shows a 2×2 or
 3×3 grid, where the wave reads best.
@@ -180,7 +208,8 @@ cache Shape uses, so Shape opens faster afterward.
 ### Fuse
 
 A blue one-hand path and a red one-hand path slide together and play once as a
-two-prop sequence. The paths are the demo sequence's two hands, shown one hand
+two-prop sequence. The paths are the demo sequence's two hands over its fourth
+and fifth steps, just past Construct's, shown one hand
 at a time with `PictographContainer`'s `visibleHand`, as `FuseSourceCard`
 shows Fuse's inputs. After they merge, the combined steps play once with props
 traveling their real paths (`motionStartData` and `motionProgress`).
