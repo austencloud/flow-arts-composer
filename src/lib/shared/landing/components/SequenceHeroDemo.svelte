@@ -75,6 +75,7 @@
     showCaption = true,
     autoPlay = true,
     cornerToggle = false,
+    cornerToggleAtRest = false,
     toolbar,
     loadPriority = "idle",
     connectionAware = false,
@@ -146,6 +147,8 @@
     autoPlay?: boolean;
     /** Exposes the inline player's keyboard-accessible play/pause button. */
     cornerToggle?: boolean;
+    /** Forwarded to the inline player: the pause control stays visible at rest. */
+    cornerToggleAtRest?: boolean;
     /** Replaces the built-in Roll row. A host that owns its own controls
         (Roll, prop chooser, theme) renders them here as one row; hosts that
         omit it keep the dice button exactly as before. */
@@ -334,6 +337,7 @@
               chrome: "minimal",
               fill: true,
               cornerToggle,
+              cornerToggleAtRest,
               leftPropType,
               rightPropType,
               fanAppearance,

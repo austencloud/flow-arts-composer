@@ -14,7 +14,12 @@
     class?: string;
   }
 
-  let { level, size = "28px", fontSize, class: extraClass = "" }: Props = $props();
+  let {
+    level,
+    size = "28px",
+    fontSize,
+    class: extraClass = "",
+  }: Props = $props();
 
   const style = $derived(DIFFICULTY_LEVELS[level] ?? DEFAULT_DIFFICULTY_STYLE);
   const computedFontSize = $derived(fontSize ?? `calc(${size} * 0.6)`);
@@ -28,6 +33,9 @@
 
 <span
   class="difficulty-badge {extraClass}"
+  role="img"
+  aria-label="Difficulty level {level}"
+  title="Difficulty level {level}"
   style="
     width: {size};
     height: {size};

@@ -643,6 +643,7 @@
           showWordHeader={true}
           autoPlay={!reduceMotion.current}
           cornerToggle={true}
+          cornerToggleAtRest={true}
           loadPriority="immediate"
         />
       </div>

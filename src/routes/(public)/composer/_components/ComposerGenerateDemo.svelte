@@ -209,6 +209,7 @@
             chrome: "minimal",
             fill: true,
             cornerToggle: true,
+            cornerToggleAtRest: true,
             playbackAllowed: active && inViewport,
             resumeWhenPlaybackAllowed: true,
             onStepChange: handlePlayerStepChange,
