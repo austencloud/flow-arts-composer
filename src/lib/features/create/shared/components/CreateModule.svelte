@@ -96,7 +96,10 @@
   import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
   import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
   import { createMethodNudgeTrigger } from "$lib/shared/auth/domain/auth-nudge-trigger";
-  import { createPanelHeightTracker } from "../state/managers/panel-height-tracker.svelte";
+  import {
+    createPanelHeightTracker,
+    type PanelHeightTrackerCleanup,
+  } from "../state/managers/panel-height-tracker.svelte";
   import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
   import type { LetterSource } from "$lib/shared/create/domain/spell-models";
   import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
@@ -219,7 +222,7 @@
   let buttonPanelElement: HTMLElement | null = $state(null);
   let effectCleanup: (() => void) | null = null;
   let panelPersistenceCleanup: (() => void) | undefined = undefined;
-  let panelHeightTrackerCleanup: (() => void) | null = null;
+  let panelHeightTrackerCleanup: PanelHeightTrackerCleanup | null = null;
   let currentDisplayWord = $state<string>(""); // Current word with contextual messages
   let currentLetterSources = $state<LetterSource[] | null>(null); // Letter sources for spell tab styling
   let isInputMode = $state(false); // Input mode - collapse workspace when word input is focused on mobile
@@ -961,9 +964,10 @@
     // its setup effect to those published values creates a feedback loop when
     // the first workspace mounts.
     untrack(() => {
-      // Clean up previous tracker if it exists
+      // Clean up previous tracker if it exists. One that still has the tool
+      // panel is replaced, not removed, so the page keeps its metrics.
       if (panelHeightTrackerCleanup) {
-        panelHeightTrackerCleanup();
+        panelHeightTrackerCleanup({ keepMetrics: toolElement !== null });
         panelHeightTrackerCleanup = null;
       }
 
