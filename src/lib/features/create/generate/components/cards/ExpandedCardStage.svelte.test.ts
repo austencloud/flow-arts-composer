@@ -623,3 +623,64 @@ describe("ExpandedCardStage", () => {
     startViewTransition.mockRestore();
   });
 });
+
+describe("ExpandedCardStage on stacked layouts", () => {
+  afterEach(async () => {
+    // Vitest's default browser viewport.
+    await page.viewport(414, 896);
+  });
+
+  function viewportRoot(): HTMLElement {
+    const root = document.body.querySelector<HTMLElement>(
+      ":scope > .expanded-card-stage"
+    );
+    expect(root).not.toBeNull();
+    return root!;
+  }
+
+  it("opens as a bottom panel over a backdrop on an unfolded foldable", async () => {
+    await page.viewport(707, 823);
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, false));
+
+    state.openTnDPanel();
+    flushSync();
+    await tick();
+
+    const root = viewportRoot();
+    expect(root.dataset.presentation).toBe("sheet");
+    const box = root.getBoundingClientRect();
+    expect(Math.round(box.bottom)).toBe(innerHeight);
+    expect(box.height).toBeLessThan(innerHeight * 0.75);
+
+    const backdrop = document.body.querySelector<HTMLElement>(
+      ":scope > .expanded-card-backdrop"
+    );
+    expect(backdrop).not.toBeNull();
+    backdrop!.click();
+    // The close runs through the card morph's view transition.
+    await vi.waitFor(() => {
+      flushSync();
+      expect(state.openGenerateCard).toBeNull();
+    });
+  });
+
+  it("fills a phone screen, but keeps LOOP a bottom panel", async () => {
+    await page.viewport(390, 844);
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, false));
+
+    state.openTnDPanel();
+    flushSync();
+    await tick();
+    expect(viewportRoot().dataset.presentation).toBe("fill");
+    expect(document.body.querySelector(".expanded-card-backdrop")).toBeNull();
+
+    state.closeGenerateCard();
+    flushSync();
+    state.openLOOPPanel(LOOPType.MIRRORED, new Set(), () => {});
+    flushSync();
+    await tick();
+    expect(viewportRoot().dataset.presentation).toBe("sheet");
+  });
+});

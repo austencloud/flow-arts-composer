@@ -270,6 +270,7 @@
     align-items: center;
     gap: 4px;
     min-width: 0;
+    max-width: 100%;
     font-size: var(--card-text-size);
     font-weight: var(--card-text-weight);
     letter-spacing: var(--card-text-spacing);
@@ -292,8 +293,43 @@
     font-style: italic;
   }
 
-  /* Short cards drop the labels; the icons and words still say it all. */
-  @container tnd-card (max-height: 72px) {
+  /* Too short for two lines under the header: stacked, they rode up over the
+     title. A wide card puts Hands and Props side by side, each label over its
+     value, the way the panel lays them out. */
+  @container tnd-card (max-height: 88px) and (min-width: 240px) {
+    .tnd-body {
+      flex-direction: row;
+      align-items: center;
+      gap: clamp(12px, 6cqw, 28px);
+    }
+
+    .tnd-line {
+      flex: 0 1 auto;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .line-label {
+      font-size: calc(var(--card-text-size) * 0.65);
+      line-height: 1;
+    }
+
+    .line-value {
+      line-height: 1.15;
+    }
+  }
+
+  /* A narrow one keeps the lines stacked, without labels, set tight enough to
+     clear the title; the icons and words still say it all. */
+  @container tnd-card (max-height: 88px) and (max-width: 239.98px) {
+    .tnd-body {
+      gap: 2px;
+    }
+
+    .tnd-line {
+      line-height: 1;
+    }
+
     .line-label {
       display: none;
     }
