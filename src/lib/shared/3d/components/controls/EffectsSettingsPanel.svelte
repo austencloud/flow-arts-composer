@@ -3,7 +3,7 @@
    * EffectsSettingsPanel - Visual effects controls for 3D viewer
    *
    * The canonical 16 per-tip effects plus one scene-level motion modifier.
-   * Uses chip-style buttons consistent with GridSettingsPanel.
+   * The performer hub uses the shared illustrated effect catalog.
    *
    * Three scopes, in precedence order:
    *   - `performers` (All-Performers mode): reads/writes EVERY performer's
@@ -26,7 +26,18 @@
     getRegistration,
   } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
   import EffectPresetsSection from "$lib/shared/animation-engine/components/effects-panel/EffectPresetsSection.svelte";
-  import { matchPresetId } from "$lib/shared/animation-engine/components/effects-panel/presets/match-preset";
+  import EffectSelector from "$lib/shared/animation-engine/components/effects-panel/EffectSelector.svelte";
+  import EffectPresetThumbnail from "$lib/shared/animation-engine/components/effects-panel/EffectPresetThumbnail.svelte";
+  import { createEffectLookPreview } from "$lib/shared/animation-engine/components/effects-panel/effect-look-preview";
+  import type { EffectPreset } from "$lib/shared/animation-engine/components/effects-panel/presets/types";
+  import {
+    fitEffectCatalog,
+    fitEffectRoster,
+  } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
+  import {
+    matchPresetId,
+    pickedPresetId,
+  } from "$lib/shared/animation-engine/components/effects-panel/presets/match-preset";
   import { isEffectId } from "$lib/shared/effects/state/effects-config-state.svelte";
   import EffectControlStack from "$lib/shared/effects/components/EffectControlStack.svelte";
   import { advancedControls } from "$lib/shared/effects/domain/effect-control-manifest";
@@ -53,6 +64,10 @@
      */
     onEffectEdit?: (effect: EffectType) => boolean;
     presentation?: "standard" | "performer-hub";
+    /** Content room measured by the hub's bounded scroller, excluding its padding. */
+    availableHeight?: number;
+    /** Reset the host scroller when moving between the catalog and tuning. */
+    onNavigate?: () => void;
   }
   let {
     performer = null,
@@ -60,6 +75,8 @@
     onSettingChange,
     onEffectEdit,
     presentation = "standard",
+    availableHeight = 0,
+    onNavigate,
   }: Props = $props();
 
   // Non-empty group => broadcast scope (All-Performers). Takes precedence over
@@ -102,6 +119,56 @@
     color: "var(--semantic-info)",
   };
   const motionEnabled = $derived(isEnabled("motion"));
+
+  let catalogWidth = $state(0);
+  let introHeight = $state(0);
+  let motionHeight = $state(0);
+  const HUB_GAP = 10;
+  const catalogRoom = $derived(
+    Math.max(0, availableHeight - introHeight - motionHeight - HUB_GAP * 2)
+  );
+  const catalogFit = $derived.by(() => {
+    const box = {
+      width: catalogWidth,
+      height: catalogRoom,
+      count: EFFECTS.length,
+    };
+    const filled = fitEffectCatalog(box);
+    if (filled?.portrait) return filled;
+    // A short sheet scrolls the pictures at their natural height. Even a narrow
+    // phone keeps pictures by using fewer columns instead of reverting to icons.
+    return fitEffectRoster(box) ?? fitEffectRoster({ ...box, columns: 2 });
+  });
+  const catalogLooks = $derived.by(() => {
+    if (presentation !== "performer-hub") return [];
+    void config.version;
+    return EFFECTS.flatMap((effect) => {
+      const group = getRegistration(effect.id)?.presetGroup;
+      if (!group || !isEffectId(effect.id)) return [];
+      const settings = config.effect(effect.id) as unknown as Record<
+        string,
+        unknown
+      >;
+      const presetId =
+        pickedPresetId(group, settings, config.activePresets[effect.id]) ??
+        matchPresetId(group, settings);
+      const preset: EffectPreset = group.presets.find(
+        (item) => item.id === presetId
+      ) ??
+        group.presets[0] ?? {
+          id: `${effect.id}-default`,
+          name: effect.label,
+          previewColor: effect.color,
+        };
+      return [
+        {
+          id: effect.id,
+          preset,
+          model: createEffectLookPreview(effect.id, preset),
+        },
+      ];
+    });
+  });
 
   // The single per-performer effect now uses the canonical EffectType directly
   // (no legacy EffectId translation), so the full 16-effect grid is selectable
@@ -266,11 +333,13 @@
     if (!isEnabled(effect)) toggle(effect);
     drilldownEffect = effect;
     showAdvanced = false;
+    onNavigate?.();
   }
 
   function closeEffectDetail(): void {
     drilldownEffect = null;
     showAdvanced = false;
+    onNavigate?.();
   }
 
   function disableDrilldownEffect(): void {
@@ -405,6 +474,7 @@
 <section
   class="effects-settings"
   class:hub-presentation={presentation === "performer-hub"}
+  style:gap={presentation === "performer-hub" ? `${HUB_GAP}px` : undefined}
 >
   {#if presentation === "performer-hub"}
     {#if drilldownEffect && activeEffectId === drilldownEffect && activeRegistration}
@@ -475,7 +545,7 @@
         {/if}
       </div>
     {:else}
-      <div class="effects-intro">
+      <div class="effects-intro" bind:offsetHeight={introHeight}>
         <strong>Choose an effect</strong>
         <span
           >Selection applies to the current performer scope. Open any effect to
@@ -483,24 +553,37 @@
         >
       </div>
 
-      <div class="effect-chips hub-effect-grid">
-        {#each effectChips as effect}
-          {@const enabled = isEnabled(effect.key)}
-          <button
-            class="effect-chip"
-            class:active={enabled}
-            style="--color: {effect.color}"
-            onclick={() => openEffectDetail(effect.key)}
-            aria-label={`${enabled ? "Tune" : "Enable"} ${effect.label}`}
-            aria-pressed={enabled}
-          >
-            <i class="fas fa-{effect.icon}" aria-hidden="true"></i>
-            <span>{effect.label}</span>
-          </button>
-        {/each}
+      <div
+        class="hub-effect-catalog"
+        bind:clientWidth={catalogWidth}
+        style:height={catalogFit?.fill ? `${catalogRoom}px` : undefined}
+      >
+        <EffectSelector
+          activeEffect={activeEffectKey ?? "none"}
+          activeAction="tune"
+          onSelect={(effect) => {
+            if (isEffectId(effect)) openEffectDetail(effect);
+          }}
+          catalog={catalogFit}
+        >
+          {#snippet portrait(effectId: string)}
+            {@const look = catalogLooks.find((item) => item.id === effectId)}
+            {#if look}
+              <EffectPresetThumbnail
+                effectType={effectId}
+                preset={look.preset}
+                legacyModel={look.model}
+                active={activeEffectKey === effectId}
+              />
+            {/if}
+          {/snippet}
+        </EffectSelector>
       </div>
 
-      <div class="scene-modifier hub-scene-modifier">
+      <div
+        class="scene-modifier hub-scene-modifier"
+        bind:offsetHeight={motionHeight}
+      >
         <div class="scene-copy">
           <strong>Scene Motion</strong>
           <span>Global motion blur and speed lines</span>
@@ -670,7 +753,7 @@
   }
 
   .effects-intro {
-    margin-bottom: 10px;
+    flex: none;
   }
 
   .effects-intro strong,
@@ -878,22 +961,16 @@
     border-color: var(--semantic-error);
   }
 
-  .hub-effect-grid {
-    grid-auto-flow: row;
-    grid-template-rows: none;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-columns: auto;
-    gap: 8px;
-    overflow: visible;
-    padding-bottom: 0;
-  }
-
-  .hub-effect-grid .effect-chip {
-    width: 100%;
+  .hub-effect-catalog {
+    display: flex;
+    flex-direction: column;
+    flex: none;
     min-width: 0;
   }
 
   .hub-scene-modifier {
+    flex: none;
+    margin-top: 0;
     justify-content: space-between;
     min-height: 68px;
     padding: 8px 10px;
@@ -947,12 +1024,6 @@
     outline-offset: 2px;
   }
 
-  @container (min-width: 560px) {
-    .hub-effect-grid {
-      grid-template-columns: repeat(8, minmax(0, 1fr));
-    }
-  }
-
   @media (max-width: 400px) {
     .effect-chips {
       grid-auto-columns: 56px;
@@ -960,10 +1031,6 @@
     .effect-chip {
       width: 56px;
       height: 56px;
-    }
-
-    .hub-effect-grid .effect-chip {
-      width: 100%;
     }
 
     .effect-drill-header {

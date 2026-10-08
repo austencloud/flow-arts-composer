@@ -387,6 +387,8 @@
   }
 
   let removeConfirmOpen = $state(false);
+  let tabContentRect = $state<DOMRectReadOnly>();
+  let tabContentElement = $state<HTMLDivElement>();
 
   function chooseSequence(sequenceData: SequenceData): void {
     const previous = sequenceWord ?? null;
@@ -436,7 +438,11 @@
 
   <div class="header-divider" aria-hidden="true"></div>
 
-  <div class="tab-content">
+  <div
+    class="tab-content"
+    bind:this={tabContentElement}
+    bind:contentRect={tabContentRect}
+  >
     <div
       class="scoped-panes"
       class:locked={emptyScope?.locksTab}
@@ -557,6 +563,10 @@
                 ? selectedPerformers
                 : null}
               presentation="performer-hub"
+              availableHeight={tabContentRect?.height ?? 0}
+              onNavigate={() => {
+                if (tabContentElement) tabContentElement.scrollTop = 0;
+              }}
               onEffectEdit={(effect) =>
                 writeParameter({ field: "effect", value: effect }, () =>
                   viewer.setEffectScoped(effect)
