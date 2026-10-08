@@ -1500,6 +1500,7 @@
           // so don't announce completion or hold the user behind a success message.
           if (screen) {
             __tkaMarkSplash("dismiss-start");
+            // src/lib/features/create/shared/components/method-previews/after-boot-screen.ts waits on `loaded`, display none, or removal.
             screen.classList.add("loaded");
             screen.addEventListener("transitionend", function (event) {
               if (event.target !== screen) return;

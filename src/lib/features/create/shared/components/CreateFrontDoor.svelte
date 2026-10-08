@@ -80,13 +80,13 @@
     isReady: (methodId) => readyIds.has(methodId),
     // The turns wait for the boot screen to leave, then for the route morph.
     defer: (go) => {
-      let cancelQuiet = (): void => {};
+      let cancelMorphIdle = (): void => {};
       const cancelBoot = runAfterBootScreen(() => {
-        cancelQuiet = runAfterNamedRouteMorphIdle(go);
+        cancelMorphIdle = runAfterNamedRouteMorphIdle(go);
       });
       return () => {
         cancelBoot();
-        cancelQuiet();
+        cancelMorphIdle();
       };
     },
   });

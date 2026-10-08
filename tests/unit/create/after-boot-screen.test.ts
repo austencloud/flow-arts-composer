@@ -1,11 +1,6 @@
 // @vitest-environment jsdom
 
-/**
- * The boot screen in app.html covers every route until the shell takes over.
- * The Create front door's previews wait for it, so a first visit does not
- * spend round 1 behind it. runAfterBootScreen runs its callback at once when
- * nothing covers the page, and otherwise once the screen starts to leave.
- */
+/** The Create previews' wait for app.html's boot screen to start leaving. */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runAfterBootScreen } from "$lib/features/create/shared/components/method-previews/after-boot-screen";
 

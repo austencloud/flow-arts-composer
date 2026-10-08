@@ -63,7 +63,8 @@ export interface MethodPreviewTurnOptions {
   reducedMotion?: () => boolean;
   /**
    * Runs `go` once the page is quiet and returns a cancel function. The front
-   * door passes runAfterNamedRouteMorphIdle. Defaults to the next task.
+   * door waits for the boot screen, then the route morph. Defaults to the next
+   * task.
    */
   defer?: (go: () => void) => () => void;
   timing?: Partial<MethodPreviewTiming>;
