@@ -817,61 +817,16 @@ h6 {
   }
 }
 
-/* Background System with Smooth Gradient Transitions */
+/* Background fallback. The background canvas (BackgroundHost) paints an
+   opaque frame over this once it mounts, so the gradient only shows while the
+   canvas loads or if it fails. It stays still: animating it repainted the
+   whole viewport every frame behind a canvas that hides it. */
 body {
   position: relative;
   background: var(--gradient-cosmic);
   background-attachment: fixed;
   background-size: 400% 400%;
   color: var(--foreground);
-}
-
-/* Background gradient animation - disabled for reduced motion users */
-@media (prefers-reduced-motion: no-preference) {
-  body {
-    animation: gradientShift 15s ease infinite;
-  }
-}
-
-/* ::after pseudo-element for smooth gradient transitions (using ::after to avoid conflicts with animation ::before effects) */
-body::after {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--gradient-next, transparent);
-  background-attachment: fixed;
-  background-size: 400% 400%;
-  opacity: 0;
-  z-index: 1;
-  pointer-events: none;
-  transition: opacity 1s ease-in-out;
-}
-
-/* Animate only when motion is OK */
-@media (prefers-reduced-motion: no-preference) {
-  body::after {
-    animation: gradientShift 15s ease infinite;
-  }
-}
-
-/* Trigger transition by toggling this class on body when gradient changes */
-body.background-transitioning::after {
-  opacity: 1;
-}
-
-@keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
 }
 
 /* Background Animation System - Apply animations to body */
