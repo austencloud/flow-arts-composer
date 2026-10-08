@@ -180,6 +180,11 @@ Navigation via bottom tabs (mobile-first UX pattern)
 
     if (routeMode !== "none")
       writeConceptUrl(concept.id, routeMode, conceptPlaceId);
+    // A lesson opened from the public course hub is a new page to the reader,
+    // so it starts at the top the way a full navigation would. Shallow routing
+    // keeps the scroll position otherwise, and the hub's lesson list sits well
+    // below the fold.
+    if (publicCourse && routeMode === "push") window.scrollTo(0, 0);
   }
 
   function syncConceptFromUrl(restoreSavedConcept: boolean) {

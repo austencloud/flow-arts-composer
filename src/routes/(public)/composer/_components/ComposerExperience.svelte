@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { flushSync, onDestroy, onMount, untrack } from "svelte";
+  import { flushSync, onMount, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import { observeComposerStopVisibility } from "./observe-composer-stop-visibility";
@@ -27,7 +27,6 @@
   } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
   import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { pinLandingSettings } from "$lib/shared/application/state/app-state.svelte";
   import {
     trackCtaClick,
     trackDemoInteraction,
@@ -124,13 +123,9 @@
   }
 
   let selectedProp = $state<PropType>(PropType.STAFF);
-  // Every demo on this page draws the canonical hands, blue left and red
-  // right, whatever this browser saved in the app: the page is prerendered
-  // with them, its poster and card images carry them, and its own prop picker
-  // is the only color control here. Pinned before any child reads settings;
-  // the picker's choice reaches the demos as explicit overrides.
-  pinLandingSettings({ primaryPropColors: null });
-  onDestroy(() => pinLandingSettings(null));
+  // The demos draw the canonical hands, blue left and red right, because the
+  // public layout pins the settings every public page reads. The picker's
+  // choice reaches the demos as explicit overrides.
 
   // Appearance and colors stay with this public page's prop choice. There is
   // no app settings service here, so writing to it would lose these edits.
