@@ -56,6 +56,7 @@
   import type { ComposerPropAppearance } from "./composer-prop-appearance";
   import ProjectStory from "./ProjectStory.svelte";
   import ComposerWordRow from "./ComposerWordRow.svelte";
+  import ChoreoCardPreview from "$lib/shared/landing/components/launchpad/ChoreoCardPreview.svelte";
 
   function trackOpenComposer(): void {
     trackCtaClick("hero", {
@@ -814,17 +815,29 @@
 
   <section class="keeping" aria-labelledby="keeping-title" use:activateShelf>
     <div class="keeping-intro">
-      <h2 id="keeping-title">Keep the sequence you made.</h2>
       <div class="keeping-lede">
+        <h2 id="keeping-title">Keep this sequence.</h2>
         <p>
           Guests keep three sequences on this device. A full account keeps a
-          cloud library and collections. Choose a sequence below to watch it
-          here.
+          cloud library and collections.
         </p>
         <div class="keeping-actions">
           <a href="/browse" class="primary-action">Browse the Gallery</a>
         </div>
       </div>
+      <!-- The page sequence as the card the app would keep. Rendered from the
+           sequence itself, so a hero draw or a fresh build needs no saved
+           thumbnail. It mounts when the stop nears, like the gallery. The
+           preview draws the app's canonical card (staff props), not the
+           chosen prop; that is the card the app keeps. -->
+      <figure class="keeping-card">
+        <div class="keeping-card-art">
+          {#if shelfActive}
+            <ChoreoCardPreview sequence={pageSequence.sequence} />
+          {/if}
+        </div>
+        <figcaption>{featuredCaption(pageSequence.source)}</figcaption>
+      </figure>
     </div>
 
     <div class="keeping-shelf">
@@ -1386,6 +1399,30 @@
     margin: 0;
   }
 
+  .keeping-card {
+    margin: 0;
+    justify-self: end;
+    width: min(100%, 18rem);
+  }
+
+  /* 5:7 is the card's own 960x1344 ratio; the preview's img already fills
+     its box with object-fit: contain, so the box holds the layout while the
+     render is in flight. */
+  .keeping-card-art {
+    aspect-ratio: 5 / 7;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    background: var(--theme-card-bg, oklch(0.2 0.025 270 / 0.75));
+    border: 1px solid var(--theme-stroke, oklch(0.45 0.03 270 / 0.2));
+  }
+
+  .keeping-card figcaption {
+    margin-top: 0.6rem;
+    color: oklch(0.76 0.014 270);
+    font-size: var(--font-size-min, 0.875rem);
+    text-align: center;
+  }
+
   .keeping-intro .keeping-actions {
     margin-top: 1.35rem;
   }
@@ -1759,6 +1796,10 @@
     .keeping-intro {
       grid-template-columns: 1fr;
       gap: 1.25rem;
+    }
+
+    .keeping-card {
+      justify-self: center;
     }
 
     .opening {
