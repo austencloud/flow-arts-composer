@@ -10,7 +10,7 @@ import type {
   PostItem,
   PostProject,
 } from "@austencloud/video-editor/core";
-import { mirrorPostProject } from "$lib/shared/media-composition/domain/post-project-mirror";
+import { mirrorPostProject } from "@austencloud/video-editor/core";
 import {
   NOW,
   card,

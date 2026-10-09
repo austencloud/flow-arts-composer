@@ -19,7 +19,7 @@ import {
 } from "vitest";
 import { mountMusicLane } from "./music-lane-harness.svelte";
 import type { PostMusic } from "@austencloud/video-editor/core";
-import { POST_MUSIC_MIN_SECONDS } from "$lib/shared/media-composition/domain/post-music-edits";
+import { POST_MUSIC_MIN_SECONDS } from "@austencloud/video-editor/core";
 
 const wave = vi.hoisted(() => ({
   created: [] as Array<{

@@ -13,11 +13,9 @@
     POST_MUSIC_MAX_TEXT,
     type PostMusic,
     POST_TIME_EPSILON,
-  } from "@austencloud/video-editor/core";
-  import {
     POST_MUSIC_MIN_SECONDS,
     type MusicPatch,
-  } from "$lib/shared/media-composition/domain/post-music-edits";
+  } from "@austencloud/video-editor/core";
   import { formatTakeClock, parseClock } from "../builder/post-builder-format";
 
   /**

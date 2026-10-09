@@ -4,7 +4,7 @@ import {
   trimMusic,
   updateMusic,
   type MusicPatch,
-} from "$lib/shared/media-composition/domain/post-music-edits";
+} from "@austencloud/video-editor/core";
 import PostMusicTool from "$lib/shared/share/components/post-studio/editor/PostMusicTool.svelte";
 import { NOW, project, video } from "./post-project-fixtures";
 import { editContext } from "$lib/shared/post-studio-plugin";

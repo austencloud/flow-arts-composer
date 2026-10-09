@@ -2,15 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   POST_MUSIC_MAX_SECONDS,
   type PostMusic,
-} from "@austencloud/video-editor/core";
-import {
   POST_MUSIC_ID,
   removeMusic,
   setMusic,
   syncedSourceIn,
   trimMusic,
   updateMusic,
-} from "$lib/shared/media-composition/domain/post-music-edits";
+} from "@austencloud/video-editor/core";
 import type { PostProject } from "@austencloud/video-editor/core";
 import { NOW, project, video } from "./post-project-fixtures";
 import { editContext } from "$lib/shared/post-studio-plugin";

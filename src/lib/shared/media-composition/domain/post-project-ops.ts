@@ -30,6 +30,12 @@ import {
   updateItem,
   type EditContext,
   type PostItemPatch,
+  POST_MUSIC_MIN_SECONDS,
+  removeMusic,
+  setMusic,
+  syncedSourceIn,
+  updateMusic,
+  type MusicPatch,
 } from "@austencloud/video-editor/core";
 import {
   POST_QR_URL_RULE,
@@ -46,14 +52,6 @@ import {
   setTunnelHookSpeed,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
-import {
-  POST_MUSIC_MIN_SECONDS,
-  removeMusic,
-  setMusic,
-  syncedSourceIn,
-  updateMusic,
-  type MusicPatch,
-} from "$lib/shared/media-composition/domain/post-music-edits";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,

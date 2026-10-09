@@ -14,12 +14,8 @@
   import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
   import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
   import { createPostSequenceView } from "$lib/shared/media-composition/services/post-sequence-view.svelte";
-  import { mirrorPostProject } from "$lib/shared/media-composition/domain/post-project-mirror";
   import {
-    DEFAULT_HAND_LABELING,
-    type HandLabeling,
-  } from "$lib/shared/video-collaboration/domain/hand-labeling";
-  import {
+    mirrorPostProject,
     POST_STUDIO_ROLE,
     ANIMATION_OVERLAY_ROLE,
     stripModeFromRole,
@@ -63,7 +59,15 @@
     setProjectBackground,
     setProjectCanvas,
     setTrackFlag,
+    removeMusic,
+    trimMusic,
+    updateMusic,
+    type MusicPatch,
   } from "@austencloud/video-editor/core";
+  import {
+    DEFAULT_HAND_LABELING,
+    type HandLabeling,
+  } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import {
     createTkaSurfaces,
     itemIdFromMovesAnimationRole,
@@ -130,12 +134,6 @@
   import PostTransitionTool from "./PostTransitionTool.svelte";
   import PostItemTool from "./PostItemTool.svelte";
   import PostMusicTool from "./PostMusicTool.svelte";
-  import {
-    removeMusic,
-    trimMusic,
-    updateMusic,
-    type MusicPatch,
-  } from "$lib/shared/media-composition/domain/post-music-edits";
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
