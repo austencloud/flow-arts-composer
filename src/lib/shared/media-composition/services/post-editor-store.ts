@@ -1,9 +1,11 @@
+import type { VideoEditorStore } from "@austencloud/video-editor";
 import type { PostProject } from "@austencloud/video-editor/core";
 import type { TakeTiming } from "$lib/shared/media-composition/domain/take-timing";
 import {
   loadPostEditorHistory,
   savePostEditorHistory,
   type PostEditorHistory,
+  type PostTimingEffect,
   type RestoredPostEditorHistory,
 } from "$lib/shared/media-composition/services/post-editor-history-store";
 import {
@@ -55,3 +57,16 @@ export const devicePostEditorStore: PostEditorStore = {
   loadHistory: loadPostEditorHistory,
   saveHistory: savePostEditorHistory,
 };
+
+/** The package store port over a tka store, which finds its own owner. */
+export function editorStoreOf(
+  store: PostEditorStore
+): VideoEditorStore<PostTimingEffect> {
+  return {
+    openProject: ({ subjectId }, now) => store.openProject(subjectId, now),
+    saveProject: (_scope, project) => store.saveProject(project),
+    backupBeforeImport: (_scope, project) => store.backupBeforeImport(project),
+    loadHistory: (_scope, head) => store.loadHistory(head),
+    saveHistory: (_scope, history) => store.saveHistory(history),
+  };
+}
