@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { opaqueFade } from "$lib/shared/transitions/motion";
+import { opaqueFade, popIn } from "$lib/shared/transitions/motion";
 
 const DIMMED = ["hidden-for-sequential"] as const;
 
@@ -37,6 +37,24 @@ describe("opaqueFade", () => {
     expect(read).not.toHaveBeenCalled();
     expect(config.css?.(1, 0)).toBe("opacity: 0.4");
     expect(config.css?.(0.5, 0.5)).toBe("opacity: 0.2");
+  });
+
+  it("passes its easing through", () => {
+    const easing = (t: number) => t * t;
+    const config = opaqueFade(cell(), { duration: 180, easing });
+
+    expect(config.easing).toBe(easing);
+  });
+
+  it("settles an oversized label down to rest without reading its style", () => {
+    const read = vi.spyOn(window, "getComputedStyle");
+    const node = cell("<svg><g></g></svg>").querySelector("g")!;
+
+    const config = popIn(node, { duration: 180, start: 1.06 });
+
+    expect(read).not.toHaveBeenCalled();
+    expect(config.css?.(0, 1)).toBe("opacity: 0; transform: scale(1.06);");
+    expect(config.css?.(1, 0)).toBe("opacity: 1; transform: scale(1);");
   });
 
   it("skips the read entirely when there is nothing to animate", () => {
