@@ -9,6 +9,7 @@
  * evaluatePresetFrame take the package's FrameAlignment; a file that called them directly would
  * have to build one itself, while tka's callers pass the SequenceFrameAlignment they build today.
  * `$lib/shared/post-studio-plugin` exports the same names with the plugin already bound.
+ * The strict per-kind schemas `PostCardItemSchema` and `PostVideoItemSchema` are bound-only too: they parse without tka's card and video fields.
  *
  * If this fails, import the name from `$lib/shared/post-studio-plugin` instead. A whole-module
  * import (`import * as x from`, `export * from` or a dynamic `import()` of the entry) is caught
@@ -28,6 +29,10 @@ const BOUND_ONLY: Record<string, string[]> = {
     "defaultBoxFor",
     "normalizeProject",
     "compilePostProject",
+    // Strict core schemas without tka's fields. If tka needs a per-kind
+    // schema, bound.ts exports one taken from the bound union.
+    "PostCardItemSchema",
+    "PostVideoItemSchema",
   ],
   [RENDER_ENTRY]: ["evaluatePresetLayers", "evaluatePresetFrame"],
 };
@@ -135,6 +140,15 @@ describe("bound-only video editor functions", () => {
         'export { createProjectSchema } from "@austencloud/video-editor/core";'
       )
     ).toEqual(["createProjectSchema"]);
+  });
+
+  it("finds the strict per-kind schemas", () => {
+    expect(
+      boundNamesIn(
+        'import { PostCardItemSchema, PostVideoItemSchema as Video } from "@austencloud/video-editor/core";',
+        CORE_ENTRY
+      )
+    ).toEqual(["PostCardItemSchema", "PostVideoItemSchema"]);
   });
 
   it("finds the render entry's bound names and reports the entry with them", () => {
