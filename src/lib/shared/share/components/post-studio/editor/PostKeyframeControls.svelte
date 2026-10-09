@@ -31,8 +31,10 @@
     type PostEasingPresetId,
   } from "@austencloud/video-editor/core";
   import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
-  import type { PostEdit } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type {
+    PostEdit,
+    PostEditorState,
+  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "./PostCurveEditor.svelte";
