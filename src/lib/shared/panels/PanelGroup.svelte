@@ -36,12 +36,14 @@
      */
     preferredSize?: string;
     /**
-     * While this panel grows, lay its content out at the size it is growing to
-     * and let the moving edge uncover it; while it shrinks, keep its content at
-     * the size it started from and let the edge cover it. Content that is
-     * costly to re-lay out, such as a grid of pictographs or a column of
-     * settings cards, then lays out once instead of on every frame of the
-     * slide. Applies only when the group can compute the settled size.
+     * While this panel's own allocation grows, lay its content out at the size
+     * it is growing to and let the moving edge uncover it; while it shrinks,
+     * keep its content at the size it started from and let the edge cover it.
+     * Content that is costly to re-lay out, such as a grid of pictographs or a
+     * column of settings cards, then lays out once instead of on every frame
+     * of the slide. A neighbour that only absorbs the space keeps following
+     * the edge, so what stays on screen grows or shrinks with the motion.
+     * Applies only when the group can compute the settled size.
      * When it is the only panel changing, it also slides in pixels, so its
      * edge follows the easing curve (see startPixelSlide).
      */
@@ -556,8 +558,9 @@
   /**
    * Motion: from the moment a panel's flex allocation changes until its track
    * comes to rest, the root carries `data-panel-motion` so per-resize
-   * measurers can wait, and a `revealContent` panel holds its content at the
-   * larger of its start and settled sizes so that content lays out once.
+   * measurers can wait, and a `revealContent` panel whose allocation changed
+   * holds its content at the larger of its start and settled sizes so that
+   * content lays out once.
    */
   let containerMainSize = $state(0);
   let inMotion = $state(false);
@@ -665,29 +668,20 @@
         const element = panel.revealContent ? panelWrapperFor(key) : null;
         if (settled === undefined || !element) return;
         const from = measurePanel(element);
-        if (
-          Math.abs(settled - from) >= 0.5 &&
-          !needsMeasuredBasisHandoff(previous, next)
-        ) {
+        if (Math.abs(settled - from) < 0.5) return;
+        // A panel whose own allocation moves holds its content still: growing,
+        // it lays out at its end size and is uncovered; shrinking, it keeps
+        // its start size and is covered, since laying it out at the end size
+        // would crop it before the edge got there. A neighbour that only
+        // fills the space is left to follow the edge. Holding it too made
+        // Play show the animator at its final size at once, under tools that
+        // then slid off it, instead of growing the picture as they folded.
+        revealing.set(key, Math.max(settled, from));
+        if (!needsMeasuredBasisHandoff(previous, next)) {
           slides.push({ key, element, from, to: settled, flex: next });
         }
       });
       if (changedCount === 0) return;
-
-      // Every revealContent panel whose size moves holds its content still,
-      // including a neighbour that only fills the space another panel gives
-      // up. A growing panel lays out at its end size and is uncovered; a
-      // shrinking one keeps its start size and is covered, since laying it
-      // out at the end size would crop it before the edge got there.
-      panels.forEach((panel, index) => {
-        const settled = settledSizes?.[index];
-        const key = panel.id ?? index;
-        const element = panel.revealContent ? panelWrapperFor(key) : null;
-        if (settled === undefined || !element) return;
-        const from = measurePanel(element);
-        if (Math.abs(settled - from) >= 0.5)
-          revealing.set(key, Math.max(settled, from));
-      });
 
       // A pixel slide needs the rest of the track to give way around it: one
       // moving panel, and a neighbour with a share to absorb the difference.
@@ -856,9 +850,9 @@
     min-height: 0;
   }
 
-  /* A revealContent panel in motion: its content holds one size (where a
-     growing track ends, where a shrinking one started), so it lays out once
-     and the moving edge uncovers or covers it. */
+  /* A revealContent panel whose allocation is moving: its content holds one
+     size (where a growing track ends, where a shrinking one started), so it
+     lays out once and the moving edge uncovers or covers it. */
   .panel-group.vertical > .panel-wrapper.revealing > :global(*) {
     flex: none;
     height: var(--panel-content-size);
