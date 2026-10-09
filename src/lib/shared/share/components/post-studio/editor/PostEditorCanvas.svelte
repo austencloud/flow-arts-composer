@@ -10,7 +10,7 @@
   import { LAYOUT_MOTION_EASING } from "$lib/shared/transitions/layout-flip";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
+  import type { CompositionSourceBinding } from "@austencloud/video-editor";
   import {
     resolvePresetTimePoint,
     fadeBlackOpacityAt,

@@ -73,7 +73,7 @@
     setTrackFlag,
   } from "$lib/shared/media-composition/domain/post-project-edits";
   import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
-  import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
+  import type { CompositionSourceBinding } from "@austencloud/video-editor";
   import {
     createPostEditorState,
     type CatalogTakeSource,

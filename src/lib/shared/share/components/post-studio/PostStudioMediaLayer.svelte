@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
+  import type { CompositionSourceBinding } from "@austencloud/video-editor";
   import type {
     LayoutRegion,
     TunnelHook,
@@ -8,7 +8,6 @@
     EvaluatedFrameLayer,
     PreviewVideoController,
   } from "@austencloud/video-editor/render";
-  import { tryGetMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type {
@@ -118,7 +117,6 @@
     onSourceSize,
     onPlaybackVideo,
   }: Props = $props();
-  const composition = tryGetMediaCompositionContext();
   // The footage stays alive when the editor refreshes its binding each frame.
   const videoSource = $derived(binding.previewUrl ?? "");
   /**
@@ -496,10 +494,6 @@
     sourceWidth = binding.sourceWidth ?? video.videoWidth;
     sourceHeight = binding.sourceHeight ?? video.videoHeight;
     onSourceSize?.({ width: sourceWidth, height: sourceHeight });
-    composition?.setSourceDuration(
-      binding.roleKey,
-      binding.durationSeconds ?? video.duration
-    );
     syncVideoTime();
     if (!playing && !video.seeking) showPausedFrame(video);
     frameRecovery?.update();
@@ -748,7 +742,7 @@
     <PostStudioTunnelLayer
       {sequence}
       {playing}
-      bpm={composition?.tempoBpm ?? 60}
+      bpm={60}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
       rightPropType={cardRenderOptions?.rightPropTypeOverride ??

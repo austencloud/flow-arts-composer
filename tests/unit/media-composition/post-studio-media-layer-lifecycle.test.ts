@@ -7,12 +7,6 @@ import {
 } from "@austencloud/video-editor/render";
 
 vi.mock(
-  "$lib/shared/media-composition/state/media-composition-context",
-  () => ({
-    tryGetMediaCompositionContext: () => null,
-  })
-);
-vi.mock(
   "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte",
   () => ({ default: () => ({}) })
 );
