@@ -672,6 +672,39 @@ Delegates ALL logic to services (SRP compliant)
       loopEnabled
     );
   });
+
+  // The grid's {#each} runs animate:flip, so Svelte measures every card twice
+  // (before and after the update, a forced layout each time) whenever the list
+  // it iterates changes. The descriptors change on every generate (busy state,
+  // summaries); the boxes only move when the set, order or spans change. The
+  // each walks this list, which keeps its identity until one of those does,
+  // and each card reads its live descriptor by id.
+  type CardSlot = Pick<CardDescriptor, "id" | "gridColumnSpan">;
+  let previousCardSlots: CardSlot[] = [];
+  const cardSlots = $derived.by((): CardSlot[] => {
+    const next = cards.map(({ id, gridColumnSpan }) => ({
+      id,
+      gridColumnSpan,
+    }));
+    const unchanged =
+      next.length === previousCardSlots.length &&
+      next.every(
+        (slot, index) =>
+          slot.id === previousCardSlots[index]?.id &&
+          slot.gridColumnSpan === previousCardSlots[index]?.gridColumnSpan
+      );
+    if (!unchanged) previousCardSlots = next;
+    return previousCardSlots;
+  });
+  // A leaving card still renders through its outro, so its last descriptor
+  // stays on hand after it drops out of the list.
+  let knownCards = new Map<CardDescriptor["id"], CardDescriptor>();
+  const cardsById = $derived.by(() => {
+    const byId = new Map(knownCards);
+    for (const card of cards) byId.set(card.id, card);
+    knownCards = byId;
+    return byId;
+  });
 </script>
 
 <div
@@ -723,11 +756,12 @@ Delegates ALL logic to services (SRP compliant)
 
            Without in/out, flip has nothing to animate for a card that did not
            exist a frame ago, and Turn Intensity simply blinks in and out. -->
-      {#each cards as card (card.id)}
+      {#each cardSlots as slot (slot.id)}
+        {@const card = cardsById.get(slot.id)!}
         <div
           class="card-wrapper"
-          data-card-id={card.id}
-          style:grid-column="span {card.gridColumnSpan}"
+          data-card-id={slot.id}
+          style:grid-column="span {slot.gridColumnSpan}"
           use:claimedViewTransitionName={{
             name: generateCardMorphName(card.id),
             enabled: panelState.openGenerateCard !== card.id,

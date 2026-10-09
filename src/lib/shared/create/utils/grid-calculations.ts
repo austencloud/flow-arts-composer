@@ -377,7 +377,19 @@ export function calculateStepPosition(
 }
 
 /**
- * Which diagonal band a cell sits on, counted out from the start placement.
+ * Which diagonal band a cell sits on: its zero-based row plus its zero-based
+ * column, counted out from the grid's top-left cell.
+ *
+ * The step grid's generation reveal and the Create front door's Generate
+ * preview both stagger their cells by this band, so the two waves are one.
+ */
+export function waveBandAt(row: number, column: number): number {
+  return row + column;
+}
+
+/**
+ * Which diagonal band a step's cell sits on, counted out from the start
+ * placement.
  *
  * The generation reveal sweeps one front across the grid rather than filling a
  * list, so cells share a delay when they share a diagonal. Row plus column also
@@ -392,7 +404,7 @@ export function calculateStepWaveBand(
   columns: number
 ): number {
   const { row, column } = calculateStepPosition(stepIndex, columns);
-  return row - 1 + (column - 1);
+  return waveBandAt(row - 1, column - 1);
 }
 
 /**

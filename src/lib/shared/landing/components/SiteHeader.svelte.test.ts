@@ -55,7 +55,14 @@ describe("SiteHeader desktop disclosures", () => {
     const notationHrefs = Array.from(
       document.querySelectorAll<HTMLAnchorElement>(".desktop-nav .panel a")
     ).map((link) => link.getAttribute("href"));
-    expect(notationHrefs).toEqual(["/shape-engine"]);
+    expect(notationHrefs).toEqual([
+      "/shape-engine",
+      "/notation/staves",
+      "/notation/poi",
+      "/notation/fans",
+      "/notation/clubs",
+      "/notation/buugeng",
+    ]);
   });
 
   it("keeps hover visual-only and opens on click", async () => {

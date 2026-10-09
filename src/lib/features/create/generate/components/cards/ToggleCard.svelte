@@ -143,7 +143,14 @@ Hides header when card height is below 65px for space optimization
       0 4px 8px hsl(var(--shadow-color) / 0.1),
       /* Inner highlight for 3D effect */ inset 0 1px 0 var(--theme-stroke);
 
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    /* Only what hover and press change. `all` also eased the container-unit
+       padding, so every resize of the panel re-laid the grid out each frame. */
+    transition:
+      transform var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
+      filter var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
+      background-color var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
+      border-color var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
     overflow: visible; /* Allow hover effects to overflow and pop over neighbors */
     color: white;
     text-align: center;

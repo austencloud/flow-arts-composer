@@ -4,13 +4,16 @@ import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-ren
 import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
 import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
+import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 import {
-  adjustTogetherOppositeLoop,
-  adjustTogetherOppositeLoops,
-  selectTogetherOppositeLoops,
-  transformTogetherOppositeLoop,
-  transformTogetherOppositeLoops,
-} from "../../src/routes/(public)/timing-and-direction/_data/together-opposite-sequences";
+  adjustModeLoop,
+  adjustModeLoops,
+  modeLoopCount,
+  modeLoopsPerGrid,
+  selectModeLoops,
+  transformModeLoop,
+  transformModeLoops,
+} from "../../src/routes/(public)/timing-and-direction/_data/mode-sequences";
 
 const records = JSON.parse(
   readFileSync("static/data/hero/tnd-base-words.json", "utf8")
@@ -20,37 +23,57 @@ vi.mock("$lib/features/browse/gallery-home/canonical-tnd-pool", () => ({
   loadCanonicalTnDBaseSequences: async () => sequences,
 }));
 
-describe("Together–Opposite four-count loops", () => {
-  it("resolves all six real sequences into the correct grids and family", () => {
-    const loops = selectTogetherOppositeLoops(sequences);
-    expect(loops.map(({ word, gridMode }) => `${gridMode}:${word}`)).toEqual([
-      "diamond:DJDJ",
-      "diamond:EKEK",
-      "diamond:FLFL",
-      "box:MPMP",
-      "box:NQNQ",
-      "box:OROR",
-    ]);
-    for (const { word, sequence, gridMode } of loops) {
-      expect(sequence.steps.map((step) => step.letter).join("")).toBe(word);
-      for (const [index, step] of sequence.steps.entries()) {
-        expect(step.gridMode).toBe(gridMode);
-        expect(deriveTnDFromPictograph(step).tndMode).toBe(TnDMode.TOG_OPP);
-        const next = sequence.steps[(index + 1) % 4]!;
-        for (const hand of ["left", "right"] as const) {
-          expect(step.motions[hand].endLocation).toBe(
-            next.motions[hand].startLocation
-          );
-          expect(step.motions[hand].endOrientation).toBe(
-            next.motions[hand].startOrientation
-          );
+describe("mode guide four-count loops", () => {
+  it("gives every mode real closed loops on both grids, all in that mode", () => {
+    const expected = {
+      SS: ["AAAA", "BBBB", "CCCC", "AAAA", "BBBB", "CCCC"],
+      TS: ["GGGG", "HHHH", "IIII", "GGGG", "HHHH", "IIII"],
+      QS: ["SSSS", "TTTT", "UUUU", "VVVV", "SSSS", "TTTT", "UUUU", "VVVV"],
+      SO: ["JDJD", "KEKE", "LFLF", "PMPM", "QNQN", "RORO"],
+      TO: ["DJDJ", "EKEK", "FLFL", "MPMP", "NQNQ", "OROR"],
+      QO: ["MPMP", "NQNQ", "OROR", "DJDJ", "EKEK", "FLFL"],
+    } as const;
+    for (const code of MODE_ORDER) {
+      const loops = selectModeLoops(code, sequences);
+      const perGrid = modeLoopsPerGrid(code);
+      expect(loops.map((loop) => loop.word)).toEqual(expected[code]);
+      expect(loops).toHaveLength(modeLoopCount(code));
+      expect(loops.map((loop) => loop.gridMode)).toEqual([
+        ...Array(perGrid).fill("diamond"),
+        ...Array(perGrid).fill("box"),
+      ]);
+      expect(new Set(loops.map((loop) => loop.id)).size).toBe(loops.length);
+      for (const { word, sequence, gridMode } of loops) {
+        expect(sequence.metadata?.familyId).toBe(
+          {
+            SS: "split-same",
+            TS: "tog-same",
+            QS: "quarter-same",
+            SO: "split-opp",
+            TO: "tog-opp",
+            QO: "quarter-opp",
+          }[code]
+        );
+        expect(sequence.steps.map((step) => step.letter).join("")).toBe(word);
+        for (const [index, step] of sequence.steps.entries()) {
+          expect(step.gridMode).toBe(gridMode);
+          expect(deriveTnDFromPictograph(step).tndMode).toBe(code);
+          const next = sequence.steps[(index + 1) % 4]!;
+          for (const hand of ["left", "right"] as const) {
+            expect(step.motions[hand].endLocation).toBe(
+              next.motions[hand].startLocation
+            );
+            expect(step.motions[hand].endOrientation).toBe(
+              next.motions[hand].startOrientation
+            );
+          }
         }
       }
     }
   });
 
   it("retains pro/anti differences rather than replacing notation with hand floats", () => {
-    const loops = selectTogetherOppositeLoops(sequences);
+    const loops = selectModeLoops("TO", sequences);
     expect(
       loops.slice(0, 3).map(({ sequence }) =>
         Object.values(sequence.steps[0]!.motions)
@@ -65,9 +88,9 @@ describe("Together–Opposite four-count loops", () => {
   });
 
   it("adjusts and propagates turns immutably without changing the hand classification", async () => {
-    for (const loop of selectTogetherOppositeLoops(sequences)) {
+    for (const loop of selectModeLoops("TO", sequences)) {
       const before = JSON.stringify(loop.sequence);
-      const result = await adjustTogetherOppositeLoop(loop, 1.5, 2);
+      const result = await adjustModeLoop(loop, 1.5, 2);
       expect(JSON.stringify(loop.sequence)).toBe(before);
       expect(result.metadata?.turnLoopClosed).toBe(true);
       for (const [index, step] of result.steps.entries()) {
@@ -85,10 +108,10 @@ describe("Together–Opposite four-count loops", () => {
   });
 
   it("keeps earlier count edits and flags an open prop orientation seam", async () => {
-    const loop = selectTogetherOppositeLoops(sequences)[0]!;
-    const first = await adjustTogetherOppositeLoop(loop, 0.5, 0, 0);
+    const loop = selectModeLoops("TO", sequences)[0]!;
+    const first = await adjustModeLoop(loop, 0.5, 0, 0);
     expect(first.metadata?.turnLoopClosed).toBe(false);
-    const second = await adjustTogetherOppositeLoop(
+    const second = await adjustModeLoop(
       { ...loop, sequence: first },
       0.5,
       0,
@@ -105,8 +128,8 @@ describe("Together–Opposite four-count loops", () => {
   });
 
   it("applies one turn choice to all six cards without replacing their recipes", async () => {
-    const loops = selectTogetherOppositeLoops(sequences);
-    const adjusted = await adjustTogetherOppositeLoops(loops, 1, 1.5, 2);
+    const loops = selectModeLoops("TO", sequences);
+    const adjusted = await adjustModeLoops(loops, 1, 1.5, 2);
 
     expect(adjusted).toHaveLength(6);
     expect(adjusted.map((loop) => loop.id)).toEqual(
@@ -124,12 +147,9 @@ describe("Together–Opposite four-count loops", () => {
   });
 
   it("keeps geometric transforms when turns are edited afterwards", async () => {
-    const loop = selectTogetherOppositeLoops(sequences)[0]!;
-    const rotated = await transformTogetherOppositeLoop(
-      loop,
-      "rotate-clockwise"
-    );
-    const withTurns = await adjustTogetherOppositeLoop(
+    const loop = selectModeLoops("TO", sequences)[0]!;
+    const rotated = await transformModeLoop(loop, "rotate-clockwise");
+    const withTurns = await adjustModeLoop(
       { ...loop, sequence: rotated },
       1,
       1
@@ -147,8 +167,8 @@ describe("Together–Opposite four-count loops", () => {
   });
 
   it("updates every card's actual grid grouping after a quarter rotation", async () => {
-    const rotated = await transformTogetherOppositeLoops(
-      selectTogetherOppositeLoops(sequences),
+    const rotated = await transformModeLoops(
+      selectModeLoops("TO", sequences),
       "rotate-clockwise"
     );
 
@@ -164,12 +184,9 @@ describe("Together–Opposite four-count loops", () => {
   });
 
   it("gives consecutive rotations fresh identities and reclassifies each geometry", async () => {
-    const loop = selectTogetherOppositeLoops(sequences)[0]!;
-    const rotated45 = await transformTogetherOppositeLoop(
-      loop,
-      "rotate-clockwise"
-    );
-    const rotated90 = await transformTogetherOppositeLoop(
+    const loop = selectModeLoops("TO", sequences)[0]!;
+    const rotated45 = await transformModeLoop(loop, "rotate-clockwise");
+    const rotated90 = await transformModeLoop(
       { ...loop, sequence: rotated45 },
       "rotate-clockwise"
     );
@@ -186,13 +203,13 @@ describe("Together–Opposite four-count loops", () => {
   });
 
   it("keeps Together-Opposite classification through mirror, flip, and swap", async () => {
-    const loop = selectTogetherOppositeLoops(sequences)[0]!;
-    const mirrored = await transformTogetherOppositeLoop(loop, "mirror");
-    const flipped = await transformTogetherOppositeLoop(
+    const loop = selectModeLoops("TO", sequences)[0]!;
+    const mirrored = await transformModeLoop(loop, "mirror");
+    const flipped = await transformModeLoop(
       { ...loop, sequence: mirrored },
       "flip"
     );
-    const swapped = await transformTogetherOppositeLoop(
+    const swapped = await transformModeLoop(
       { ...loop, sequence: flipped },
       "swap"
     );

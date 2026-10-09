@@ -188,3 +188,59 @@ describe("CanvasLifecycleManager", () => {
     expect(() => mgr.dispose()).not.toThrow();
   });
 });
+
+describe("CanvasLifecycleManager trail overlay", () => {
+  /**
+   * Run the render-loop wiring step against a stand-in effect manager, so the
+   * test sees whether the GPU trail layer was built without a WebGL context.
+   */
+  function wireRenderLoop(trailOverlay: boolean) {
+    const container = document.createElement("div");
+    sizeContainer(container, 320);
+    const overlay = { initialize: vi.fn() };
+    const erm = {
+      fireTipTracker: null as unknown,
+      ledSampler: null as unknown,
+      trailOverlay: null as unknown,
+      wire: vi.fn(),
+      syncEffectLayers: vi.fn(),
+      createTrailOverlay: vi.fn(() => overlay),
+    };
+    const mgr = new CanvasLifecycleManager();
+    injectInternals(mgr, { _animationRenderer: {} });
+    mgr["_doInitRenderLoopService"]({
+      containerElement: container,
+      effectRendererManager: erm as any,
+      propTypeManager: { wire: vi.fn() } as any,
+      frameBudgetMonitor: {} as any,
+      canvasSize: 320,
+      trailOverlay,
+      getLastPropsRef: () => null,
+      buildFrameParams: vi.fn() as any,
+      getVM: vi.fn() as any,
+      callbacks: {},
+    });
+    return { mgr, erm, overlay, container };
+  }
+
+  it("builds the GPU trail layer by default and hands it to the render loop", () => {
+    const { mgr, erm, overlay, container } = wireRenderLoop(true);
+    expect(erm.createTrailOverlay).toHaveBeenCalledOnce();
+    expect(overlay.initialize).toHaveBeenCalledWith(container, 320, 320);
+    expect(erm.trailOverlay).toBe(overlay);
+    expect(mgr.renderLoop?.getDiagnostics().hasTrailOverlay).toBe(true);
+    mgr.dispose();
+  });
+
+  it("never builds the GPU trail layer when the canvas opts out", () => {
+    const { mgr, erm, overlay } = wireRenderLoop(false);
+    expect(erm.createTrailOverlay).not.toHaveBeenCalled();
+    expect(overlay.initialize).not.toHaveBeenCalled();
+    expect(erm.trailOverlay).toBeNull();
+    expect(mgr.renderLoop?.getDiagnostics().hasTrailOverlay).toBe(false);
+    // The rest of the wiring still runs.
+    expect(erm.wire).toHaveBeenCalledOnce();
+    expect(erm.syncEffectLayers).toHaveBeenCalledOnce();
+    mgr.dispose();
+  });
+});

@@ -10,6 +10,10 @@
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import {
+  isOpenedSequence,
+  refreshOpenedPerformers,
+} from "./refresh-opened-sequence";
 import { reducedMotion } from "$lib/shared/transitions/motion";
 // propInterpolator / sequenceConverter are now module-level functions; no type imports needed
 import type { CameraStateSnapshot } from "@austencloud/scene-3d";
@@ -22,7 +26,12 @@ import type {
   ViewerDomainSnapshot,
   VisibilityDomainSnapshot,
 } from "../undo/scene-undo-types";
-import { Plane, PlaneMode, type PropBuild } from "@austencloud/scene-3d";
+import {
+  Plane,
+  PlaneMode,
+  cmToUnits,
+  type PropBuild,
+} from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "./character-instance-state.svelte";
 import { derivePlaneModeFromHands } from "./character-instance-state.svelte";
 import type {
@@ -54,13 +63,12 @@ import {
 } from "../domain/viewer-formation-facing";
 import { isWebGL2Available } from "../capabilities/webgl-capabilities";
 import { getBlossomOpeningCamera } from "../environments/scenes/cherry-blossom/blossom-site";
+import { levelJoinedViewerOpeningShot } from "../camera/viewer-camera-framing";
+import { resolveGridJoin3D } from "../services/grid-join-3d";
 import { fits3DViewportNow } from "../capabilities/viewport-3d-gate.svelte";
 import { userProportionsState } from "@austencloud/scene-3d";
 import { createCameraChoreographyState } from "$lib/shared/sequence-viewer/camera-choreography/state.svelte";
-import {
-  computeChoreographerShot,
-  type PerformerShotSubject,
-} from "$lib/shared/sequence-viewer/camera-choreography/presets/shots";
+import { computeChoreographerShot } from "$lib/shared/sequence-viewer/camera-choreography/presets/shots";
 import type { OceanVariant } from "../environments/domain/enums/environment-enums";
 import type { TimedTransition } from "../camera/transitions";
 import {
@@ -836,11 +844,19 @@ function buildViewer3DState(
    * viewer adapter supplies the scene-specific stage axis.
    */
   function computeViewerFrontStageShot(
-    performers: readonly PerformerShotSubject[],
+    performers: readonly CharacterInstanceState[],
     viewportAspect = currentViewportAspect()
   ) {
     const shot = computeChoreographerShot(
-      performers,
+      performers.map((performer) => ({
+        position: performer.position,
+        loadedSequence: performer.loadedSequence,
+        handDistance: performer.handDistance,
+        staffHalfLength:
+          (performer.settings.staffLengthCm == null
+            ? userProportionsState.staffLength
+            : cmToUnits(performer.settings.staffLengthCm)) / 2,
+      })),
       stageGroundOffset,
       viewportAspect
     );
@@ -859,15 +875,33 @@ function buildViewer3DState(
    * the performers. Later cast edits still use the elevated overview above.
    */
   function computeViewerOpeningShot(
-    performers: readonly PerformerShotSubject[]
+    performers: readonly CharacterInstanceState[]
   ) {
     const shot = computeViewerFrontStageShot(performers);
-    if (environmentId === "blossom" && performers.length === 1) {
+    if (
+      environmentId === "blossom" &&
+      performers.length === 1 &&
+      !resolveGridJoin3D(performers[0]?.loadedSequence)
+    ) {
       const camera = getBlossomOpeningCamera(currentViewportAspect() < 1);
       const [x, y, z] = camera.position;
       const [tx, ty, tz] = camera.target;
       shot.eye.set(x, y, z);
       shot.target.set(tx, ty, tz);
+      return shot;
+    }
+    if (
+      performers.some((performer) =>
+        resolveGridJoin3D(performer.loadedSequence)
+      )
+    ) {
+      const level = levelJoinedViewerOpeningShot(
+        shot,
+        stageGroundOffset,
+        environmentId
+      );
+      shot.eye.set(level.position.x, level.position.y, level.position.z);
+      shot.target.set(level.target.x, level.target.y, level.target.z);
       return shot;
     }
     const horizontalDistance = Math.hypot(
@@ -912,7 +946,7 @@ function buildViewer3DState(
   }
 
   function framePerformers(
-    performers: readonly PerformerShotSubject[],
+    performers: readonly CharacterInstanceState[],
     viewportAspect: number,
     preserveViewingDirection: boolean
   ): void {
@@ -1400,6 +1434,16 @@ function buildViewer3DState(
     );
     if (!applied) _currentSequenceData = previousSequence;
     return applied;
+  }
+
+  /** Keep the opened score current without replacing a performer's own score. */
+  function refreshOpenedSequence(
+    previous: SequenceData,
+    next: SequenceData
+  ): void {
+    if (isOpenedSequence(_currentSequenceData, previous))
+      _currentSequenceData = next;
+    refreshOpenedPerformers(performerManager.performers, previous, next);
   }
 
   function clearSequenceScoped(): boolean {
@@ -2748,6 +2792,7 @@ function buildViewer3DState(
     serialize,
     applyPersistConfig,
     enter3D,
+    refreshOpenedSequence,
     exit3D,
     toggleEffect,
     updateCameraSnapshot,

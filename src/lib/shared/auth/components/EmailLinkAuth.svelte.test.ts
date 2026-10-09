@@ -172,6 +172,94 @@ describe.each([false, true])(
       );
     });
 
+    it("keeps the email and one status target across failed send and retry", async () => {
+      let failSend: ((error: Error) => void) | undefined;
+      mocks.sendMagicLink
+        .mockImplementationOnce(
+          () =>
+            new Promise((_, reject) => {
+              failSend = reject;
+            })
+        )
+        .mockResolvedValueOnce({
+          data: {
+            success: true,
+            requestId: "0867d981-cda5-4d0e-bc72-d75284111db8",
+            subject: "Your sign-in code",
+            senderEmail: "noreply@example.com",
+          },
+        });
+
+      render(EmailLinkAuth, { compact });
+      const email = page.getByRole("textbox", { name: "Email" });
+      await email.fill("spinner@example.com");
+      await page
+        .getByRole("button", {
+          name: compact ? "Send a code" : "Email me a code",
+        })
+        .click();
+      await expect
+        .element(page.getByRole("status"))
+        .toHaveTextContent("Sending your code");
+      failSend?.(new Error("Network unavailable"));
+
+      await expect
+        .element(page.getByRole("alert"))
+        .toHaveTextContent("The email was not sent");
+      await expect.element(email).toHaveValue("spinner@example.com");
+      expect(document.querySelectorAll("#magic-link-status")).toHaveLength(1);
+
+      await page
+        .getByRole("button", {
+          name: compact ? "Send a code" : "Email me a code",
+        })
+        .click();
+      await expect
+        .element(page.getByRole("status"))
+        .toHaveTextContent("Check your email");
+      await expect
+        .element(page.getByRole("textbox", { name: "Six-digit code" }))
+        .toHaveFocus();
+      expect(document.querySelectorAll("#magic-link-status")).toHaveLength(1);
+      expect(mocks.sendMagicLink).toHaveBeenCalledTimes(2);
+    });
+
+    if (compact) {
+      it("returns focus to the email field after leaving code entry", async () => {
+        mocks.sendMagicLink.mockResolvedValue({
+          data: {
+            success: true,
+            requestId: "7f90ab14-86fb-472f-a4b5-6c816841423e",
+            subject: "Your sign-in code",
+            senderEmail: "noreply@example.com",
+          },
+        });
+
+        render(EmailLinkAuth, { compact });
+        await page
+          .getByRole("textbox", { name: "Email" })
+          .fill("one@example.com");
+        await page.getByRole("button", { name: "Send a code" }).click();
+
+        await expect
+          .element(page.getByRole("textbox", { name: "Six-digit code" }))
+          .toHaveFocus();
+        await expect
+          .element(page.getByRole("textbox", { name: "Email" }))
+          .not.toBeInTheDocument();
+
+        await page
+          .getByRole("button", { name: "Use a different email" })
+          .click();
+
+        const email = page.getByRole("textbox", { name: "Email" });
+        await expect.element(email).toHaveFocus();
+        await expect.element(email).toBeEnabled();
+        await email.fill("two@example.com");
+        await expect.element(email).toHaveValue("two@example.com");
+      });
+    }
+
     it("tells an installed-app user to return and enter the code", async () => {
       mocks.standalone = true;
       mocks.sendMagicLink.mockResolvedValue({

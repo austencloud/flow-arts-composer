@@ -31,6 +31,12 @@
   import { whatsNewState } from "../../settings/state/whats-new-state.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import {
+    growFade,
+    popIn,
+    motionDuration,
+  } from "$lib/shared/transitions/motion";
+  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
   import { navigationState } from "../state/navigation-state.svelte";
   import { getAccessibleSectionsForModule } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
 
@@ -64,6 +70,29 @@
   let InlineAuthComponent = $state<typeof AuthModal | null>(null);
   let authBackButton = $state<HTMLButtonElement | null>(null);
   let drawerContainer = $state<HTMLDivElement | null>(null);
+  const headerMotion = createLayoutMotion({
+    getRoot: () => drawerContainer,
+    groups: [
+      { selector: "[data-navigation-header]", datasetKey: "navigationHeader" },
+    ],
+    getDuration: () => motionDuration(DURATION.normal),
+    resize: "layout",
+  });
+
+  $effect.pre(() => {
+    authView;
+    selectedModuleId;
+    if (isOpen) headerMotion.capture();
+    else headerMotion.cancel();
+  });
+
+  $effect(() => {
+    authView;
+    selectedModuleId;
+    if (isOpen) headerMotion.play();
+  });
+
+  $effect(() => () => headerMotion.cancel());
   const localizedCurrentModuleName = $derived.by(() => {
     const module = modules.find((item) => item.id === currentModule);
     return module ? t(module.labelKey) : currentModuleName;
@@ -210,8 +239,11 @@
 
   async function focusAccountRow() {
     await tick();
-    drawerContainer
-      ?.querySelector<HTMLButtonElement>(".account-footer .account-row.drawer")
+    const rows = drawerContainer?.querySelectorAll<HTMLButtonElement>(
+      ".account-footer .account-row.drawer"
+    );
+    Array.from(rows ?? [])
+      .find((row) => !row.closest("[inert]"))
       ?.focus();
   }
 
@@ -346,39 +378,47 @@
         class="drill-back-button"
         class:visible={selectedModule !== null || authView}
         class:auth-back={authView}
+        data-navigation-header="back"
         bind:this={authBackButton}
         aria-label={authView
           ? t("nav_ui_back_to_modules")
           : t("nav_ui_back_to_all_modules")}
         aria-hidden={selectedModule === null && !authView}
+        disabled={selectedModule === null && !authView}
         tabindex={selectedModule === null && !authView ? -1 : 0}
         onclick={authView ? handleAuthBack : handleDrillBack}
       >
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        {#if authView}<span>{t("nav_ui_navigation")}</span>{/if}
+        {#if authView}<span transition:popIn>{t("nav_ui_navigation")}</span
+          >{/if}
       </button>
-      <div class="header-content">
-        <h2>
-          {authView
-            ? t("settings_account")
-            : selectedModule
-              ? t(selectedModule.labelKey)
-              : t("nav_ui_navigation")}
-        </h2>
+      <div class="header-content" data-navigation-header="title">
+        <Crossfade key={authView ? "auth" : selectedModuleId}>
+          <h2>
+            {authView
+              ? t("settings_account")
+              : selectedModule
+                ? t(selectedModule.labelKey)
+                : t("nav_ui_navigation")}
+          </h2>
+        </Crossfade>
         {#if !authView}
-          <div class="current-location">
-            <span class="module-name">
-              {selectedModule
-                ? t("nav_ui_choose_a_destination")
-                : t("nav_current_module", {
-                    module: localizedCurrentModuleName,
-                  })}
-            </span>
+          <div class="current-location" transition:growFade>
+            <div class="module-name">
+              <Crossfade key={selectedModuleId ?? localizedCurrentModuleName}>
+                {selectedModule
+                  ? t("nav_ui_choose_a_destination")
+                  : t("nav_current_module", {
+                      module: localizedCurrentModuleName,
+                    })}
+              </Crossfade>
+            </div>
           </div>
         {/if}
       </div>
       <button
         class="close-button"
+        data-navigation-header="close"
         onclick={closeDrawer}
         aria-label={t("nav_ui_close_menu")}
       >
@@ -406,14 +446,20 @@
         <div class="navigator-body">
           {#if authView}
             <div class="navigation-auth-view" onfocusin={revealAuthFocus}>
-              {#if InlineAuthComponent}
-                <InlineAuthComponent
-                  open
-                  inline
-                  initialMode="signin"
-                  onClose={handleAuthBack}
-                />
-              {/if}
+              <Crossfade key={InlineAuthComponent !== null} animateHeight>
+                {#if InlineAuthComponent}
+                  <InlineAuthComponent
+                    open
+                    inline
+                    initialMode="signin"
+                    onClose={handleAuthBack}
+                  />
+                {:else}
+                  <p class="auth-loading" role="status">
+                    {t("common_loading")}
+                  </p>
+                {/if}
+              </Crossfade>
             </div>
           {:else if selectedModule}
             <ModuleDestinationList
@@ -443,7 +489,15 @@
 
     <!-- Account Footer -->
     {#if !authView}
-      <div class="account-footer">
+      <div
+        class="account-footer"
+        transition:growFade
+        inert={authView}
+        onoutrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = true)}
+        onintrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = false)}
+      >
         <AccountRow
           variant="drawer"
           onSignIn={handleSignIn}
@@ -453,59 +507,66 @@
               ? handleProfileTap
               : closeDrawer}
         />
-        <div class="account-footer-actions" class:full-account={isFullAccount}>
-          {#if isFullAccount}
+        <Crossfade key={isFullAccount} animateHeight>
+          <div
+            class="account-footer-actions"
+            class:full-account={isFullAccount}
+          >
+            {#if isFullAccount}
+              <button
+                class="drawer-action inbox"
+                onclick={handleInboxClick}
+                aria-label={t("module_inbox")}
+              >
+                <div class="drawer-action-icon-wrapper">
+                  <i class="fas fa-inbox" aria-hidden="true"></i>
+                  {#if hasUnread && unreadCount > 0}
+                    <div class="drawer-unread-badge" transition:popIn>
+                      <Crossfade key={unreadCount}
+                        >{unreadCount > 99 ? "99+" : unreadCount}</Crossfade
+                      >
+                    </div>
+                  {/if}
+                </div>
+                <span>{t("module_inbox")}</span>
+              </button>
+            {/if}
             <button
-              class="drawer-action inbox"
-              onclick={handleInboxClick}
-              aria-label={t("module_inbox")}
+              class="drawer-action"
+              onclick={handleAccountSettings}
+              aria-label={t("module_settings")}
             >
-              <div class="drawer-action-icon-wrapper">
-                <i class="fas fa-inbox" aria-hidden="true"></i>
-                {#if hasUnread && unreadCount > 0}
-                  <span class="drawer-unread-badge"
-                    >{unreadCount > 99 ? "99+" : unreadCount}</span
-                  >
-                {/if}
-              </div>
-              <span>{t("module_inbox")}</span>
+              <i class="fas fa-cog" aria-hidden="true"></i>
+              <span>{t("module_settings")}</span>
             </button>
-          {/if}
-          <button
-            class="drawer-action"
-            onclick={handleAccountSettings}
-            aria-label={t("module_settings")}
-          >
-            <i class="fas fa-cog" aria-hidden="true"></i>
-            <span>{t("module_settings")}</span>
-          </button>
-          <button
-            class="drawer-action release-notes"
-            onclick={handleWhatsNew}
-            aria-label={t("nav_ui_open_release_notes")}
-          >
-            <i class="fas fa-gift" aria-hidden="true"></i>
-            <span>{t("tab_settings_release_notes")}</span>
-          </button>
-          <button
-            class="drawer-action support"
-            onclick={() => supportModalState.show()}
-            aria-label={t("tab_community_support")}
-          >
-            <i class="fas fa-heart" aria-hidden="true"></i>
-            <span>{t("tab_community_support")}</span>
-          </button>
-          {#if isFullAccount}
             <button
-              class="drawer-action sign-out"
-              onclick={handleSignOut}
-              aria-label={t("nav_ui_sign_out")}
+              class="drawer-action release-notes"
+              onclick={handleWhatsNew}
+              aria-label={t("nav_ui_open_release_notes")}
             >
-              <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-              <span>{t("nav_ui_sign_out")}</span>
+              <i class="fas fa-gift" aria-hidden="true"></i>
+              <span>{t("tab_settings_release_notes")}</span>
             </button>
-          {/if}
-        </div>
+            <button
+              class="drawer-action support"
+              onclick={() => supportModalState.show()}
+              aria-label={t("tab_community_support")}
+            >
+              <i class="fas fa-heart" aria-hidden="true"></i>
+              <span>{t("tab_community_support")}</span>
+            </button>
+            {#if isFullAccount}
+              <button
+                class="drawer-action sign-out"
+                onclick={handleSignOut}
+                aria-label={t("nav_ui_sign_out")}
+              >
+                <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                <span>{t("nav_ui_sign_out")}</span>
+              </button>
+            {/if}
+          </div>
+        </Crossfade>
       </div>
     {/if}
   </div>
@@ -637,7 +698,6 @@
     color: var(--theme-text-dim);
     cursor: pointer;
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
     transition:
       opacity var(--transition-normal),
@@ -648,7 +708,6 @@
 
   .drill-back-button.visible {
     opacity: 1;
-    visibility: visible;
     pointer-events: auto;
   }
 
@@ -755,6 +814,12 @@
   .navigation-auth-view {
     width: min(100%, 35rem);
     margin-inline: auto;
+  }
+
+  .auth-loading {
+    margin: 0;
+    padding-block: 1rem;
+    color: var(--theme-text-dim);
   }
 
   /* Landscape mobile - optimize for left drawer */

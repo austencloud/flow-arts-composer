@@ -2,6 +2,9 @@
  * Finished serialized card fronts must carry a QR that decodes to the exact
  * serialized URL and fills its slot. Rendering uses node-canvas and the
  * production QR generator; decoding uses the self-hosted ZXing decoder.
+ *
+ * The suite runs only where node-canvas's native binding loads (see
+ * nodeCanvasAvailable); CI has it, so the scan still gates the build there.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
@@ -14,6 +17,7 @@ import {
   createNodeQrDetector,
   createNodeQrGenerator,
   installNodeCanvas,
+  nodeCanvasAvailable,
 } from "../../../../../../tests/helpers/node-print-qr";
 import { TND_ELEMENTS } from "../../domain/tnd-element";
 import { calculatePhysicalCardLayout } from "../physical-card-layout-calculator";
@@ -141,52 +145,52 @@ const CASES: ScanCase[] = [
   },
 ];
 
-let restoreCanvas: () => void;
-let generator: QRCodeGenerator;
-let detector: TkaQrDetector;
+describe.runIf(nodeCanvasAvailable())("serialized card front QR scan", () => {
+  let restoreCanvas: () => void;
+  let generator: QRCodeGenerator;
+  let detector: TkaQrDetector;
 
-beforeAll(() => {
-  restoreCanvas = installNodeCanvas();
-  generator = createNodeQrGenerator();
-  detector = createNodeQrDetector();
-});
+  beforeAll(() => {
+    restoreCanvas = installNodeCanvas();
+    generator = createNodeQrGenerator();
+    detector = createNodeQrDetector();
+  });
 
-afterAll(() => {
-  restoreCanvas();
-});
+  afterAll(() => {
+    restoreCanvas();
+  });
 
-/** A framed front whose QR cell already holds the deck's shared QR. */
-async function baseFront(
-  placement: NonNullable<ReturnType<typeof getSerializedQrPlacement>>
-): Promise<HTMLCanvasElement> {
-  const front = createNodeCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
-  const context = front.getContext("2d")!;
-  context.fillStyle = "#e8e2d4";
-  context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-  const flood = Math.ceil(placement.size * 0.06);
-  context.fillStyle = "#ffffff";
-  context.fillRect(
-    placement.x - flood,
-    placement.y - flood,
-    placement.size + flood * 2,
-    placement.size + flood * 2
-  );
-  const shared = await generator.generateUrlAsImage(
-    SHARED_URL,
-    PRINT_QR_RENDER_SIZE,
-    { style: "modern", margin: 1, darkMode: false }
-  );
-  context.drawImage(
-    shared,
-    placement.x,
-    placement.y,
-    placement.size,
-    placement.size
-  );
-  return front;
-}
+  /** A framed front whose QR cell already holds the deck's shared QR. */
+  async function baseFront(
+    placement: NonNullable<ReturnType<typeof getSerializedQrPlacement>>
+  ): Promise<HTMLCanvasElement> {
+    const front = createNodeCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    const context = front.getContext("2d")!;
+    context.fillStyle = "#e8e2d4";
+    context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    const flood = Math.ceil(placement.size * 0.06);
+    context.fillStyle = "#ffffff";
+    context.fillRect(
+      placement.x - flood,
+      placement.y - flood,
+      placement.size + flood * 2,
+      placement.size + flood * 2
+    );
+    const shared = await generator.generateUrlAsImage(
+      SHARED_URL,
+      PRINT_QR_RENDER_SIZE,
+      { style: "modern", margin: 1, darkMode: false }
+    );
+    context.drawImage(
+      shared,
+      placement.x,
+      placement.y,
+      placement.size,
+      placement.size
+    );
+    return front;
+  }
 
-describe("serialized card front QR scan", () => {
   it.each(CASES)(
     "$name decodes to the serialized URL and fills its slot",
     async ({ stepCount, layout, url, printable }) => {

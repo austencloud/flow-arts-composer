@@ -118,7 +118,8 @@
   .reference {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 1px;
+    gap: 0.5rem;
+    padding: 0 0.75rem;
     min-width: 0;
     min-height: 0;
   }
@@ -126,7 +127,7 @@
   .pair {
     display: grid;
     grid-template-rows: repeat(2, minmax(0, 36svh));
-    gap: 1px;
+    gap: 0.5rem;
     min-width: 0;
     min-height: 0;
   }
@@ -136,7 +137,11 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    background: var(--surface-inset, rgba(0, 0, 0, 0.2));
+    /* Each video and each 3D view is its own matte panel, like the lab's
+       camera panes. */
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    background: var(--theme-panel-bg, rgba(12, 14, 20, 0.92));
   }
 
   .pane :global(canvas) {
@@ -162,7 +167,7 @@
     overflow: hidden;
     padding: 0.25rem 0.5rem;
     border-radius: 6px;
-    background: var(--surface-glass, rgba(0, 0, 0, 0.6));
+    background: var(--theme-card-bg, rgba(0, 0, 0, 0.6));
     font-size: var(--font-size-compact, 0.75rem);
     text-overflow: ellipsis;
     white-space: nowrap;

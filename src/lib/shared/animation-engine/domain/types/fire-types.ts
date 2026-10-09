@@ -51,6 +51,13 @@ export interface PropTipData {
   prevX: number;
   /** Previous frame Y position in viewbox coordinates (for sub-frame interpolation) */
   prevY: number;
+  /**
+   * Positions this tip passed through since the previous frame, oldest first,
+   * strictly between (prevX, prevY) and (x, y). Present only when the render
+   * loop resampled a slow frame. Renderers that sweep prev to cur follow this
+   * polyline instead of the chord.
+   */
+  path?: readonly { x: number; y: number }[];
   /** Horizontal velocity (viewbox units/second) */
   velocityX: number;
   /** Vertical velocity (viewbox units/second) */

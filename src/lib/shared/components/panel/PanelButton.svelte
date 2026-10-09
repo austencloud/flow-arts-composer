@@ -26,6 +26,8 @@
     fullWidth?: boolean;
     /** Accessible name when the visible label is shortened responsively. */
     ariaLabel?: string;
+    /** Hover hint, for an icon-only button. */
+    title?: string;
     /** Exposes the native button for focus restoration after inline editing. */
     ref?: HTMLButtonElement | null;
     /** Announces that the button's action is in progress. */
@@ -50,6 +52,7 @@
     type = "button",
     fullWidth = false,
     ariaLabel,
+    title,
     ref = $bindable(null),
     ariaBusy = false,
     ariaExpanded,
@@ -66,6 +69,7 @@
     class:panel-btn--full-width={fullWidth}
     class:panel-btn--tinted={!!accentColor}
     style:--panel-accent={accentColor}
+    {title}
     aria-label={ariaLabel}
     aria-disabled={disabled || undefined}
     tabindex={disabled ? -1 : undefined}
@@ -87,6 +91,7 @@
     {onclick}
     {disabled}
     {type}
+    {title}
     aria-label={ariaLabel}
     aria-busy={ariaBusy}
     aria-expanded={ariaExpanded}

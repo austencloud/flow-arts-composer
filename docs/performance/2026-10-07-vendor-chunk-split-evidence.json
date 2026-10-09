@@ -1,0 +1,4769 @@
+{
+  "provenance": {
+    "date": "2026-10-07",
+    "baselineCheckout": "8efe4d1b5ca26900464e9daa7f678d6885235d64",
+    "candidateCheckout": "fec90004ad59a9265431fdba007116bd80c97885",
+    "candidateMain": "98706205164da1d698beffc53e5a59974a86228d",
+    "note": "Main and shared workspace package sources changed during measurement. Timings compare baseline to integrated candidate, not a single isolated code change.",
+    "harness": "2026-09-13-boot-graph-probe.mjs at 2ff8f2f409",
+    "base": "http://127.0.0.1:4176",
+    "windowMs": 20000,
+    "repeats": 3,
+    "localOnly": true,
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "throttled": {
+      "downloadBytesPerSecond": 209715.2,
+      "uploadBytesPerSecond": 96000,
+      "latencyMs": 150,
+      "cpuRate": 4
+    },
+    "bytes": "Requested local JavaScript code; gzip is per-file level-9 estimate, not wire bytes. Requests still pending at observation end are included.",
+    "hydration": "tka:hydrated at start of root layout onMount, not complete feature readiness"
+  },
+  "staticGraphs": {
+    "before": {
+      "home /": {
+        "name": "home /",
+        "chunks": 47,
+        "raw": 7035107,
+        "gz": 2014874,
+        "files": [
+          {
+            "key": "_n8OM9Ns2.js",
+            "file": "_app/immutable/chunks/n8OM9Ns2.js",
+            "raw": 3270163,
+            "gz": 912397
+          },
+          {
+            "key": "_1z2ew56s.js",
+            "file": "_app/immutable/chunks/1z2ew56s.js",
+            "raw": 1577133,
+            "gz": 435260
+          },
+          {
+            "key": "_DvUPpre9.js",
+            "file": "_app/immutable/chunks/DvUPpre9.js",
+            "raw": 627035,
+            "gz": 187508
+          },
+          {
+            "key": "_yC3aPJC1.js",
+            "file": "_app/immutable/chunks/yC3aPJC1.js",
+            "raw": 210573,
+            "gz": 71958
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/app.js",
+            "file": "_app/immutable/entry/app.ChtnHgn7.js",
+            "raw": 104355,
+            "gz": 25225
+          },
+          {
+            "key": "_CUHAbkx_.js",
+            "file": "_app/immutable/chunks/CUHAbkx_.js",
+            "raw": 95501,
+            "gz": 32011
+          },
+          {
+            "key": "_D5yS0jV-.js",
+            "file": "_app/immutable/chunks/D5yS0jV-.js",
+            "raw": 89999,
+            "gz": 27806
+          },
+          {
+            "key": "_6UXY8s8s.js",
+            "file": "_app/immutable/chunks/6UXY8s8s.js",
+            "raw": 78495,
+            "gz": 19313
+          },
+          {
+            "key": "_C2OEcznz.js",
+            "file": "_app/immutable/chunks/C2OEcznz.js",
+            "raw": 76328,
+            "gz": 22627
+          },
+          {
+            "key": "_BYbxNuk4.js",
+            "file": "_app/immutable/chunks/BYbxNuk4.js",
+            "raw": 70490,
+            "gz": 26876
+          },
+          {
+            "key": "_B5smmBEV.js",
+            "file": "_app/immutable/chunks/B5smmBEV.js",
+            "raw": 68520,
+            "gz": 18487
+          },
+          {
+            "key": "_Dw7yKF9a.js",
+            "file": "_app/immutable/chunks/Dw7yKF9a.js",
+            "raw": 65300,
+            "gz": 19199
+          },
+          {
+            "key": "_DxpecNBG.js",
+            "file": "_app/immutable/chunks/DxpecNBG.js",
+            "raw": 63963,
+            "gz": 16552
+          },
+          {
+            "key": "_C6z_ZNS5.js",
+            "file": "_app/immutable/chunks/C6z_ZNS5.js",
+            "raw": 60235,
+            "gz": 15763
+          },
+          {
+            "key": "_rReySICs.js",
+            "file": "_app/immutable/chunks/rReySICs.js",
+            "raw": 59152,
+            "gz": 15232
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/0.js",
+            "file": "_app/immutable/nodes/0.BNvbTH9F.js",
+            "raw": 47854,
+            "gz": 14224
+          },
+          {
+            "key": "_2jsd0Qlr.js",
+            "file": "_app/immutable/chunks/2jsd0Qlr.js",
+            "raw": 46361,
+            "gz": 11862
+          },
+          {
+            "key": "_CHi_54CN.js",
+            "file": "_app/immutable/chunks/CHi_54CN.js",
+            "raw": 45377,
+            "gz": 14229
+          },
+          {
+            "key": "_DKXvfxbS.js",
+            "file": "_app/immutable/chunks/DKXvfxbS.js",
+            "raw": 34281,
+            "gz": 13270
+          },
+          {
+            "key": "_DM9HxvFb.js",
+            "file": "_app/immutable/chunks/DM9HxvFb.js",
+            "raw": 32427,
+            "gz": 4556
+          },
+          {
+            "key": "_KLO_UYo4.js",
+            "file": "_app/immutable/chunks/KLO_UYo4.js",
+            "raw": 30902,
+            "gz": 8737
+          },
+          {
+            "key": "_Dk1MZLG4.js",
+            "file": "_app/immutable/chunks/Dk1MZLG4.js",
+            "raw": 27575,
+            "gz": 9688
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/59.js",
+            "file": "_app/immutable/nodes/59.DK1Mx_dh.js",
+            "raw": 24431,
+            "gz": 8176
+          },
+          {
+            "key": "_B5pTzY-h.js",
+            "file": "_app/immutable/chunks/B5pTzY-h.js",
+            "raw": 21919,
+            "gz": 7923
+          },
+          {
+            "key": "_BJDCJsHj.js",
+            "file": "_app/immutable/chunks/BJDCJsHj.js",
+            "raw": 20639,
+            "gz": 6788
+          },
+          {
+            "key": "_DyYuBZ7g.js",
+            "file": "_app/immutable/chunks/DyYuBZ7g.js",
+            "raw": 18794,
+            "gz": 5801
+          },
+          {
+            "key": "_BA5IbADO.js",
+            "file": "_app/immutable/chunks/BA5IbADO.js",
+            "raw": 17437,
+            "gz": 7534
+          },
+          {
+            "key": "_DyIHGDbA.js",
+            "file": "_app/immutable/chunks/DyIHGDbA.js",
+            "raw": 16024,
+            "gz": 4514
+          },
+          {
+            "key": "_C0eE2S-f.js",
+            "file": "_app/immutable/chunks/C0eE2S-f.js",
+            "raw": 15614,
+            "gz": 5722
+          },
+          {
+            "key": "_C_Dv_ddM.js",
+            "file": "_app/immutable/chunks/C_Dv_ddM.js",
+            "raw": 14154,
+            "gz": 5259
+          },
+          {
+            "key": "_CoYo72Pu.js",
+            "file": "_app/immutable/chunks/CoYo72Pu.js",
+            "raw": 13726,
+            "gz": 5120
+          },
+          {
+            "key": "_BEzPQ3gS.js",
+            "file": "_app/immutable/chunks/BEzPQ3gS.js",
+            "raw": 12701,
+            "gz": 4549
+          },
+          {
+            "key": "_H10y1y_U.js",
+            "file": "_app/immutable/chunks/H10y1y_U.js",
+            "raw": 11951,
+            "gz": 4418
+          },
+          {
+            "key": "_C7P7Z5Dz.js",
+            "file": "_app/immutable/chunks/C7P7Z5Dz.js",
+            "raw": 11654,
+            "gz": 4329
+          },
+          {
+            "key": "_CIfePTQS.js",
+            "file": "_app/immutable/chunks/CIfePTQS.js",
+            "raw": 8597,
+            "gz": 2975
+          },
+          {
+            "key": "_OCzkNNha.js",
+            "file": "_app/immutable/chunks/OCzkNNha.js",
+            "raw": 8140,
+            "gz": 3324
+          },
+          {
+            "key": "_CgVpddGl.js",
+            "file": "_app/immutable/chunks/CgVpddGl.js",
+            "raw": 6922,
+            "gz": 2984
+          },
+          {
+            "key": "_Cy2p5uj0.js",
+            "file": "_app/immutable/chunks/Cy2p5uj0.js",
+            "raw": 4990,
+            "gz": 2298
+          },
+          {
+            "key": "_DmG-7Z_t.js",
+            "file": "_app/immutable/chunks/DmG-7Z_t.js",
+            "raw": 4258,
+            "gz": 1461
+          },
+          {
+            "key": "_B05Ed9pS.js",
+            "file": "_app/immutable/chunks/B05Ed9pS.js",
+            "raw": 4190,
+            "gz": 1544
+          },
+          {
+            "key": "_7nw-1MkW.js",
+            "file": "_app/immutable/chunks/7nw-1MkW.js",
+            "raw": 4140,
+            "gz": 1197
+          },
+          {
+            "key": "_CUyT0-jl.js",
+            "file": "_app/immutable/chunks/CUyT0-jl.js",
+            "raw": 3435,
+            "gz": 1593
+          },
+          {
+            "key": "_CtTIQPch.js",
+            "file": "_app/immutable/chunks/CtTIQPch.js",
+            "raw": 2915,
+            "gz": 1426
+          },
+          {
+            "key": "_BueYYGQA.js",
+            "file": "_app/immutable/chunks/BueYYGQA.js",
+            "raw": 2915,
+            "gz": 1293
+          },
+          {
+            "key": "_LPjZWIzN.js",
+            "file": "_app/immutable/chunks/LPjZWIzN.js",
+            "raw": 1613,
+            "gz": 622
+          },
+          {
+            "key": "_XShCdsle.js",
+            "file": "_app/immutable/chunks/XShCdsle.js",
+            "raw": 1156,
+            "gz": 736
+          },
+          {
+            "key": "_C0z4z24I.js",
+            "file": "_app/immutable/chunks/C0z4z24I.js",
+            "raw": 773,
+            "gz": 508
+          }
+        ]
+      },
+      "app /create,/browse (shell)": {
+        "name": "app /create,/browse (shell)",
+        "chunks": 34,
+        "raw": 6638679,
+        "gz": 1897583,
+        "files": [
+          {
+            "key": "_n8OM9Ns2.js",
+            "file": "_app/immutable/chunks/n8OM9Ns2.js",
+            "raw": 3270163,
+            "gz": 912397
+          },
+          {
+            "key": "_1z2ew56s.js",
+            "file": "_app/immutable/chunks/1z2ew56s.js",
+            "raw": 1577133,
+            "gz": 435260
+          },
+          {
+            "key": "_DvUPpre9.js",
+            "file": "_app/immutable/chunks/DvUPpre9.js",
+            "raw": 627035,
+            "gz": 187508
+          },
+          {
+            "key": "_yC3aPJC1.js",
+            "file": "_app/immutable/chunks/yC3aPJC1.js",
+            "raw": 210573,
+            "gz": 71958
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/app.js",
+            "file": "_app/immutable/entry/app.ChtnHgn7.js",
+            "raw": 104355,
+            "gz": 25225
+          },
+          {
+            "key": "_CUHAbkx_.js",
+            "file": "_app/immutable/chunks/CUHAbkx_.js",
+            "raw": 95501,
+            "gz": 32011
+          },
+          {
+            "key": "_D5yS0jV-.js",
+            "file": "_app/immutable/chunks/D5yS0jV-.js",
+            "raw": 89999,
+            "gz": 27806
+          },
+          {
+            "key": "_6UXY8s8s.js",
+            "file": "_app/immutable/chunks/6UXY8s8s.js",
+            "raw": 78495,
+            "gz": 19313
+          },
+          {
+            "key": "_BYbxNuk4.js",
+            "file": "_app/immutable/chunks/BYbxNuk4.js",
+            "raw": 70490,
+            "gz": 26876
+          },
+          {
+            "key": "_B5smmBEV.js",
+            "file": "_app/immutable/chunks/B5smmBEV.js",
+            "raw": 68520,
+            "gz": 18487
+          },
+          {
+            "key": "_DxpecNBG.js",
+            "file": "_app/immutable/chunks/DxpecNBG.js",
+            "raw": 63963,
+            "gz": 16552
+          },
+          {
+            "key": "_C6z_ZNS5.js",
+            "file": "_app/immutable/chunks/C6z_ZNS5.js",
+            "raw": 60235,
+            "gz": 15763
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/0.js",
+            "file": "_app/immutable/nodes/0.BNvbTH9F.js",
+            "raw": 47854,
+            "gz": 14224
+          },
+          {
+            "key": "_2jsd0Qlr.js",
+            "file": "_app/immutable/chunks/2jsd0Qlr.js",
+            "raw": 46361,
+            "gz": 11862
+          },
+          {
+            "key": "_CHi_54CN.js",
+            "file": "_app/immutable/chunks/CHi_54CN.js",
+            "raw": 45377,
+            "gz": 14229
+          },
+          {
+            "key": "_DKXvfxbS.js",
+            "file": "_app/immutable/chunks/DKXvfxbS.js",
+            "raw": 34281,
+            "gz": 13270
+          },
+          {
+            "key": "_Dk1MZLG4.js",
+            "file": "_app/immutable/chunks/Dk1MZLG4.js",
+            "raw": 27575,
+            "gz": 9688
+          },
+          {
+            "key": "_B5pTzY-h.js",
+            "file": "_app/immutable/chunks/B5pTzY-h.js",
+            "raw": 21919,
+            "gz": 7923
+          },
+          {
+            "key": "_BJDCJsHj.js",
+            "file": "_app/immutable/chunks/BJDCJsHj.js",
+            "raw": 20639,
+            "gz": 6788
+          },
+          {
+            "key": "_C_Dv_ddM.js",
+            "file": "_app/immutable/chunks/C_Dv_ddM.js",
+            "raw": 14154,
+            "gz": 5259
+          },
+          {
+            "key": "_C7P7Z5Dz.js",
+            "file": "_app/immutable/chunks/C7P7Z5Dz.js",
+            "raw": 11654,
+            "gz": 4329
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/345.js",
+            "file": "_app/immutable/nodes/345.QYVRbmUW.js",
+            "raw": 10081,
+            "gz": 3384
+          },
+          {
+            "key": "_CIfePTQS.js",
+            "file": "_app/immutable/chunks/CIfePTQS.js",
+            "raw": 8597,
+            "gz": 2975
+          },
+          {
+            "key": "_OCzkNNha.js",
+            "file": "_app/immutable/chunks/OCzkNNha.js",
+            "raw": 8140,
+            "gz": 3324
+          },
+          {
+            "key": "_tvsRy15c.js",
+            "file": "_app/immutable/chunks/tvsRy15c.js",
+            "raw": 5049,
+            "gz": 1883
+          },
+          {
+            "key": "_Cy2p5uj0.js",
+            "file": "_app/immutable/chunks/Cy2p5uj0.js",
+            "raw": 4990,
+            "gz": 2298
+          },
+          {
+            "key": "_DmG-7Z_t.js",
+            "file": "_app/immutable/chunks/DmG-7Z_t.js",
+            "raw": 4258,
+            "gz": 1461
+          },
+          {
+            "key": "_CtTIQPch.js",
+            "file": "_app/immutable/chunks/CtTIQPch.js",
+            "raw": 2915,
+            "gz": 1426
+          },
+          {
+            "key": "_BueYYGQA.js",
+            "file": "_app/immutable/chunks/BueYYGQA.js",
+            "raw": 2915,
+            "gz": 1293
+          },
+          {
+            "key": "_MvdDeoZL.js",
+            "file": "_app/immutable/chunks/MvdDeoZL.js",
+            "raw": 2087,
+            "gz": 992
+          },
+          {
+            "key": "_LPjZWIzN.js",
+            "file": "_app/immutable/chunks/LPjZWIzN.js",
+            "raw": 1613,
+            "gz": 622
+          },
+          {
+            "key": "_XShCdsle.js",
+            "file": "_app/immutable/chunks/XShCdsle.js",
+            "raw": 1156,
+            "gz": 736
+          },
+          {
+            "key": "_Dm2J6wVz.js",
+            "file": "_app/immutable/chunks/Dm2J6wVz.js",
+            "raw": 479,
+            "gz": 348
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/58.js",
+            "file": "_app/immutable/nodes/58.CdV6XvPT.js",
+            "raw": 123,
+            "gz": 113
+          }
+        ]
+      },
+      "root layout only": {
+        "name": "root layout only",
+        "chunks": 26,
+        "raw": 6510675,
+        "gz": 1862919,
+        "files": [
+          {
+            "key": "_n8OM9Ns2.js",
+            "file": "_app/immutable/chunks/n8OM9Ns2.js",
+            "raw": 3270163,
+            "gz": 912397
+          },
+          {
+            "key": "_1z2ew56s.js",
+            "file": "_app/immutable/chunks/1z2ew56s.js",
+            "raw": 1577133,
+            "gz": 435260
+          },
+          {
+            "key": "_DvUPpre9.js",
+            "file": "_app/immutable/chunks/DvUPpre9.js",
+            "raw": 627035,
+            "gz": 187508
+          },
+          {
+            "key": "_yC3aPJC1.js",
+            "file": "_app/immutable/chunks/yC3aPJC1.js",
+            "raw": 210573,
+            "gz": 71958
+          },
+          {
+            "key": "_CUHAbkx_.js",
+            "file": "_app/immutable/chunks/CUHAbkx_.js",
+            "raw": 95501,
+            "gz": 32011
+          },
+          {
+            "key": "_D5yS0jV-.js",
+            "file": "_app/immutable/chunks/D5yS0jV-.js",
+            "raw": 89999,
+            "gz": 27806
+          },
+          {
+            "key": "_6UXY8s8s.js",
+            "file": "_app/immutable/chunks/6UXY8s8s.js",
+            "raw": 78495,
+            "gz": 19313
+          },
+          {
+            "key": "_BYbxNuk4.js",
+            "file": "_app/immutable/chunks/BYbxNuk4.js",
+            "raw": 70490,
+            "gz": 26876
+          },
+          {
+            "key": "_B5smmBEV.js",
+            "file": "_app/immutable/chunks/B5smmBEV.js",
+            "raw": 68520,
+            "gz": 18487
+          },
+          {
+            "key": "_DxpecNBG.js",
+            "file": "_app/immutable/chunks/DxpecNBG.js",
+            "raw": 63963,
+            "gz": 16552
+          },
+          {
+            "key": "_C6z_ZNS5.js",
+            "file": "_app/immutable/chunks/C6z_ZNS5.js",
+            "raw": 60235,
+            "gz": 15763
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/0.js",
+            "file": "_app/immutable/nodes/0.BNvbTH9F.js",
+            "raw": 47854,
+            "gz": 14224
+          },
+          {
+            "key": "_2jsd0Qlr.js",
+            "file": "_app/immutable/chunks/2jsd0Qlr.js",
+            "raw": 46361,
+            "gz": 11862
+          },
+          {
+            "key": "_CHi_54CN.js",
+            "file": "_app/immutable/chunks/CHi_54CN.js",
+            "raw": 45377,
+            "gz": 14229
+          },
+          {
+            "key": "_DKXvfxbS.js",
+            "file": "_app/immutable/chunks/DKXvfxbS.js",
+            "raw": 34281,
+            "gz": 13270
+          },
+          {
+            "key": "_Dk1MZLG4.js",
+            "file": "_app/immutable/chunks/Dk1MZLG4.js",
+            "raw": 27575,
+            "gz": 9688
+          },
+          {
+            "key": "_B5pTzY-h.js",
+            "file": "_app/immutable/chunks/B5pTzY-h.js",
+            "raw": 21919,
+            "gz": 7923
+          },
+          {
+            "key": "_BJDCJsHj.js",
+            "file": "_app/immutable/chunks/BJDCJsHj.js",
+            "raw": 20639,
+            "gz": 6788
+          },
+          {
+            "key": "_C_Dv_ddM.js",
+            "file": "_app/immutable/chunks/C_Dv_ddM.js",
+            "raw": 14154,
+            "gz": 5259
+          },
+          {
+            "key": "_C7P7Z5Dz.js",
+            "file": "_app/immutable/chunks/C7P7Z5Dz.js",
+            "raw": 11654,
+            "gz": 4329
+          },
+          {
+            "key": "_CIfePTQS.js",
+            "file": "_app/immutable/chunks/CIfePTQS.js",
+            "raw": 8597,
+            "gz": 2975
+          },
+          {
+            "key": "_OCzkNNha.js",
+            "file": "_app/immutable/chunks/OCzkNNha.js",
+            "raw": 8140,
+            "gz": 3324
+          },
+          {
+            "key": "_Cy2p5uj0.js",
+            "file": "_app/immutable/chunks/Cy2p5uj0.js",
+            "raw": 4990,
+            "gz": 2298
+          },
+          {
+            "key": "_DmG-7Z_t.js",
+            "file": "_app/immutable/chunks/DmG-7Z_t.js",
+            "raw": 4258,
+            "gz": 1461
+          },
+          {
+            "key": "_LPjZWIzN.js",
+            "file": "_app/immutable/chunks/LPjZWIzN.js",
+            "raw": 1613,
+            "gz": 622
+          },
+          {
+            "key": "_XShCdsle.js",
+            "file": "_app/immutable/chunks/XShCdsle.js",
+            "raw": 1156,
+            "gz": 736
+          }
+        ]
+      }
+    },
+    "after": {
+      "home /": {
+        "name": "home /",
+        "chunks": 41,
+        "raw": 2656803,
+        "gz": 810445,
+        "files": [
+          {
+            "key": "_CWxEtcMp.js",
+            "file": "_app/immutable/chunks/CWxEtcMp.js",
+            "raw": 851894,
+            "gz": 241071
+          },
+          {
+            "key": "_nPmEOXRM.js",
+            "file": "_app/immutable/chunks/nPmEOXRM.js",
+            "raw": 622631,
+            "gz": 185667
+          },
+          {
+            "key": "_yC3aPJC1.js",
+            "file": "_app/immutable/chunks/yC3aPJC1.js",
+            "raw": 210573,
+            "gz": 71958
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/app.js",
+            "file": "_app/immutable/entry/app.VxWXBTDA.js",
+            "raw": 99318,
+            "gz": 25129
+          },
+          {
+            "key": "_CUHAbkx_.js",
+            "file": "_app/immutable/chunks/CUHAbkx_.js",
+            "raw": 95501,
+            "gz": 32011
+          },
+          {
+            "key": "_B66s9Fih.js",
+            "file": "_app/immutable/chunks/B66s9Fih.js",
+            "raw": 75269,
+            "gz": 22319
+          },
+          {
+            "key": "_EHYw4H0E.js",
+            "file": "_app/immutable/chunks/EHYw4H0E.js",
+            "raw": 70490,
+            "gz": 26878
+          },
+          {
+            "key": "_CkoTYcQs.js",
+            "file": "_app/immutable/chunks/CkoTYcQs.js",
+            "raw": 53034,
+            "gz": 15472
+          },
+          {
+            "key": "_C_XNLhVp.js",
+            "file": "_app/immutable/chunks/C_XNLhVp.js",
+            "raw": 52818,
+            "gz": 14402
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/0.js",
+            "file": "_app/immutable/nodes/0.D7xttNwX.js",
+            "raw": 47299,
+            "gz": 14279
+          },
+          {
+            "key": "_D5Fo2ayL.js",
+            "file": "_app/immutable/chunks/D5Fo2ayL.js",
+            "raw": 39930,
+            "gz": 11663
+          },
+          {
+            "key": "_Cxv2dTqH.js",
+            "file": "_app/immutable/chunks/Cxv2dTqH.js",
+            "raw": 39263,
+            "gz": 13101
+          },
+          {
+            "key": "_DBYupVO1.js",
+            "file": "_app/immutable/chunks/DBYupVO1.js",
+            "raw": 34276,
+            "gz": 13269
+          },
+          {
+            "key": "_hQzTmGX1.js",
+            "file": "_app/immutable/chunks/hQzTmGX1.js",
+            "raw": 32152,
+            "gz": 4480
+          },
+          {
+            "key": "_BesgXVz4.js",
+            "file": "_app/immutable/chunks/BesgXVz4.js",
+            "raw": 31616,
+            "gz": 10378
+          },
+          {
+            "key": "_tGRzfnCd.js",
+            "file": "_app/immutable/chunks/tGRzfnCd.js",
+            "raw": 30902,
+            "gz": 8735
+          },
+          {
+            "key": "_BXx-mlZQ.js",
+            "file": "_app/immutable/chunks/BXx-mlZQ.js",
+            "raw": 26285,
+            "gz": 9079
+          },
+          {
+            "key": "_HP7lKaUy.js",
+            "file": "_app/immutable/chunks/HP7lKaUy.js",
+            "raw": 25960,
+            "gz": 9782
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/59.js",
+            "file": "_app/immutable/nodes/59.Bh8Zun8j.js",
+            "raw": 24337,
+            "gz": 8167
+          },
+          {
+            "key": "_Cm8OY-ub.js",
+            "file": "_app/immutable/chunks/Cm8OY-ub.js",
+            "raw": 21877,
+            "gz": 7906
+          },
+          {
+            "key": "_4Zd9P6zF.js",
+            "file": "_app/immutable/chunks/4Zd9P6zF.js",
+            "raw": 18985,
+            "gz": 6226
+          },
+          {
+            "key": "_BRoTDg3L.js",
+            "file": "_app/immutable/chunks/BRoTDg3L.js",
+            "raw": 18767,
+            "gz": 5793
+          },
+          {
+            "key": "_Cc4zeT9L.js",
+            "file": "_app/immutable/chunks/Cc4zeT9L.js",
+            "raw": 16772,
+            "gz": 6752
+          },
+          {
+            "key": "_CFRAo8-2.js",
+            "file": "_app/immutable/chunks/CFRAo8-2.js",
+            "raw": 13638,
+            "gz": 5084
+          },
+          {
+            "key": "_D64lpurs.js",
+            "file": "_app/immutable/chunks/D64lpurs.js",
+            "raw": 13002,
+            "gz": 4083
+          },
+          {
+            "key": "_56eL4ERE.js",
+            "file": "_app/immutable/chunks/56eL4ERE.js",
+            "raw": 12337,
+            "gz": 4978
+          },
+          {
+            "key": "_4YCc7MEA.js",
+            "file": "_app/immutable/chunks/4YCc7MEA.js",
+            "raw": 11228,
+            "gz": 4619
+          },
+          {
+            "key": "_BBCUGp5E.js",
+            "file": "_app/immutable/chunks/BBCUGp5E.js",
+            "raw": 10818,
+            "gz": 4224
+          },
+          {
+            "key": "_NZyZXVDA.js",
+            "file": "_app/immutable/chunks/NZyZXVDA.js",
+            "raw": 8205,
+            "gz": 2853
+          },
+          {
+            "key": "_OCzkNNha.js",
+            "file": "_app/immutable/chunks/OCzkNNha.js",
+            "raw": 8140,
+            "gz": 3324
+          },
+          {
+            "key": "_DcT1AfKz.js",
+            "file": "_app/immutable/chunks/DcT1AfKz.js",
+            "raw": 7901,
+            "gz": 3109
+          },
+          {
+            "key": "_ms2h38H4.js",
+            "file": "_app/immutable/chunks/ms2h38H4.js",
+            "raw": 4597,
+            "gz": 2045
+          },
+          {
+            "key": "_BRcM6zgl.js",
+            "file": "_app/immutable/chunks/BRcM6zgl.js",
+            "raw": 4431,
+            "gz": 2000
+          },
+          {
+            "key": "_DxRzHGdq.js",
+            "file": "_app/immutable/chunks/DxRzHGdq.js",
+            "raw": 4099,
+            "gz": 1423
+          },
+          {
+            "key": "_BBEKAhZt.js",
+            "file": "_app/immutable/chunks/BBEKAhZt.js",
+            "raw": 4091,
+            "gz": 1891
+          },
+          {
+            "key": "_BNVoXFoQ.js",
+            "file": "_app/immutable/chunks/BNVoXFoQ.js",
+            "raw": 3760,
+            "gz": 1428
+          },
+          {
+            "key": "_BueYYGQA.js",
+            "file": "_app/immutable/chunks/BueYYGQA.js",
+            "raw": 2915,
+            "gz": 1293
+          },
+          {
+            "key": "_CkfYw11i.js",
+            "file": "_app/immutable/chunks/CkfYw11i.js",
+            "raw": 2665,
+            "gz": 1335
+          },
+          {
+            "key": "__cOOFzGK.js",
+            "file": "_app/immutable/chunks/_cOOFzGK.js",
+            "raw": 2641,
+            "gz": 1109
+          },
+          {
+            "key": "_TdAw66yf.js",
+            "file": "_app/immutable/chunks/TdAw66yf.js",
+            "raw": 1613,
+            "gz": 622
+          },
+          {
+            "key": "_DhPbozuA.js",
+            "file": "_app/immutable/chunks/DhPbozuA.js",
+            "raw": 773,
+            "gz": 508
+          }
+        ]
+      },
+      "app /create,/browse (shell)": {
+        "name": "app /create,/browse (shell)",
+        "chunks": 30,
+        "raw": 1439881,
+        "gz": 455062,
+        "files": [
+          {
+            "key": "_nPmEOXRM.js",
+            "file": "_app/immutable/chunks/nPmEOXRM.js",
+            "raw": 622631,
+            "gz": 185667
+          },
+          {
+            "key": "_yC3aPJC1.js",
+            "file": "_app/immutable/chunks/yC3aPJC1.js",
+            "raw": 210573,
+            "gz": 71958
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/app.js",
+            "file": "_app/immutable/entry/app.VxWXBTDA.js",
+            "raw": 99318,
+            "gz": 25129
+          },
+          {
+            "key": "_EHYw4H0E.js",
+            "file": "_app/immutable/chunks/EHYw4H0E.js",
+            "raw": 70490,
+            "gz": 26878
+          },
+          {
+            "key": "_CkoTYcQs.js",
+            "file": "_app/immutable/chunks/CkoTYcQs.js",
+            "raw": 53034,
+            "gz": 15472
+          },
+          {
+            "key": "_C_XNLhVp.js",
+            "file": "_app/immutable/chunks/C_XNLhVp.js",
+            "raw": 52818,
+            "gz": 14402
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/0.js",
+            "file": "_app/immutable/nodes/0.D7xttNwX.js",
+            "raw": 47299,
+            "gz": 14279
+          },
+          {
+            "key": "_D5Fo2ayL.js",
+            "file": "_app/immutable/chunks/D5Fo2ayL.js",
+            "raw": 39930,
+            "gz": 11663
+          },
+          {
+            "key": "_Cxv2dTqH.js",
+            "file": "_app/immutable/chunks/Cxv2dTqH.js",
+            "raw": 39263,
+            "gz": 13101
+          },
+          {
+            "key": "_DBYupVO1.js",
+            "file": "_app/immutable/chunks/DBYupVO1.js",
+            "raw": 34276,
+            "gz": 13269
+          },
+          {
+            "key": "_BXx-mlZQ.js",
+            "file": "_app/immutable/chunks/BXx-mlZQ.js",
+            "raw": 26285,
+            "gz": 9079
+          },
+          {
+            "key": "_Cm8OY-ub.js",
+            "file": "_app/immutable/chunks/Cm8OY-ub.js",
+            "raw": 21877,
+            "gz": 7906
+          },
+          {
+            "key": "_4Zd9P6zF.js",
+            "file": "_app/immutable/chunks/4Zd9P6zF.js",
+            "raw": 18985,
+            "gz": 6226
+          },
+          {
+            "key": "_D64lpurs.js",
+            "file": "_app/immutable/chunks/D64lpurs.js",
+            "raw": 13002,
+            "gz": 4083
+          },
+          {
+            "key": "_56eL4ERE.js",
+            "file": "_app/immutable/chunks/56eL4ERE.js",
+            "raw": 12337,
+            "gz": 4978
+          },
+          {
+            "key": "_4YCc7MEA.js",
+            "file": "_app/immutable/chunks/4YCc7MEA.js",
+            "raw": 11228,
+            "gz": 4619
+          },
+          {
+            "key": "_BBCUGp5E.js",
+            "file": "_app/immutable/chunks/BBCUGp5E.js",
+            "raw": 10818,
+            "gz": 4224
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/345.js",
+            "file": "_app/immutable/nodes/345.cqZ6HxjK.js",
+            "raw": 10043,
+            "gz": 3375
+          },
+          {
+            "key": "_NZyZXVDA.js",
+            "file": "_app/immutable/chunks/NZyZXVDA.js",
+            "raw": 8205,
+            "gz": 2853
+          },
+          {
+            "key": "_OCzkNNha.js",
+            "file": "_app/immutable/chunks/OCzkNNha.js",
+            "raw": 8140,
+            "gz": 3324
+          },
+          {
+            "key": "_BOoZ7LKw.js",
+            "file": "_app/immutable/chunks/BOoZ7LKw.js",
+            "raw": 4893,
+            "gz": 1849
+          },
+          {
+            "key": "_ms2h38H4.js",
+            "file": "_app/immutable/chunks/ms2h38H4.js",
+            "raw": 4597,
+            "gz": 2045
+          },
+          {
+            "key": "_BRcM6zgl.js",
+            "file": "_app/immutable/chunks/BRcM6zgl.js",
+            "raw": 4431,
+            "gz": 2000
+          },
+          {
+            "key": "_DxRzHGdq.js",
+            "file": "_app/immutable/chunks/DxRzHGdq.js",
+            "raw": 4099,
+            "gz": 1423
+          },
+          {
+            "key": "_BBEKAhZt.js",
+            "file": "_app/immutable/chunks/BBEKAhZt.js",
+            "raw": 4091,
+            "gz": 1891
+          },
+          {
+            "key": "_BueYYGQA.js",
+            "file": "_app/immutable/chunks/BueYYGQA.js",
+            "raw": 2915,
+            "gz": 1293
+          },
+          {
+            "key": "_BkaIPIHC.js",
+            "file": "_app/immutable/chunks/BkaIPIHC.js",
+            "raw": 2087,
+            "gz": 992
+          },
+          {
+            "key": "_TdAw66yf.js",
+            "file": "_app/immutable/chunks/TdAw66yf.js",
+            "raw": 1613,
+            "gz": 622
+          },
+          {
+            "key": "_BnxiDal0.js",
+            "file": "_app/immutable/chunks/BnxiDal0.js",
+            "raw": 479,
+            "gz": 348
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/58.js",
+            "file": "_app/immutable/nodes/58.D3-gbvUy.js",
+            "raw": 124,
+            "gz": 114
+          }
+        ]
+      },
+      "root layout only": {
+        "name": "root layout only",
+        "chunks": 22,
+        "raw": 1315591,
+        "gz": 419962,
+        "files": [
+          {
+            "key": "_nPmEOXRM.js",
+            "file": "_app/immutable/chunks/nPmEOXRM.js",
+            "raw": 622631,
+            "gz": 185667
+          },
+          {
+            "key": "_yC3aPJC1.js",
+            "file": "_app/immutable/chunks/yC3aPJC1.js",
+            "raw": 210573,
+            "gz": 71958
+          },
+          {
+            "key": "_EHYw4H0E.js",
+            "file": "_app/immutable/chunks/EHYw4H0E.js",
+            "raw": 70490,
+            "gz": 26878
+          },
+          {
+            "key": "_CkoTYcQs.js",
+            "file": "_app/immutable/chunks/CkoTYcQs.js",
+            "raw": 53034,
+            "gz": 15472
+          },
+          {
+            "key": "_C_XNLhVp.js",
+            "file": "_app/immutable/chunks/C_XNLhVp.js",
+            "raw": 52818,
+            "gz": 14402
+          },
+          {
+            "key": ".svelte-kit/generated/client-optimized/nodes/0.js",
+            "file": "_app/immutable/nodes/0.D7xttNwX.js",
+            "raw": 47299,
+            "gz": 14279
+          },
+          {
+            "key": "_D5Fo2ayL.js",
+            "file": "_app/immutable/chunks/D5Fo2ayL.js",
+            "raw": 39930,
+            "gz": 11663
+          },
+          {
+            "key": "_Cxv2dTqH.js",
+            "file": "_app/immutable/chunks/Cxv2dTqH.js",
+            "raw": 39263,
+            "gz": 13101
+          },
+          {
+            "key": "_DBYupVO1.js",
+            "file": "_app/immutable/chunks/DBYupVO1.js",
+            "raw": 34276,
+            "gz": 13269
+          },
+          {
+            "key": "_BXx-mlZQ.js",
+            "file": "_app/immutable/chunks/BXx-mlZQ.js",
+            "raw": 26285,
+            "gz": 9079
+          },
+          {
+            "key": "_Cm8OY-ub.js",
+            "file": "_app/immutable/chunks/Cm8OY-ub.js",
+            "raw": 21877,
+            "gz": 7906
+          },
+          {
+            "key": "_4Zd9P6zF.js",
+            "file": "_app/immutable/chunks/4Zd9P6zF.js",
+            "raw": 18985,
+            "gz": 6226
+          },
+          {
+            "key": "_D64lpurs.js",
+            "file": "_app/immutable/chunks/D64lpurs.js",
+            "raw": 13002,
+            "gz": 4083
+          },
+          {
+            "key": "_56eL4ERE.js",
+            "file": "_app/immutable/chunks/56eL4ERE.js",
+            "raw": 12337,
+            "gz": 4978
+          },
+          {
+            "key": "_4YCc7MEA.js",
+            "file": "_app/immutable/chunks/4YCc7MEA.js",
+            "raw": 11228,
+            "gz": 4619
+          },
+          {
+            "key": "_BBCUGp5E.js",
+            "file": "_app/immutable/chunks/BBCUGp5E.js",
+            "raw": 10818,
+            "gz": 4224
+          },
+          {
+            "key": "_NZyZXVDA.js",
+            "file": "_app/immutable/chunks/NZyZXVDA.js",
+            "raw": 8205,
+            "gz": 2853
+          },
+          {
+            "key": "_OCzkNNha.js",
+            "file": "_app/immutable/chunks/OCzkNNha.js",
+            "raw": 8140,
+            "gz": 3324
+          },
+          {
+            "key": "_ms2h38H4.js",
+            "file": "_app/immutable/chunks/ms2h38H4.js",
+            "raw": 4597,
+            "gz": 2045
+          },
+          {
+            "key": "_DxRzHGdq.js",
+            "file": "_app/immutable/chunks/DxRzHGdq.js",
+            "raw": 4099,
+            "gz": 1423
+          },
+          {
+            "key": "_BBEKAhZt.js",
+            "file": "_app/immutable/chunks/BBEKAhZt.js",
+            "raw": 4091,
+            "gz": 1891
+          },
+          {
+            "key": "_TdAw66yf.js",
+            "file": "_app/immutable/chunks/TdAw66yf.js",
+            "raw": 1613,
+            "gz": 622
+          }
+        ]
+      }
+    }
+  },
+  "vendorChunks": {
+    "before": {
+      "file": ".svelte-kit/output/client/_app/immutable/chunks/n8OM9Ns2.js",
+      "raw": 3270163,
+      "gzip": 912397
+    },
+    "after": {
+      "vendor": {
+        "file": "_app/immutable/chunks/CWxEtcMp.js",
+        "raw": 851894,
+        "gzip": 241071
+      },
+      "vendor-three": {
+        "file": "_app/immutable/chunks/jCuRHVGS.js",
+        "raw": 1605022,
+        "gzip": 444400
+      },
+      "vendor-backgrounds": {
+        "file": "_app/immutable/chunks/yfwc-Fgr.js",
+        "raw": 441029,
+        "gzip": 123971
+      },
+      "vendor-media-export": {
+        "file": "_app/immutable/chunks/sr8V0Pkk.js",
+        "raw": 1449543,
+        "gzip": 410013
+      },
+      "vendor-audio-inference": {
+        "file": "_app/immutable/chunks/Bx_G16Vx.js",
+        "raw": 428912,
+        "gzip": 117448
+      }
+    }
+  },
+  "medians": [
+    {
+      "label": "before",
+      "condition": "fast",
+      "route": "/",
+      "hydrated": 862,
+      "fcp": 292,
+      "load": 285,
+      "beforeLoad": {
+        "requests": 19,
+        "rawBytes": 489704,
+        "gzipBytes": 159094
+      },
+      "at10s": {
+        "requests": 176,
+        "rawBytes": 9700301,
+        "gzipBytes": 2825826
+      },
+      "longTasks3sMs": 1804,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 0
+    },
+    {
+      "label": "before",
+      "condition": "fast",
+      "route": "/create",
+      "hydrated": 1165,
+      "fcp": 416,
+      "load": 482,
+      "beforeLoad": {
+        "requests": 39,
+        "rawBytes": 6661809,
+        "gzipBytes": 1905926
+      },
+      "at10s": {
+        "requests": 308,
+        "rawBytes": 12667343,
+        "gzipBytes": 3771888
+      },
+      "longTasks3sMs": 1209,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 0
+    },
+    {
+      "label": "before",
+      "condition": "fast",
+      "route": "/browse",
+      "hydrated": 858,
+      "fcp": 304,
+      "load": 391,
+      "beforeLoad": {
+        "requests": 39,
+        "rawBytes": 6661809,
+        "gzipBytes": 1905926
+      },
+      "at10s": {
+        "requests": 294,
+        "rawBytes": 12173817,
+        "gzipBytes": 3616998
+      },
+      "longTasks3sMs": 1838,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 0
+    },
+    {
+      "label": "before",
+      "condition": "throttled",
+      "route": "/",
+      "hydrated": 15289,
+      "fcp": 1180,
+      "load": 2499,
+      "beforeLoad": {
+        "requests": 53,
+        "rawBytes": 7058547,
+        "gzipBytes": 2023217
+      },
+      "at10s": {
+        "requests": 53,
+        "rawBytes": 7058547,
+        "gzipBytes": 2023217
+      },
+      "longTasks3sMs": 1212,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 7
+    },
+    {
+      "label": "before",
+      "condition": "throttled",
+      "route": "/create",
+      "hydrated": 14814,
+      "fcp": 908,
+      "load": 4124,
+      "beforeLoad": {
+        "requests": 39,
+        "rawBytes": 6661809,
+        "gzipBytes": 1905926
+      },
+      "at10s": {
+        "requests": 39,
+        "rawBytes": 6661809,
+        "gzipBytes": 1905926
+      },
+      "longTasks3sMs": 380,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 137
+    },
+    {
+      "label": "before",
+      "condition": "throttled",
+      "route": "/browse",
+      "hydrated": 16565,
+      "fcp": 888,
+      "load": 4022,
+      "beforeLoad": {
+        "requests": 39,
+        "rawBytes": 6661809,
+        "gzipBytes": 1905926
+      },
+      "at10s": {
+        "requests": 39,
+        "rawBytes": 6661809,
+        "gzipBytes": 1905926
+      },
+      "longTasks3sMs": 406,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 175
+    },
+    {
+      "label": "after",
+      "condition": "fast",
+      "route": "/",
+      "hydrated": 600,
+      "fcp": 300,
+      "load": 431,
+      "beforeLoad": {
+        "requests": 47,
+        "rawBytes": 2680036,
+        "gzipBytes": 818738
+      },
+      "at10s": {
+        "requests": 172,
+        "rawBytes": 8564186,
+        "gzipBytes": 2533253
+      },
+      "longTasks3sMs": 1798,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 0
+    },
+    {
+      "label": "after",
+      "condition": "fast",
+      "route": "/create",
+      "hydrated": 1665,
+      "fcp": 456,
+      "load": 464,
+      "beforeLoad": {
+        "requests": 37,
+        "rawBytes": 2410199,
+        "gzipBytes": 736437
+      },
+      "at10s": {
+        "requests": 308,
+        "rawBytes": 11770882,
+        "gzipBytes": 3549454
+      },
+      "longTasks3sMs": 257,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 0
+    },
+    {
+      "label": "after",
+      "condition": "fast",
+      "route": "/browse",
+      "hydrated": 528,
+      "fcp": 308,
+      "load": 387,
+      "beforeLoad": {
+        "requests": 37,
+        "rawBytes": 2410199,
+        "gzipBytes": 736437
+      },
+      "at10s": {
+        "requests": 296,
+        "rawBytes": 11288732,
+        "gzipBytes": 3398802
+      },
+      "longTasks3sMs": 1783,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 0
+    },
+    {
+      "label": "after",
+      "condition": "throttled",
+      "route": "/",
+      "hydrated": 8598,
+      "fcp": 832,
+      "load": 3619,
+      "beforeLoad": {
+        "requests": 47,
+        "rawBytes": 2680036,
+        "gzipBytes": 818738
+      },
+      "at10s": {
+        "requests": 131,
+        "rawBytes": 6360752,
+        "gzipBytes": 1876842
+      },
+      "longTasks3sMs": 1571,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 0
+    },
+    {
+      "label": "after",
+      "condition": "throttled",
+      "route": "/create",
+      "hydrated": 9761,
+      "fcp": 932,
+      "load": 4012,
+      "beforeLoad": {
+        "requests": 37,
+        "rawBytes": 2410199,
+        "gzipBytes": 736437
+      },
+      "at10s": {
+        "requests": 180,
+        "rawBytes": 9810605,
+        "gzipBytes": 2908952
+      },
+      "longTasks3sMs": 780,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 107
+    },
+    {
+      "label": "after",
+      "condition": "throttled",
+      "route": "/browse",
+      "hydrated": 8112,
+      "fcp": 1068,
+      "load": 4195,
+      "beforeLoad": {
+        "requests": 37,
+        "rawBytes": 2410199,
+        "gzipBytes": 736437
+      },
+      "at10s": {
+        "requests": 259,
+        "rawBytes": 10838173,
+        "gzipBytes": 3244734
+      },
+      "longTasks3sMs": 664,
+      "hydratedRuns": 3,
+      "pageErrors": 0,
+      "pendingJsMedian": 60
+    }
+  ],
+  "runs": {
+    "before": [
+      {
+        "route": "/",
+        "condition": "fast",
+        "repeat": 0,
+        "fcp": 324,
+        "dcl": 241,
+        "load": 285,
+        "hydrated": 1407,
+        "beforeLoad": {
+          "requests": 19,
+          "rawBytes": 489704,
+          "gzipBytes": 159094
+        },
+        "beforeHydration": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "at3s": {
+          "requests": 176,
+          "rawBytes": 9700301,
+          "gzipBytes": 2825826
+        },
+        "at10s": {
+          "requests": 176,
+          "rawBytes": 9700301,
+          "gzipBytes": 2825826
+        },
+        "longTasks3s": {
+          "count": 13,
+          "ms": 1586
+        },
+        "longTasksAll": {
+          "count": 141,
+          "ms": 13998
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "repeat": 1,
+        "fcp": 284,
+        "dcl": 44,
+        "load": 217,
+        "hydrated": 862,
+        "beforeLoad": {
+          "requests": 19,
+          "rawBytes": 489704,
+          "gzipBytes": 159094
+        },
+        "beforeHydration": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "at3s": {
+          "requests": 176,
+          "rawBytes": 9700301,
+          "gzipBytes": 2825826
+        },
+        "at10s": {
+          "requests": 176,
+          "rawBytes": 9700301,
+          "gzipBytes": 2825826
+        },
+        "longTasks3s": {
+          "count": 15,
+          "ms": 1988
+        },
+        "longTasksAll": {
+          "count": 158,
+          "ms": 15270
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "repeat": 2,
+        "fcp": 292,
+        "dcl": 50,
+        "load": 407,
+        "hydrated": 827,
+        "beforeLoad": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "beforeHydration": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "at3s": {
+          "requests": 173,
+          "rawBytes": 9524990,
+          "gzipBytes": 2777266
+        },
+        "at10s": {
+          "requests": 173,
+          "rawBytes": 9524990,
+          "gzipBytes": 2777266
+        },
+        "longTasks3s": {
+          "count": 14,
+          "ms": 1804
+        },
+        "longTasksAll": {
+          "count": 150,
+          "ms": 14854
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "repeat": 0,
+        "fcp": 316,
+        "dcl": 176,
+        "load": 384,
+        "hydrated": 776,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 248,
+          "rawBytes": 11777359,
+          "gzipBytes": 3478908
+        },
+        "at3s": {
+          "requests": 301,
+          "rawBytes": 12494609,
+          "gzipBytes": 3721457
+        },
+        "at10s": {
+          "requests": 308,
+          "rawBytes": 12667343,
+          "gzipBytes": 3771888
+        },
+        "longTasks3s": {
+          "count": 20,
+          "ms": 1893
+        },
+        "longTasksAll": {
+          "count": 124,
+          "ms": 9826
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firestore.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "repeat": 1,
+        "fcp": 604,
+        "dcl": 476,
+        "load": 692,
+        "hydrated": 1270,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 248,
+          "rawBytes": 11777359,
+          "gzipBytes": 3478908
+        },
+        "at3s": {
+          "requests": 298,
+          "rawBytes": 12480458,
+          "gzipBytes": 3716196
+        },
+        "at10s": {
+          "requests": 308,
+          "rawBytes": 12667343,
+          "gzipBytes": 3771888
+        },
+        "longTasks3s": {
+          "count": 4,
+          "ms": 678
+        },
+        "longTasksAll": {
+          "count": 104,
+          "ms": 9099
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firestore.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "repeat": 2,
+        "fcp": 416,
+        "dcl": 286,
+        "load": 482,
+        "hydrated": 1165,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 248,
+          "rawBytes": 11777359,
+          "gzipBytes": 3478908
+        },
+        "at3s": {
+          "requests": 254,
+          "rawBytes": 11812178,
+          "gzipBytes": 3492050
+        },
+        "at10s": {
+          "requests": 308,
+          "rawBytes": 12667343,
+          "gzipBytes": 3771888
+        },
+        "longTasks3s": {
+          "count": 11,
+          "ms": 1209
+        },
+        "longTasksAll": {
+          "count": 119,
+          "ms": 10299
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firestore.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "repeat": 0,
+        "fcp": 308,
+        "dcl": 161,
+        "load": 423,
+        "hydrated": 864,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 258,
+          "rawBytes": 11673919,
+          "gzipBytes": 3450458
+        },
+        "at3s": {
+          "requests": 290,
+          "rawBytes": 12115849,
+          "gzipBytes": 3597276
+        },
+        "at10s": {
+          "requests": 294,
+          "rawBytes": 12173817,
+          "gzipBytes": 3616998
+        },
+        "longTasks3s": {
+          "count": 19,
+          "ms": 2020
+        },
+        "longTasksAll": {
+          "count": 136,
+          "ms": 11652
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firestore.googleapis.com",
+          "https://identitytoolkit.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "repeat": 1,
+        "fcp": 304,
+        "dcl": 197,
+        "load": 391,
+        "hydrated": 852,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 258,
+          "rawBytes": 11673919,
+          "gzipBytes": 3450458
+        },
+        "at3s": {
+          "requests": 287,
+          "rawBytes": 12101698,
+          "gzipBytes": 3592015
+        },
+        "at10s": {
+          "requests": 294,
+          "rawBytes": 12173817,
+          "gzipBytes": 3616998
+        },
+        "longTasks3s": {
+          "count": 17,
+          "ms": 1777
+        },
+        "longTasksAll": {
+          "count": 110,
+          "ms": 9096
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firestore.googleapis.com",
+          "https://identitytoolkit.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "repeat": 2,
+        "fcp": 272,
+        "dcl": 160,
+        "load": 388,
+        "hydrated": 858,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 258,
+          "rawBytes": 11673919,
+          "gzipBytes": 3450458
+        },
+        "at3s": {
+          "requests": 287,
+          "rawBytes": 12101698,
+          "gzipBytes": 3592015
+        },
+        "at10s": {
+          "requests": 294,
+          "rawBytes": 12173817,
+          "gzipBytes": 3616998
+        },
+        "longTasks3s": {
+          "count": 17,
+          "ms": 1838
+        },
+        "longTasksAll": {
+          "count": 103,
+          "ms": 8600
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firebasestorage.googleapis.com",
+          "https://firestore.googleapis.com",
+          "https://identitytoolkit.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "repeat": 0,
+        "fcp": 1184,
+        "dcl": 1151,
+        "load": 2617,
+        "hydrated": 17802,
+        "beforeLoad": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "beforeHydration": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "at3s": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "at10s": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "longTasks3s": {
+          "count": 5,
+          "ms": 1212
+        },
+        "longTasksAll": {
+          "count": 19,
+          "ms": 8798
+        },
+        "pendingJsCount": 97,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "repeat": 1,
+        "fcp": 904,
+        "dcl": 1338,
+        "load": 2499,
+        "hydrated": 14683,
+        "beforeLoad": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "beforeHydration": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "at3s": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "at10s": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "longTasks3s": {
+          "count": 6,
+          "ms": 1149
+        },
+        "longTasksAll": {
+          "count": 19,
+          "ms": 6406
+        },
+        "pendingJsCount": 7,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "repeat": 2,
+        "fcp": 1180,
+        "dcl": 2181,
+        "load": 2382,
+        "hydrated": 15289,
+        "beforeLoad": {
+          "requests": 19,
+          "rawBytes": 489704,
+          "gzipBytes": 159094
+        },
+        "beforeHydration": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "at3s": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "at10s": {
+          "requests": 53,
+          "rawBytes": 7058547,
+          "gzipBytes": 2023217
+        },
+        "longTasks3s": {
+          "count": 8,
+          "ms": 1808
+        },
+        "longTasksAll": {
+          "count": 26,
+          "ms": 8918
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "repeat": 0,
+        "fcp": 1252,
+        "dcl": 1238,
+        "load": 4219,
+        "hydrated": 14999,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 109,
+          "rawBytes": 8644809,
+          "gzipBytes": 2507773
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "at10s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "longTasks3s": {
+          "count": 8,
+          "ms": 1413
+        },
+        "longTasksAll": {
+          "count": 13,
+          "ms": 5560
+        },
+        "pendingJsCount": 139,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "repeat": 1,
+        "fcp": 864,
+        "dcl": 651,
+        "load": 4028,
+        "hydrated": 14814,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 111,
+          "rawBytes": 8671823,
+          "gzipBytes": 2516765
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "at10s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "longTasks3s": {
+          "count": 4,
+          "ms": 380
+        },
+        "longTasksAll": {
+          "count": 10,
+          "ms": 4523
+        },
+        "pendingJsCount": 137,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "repeat": 2,
+        "fcp": 908,
+        "dcl": 681,
+        "load": 4124,
+        "hydrated": 14239,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 129,
+          "rawBytes": 9253860,
+          "gzipBytes": 2700092
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "at10s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "longTasks3s": {
+          "count": 4,
+          "ms": 314
+        },
+        "longTasksAll": {
+          "count": 8,
+          "ms": 3907
+        },
+        "pendingJsCount": 119,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "repeat": 0,
+        "fcp": 848,
+        "dcl": 628,
+        "load": 4022,
+        "hydrated": 20996,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 6718447,
+          "gzipBytes": 1923931
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "at10s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "longTasks3s": {
+          "count": 4,
+          "ms": 406
+        },
+        "longTasksAll": {
+          "count": 24,
+          "ms": 11276
+        },
+        "pendingJsCount": 216,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "repeat": 1,
+        "fcp": 888,
+        "dcl": 686,
+        "load": 2866,
+        "hydrated": 16565,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 83,
+          "rawBytes": 7480823,
+          "gzipBytes": 2163095
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "at10s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 372
+        },
+        "longTasksAll": {
+          "count": 11,
+          "ms": 5866
+        },
+        "pendingJsCount": 175,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "repeat": 2,
+        "fcp": 1280,
+        "dcl": 1096,
+        "load": 5317,
+        "hydrated": 15554,
+        "beforeLoad": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "beforeHydration": {
+          "requests": 102,
+          "rawBytes": 7896078,
+          "gzipBytes": 2289857
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "at10s": {
+          "requests": 39,
+          "rawBytes": 6661809,
+          "gzipBytes": 1905926
+        },
+        "longTasks3s": {
+          "count": 7,
+          "ms": 912
+        },
+        "longTasksAll": {
+          "count": 12,
+          "ms": 5293
+        },
+        "pendingJsCount": 156,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      }
+    ],
+    "after": [
+      {
+        "route": "/",
+        "condition": "fast",
+        "repeat": 0,
+        "fcp": 300,
+        "dcl": 73,
+        "load": 431,
+        "hydrated": 614,
+        "beforeLoad": {
+          "requests": 47,
+          "rawBytes": 2680036,
+          "gzipBytes": 818738
+        },
+        "beforeHydration": {
+          "requests": 48,
+          "rawBytes": 3121065,
+          "gzipBytes": 942709
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 8564186,
+          "gzipBytes": 2533253
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 8564186,
+          "gzipBytes": 2533253
+        },
+        "longTasks3s": {
+          "count": 16,
+          "ms": 1929
+        },
+        "longTasksAll": {
+          "count": 146,
+          "ms": 15267
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "repeat": 1,
+        "fcp": 308,
+        "dcl": 44,
+        "load": 472,
+        "hydrated": 600,
+        "beforeLoad": {
+          "requests": 47,
+          "rawBytes": 2680036,
+          "gzipBytes": 818738
+        },
+        "beforeHydration": {
+          "requests": 48,
+          "rawBytes": 3121065,
+          "gzipBytes": 942709
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 8564186,
+          "gzipBytes": 2533253
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 8564186,
+          "gzipBytes": 2533253
+        },
+        "longTasks3s": {
+          "count": 14,
+          "ms": 1404
+        },
+        "longTasksAll": {
+          "count": 155,
+          "ms": 14706
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "repeat": 2,
+        "fcp": 284,
+        "dcl": 48,
+        "load": 305,
+        "hydrated": 464,
+        "beforeLoad": {
+          "requests": 47,
+          "rawBytes": 2680036,
+          "gzipBytes": 818738
+        },
+        "beforeHydration": {
+          "requests": 48,
+          "rawBytes": 3121065,
+          "gzipBytes": 942709
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 8564186,
+          "gzipBytes": 2533253
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 8564186,
+          "gzipBytes": 2533253
+        },
+        "longTasks3s": {
+          "count": 15,
+          "ms": 1798
+        },
+        "longTasksAll": {
+          "count": 157,
+          "ms": 15054
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "repeat": 0,
+        "fcp": 456,
+        "dcl": 332,
+        "load": 464,
+        "hydrated": 1792,
+        "beforeLoad": {
+          "requests": 18,
+          "rawBytes": 1031632,
+          "gzipBytes": 320137
+        },
+        "beforeHydration": {
+          "requests": 247,
+          "rawBytes": 10870042,
+          "gzipBytes": 3253283
+        },
+        "at3s": {
+          "requests": 247,
+          "rawBytes": 10870042,
+          "gzipBytes": 3253283
+        },
+        "at10s": {
+          "requests": 308,
+          "rawBytes": 11770882,
+          "gzipBytes": 3549454
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 257
+        },
+        "longTasksAll": {
+          "count": 98,
+          "ms": 8066
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firestore.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "repeat": 1,
+        "fcp": 568,
+        "dcl": 392,
+        "load": 1246,
+        "hydrated": 1665,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 247,
+          "rawBytes": 10870042,
+          "gzipBytes": 3253283
+        },
+        "at3s": {
+          "requests": 247,
+          "rawBytes": 10870042,
+          "gzipBytes": 3253283
+        },
+        "at10s": {
+          "requests": 308,
+          "rawBytes": 11770882,
+          "gzipBytes": 3549454
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 239
+        },
+        "longTasksAll": {
+          "count": 132,
+          "ms": 10264
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firestore.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "repeat": 2,
+        "fcp": 328,
+        "dcl": 184,
+        "load": 384,
+        "hydrated": 539,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 247,
+          "rawBytes": 10870042,
+          "gzipBytes": 3253283
+        },
+        "at3s": {
+          "requests": 297,
+          "rawBytes": 11575579,
+          "gzipBytes": 3491585
+        },
+        "at10s": {
+          "requests": 308,
+          "rawBytes": 11770882,
+          "gzipBytes": 3549454
+        },
+        "longTasks3s": {
+          "count": 18,
+          "ms": 1727
+        },
+        "longTasksAll": {
+          "count": 118,
+          "ms": 9514
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firebasestorage.googleapis.com",
+          "https://firestore.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "repeat": 0,
+        "fcp": 372,
+        "dcl": 252,
+        "load": 479,
+        "hydrated": 718,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 259,
+          "rawBytes": 10838173,
+          "gzipBytes": 3244734
+        },
+        "at3s": {
+          "requests": 296,
+          "rawBytes": 11281937,
+          "gzipBytes": 3398110
+        },
+        "at10s": {
+          "requests": 302,
+          "rawBytes": 11310563,
+          "gzipBytes": 3407811
+        },
+        "longTasks3s": {
+          "count": 11,
+          "ms": 1287
+        },
+        "longTasksAll": {
+          "count": 94,
+          "ms": 8192
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/browse/__data.json",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firebasestorage.googleapis.com",
+          "https://firestore.googleapis.com",
+          "https://identitytoolkit.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "repeat": 1,
+        "fcp": 308,
+        "dcl": 220,
+        "load": 361,
+        "hydrated": 528,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 259,
+          "rawBytes": 10838173,
+          "gzipBytes": 3244734
+        },
+        "at3s": {
+          "requests": 287,
+          "rawBytes": 11205727,
+          "gzipBytes": 3370827
+        },
+        "at10s": {
+          "requests": 296,
+          "rawBytes": 11288732,
+          "gzipBytes": 3398802
+        },
+        "longTasks3s": {
+          "count": 18,
+          "ms": 1783
+        },
+        "longTasksAll": {
+          "count": 111,
+          "ms": 9427
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firestore.googleapis.com",
+          "https://identitytoolkit.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "repeat": 2,
+        "fcp": 304,
+        "dcl": 159,
+        "load": 387,
+        "hydrated": 490,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 259,
+          "rawBytes": 10838173,
+          "gzipBytes": 3244734
+        },
+        "at3s": {
+          "requests": 291,
+          "rawBytes": 11221636,
+          "gzipBytes": 3376906
+        },
+        "at10s": {
+          "requests": 296,
+          "rawBytes": 11288732,
+          "gzipBytes": 3398802
+        },
+        "longTasks3s": {
+          "count": 19,
+          "ms": 1916
+        },
+        "longTasksAll": {
+          "count": 113,
+          "ms": 9108
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          },
+          {
+            "url": "/api/console-log",
+            "error": "net::ERR_ABORTED"
+          }
+        ],
+        "httpErrors": [
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          },
+          {
+            "url": "/api/console-log",
+            "status": 404
+          }
+        ],
+        "blockedExternal": [
+          "https://accounts.google.com",
+          "https://firebasestorage.googleapis.com",
+          "https://firestore.googleapis.com",
+          "https://identitytoolkit.googleapis.com",
+          "https://www.google.com"
+        ]
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "repeat": 0,
+        "fcp": 832,
+        "dcl": 1633,
+        "load": 3619,
+        "hydrated": 8871,
+        "beforeLoad": {
+          "requests": 47,
+          "rawBytes": 2680036,
+          "gzipBytes": 818738
+        },
+        "beforeHydration": {
+          "requests": 48,
+          "rawBytes": 3121065,
+          "gzipBytes": 942709
+        },
+        "at3s": {
+          "requests": 47,
+          "rawBytes": 2680036,
+          "gzipBytes": 818738
+        },
+        "at10s": {
+          "requests": 130,
+          "rawBytes": 6353663,
+          "gzipBytes": 1874268
+        },
+        "longTasks3s": {
+          "count": 7,
+          "ms": 1571
+        },
+        "longTasksAll": {
+          "count": 42,
+          "ms": 11557
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "repeat": 1,
+        "fcp": 972,
+        "dcl": 1555,
+        "load": 4132,
+        "hydrated": 8578,
+        "beforeLoad": {
+          "requests": 47,
+          "rawBytes": 2680036,
+          "gzipBytes": 818738
+        },
+        "beforeHydration": {
+          "requests": 48,
+          "rawBytes": 3121065,
+          "gzipBytes": 942709
+        },
+        "at3s": {
+          "requests": 35,
+          "rawBytes": 2420160,
+          "gzipBytes": 738911
+        },
+        "at10s": {
+          "requests": 133,
+          "rawBytes": 6369408,
+          "gzipBytes": 1880952
+        },
+        "longTasks3s": {
+          "count": 7,
+          "ms": 1891
+        },
+        "longTasksAll": {
+          "count": 37,
+          "ms": 10597
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "repeat": 2,
+        "fcp": 688,
+        "dcl": 1659,
+        "load": 2732,
+        "hydrated": 8598,
+        "beforeLoad": {
+          "requests": 47,
+          "rawBytes": 2680036,
+          "gzipBytes": 818738
+        },
+        "beforeHydration": {
+          "requests": 48,
+          "rawBytes": 3121065,
+          "gzipBytes": 942709
+        },
+        "at3s": {
+          "requests": 47,
+          "rawBytes": 2680036,
+          "gzipBytes": 818738
+        },
+        "at10s": {
+          "requests": 131,
+          "rawBytes": 6360752,
+          "gzipBytes": 1876842
+        },
+        "longTasks3s": {
+          "count": 6,
+          "ms": 1362
+        },
+        "longTasksAll": {
+          "count": 33,
+          "ms": 9365
+        },
+        "pendingJsCount": 0,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": []
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "repeat": 0,
+        "fcp": 844,
+        "dcl": 624,
+        "load": 4012,
+        "hydrated": 8060,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 195,
+          "rawBytes": 9483376,
+          "gzipBytes": 2839129
+        },
+        "at3s": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "at10s": {
+          "requests": 247,
+          "rawBytes": 10870042,
+          "gzipBytes": 3253283
+        },
+        "longTasks3s": {
+          "count": 4,
+          "ms": 462
+        },
+        "longTasksAll": {
+          "count": 27,
+          "ms": 7810
+        },
+        "pendingJsCount": 52,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "repeat": 1,
+        "fcp": 976,
+        "dcl": 792,
+        "load": 4204,
+        "hydrated": 9761,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 140,
+          "rawBytes": 5489957,
+          "gzipBytes": 1679187
+        },
+        "at3s": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "at10s": {
+          "requests": 180,
+          "rawBytes": 9810605,
+          "gzipBytes": 2908952
+        },
+        "longTasks3s": {
+          "count": 7,
+          "ms": 869
+        },
+        "longTasksAll": {
+          "count": 28,
+          "ms": 7875
+        },
+        "pendingJsCount": 107,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "repeat": 2,
+        "fcp": 932,
+        "dcl": 711,
+        "load": 3042,
+        "hydrated": 9802,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 138,
+          "rawBytes": 5471575,
+          "gzipBytes": 1673004
+        },
+        "at3s": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "at10s": {
+          "requests": 140,
+          "rawBytes": 8526140,
+          "gzipBytes": 2527417
+        },
+        "longTasks3s": {
+          "count": 8,
+          "ms": 780
+        },
+        "longTasksAll": {
+          "count": 19,
+          "ms": 6653
+        },
+        "pendingJsCount": 109,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "repeat": 0,
+        "fcp": 1068,
+        "dcl": 850,
+        "load": 4376,
+        "hydrated": 8112,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 199,
+          "rawBytes": 9312699,
+          "gzipBytes": 2790209
+        },
+        "at3s": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "at10s": {
+          "requests": 259,
+          "rawBytes": 10838173,
+          "gzipBytes": 3244734
+        },
+        "longTasks3s": {
+          "count": 5,
+          "ms": 525
+        },
+        "longTasksAll": {
+          "count": 18,
+          "ms": 5577
+        },
+        "pendingJsCount": 60,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "repeat": 1,
+        "fcp": 1188,
+        "dcl": 1288,
+        "load": 3525,
+        "hydrated": 7792,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 217,
+          "rawBytes": 9737036,
+          "gzipBytes": 2925367
+        },
+        "at3s": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "at10s": {
+          "requests": 259,
+          "rawBytes": 10838173,
+          "gzipBytes": 3244734
+        },
+        "longTasks3s": {
+          "count": 8,
+          "ms": 1244
+        },
+        "longTasksAll": {
+          "count": 22,
+          "ms": 7556
+        },
+        "pendingJsCount": 42,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "repeat": 2,
+        "fcp": 868,
+        "dcl": 720,
+        "load": 4195,
+        "hydrated": 8612,
+        "beforeLoad": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "beforeHydration": {
+          "requests": 166,
+          "rawBytes": 5904026,
+          "gzipBytes": 1814879
+        },
+        "at3s": {
+          "requests": 37,
+          "rawBytes": 2410199,
+          "gzipBytes": 736437
+        },
+        "at10s": {
+          "requests": 259,
+          "rawBytes": 10838173,
+          "gzipBytes": 3244734
+        },
+        "longTasks3s": {
+          "count": 5,
+          "ms": 664
+        },
+        "longTasksAll": {
+          "count": 19,
+          "ms": 5437
+        },
+        "pendingJsCount": 93,
+        "pageErrors": [],
+        "failedRequests": [],
+        "httpErrors": [],
+        "blockedExternal": ["https://accounts.google.com"]
+      }
+    ]
+  },
+  "validation": {
+    "measuredBuild": {
+      "head": "fec90004ad59a9265431fdba007116bd80c97885",
+      "command": "ANALYZE=true DIAG_CHUNKS=1 npm run build:fast",
+      "exitCode": 0,
+      "cycles": {
+        "server": 0,
+        "client": 0
+      },
+      "bootGuard": {
+        "passed": true,
+        "commonHomeAppShellChunks": 47
+      },
+      "publicFirebaseGuard": {
+        "passed": true,
+        "routes": 53
+      },
+      "sourceBoundaryTests": {
+        "passed": 20,
+        "failed": 0,
+        "cliTestTimeoutMs": 120000
+      }
+    },
+    "attribution": {
+      "artifact": "E:/tmp/codex-vendor-split-20261007/release-final/stats-3-1791415798264.html",
+      "packages": {
+        "backgrounds": {
+          "expected": "vendor-backgrounds",
+          "emittedModules": 153,
+          "chunks": {
+            "vendor-backgrounds": 152,
+            "BackgroundHost": 1
+          },
+          "cssException": ["BackgroundHost"]
+        },
+        "mediabunny": {
+          "expected": "vendor-media-export",
+          "emittedModules": 67,
+          "chunks": {
+            "vendor-media-export": 67
+          }
+        },
+        "h264_mp4_encoder": {
+          "expected": "vendor-media-export",
+          "emittedModules": 2,
+          "chunks": {
+            "vendor-media-export": 2
+          }
+        },
+        "gifenc": {
+          "expected": "vendor-media-export",
+          "emittedModules": 0,
+          "chunks": {}
+        },
+        "modern_screenshot": {
+          "expected": "vendor-media-export",
+          "emittedModules": 1,
+          "chunks": {
+            "vendor-media-export": 1
+          }
+        },
+        "onnxruntime_web": {
+          "expected": "vendor-audio-inference",
+          "emittedModules": 4,
+          "chunks": {
+            "vendor-audio-inference": 4
+          }
+        },
+        "vad_web": {
+          "expected": "vendor-audio-inference",
+          "emittedModules": 29,
+          "chunks": {
+            "vendor-audio-inference": 29
+          }
+        },
+        "pako": {
+          "expected": "vendor",
+          "emittedModules": 24,
+          "chunks": {
+            "vendor": 24
+          }
+        }
+      },
+      "sceneLeaves": {
+        "winter-starfield.ts": ["vendor-three"],
+        "CanvasLifecycle.svelte": ["vendor-three"],
+        "organic-pond-shape.ts": ["vendor-three"],
+        "gltf-decoders.ts": ["vendor-three"],
+        "scene-graph-object-adapter.ts": ["vendor-three"],
+        "grid-render-resources.ts": ["vendor-three"],
+        "cosmic-environment-assets.ts": ["vendor-three"],
+        "plane-transforms.ts": ["vendor-three"],
+        "fire-color-curve-3d.ts": ["vendor-three"],
+        "rainbow-particle-field.ts": ["vendor-three"],
+        "reflective-pool-shader.ts": ["vendor-three"],
+        "character-model.ts": ["vendor-three"],
+        "performer-stage-bounds.ts": ["vendor-three"],
+        "stage-coordinate-frame.ts": ["scene-stage-coordinate-frame"]
+      },
+      "crossBucketDuplicateModules": []
+    },
+    "runtime": {
+      "localOnly": true,
+      "observation": "Screenshots at three seconds after root hydration; Home rendered, Create and Browse still showed loading states. This verifies shell/module evaluation, not feature readiness.",
+      "routes": [
+        {
+          "route": "/",
+          "title": "Flow Arts Notation | The Kinetic Alphabet"
+        },
+        {
+          "route": "/create",
+          "title": "Create | Flow Arts Composer"
+        },
+        {
+          "route": "/browse",
+          "title": "Browse | Flow Arts Composer"
+        }
+      ],
+      "chunks": [
+        {
+          "name": "vendor-three",
+          "file": "_app/immutable/chunks/jCuRHVGS.js",
+          "exports": 216
+        },
+        {
+          "name": "vendor-backgrounds",
+          "file": "_app/immutable/chunks/yfwc-Fgr.js",
+          "exports": 20
+        },
+        {
+          "name": "vendor-media-export",
+          "file": "_app/immutable/chunks/sr8V0Pkk.js",
+          "exports": 13
+        },
+        {
+          "name": "vendor-audio-inference",
+          "file": "_app/immutable/chunks/Bx_G16Vx.js",
+          "exports": 2
+        }
+      ],
+      "pageErrors": [],
+      "scriptErrors": []
+    },
+    "before": {
+      "runs": 18,
+      "hydratedRuns": 18,
+      "pageErrorCount": 0,
+      "localRequestFailures": [
+        {
+          "url": "/api/console-log",
+          "error": "net::ERR_ABORTED",
+          "count": 45
+        }
+      ],
+      "localHttpErrors": [
+        {
+          "url": "/api/console-log",
+          "status": 404,
+          "count": 45
+        }
+      ]
+    },
+    "after": {
+      "runs": 18,
+      "hydratedRuns": 18,
+      "pageErrorCount": 0,
+      "localRequestFailures": [
+        {
+          "url": "/api/console-log",
+          "error": "net::ERR_ABORTED",
+          "count": 47
+        },
+        {
+          "url": "/browse/__data.json",
+          "error": "net::ERR_ABORTED",
+          "count": 1
+        }
+      ],
+      "localHttpErrors": [
+        {
+          "url": "/api/console-log",
+          "status": 404,
+          "count": 47
+        }
+      ]
+    },
+    "integrationBuild": {
+      "head": "4149037776f7628b3a047bdde4ba1205309c4ebc",
+      "includedMain": "8c48b871c0353303492bfb0919798270cc390ddf",
+      "command": "DIAG_CHUNKS=1 npm run build:fast (ANALYZE off)",
+      "exitCode": 0,
+      "serverCycles": 0,
+      "clientCycles": 0,
+      "bootGuard": {
+        "passed": true,
+        "unionChunks": 46
+      },
+      "publicFirebaseGuard": {
+        "passed": true,
+        "routes": 53
+      },
+      "focusedSourceTests": {
+        "passed": 20,
+        "failed": 0
+      },
+      "staticGraphs": {
+        "home /": {
+          "name": "home /",
+          "chunks": 40,
+          "raw": 2633907,
+          "gz": 804526,
+          "files": [
+            {
+              "key": "_hrWYeZdy.js",
+              "file": "_app/immutable/chunks/hrWYeZdy.js",
+              "raw": 851894,
+              "gz": 241073
+            },
+            {
+              "key": "_DtmB6GMM.js",
+              "file": "_app/immutable/chunks/DtmB6GMM.js",
+              "raw": 622555,
+              "gz": 185644
+            },
+            {
+              "key": "_yC3aPJC1.js",
+              "file": "_app/immutable/chunks/yC3aPJC1.js",
+              "raw": 210573,
+              "gz": 71958
+            },
+            {
+              "key": ".svelte-kit/generated/client-optimized/app.js",
+              "file": "_app/immutable/entry/app.CBLvleEv.js",
+              "raw": 99171,
+              "gz": 25082
+            },
+            {
+              "key": "_CUHAbkx_.js",
+              "file": "_app/immutable/chunks/CUHAbkx_.js",
+              "raw": 95501,
+              "gz": 32011
+            },
+            {
+              "key": "_CV2Hx3rl.js",
+              "file": "_app/immutable/chunks/CV2Hx3rl.js",
+              "raw": 75269,
+              "gz": 22319
+            },
+            {
+              "key": "_EHYw4H0E.js",
+              "file": "_app/immutable/chunks/EHYw4H0E.js",
+              "raw": 70490,
+              "gz": 26878
+            },
+            {
+              "key": "_NFMwRFQv.js",
+              "file": "_app/immutable/chunks/NFMwRFQv.js",
+              "raw": 60327,
+              "gz": 17790
+            },
+            {
+              "key": "_Cx5CP5Fc.js",
+              "file": "_app/immutable/chunks/Cx5CP5Fc.js",
+              "raw": 60192,
+              "gz": 17191
+            },
+            {
+              "key": ".svelte-kit/generated/client-optimized/nodes/0.js",
+              "file": "_app/immutable/nodes/0.pPiOfq2a.js",
+              "raw": 47264,
+              "gz": 14240
+            },
+            {
+              "key": "_vFtFJ9ka.js",
+              "file": "_app/immutable/chunks/vFtFJ9ka.js",
+              "raw": 41945,
+              "gz": 13944
+            },
+            {
+              "key": "_Bc83u6o1.js",
+              "file": "_app/immutable/chunks/Bc83u6o1.js",
+              "raw": 34281,
+              "gz": 13274
+            },
+            {
+              "key": "_DRFsrQFg.js",
+              "file": "_app/immutable/chunks/DRFsrQFg.js",
+              "raw": 32152,
+              "gz": 4475
+            },
+            {
+              "key": "_BBaYYrTH.js",
+              "file": "_app/immutable/chunks/BBaYYrTH.js",
+              "raw": 31616,
+              "gz": 10372
+            },
+            {
+              "key": "_Bom48LJ-.js",
+              "file": "_app/immutable/chunks/Bom48LJ-.js",
+              "raw": 30902,
+              "gz": 8737
+            },
+            {
+              "key": "_6aNj_2lu.js",
+              "file": "_app/immutable/chunks/6aNj_2lu.js",
+              "raw": 26285,
+              "gz": 9073
+            },
+            {
+              "key": "_CBlU_PdP.js",
+              "file": "_app/immutable/chunks/CBlU_PdP.js",
+              "raw": 25960,
+              "gz": 9782
+            },
+            {
+              "key": ".svelte-kit/generated/client-optimized/nodes/59.js",
+              "file": "_app/immutable/nodes/59.HM1TcdCv.js",
+              "raw": 24302,
+              "gz": 8135
+            },
+            {
+              "key": "_B_uyH-Xj.js",
+              "file": "_app/immutable/chunks/B_uyH-Xj.js",
+              "raw": 21850,
+              "gz": 7898
+            },
+            {
+              "key": "_CS-9zthl.js",
+              "file": "_app/immutable/chunks/CS-9zthl.js",
+              "raw": 18985,
+              "gz": 6219
+            },
+            {
+              "key": "_BWoHpjjB.js",
+              "file": "_app/immutable/chunks/BWoHpjjB.js",
+              "raw": 18767,
+              "gz": 5791
+            },
+            {
+              "key": "_CL8McJ63.js",
+              "file": "_app/immutable/chunks/CL8McJ63.js",
+              "raw": 16772,
+              "gz": 6752
+            },
+            {
+              "key": "_DxwTHSls.js",
+              "file": "_app/immutable/chunks/DxwTHSls.js",
+              "raw": 13638,
+              "gz": 5077
+            },
+            {
+              "key": "_D64lpurs.js",
+              "file": "_app/immutable/chunks/D64lpurs.js",
+              "raw": 13002,
+              "gz": 4083
+            },
+            {
+              "key": "_CXjqM6nb.js",
+              "file": "_app/immutable/chunks/CXjqM6nb.js",
+              "raw": 12337,
+              "gz": 4977
+            },
+            {
+              "key": "_CAd_iyVW.js",
+              "file": "_app/immutable/chunks/CAd_iyVW.js",
+              "raw": 11228,
+              "gz": 4618
+            },
+            {
+              "key": "_DBFHc3rG.js",
+              "file": "_app/immutable/chunks/DBFHc3rG.js",
+              "raw": 10818,
+              "gz": 4208
+            },
+            {
+              "key": "_-j6plZLC.js",
+              "file": "_app/immutable/chunks/-j6plZLC.js",
+              "raw": 8205,
+              "gz": 2850
+            },
+            {
+              "key": "_OCzkNNha.js",
+              "file": "_app/immutable/chunks/OCzkNNha.js",
+              "raw": 8140,
+              "gz": 3324
+            },
+            {
+              "key": "_D_Ag_B2f.js",
+              "file": "_app/immutable/chunks/D_Ag_B2f.js",
+              "raw": 7901,
+              "gz": 3108
+            },
+            {
+              "key": "_0cw-5n94.js",
+              "file": "_app/immutable/chunks/0cw-5n94.js",
+              "raw": 4597,
+              "gz": 2046
+            },
+            {
+              "key": "_Bb-KrJcq.js",
+              "file": "_app/immutable/chunks/Bb-KrJcq.js",
+              "raw": 4431,
+              "gz": 2000
+            },
+            {
+              "key": "_igVzbW_l.js",
+              "file": "_app/immutable/chunks/igVzbW_l.js",
+              "raw": 4099,
+              "gz": 1415
+            },
+            {
+              "key": "_BBEKAhZt.js",
+              "file": "_app/immutable/chunks/BBEKAhZt.js",
+              "raw": 4091,
+              "gz": 1891
+            },
+            {
+              "key": "_BTzpTToI.js",
+              "file": "_app/immutable/chunks/BTzpTToI.js",
+              "raw": 3760,
+              "gz": 1427
+            },
+            {
+              "key": "_BueYYGQA.js",
+              "file": "_app/immutable/chunks/BueYYGQA.js",
+              "raw": 2915,
+              "gz": 1293
+            },
+            {
+              "key": "_CkfYw11i.js",
+              "file": "_app/immutable/chunks/CkfYw11i.js",
+              "raw": 2665,
+              "gz": 1335
+            },
+            {
+              "key": "_CXPeFtaS.js",
+              "file": "_app/immutable/chunks/CXPeFtaS.js",
+              "raw": 2641,
+              "gz": 1107
+            },
+            {
+              "key": "_B8UK-T4T.js",
+              "file": "_app/immutable/chunks/B8UK-T4T.js",
+              "raw": 1613,
+              "gz": 621
+            },
+            {
+              "key": "_BSjHxrre.js",
+              "file": "_app/immutable/chunks/BSjHxrre.js",
+              "raw": 773,
+              "gz": 508
+            }
+          ]
+        },
+        "app /create,/browse (shell)": {
+          "name": "app /create,/browse (shell)",
+          "chunks": 29,
+          "raw": 1417020,
+          "gz": 449173,
+          "files": [
+            {
+              "key": "_DtmB6GMM.js",
+              "file": "_app/immutable/chunks/DtmB6GMM.js",
+              "raw": 622555,
+              "gz": 185644
+            },
+            {
+              "key": "_yC3aPJC1.js",
+              "file": "_app/immutable/chunks/yC3aPJC1.js",
+              "raw": 210573,
+              "gz": 71958
+            },
+            {
+              "key": ".svelte-kit/generated/client-optimized/app.js",
+              "file": "_app/immutable/entry/app.CBLvleEv.js",
+              "raw": 99171,
+              "gz": 25082
+            },
+            {
+              "key": "_EHYw4H0E.js",
+              "file": "_app/immutable/chunks/EHYw4H0E.js",
+              "raw": 70490,
+              "gz": 26878
+            },
+            {
+              "key": "_NFMwRFQv.js",
+              "file": "_app/immutable/chunks/NFMwRFQv.js",
+              "raw": 60327,
+              "gz": 17790
+            },
+            {
+              "key": "_Cx5CP5Fc.js",
+              "file": "_app/immutable/chunks/Cx5CP5Fc.js",
+              "raw": 60192,
+              "gz": 17191
+            },
+            {
+              "key": ".svelte-kit/generated/client-optimized/nodes/0.js",
+              "file": "_app/immutable/nodes/0.pPiOfq2a.js",
+              "raw": 47264,
+              "gz": 14240
+            },
+            {
+              "key": "_vFtFJ9ka.js",
+              "file": "_app/immutable/chunks/vFtFJ9ka.js",
+              "raw": 41945,
+              "gz": 13944
+            },
+            {
+              "key": "_Bc83u6o1.js",
+              "file": "_app/immutable/chunks/Bc83u6o1.js",
+              "raw": 34281,
+              "gz": 13274
+            },
+            {
+              "key": "_6aNj_2lu.js",
+              "file": "_app/immutable/chunks/6aNj_2lu.js",
+              "raw": 26285,
+              "gz": 9073
+            },
+            {
+              "key": "_B_uyH-Xj.js",
+              "file": "_app/immutable/chunks/B_uyH-Xj.js",
+              "raw": 21850,
+              "gz": 7898
+            },
+            {
+              "key": "_CS-9zthl.js",
+              "file": "_app/immutable/chunks/CS-9zthl.js",
+              "raw": 18985,
+              "gz": 6219
+            },
+            {
+              "key": "_D64lpurs.js",
+              "file": "_app/immutable/chunks/D64lpurs.js",
+              "raw": 13002,
+              "gz": 4083
+            },
+            {
+              "key": "_CXjqM6nb.js",
+              "file": "_app/immutable/chunks/CXjqM6nb.js",
+              "raw": 12337,
+              "gz": 4977
+            },
+            {
+              "key": "_CAd_iyVW.js",
+              "file": "_app/immutable/chunks/CAd_iyVW.js",
+              "raw": 11228,
+              "gz": 4618
+            },
+            {
+              "key": "_DBFHc3rG.js",
+              "file": "_app/immutable/chunks/DBFHc3rG.js",
+              "raw": 10818,
+              "gz": 4208
+            },
+            {
+              "key": ".svelte-kit/generated/client-optimized/nodes/345.js",
+              "file": "_app/immutable/nodes/345.CLNZmSl5.js",
+              "raw": 10043,
+              "gz": 3365
+            },
+            {
+              "key": "_-j6plZLC.js",
+              "file": "_app/immutable/chunks/-j6plZLC.js",
+              "raw": 8205,
+              "gz": 2850
+            },
+            {
+              "key": "_OCzkNNha.js",
+              "file": "_app/immutable/chunks/OCzkNNha.js",
+              "raw": 8140,
+              "gz": 3324
+            },
+            {
+              "key": "_UcnTHl-o.js",
+              "file": "_app/immutable/chunks/UcnTHl-o.js",
+              "raw": 4893,
+              "gz": 1837
+            },
+            {
+              "key": "_0cw-5n94.js",
+              "file": "_app/immutable/chunks/0cw-5n94.js",
+              "raw": 4597,
+              "gz": 2046
+            },
+            {
+              "key": "_Bb-KrJcq.js",
+              "file": "_app/immutable/chunks/Bb-KrJcq.js",
+              "raw": 4431,
+              "gz": 2000
+            },
+            {
+              "key": "_igVzbW_l.js",
+              "file": "_app/immutable/chunks/igVzbW_l.js",
+              "raw": 4099,
+              "gz": 1415
+            },
+            {
+              "key": "_BBEKAhZt.js",
+              "file": "_app/immutable/chunks/BBEKAhZt.js",
+              "raw": 4091,
+              "gz": 1891
+            },
+            {
+              "key": "_BueYYGQA.js",
+              "file": "_app/immutable/chunks/BueYYGQA.js",
+              "raw": 2915,
+              "gz": 1293
+            },
+            {
+              "key": "_iMqYDQds.js",
+              "file": "_app/immutable/chunks/iMqYDQds.js",
+              "raw": 2087,
+              "gz": 992
+            },
+            {
+              "key": "_B8UK-T4T.js",
+              "file": "_app/immutable/chunks/B8UK-T4T.js",
+              "raw": 1613,
+              "gz": 621
+            },
+            {
+              "key": "_BnxiDal0.js",
+              "file": "_app/immutable/chunks/BnxiDal0.js",
+              "raw": 479,
+              "gz": 348
+            },
+            {
+              "key": ".svelte-kit/generated/client-optimized/nodes/58.js",
+              "file": "_app/immutable/nodes/58.Dm0Ep0u9.js",
+              "raw": 124,
+              "gz": 114
+            }
+          ]
+        },
+        "root layout only": {
+          "name": "root layout only",
+          "chunks": 21,
+          "raw": 1292877,
+          "gz": 414142,
+          "files": [
+            {
+              "key": "_DtmB6GMM.js",
+              "file": "_app/immutable/chunks/DtmB6GMM.js",
+              "raw": 622555,
+              "gz": 185644
+            },
+            {
+              "key": "_yC3aPJC1.js",
+              "file": "_app/immutable/chunks/yC3aPJC1.js",
+              "raw": 210573,
+              "gz": 71958
+            },
+            {
+              "key": "_EHYw4H0E.js",
+              "file": "_app/immutable/chunks/EHYw4H0E.js",
+              "raw": 70490,
+              "gz": 26878
+            },
+            {
+              "key": "_NFMwRFQv.js",
+              "file": "_app/immutable/chunks/NFMwRFQv.js",
+              "raw": 60327,
+              "gz": 17790
+            },
+            {
+              "key": "_Cx5CP5Fc.js",
+              "file": "_app/immutable/chunks/Cx5CP5Fc.js",
+              "raw": 60192,
+              "gz": 17191
+            },
+            {
+              "key": ".svelte-kit/generated/client-optimized/nodes/0.js",
+              "file": "_app/immutable/nodes/0.pPiOfq2a.js",
+              "raw": 47264,
+              "gz": 14240
+            },
+            {
+              "key": "_vFtFJ9ka.js",
+              "file": "_app/immutable/chunks/vFtFJ9ka.js",
+              "raw": 41945,
+              "gz": 13944
+            },
+            {
+              "key": "_Bc83u6o1.js",
+              "file": "_app/immutable/chunks/Bc83u6o1.js",
+              "raw": 34281,
+              "gz": 13274
+            },
+            {
+              "key": "_6aNj_2lu.js",
+              "file": "_app/immutable/chunks/6aNj_2lu.js",
+              "raw": 26285,
+              "gz": 9073
+            },
+            {
+              "key": "_B_uyH-Xj.js",
+              "file": "_app/immutable/chunks/B_uyH-Xj.js",
+              "raw": 21850,
+              "gz": 7898
+            },
+            {
+              "key": "_CS-9zthl.js",
+              "file": "_app/immutable/chunks/CS-9zthl.js",
+              "raw": 18985,
+              "gz": 6219
+            },
+            {
+              "key": "_D64lpurs.js",
+              "file": "_app/immutable/chunks/D64lpurs.js",
+              "raw": 13002,
+              "gz": 4083
+            },
+            {
+              "key": "_CXjqM6nb.js",
+              "file": "_app/immutable/chunks/CXjqM6nb.js",
+              "raw": 12337,
+              "gz": 4977
+            },
+            {
+              "key": "_CAd_iyVW.js",
+              "file": "_app/immutable/chunks/CAd_iyVW.js",
+              "raw": 11228,
+              "gz": 4618
+            },
+            {
+              "key": "_DBFHc3rG.js",
+              "file": "_app/immutable/chunks/DBFHc3rG.js",
+              "raw": 10818,
+              "gz": 4208
+            },
+            {
+              "key": "_-j6plZLC.js",
+              "file": "_app/immutable/chunks/-j6plZLC.js",
+              "raw": 8205,
+              "gz": 2850
+            },
+            {
+              "key": "_OCzkNNha.js",
+              "file": "_app/immutable/chunks/OCzkNNha.js",
+              "raw": 8140,
+              "gz": 3324
+            },
+            {
+              "key": "_0cw-5n94.js",
+              "file": "_app/immutable/chunks/0cw-5n94.js",
+              "raw": 4597,
+              "gz": 2046
+            },
+            {
+              "key": "_igVzbW_l.js",
+              "file": "_app/immutable/chunks/igVzbW_l.js",
+              "raw": 4099,
+              "gz": 1415
+            },
+            {
+              "key": "_BBEKAhZt.js",
+              "file": "_app/immutable/chunks/BBEKAhZt.js",
+              "raw": 4091,
+              "gz": 1891
+            },
+            {
+              "key": "_B8UK-T4T.js",
+              "file": "_app/immutable/chunks/B8UK-T4T.js",
+              "raw": 1613,
+              "gz": 621
+            }
+          ]
+        }
+      },
+      "vendorChunks": {
+        "vendor": {
+          "file": "_app/immutable/chunks/hrWYeZdy.js",
+          "raw": 851894,
+          "gzip": 241073
+        },
+        "vendor-three": {
+          "file": "_app/immutable/chunks/CaJ4lS5v.js",
+          "raw": 1605022,
+          "gzip": 444399
+        },
+        "vendor-backgrounds": {
+          "file": "_app/immutable/chunks/p5JO9GT4.js",
+          "raw": 441029,
+          "gzip": 123970
+        },
+        "vendor-media-export": {
+          "file": "_app/immutable/chunks/sr8V0Pkk.js",
+          "raw": 1449543,
+          "gzip": 410013
+        },
+        "vendor-audio-inference": {
+          "file": "_app/immutable/chunks/Bx_G16Vx.js",
+          "raw": 428912,
+          "gzip": 117448
+        }
+      },
+      "runtime": {
+        "localOnly": true,
+        "observation": "Startup loading screens cleared within the additional 30-second wait. Create rendered creation choices and Browse rendered navigation. Browse still showed remote sequences loading while external requests were blocked. No authenticated workflows or remote sequence retrieval tested.",
+        "routes": [
+          {
+            "route": "/",
+            "title": "Flow Arts Notation | The Kinetic Alphabet",
+            "startupLoadingCleared": null
+          },
+          {
+            "route": "/create",
+            "title": "Create | Flow Arts Composer",
+            "startupLoadingCleared": true
+          },
+          {
+            "route": "/browse",
+            "title": "Browse | Flow Arts Composer",
+            "startupLoadingCleared": true
+          }
+        ],
+        "chunks": [
+          {
+            "name": "vendor-three",
+            "file": "_app/immutable/chunks/CaJ4lS5v.js",
+            "exports": 216
+          },
+          {
+            "name": "vendor-backgrounds",
+            "file": "_app/immutable/chunks/p5JO9GT4.js",
+            "exports": 20
+          },
+          {
+            "name": "vendor-media-export",
+            "file": "_app/immutable/chunks/sr8V0Pkk.js",
+            "exports": 13
+          },
+          {
+            "name": "vendor-audio-inference",
+            "file": "_app/immutable/chunks/Bx_G16Vx.js",
+            "exports": 2
+          }
+        ],
+        "pageErrors": [],
+        "scriptErrors": []
+      },
+      "subsequentMain": {
+        "head": "1066719638687c4d63652d16c4336600c2431d42",
+        "scope": "Only staff-grip lab styles and a picker label; no import changes. Covered by normal local integration checks, not another timing matrix."
+      }
+    }
+  }
+}

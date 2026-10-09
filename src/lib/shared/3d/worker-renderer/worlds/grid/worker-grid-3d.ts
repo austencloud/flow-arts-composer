@@ -226,12 +226,12 @@ export function createWorkerGrid3D(options: WorkerGridOptions): WorkerGrid3D {
   const visiblePlanes = (Object.values(Plane) as Plane[]).filter((plane) =>
     options.visiblePlanes.has(plane)
   );
+  const staffHalfLength =
+    options.staffHalfLength ??
+    PLANE_MODE_CONFIGS[PlaneMode.DUAL_WHEEL].blueLateralOffset;
   const wheelOffsets =
     options.planeMode === PlaneMode.DUAL_WHEEL
-      ? [
-          PLANE_MODE_CONFIGS[PlaneMode.DUAL_WHEEL].blueLateralOffset,
-          PLANE_MODE_CONFIGS[PlaneMode.DUAL_WHEEL].redLateralOffset,
-        ]
+      ? [staffHalfLength, -staffHalfLength]
       : [0];
 
   for (const plane of visiblePlanes) {
@@ -283,7 +283,11 @@ export function createWorkerGrid3D(options: WorkerGridOptions): WorkerGrid3D {
       let labelPlane: Plane | null = null;
       let bestDot = -1;
       for (const plane of visiblePlanes) {
-        const dot = Math.abs(viewDirection.dot(PLANE_NORMALS[plane as unknown as keyof typeof PLANE_NORMALS]));
+        const dot = Math.abs(
+          viewDirection.dot(
+            PLANE_NORMALS[plane as unknown as keyof typeof PLANE_NORMALS]
+          )
+        );
         if (dot > bestDot) {
           bestDot = dot;
           labelPlane = plane;

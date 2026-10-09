@@ -125,6 +125,7 @@
         {#if !hideLabel}<span class="ctl-label">{c.label}</span>{/if}
         <input
           type="range"
+          aria-label={c.label}
           min={c.min}
           max={c.max}
           step={c.step}

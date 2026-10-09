@@ -48,7 +48,6 @@ const CENTRALIZED_KEYFRAMES = [
   "shake",
   "shimmer",
   // Also keyframes already in app.css
-  "gradientShift",
   "star-twinkle-animation",
   "aurora-animation",
   "bubble-rise",

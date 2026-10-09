@@ -91,6 +91,9 @@ export class LedSampler {
   /** Output array reused each frame */
   private outputLeds: LedSample[] = [];
 
+  /** Where the current update writes: the caller's array or the sampler's own. */
+  private target: LedSample[] = this.outputLeds;
+
   /** Skip first few frames after reset to let canvas size settle. */
   private warmupFramesRemaining = WARMUP_FRAMES;
 
@@ -103,16 +106,20 @@ export class LedSampler {
     rightProp: PropState | null,
     config: LedSamplerConfig,
     currentTime: number,
-    ledConfig: LedOverlayConfig
+    ledConfig: LedOverlayConfig,
+    out?: LedSample[]
   ): LedSample[] {
+    // A caller that samples several poses per frame supplies its own array so
+    // the sets do not overwrite each other.
+    this.target = out ?? this.outputLeds;
     // Let canvas size settle before emitting LED positions
     if (this.warmupFramesRemaining > 0) {
       this.warmupFramesRemaining--;
-      this.outputLeds.length = 0;
-      return this.outputLeds;
+      this.target.length = 0;
+      return this.target;
     }
 
-    this.outputLeds.length = 0;
+    this.target.length = 0;
 
     const ledCount = Math.max(1, Math.round(ledConfig.device.ledCount));
     const pattern = this.materializer.resolve(ledConfig.pattern, ledCount);
@@ -243,7 +250,7 @@ export class LedSampler {
       }
     }
 
-    return this.outputLeds;
+    return this.target;
   }
 
   reset(): void {
@@ -344,7 +351,7 @@ export class LedSampler {
     outputIndex: number,
     brightness: number
   ): void {
-    const existing = this.outputLeds[outputIndex];
+    const existing = this.target[outputIndex];
     if (existing) {
       existing.x = x;
       existing.y = y;
@@ -356,7 +363,7 @@ export class LedSampler {
       existing.g = color.g;
       existing.b = color.b;
     } else {
-      this.outputLeds.push({
+      this.target.push({
         x,
         y,
         propIndex,

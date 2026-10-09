@@ -19,14 +19,15 @@ import {
 import type { TunnelTitlesPlan } from "$lib/shared/media-composition/domain/tunnel-titles";
 import type { tkaProjectShape } from "./project-extension";
 import { compileSequenceItem, compileTitlesItem } from "./compile-hooks";
+import { POST_QR_URL_RULE, isPostCardQrUrl } from "./card-qr";
 
 /**
  * TKA's item kinds and the fields TKA adds to the core kinds of
  * `@austencloud/video-editor`: the sequence animation, the
  * picture-in-picture moves, the carousel and the titles, plus a video's staff
- * effect and a card's appearance overrides. The augmentation below makes the
- * core's `PostItem`, `PostVideoItem`, `PostCardItem` and `PostProject` carry
- * them, so every tka importer stays fully typed.
+ * effect and a card's scan link and appearance overrides. The augmentation
+ * below makes the core's `PostItem`, `PostVideoItem`, `PostCardItem` and
+ * `PostProject` carry them, so every tka importer stays fully typed.
  */
 
 type TkaProjectFields = z.infer<z.ZodObject<typeof tkaProjectShape>>;
@@ -281,6 +282,8 @@ export const tkaVideoShape = {
 };
 
 export const tkaCardShape = {
+  /** The link the card's QR shows instead of the account's own code. */
+  qrUrl: z.string().refine(isPostCardQrUrl, POST_QR_URL_RULE).optional(),
   /** Overrides for this card only; absent fields retain the viewer look. */
   cardAppearance: z
     .object({
@@ -360,7 +363,7 @@ export const TKA_KIND_EXTENSIONS: Partial<
   },
   card: {
     shape: tkaCardShape,
-    order: [...BASE_ORDER, "kind", "cardAppearance"],
+    order: [...BASE_ORDER, "kind", "qrUrl", "cardAppearance"],
   },
 };
 

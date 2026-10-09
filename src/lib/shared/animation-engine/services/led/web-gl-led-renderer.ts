@@ -23,7 +23,7 @@
  */
 
 import { frameOffset, measureFrame } from "../../domain/types/canvas-frame";
-import type { LedFrameInput, LedOverlayConfig } from "../../domain/types/led-types";
+import type { LedFrameInput, LedOverlayConfig, LedSample } from "../../domain/types/led-types";
 import { ledBrightnessToFloat } from "../../domain/types/led-types";
 import {
 	BLOOM_COMPOSITE_STRENGTH,
@@ -112,6 +112,17 @@ const MAX_STREAK_VIEWBOX = 400;
  *  discontinuity, where the measured gap says nothing about motion. */
 const FALLBACK_DT = 1 / 60;
 const MIN_DT = 1 / 240;
+
+const NO_PRIORS: readonly (readonly LedSample[])[] = [];
+
+/** Where one LED's path began this frame, for whole-frame cap decisions
+ *  across the prior-set passes. */
+interface FrameStart {
+	x: number;
+	y: number;
+	firstSegment: number;
+	startCap: number;
+}
 
 // Framebuffer types (mirrored from WebGLFireRenderer)
 
@@ -206,6 +217,9 @@ export class WebGLLedRenderer {
 	private stepCy = new Float32Array(MAX_SUB_STEPS + 1);
 	/** Timestamp of the last frame rendered, in seconds (from the input). */
 	private lastFrameTime = -1;
+	/** Per-frame path starts, keyed like prevPositions; used only when a frame
+	 *  deposits more than one pass. */
+	private readonly frameStart: Map<number, FrameStart> = new Map();
 	/** Recognises a re-render of the moment already on the canvas. */
 	private repeatGuard = new LedRepeatFrameGuard(MAX_LEDS);
 
@@ -441,15 +455,38 @@ export class WebGLLedRenderer {
 
 		const currentTimeSec = input.currentTime / 1000;
 		const rawDt = this.lastFrameTime >= 0 ? currentTimeSec - this.lastFrameTime : 0;
-		const isDiscontinuity = rawDt <= 0 || rawDt > MAX_STREAK_DT;
-		const dt = isDiscontinuity
-			? FALLBACK_DT
-			: Math.min(Math.max(rawDt, MIN_DT), MAX_STREAK_DT);
+		// Prior sets bridge a slow frame: the streak rule is judged on the
+		// per-pass delta so the bridged frame reads as a streak, not a gap. A
+		// discontinuity still deposits one reference step in total.
+		const priors = input.priorSamples ?? NO_PRIORS;
+		const passes = priors.length + 1;
+		const perPassRaw = rawDt / passes;
+		const isDiscontinuity = rawDt <= 0 || perPassRaw > MAX_STREAK_DT;
+		const passDt = isDiscontinuity
+			? FALLBACK_DT / passes
+			: Math.min(Math.max(perPassRaw, MIN_DT), MAX_STREAK_DT);
+		// The shutter integrates the whole frame.
+		const dt = isDiscontinuity ? FALLBACK_DT : passDt * passes;
 		this.lastFrameTime = currentTimeSec;
 
 		// A change of input frame size keeps the streak: buildSegments carries
-		// the stored positions onto the new square.
-		const segmentCount = this.buildSegments(input, config, dt, isDiscontinuity);
+		// the stored positions onto the new square. One pass per prior set, then
+		// the final pass; caps are judged on the whole frame's path.
+		this.frameStart.clear();
+		let segmentCount = 0;
+		for (let pass = 0; pass < passes; pass++) {
+			segmentCount = this.buildSegments(
+				pass < priors.length ? priors[pass]! : input.leds,
+				input.canvasWidth,
+				input.canvasHeight,
+				config,
+				passDt,
+				isDiscontinuity && pass === 0,
+				pass === 0,
+				pass === passes - 1,
+				segmentCount,
+			);
+		}
 		if (segmentCount === 0) {
 			this.repeatGuard.reset();
 			return;
@@ -760,21 +797,28 @@ export class WebGLLedRenderer {
 	}
 
 	/**
-	 * Fills the instance buffer with one capsule per LED per sub-step and
-	 * returns how many were written.
+	 * Fills the instance buffer with one capsule per LED per sub-step, starting
+	 * at `startIndex`, and returns the new count. A frame is one pass unless
+	 * prior sets bridge it; `firstPass`/`lastPass` mark the frame's ends so
+	 * caps and state pruning apply to the whole frame, not to each pass.
 	 */
 	private buildSegments(
-		input: LedFrameInput,
+		leds: readonly LedSample[],
+		canvasWidth: number,
+		canvasHeight: number,
 		config: LedOverlayConfig,
 		dt: number,
 		timeDiscontinuity: boolean,
+		firstPass: boolean,
+		lastPass: boolean,
+		startIndex: number,
 	): number {
-		const keptPositions = this.adoptFrame(input.canvasWidth, input.canvasHeight);
+		const keptPositions = this.adoptFrame(canvasWidth, canvasHeight);
 		const isDiscontinuity = timeDiscontinuity || !keptPositions;
 
-		const ledCount = Math.min(input.leds.length, MAX_LEDS);
-		const scaleX = this.displayWidth / Math.max(input.canvasWidth, 1);
-		const scaleY = this.displayHeight / Math.max(input.canvasHeight, 1);
+		const ledCount = Math.min(leds.length, MAX_LEDS);
+		const scaleX = this.displayWidth / Math.max(canvasWidth, 1);
+		const scaleY = this.displayHeight / Math.max(canvasHeight, 1);
 
 		// Pass 1: resolve each LED's previous position and group by prop. Flux and
 		// footprint are properties of a strip, so nothing can be computed per LED
@@ -785,7 +829,7 @@ export class WebGLLedRenderer {
 
 		const seenKeys = new Set<number>();
 		for (let i = 0; i < ledCount; i++) {
-			const led = input.leds[i]!;
+			const led = leds[i]!;
 			// Stride 1000 so a 200-LED staff on any prop index keeps a unique key.
 			const key = led.propIndex * 1000 + led.ledIndex;
 			seenKeys.add(key);
@@ -838,20 +882,24 @@ export class WebGLLedRenderer {
 		}
 
 		// Drop state for LEDs that disappeared this frame so they start fresh
-		// next time they reappear rather than streaking across the gap.
-		for (const key of this.prevPositions.keys()) {
-			if (!seenKeys.has(key)) this.prevPositions.delete(key);
+		// next time they reappear rather than streaking across the gap. A prior
+		// set may lack an LED the frame still has (a layer the sampler could not
+		// vouch for), so only the final pass prunes.
+		if (lastPass) {
+			for (const key of this.prevPositions.keys()) {
+				if (!seenKeys.has(key)) this.prevPositions.delete(key);
+			}
 		}
 
 		const propFlux = PROP_REFERENCE_FLUX * ledBrightnessToFloat(config.look.brightness);
-		let written = 0;
+		let written = startIndex;
 
 		for (const group of this.propGroups.values()) {
 			const count = group.members.length;
 			if (count === 0) continue;
 
-			const firstLed = input.leds[group.firstMember]!;
-			const lastLed = input.leds[group.lastMember]!;
+			const firstLed = leds[group.firstMember]!;
+			const lastLed = leds[group.lastMember]!;
 			const currFirstX = firstLed.x * scaleX;
 			const currFirstY = firstLed.y * scaleY;
 			const currLastX = lastLed.x * scaleX;
@@ -895,7 +943,7 @@ export class WebGLLedRenderer {
 			const endSin = this.stepSin[subSteps]!;
 
 			for (const member of group.members) {
-				const led = input.leds[member]!;
+				const led = leds[member]!;
 				const currX = led.x * scaleX;
 				const currY = led.y * scaleY;
 				const relX = this.prevScratch[member * 2]! * scaleX - prevCx;
@@ -934,10 +982,35 @@ export class WebGLLedRenderer {
 				// confetti rather than an arc. Round caps belong only to a genuinely
 				// isolated splat: an emitter that barely moved this frame, or one
 				// whose history was just discarded and so has no path to continue.
-				const framePathPx = Math.hypot(currX - ax, currY - ay);
-				const isolated = framePathPx < sigmaEff;
-				const pathStartCap = isolated || isDiscontinuity ? 1 : 0;
+				// Across prior-set passes the frame's path is judged as a whole:
+				// the first pass records where each LED started, the last pass
+				// measures to the final position and patches the first pass's
+				// start cap when the whole frame turned out isolated.
+				let framePathPx: number;
+				let start: FrameStart | null = null;
+				if (firstPass && lastPass) {
+					framePathPx = Math.hypot(currX - ax, currY - ay);
+				} else {
+					const key = led.propIndex * 1000 + led.ledIndex;
+					start = this.frameStart.get(key) ?? null;
+					if (firstPass || !start) {
+						start = {
+							x: ax,
+							y: ay,
+							firstSegment: written,
+							startCap: isDiscontinuity ? 1 : 0,
+						};
+						this.frameStart.set(key, start);
+					}
+					framePathPx = Math.hypot(currX - start.x, currY - start.y);
+				}
+				const isolated = lastPass && framePathPx < sigmaEff;
+				const pathStartCap = firstPass ? (isolated || isDiscontinuity ? 1 : 0) : 0;
 				const pathEndCap = isolated ? 1 : 0;
+				if (isolated && start && !firstPass && start.startCap === 0) {
+					this.instanceData[start.firstSegment * INSTANCE_STRIDE_FLOATS + 9] = 1;
+					start.startCap = 1;
+				}
 				const firstSegment = written;
 				let firstTurn = 0;
 				let lastTurn = 0;

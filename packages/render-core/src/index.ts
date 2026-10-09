@@ -50,6 +50,49 @@ export {
   FAN_PAPER_CONTRAST,
 } from "./fan-appearance.js";
 
+// Glyph turns column
+export {
+  parseTurnsTuple,
+  shouldDisplayTurn,
+  getTurnNumberImagePath,
+  getTurnNumberWidth,
+  HALF_MARK_IMAGE_PATH,
+  getHalfMarkWidth,
+  MARK_GAP,
+  getSlotUnitWidth,
+  getSlotOffsetX,
+  PADDING_X as TURNS_COLUMN_PADDING_X,
+  calculateTurnPositions,
+  turnsColumnHands,
+} from "./calculations/turns-column.js";
+export type {
+  TurnValue,
+  DirectionValue,
+  OpenCloseValue,
+  ParsedTurnsTuple,
+  Dimensions as TurnsColumnDimensions,
+  Position as TurnPosition,
+  TurnPositions,
+  TurnsColumnHand,
+  TurnsColumnMotion,
+} from "./calculations/turns-column.js";
+
+export {
+  drawsHandPaths,
+  deriveShiftHandPath,
+  handPathMotionOverrides,
+} from "./calculations/hand-path-motion.js";
+export type {
+  HandPathMotionInput,
+  HandPathMotionOverrides,
+} from "./calculations/hand-path-motion.js";
+
+export {
+  propArtworkStem,
+  PICTOGRAPH_PROP_ARTWORK_DIR,
+} from "./prop-artwork.js";
+export type { PropSpriteSide } from "./prop-artwork.js";
+
 // Viewbox constants
 export {
   VIEWBOX_SIZE,
@@ -235,6 +278,29 @@ export type { TurnsTupleMotion } from "./calculations/turns-tuple.js";
 
 // Arrow rotation
 export { calculateArrowRotation } from "./calculations/arrow-rotation.js";
+
+// Arrow adjustment from the static placement JSON
+export {
+  arrowDirectionalTuples,
+  arrowQuadrantIndex,
+  calculateArrowAdjustment,
+  defaultArrowAdjustment,
+  hasRotationOverride,
+  legacyOrientationBucket,
+  lookupSpecialPlacementAdjustment,
+  resolveArrowRotation,
+  rotationOverrideAngle,
+  rotationOverrideKey,
+  shouldMirrorArrow,
+  specialPlacementAttributeKey,
+  specialPlacementOrientationKeys,
+} from "./calculations/arrow-adjustment.js";
+export type {
+  ArrowAdjustmentMotion,
+  ArrowAdjustmentPictograph,
+  ArrowHand,
+  ArrowPlacementJsonLoader,
+} from "./calculations/arrow-adjustment.js";
 
 // Arrow asset paths
 export { resolveFullArrowAssetPath } from "./calculations/arrow-asset-path.js";

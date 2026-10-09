@@ -1403,6 +1403,10 @@
   });
 
   $effect(() => {
+    // Read nothing else until a download waits: videoSourceKey embeds the
+    // host's share URL, which re-encodes the whole viewer state on every
+    // change and cost the viewer ~100 ms while it opened.
+    if (!pendingDownload) return;
     const outcome = pendingVideoDownloadOutcome({
       pending: pendingDownload,
       sheetOpen: isOpen,

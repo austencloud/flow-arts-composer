@@ -88,7 +88,12 @@ announced chapters:
 
 1. Identify Composer and show a real sequence moving.
 2. Let the visitor see how a sequence is made or generated.
-3. Carry that same sequence into the views that genuinely change how it is seen.
+3. Carry that same sequence into the views that genuinely change how it is
+   seen. The page has one sequence: the hero's draw until the visitor builds
+   or generates one, then the last of those. Construct, Generate, the tunnel
+   and 3D name it in the shared word row (the word in notation glyphs, with
+   the prop chooser where the demonstration has one); the hero names it in
+   its player's word header, and Keep shows it as a card first (2026-10-07).
 4. Show what can be kept, collected, exported, or shared, with account limits stated plainly.
 5. Place Composer in relation to The Kinetic Alphabet and end at the app.
 
@@ -119,6 +124,9 @@ The stage keeps these limits:
 - It moves whole sections. Nothing inside a section fades or rises on scroll.
 - Only the reader moves it. A demonstration that moves focus by itself never
   starts a glide.
+- The hero rolls a new word on its own only until the reader touches its
+  player column or leaves the hero stop. After that it changes only on Roll,
+  so the word the reader saw is the word the page carries (2026-10-07).
 - Sections off the stage stay in the page for screen readers and Tab.
 - Phones, tablets, small or zoomed-in windows, and reduced motion get the plain
   page, which must read completely on its own.
@@ -136,7 +144,13 @@ exception to the heading read below.
   about 1728 by 832 pixels, and sits centered in larger rooms. Its option tiles
   and step cells have fixed caps, so a bigger frame only adds empty panel.
 - The prop chooser lives inside each demonstration, beside the sequence's
-  word. There is no page-level Build and Generate switch.
+  word, in the shared word row. There is no page-level Build and Generate
+  switch. The hero's controls (Roll, prop chooser, Theme) are one row under
+  its player.
+- The Kinetic Alphabet has no stop of its own. One sentence in the hero names
+  it, and the Guide and Common questions links sit in the closing section
+  with Notation history, each once. Austen chose this on 2026-10-07 over
+  keeping the stop with a live pictograph or moving it after Keep.
 - No stop ends in a link to the part of the app it shows. The header's Open
   Flow Arts Composer button is the way into the app on every page.
 

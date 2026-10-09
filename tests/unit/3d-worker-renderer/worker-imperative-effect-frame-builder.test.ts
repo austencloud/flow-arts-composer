@@ -9,6 +9,7 @@ import {
 import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
 import {
   resolveLed3D,
+  resolveGoo3D,
   resolveSparkles3D,
   resolveTrails3D,
 } from "$lib/shared/effects/translators/webgl3d-translator";
@@ -80,6 +81,15 @@ function input(
 }
 
 describe("worker imperative effect frame builder", () => {
+  it("routes the performer's supporting floor into Goo sources", () => {
+    const goo = input("trails");
+    goo.collisionFloorY = 2.25;
+    goo.intent.tips = [{ propIndex: 0, tipIndex: 0, effect: "goo" }];
+    goo.intent.pooled.goo = resolveGoo3D(DEFAULT_EFFECTS_CONFIG.goo);
+    expect(new WorkerImperativeEffectFrameBuilder().build(goo).sources).toEqual(
+      [expect.objectContaining({ effect: "goo", collisionFloorY: 2.25 })]
+    );
+  });
   it("derives trails from the worker-owned world prop center", () => {
     const defaultTrails = input("trails");
     const output = new WorkerImperativeEffectFrameBuilder().build(

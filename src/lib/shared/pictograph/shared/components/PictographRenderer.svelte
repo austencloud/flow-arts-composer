@@ -19,8 +19,7 @@ Usage:
 -->
 
 <script lang="ts">
-  import { fade } from "svelte/transition";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { motionDuration, opaqueFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import type { PreparedPictographData } from "../domain/models/prepared-pictograph-data";
@@ -733,7 +732,7 @@ Usage:
         <g
           {opacity}
           transform={slideHandTransform(hand)}
-          transition:fade={{ duration: contentDuration() }}
+          transition:opaqueFade={{ duration: contentDuration(), opacity }}
         >
           <PropSvg
             motionData={data}
@@ -851,7 +850,10 @@ Usage:
       <g
         opacity={glyphOpacity}
         transform="translate({tkaOffset}, 0)"
-        transition:fade={{ duration: contentDuration() }}
+        transition:opaqueFade={{
+          duration: contentDuration(),
+          opacity: glyphOpacity,
+        }}
       >
         <TKAGlyph
           letter={glyph.letter}
@@ -870,7 +872,10 @@ Usage:
       <g
         opacity={glyphOpacity}
         transform="translate({tkaOffset}, 0)"
-        transition:fade={{ duration: contentDuration() }}
+        transition:opaqueFade={{
+          duration: contentDuration(),
+          opacity: glyphOpacity,
+        }}
       >
         <SkewBraces
           letter={pictograph.letter}

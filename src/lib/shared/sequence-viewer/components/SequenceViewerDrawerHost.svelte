@@ -10,13 +10,14 @@
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { onMount, tick, type ComponentProps } from "svelte";
+  import { onMount, tick, untrack, type ComponentProps } from "svelte";
   import type SequenceViewerDrawerContent from "./SequenceViewerDrawerContent.svelte";
   import { afterNavigate, goto } from "$app/navigation";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import ScanSequenceLoader from "./ScanSequenceLoader.svelte";
+  import { loadSequenceViewerContent } from "../services/prefetch-sequence-viewer";
   import {
     getSequenceOverlayState,
     closeSequenceOverlay,
@@ -76,9 +77,38 @@
   let nativeLoadingProgress = $state(0);
   let nativeLoaderSurface = $state<HTMLDivElement | null>(null);
 
+  // Opening the viewer mounts its content and draws its first frame, about a
+  // third of a second of work that used to land in the middle of the slide.
+  // The drawer lays the viewer out off-screen and slides once it reports
+  // ready, capped so a slow first draw can't leave a tap waiting. The native
+  // scan loader covers its own wait and is never held.
+  const VIEWER_HOLD_CAP_MS = 600;
+  let holdViewerSlide = $state(false);
+  let viewerHoldTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function releaseViewerHold() {
+    holdViewerSlide = false;
+    if (viewerHoldTimer !== null) {
+      clearTimeout(viewerHoldTimer);
+      viewerHoldTimer = null;
+    }
+  }
+
   $effect(() => {
-    drawerOpen = overlay.isOpen || nativeLoadingCode !== null;
+    const open = overlay.isOpen || nativeLoadingCode !== null;
+    untrack(() => {
+      if (open && !drawerOpen && nativeLoadingCode === null) {
+        releaseViewerHold();
+        holdViewerSlide = true;
+        viewerHoldTimer = setTimeout(releaseViewerHold, VIEWER_HOLD_CAP_MS);
+      } else if (!open) {
+        releaseViewerHold();
+      }
+      drawerOpen = open;
+    });
   });
+
+  onMount(() => releaseViewerHold);
 
   async function afterNextPaint(): Promise<void> {
     await tick();
@@ -393,6 +423,7 @@
   }
 
   async function handleViewerReady() {
+    releaseViewerHold();
     const code = overlay.activeShortCode;
     if (code) {
       if (nativeLoadingCode === code) {
@@ -438,6 +469,7 @@
 
 <Drawer
   bind:isOpen={drawerOpen}
+  holdOpen={holdViewerSlide}
   placement="bottom"
   snapPoints={["100%"]}
   onclose={handleDrawerClose}
@@ -451,7 +483,7 @@
 >
   <div class="viewer-stage">
     <LazyMount
-      loader={() => import("./SequenceViewerDrawerContent.svelte")}
+      loader={loadSequenceViewerContent}
       active={overlay.sequence !== null}
       placeholder={overlay.sequence ? viewerContentPlaceholder : undefined}
       error={overlay.sequence ? viewerContentError : undefined}

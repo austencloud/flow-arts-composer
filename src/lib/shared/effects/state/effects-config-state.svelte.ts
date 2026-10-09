@@ -28,7 +28,10 @@ import type {
   AnimalIntent,
   PulseIntent,
 } from "../domain/effects-config";
-import { clampSilkIntensity } from "../domain/effects-config";
+import {
+  clampSilkIntensity,
+  normalizeGooLiquidControls,
+} from "../domain/effects-config";
 
 export interface EffectConfigMap {
   trails: TrailsIntent;
@@ -115,6 +118,14 @@ function normalizeEffectIntent(effectId: string, intent: unknown): unknown {
     const silk = intent as SilkIntent;
     return { ...silk, intensity: clampSilkIntensity(silk.intensity) };
   }
+  if (effectId === "goo") {
+    const goo = intent as Partial<GooIntent>;
+    return {
+      ...DEFAULT_EFFECTS_CONFIG.goo,
+      ...goo,
+      ...normalizeGooLiquidControls(goo),
+    };
+  }
   if (effectId === "bloom") {
     const bloom = intent as Partial<BloomIntent>;
     return {
@@ -132,6 +143,7 @@ function normalizeEffectIntent(effectId: string, intent: unknown): unknown {
 function normalizeEffectsConfig(next: EffectsConfig): EffectsConfig {
   return {
     ...next,
+    goo: normalizeEffectIntent("goo", next.goo) as GooIntent,
     bloom: normalizeEffectIntent("bloom", next.bloom) as BloomIntent,
     silk: normalizeEffectIntent("silk", next.silk) as SilkIntent,
   };

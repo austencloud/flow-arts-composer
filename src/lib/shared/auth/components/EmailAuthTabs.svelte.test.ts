@@ -106,4 +106,21 @@ describe("EmailAuthTabs", () => {
       .element(page.getByLabelText("Stub email"))
       .toHaveValue("spinner@example.com");
   });
+
+  it("keeps the shared address through interrupted tab changes", async () => {
+    render(EmailAuthTabs, { mode: "signin" });
+    await page.getByLabelText("Stub email").fill("spinner@example.com");
+
+    await codeTab().click();
+    await passwordTab().click();
+    await codeTab().click();
+
+    await expect.element(codeTab()).toHaveAttribute("aria-selected", "true");
+    await expect
+      .element(page.getByLabelText("Stub email"))
+      .toHaveValue("spinner@example.com");
+    expect(
+      document.querySelectorAll(".tab-content .layer:not([inert]) input")
+    ).toHaveLength(1);
+  });
 });

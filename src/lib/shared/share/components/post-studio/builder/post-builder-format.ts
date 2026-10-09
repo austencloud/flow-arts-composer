@@ -18,6 +18,11 @@ export function formatTakeClock(seconds: number): string {
   return `${minutes}:${rest.toFixed(2).padStart(5, "0")}`;
 }
 
+/** 0.98×, 1.5×, 2×: a clip's speed in its tool and on the timeline badge. */
+export function formatPostSpeed(speed: number): string {
+  return `${Number(speed.toFixed(2))}×`;
+}
+
 /**
  * Reads "1:23.45", "83.45", "83", "1:23,45" or "83 s" as seconds. Null when
  * it is not a time.

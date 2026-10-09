@@ -136,9 +136,10 @@ Always renders as a pure button. Word input is now in WordInputCard.
         100%
     );
 
-    animation:
-      meshGradientFlow 8s ease infinite,
-      subtlePulse 2s ease-in-out infinite;
+    /* Only the transform pulse loops, so the compositor runs it. The gradient
+       fills the button exactly, so the old background-position "flow" never
+       moved; it only repainted the button every frame. */
+    animation: subtlePulse 2s ease-in-out infinite;
 
     color: var(--theme-text, white);
     border-radius: 20px;
@@ -213,13 +214,11 @@ Always renders as a pure button. Word input is now in WordInputCard.
       0 2px 6px rgba(0, 0, 0, 0.6),
       0 0 25px color-mix(in srgb, var(--theme-text) 40%, transparent);
 
-    animation-duration: 6s, 1.5s;
+    animation-duration: 1.5s;
   }
 
   .generate-button-card.pulse-suspended:not(:disabled) {
-    animation:
-      meshGradientFlow 8s ease infinite,
-      settlePulse var(--duration-emphasis) var(--ease-out) both;
+    animation: settlePulse var(--duration-emphasis) var(--ease-out) both;
   }
 
   .generate-button-card:active:not(:disabled) {
@@ -249,22 +248,6 @@ Always renders as a pure button. Word input is now in WordInputCard.
   @media (prefers-reduced-motion: reduce) {
     .generate-button-card {
       animation: none;
-    }
-  }
-
-  @keyframes meshGradientFlow {
-    0%,
-    100% {
-      background-position: 0% 50%;
-    }
-    25% {
-      background-position: 50% 100%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    75% {
-      background-position: 50% 0%;
     }
   }
 

@@ -123,7 +123,8 @@ export class WebGL2Backend implements RenderBackend {
 
     this.canvas = canvas;
     this.gl = gl;
-    this.shaders = new ShaderLibrary(gl);
+    const shaders = new ShaderLibrary(gl);
+    this.shaders = shaders;
     this.fbos = new FBOPool(gl, canvas.width, canvas.height);
 
     this.emptyVAO = gl.createVertexArray();
@@ -135,7 +136,10 @@ export class WebGL2Backend implements RenderBackend {
       throw new Error("WebGL2Backend: mesh VAO/VBO allocation failed");
     }
 
-    this.shaders.precompile([
+    // The driver compiles these on its own threads while the page keeps
+    // painting; reading each status in turn here held the main thread
+    // ~200 ms whenever an animation canvas mounted.
+    shaders.compileInBackground([
       "decay",
       "composite",
       "trail-mesh",
@@ -164,8 +168,10 @@ export class WebGL2Backend implements RenderBackend {
       "effect-ring",
       "effect-frost",
     ]);
+    await shaders.settle();
+    if (this.shaders !== shaders) return;
 
-    const mesh = this.shaders.get("trail-mesh");
+    const mesh = shaders.get("trail-mesh");
     gl.bindVertexArray(this.meshVAO);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.meshVBO);
 

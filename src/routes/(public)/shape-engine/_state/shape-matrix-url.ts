@@ -4,6 +4,8 @@ import {
 } from "$lib/shared/shape-matrix/domain/flower-signature";
 import {
   matrixTurnsForLevel,
+  SHAPE_MATRIX_DEFAULT_LEVEL,
+  SHAPE_MATRIX_DEFAULT_TURN,
   type MatrixLabelMode,
 } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
 import {
@@ -70,7 +72,9 @@ function readTheoryFlower(
 
 function readLevel(params: URLSearchParams): TurnLevel {
   const raw = Number(params.get("level"));
-  return Number.isInteger(raw) && raw >= 1 && raw <= 4 ? asTurnLevel(raw) : 2;
+  return Number.isInteger(raw) && raw >= 1 && raw <= 4
+    ? asTurnLevel(raw)
+    : SHAPE_MATRIX_DEFAULT_LEVEL;
 }
 
 function readTurn(
@@ -90,7 +94,7 @@ function readTurn(
         ? keyToTurnValue(params.get("turn") ?? "")
         : legacySize && legacySize in LEGACY_SIZE_TURNS
           ? LEGACY_SIZE_TURNS[legacySize]
-          : 2;
+          : SHAPE_MATRIX_DEFAULT_TURN;
   return matrixTurnsForLevel(level).includes(raw)
     ? raw
     : (matrixTurnsForLevel(level)[0] ?? 0);

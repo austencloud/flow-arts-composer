@@ -1,3 +1,4 @@
+import { propArtworkStem, type PropSpriteSide } from "@tka/render-core";
 import {
   fanAppearanceArtwork,
   fanPreviewImage,
@@ -43,21 +44,7 @@ export type PropLook = (typeof PROP_LOOKS)[number];
  */
 export const DEFAULT_PROP_LOOK: PropLook = "pictograph";
 
-export type PropSpriteSide = "left" | "right";
-
-/**
- * Props whose two hands hold different flat artwork. Two found sticks are
- * never the same branch, so the right hand draws `stick-right.svg` beside the
- * left hand's `stick.svg`: the same length, bark and tape, a different branch.
- */
-const HANDED_ARTWORK_PROPS: ReadonlySet<string> = new Set(["stick"]);
-
-/** File name, without `.svg`, of a prop's flat artwork for one hand. */
-export function propArtworkStem(propType: string, side: PropSpriteSide): string {
-  return side === "right" && HANDED_ARTWORK_PROPS.has(propType.toLowerCase())
-    ? `${propType}-right`
-    : propType;
-}
+export { propArtworkStem, type PropSpriteSide };
 
 export function normalizePropLook(value: unknown): PropLook {
   return value === "model" ? "model" : DEFAULT_PROP_LOOK;

@@ -4,6 +4,7 @@ import {
   needsMeasuredBasisHandoff,
   panelFlexStyle,
   resolvePanelFlex,
+  settledPanelSizes,
 } from "$lib/shared/panels/panel-flex";
 
 /**
@@ -95,5 +96,41 @@ describe("needsMeasuredBasisHandoff", () => {
         { grow: 2, shrink: 1, basis: "0px" }
       )
     ).toBe(false);
+  });
+});
+
+describe("settledPanelSizes", () => {
+  // Create's stacked workspace: the sequence takes 5 parts, the tools 4.
+  const workspace = resolvePanelFlex({ defaultSize: 5 }, { flexShare: 5 });
+  const tools = resolvePanelFlex({ defaultSize: 4 }, { flexShare: 4 });
+  const collapsed = resolvePanelFlex({ fixedSize: "0px" }, {});
+
+  it("splits the group by grow share, as the browser will once the slide ends", () => {
+    const [top, bottom] = settledPanelSizes([workspace, tools], 720) ?? [];
+    expect(top).toBeCloseTo(400);
+    expect(bottom).toBeCloseTo(320);
+  });
+
+  it("gives a collapsed panel its held length and the rest to the shares", () => {
+    expect(settledPanelSizes([collapsed, tools], 720)).toEqual([0, 720]);
+  });
+
+  it("subtracts resize handles before sharing", () => {
+    const [top] = settledPanelSizes([workspace, tools], 726, 6) ?? [];
+    expect(top).toBeCloseTo(400);
+  });
+
+  it("hands out only part of the space when the grow total is under one", () => {
+    const half = { grow: 0.5, shrink: 1, basis: "0px" };
+    expect(settledPanelSizes([half], 600)).toEqual([300]);
+  });
+
+  it("declines sizes only layout can know", () => {
+    expect(
+      settledPanelSizes([resolvePanelFlex(contentSizedDock, {}), tools], 720)
+    ).toBeNull();
+    expect(
+      settledPanelSizes([{ grow: 1, shrink: 1, basis: "120px" }, tools], 720)
+    ).toBeNull();
   });
 });

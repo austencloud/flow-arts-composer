@@ -135,6 +135,32 @@ describe("ExpandedCardStage", () => {
     expect(root!.getAnimations().length).toBe(0);
   });
 
+  it("does not read the stage's style for a motionless entrance", async () => {
+    // Svelte's scale reads computed style before it starts, even at zero
+    // duration. After a morph that read forced a layout of the freshly
+    // mounted panel inside the view transition callback.
+    vi.spyOn(window, "matchMedia").mockReturnValue({
+      matches: true,
+      media: "(prefers-reduced-motion: reduce)",
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as MediaQueryList);
+    const styleReads = vi.spyOn(window, "getComputedStyle");
+
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, props(state, true));
+
+    state.openPresetDrawer();
+    flushSync();
+    await tick();
+
+    const root = container.querySelector<HTMLElement>(".expanded-card-stage");
+    expect(root).not.toBeNull();
+    expect(styleReads.mock.calls.some(([element]) => element === root)).toBe(
+      false
+    );
+  });
+
   it("renders the Setups panel in the stage on side-by-side layouts", async () => {
     const state = createPanelCoordinationState();
     const { container } = render(ExpandedCardStage, props(state, true));
@@ -621,5 +647,66 @@ describe("ExpandedCardStage", () => {
     // out a fixed timeout for state that was never going to change.
     expect(startViewTransition).not.toHaveBeenCalled();
     startViewTransition.mockRestore();
+  });
+});
+
+describe("ExpandedCardStage on stacked layouts", () => {
+  afterEach(async () => {
+    // Vitest's default browser viewport.
+    await page.viewport(414, 896);
+  });
+
+  function viewportRoot(): HTMLElement {
+    const root = document.body.querySelector<HTMLElement>(
+      ":scope > .expanded-card-stage"
+    );
+    expect(root).not.toBeNull();
+    return root!;
+  }
+
+  it("opens as a bottom panel over a backdrop on an unfolded foldable", async () => {
+    await page.viewport(707, 823);
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, false));
+
+    state.openTnDPanel();
+    flushSync();
+    await tick();
+
+    const root = viewportRoot();
+    expect(root.dataset.presentation).toBe("sheet");
+    const box = root.getBoundingClientRect();
+    expect(Math.round(box.bottom)).toBe(innerHeight);
+    expect(box.height).toBeLessThan(innerHeight * 0.75);
+
+    const backdrop = document.body.querySelector<HTMLElement>(
+      ":scope > .expanded-card-backdrop"
+    );
+    expect(backdrop).not.toBeNull();
+    backdrop!.click();
+    // The close runs through the card morph's view transition.
+    await vi.waitFor(() => {
+      flushSync();
+      expect(state.openGenerateCard).toBeNull();
+    });
+  });
+
+  it("fills a phone screen, but keeps LOOP a bottom panel", async () => {
+    await page.viewport(390, 844);
+    const state = createPanelCoordinationState();
+    render(ExpandedCardStage, props(state, false));
+
+    state.openTnDPanel();
+    flushSync();
+    await tick();
+    expect(viewportRoot().dataset.presentation).toBe("fill");
+    expect(document.body.querySelector(".expanded-card-backdrop")).toBeNull();
+
+    state.closeGenerateCard();
+    flushSync();
+    state.openLOOPPanel(LOOPType.MIRRORED, new Set(), () => {});
+    flushSync();
+    await tick();
+    expect(viewportRoot().dataset.presentation).toBe("sheet");
   });
 });

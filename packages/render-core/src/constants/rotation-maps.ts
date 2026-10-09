@@ -365,7 +365,80 @@ export const DASH_NO_ROTATION_MAP: Record<string, number> = {
 };
 
 /**
- * FLOAT rotation maps (same as PRO but uses handpath direction)
+ * FLOAT rotation maps, chosen by the hand's path (start to end), not the
+ * motion's rotation direction, as the app's float-rotation-maps do.
  */
-export const FLOAT_CLOCKWISE_MAP = PRO_CLOCKWISE_MAP;
-export const FLOAT_COUNTER_CLOCKWISE_MAP = PRO_COUNTER_CLOCKWISE_MAP;
+export const FLOAT_CLOCKWISE_MAP: Record<GridLocation, number> = {
+  n: 315,
+  e: 45,
+  s: 135,
+  w: 225,
+  ne: 0,
+  se: 90,
+  sw: 180,
+  nw: 270,
+  c: 0,
+} as Record<GridLocation, number>;
+
+export const FLOAT_COUNTER_CLOCKWISE_MAP: Record<GridLocation, number> = {
+  n: 135,
+  e: 225,
+  s: 315,
+  w: 45,
+  ne: 180,
+  se: 270,
+  sw: 0,
+  nw: 90,
+  c: 0,
+} as Record<GridLocation, number>;
+
+/**
+ * A static or dash arrow whose special placement sets a rotation override
+ * flag uses these angles instead of its usual map. Static angles are keyed by
+ * location, then by cw/ccw.
+ */
+export const STATIC_RADIAL_OVERRIDE_MAP: Record<string, { cw: number; ccw: number }> = {
+  n: { cw: 180, ccw: 180 },
+  e: { cw: 270, ccw: 270 },
+  s: { cw: 0, ccw: 0 },
+  w: { cw: 90, ccw: 90 },
+  ne: { cw: 225, ccw: 225 },
+  se: { cw: 315, ccw: 315 },
+  sw: { cw: 45, ccw: 45 },
+  nw: { cw: 135, ccw: 135 },
+  c: { cw: 0, ccw: 0 },
+};
+
+export const STATIC_NON_RADIAL_OVERRIDE_MAP: Record<string, { cw: number; ccw: number }> = {
+  n: { cw: 0, ccw: 0 },
+  e: { cw: 90, ccw: 90 },
+  s: { cw: 180, ccw: 180 },
+  w: { cw: 270, ccw: 270 },
+  ne: { cw: 45, ccw: 315 },
+  se: { cw: 135, ccw: 225 },
+  sw: { cw: 225, ccw: 135 },
+  nw: { cw: 315, ccw: 45 },
+  c: { cw: 0, ccw: 0 },
+};
+
+export const DASH_CLOCKWISE_OVERRIDE_MAP: Record<string, number> = {
+  n: 270,
+  e: 0,
+  s: 90,
+  w: 180,
+  ne: 315,
+  se: 45,
+  sw: 135,
+  nw: 225,
+};
+
+export const DASH_COUNTER_CLOCKWISE_OVERRIDE_MAP: Record<string, number> = {
+  n: 90,
+  e: 180,
+  s: 270,
+  w: 0,
+  ne: 135,
+  se: 225,
+  sw: 315,
+  nw: 45,
+};

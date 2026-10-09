@@ -238,15 +238,12 @@ export interface BloomIntent {
  * metaball blur+contrast threshold. Renamed from the earlier realistic-water
  * effect (2026-06-28).
  *
- * The 2D and 3D renderers read different fields, so a setting can visibly
- * change one surface and do nothing on the other:
+ * The 2D and 3D renderers read different fields:
  * - 2D canvas (Goo2DRenderer) reads intensity, motionEmission, surfaceTension
  *   (as Viscosity), palette, customColor and trackingMode. It ignores
- *   ambientEmission, clarity and spewStyle.
- * - 3D viewer (GooRenderer3D, or the legacy WaterEmitter3D when the pooled
- *   scene-effects manager is absent) reads ambientEmission, motionEmission,
- *   intensity, clarity, palette, customColor and trackingMode. It ignores
- *   surfaceTension and spewStyle.
+ *   ambientEmission, clarity, spewStyle, viscosity and gravity.
+ * - Pooled 3D viewer reads every field. The legacy WaterEmitter3D uses a
+ *   simpler droplet path when the pooled scene-effects manager is absent.
  */
 export interface GooIntent {
   /** 0-1. 3D only: a steady droplet rate that keeps flowing while the prop is
@@ -255,23 +252,39 @@ export interface GooIntent {
   /** 0-1. 2D: how thick the stream is. 3D: extra droplets that scale with tip
    *  speed. */
   motionEmission: number;
-  /** 0-1. 2D: bead size and how solid the body looks. 3D: droplet size. */
+  /** 0-1. 2D: bead size and opacity. 3D: strand and droplet thickness. */
   intensity: number;
   /** Named color palette. "custom" uses customColor instead. */
   palette: "classic" | "mercury" | "acid" | "blood" | "spirit" | "custom";
   /** Hex string. Used only when palette === "custom". */
   customColor: string;
-  /** 0-1. 3D only: higher is more see-through (droplet peak opacity falls from
-   *  1 to 0.75). */
+  /** 0-1. 3D only: higher is more see-through. */
   clarity: number;
-  /** 0-1. 2D only: Viscosity. 0 is watery, necks off early and sheds drips; 1
-   *  is thick, keeps its width down the stream and rarely drips. */
+  /** 0-1. 2D viscosity; 3D cohesion and resistance to strand breakup. */
   surfaceTension: number;
+  /** 0-1. 3D resistance to stretching while liquid is connected. */
+  viscosity: number;
+  /** 0-2. 3D downward gravity in Earth multiples. */
+  gravity: number;
   /** Which staff end(s) droplets track. */
   trackingMode: "left_end" | "right_end" | "both_ends";
-  /** Read by neither renderer. A droplet-era setting kept so saved configs
-   *  keep their shape. */
+  /** 3D: connected flow, short splash strands, or fine detached mist. */
   spewStyle: "splash" | "flow" | "mist";
+}
+
+/** Shared bounds for 3D Goo controls, including older saved looks. */
+export function normalizeGooLiquidControls(
+  intent: Partial<GooIntent>
+): Pick<GooIntent, "surfaceTension" | "viscosity" | "gravity"> {
+  const inRange = (value: unknown, fallback: number, max: number) =>
+    typeof value === "number" && Number.isFinite(value)
+      ? Math.max(0, Math.min(max, value))
+      : fallback;
+  return {
+    surfaceTension: inRange(intent.surfaceTension, 0.45, 1),
+    viscosity: inRange(intent.viscosity, 0, 1),
+    gravity: inRange(intent.gravity, 1, 2),
+  };
 }
 
 export interface BubblesIntent {

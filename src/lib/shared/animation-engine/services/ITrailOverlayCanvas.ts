@@ -3,6 +3,7 @@ import type { AdditionalLayerRenderData } from "../domain/types/animation-render
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import type { TipEffectMap } from "../domain/types/tip-effect-types";
 import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+import type { MotionSubSample } from "./motion-sub-sampler";
 
 export interface TrailOverlayRenderParams {
   leftTrailPoints: TrailPoint[];
@@ -72,6 +73,12 @@ export interface TrailOverlayRenderParams {
   leftPropSwapSuppressed?: boolean;
   /** Right-hand counterpart of leftPropSwapSuppressed. */
   rightPropSwapSuppressed?: boolean;
+  /**
+   * Poses the props passed through since the previous frame, oldest first.
+   * Each one is captured before the current frame with the same gates.
+   * Absent or empty at a healthy frame rate and during export.
+   */
+  motionSamples?: readonly MotionSubSample[];
 }
 
 export interface ITrailOverlayCanvas {

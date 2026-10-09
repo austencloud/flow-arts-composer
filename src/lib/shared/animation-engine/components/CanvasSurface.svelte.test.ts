@@ -40,6 +40,7 @@ const mocks = vi.hoisted(() => {
     setMotionVisibility: vi.fn(),
     setVisibilityManager: vi.fn(),
     setInitialQualityTier: vi.fn(),
+    setTrailOverlayEnabled: vi.fn(),
     invalidateFireFrameCacheOnly: vi.fn(),
     clearFireThermalFields: vi.fn(),
     invalidateFireCache: vi.fn(),
@@ -139,6 +140,33 @@ describe("CanvasSurface initialization", () => {
 
     expect(mocks.register).not.toHaveBeenCalled();
     expect(engine.dispose).toHaveBeenCalledOnce();
+  });
+});
+
+describe("CanvasSurface trail overlay option", () => {
+  // The engine reads this once, before it initializes, so the hop from the
+  // surface's prop to the engine is the whole feature. Without it the WebGL2
+  // trail overlay (about 250 ms of main-thread time at mount) is built anyway.
+  it("tells its engine to skip the GPU trail layer when trailOverlay is false", async () => {
+    const screen = render(CanvasSurface, {
+      props: { leftProp: null, rightProp: null, trailOverlay: false },
+    });
+    await vi.waitFor(() => expect(mocks.engines).toHaveLength(1));
+
+    expect(
+      mocks.engines[0]!.setTrailOverlayEnabled
+    ).toHaveBeenCalledExactlyOnceWith(false);
+    screen.unmount();
+  });
+
+  it("leaves the GPU trail layer on by default", async () => {
+    const screen = render(CanvasSurface, {
+      props: { leftProp: null, rightProp: null },
+    });
+    await vi.waitFor(() => expect(mocks.engines).toHaveLength(1));
+
+    expect(mocks.engines[0]!.setTrailOverlayEnabled).not.toHaveBeenCalled();
+    screen.unmount();
   });
 });
 

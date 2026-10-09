@@ -213,6 +213,17 @@ export async function alignTake(takeFile, musicFile) {
  * when the media is shared.
  */
 export function mediaPathFromUrl(url, root) {
+  const parts = featureMediaUrlParts(url);
+  if (!parts) throw new Error(`${url} is not a feature video media URL.`);
+  return path.join(root, parts.slug, "media", ...parts.path.split("/"));
+}
+
+/**
+ * The feature video a media URL names and the decoded path inside its media
+ * folder, or null for any other URL, or one with a part that could leave
+ * that folder.
+ */
+export function featureMediaUrlParts(url) {
   const match = /^\/api\/dev\/feature-videos\/([^/?#]+)\/media\/([^?#]+)$/.exec(
     String(url)
   );
@@ -231,7 +242,7 @@ export function mediaPathFromUrl(url, root) {
       (part) => !part || part === "." || part === ".." || /[\\/:]/.test(part)
     )
   )
-    throw new Error(`${url} is not a feature video media URL.`);
+    return null;
   const [slug, ...rest] = parts;
-  return path.join(root, slug, "media", ...rest);
+  return { slug, path: rest.join("/") };
 }

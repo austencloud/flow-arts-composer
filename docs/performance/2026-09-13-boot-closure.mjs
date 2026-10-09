@@ -8,13 +8,12 @@
  *   node docs/performance/2026-09-13-boot-closure.mjs --json out.json
  *
  * "Closure" here is the transitive set of chunks reachable through STATIC
- * imports from a route's SvelteKit nodes — the set the document modulepreloads
- * and the router must evaluate before it can render. Dynamic imports are
- * deliberately excluded: they are the escape hatch, and counting them would
- * hide whether the escape hatch works.
+ * imports from a route's SvelteKit nodes. This is a graph boundary, not a
+ * measurement of code loaded or evaluated before paint: the landing page can
+ * defer modulepreloads. Dynamic imports are deliberately excluded.
  *
- * Raw bytes are what the browser parses and evaluates; gzip is what it
- * transfers. They are different costs and must not be added together.
+ * Raw bytes are emitted file sizes; gzip is a level-9 estimate per file.
+ * Neither measures browser evaluation or deployed transfer bytes.
  *
  * NODE INDICES CHANGE. `.svelte-kit/generated/client-optimized/nodes/N.js` is
  * regenerated on every build, so re-derive them before trusting a comparison:

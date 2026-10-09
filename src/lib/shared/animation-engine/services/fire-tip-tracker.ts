@@ -18,6 +18,7 @@ import {
   calculatePropCenter,
   type PropEndpointConfig,
 } from "./prop-position-calculator";
+import type { MotionSubSample } from "./motion-sub-sampler";
 
 export interface FireTipTrackerConfig {
   canvasSize: number;
@@ -149,7 +150,8 @@ export class FireTipTracker {
     leftProp: PropState | null,
     rightProp: PropState | null,
     config: FireTipTrackerConfig,
-    currentTime: number
+    currentTime: number,
+    motionSamples?: readonly MotionSubSample[]
   ): FireTipUpdateResult {
     // Let canvas size and prop positions settle before tracking.
     // Without this, the first frame can compute tip positions at a
@@ -190,7 +192,8 @@ export class FireTipTracker {
         0, // prevTipOffset
         currentTime,
         totalTips,
-        config.renderedTransforms?.left
+        config.renderedTransforms?.left,
+        motionSamples
       );
     } else {
       // Invalidate blue prop stored tips
@@ -208,7 +211,8 @@ export class FireTipTracker {
         MAX_TOTAL_TIPS / 2, // prevTipOffset (red starts at slot 8)
         currentTime,
         totalTips,
-        config.renderedTransforms?.right
+        config.renderedTransforms?.right,
+        motionSamples
       );
     } else {
       // Invalidate red prop stored tips
@@ -246,7 +250,9 @@ export class FireTipTracker {
             currentTime,
             layerOutputIndex,
             cap,
-            layer.opacity ?? 1
+            layer.opacity ?? 1,
+            motionSamples,
+            li
           );
         }
         if (layer.rightProp) {
@@ -261,7 +267,9 @@ export class FireTipTracker {
             currentTime,
             layerOutputIndex,
             cap,
-            layer.opacity ?? 1
+            layer.opacity ?? 1,
+            motionSamples,
+            li
           );
         }
       }
@@ -295,12 +303,14 @@ export class FireTipTracker {
     prevTipOffset: number,
     currentTime: number,
     outputStartIndex: number,
-    renderedTransform?: RenderedPropTransform | null
+    renderedTransform?: RenderedPropTransform | null,
+    samples?: readonly MotionSubSample[]
   ): number {
     const tipConfig = getTipPoints(propType);
     const tipPoints = tipConfig.points;
 
     if (tipPoints.length === 0) return outputStartIndex;
+    const hand = propIndex === 0 ? "left" : "right";
 
     let centerX: number;
     let centerY: number;
@@ -342,15 +352,30 @@ export class FireTipTracker {
       const worldX = centerX + (dx * cosA - tp.dy * sinA) * gridScaleFactor;
       const worldY = centerY + (dx * sinA + tp.dy * cosA) * gridScaleFactor;
 
+      const prev = this.prevTips[prevSlot]!;
+      const path = this.computeTipPath(
+        prev,
+        samples,
+        hand,
+        -1,
+        canvasSize,
+        propDimensions,
+        tp,
+        mirror,
+        prop,
+        renderedTransform ? worldX : null,
+        renderedTransform ? worldY : null
+      );
       this.emitTip(
-        this.prevTips[prevSlot]!,
+        prev,
         worldX,
         worldY,
         propIndex,
         i,
         1.0,
         currentTime,
-        outputIndex
+        outputIndex,
+        path
       );
       outputIndex++;
     }
@@ -383,11 +408,14 @@ export class FireTipTracker {
     currentTime: number,
     outputStartIndex: number,
     cap: number,
-    opacity: number
+    opacity: number,
+    samples?: readonly MotionSubSample[],
+    layerIndex = -1
   ): number {
     const tipConfig = getTipPoints(propType);
     const tipPoints = tipConfig.points;
     if (tipPoints.length === 0) return outputStartIndex;
+    const hand = propIndex % 2 === 0 ? "left" : "right";
 
     const endpointConfig: PropEndpointConfig = { canvasSize, propDimensions };
     const center = calculatePropCenter(prop, endpointConfig);
@@ -411,6 +439,19 @@ export class FireTipTracker {
         this.layerPrevTips.set(key, prev);
       }
 
+      const path = this.computeTipPath(
+        prev,
+        samples,
+        hand,
+        layerIndex,
+        canvasSize,
+        propDimensions,
+        tp,
+        mirror,
+        prop,
+        null,
+        null
+      );
       this.emitTip(
         prev,
         worldX,
@@ -419,12 +460,70 @@ export class FireTipTracker {
         i,
         Math.max(0, Math.min(1, opacity)),
         currentTime,
-        outputIndex
+        outputIndex,
+        path
       );
       outputIndex++;
     }
 
     return outputIndex;
+  }
+
+  /**
+   * The tip's positions at the sub-frame instants, oldest first, with the
+   * fallback position math. When the drawn tip came from a rendered transform,
+   * every point is shifted by (rendered tip - fallback tip at the current
+   * step) so the path stays continuous with the drawn position. Undefined when
+   * there is no previous position to connect from or no samples. Allocates
+   * only on resampled frames; the zero-alloc hot path is unchanged otherwise.
+   */
+  private computeTipPath(
+    prev: StoredTip,
+    samples: readonly MotionSubSample[] | undefined,
+    hand: "left" | "right",
+    layerIndex: number,
+    canvasSize: number,
+    propDimensions: { width: number; height: number },
+    tp: TipPoint,
+    mirror: number,
+    currentProp: PropState,
+    renderedX: number | null,
+    renderedY: number | null
+  ): readonly { x: number; y: number }[] | undefined {
+    if (!prev.valid || !samples || samples.length === 0) return undefined;
+    const endpointConfig: PropEndpointConfig = { canvasSize, propDimensions };
+    const gridScaleFactor = canvasSize / VIEWBOX_SIZE;
+    const dx = tp.dx * mirror;
+    const tipAt = (p: PropState): { x: number; y: number } => {
+      const center = calculatePropCenter(p, endpointConfig);
+      const cosA = Math.cos(p.staffRotationAngle);
+      const sinA = Math.sin(p.staffRotationAngle);
+      return {
+        x: center.x + (dx * cosA - tp.dy * sinA) * gridScaleFactor,
+        y: center.y + (dx * sinA + tp.dy * cosA) * gridScaleFactor,
+      };
+    };
+    let offsetX = 0;
+    let offsetY = 0;
+    if (renderedX !== null && renderedY !== null) {
+      const fallback = tipAt(currentProp);
+      offsetX = renderedX - fallback.x;
+      offsetY = renderedY - fallback.y;
+    }
+    let path: { x: number; y: number }[] | undefined;
+    for (const s of samples) {
+      let pose: PropState | null;
+      if (layerIndex < 0) {
+        pose = hand === "left" ? s.left : s.right;
+      } else {
+        const layer = s.layers[layerIndex];
+        pose = layer ? (hand === "left" ? layer.left : layer.right) : null;
+      }
+      if (!pose) continue;
+      const p = tipAt(pose);
+      (path ??= []).push({ x: p.x + offsetX, y: p.y + offsetY });
+    }
+    return path;
   }
 
   private emitTip(
@@ -435,7 +534,8 @@ export class FireTipTracker {
     tipIndex: number,
     flameScale: number,
     currentTime: number,
-    outputIndex: number
+    outputIndex: number,
+    path: readonly { x: number; y: number }[] | undefined
   ): void {
     let velocityX = 0;
     let velocityY = 0;
@@ -494,6 +594,7 @@ export class FireTipTracker {
       existing.tipIndex = tipIndex;
       existing.flameScale = flameScale;
       existing.jerk = jerk;
+      existing.path = path;
     } else {
       this.outputTips.push({
         x,
@@ -509,6 +610,7 @@ export class FireTipTracker {
         tipIndex,
         flameScale,
         jerk,
+        path,
       });
     }
   }

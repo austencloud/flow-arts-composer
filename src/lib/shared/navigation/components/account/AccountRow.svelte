@@ -5,6 +5,8 @@
   import { authState } from "../../../auth/state/auth-state.svelte";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import RobustAvatar from "../../../components/avatar/RobustAvatar.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { growFade } from "$lib/shared/transitions/motion";
   import { authDrawerState } from "../../../auth/state/auth-drawer-state.svelte";
   import { tryGetAccountSetupContext } from "$lib/shared/onboarding/context/account-setup-context";
 
@@ -57,64 +59,68 @@
 </script>
 
 {#if variant === "drawer"}
-  {#if isFullAccount && onclick}
-    <button
-      class="account-row drawer interactive"
-      onclick={handleClick}
-      aria-label={t("nav_ui_edit_profile")}
-    >
-      <RobustAvatar src={photoURL} name={displayName} customSize={32} />
-      <span class="account-copy">
-        <span class="account-label">{displayName}</span>
-        {#if showSetupStatus && accountSetupState}
-          <span class="setup-status">
-            {t("nav_setup_remaining", {
-              count:
-                accountSetupState.totalCount - accountSetupState.completedCount,
-            })}
-          </span>
-        {/if}
-      </span>
-      <i class="fas fa-chevron-right drawer-chevron" aria-hidden="true"></i>
-    </button>
-  {:else if isFullAccount}
-    <div class="account-row drawer">
-      <RobustAvatar src={photoURL} name={displayName} customSize={32} />
-      <span class="account-copy">
-        <span class="account-label">{displayName}</span>
-        {#if showSetupStatus && accountSetupState}
-          <span class="setup-status">
-            {t("nav_setup_remaining", {
-              count:
-                accountSetupState.totalCount - accountSetupState.completedCount,
-            })}
-          </span>
-        {/if}
-      </span>
-    </div>
-  {:else}
-    <button
-      class="account-row drawer interactive"
-      onclick={() => {
-        try {
-          (getHapticFeedback() as HapticFeedback)?.trigger("selection");
-        } catch {}
-        // A provided callback keeps auth in the containing drawer. Other
-        // callers close it before opening the shared auth drawer.
-        if (onSignIn) onSignIn();
-        else {
-          onclick?.();
-          authDrawerState.show("signin");
-        }
-      }}
-      aria-label={t("nav_ui_sign_in")}
-    >
-      <div class="avatar-guest drawer-size">
-        <i class="fas fa-user-plus" aria-hidden="true"></i>
+  <Crossfade key={`${isFullAccount}:${Boolean(onclick)}`} animateHeight>
+    {#if isFullAccount && onclick}
+      <button
+        class="account-row drawer interactive"
+        onclick={handleClick}
+        aria-label={t("nav_ui_edit_profile")}
+      >
+        <RobustAvatar src={photoURL} name={displayName} customSize={32} />
+        <span class="account-copy">
+          <span class="account-label">{displayName}</span>
+          {#if showSetupStatus && accountSetupState}
+            <span class="setup-status" transition:growFade>
+              {t("nav_setup_remaining", {
+                count:
+                  accountSetupState.totalCount -
+                  accountSetupState.completedCount,
+              })}
+            </span>
+          {/if}
+        </span>
+        <i class="fas fa-chevron-right drawer-chevron" aria-hidden="true"></i>
+      </button>
+    {:else if isFullAccount}
+      <div class="account-row drawer">
+        <RobustAvatar src={photoURL} name={displayName} customSize={32} />
+        <span class="account-copy">
+          <span class="account-label">{displayName}</span>
+          {#if showSetupStatus && accountSetupState}
+            <span class="setup-status" transition:growFade>
+              {t("nav_setup_remaining", {
+                count:
+                  accountSetupState.totalCount -
+                  accountSetupState.completedCount,
+              })}
+            </span>
+          {/if}
+        </span>
       </div>
-      <span class="account-label sign-up-label">{t("nav_ui_sign_in")}</span>
-    </button>
-  {/if}
+    {:else}
+      <button
+        class="account-row drawer interactive"
+        onclick={() => {
+          try {
+            (getHapticFeedback() as HapticFeedback)?.trigger("selection");
+          } catch {}
+          // A provided callback keeps auth in the containing drawer. Other
+          // callers close it before opening the shared auth drawer.
+          if (onSignIn) onSignIn();
+          else {
+            onclick?.();
+            authDrawerState.show("signin");
+          }
+        }}
+        aria-label={t("nav_ui_sign_in")}
+      >
+        <div class="avatar-guest drawer-size">
+          <i class="fas fa-user-plus" aria-hidden="true"></i>
+        </div>
+        <span class="account-label sign-up-label">{t("nav_ui_sign_in")}</span>
+      </button>
+    {/if}
+  </Crossfade>
 {:else}
   <button
     class="account-row"
@@ -315,6 +321,7 @@
 
   .drawer .account-label {
     flex: none;
+    animation: none;
   }
 
   .account-copy {

@@ -1,6 +1,9 @@
 <script lang="ts">
   import type { PostItem, PostItemKind } from "@austencloud/video-editor/core";
-  import { formatPostClock } from "../../builder/post-builder-format";
+  import {
+    formatPostClock,
+    formatPostSpeed,
+  } from "../../builder/post-builder-format";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   /**
@@ -64,7 +67,9 @@
   };
 
   const speedLabel = $derived(
-    item.kind === "video" && item.speed !== 1 ? `${item.speed}×` : null
+    item.kind === "video" && item.speed !== 1
+      ? formatPostSpeed(item.speed)
+      : null
   );
   const isMuted = $derived(item.kind === "video" && item.volume === 0);
 

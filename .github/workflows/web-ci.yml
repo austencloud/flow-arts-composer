@@ -127,6 +127,11 @@ jobs:
       - name: Verify public pages start without Firebase
         run: pnpm run verify:public-firebase
 
+      # Source imports can stay lazy while Rollup merges a Three-dependent
+      # module into a startup chunk. Check the emitted graph as well.
+      - name: Verify heavy feature chunks stay out of startup
+        run: pnpm run verify:boot-chunks
+
       # A red run on main is also a PRODUCTION OUTAGE, and that half is silent.
       # Deploy Pages (gated) fires on workflow_run and exits `skipped` when the
       # conclusion isn't success — no failure, no notification, just an absent

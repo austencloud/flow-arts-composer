@@ -155,7 +155,12 @@ icons when enabled. Click opens the expanded overlay.
 
   // Icon size tracks the card. A literal 16px reads as punctuation on a native
   // 4K card, and overwhelms the label on a phone.
-  let cardHeight = $state(0);
+  // Read from the resize observer rather than `bind:clientHeight`, which also
+  // reads the height synchronously as the card mounts and forces a layout of
+  // the whole half-built Generate panel. The observer reports before the first
+  // paint, and the button has no border, so its border box is its client box.
+  let cardBox = $state<readonly ResizeObserverSize[]>();
+  const cardHeight = $derived(Math.round(cardBox?.[0]?.blockSize ?? 0));
   const iconSize = $derived(
     Math.min(24, Math.max(12, Math.round(cardHeight * 0.15)))
   );
@@ -206,10 +211,13 @@ icons when enabled. Click opens the expanded overlay.
   class:enabled={loopEnabled}
   style="--card-index: {cardIndex};"
 >
+  {#if loopEnabled}
+    <span class="loop-shimmer" aria-hidden="true"></span>
+  {/if}
   <button
     class="loop-consolidated-card"
     class:enabled={loopEnabled}
-    bind:clientHeight={cardHeight}
+    bind:borderBoxSize={cardBox}
     onclick={handleClick}
     onkeydown={handleKeydown}
     aria-label={t("create_deep_loop_card_aria", {
@@ -268,8 +276,37 @@ icons when enabled. Click opens the expanded overlay.
     transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* On state: accent gradient with shimmer */
+  /* On state: accent gradient with shimmer, drawn by .loop-shimmer. The
+     transparent border keeps the on-state box size. */
   .loop-card-wrapper.enabled {
+    background: none;
+    box-shadow:
+      0 2px 4px var(--theme-shadow),
+      0 4px 12px color-mix(in srgb, var(--theme-accent) 20%, transparent);
+    border: 1px solid transparent;
+  }
+
+  /* The shimmer slides an oversized gradient by transform, which the
+     compositor runs. Animating background-position repainted the card every
+     frame, even while the screen sat idle. The layer covers the border box
+     and clips to the card's corners. */
+  .loop-shimmer {
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* 200% of the card in both axes, like the old background-size; a translate
+     of -50% equals background-position 100%, and -25% equals 50%. */
+  .loop-shimmer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
     background: linear-gradient(
       135deg,
       color-mix(
@@ -287,24 +324,28 @@ icons when enabled. Click opens the expanded overlay.
         )
         100%
     );
-    background-size: 200% 200%;
     animation: accentShimmer 6s ease-in-out infinite;
-    box-shadow:
-      0 2px 4px var(--theme-shadow),
-      0 4px 12px color-mix(in srgb, var(--theme-accent) 20%, transparent),
-      inset 0 1px 0 var(--theme-stroke-strong);
+  }
+
+  /* The border sits over the moving gradient, as it sat over the old
+     animated background. */
+  .loop-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
     border: 1px solid color-mix(in srgb, var(--theme-accent) 40%, transparent);
+    border-radius: inherit;
   }
 
   @keyframes accentShimmer {
     0% {
-      background-position: 0% 50%;
+      transform: translate(0, -25%);
     }
     50% {
-      background-position: 100% 50%;
+      transform: translate(-50%, -25%);
     }
     100% {
-      background-position: 0% 50%;
+      transform: translate(0, -25%);
     }
   }
 
@@ -376,8 +417,7 @@ icons when enabled. Click opens the expanded overlay.
       box-shadow:
         0 2px 4px var(--theme-shadow),
         0 6px 16px color-mix(in srgb, var(--theme-accent) 30%, transparent),
-        0 12px 24px color-mix(in srgb, var(--theme-accent) 15%, transparent),
-        inset 0 1px 0 var(--theme-stroke-strong);
+        0 12px 24px color-mix(in srgb, var(--theme-accent) 15%, transparent);
     }
   }
 
@@ -500,8 +540,11 @@ icons when enabled. Click opens the expanded overlay.
 
   @media (prefers-reduced-motion: reduce) {
     .loop-card-wrapper {
-      animation: none;
       transition: none;
+    }
+
+    .loop-shimmer::before {
+      animation: none;
     }
   }
 </style>

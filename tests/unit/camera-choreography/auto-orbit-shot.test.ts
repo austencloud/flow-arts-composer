@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import demo from "$lib/shared/landing/data/demo-sequence.json";
 import {
   computeAutoOrbitShot,
   computeChoreographerShot,
   computePlaneShot,
   computeGroupBounds,
+  computeRevealStartShot,
   type PerformerShotSubject,
 } from "../../../src/lib/shared/sequence-viewer/camera-choreography/presets/shots";
 
@@ -12,6 +15,57 @@ function fakePerformer(x: number, z: number): PerformerShotSubject {
 }
 
 describe("camera-choreography shot helpers", () => {
+  const joinedSequence = {
+    ...(demo as unknown as SequenceData),
+    conjoined: { toward: "e", steps: 2 },
+  } as SequenceData;
+
+  it("keeps the original unjoined solo radius", () => {
+    expect(computeGroupBounds([fakePerformer(0, 0)]).radius).toBe(1.2);
+  });
+
+  it("fits joined hand grids and prop reach in each shared shot", () => {
+    const solo = fakePerformer(0, 0);
+    const joined = { ...solo, loadedSequence: joinedSequence };
+    const standardRadius = computeGroupBounds([solo]).radius;
+    const joinedRadius = computeGroupBounds([joined]).radius;
+    expect(joinedRadius).toBeGreaterThan(standardRadius + 0.5);
+
+    const standardShots = [
+      computePlaneShot("wall", [solo]),
+      computeAutoOrbitShot([solo], 0),
+      computeChoreographerShot([solo], 0),
+      computeRevealStartShot([solo], 0),
+    ];
+    const joinedShots = [
+      computePlaneShot("wall", [joined]),
+      computeAutoOrbitShot([joined], 0),
+      computeChoreographerShot([joined], 0),
+      computeRevealStartShot([joined], 0),
+    ];
+    for (let index = 0; index < standardShots.length; index++) {
+      expect(
+        joinedShots[index].eye.distanceTo(joinedShots[index].target)
+      ).toBeGreaterThan(
+        standardShots[index].eye.distanceTo(standardShots[index].target)
+      );
+    }
+  });
+
+  it("includes the actual staff half length in joined bounds", () => {
+    const joined = { ...fakePerformer(0, 0), loadedSequence: joinedSequence };
+    const standard = computeGroupBounds([{ ...joined, staffHalfLength: 0.43 }]);
+    const longStaff = computeGroupBounds([{ ...joined, staffHalfLength: 2 }]);
+    expect(longStaff.radius - standard.radius).toBeGreaterThan(1);
+  });
+
+  it("uses the widest joined performer, even when it is off center", () => {
+    const bounds = computeGroupBounds([
+      fakePerformer(-2, 0),
+      { ...fakePerformer(2, 0), loadedSequence: joinedSequence },
+    ]);
+    expect(bounds.radius).toBeGreaterThan(3.7);
+  });
   it("computes group bounds centered on the mean XZ position", () => {
     const bounds = computeGroupBounds([
       fakePerformer(1, 0),

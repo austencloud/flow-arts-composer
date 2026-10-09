@@ -23,6 +23,8 @@
   } from "../firebase";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { growFade } from "$lib/shared/transitions/motion";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { recordAuthSubmission } from "$lib/shared/auth/services/auth-analytics-bridge";
   import { recordLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
@@ -60,7 +62,7 @@
   let codeError = $state<string | null>(null);
   let codeCompleted = $state(false);
   let installedApp = $state(false);
-  let emailInput: HTMLInputElement;
+  let emailInput = $state<HTMLInputElement>();
   let codeInput = $state<HTMLInputElement>();
 
   // The code box is the only thing left to do once a code is on its way.
@@ -83,8 +85,8 @@
     }
 
     if (!sendOnOpen) return;
-    if (emailInput.checkValidity()) void sendEmailLink();
-    else emailInput.focus();
+    if (emailInput?.checkValidity()) void sendEmailLink();
+    else emailInput?.focus();
   });
 
   // Inside an in-app webview this form is not just one option among several —
@@ -261,7 +263,7 @@
     codeError = null;
     codeCompleted = false;
     clearPendingEmailCode();
-    requestAnimationFrame(() => emailInput.focus());
+    requestAnimationFrame(() => emailInput?.focus());
   }
 
   function updateSignInCode(event: Event) {
@@ -334,103 +336,134 @@
   class="email-link-form"
   class:compact
 >
-  {#if error}
-    <div
-      id="magic-link-status"
-      class="delivery-card delivery-card--error"
-      role="alert"
-    >
-      <span class="delivery-icon" aria-hidden="true">
-        <i class="fas fa-triangle-exclamation"></i>
-      </span>
-      <span class="delivery-copy">
-        <strong>{t("auth_email_not_sent")}</strong>
-        <span>{error}</span>
-      </span>
-    </div>
-  {:else if !compact || loading || success}
+  {#if error || !compact || loading || success}
     <div
       id="magic-link-status"
       class="delivery-card"
+      class:delivery-card--error={!!error}
       class:delivery-card--sending={loading}
       class:delivery-card--success={!!success}
-      role="status"
+      role={error ? "alert" : "status"}
       aria-live="polite"
       aria-atomic="true"
+      transition:growFade
     >
-      <span
+      <div
         class="delivery-icon"
         class:delivery-icon--sending={loading}
         aria-hidden="true"
       >
-        {#if loading}
-          <i class="fas fa-paper-plane"></i>
-        {:else if success}
-          <i class="fas fa-check"></i>
-        {:else}
-          <i class="fas fa-envelope"></i>
-        {/if}
-      </span>
-      <span class="delivery-copy">
-        {#if loading}
-          <strong>{t("auth_sending_code")}</strong>
-          <span>{t("auth_sending_email_to", { email: submittedEmail })}</span>
-        {:else if success}
-          {#if codeCompleted}
-            <strong>{t("auth_signed_in")}</strong>
-            <span>{t("auth_close_and_continue")}</span>
-          {:else if compact}
-            <strong>{t("auth_check_email")}</strong>
-            <span
-              >{t("auth_enter_code_sent_to", { email: submittedEmail })}</span
-            >
-          {:else}
-            <strong>{t("auth_check_email")}</strong>
-            {#if staysInThisApp}
+        <Crossfade
+          key={error
+            ? "error"
+            : loading
+              ? "loading"
+              : success
+                ? "success"
+                : "idle"}
+        >
+          {#if error}<i class="fas fa-triangle-exclamation"></i>
+          {:else if loading}<i class="fas fa-paper-plane"></i>
+          {:else if success}<i class="fas fa-check"></i>
+          {:else}<i class="fas fa-envelope"></i>{/if}
+        </Crossfade>
+      </div>
+      <div class="delivery-copy">
+        <Crossfade
+          key={error
+            ? `error:${error}`
+            : loading
+              ? `loading:${submittedEmail}`
+              : success
+                ? codeCompleted
+                  ? "complete"
+                  : staysInThisApp
+                    ? `sent-here:${submittedEmail}`
+                    : compact
+                      ? `sent-compact:${submittedEmail}`
+                      : `sent-elsewhere:${submittedEmail}`
+                : `idle:${hint}`}
+          animateHeight
+        >
+          {#if error}
+            <strong>{t("auth_email_not_sent")}</strong>
+            <span>{error}</span>
+          {:else if loading}
+            <strong>{t("auth_sending_code")}</strong>
+            <span>{t("auth_sending_email_to", { email: submittedEmail })}</span>
+          {:else if success}
+            {#if codeCompleted}
+              <strong>{t("auth_signed_in")}</strong>
+              <span>{t("auth_close_and_continue")}</span>
+            {:else if compact}
+              <strong>{t("auth_check_email")}</strong>
               <span
-                >{t("auth_code_sent_return", { email: submittedEmail })}</span
+                >{t("auth_enter_code_sent_to", { email: submittedEmail })}</span
               >
             {:else}
-              <span
-                >{t("auth_code_sent_button", { email: submittedEmail })}</span
-              >
+              <strong>{t("auth_check_email")}</strong>
+              {#if staysInThisApp}
+                <span
+                  >{t("auth_code_sent_return", { email: submittedEmail })}</span
+                >
+              {:else}
+                <span
+                  >{t("auth_code_sent_button", { email: submittedEmail })}</span
+                >
+              {/if}
             {/if}
+          {:else}
+            <strong>{t("auth_sign_in_email_code")}</strong>
+            <span>{hint}</span>
           {/if}
-        {:else}
-          <strong>{t("auth_sign_in_email_code")}</strong>
-          <span>{hint}</span>
-        {/if}
-      </span>
+        </Crossfade>
+      </div>
     </div>
   {/if}
 
   {#if pendingGuestDrafts && !compact}
-    <p class="drift-warning" role="status">
+    <p class="drift-warning" role="status" transition:growFade>
       {t("auth_work_stays_in_app")}
     </p>
   {/if}
 
-  <div class="form-group" class:email-sent={compact && !!success}>
-    <label for="email-link">{t("form_email")}</label>
-    <input
-      id="email-link"
-      type="email"
-      autocomplete="email"
-      bind:this={emailInput}
-      bind:value={email}
-      placeholder={compact
-        ? t("auth_email_address")
-        : t("form_placeholder_email")}
-      required
-      disabled={loading || !!success}
-      aria-describedby={!compact || loading || success || error
-        ? "magic-link-status"
-        : undefined}
-    />
-  </div>
+  {#if !compact || !success}
+    <div
+      class="form-group"
+      transition:growFade
+      onoutrostart={(event) =>
+        ((event.currentTarget as HTMLElement).inert = true)}
+      onintrostart={(event) =>
+        ((event.currentTarget as HTMLElement).inert = false)}
+    >
+      <label for="email-link">{t("form_email")}</label>
+      <input
+        id="email-link"
+        type="email"
+        autocomplete="email"
+        bind:this={emailInput}
+        bind:value={email}
+        placeholder={compact
+          ? t("auth_email_address")
+          : t("form_placeholder_email")}
+        required
+        disabled={loading || !!success}
+        aria-describedby={!compact || loading || success || error
+          ? "magic-link-status"
+          : undefined}
+      />
+    </div>
+  {/if}
 
   {#if success && acceptedRequestId}
-    <div class="code-entry">
+    <div
+      class="code-entry"
+      transition:growFade
+      onoutrostart={(event) =>
+        ((event.currentTarget as HTMLElement).inert = true)}
+      onintrostart={(event) =>
+        ((event.currentTarget as HTMLElement).inert = false)}
+    >
       <label for="email-sign-in-code">{t("auth_six_digit_code")}</label>
       <div class="code-row">
         <input
@@ -456,13 +489,20 @@
           disabled={codeLoading || signInCode.length !== 6}
           aria-busy={codeLoading}
         >
-          {codeLoading ? t("auth_logging_in") : t("auth_sign_in")}
+          <Crossfade key={codeLoading}>
+            {codeLoading ? t("auth_logging_in") : t("auth_sign_in")}
+          </Crossfade>
         </button>
       </div>
       {#if codeError}
-        <p id="email-sign-in-code-error" class="code-error" role="alert">
-          {codeError}
-        </p>
+        <div
+          id="email-sign-in-code-error"
+          class="code-error"
+          role="alert"
+          transition:growFade
+        >
+          <Crossfade key={codeError}>{codeError}</Crossfade>
+        </div>
       {/if}
     </div>
   {/if}
@@ -478,24 +518,37 @@
         ? "magic-link-status"
         : undefined}
     >
-      {#if loading}
-        <ProgressRing percent={-1} size={24} strokeWidth={2} />
-        {t("auth_sending")}
-      {:else}
-        {#if !compact}
-          <i class="fas fa-envelope" aria-hidden="true"></i>
+      <Crossfade
+        key={loading
+          ? "loading"
+          : success
+            ? "resend"
+            : compact
+              ? "compact"
+              : "full"}
+      >
+        {#if loading}
+          <ProgressRing percent={-1} size={24} strokeWidth={2} />
+          {t("auth_sending")}
+        {:else}
+          {#if !compact}<i class="fas fa-envelope" aria-hidden="true"></i>{/if}
+          {success
+            ? t("auth_send_another_code")
+            : compact
+              ? t("auth_send_code")
+              : t("auth_send_magic_link")}
         {/if}
-        {success
-          ? t("auth_send_another_code")
-          : compact
-            ? t("auth_send_code")
-            : t("auth_send_magic_link")}
-      {/if}
+      </Crossfade>
     </button>
     {#if success}
       <button
         type="button"
         class="different-email-button"
+        transition:growFade
+        onoutrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = true)}
+        onintrostart={(event) =>
+          ((event.currentTarget as HTMLElement).inert = false)}
         onclick={useDifferentEmail}
       >
         {t("auth_use_different_email")}
@@ -512,8 +565,7 @@
     background: transparent;
   }
 
-  .compact .delivery-icon,
-  .compact .email-sent {
+  .compact .delivery-icon {
     display: none;
   }
 
@@ -577,8 +629,11 @@
   .email-link-form {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
     width: 100%;
+  }
+
+  .email-link-form > :not(:last-child) {
+    margin-block-end: 0.75rem;
   }
 
   .delivery-card {
@@ -592,6 +647,9 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--radius-md, 0.75rem);
+    transition:
+      background-color var(--duration-normal, 200ms) ease,
+      border-color var(--duration-normal, 200ms) ease;
   }
 
   .delivery-card--sending {
@@ -645,6 +703,9 @@
       var(--theme-accent, #7c6af7) 18%,
       transparent
     );
+    transition:
+      color var(--duration-normal, 200ms) ease,
+      background-color var(--duration-normal, 200ms) ease;
   }
 
   .delivery-card--success .delivery-icon {
@@ -678,6 +739,12 @@
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.45;
     overflow-wrap: anywhere;
+  }
+
+  .delivery-copy :global(.crossfade > .layer) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   .delivery-copy strong {
@@ -857,12 +924,16 @@
 
   .form-actions {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.625rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
+    column-gap: 0;
+    transition:
+      grid-template-columns var(--duration-normal, 200ms) ease,
+      column-gap var(--duration-normal, 200ms) ease;
   }
 
   .form-actions--split {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.625rem;
   }
 
   .submit-button {
@@ -888,7 +959,13 @@
     font-weight: 600;
     font-size: var(--font-size-min, 0.875rem);
     cursor: pointer;
-    transition: all var(--duration-normal) ease;
+    transition:
+      background-color var(--duration-normal, 200ms) ease,
+      border-color var(--duration-normal, 200ms) ease,
+      color var(--duration-normal, 200ms) ease,
+      box-shadow var(--duration-normal, 200ms) ease,
+      transform var(--duration-normal, 200ms) ease,
+      opacity var(--duration-normal, 200ms) ease;
     min-height: var(--min-touch-target);
     box-shadow: 0 4px 6px
       color-mix(
@@ -896,6 +973,13 @@
         var(--theme-accent-strong, var(--theme-accent, #7c6af7)) 20%,
         transparent
       );
+  }
+
+  .submit-button :global(.crossfade > .layer) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
   }
 
   .submit-button:hover:not(:disabled) {
@@ -986,7 +1070,10 @@
       animation: none;
     }
 
+    .delivery-card,
+    .delivery-icon,
     input,
+    .form-actions,
     .submit-button,
     .different-email-button {
       transition: none;

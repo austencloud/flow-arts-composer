@@ -47,6 +47,8 @@
     rightBuugengFlipped,
     onCanvasReady,
     onActivePerformerStepsChange,
+    decorative = false,
+    trailOverlay = true,
   }: {
     sequence: SequenceData;
     playback?: ViewerPlaybackState;
@@ -84,6 +86,18 @@
     onActivePerformerStepsChange?: (
       stepIndices: Readonly<Record<string, number>>
     ) => void;
+    /**
+     * Decorative previews: no tap, hover badge, corner toggle, or tunnel menu
+     * items. The canvas menu still offers Save to library, so the host must
+     * make the preview inert.
+     */
+    decorative?: boolean;
+    /**
+     * False never creates the canvas's GPU trail layer, which costs a few
+     * hundred milliseconds of main-thread time at mount. Only for hosts whose
+     * trails stay off for the tunnel's whole life (a decorative preview).
+     */
+    trailOverlay?: boolean;
   } = $props();
 
   let readyFrame = 0;
@@ -183,23 +197,25 @@
     reducedMotion ? speed * REDUCED_MOTION_DAMP : speed
   );
 
-  onMount(() => {
+  // The self-clock runs only while playing, so a paused tunnel (a gallery
+  // preview, or a Create method preview between turns) keeps no frame loop.
+  // Each tick reads the speed and loop length without tracking them, so only
+  // playing and the step count restart the loop.
+  $effect(() => {
+    if (!playing || stepCount === 0) return;
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
-      const dt = (now - last) / 1000;
+      const dt = Math.max(0, now - last) / 1000;
       last = now;
-      if (stepCount > 0 && playing) {
-        currentStep = ((currentStep - 1 + dt * effSpeed) % loopSteps) + 1;
-      }
+      currentStep = ((currentStep - 1 + dt * effSpeed) % loopSteps) + 1;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(raf);
-      cancelAnimationFrame(readyFrame);
-    };
+    return () => cancelAnimationFrame(raf);
   });
+
+  onMount(() => () => cancelAnimationFrame(readyFrame));
 
   // Unbounded-within-loop playhead (1-indexed) for the kaleidoscope sampling —
   // the controller wraps it per-arm so drift works.
@@ -270,9 +286,12 @@
         sequenceData={seq}
         currentStep={displayStep}
         isPlaying={playing}
-        tapToToggle={true}
-        hoverHint="badge"
-        cornerToggle={true}
+        tapToToggle={!decorative}
+        hoverHint={decorative ? "none" : "badge"}
+        cornerToggle={!decorative}
+        ghostAnnotations={!decorative}
+        {trailOverlay}
+        disableContextMenu={decorative}
         onPlaybackToggle={handlePlaybackToggle}
         gridMode={effectiveGridMode}
         {trailSettings}
@@ -288,7 +307,7 @@
         hidePathLines={true}
         fillContainer={true}
         fireConfig={{ disableFrameCache: true }}
-        extraContextMenuItems={saveMenuItems}
+        extraContextMenuItems={decorative ? [] : saveMenuItems}
       />
     {/if}
   </div>

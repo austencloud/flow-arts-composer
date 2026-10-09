@@ -16,7 +16,9 @@
   import { getProductLoader } from "$lib/features/store/get-product-loader";
   import { createStoreState } from "./state/store-state.svelte";
   import { setStoreContext } from "./context/store-context";
-  import ShopProductShell from "./components/shell/ShopProductShell.svelte";
+  import ShopProductShell, {
+    type ShopAssurance,
+  } from "./components/shell/ShopProductShell.svelte";
   import ShopPurchaseCta from "./components/shell/ShopPurchaseCta.svelte";
   import { deriveCrossSell } from "./domain/catalog-listings";
   import { resolvePurchaseState, SALES_LIVE } from "./domain/purchase-state";
@@ -370,9 +372,10 @@
   );
   // The SKU the buy cluster acts on, and whether it can take money at all.
   const buySku = $derived(customSku ?? flavorSkus[0] ?? null);
-  const purchasable = $derived(
-    buySku !== null && resolvePurchaseState(buySku, SALES_LIVE) !== "notify"
+  const purchaseState = $derived(
+    buySku === null ? "notify" : resolvePurchaseState(buySku, SALES_LIVE)
   );
+  const purchasable = $derived(purchaseState !== "notify");
 
   // Exclude the listing this page IS, not the one it came from. Naming the
   // LOOP deck's href here sold the Architect back to the reader on its own
@@ -381,8 +384,14 @@
     deriveCrossSell(store.products, { currentListing: "loop-deck-architect" })
   );
 
-  const ASSURANCES = [
-    { icon: "fas fa-calendar-check", text: "Preorder now. Decks ship October 1." },
+  // The ship-date line is the preorder promise. It reads from the same
+  // resolver as the buy button, so a page that can only take an email never
+  // claims a ship date beside its "Preorders open soon" box.
+  const PREORDER_ASSURANCE: ShopAssurance = {
+    icon: "fas fa-calendar-check",
+    text: "Preorder now. Decks ship October 1.",
+  };
+  const STANDING_ASSURANCES: readonly ShopAssurance[] = [
     {
       icon: "fas fa-wand-magic-sparkles",
       text: "Every card generated to your recipe, one of one",
@@ -392,6 +401,11 @@
       text: "Printed and cut by hand in Chicago, small batches",
     },
   ];
+  const assurances = $derived(
+    purchaseState === "preorder"
+      ? [PREORDER_ASSURANCE, ...STANDING_ASSURANCES]
+      : STANDING_ASSURANCES
+  );
 
   const NOTIFY_TEXT =
     "Preorders open soon. Leave an email and you'll hear the moment they do.";
@@ -434,7 +448,7 @@
   price={flavorSkus.length > 0 ? price : undefined}
   checkoutError={store.checkoutError}
   {crossSell}
-  assurances={ASSURANCES}
+  {assurances}
   loading={store.isLoading && flavorSkus.length === 0}
   loadingLabel="Loading the machine..."
   error={store.error ??

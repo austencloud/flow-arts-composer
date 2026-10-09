@@ -434,6 +434,16 @@ restrained whole-surface tint, and full perimeter border carry its tab color.
 The tiles do not use list-row chevrons, blur, decorative edge strips, or
 invented workflow graphics.
 
+Each tile also holds a live preview drawn with its method's own renderers and
+data: Construct's pictographs and demo taps, Generate's diagonal wave, the
+Shape Matrix's mandala reveal, Fuse's one-hand paths, the real tunnel, and
+Assemble's grid and hops. They show each method's real output, so they are not
+invented workflow graphics. The previews take turns in board order for two
+rounds, then rest on finished pictures. Only the playing preview animates, and
+reduced motion leaves every preview on its finished picture. The icon sits
+beside the method name in the method color, and every tile keeps its
+description: a preview never explains a method alone.
+
 On desktop, the chooser uses a deliberately generous front-door scale because
 it presents one focused decision rather than dense workspace chrome. The
 authored band grows fluidly toward 1440px while its title, icons, descriptions,

@@ -17,9 +17,6 @@ import { PropType } from "../../prop/domain/enums/prop-type";
 import {
   HandSide,
   MotionType,
-  HandPath,
-  RotationDirection,
-  Orientation,
 } from "../domain/enums/pictograph-enums";
 import { getPictographGeometryRevision } from "$lib/shared/render/services/pictograph-key-hasher";
 import {
@@ -30,9 +27,11 @@ import {
 import { resolvePropRenderKey } from "../../prop/domain/prop-look";
 import type { GridJoin } from "@tka/tka-types";
 import {
+  drawsHandPaths,
   getGridJoinLayout,
   gridJoinKey,
   gridJoinPropNudges,
+  handPathMotionOverrides,
   isGridJoin,
 } from "@tka/render-core";
 import { getBetaOffsetSize } from "$lib/shared/render/core/constants/prop-classification";
@@ -321,8 +320,7 @@ export class PictographPreparer {
     };
     const useHandPath =
       options?.handPathMode ||
-      (settings.leftPropType === PropType.HAND &&
-        settings.rightPropType === PropType.HAND);
+      drawsHandPaths(settings.leftPropType, settings.rightPropType);
     const effectivePictograph = useHandPath
       ? this.transformForHandPath(pictograph)
       : pictograph;
@@ -372,7 +370,7 @@ export class PictographPreparer {
       options?.themeMode ?? "dark",
       (options?.useGridVersion ?? false) ? "grid" : "thumbnail",
       options?.handPathMode ||
-      (effectiveLeft === PropType.HAND && effectiveRight === PropType.HAND)
+      drawsHandPaths(effectiveLeft, effectiveRight)
         ? "hp"
         : "",
       options?.showLeftMotion === false ? "hideBlue" : "",
@@ -579,65 +577,18 @@ export class PictographPreparer {
     if (!motions) return pictograph;
 
     const transform = (motion: MotionData): MotionData => {
-      const isShift =
-        motion.motionType === MotionType.PRO ||
-        motion.motionType === MotionType.ANTI;
-      const isDash = motion.motionType === MotionType.DASH;
-      const isStatic = motion.motionType === MotionType.STATIC;
-
-      if (isShift) {
-        const handPath = this.deriveHandPath(
-          motion.startLocation,
-          motion.endLocation
-        );
-        const handpathRotDir =
-          handPath === HandPath.CLOCKWISE
-            ? RotationDirection.CLOCKWISE
-            : handPath === HandPath.COUNTER_CLOCKWISE
-              ? RotationDirection.COUNTER_CLOCKWISE
-              : RotationDirection.NO_ROTATION;
-
-        // Orientations stay radial (IN) rather than blanked: hands have no
-        // orientation of their own, but the placement pipeline keys off them —
-        // undefined orientations killed layer detection (default keys degraded
-        // to a bare "float" miss → 0,0) and with it the per-color special
-        // placements that separate same-path float arrows (G/H "(fl, fl)").
-        // IN matches what the static branch keeps and what hand start
-        // positions carry, so prop rendering is unchanged.
-        return {
-          ...motion,
-          motionType: MotionType.FLOAT,
-          turns: "fl" as const,
-          handPath,
-          rotationDirection: handpathRotDir,
-          startOrientation: Orientation.IN,
-          endOrientation: Orientation.IN,
-          propType: PropType.HAND,
-        };
-      }
-
-      if (isDash) {
-        return {
-          ...motion,
-          turns: 0,
-          rotationDirection: RotationDirection.NO_ROTATION,
-          propType: PropType.HAND,
-        };
-      }
-
-      if (isStatic) {
-        return {
-          ...motion,
-          propType: PropType.HAND,
-          arrowPlacementData:
-            undefined as unknown as typeof motion.arrowPlacementData,
-        };
-      }
-
-      return {
+      const transformed = {
         ...motion,
-        propType: PropType.HAND,
-      };
+        ...handPathMotionOverrides(motion),
+      } as MotionData;
+      // A static hand draws its arrow from the hand point, not a stored nudge.
+      return motion.motionType === MotionType.STATIC
+        ? {
+            ...transformed,
+            arrowPlacementData:
+              undefined as unknown as typeof motion.arrowPlacementData,
+          }
+        : transformed;
     };
 
     return {
@@ -647,80 +598,6 @@ export class PictographPreparer {
         right: motions.right ? transform(motions.right) : undefined,
       } as PictographData["motions"],
     };
-  }
-
-  private deriveHandPath(
-    startLocation: string,
-    endLocation: string
-  ): HandPath | null {
-    const CW_PAIRS: [string, string][] = [
-      ["s", "w"],
-      ["w", "n"],
-      ["n", "e"],
-      ["e", "s"],
-      ["ne", "se"],
-      ["se", "sw"],
-      ["sw", "nw"],
-      ["nw", "ne"],
-    ];
-    const CCW_PAIRS: [string, string][] = [
-      ["w", "s"],
-      ["n", "w"],
-      ["e", "n"],
-      ["s", "e"],
-      ["ne", "nw"],
-      ["nw", "sw"],
-      ["sw", "se"],
-      ["se", "ne"],
-    ];
-    const DASH_PAIRS: [string, string][] = [
-      ["s", "n"],
-      ["w", "e"],
-      ["n", "s"],
-      ["e", "w"],
-      ["ne", "sw"],
-      ["se", "nw"],
-      ["sw", "ne"],
-      ["nw", "se"],
-    ];
-
-    const s = startLocation.toLowerCase();
-    const e = endLocation.toLowerCase();
-
-    if (s === e) return HandPath.STATIC;
-    if (CW_PAIRS.some(([a, b]) => a === s && b === e))
-      return HandPath.CLOCKWISE;
-    if (CCW_PAIRS.some(([a, b]) => a === s && b === e))
-      return HandPath.COUNTER_CLOCKWISE;
-    if (DASH_PAIRS.some(([a, b]) => a === s && b === e)) return HandPath.DASH;
-
-    // Skewed / cross-grid pairs (e.g. N→SE, W→NE, cardinal→intercardinal).
-    // Determine CW vs CCW by comparing the shorter arc on the position circle.
-    // Order: N=0, NE=1, E=2, SE=3, S=4, SW=5, W=6, NW=7 (CW around the grid)
-    const POSITION_ORDER: Record<string, number> = {
-      n: 0,
-      ne: 1,
-      e: 2,
-      se: 3,
-      s: 4,
-      sw: 5,
-      w: 6,
-      nw: 7,
-    };
-    const startIdx = POSITION_ORDER[s];
-    const endIdx = POSITION_ORDER[e];
-    if (startIdx !== undefined && endIdx !== undefined) {
-      // CW delta: how many steps CW from start to end
-      const cwDelta = (((endIdx - startIdx) % 8) + 8) % 8;
-      // If CW path is shorter (1-3 steps), it's CW; if longer (5-7), it's CCW;
-      // 4 steps = opposite = DASH (already handled above for same-grid)
-      if (cwDelta > 0 && cwDelta < 4) return HandPath.CLOCKWISE;
-      if (cwDelta > 4) return HandPath.COUNTER_CLOCKWISE;
-      // cwDelta === 4 means opposite (DASH)
-      return HandPath.DASH;
-    }
-
-    return null;
   }
 
   clearCache(): void {

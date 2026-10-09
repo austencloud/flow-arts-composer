@@ -18,7 +18,11 @@ import {
 	PURPLE_FILL,
 } from "../domain/mandala-constants";
 import { DEFAULT_OVERLAP_CONFIG } from "../domain/mandala-types";
-import type { MandalaPaths, MandalaRenderOptions } from "../domain/mandala-types";
+import type {
+	MandalaHandVisibility,
+	MandalaPaths,
+	MandalaRenderOptions,
+} from "../domain/mandala-types";
 import { compositeMandalaOverlap } from "./mandala-overlap-compositor";
 import {
 	mandalaJoinReach,
@@ -242,6 +246,43 @@ export function resolveMandalaRenderExtent(
 	);
 }
 
+/**
+ * Traced extent by geometry and visible hands. Measuring parses every path
+ * string, a draw asks twice (the fit and the glow size), and a still mandala
+ * redraws the same geometry each frame, so each geometry is measured once.
+ * Geometry objects are never changed after they are built.
+ */
+const TRACED_EXTENT_CACHE = new WeakMap<
+	MandalaPaths,
+	Partial<Record<MandalaHandVisibility, number>>
+>();
+
+function tracedPathExtent(
+	paths: MandalaPaths,
+	show: MandalaHandVisibility
+): number {
+	let byShow = TRACED_EXTENT_CACHE.get(paths);
+	const cached = byShow?.[show];
+	if (cached !== undefined) return cached;
+
+	const visiblePaths =
+		show === "left"
+			? paths.left
+			: show === "right"
+				? paths.right
+				: [...paths.left, ...paths.right];
+	const extent = visiblePaths.reduce(
+		(max, path) => Math.max(max, pathCoordinateExtent(path.d)),
+		0
+	);
+	if (!byShow) {
+		byShow = {};
+		TRACED_EXTENT_CACHE.set(paths, byShow);
+	}
+	byShow[show] = extent;
+	return extent;
+}
+
 function resolveFigureExtent(
 	paths: MandalaPaths,
 	options: Pick<MandalaRenderOptions, "show" | "tipDx">
@@ -253,16 +294,7 @@ function resolveFigureExtent(
 	const standardExtent =
 		MANDALA_GRID_RADIUS +
 		(effectiveTipDx * MANDALA_GRID_RADIUS) / ENGINE_GRID_RADIUS;
-	const visiblePaths =
-		options.show === "left"
-			? paths.left
-			: options.show === "right"
-				? paths.right
-				: [...paths.left, ...paths.right];
-	const tracedExtent = visiblePaths.reduce(
-		(max, path) => Math.max(max, pathCoordinateExtent(path.d)),
-		0
-	);
+	const tracedExtent = tracedPathExtent(paths, options.show);
 
 	// The existing 5% breathing room already contains ordinary prop geometry.
 	// Keep that exact scale until the path would cross the padded boundary.

@@ -24,6 +24,10 @@
 	} from "../domain/mandala-types";
 	import { DEFAULT_OVERLAP_CONFIG } from "../domain/mandala-types";
 	import {
+		createMandalaCanvasSizeTracker,
+		unrotatedSquareSide,
+	} from "$lib/shared/mandala/services/mandala-canvas-size";
+	import {
 		MANDALA_DEFAULT_SIZE,
 		MANDALA_STANDARD_TIP_DX,
 		DARK_MOTION_BLUE_STROKE,
@@ -45,7 +49,7 @@
 	} from "../services/mandala-geometry-calculator";
 	import { getMandalaPathOptions } from "../services/mandala-path-options";
 	import { resolveMandalaTipOffsets } from "../services/mandala-path-preparer";
-	import { interpolateMandalaPaths, mandalaPathsEqual } from "../services/mandala-path-interpolator";
+	import { createMandalaMorph, mandalaPathsEqual } from "../services/mandala-path-interpolator";
 	import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 	import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
 	import { DURATION } from "$lib/shared/transitions/transitions";
@@ -456,13 +460,14 @@
 		if (changeMorphRafId) cancelAnimationFrame(changeMorphRafId);
 		changeMorphPaths = from;
 		changeMorphActive = true;
+		const morphAt = createMandalaMorph(from, target);
 
 		let start: number | null = null;
 		const stepChangeMorph = (timestamp: number) => {
 			if (start === null) start = timestamp;
 			const linearProgress = Math.min(1, (timestamp - start) / CHANGE_MORPH_MS);
 			const progress = EASING_FNS.bloom(linearProgress);
-			changeMorphPaths = interpolateMandalaPaths(from, target, progress);
+			changeMorphPaths = morphAt(progress);
 			draw();
 
 			if (linearProgress < 1) {
@@ -507,6 +512,39 @@
 		return renderMandalaSVG(paths, renderOptions);
 	});
 
+	// On-screen CSS size of the canvas, measured on demand rather than every
+	// frame; see mandala-canvas-size.ts.
+	const canvasSize = createMandalaCanvasSizeTracker();
+
+	function resolveLogicalSize(canvas: HTMLCanvasElement): number {
+		// getBoundingClientRect reflects any CSS transform/zoom on an ancestor
+		// (e.g. a scaled device frame), so the backing matches what is actually on
+		// screen there. The container's own spin is taken back out.
+		return canvasSize.resolve(
+			() => unrotatedSquareSide(canvas.getBoundingClientRect().width, rotationDeg),
+			size,
+		);
+	}
+
+	// A layout resize (pane drag, phone rotation) re-measures exactly. A canvas
+	// no loop is painting redraws here so it is not left stretched.
+	// The first notification counts too: a card's layout can settle after the
+	// mount draw measured it, and skipping it left card mandalas drawn at that
+	// stale size (soft, pale lines in the live card vs its PNG).
+	$effect(() => {
+		const canvas = canvasEl;
+		if (!canvas || typeof ResizeObserver === "undefined") return;
+		const observer = new ResizeObserver(() => {
+			canvasSize.invalidate();
+			if (!rafId && !morphRafId && !changeMorphRafId) draw();
+		});
+		observer.observe(canvas);
+		return () => {
+			observer.disconnect();
+			canvasSize.invalidate();
+		};
+	});
+
 	// Paint the canvas ONCE for the current state. Called exactly once per frame
 	// from the single animation rAF (and once from the morph rAF when not
 	// otherwise animating), so the canvas redraws at the display refresh rate,
@@ -530,10 +568,7 @@
 		// MAX_BACKING caps the pixel count so the per-frame raster (glow is the
 		// expensive part) stays within the 60fps budget on the largest panes.
 		const dpr = typeof window !== "undefined" ? Math.min(3, Math.max(1, window.devicePixelRatio || 1)) : 1;
-		// True rendered size in CSS px — getBoundingClientRect reflects any CSS
-		// transform/zoom on an ancestor (e.g. a scaled device frame), so the backing
-		// matches what's actually on screen even there. Falls back to the prop.
-		const logicalSize = Math.max(1, Math.round(canvas.getBoundingClientRect().width) || size);
+		const logicalSize = resolveLogicalSize(canvas);
 		const device = Math.min(MAX_BACKING, Math.max(1, Math.round(logicalSize * dpr * SUPERSAMPLE)));
 		// Logical→device scale (folds in dpr + supersample + any CSS stretch).
 		const ratio = device / logicalSize;

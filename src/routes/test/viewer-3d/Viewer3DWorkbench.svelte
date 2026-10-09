@@ -22,6 +22,7 @@
   import demoSequenceJson from "$lib/shared/landing/data/demo-sequence.json";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { EMBER_VIEWER_FRONT_STAGE_FACING_ANGLE } from "$lib/shared/3d/domain/viewer-formation-facing";
+  import { parseGridJoinToken } from "$lib/shared/foundation/domain/models/grid-join-token";
 
   const WORKBENCH_SCENES = new Set<string>([
     BackgroundType.FOREST,
@@ -96,7 +97,16 @@
     ];
   }
 
-  const sequence = demoSequenceJson as unknown as SequenceData;
+  const requestedJoin =
+    typeof window !== "undefined"
+      ? parseGridJoinToken(
+          new URLSearchParams(window.location.search).get("join") ?? ""
+        )
+      : undefined;
+  const sequence = {
+    ...demoSequenceJson,
+    ...(requestedJoin ? { conjoined: requestedJoin } : {}),
+  } as unknown as SequenceData;
   const viewer = createViewer3DState({
     renderMode: "3d",
     backgroundType: requestedScene(),
@@ -105,7 +115,7 @@
     selectedPerformerIndex: 0,
     activeFormation: "line",
     defaultProp: PropType.STAFF,
-    visiblePlanes: [],
+    visiblePlanes: requestedJoin && !workerReview ? [Plane.WALL] : [],
     effectToggles: {},
     sceneFeatures: workerReview
       ? Object.fromEntries(
@@ -120,7 +130,7 @@
         },
   });
   viewer.enter3D(sequence);
-  viewer.hideAllPlanes();
+  if (!requestedJoin || workerReview) viewer.hideAllPlanes();
   if (
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("perf") === "1"

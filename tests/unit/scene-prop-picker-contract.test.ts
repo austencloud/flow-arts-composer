@@ -46,7 +46,9 @@ const HOSTS: Record<string, string> = {
   "performer inspector": path.join(
     "src/lib/shared/3d/components/controls/PerformerHubDetail.svelte"
   ),
-  "staff grip lab": path.join("src/routes/test/staff-grip/LabControls.svelte"),
+  "staff grip lab": path.join(
+    "src/routes/test/staff-grip/LabPerformerSection.svelte"
+  ),
 };
 
 /**

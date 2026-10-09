@@ -6,6 +6,7 @@
     DEFAULT_DIFFICULTY_STYLE,
   } from "$lib/shared/config/difficulty-styles";
   import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
+  import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     level: number;
@@ -14,7 +15,12 @@
     class?: string;
   }
 
-  let { level, size = "28px", fontSize, class: extraClass = "" }: Props = $props();
+  let {
+    level,
+    size = "28px",
+    fontSize,
+    class: extraClass = "",
+  }: Props = $props();
 
   const style = $derived(DIFFICULTY_LEVELS[level] ?? DEFAULT_DIFFICULTY_STYLE);
   const computedFontSize = $derived(fontSize ?? `calc(${size} * 0.6)`);
@@ -28,6 +34,9 @@
 
 <span
   class="difficulty-badge {extraClass}"
+  role="img"
+  aria-label={t("create_difficulty_level", { level })}
+  title={t("create_difficulty_level", { level })}
   style="
     width: {size};
     height: {size};

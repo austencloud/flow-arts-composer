@@ -6,8 +6,9 @@
   import { getLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
   import EmailAuthTabs from "./EmailAuthTabs.svelte";
   import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import SocialAuthCompact from "./SocialAuthCompact.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import { growFade, popIn } from "$lib/shared/transitions/motion";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { authPromptCopy } from "../domain/auth-prompt-copy";
   import { tick, untrack } from "svelte";
@@ -105,7 +106,7 @@
   {#if !embedded}
     <header class="prompt-header">
       {#if !compact}
-        <div class="brand-lockup">
+        <div class="brand-lockup" transition:growFade>
           <span class="brand-mark">
             <img src="/branding/logo.jpg" alt="" width="56" height="56" />
           </span>
@@ -119,6 +120,7 @@
           type="button"
           onclick={onClose}
           aria-label={t("common_close")}
+          transition:popIn
         >
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
@@ -130,99 +132,143 @@
     {#if compact}
       <div class="fac-signature">
         <img src="/branding/logo.jpg" alt="" width="28" height="28" />
-        {#if encoreOffer}<span>{t("auth_one_time_extension")}</span>{/if}
+        {#if encoreOffer}<span transition:growFade={{ axis: "x" }}
+            >{t("auth_one_time_extension")}</span
+          >{/if}
       </div>
     {/if}
-    <h2 id={titleId}>{authPromptCopy(content.title)}</h2>
-    <p id={descriptionId}>{authPromptCopy(content.body)}</p>
+    <div id={titleId} class="prompt-heading" role="heading" aria-level="2">
+      <Crossfade key={content.title}>
+        {authPromptCopy(content.title)}
+      </Crossfade>
+    </div>
+    <div id={descriptionId} class="prompt-description">
+      <Crossfade key={content.body} animateHeight>
+        {authPromptCopy(content.body)}
+      </Crossfade>
+    </div>
   </div>
 
   <div class="auth-methods">
-    {#if compact && encoreOffer}
-      <button class="encore-button" type="button" onclick={onAcceptEncore}>
-        {t("auth_keep_going")}
-        <i class="fas fa-arrow-right" aria-hidden="true"></i>
-      </button>
-    {:else if compact}
-      <EmailAuthTabs bind:mode compact showMethods={showOtherProviders} />
-      <button
-        class="more-methods"
-        type="button"
-        aria-expanded={showOtherProviders}
-        onclick={() => (showOtherProviders = !showOtherProviders)}
-      >
-        {showOtherProviders
-          ? t("auth_fewer_options")
-          : t("auth_more_sign_in_options")}
-      </button>
-      {#if showOtherProviders}
-        <div transition:growFade>
-          <SocialAuthCompact {mode} {onFacebookAuth} />
+    <Crossfade
+      key={encoreOffer
+        ? "encore"
+        : compact
+          ? "compact"
+          : inAppBrowser
+            ? "browser"
+            : showEmailAuth
+              ? "email"
+              : "providers"}
+      animateHeight
+    >
+      {#if compact && encoreOffer}
+        <button class="encore-button" type="button" onclick={onAcceptEncore}>
+          {t("auth_keep_going")}
+          <i class="fas fa-arrow-right" aria-hidden="true"></i>
+        </button>
+      {:else if compact}
+        <EmailAuthTabs bind:mode compact showMethods={showOtherProviders} />
+        <button
+          class="more-methods"
+          type="button"
+          aria-expanded={showOtherProviders}
+          onclick={() => (showOtherProviders = !showOtherProviders)}
+        >
+          <Crossfade key={showOtherProviders}>
+            {showOtherProviders
+              ? t("auth_fewer_options")
+              : t("auth_more_sign_in_options")}
+          </Crossfade>
+        </button>
+        {#if showOtherProviders}
+          <div
+            transition:growFade
+            onoutrostart={(event) =>
+              ((event.currentTarget as HTMLElement).inert = true)}
+            onintrostart={(event) =>
+              ((event.currentTarget as HTMLElement).inert = false)}
+          >
+            <SocialAuthCompact {mode} {onFacebookAuth} />
+          </div>
+        {/if}
+      {:else if inAppBrowser}
+        <div class="email-flow">
+          <div class="email-divider">
+            <span>{t("auth_continue_by_email")}</span>
+          </div>
+          <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
+        </div>
+
+        <p class="provider-warning">
+          {t("auth_social_blocked_browser")}
+        </p>
+        <SocialAuthCompact {mode} {onFacebookAuth} />
+      {:else if showEmailAuth}
+        <div class="email-flow" bind:this={emailFlow}>
+          <button
+            class="email-back"
+            type="button"
+            onclick={() => (showEmailAuth = false)}
+          >
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            {t("auth_other_sign_in_options")}
+          </button>
+          <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
+        </div>
+      {:else}
+        <div class="method-grid">
+          <div class="google-method">
+            <SocialAuthCompact {mode} {onFacebookAuth} />
+          </div>
+
+          <div class="email-method-slot">
+            <button
+              class="email-method"
+              type="button"
+              onclick={openEmailAuth}
+              aria-label={lastUsedEmail
+                ? t("auth_continue_email_last_used")
+                : t("auth_continue_email")}
+            >
+              {#if lastUsedEmail}
+                <LastUsedBadge />
+              {/if}
+              <i class="fas fa-envelope" aria-hidden="true"></i>
+              <span>{t("auth_continue_email")}</span>
+            </button>
+          </div>
         </div>
       {/if}
-    {:else if inAppBrowser}
-      <div class="email-flow">
-        <div class="email-divider">
-          <span>{t("auth_continue_by_email")}</span>
-        </div>
-        <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
-      </div>
-
-      <p class="provider-warning">
-        {t("auth_social_blocked_browser")}
-      </p>
-      <SocialAuthCompact {mode} {onFacebookAuth} />
-    {:else if showEmailAuth}
-      <div class="email-flow" bind:this={emailFlow}>
-        <button
-          class="email-back"
-          type="button"
-          onclick={() => (showEmailAuth = false)}
-        >
-          <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          {t("auth_other_sign_in_options")}
-        </button>
-        <EmailAuthTabs bind:mode {compact} showModeSwitch={false} />
-      </div>
-    {:else}
-      <div class="method-grid">
-        <div class="google-method">
-          <SocialAuthCompact {mode} {onFacebookAuth} />
-        </div>
-
-        <div class="email-method-slot">
-          <button
-            class="email-method"
-            type="button"
-            onclick={openEmailAuth}
-            aria-label={lastUsedEmail
-              ? t("auth_continue_email_last_used")
-              : t("auth_continue_email")}
-          >
-            {#if lastUsedEmail}
-              <LastUsedBadge />
-            {/if}
-            <i class="fas fa-envelope" aria-hidden="true"></i>
-            <span>{t("auth_continue_email")}</span>
-          </button>
-        </div>
-      </div>
-    {/if}
+    </Crossfade>
 
     {#if facebookError}
-      <p class="provider-error" role="alert">{facebookError}</p>
+      <p class="provider-error" role="alert" transition:growFade>
+        {facebookError}
+      </p>
     {/if}
   </div>
 
   {#if !encoreOffer && (!compact || showOtherProviders)}
-    <button class="mode-toggle" type="button" onclick={toggleMode}>
-      {#if mode === "signup"}
-        <span>{t("auth_already_have_account")}</span>
-        <strong>{t("auth_sign_in")}</strong>
-      {:else}
-        <span>{t("auth_new_here")}</span>
-        <strong>{t("auth_create_account")}</strong>
-      {/if}
+    <button
+      class="mode-toggle"
+      type="button"
+      onclick={toggleMode}
+      transition:growFade
+      onoutrostart={(event) =>
+        ((event.currentTarget as HTMLElement).inert = true)}
+      onintrostart={(event) =>
+        ((event.currentTarget as HTMLElement).inert = false)}
+    >
+      <Crossfade key={mode}>
+        {#if mode === "signup"}
+          <span>{t("auth_already_have_account")}</span>
+          <strong>{t("auth_sign_in")}</strong>
+        {:else}
+          <span>{t("auth_new_here")}</span>
+          <strong>{t("auth_create_account")}</strong>
+        {/if}
+      </Crossfade>
     </button>
   {/if}
 </section>
@@ -243,11 +289,11 @@
     padding-block: 0 1.25rem;
   }
 
-  .embedded h2 {
+  .embedded .prompt-heading {
     font-size: clamp(1.5rem, 1.3rem + 1cqw, 2rem);
   }
 
-  .embedded .prompt-copy p {
+  .embedded .prompt-description {
     min-height: 0;
   }
 
@@ -359,7 +405,7 @@
     padding-block: clamp(1.75rem, 4cqw, 3.5rem) clamp(1.25rem, 2.6cqw, 2.25rem);
   }
 
-  h2 {
+  .prompt-heading {
     margin: 0;
     color: var(--theme-text, #f8fafc);
     font-size: clamp(1.75rem, 1.25rem + 2.1cqw, 3rem);
@@ -369,7 +415,7 @@
     text-wrap: balance;
   }
 
-  .prompt-copy p {
+  .prompt-description {
     max-width: 43rem;
     min-height: 2.96em;
     margin: clamp(0.65rem, 1.2cqw, 1rem) 0 0;
@@ -530,6 +576,14 @@
       border-color var(--duration-fast, 150ms) ease;
   }
 
+  .mode-toggle :global(.crossfade > .layer) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
   .mode-toggle:hover {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.18));
@@ -596,11 +650,11 @@
       padding-block: 0.8rem;
     }
 
-    h2 {
+    .prompt-heading {
       font-size: 1.55rem;
     }
 
-    .prompt-copy p {
+    .prompt-description {
       min-height: 0;
       margin-top: 0.4rem;
       font-size: 0.875rem;
@@ -697,7 +751,7 @@
     padding: 0 0 1.5rem;
   }
 
-  .compact h2 {
+  .compact .prompt-heading {
     padding-right: 1.75rem;
     font-size: 1.5rem;
     font-weight: 600;
@@ -706,7 +760,7 @@
     text-wrap: pretty;
   }
 
-  .compact .prompt-copy p {
+  .compact .prompt-description {
     min-height: 0;
     margin-top: 0.625rem;
     font-size: 0.9375rem;

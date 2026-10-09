@@ -1,8 +1,23 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatPostSpeed,
   formatTakeClock,
   parseClock,
 } from "$lib/shared/share/components/post-studio/builder/post-builder-format";
+
+describe("formatPostSpeed", () => {
+  it("rounds a clip speed to two decimals", () => {
+    // The timeline badge once printed this one as 0.9774999970674999×.
+    expect(formatPostSpeed(0.9774999970674999)).toBe("0.98×");
+    expect(formatPostSpeed(2.1781)).toBe("2.18×");
+  });
+
+  it("drops trailing zeros", () => {
+    expect(formatPostSpeed(1.5)).toBe("1.5×");
+    expect(formatPostSpeed(2)).toBe("2×");
+    expect(formatPostSpeed(0.25)).toBe("0.25×");
+  });
+});
 
 describe("parseClock", () => {
   it("reads a clock or plain seconds", () => {

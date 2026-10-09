@@ -1,9 +1,15 @@
 <!--
-  The Reference video card: add up to three camera videos of a real
+  The Reference video section: add up to three camera videos of a real
   performance, see how each one synced, and nudge or re-aim it.
 -->
 <script lang="ts">
+  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
   import ScrubbableNumber from "$lib/shared/ui/components/ScrubbableNumber.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+
+  import LabSection from "../LabSection.svelte";
 
   import { REFERENCE_CAMERA_PRESETS } from "./reference-cameras";
   import {
@@ -35,6 +41,29 @@
     }[session.status]
   );
 
+  /** Short labels for the angle grid; the full name stays the accessible one. */
+  const SHORT_CAMERA_LABEL: Record<string, string> = {
+    front: "Front",
+    "quarter-left": "¾ left",
+    left: "Left",
+    "quarter-right": "¾ right",
+    right: "Right",
+    back: "Back",
+    overhead: "Above",
+  };
+
+  const CAMERA_OPTIONS = REFERENCE_CAMERA_PRESETS.map((preset) => ({
+    value: preset.id,
+    label: SHORT_CAMERA_LABEL[preset.id] ?? preset.label,
+    ariaLabel: preset.label,
+  }));
+
+  const summaryText = $derived(
+    session.videos.length === 0
+      ? "None yet"
+      : `${session.videos.length} of ${MAX_REFERENCE_VIDEOS}${session.status === "ready" ? " · timed" : ""}`
+  );
+
   function syncText(video: ReferenceVideo): string {
     if (video.key === session.timedVideoKey) return "Timed in Post Studio";
     if (video.clapState === "finding") return "Listening for the clap…";
@@ -43,23 +72,27 @@
   }
 </script>
 
-<section class="card" aria-label="Reference video">
-  <h2 class="card-title">Reference video</h2>
+<LabSection
+  id="lab-reference"
+  title="Reference video"
+  icon="fa-film"
+  summary={summaryText}
+>
   <p class="note">{statusText}</p>
   {#if session.status === "no-post" || session.status === "no-timing" || session.status === "stale"}
-    <div class="row">
-      <a
-        class="link"
+    <div class="actions">
+      <LinkChip
         href={`/post?project=${encodeURIComponent(sequenceId)}`}
         target="_blank"
-        rel="noopener">Open Post Studio</a
+        rel="noopener">Open Post Studio</LinkChip
       >
-      <button
-        type="button"
-        class="link"
+      <FilterChipBase
+        mode="action"
+        icon="fa-rotate"
+        label="Check again"
+        size="sm"
         onclick={() => void session.findTimedTake(sequenceId)}
-        >Check again</button
-      >
+      />
     </div>
   {/if}
 
@@ -67,29 +100,28 @@
     <div class="video-row">
       <div class="row">
         <span class="name" title={video.name}>{video.name}</span>
-        <button
-          type="button"
-          class="link"
-          aria-label={`Remove ${video.name}`}
-          onclick={() => session.remove(video.key, sequenceId)}>Remove</button
-        >
+        <FilterChipBase
+          mode="action"
+          icon="fa-xmark"
+          label="Remove"
+          size="sm"
+          ariaLabel={`Remove ${video.name}`}
+          onclick={() => session.remove(video.key, sequenceId)}
+        />
       </div>
       <span class="note">{syncText(video)}</span>
-      <label class="field">
+      <div class="field">
         <span class="field-label">Camera</span>
-        <select
+        <SegmentedControl
+          options={CAMERA_OPTIONS}
           value={video.camera.presetId}
-          onchange={(event) =>
-            session.setCamera(video.key, {
-              presetId: event.currentTarget.value,
-              shot: null,
-            })}
-        >
-          {#each REFERENCE_CAMERA_PRESETS as preset (preset.id)}
-            <option value={preset.id}>{preset.label}</option>
-          {/each}
-        </select>
-      </label>
+          density="tight"
+          columns={4}
+          ariaLabel={`Camera angle for ${video.name}`}
+          onchange={(presetId) =>
+            session.setCamera(video.key, { presetId, shot: null })}
+        />
+      </div>
       {#if !(video.key === session.timedVideoKey)}
         <ScrubbableNumber
           label="Offset"
@@ -118,31 +150,16 @@
         event.currentTarget.value = "";
       }}
     />
-    <button type="button" class="add" onclick={() => input?.click()}>
-      {session.videos.length === 0 ? "Add videos" : "Add another video"}
-    </button>
+    <div class="actions">
+      <PanelButton onclick={() => input?.click()}>
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        {session.videos.length === 0 ? "Add videos" : "Add another video"}
+      </PanelButton>
+    </div>
   {/if}
-</section>
+</LabSection>
 
 <style>
-  .card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    min-width: 0;
-    padding: 1rem;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
-    border-radius: 12px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.05));
-  }
-  .card-title {
-    margin: 0;
-    font-size: var(--font-size-compact, 0.75rem);
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.75));
-  }
   .note,
   .field-label {
     margin: 0;
@@ -152,8 +169,9 @@
   .video-row {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
-    padding-top: 0.6rem;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    /* A neutral divider between videos, the theme stroke, not an accent. */
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
   }
   .row {
@@ -161,35 +179,25 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    min-width: 0;
   }
   .name {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: var(--font-size-sm, 0.875rem);
   }
   .field {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.4rem;
   }
-  select,
-  .add {
-    min-height: 44px;
-    border-radius: 8px;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.05));
-    color: inherit;
-    font: inherit;
-    padding: 0 0.75rem;
-  }
-  .link {
-    background: none;
-    border: none;
-    padding: 0.25rem 0;
-    color: var(--theme-accent, #8ab4ff);
-    font: inherit;
-    cursor: pointer;
-    min-height: 44px;
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
   }
   .hidden {
     display: none;

@@ -181,5 +181,22 @@ describe("prop presets", () => {
         presetLabel(fan)
       );
     });
+
+    it("names each prop through the screen's own lookup", () => {
+      const names: Partial<Record<PropType, string>> = {
+        [PropType.STAFF]: "Bastón doble",
+        [PropType.FAN]: "Abanico",
+      };
+      const label = presetLabel(
+        {
+          leftPropType: PropType.STAFF,
+          rightPropType: PropType.FAN,
+          catDogMode: true,
+          propArtwork: "model",
+        },
+        (prop) => names[prop] ?? prop
+      );
+      expect(label).toBe("Bastón doble V2 + Abanico");
+    });
   });
 });

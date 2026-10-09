@@ -3,7 +3,6 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
   import { tick, untrack } from "svelte";
-  import { fade } from "svelte/transition";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
@@ -24,6 +23,7 @@
     calculateStepPosition,
     calculateStepWaveBand,
     getTimelineWidthMultiplier,
+    waveBandAt,
   } from "$lib/shared/create/utils/grid-calculations";
   import { getMandalaPlacements } from "$lib/shared/sequence-viewer/services/get-mandala-placements";
   import {
@@ -44,7 +44,7 @@
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import { BackgroundType } from "@austencloud/backgrounds";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { motionDuration, opaqueFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import {
     createLayoutMotion,
@@ -557,6 +557,15 @@
     return historyTransition?.startPlacementChanged ? motionDuration(180) : 0;
   }
 
+  // Cells under these classes rest below full opacity, so their history fade
+  // has to read where it starts from. Every other cell fades from 1 without
+  // the style read.
+  const DIMMED_CELL_CLASSES = [
+    "hidden-for-sequential",
+    "deleting",
+    "awaiting-reveal",
+  ] as const;
+
   function getStepLayoutElements(): Map<string, HTMLElement> {
     if (!gridSurfaceRef) return new Map();
     return new Map(
@@ -732,7 +741,7 @@
           }))
       : standardMandalaCells.map((cell, slot) => ({
           key: mandalaRevealKey(slot),
-          band: cell.row - 1 + (cell.column - 1),
+          band: waveBandAt(cell.row - 1, cell.column - 1),
         }))
   );
 
@@ -882,8 +891,14 @@
             class:cell-practice={practiceStepNumber === 0}
             data-history-start-placement
             style:--reveal-delay={revealDelayFor(START_TILE_REVEAL_KEY, 0)}
-            in:fade={{ duration: getHistoryStartDuration() }}
-            out:fade={{ duration: getHistoryStartDuration() }}
+            in:opaqueFade={{
+              duration: getHistoryStartDuration(),
+              dimmedBy: DIMMED_CELL_CLASSES,
+            }}
+            out:opaqueFade={{
+              duration: getHistoryStartDuration(),
+              dimmedBy: DIMMED_CELL_CLASSES,
+            }}
           >
             {#if isStartTileAwaiting}
               <div
@@ -976,7 +991,7 @@
               {@const step = steps[stepIndex]!}
               {@const identity = getStepKey(step, stepIndex)}
               <!-- Row plus column, offset past the start tile's band 0. -->
-              {@const waveBand = rowIndex + columnIndex + 1}
+              {@const waveBand = waveBandAt(rowIndex, columnIndex + 1)}
               {@const isDeleting = isStepLeaving(stepIndex)}
               {@const musicalPosition = getDurationDisplay(stepIndex)}
               {@const effectiveDuration = getEffectiveMultiplier(
@@ -1011,8 +1026,14 @@
                 inert={isArrivalDestinationHidden(stepIndex)}
                 style:--duration-multiplier={effectiveDuration}
                 style:--reveal-delay={revealDelayFor(stepIndex, waveBand)}
-                in:fade={{ duration: getHistoryMembershipDuration(identity) }}
-                out:fade={{ duration: getHistoryMembershipDuration(identity) }}
+                in:opaqueFade={{
+                  duration: getHistoryMembershipDuration(identity),
+                  dimmedBy: DIMMED_CELL_CLASSES,
+                }}
+                out:opaqueFade={{
+                  duration: getHistoryMembershipDuration(identity),
+                  dimmedBy: DIMMED_CELL_CLASSES,
+                }}
               >
                 {#if isAwaitingReveal(stepIndex)}
                   <div
@@ -1083,8 +1104,14 @@
           style:grid-row="1"
           style:grid-column="1"
           style:--reveal-delay={revealDelayFor(START_TILE_REVEAL_KEY, 0)}
-          in:fade={{ duration: getHistoryStartDuration() }}
-          out:fade={{ duration: getHistoryStartDuration() }}
+          in:opaqueFade={{
+            duration: getHistoryStartDuration(),
+            dimmedBy: DIMMED_CELL_CLASSES,
+          }}
+          out:opaqueFade={{
+            duration: getHistoryStartDuration(),
+            dimmedBy: DIMMED_CELL_CLASSES,
+          }}
         >
           {#if isStartTileAwaiting}
             <div
@@ -1145,8 +1172,14 @@
           style:grid-row={position.row}
           style:grid-column={position.column}
           style:--reveal-delay={revealDelayFor(index, waveBand)}
-          in:fade={{ duration: getHistoryMembershipDuration(identity) }}
-          out:fade={{ duration: getHistoryMembershipDuration(identity) }}
+          in:opaqueFade={{
+            duration: getHistoryMembershipDuration(identity),
+            dimmedBy: DIMMED_CELL_CLASSES,
+          }}
+          out:opaqueFade={{
+            duration: getHistoryMembershipDuration(identity),
+            dimmedBy: DIMMED_CELL_CLASSES,
+          }}
         >
           {#if isAwaitingReveal(index)}
             <div
@@ -1188,7 +1221,7 @@
       {/each}
 
       {#each standardMandalaCells as cell, slot (cell.key)}
-        {@const waveBand = cell.row - 1 + (cell.column - 1)}
+        {@const waveBand = waveBandAt(cell.row - 1, cell.column - 1)}
         <div
           class="mandala-layout-item"
           class:cascading={isMandalaCascading(slot)}

@@ -198,11 +198,6 @@ function getLetterGHDirection(
 ): VectorDirection | null {
   const loc = endLocation.toLowerCase();
 
-  // Special case: south always returns RIGHT as base
-  if (loc === "s") {
-    const baseDirection: VectorDirection = "right";
-    return hand === "right" ? baseDirection : getOppositeDirection(baseDirection);
-  }
 
   // Determine map based on cardinal vs intercardinal
   const isBox = !isCardinal(loc);

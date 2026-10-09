@@ -1,5 +1,6 @@
 export * from "./create-plugin";
 export * from "./item-kinds";
+export * from "./card-qr";
 export * from "./project-extension";
 export * from "./normalize-hooks";
 export * from "./compile-hooks";

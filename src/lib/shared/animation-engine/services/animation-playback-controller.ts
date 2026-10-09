@@ -723,16 +723,29 @@ export class AnimationPlaybackController {
           // No prepared continuation: retain the established same-sequence
           // looping behavior. Circular sequences skip the repeated start hold;
           // freeform sequences show it again.
-          this.timePosition = this._isSeamlesslyLoopable
-            ? fallbackStartPlacementDuration
-            : 0;
-
           if (this.sequenceData) {
             this.animationEngine.initializeWithDomainData(this.sequenceData);
             this.totalDuration =
               this.animationEngine.getTotalDurationWithStartPlacement() +
               this.endPlacementHoldDuration;
           }
+
+          const wrapStart = this._isSeamlesslyLoopable
+            ? fallbackStartPlacementDuration
+            : 0;
+          // Carry the overrun into the new loop, wrapped by the loop body
+          // rather than clamped below the end. Play time is periodic here, so
+          // a frame that overshoots by more than one body (a long hidden tab)
+          // resumes at the phase play time dictates. Clamping would park one
+          // frame on the final pose and wrap on the next, which is the very
+          // boundary hitch this branch exists to remove. The render loop
+          // already treats any large step jump as a discontinuity, so a
+          // wrapped landing ahead of the previous step needs no special case.
+          const loopBody = this.totalDuration - wrapStart;
+          this.timePosition =
+            loopBody > 0
+              ? wrapStart + (Math.max(0, boundaryOverrun) % loopBody)
+              : wrapStart;
         }
       } else {
         // Stop at end
@@ -837,7 +850,10 @@ export class AnimationPlaybackController {
    * orchestrator's internal calc state only; the export's teardown jumpToStep(snapshot)
    * restores it, and live playback is paused for the duration, so nothing observes it.
    */
-  computePropStatesForStep(step: number): { left: PropState; right: PropState } {
+  computePropStatesForStep(step: number): {
+    left: PropState;
+    right: PropState;
+  } {
     this.animationEngine.calculateState(step);
     return this.animationEngine.getCurrentPropStates();
   }

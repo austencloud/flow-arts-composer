@@ -10,8 +10,19 @@ import {
   measureLoudness,
   suggestMusicGain,
 } from "./feature-video/loudness.mjs";
-import { importTake } from "./feature-video/media-import.mjs";
+import {
+  assertCaptureId,
+  clipChanges,
+  findCaptureTake,
+} from "./feature-video/capture-files.mjs";
+import { importTake, probeMedia } from "./feature-video/media-import.mjs";
 import { importMusic } from "./feature-video/music-import.mjs";
+import { browserOrigin, renderFeature } from "./feature-video/render.mjs";
+import {
+  parseStillTimes,
+  writeContactSheet,
+  writeStills,
+} from "./feature-video/stills.mjs";
 import { parseTimeArg } from "./feature-video/time-args.mjs";
 
 const [command, ...args] = process.argv.slice(2);
@@ -178,6 +189,13 @@ const EDIT_COMMANDS = {
     return { op: "music", ...patch };
   },
   "remove-music": () => ({ op: "remove-music" }),
+  sound: () => ({ op: "sound", sound: positional(0, "takes or silent") }),
+  "add-card": () => ({
+    op: "add-card",
+    ...text("label"),
+    ...(option("qr-url") !== undefined ? { qrUrl: option("qr-url") } : {}),
+    ...number("fade-in", "fadeIn"),
+  }),
   "sync-to-music": () => {
     required("offset");
     return {
@@ -194,6 +212,7 @@ const BOOLEAN_FLAGS = [
   "--json",
   "--append",
   "--share-media",
+  "--open",
 ];
 function flag(name) {
   return args.includes(`--${name}`);
@@ -290,9 +309,11 @@ function summarize(snapshot) {
   snapshot.tracks.forEach((track, trackIndex) => {
     for (const item of track.items)
       rows.push(
-        `track ${trackIndex}  ${item.id}  ${item.kind}${item.tunnelHook ? " (opening tunnel)" : ""}  ${item.start.toFixed(2)}s +${item.duration.toFixed(2)}s${item.label ? `  "${item.label}"` : ""}`
+        `track ${trackIndex}  ${item.id}  ${item.kind}${item.tunnelHook ? " (opening tunnel)" : ""}  ${item.start.toFixed(2)}s +${item.duration.toFixed(2)}s${item.label ? `  "${item.label}"` : ""}${item.qrUrl ? `  QR ${item.qrUrl}` : ""}`
       );
   });
+  // Whether the takes' own sound plays; set it with: sound takes|silent.
+  rows.push(`sound ${snapshot.audio ?? "takes"}`);
   return rows.join("\n");
 }
 
@@ -426,6 +447,77 @@ try {
         },
       ]),
     };
+  } else if (command === "capture-info") {
+    const feature = required("feature");
+    const { folder, file } = await request(
+      "GET",
+      {},
+      undefined,
+      featureRoute(feature)
+    );
+    const existing = await fs
+      .readdir(path.join(folder, "media", "captures"))
+      .catch(() => []);
+    result = {
+      folder,
+      existing,
+      takes: (file.project.takes ?? []).map((take) => ({
+        id: take.id,
+        label: take.label,
+        url: take.ref.kind === "linked" ? take.ref.url : null,
+      })),
+    };
+  } else if (command === "link-capture") {
+    const feature = required("feature");
+    const capture = assertCaptureId(required("capture"));
+    const media = required("media");
+    if (!new RegExp(`^captures/${capture}\\.\\d+\\.mp4$`).test(media))
+      throw new Error(`--media must be captures/${capture}.<n>.mp4.`);
+    const { folder } = await request(
+      "GET",
+      {},
+      undefined,
+      featureRoute(feature)
+    );
+    const { durationSeconds } = await probeMedia(
+      path.join(folder, "media", ...media.split("/"))
+    );
+    const mediaUrl = featureMediaUrl(feature, media);
+    // The open editor's post, which may hold edits not saved to disk yet.
+    const before = await currentSnapshot();
+    const earlier = findCaptureTake(before.takes ?? [], capture);
+    const edit = await sendOps([
+      earlier
+        ? {
+            op: "relink-take",
+            take: earlier.id,
+            url: mediaUrl,
+            durationSeconds,
+          }
+        : {
+            op: "add-take",
+            url: mediaUrl,
+            durationSeconds,
+            label: option("label") ?? capture,
+          },
+    ]);
+    const landed = edit.status === "completed" || edit.status === "applied";
+    const clips =
+      earlier && landed
+        ? clipChanges(before, await currentSnapshot(), earlier.id)
+        : null;
+    result = {
+      media,
+      durationSeconds,
+      take: earlier?.id ?? null,
+      edit,
+      ...(clips ? { clips } : {}),
+      ...(clips?.removed.length || clips?.shortened.length
+        ? {
+            note: "The new recording is shorter than the clips cut from the old one: clips.removed are gone and clips.shortened end sooner. Check the timeline.",
+          }
+        : {}),
+    };
   } else if (command === "add-music") {
     const feature = required("feature");
     const file = path.resolve(positional(0, "a music file"));
@@ -537,6 +629,34 @@ try {
         measured.truePeakDbtp
       );
     }
+  } else if (command === "render") {
+    const feature = required("feature");
+    const name = option("name");
+    result = await renderFeature({
+      request,
+      feature,
+      ...(name ? { name: /\.mp4$/i.test(name) ? name : `${name}.mp4` } : {}),
+      open: flag("open"),
+      origin: browserOrigin(base),
+      log: (line) => process.stderr.write(`${line}\n`),
+      pollMs: Number(process.env.TKA_RENDER_POLL_MS) || 1000,
+      findFeature: (slug) => request("GET", {}, undefined, featureRoute(slug)),
+    });
+  } else if (command === "stills") {
+    result = {
+      stills: await writeStills(
+        path.resolve(positional(0, "a rendered video")),
+        parseStillTimes(required("at"))
+      ),
+    };
+  } else if (command === "contact-sheet") {
+    const columns = Number(option("columns") ?? 10);
+    if (!Number.isInteger(columns) || columns < 1 || columns > 30)
+      throw new Error("--columns must be a whole number from 1 to 30.");
+    result = await writeContactSheet(
+      path.resolve(positional(0, "a rendered video")),
+      columns
+    );
   } else if (command === "duplicate") {
     result = await request(
       "POST",
@@ -599,6 +719,8 @@ try {
   trim --item ID --edge start|end --seconds T
   delete --item ID
   canvas <ratio>   background <dark|blur>
+  sound <takes|silent>         whether the takes' own sound plays; the music plays either way
+  add-card [--label "End"] [--qr-url https://...] [--fade-in S]   a card at the end; --qr-url is the link its QR code opens
   ops --file ops.json          a batch applied in one step
   read|apply|status            whole-manifest bridge (--session, --base-revision, --base-fingerprint, --file, --command)
 Feature videos, folders on the dev server's computer:
@@ -614,6 +736,11 @@ Feature videos, folders on the dev server's computer:
   align-take --place ITEM | --take ID   where a take sits in the music, from its camera sound; --place puts the clip in time with it
   sync-to-music --item ID --offset S   puts a clip in time with the music at one of align-take's offsets
   loudness <render.mp4> [--feature SLUG]   loudness and true peak; with --feature, the music level that reaches -14 LUFS
+  render --feature SLUG [--name NAME] [--open]   renders in the editor that has it open, into exports/; --open opens one in a private headless Chrome
+  stills <render.mp4> --at 0,4,6.5   a still at each time, in stills/ beside the render
+  contact-sheet <render.mp4> [--columns 10]   one frame a second on one sheet, in stills/ beside the render
+  capture-info --feature SLUG   the project's folder, the recordings already in media/captures and its takes
+  link-capture --feature SLUG --capture ID --media captures/ID.N.mp4 [--label "Name"]   puts a recording in the project: the take that plays an earlier recording of ID is pointed at it, else it becomes a new take
   T is seconds (12.5), a clock (1:02.5), or a bar of the music: @9 is bar 9, @9.3 is bar 9, beat 3.
   With --feature, show and every edit use the editor that has it open, else the file on disk.
   Add --no-wait to return before the editor confirms; --out file to write output.`

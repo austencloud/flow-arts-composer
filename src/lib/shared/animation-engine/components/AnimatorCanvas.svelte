@@ -89,6 +89,7 @@ Last audit: 2025-12-27
     rightProp,
     additionalLayers = [],
     preloadAdditionalLayers = [],
+    additionalLayersAt = undefined,
     tunnelSpectrum = true,
     tunnelPropColors = null,
     primaryPropColors,
@@ -159,6 +160,7 @@ Last audit: 2025-12-27
     progressLine = false,
     hoverHint = "none",
     cornerToggle = false,
+    cornerToggleAtRest = false,
     showScrubberPlaybackControl = false,
     extraContextMenuItems = [],
     beatIndicators = true,
@@ -168,11 +170,14 @@ Last audit: 2025-12-27
     onPlaybackModeChange = undefined,
     onSaveToLibrary = undefined,
     initialQualityTier = undefined,
+    trailOverlay = true,
+    ghostAnnotations = true,
   }: {
     leftProp: PropState | null;
     rightProp: PropState | null;
     additionalLayers?: AdditionalLayerProps[];
     preloadAdditionalLayers?: AdditionalLayerProps[];
+    additionalLayersAt?: (step: number) => AdditionalLayerProps[];
     tunnelSpectrum?: boolean;
     tunnelPropColors?: TunnelPropColorPair | null;
     primaryPropColors?: TunnelPropColorPair | null;
@@ -320,6 +325,10 @@ Last audit: 2025-12-27
      *  canvas via CanvasSurface's cornerControl slot. Pairs with onPlaybackToggle.
      *  Off by default. */
     cornerToggle?: boolean;
+    /** Keeps the corner toggle visible and interactive while playing, not
+     *  only on hover or when paused. Marketing demonstrations opt in so the
+     *  pause control passes the 44 px visible-at-rest rule on every pointer. */
+    cornerToggleAtRest?: boolean;
     /** Adds the canonical play/pause action beside the minimal scrubber. */
     showScrubberPlaybackControl?: boolean;
     /** Extra entries injected into the right-click context menu (e.g. "Save
@@ -342,6 +351,15 @@ Last audit: 2025-12-27
     onSaveToLibrary?: () => void | Promise<void>;
     /** Optional adaptive-quality ceiling for performance-sensitive embeds. */
     initialQualityTier?: QualityTier;
+    /** False never creates the main canvas's GPU trail layer, which costs a
+     *  few hundred milliseconds of main-thread time at mount. Only for canvases
+     *  whose trails stay off for their whole life, such as decorative previews.
+     *  The split view draws its own canvases and does not take this option. */
+    trailOverlay?: boolean;
+    /** False omits the data-ghost* annotations, so the admin ghost presenter
+     *  neither parks beside this canvas nor reads its playing state. For
+     *  decorative previews that sit inside another control. */
+    ghostAnnotations?: boolean;
   } = $props();
 
   const resolvedContextId =
@@ -437,14 +455,15 @@ Last audit: 2025-12-27
     (hideProgressBar ? 3.5 : focused ? 8.5 : 7) * 16
   );
 
+  // The observer's first notification arrives before the host paints, so no
+  // mount-time read is needed. Its entry carries the size: reading the box
+  // back from the node forced a fresh layout (~10 ms) when Play mounted it.
   function observeDisassemblyHost(node: HTMLElement) {
-    const update = () => {
-      const { width, height } = node.getBoundingClientRect();
-      if (width <= 0 || height <= 0) return;
-      disassemblyHostBox = { width, height };
-    };
-    update();
-    const observer = new ResizeObserver(update);
+    const observer = new ResizeObserver(([entry]) => {
+      const size = entry?.borderBoxSize?.[0];
+      if (!size || size.inlineSize <= 0 || size.blockSize <= 0) return;
+      disassemblyHostBox = { width: size.inlineSize, height: size.blockSize };
+    });
     observer.observe(node);
     return {
       destroy() {
@@ -807,8 +826,8 @@ Last audit: 2025-12-27
     type="button"
     class="corner-toggle"
     aria-label={isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}
-    data-ghost="safe"
-    data-ghost-kind="play"
+    data-ghost={ghostAnnotations ? "safe" : undefined}
+    data-ghost-kind={ghostAnnotations ? "play" : undefined}
     onclick={handleCornerToggle}
   >
     <span class="corner-disc">
@@ -832,13 +851,14 @@ Last audit: 2025-12-27
   data-hover-hint={hoverHint !== "none" ? hoverHint : undefined}
   data-tap-toggle={tapToToggle || undefined}
   data-corner-toggle={cornerToggle || undefined}
+  data-corner-toggle-at-rest={(cornerToggle && cornerToggleAtRest) || undefined}
   data-playing={isPlaying || undefined}
   data-view={viewState}
-  data-ghost="safe"
-  data-ghost-kind="stage"
-  data-ghost-state={isPlaying ? "playing" : undefined}
-  data-ghost-linger={isPlaying ? "" : undefined}
-  data-ghost-word={word || undefined}
+  data-ghost={ghostAnnotations ? "safe" : undefined}
+  data-ghost-kind={ghostAnnotations ? "stage" : undefined}
+  data-ghost-state={ghostAnnotations && isPlaying ? "playing" : undefined}
+  data-ghost-linger={ghostAnnotations && isPlaying ? "" : undefined}
+  data-ghost-word={ghostAnnotations ? word || undefined : undefined}
   oncontextmenu={handleContextMenu}
   onpointerdown={handlePointerDown}
   onpointermove={handlePointerMove}
@@ -872,6 +892,7 @@ Last audit: 2025-12-27
       {rightProp}
       {additionalLayers}
       {preloadAdditionalLayers}
+      {additionalLayersAt}
       {tunnelSpectrum}
       {tunnelPropColors}
       {primaryPropColors}
@@ -923,6 +944,7 @@ Last audit: 2025-12-27
       {effectsConfigState}
       {prewarmEffects}
       {initialQualityTier}
+      {trailOverlay}
       {beatIndicators}
       contextId={resolvedContextId}
       onCanvasReady={handleCanvasReady}
@@ -1310,6 +1332,13 @@ Last audit: 2025-12-27
       opacity 140ms ease,
       transform 150ms ease; /* exit: quick, no overshoot */
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Opted-in hosts show the toggle at rest on every pointer type. */
+  .animation-container[data-corner-toggle-at-rest] .corner-toggle {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
   }
 
   /* Persistent PAUSED indicator — always visible on every pointer type

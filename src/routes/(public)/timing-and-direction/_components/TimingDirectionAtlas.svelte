@@ -194,8 +194,13 @@
     font-size: 0.875rem;
   }
 
+  /* Two rows, the lesson board then its link. The board fills its own row
+     (its root is height: 100%), so it can no longer take the whole section
+     and push "Open full lesson" under the "Mode guides" heading below. */
   .intro {
     container-type: inline-size;
+    display: grid;
+    grid-template-rows: auto auto;
     width: min(100%, 96rem);
     margin-inline: auto;
     margin-top: 2rem;

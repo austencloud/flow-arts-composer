@@ -36,6 +36,11 @@ export interface WorkerGridOptions {
   readonly planeOpacity?: number;
   readonly gridMode?: GridMode;
   readonly planeMode?: PlaneMode;
+  /**
+   * Half the performer's staff. Grid3D spaces the two dual-wheel copies by it
+   * so each wheel sits on its hand; defaults to the dual-wheel lateral offset.
+   */
+  readonly staffHalfLength?: number;
   readonly showOrientationHelpers?: boolean;
   readonly labelFontFamily?: string;
   readonly createCanvas?: WorkerGridCanvasFactory;

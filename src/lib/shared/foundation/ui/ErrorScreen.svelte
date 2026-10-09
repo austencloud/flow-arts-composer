@@ -4,9 +4,12 @@
 import { onMount } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
-  let { error, onRetry } = $props<{
+  // A 404 passes its own heading and no retry: reloading a missing page
+  // cannot help. Everything else keeps the initialization failure screen.
+  let { error, onRetry, title } = $props<{
     error: string;
-    onRetry: () => void;
+    onRetry?: () => void;
+    title?: string;
   }>();
 
   // Services
@@ -20,7 +23,7 @@ import { onMount } from "svelte";
   function handleRetry() {
     // Trigger selection haptic feedback for retry action
     hapticService?.trigger("selection");
-    onRetry();
+    onRetry?.();
   }
 
   // Handle home navigation with haptic feedback
@@ -72,10 +75,11 @@ import { onMount } from "svelte";
       </svg>
     </div>
 
-    <h1>{t("error_initialization_failed")}</h1>
+    <h1>{title ?? t("error_initialization_failed")}</h1>
     <p class="error-message">{displayMessage}</p>
 
     <div class="error-actions">
+      {#if onRetry}
       <button class="btn btn-primary" onclick={handleRetry}>
         <svg
           width="16"
@@ -99,6 +103,7 @@ import { onMount } from "svelte";
         </svg>
         {t("common_retry")}
       </button>
+      {/if}
 
       <button class="btn btn-glass" onclick={handleGoHome}> {t("common_go_home")} </button>
     </div>

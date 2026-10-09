@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Halved-motion mark ("/" token). Treatment B, ratified 2026-07-16 —
+     docs/superpowers/specs/2026-07-16-half-notation-canon-design.md.
+     Geometry copied exactly from the computeB() cut-stroke on the A/B page
+     (src/routes/test/half-notation/+page.svelte): a single round-capped
+     stroke, ~25deg off vertical, length 60% of the 45-unit number height
+     (27 units), stroke-width 4.5. Standalone here (not offset past a
+     number's width) since this asset sits in its own <image> beside the
+     number in TurnsColumn — the gap is applied by the consumer, not baked
+     into the asset. viewBox height 45 matches every other numbers/*.svg so
+     TurnsColumn can position it against the same y-baseline. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 45">
+  <line x1="2.295" y1="34.735" x2="13.705" y2="10.265" stroke="#000000" stroke-width="4.5" stroke-linecap="round" />
+</svg>

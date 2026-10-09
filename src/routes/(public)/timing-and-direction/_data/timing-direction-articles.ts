@@ -24,10 +24,6 @@ export interface TimingDirectionArticle {
   readonly phase: "0°" | "90° / 270°" | "180°";
   readonly representativeLetter: string;
   readonly definition: string;
-  readonly watchFor: string;
-  readonly example: string;
-  readonly commonMistake: string;
-  readonly tkaConnection: string;
   readonly history: string;
   readonly aliases: readonly string[];
   readonly metaDescription: string;
@@ -84,14 +80,6 @@ const ARTICLE_BY_CODE = {
     representativeLetter: "A",
     definition:
       "Both hands circle in the same direction, half a cycle apart. When one reaches the top, the other reaches the bottom.",
-    watchFor:
-      "The gap stays the same as they move. Neither side catches up with the other.",
-    example:
-      "A regular three-beat poi weave uses Split-Same. So do windmills that keep the same timing.",
-    commonMistake:
-      "Split means half a cycle apart. It says nothing about direction: both can turn clockwise, or both counterclockwise.",
-    tkaConnection:
-      "A is a Split-Same dual-shift. Water identifies this family in TKA.",
     history:
       "Poi spinners discussed same-direction split timing in a 2002 weave thread. A 2005 discussion names Split-Same explicitly; Noel Yee includes it in his 2009 transition article.",
     aliases: ["Split-Same", "SS", "Split time", "Follow time"],
@@ -125,14 +113,6 @@ const ARTICLE_BY_CODE = {
     representativeLetter: "G",
     definition:
       "Both hands circle in the same direction and reach matching points at the same time.",
-    watchFor:
-      "Both reach the top together, then the side, then the bottom. Their relative timing stays unchanged.",
-    example:
-      "In poi, a parallel weave uses Together-Same. The 2005 discussion below gives a four-beat parallel weave as an example.",
-    commonMistake:
-      "Same direction can mean both clockwise or both counterclockwise. Together means they share the same beat.",
-    tkaConnection:
-      "G is a Together-Same dual-shift. Earth identifies this family in TKA.",
     history:
       "A 2005 poi discussion names Together Time, Same Direction and connects it to parallel weaves. Noel Yee uses the same relationship in his 2009 transition article.",
     aliases: ["Together-Same", "Tog-Same", "TS", "Parallel time"],
@@ -167,14 +147,6 @@ const ARTICLE_BY_CODE = {
     representativeLetter: "S",
     definition:
       "Both hands circle in the same direction, a quarter-cycle apart. Either hand can lead.",
-    watchFor:
-      "When one reaches the top, the other is at the side. At equal speed, that quarter-cycle gap stays fixed.",
-    example:
-      "Quarter-time poi weaves appear in the 2005 discussion below. DrexFactor also uses this timing in a third-order chase in 2011.",
-    commonMistake:
-      "Quarter time describes when things arrive. Gamma describes hands on adjacent grid points. Timing and placement are separate.",
-    tkaConnection:
-      "S is a Quarter-Same dual-shift. Sun identifies the S–V family in TKA.",
     history:
       "Quarter-time wording appears in a 2002 poi discussion. In 2005, spinners discuss quarter-time weaves while distinguishing timing from direction. A 2009 thread describes the same-direction case in terms of phase.",
     aliases: ["Quarter-Same", "QS", "Quarter time", "90-degree phase"],
@@ -225,14 +197,6 @@ const ARTICLE_BY_CODE = {
     representativeLetter: "J",
     definition:
       "The hands circle in opposite directions. One reaches the bottom halfway between the other's downbeats.",
-    watchFor:
-      "In this upright view, one reaches the top as the other reaches the bottom. Their paths mirror each other across a horizontal line.",
-    example:
-      "A split-time poi butterfly uses this relationship. Its downbeats alternate.",
-    commonMistake:
-      "Split time also exists in same-direction motion. Add the direction to distinguish a split-time butterfly from a regular weave.",
-    tkaConnection:
-      "J is a Split-Opposite dual-shift. Fire identifies this family in TKA.",
     history:
       "The 2002 weave discussion includes opposite-direction split timing. A 2005 thread explicitly maps Split Time, Opposite Direction to a split-time butterfly.",
     aliases: ["Split-Opposite", "Split-Opp", "SO", "Split-time butterfly"],
@@ -266,14 +230,6 @@ const ARTICLE_BY_CODE = {
     representativeLetter: "D",
     definition:
       "The hands circle in opposite directions and reach the top and bottom together.",
-    watchFor:
-      "In this upright view, the two paths mirror each other across a vertical line.",
-    example:
-      "A regular poi butterfly uses Together-Opposite. Both poi heads share the same downbeat.",
-    commonMistake:
-      "Together describes timing, not direction. Two motions can share a beat while turning opposite ways.",
-    tkaConnection:
-      "D is a Together-Opposite dual-shift. Air identifies this family in TKA.",
     history:
       "The 2005 discussion below names a regular butterfly as Together Time, Opposite Direction. Noel Yee includes the same relationship in his 2009 transition article.",
     aliases: ["Together-Opposite", "Tog-Opp", "TO", "Butterfly"],
@@ -309,14 +265,6 @@ const ARTICLE_BY_CODE = {
     representativeLetter: "M",
     definition:
       "The hands circle in opposite directions, a quarter-cycle apart. Either hand can lead.",
-    watchFor:
-      "In this upright view, the paths mirror each other across a diagonal. Swapping the lead changes which diagonal.",
-    example:
-      "Quarter-time poi butterflies use this relationship. They are named in the 2002 discussion below.",
-    commonMistake:
-      "Quarter time describes when things arrive, not where the hands are placed. Alpha, beta, and gamma describe placement separately.",
-    tkaConnection:
-      "M is a Quarter-Opposite dual-shift. Moon identifies the M–R family in TKA.",
     history:
       "A 2002 poi discussion names quarter-time butterflies. A 2005 thread uses them to explain why timing and direction need separate names. In 2009, spinners describe their diagonal mirror symmetry.",
     aliases: [

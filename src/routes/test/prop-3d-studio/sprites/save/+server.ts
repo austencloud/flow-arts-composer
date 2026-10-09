@@ -2,6 +2,7 @@ import { json, type RequestHandler } from "@sveltejs/kit";
 import { dev } from "$app/environment";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { isRetiredModelSprite } from "$lib/shared/pictograph/prop/domain/retired-model-sprites";
 
 // Dev-only: /test/prop-3d-studio/sprites POSTs each captured prop sprite here.
 // The dev server runs from the project root, so resolve from cwd.
@@ -161,6 +162,12 @@ export const POST: RequestHandler = async ({ request }) => {
   ) {
     return json(
       { ok: false, error: "invalid capture payload" },
+      { status: 400 }
+    );
+  }
+  if (isRetiredModelSprite(prop)) {
+    return json(
+      { ok: false, error: `${prop} has no Version 2: its capture duplicates another look` },
       { status: 400 }
     );
   }

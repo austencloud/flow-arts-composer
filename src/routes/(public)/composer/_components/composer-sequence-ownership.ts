@@ -1,30 +1,68 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
-/** The lower demonstrations need a sequence before the hero can reach a
- * playback boundary. The baked opening keeps them usable while the hero is
- * paused, offscreen, or still preparing its first live continuation. */
-export function resolveComposerCarriedSequence(
-  visitorSequence: SequenceData | null,
-  latchedHeroSequence: SequenceData | null,
-  openingSequence: SequenceData
-): SequenceData {
-  return visitorSequence ?? latchedHeroSequence ?? openingSequence;
+/** Where the page's one sequence came from. The hero's draws, a Construct
+ * build, and a Generate or tunnel draw all write the same slot. */
+export type PageSequenceSource =
+  | "opening"
+  | "hero"
+  | "construct"
+  | "generate"
+  | "tunnel";
+
+export interface PageSequence {
+  sequence: SequenceData;
+  source: PageSequenceSource;
 }
 
-/** The generator catches up to the latest page sequence when it returns to
- * view. After a local draw, it keeps the visitor's chosen result instead. */
+/** The baked opening keeps the lower demonstrations usable before the hero
+ * has drawn anything live. */
+export function openingPageSequence(opening: SequenceData): PageSequence {
+  return { sequence: opening, source: "opening" };
+}
+
+/** Last write wins. A missing sequence never replaces the current one, and
+ * the same sequence from the same source returns the same state object so
+ * readers are not notified for nothing. The reducer cannot tell a stale
+ * writer firing again from a new write, so each writer must fire only on
+ * a genuinely new value; the page's hero effect reads only the live draw
+ * and writes untracked. */
+export function carryPageSequence(
+  state: PageSequence,
+  source: PageSequenceSource,
+  next: SequenceData | null | undefined
+): PageSequence {
+  if (!next) return state;
+  if (state.sequence.id === next.id && state.source === source) return state;
+  return { sequence: next, source };
+}
+
+/** One honest line under the Keep stop's card. */
+export function featuredCaption(source: PageSequenceSource): string {
+  switch (source) {
+    case "construct":
+      return "The sequence you built.";
+    case "generate":
+    case "tunnel":
+      return "The sequence you generated.";
+    case "opening":
+    case "hero":
+      return "The sequence playing above.";
+    default: {
+      const unknown: never = source;
+      return unknown;
+    }
+  }
+}
+
+/** The generator catches up to the page sequence when it is in view and the
+ * page holds a different sequence. Its own draws set the page sequence, so
+ * the next incoming id equals its current id and nothing churns. */
 export function shouldAdoptCarriedSequence(
   current: SequenceData | null,
   incoming: SequenceData | null,
-  hasGeneratedLocally: boolean,
   inViewport: boolean
 ): incoming is SequenceData {
-  return (
-    inViewport &&
-    !hasGeneratedLocally &&
-    incoming !== null &&
-    incoming.id !== current?.id
-  );
+  return inViewport && incoming !== null && incoming.id !== current?.id;
 }
 
 /** The construct attract act is allowed to animate its own panel, but only a

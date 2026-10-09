@@ -170,11 +170,16 @@ export function presetShortcutKey(index: number): string {
  * Human label, e.g. "Double Staff" or "Double Staff + Fan". A prop shown at
  * Version 2 ends in " V2": "LED Baton V2", "Double Staff V2 + Fan". A prop
  * with no Version 2 keeps its plain name even when the setup is at Version 2.
+ * Screens pass `propName` to show each prop's name in the reader's language.
  */
-export function presetLabel(preset: PropPreset): string {
+export function presetLabel(
+  preset: PropPreset,
+  propName: (prop: PropType) => string = (prop) =>
+    getPropTypeDisplayInfo(prop).label
+): string {
   const versioned = presetVersion(preset) === "model";
   const name = (prop: PropType) => {
-    const label = getPropTypeDisplayInfo(prop).label;
+    const label = propName(prop);
     return versioned && hasModelSprite(prop) ? `${label} V2` : label;
   };
   const left = name(preset.leftPropType);

@@ -21,7 +21,10 @@
   import { toScenePropType } from "../domain/scene-prop-type";
   import { getSceneEnvironmentRendererKey } from "../environments/domain/scene-environment";
   import { getWorkerEnvironmentKey } from "../worker-renderer/domain/worker-viewer-backend";
-  import { getStageCoordinateFrame } from "../environments/domain/stage-coordinate-frame";
+  import {
+    CANONICAL_PERFORMER_ANCHOR_Y,
+    getStageCoordinateFrame,
+  } from "../environments/domain/stage-coordinate-frame";
   import {
     getCanonicalPerformerStageBounds,
     getPerformerStageClearance,
@@ -31,7 +34,7 @@
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
   import { computeViewerAlignedCamera } from "../camera/viewer-camera-framing";
-  import { largestHandDistance } from "../domain/performer-hand-distance";
+  import { resolveGridJoin3D } from "../services/grid-join-3d";
   import WorkerEnvironmentRenderer from "../worker-renderer/components/WorkerEnvironmentRenderer.svelte";
   import type {
     WorkerPerformerInteractionFailure,
@@ -140,9 +143,11 @@
   const alignedCamera = computeViewerAlignedCamera({
     environmentId: viewer.environmentId,
     fov: cameraFov ?? 50,
-    handDistance: largestHandDistance(
-      viewer.performerManager.performers[0]?.handDistance
-    ),
+    performers: viewer.performerManager.performers.map((performer) => ({
+      position: performer.position,
+      handDistance: performer.handDistance,
+      conjoined: resolveGridJoin3D(performer.loadedSequence),
+    })),
   });
   const cameraFallback = {
     position: [
@@ -431,6 +436,8 @@
     }}
     onCameraChange={handleCameraChange}
     onCameraReady={(controller) => {
+      // The welcome shot needs the same rig height as the worker's stage.
+      viewer.setStageGroundOffset(CANONICAL_PERFORMER_ANCHOR_Y);
       const stopOrbitNavigation = configureViewerOrbitNavigation(
         controller.controls
       );

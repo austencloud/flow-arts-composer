@@ -9,10 +9,15 @@ import {
 /** The streak geometry for one frame, read back from the instance buffer. */
 interface SegmentProbe {
   buildSegments(
-    input: LedFrameInput,
+    leds: readonly LedSample[],
+    canvasWidth: number,
+    canvasHeight: number,
     config: typeof DEFAULT_LED_CONFIG,
     dt: number,
-    timeDiscontinuity: boolean
+    timeDiscontinuity: boolean,
+    firstPass: boolean,
+    lastPass: boolean,
+    startIndex: number
   ): number;
   instanceData: Float32Array;
   displayWidth: number;
@@ -39,7 +44,12 @@ function staff(x: number, y: number): LedSample[] {
  * A staff at (u, v) in the engine's square, drawn in a width x height frame
  * the way the sampler places it: scaled to the square, offset by its centring.
  */
-function staffInFrame(width: number, height: number, u: number, v: number): LedSample[] {
+function staffInFrame(
+  width: number,
+  height: number,
+  u: number,
+  v: number
+): LedSample[] {
   const side = Math.min(width, height);
   const x = (width - side) / 2 + u * side;
   const y = (height - side) / 2 + v * side;
@@ -61,6 +71,27 @@ function sweptLength(probe: SegmentProbe, written: number): number {
   return total;
 }
 
+/** One frame with no prior sets: a single pass that is both first and last. */
+function buildFrame(
+  probe: SegmentProbe,
+  input: LedFrameInput,
+  config: typeof DEFAULT_LED_CONFIG,
+  dt: number,
+  timeDiscontinuity: boolean
+): number {
+  return probe.buildSegments(
+    input.leds,
+    input.canvasWidth,
+    input.canvasHeight,
+    config,
+    dt,
+    timeDiscontinuity,
+    true,
+    true,
+    0
+  );
+}
+
 function renderer(): SegmentProbe {
   const probe = new WebGLLedRenderer() as unknown as SegmentProbe;
   probe.displayWidth = 396;
@@ -74,7 +105,8 @@ describe("WebGLLedRenderer frame changes", () => {
     // Tall frame: the square sits 152 px down. Then the frame shrinks below
     // the square's width, so the same staff is drawn higher and smaller
     // without having moved.
-    probe.buildSegments(
+    buildFrame(
+      probe,
       {
         leds: staffInFrame(396, 700, 0.5, 0.4),
         currentTime: 1000,
@@ -86,7 +118,8 @@ describe("WebGLLedRenderer frame changes", () => {
       false
     );
     probe.displayHeight = 349;
-    const written = probe.buildSegments(
+    const written = buildFrame(
+      probe,
       {
         leds: staffInFrame(396, 349, 0.5, 0.4),
         currentTime: 1016,
@@ -106,7 +139,8 @@ describe("WebGLLedRenderer frame changes", () => {
     const probe = renderer();
     // The opening tunnel's box shrinks a few pixels a frame while the staff
     // swings; each frame must still streak from where the staff was.
-    probe.buildSegments(
+    buildFrame(
+      probe,
       {
         leds: staffInFrame(396, 700, 0.4, 0.4),
         currentTime: 1000,
@@ -118,7 +152,8 @@ describe("WebGLLedRenderer frame changes", () => {
       false
     );
     probe.displayHeight = 690;
-    const written = probe.buildSegments(
+    const written = buildFrame(
+      probe,
       {
         leds: staffInFrame(396, 690, 0.5, 0.4),
         currentTime: 1033,
@@ -139,13 +174,15 @@ describe("WebGLLedRenderer frame changes", () => {
   it("still streaks real motion inside an unchanged frame", () => {
     const probe = renderer();
     const frame = { canvasWidth: 396, canvasHeight: 700 };
-    probe.buildSegments(
+    buildFrame(
+      probe,
       { leds: staff(200, 300), currentTime: 1000, ...frame },
       DEFAULT_LED_CONFIG,
       1 / 60,
       false
     );
-    const written = probe.buildSegments(
+    const written = buildFrame(
+      probe,
       { leds: staff(200, 124), currentTime: 1016, ...frame },
       DEFAULT_LED_CONFIG,
       1 / 60,
@@ -177,8 +214,14 @@ describe("WebGLLedRenderer join cuts", () => {
   }
 
   function spin(probe: SegmentProbe, degrees: number, timeMs: number): number {
-    return probe.buildSegments(
-      { leds: spunStaff(degrees), currentTime: timeMs, canvasWidth: 396, canvasHeight: 700 },
+    return buildFrame(
+      probe,
+      {
+        leds: spunStaff(degrees),
+        currentTime: timeMs,
+        canvasWidth: 396,
+        canvasHeight: 700,
+      },
       DEFAULT_LED_CONFIG,
       1 / 30,
       false
@@ -216,7 +259,9 @@ describe("WebGLLedRenderer join cuts", () => {
       // Not square to either chord: the cut bisects the angle between them.
       const dir = { x: here.b.x - here.a.x, y: here.b.y - here.a.y };
       const len = Math.hypot(dir.x, dir.y);
-      expect((here.cutEnd.x * dir.x + here.cutEnd.y * dir.y) / len).toBeLessThan(0.99999);
+      expect(
+        (here.cutEnd.x * dir.x + here.cutEnd.y * dir.y) / len
+      ).toBeLessThan(0.99999);
     }
     expect(joins).toBeGreaterThan(0);
   });
@@ -362,7 +407,11 @@ describe("WebGLLedRenderer reframe", () => {
     return { probe, used };
   }
 
-  function tunnelFrame(timeMs: number, height: number, u: number): LedFrameInput {
+  function tunnelFrame(
+    timeMs: number,
+    height: number,
+    u: number
+  ): LedFrameInput {
     return {
       leds: staffInFrame(396, height, u, 0.4),
       currentTime: timeMs,

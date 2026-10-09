@@ -37,22 +37,6 @@ html.named-route-morph::view-transition {
   background: transparent;
 }
 
-/* One live hand canvas travels between the explorer and its article. Using
-   only the incoming image avoids two out-of-phase sets of hands overlapping. */
-::view-transition-group(timing-direction-canvas) {
-  animation-duration: var(--duration-dramatic);
-  animation-timing-function: var(--ease-in-out);
-}
-::view-transition-old(timing-direction-canvas) {
-  display: none;
-}
-::view-transition-new(timing-direction-canvas) {
-  animation: none;
-  height: 100%;
-  width: 100%;
-  object-fit: fill;
-}
-
 /* The Grid and Hand Positions lessons are one continuous curriculum journey.
    Their shared stage regions keep their names across the concept-state swap so
    the grid carries forward while the heading and controls settle around it. */

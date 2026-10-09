@@ -38,6 +38,7 @@ import {
   GridJoinTween,
   gridJoinHandOffsets,
 } from "$lib/shared/grid-join/grid-join-tween";
+import { OrchestratorMotionSampleSource } from "../motion-sub-sampler";
 
 export class FrameSystem {
   readonly frameParameterBuilder = new FrameParameterBuilder();
@@ -60,6 +61,11 @@ export class FrameSystem {
    */
   readonly gridJoinTween = new GridJoinTween();
   private gridJoinTweenEnded: (() => void) | null = null;
+  /** Pure pose source for slow-frame trail sampling; reads the lifecycle
+   *  orchestrator lazily so a sequence switch needs no re-wiring. */
+  private readonly motionSampleSource = new OrchestratorMotionSampleSource(
+    () => this.deps.lifecycleManager.orchestrator
+  );
 
   constructor(
     private readonly state: AnimatorState,
@@ -99,7 +105,6 @@ export class FrameSystem {
         settingsService: this.deps.lifecycleManager.settingsService,
         effectRendererManager: buildDeps.effectRendererManager,
         getVM: buildDeps.getVM,
-        orchestrator: this.deps.lifecycleManager.orchestrator,
       }
     );
 
@@ -120,6 +125,16 @@ export class FrameSystem {
         props.gridMode
       )
     );
+    if (this.motionSampleSource.isReady()) {
+      this.motionSampleSource.setGridJoinOffsets(
+        params.gridJoin || params.gridJoinSlide
+          ? (params.gridJoinOffsets ?? null)
+          : null
+      );
+      params.motionSampleSource = this.motionSampleSource;
+    } else {
+      params.motionSampleSource = undefined;
+    }
     return params;
   }
 

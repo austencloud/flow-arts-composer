@@ -220,8 +220,9 @@ Variation support:
       return;
     }
 
-    // The variation pill owns its own tap. Holding it should not select the
-    // whole card underneath.
+    // Only a hold on the card's own button counts. The chips are siblings of
+    // it now, so this guard is belt and braces against a control nested here
+    // again later.
     const target = event.target;
     if (
       target instanceof Element &&
@@ -740,9 +741,14 @@ Variation support:
       {/if}
     </span>
   {/if}
+{/snippet}
 
+{#snippet cardChips()}
   <!-- One row so the chips can never land on top of each other, and so adding
-       a third later doesn't need new positioning math. -->
+       a third later doesn't need new positioning math. The chips are siblings
+       of the card's own button, never children of it: a button inside a
+       button is invalid HTML, and screen readers read the inner one as part
+       of the card's name. -->
   <div class="card-chips">
     {#if !selectionMode}
       <PreviewPlayChip playing={previewActive} onToggle={togglePreview} />
@@ -756,32 +762,42 @@ Variation support:
 {/snippet}
 
 {#if isInteractive}
-  <button
-    type="button"
+  <!-- The card is a tile with one real control, the button that fills it,
+       plus the chips beside that button. Hover and the context menu belong
+       to the whole tile; the click, the hold and the ghost's target belong
+       to the button. -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
     class="choreo-card interactive"
     class:selected={isSelected}
     class:selection-mode={selectionMode}
     class:long-pressing={isLongPressing}
     class:light-mode={lightMode}
     style:--selection-hold-duration={`${LONG_PRESS_MS}ms`}
-    data-ghost={selectionMode ? undefined : "safe"}
-    data-ghost-kind={selectionMode ? undefined : "gallery-item"}
-    data-ghost-linger={selectionMode ? undefined : ""}
-    onclick={handlePrimaryAction}
     oncontextmenu={handleContextMenu}
-    onpointerdown={handleSelectionPointerDown}
-    onpointermove={handleSelectionPointerMove}
-    onpointerup={cancelSelectionLongPress}
-    onpointercancel={cancelSelectionLongPress}
     onpointerenter={handlePointerEnter}
     onpointerleave={handlePointerLeave}
-    aria-pressed={selectionMode ? isSelected : undefined}
-    aria-label={selectionMode
-      ? `${isSelected ? "Deselect" : "Select"} ${displayedSequence.name || displayedSequence.word || "sequence"}`
-      : undefined}
   >
-    {@render cardContents()}
-  </button>
+    <button
+      type="button"
+      class="card-action"
+      data-ghost={selectionMode ? undefined : "safe"}
+      data-ghost-kind={selectionMode ? undefined : "gallery-item"}
+      data-ghost-linger={selectionMode ? undefined : ""}
+      onclick={handlePrimaryAction}
+      onpointerdown={handleSelectionPointerDown}
+      onpointermove={handleSelectionPointerMove}
+      onpointerup={cancelSelectionLongPress}
+      onpointercancel={cancelSelectionLongPress}
+      aria-pressed={selectionMode ? isSelected : undefined}
+      aria-label={selectionMode
+        ? `${isSelected ? "Deselect" : "Select"} ${displayedSequence.name || displayedSequence.word || "sequence"}`
+        : undefined}
+    >
+      {@render cardContents()}
+    </button>
+    {@render cardChips()}
+  </div>
 {:else}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
@@ -790,6 +806,7 @@ Variation support:
     oncontextmenu={handleContextMenu}
   >
     {@render cardContents()}
+    {@render cardChips()}
   </div>
 {/if}
 
@@ -854,7 +871,31 @@ Variation support:
     }
   }
 
-  .choreo-card.interactive:focus-visible {
+  /* The card's one real control. It fills the card so the whole picture is
+     the target; the chips sit beside it as siblings, so no control nests in
+     another. */
+  .card-action {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    touch-action: pan-y;
+    -webkit-touch-callout: none;
+  }
+
+  /* The card clips its overflow, so a ring on the inner button would be cut
+     off. The card draws it instead, around the whole tile as before. */
+  .card-action:focus-visible {
+    outline: none;
+  }
+
+  .choreo-card.interactive:has(> .card-action:focus-visible) {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
   }

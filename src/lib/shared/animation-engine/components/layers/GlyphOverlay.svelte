@@ -12,7 +12,6 @@ When darkMode prop is provided, it overrides global state.
 CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
 -->
 <script lang="ts">
-  import { fade, scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -34,7 +33,14 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
   import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
   import { DURATION } from "$lib/shared/transitions/transitions";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  // These groups rest at full opacity, so they fade and settle without the
+  // computed-style read Svelte's fade and scale make (one forced style pass
+  // per label swap on every Play).
+  import {
+    motionDuration,
+    opaqueFade,
+    popIn,
+  } from "$lib/shared/transitions/motion";
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import {
     calculateGlyphOverlayFrame,
@@ -277,14 +283,8 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
         <g
           class="glyph-group"
           transform={`translate(0 ${frame.bottomOffset})`}
-          in:fade={{
-            duration: motionDuration(FADE_DURATION),
-            easing: cubicOut,
-          }}
-          out:fade={{
-            duration: motionDuration(FADE_DURATION),
-            easing: cubicOut,
-          }}
+          in:opaqueFade={{ duration: FADE_DURATION, easing: cubicOut }}
+          out:opaqueFade={{ duration: FADE_DURATION, easing: cubicOut }}
         >
           <TKAGlyph
             {letter}
@@ -331,14 +331,8 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
         <g
           class="elemental-glyph-transition"
           transform={`translate(${frame.rightOffset} ${frame.bottomOffset})`}
-          in:fade|global={{
-            duration: motionDuration(FADE_DURATION),
-            easing: cubicOut,
-          }}
-          out:fade|global={{
-            duration: motionDuration(FADE_DURATION),
-            easing: cubicOut,
-          }}
+          in:opaqueFade|global={{ duration: FADE_DURATION, easing: cubicOut }}
+          out:opaqueFade|global={{ duration: FADE_DURATION, easing: cubicOut }}
         >
           <ElementalGlyph
             elementalType={elementalInfo.elementalType}
@@ -356,14 +350,8 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
         <g
           class="prop-elemental-glyph-transition"
           transform={`translate(${frame.rightOffset} 0)`}
-          in:fade|global={{
-            duration: motionDuration(FADE_DURATION),
-            easing: cubicOut,
-          }}
-          out:fade|global={{
-            duration: motionDuration(FADE_DURATION),
-            easing: cubicOut,
-          }}
+          in:opaqueFade|global={{ duration: FADE_DURATION, easing: cubicOut }}
+          out:opaqueFade|global={{ duration: FADE_DURATION, easing: cubicOut }}
         >
           <ElementalGlyph
             elementalType={effectivePropElementalType}
@@ -402,7 +390,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
          Crossfade component renders an HTML <div>, invalid inside this
          <svg>/<g> tree. See crossfade-primitive.md. The swap's two phases
          share FADE_DURATION so it still ends with the glyph.
-         The in transition is scale (fade + settle) rather than a CSS keyframe
+         The in transition is popIn (fade + settle) rather than a CSS keyframe
          pulse: a dip-and-return pulse on a remounting group played its dip
          while the label was still invisible, so only the grow-back showed,
          late and with a velocity kick at the reversal.
@@ -412,13 +400,8 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
       {#key stepKey}
         <g
           class="beat-number-group"
-          in:scale={{
-            start: STEP_NUMBER_SETTLE_SCALE,
-            opacity: 0,
-            ...stepLabelTiming(),
-            easing: cubicOut,
-          }}
-          out:fade={{
+          in:popIn={{ start: STEP_NUMBER_SETTLE_SCALE, ...stepLabelTiming() }}
+          out:opaqueFade={{
             duration: stepLabelTiming().duration,
             easing: cubicOut,
           }}
@@ -458,7 +441,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     transition: filter var(--duration-fast) ease-out !important;
   }
 
-  /* The in:scale settle transforms this SVG group; give it a real box and a
+  /* The in:popIn settle transforms this SVG group; give it a real box and a
      centered origin so it scales about the number, not the svg origin. */
   .beat-number-group {
     transform-box: fill-box;

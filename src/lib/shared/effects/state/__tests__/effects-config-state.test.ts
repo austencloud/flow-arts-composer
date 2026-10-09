@@ -35,6 +35,16 @@ function makeLocalStorageStub() {
 
 describe("EffectsConfigState", () => {
   describe("saved config migration", () => {
+    it("hydrates missing Goo liquid controls and bounds invalid values", () => {
+      const { viscosity: _viscosity, gravity: _gravity, ...oldGoo } = DEFAULT_EFFECTS_CONFIG.goo;
+      const state = createEffectsConfigState({ ...DEFAULT_EFFECTS_CONFIG, goo: oldGoo } as typeof DEFAULT_EFFECTS_CONFIG, { persist: false });
+      expect(state.goo.viscosity).toBe(0);
+      expect(state.goo.gravity).toBe(1);
+      state.updateEffect("goo", { viscosity: Infinity, gravity: -3, surfaceTension: NaN });
+      expect(state.goo).toMatchObject({ viscosity: 0, gravity: 0, surfaceTension: 0.45 });
+      state.updateEffect("goo", { viscosity: 3, gravity: 3, surfaceTension: -1 });
+      expect(state.goo).toMatchObject({ viscosity: 1, gravity: 2, surfaceTension: 0 });
+    });
     const incompleteSavedConfig = {
       ...DEFAULT_EFFECTS_CONFIG,
       led: { cycleDuration: 1.4 },
@@ -210,6 +220,20 @@ describe("EffectsConfigState", () => {
         DEFAULT_EFFECTS_CONFIG.bloom.coreStrength
       );
       expect(state.personalDefault("bloom")?.falloff).toBe("smooth");
+      vi.unstubAllGlobals();
+    });
+
+    it("heals an older Goo personal default on restore", () => {
+      const ls = makeLocalStorageStub();
+      vi.stubGlobal("window", {});
+      vi.stubGlobal("localStorage", ls);
+      ls.setItem("tka_effects_custom", JSON.stringify({ goo: { ...DEFAULT_EFFECTS_CONFIG.goo, viscosity: undefined, gravity: undefined } }));
+      ls.setItem("tka_effects_custom_clean", "1");
+      const state = createEffectsConfigState(undefined, { persist: true });
+      expect(state.personalDefault("goo")).toMatchObject({ viscosity: 0, gravity: 1 });
+      state.applyPreset("goo", "temporary", { viscosity: 1, gravity: 2 });
+      state.restorePersonalDefault("goo");
+      expect(state.goo).toMatchObject({ viscosity: 0, gravity: 1 });
       vi.unstubAllGlobals();
     });
 

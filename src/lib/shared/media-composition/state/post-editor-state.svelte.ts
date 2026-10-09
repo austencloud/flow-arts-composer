@@ -718,10 +718,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
    * Media saved in the project: catalog and linked takes and linked images
    * come straight back, a local file waits to be picked again. Undo after a
    * reload can bring back media this page has not loaded yet, so it runs
-   * then too.
+   * then too. `source` is the project about to open, when that is not the
+   * current one yet.
    */
-  function loadSavedMedia(): void {
-    for (const take of project.takes) {
+  function loadSavedMedia(source: PostProject = project): void {
+    for (const take of source.takes) {
       const loaded = timings[take.id];
       if (loaded?.takeKey === take.takeKey && loaded.sequenceId === sequence.id)
         continue;
@@ -729,20 +730,26 @@ export function createPostEditorState(deps: PostEditorDeps) {
         const video = deps.getCatalogVideo?.(take.ref.videoId);
         // Without its video yet, the timing waits too, so an older editor's
         // map can still seed it when the catalog arrives.
-        if (video) attach(take, video.url, false, video.legacyStepMap);
+        if (video) attach(take, video.url, false, video.legacyStepMap, source);
         else if (
-          project.timings?.[take.id] ||
+          source.timings?.[take.id] ||
           store.loadTiming(sequence.id, take.takeKey)
         ) {
-          timings = { ...timings, [take.id]: openTiming(take) };
+          timings = {
+            ...timings,
+            [take.id]: openTiming(take, undefined, source),
+          };
         }
       } else if (take.ref.kind === "linked") {
-        attach(take, take.ref.url, false);
+        attach(take, take.ref.url, false, undefined, source);
       } else {
-        timings = { ...timings, [take.id]: openTiming(take) };
+        timings = {
+          ...timings,
+          [take.id]: openTiming(take, undefined, source),
+        };
       }
     }
-    for (const image of project.images ?? []) {
+    for (const image of source.images ?? []) {
       if (image.ref.kind === "linked" && !imageMedia[image.id]) {
         imageMedia = {
           ...imageMedia,
@@ -947,12 +954,15 @@ export function createPostEditorState(deps: PostEditorDeps) {
       JSON.stringify(withoutTimestamp(project))
     )
       return { ok: true };
-    commit({
+    const incoming = {
       ...normalized,
       updatedAt: Math.max(now(), project.updatedAt + 1, normalized.updatedAt),
-    });
-    // A take added through the bridge plays straight away.
-    loadSavedMedia();
+    };
+    // A take the edit adds or points at another file plays straight away.
+    // Its timing opens first, so the save holds it: a feature video's disk
+    // save skips a copy older than the editor's own.
+    loadSavedMedia(incoming);
+    commit(incoming);
     return { ok: true };
   }
 

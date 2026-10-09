@@ -31,7 +31,7 @@
     isValidViewerCameraPose,
     isValidViewerCameraSnapshot,
   } from "../camera/viewer-camera-framing";
-  import { largestHandDistance } from "../domain/performer-hand-distance";
+  import { resolveGridJoin3D } from "../services/grid-join-3d";
   import {
     collectEnvironmentCameraCollisionMeshes,
     keepEnvironmentReviewOrbitAboveSurface,
@@ -71,9 +71,11 @@
   const computed = computeViewerAlignedCamera({
     environmentId: viewer3DState.environmentId,
     fov,
-    handDistance: largestHandDistance(
-      viewer3DState.performerManager.performers[0]?.handDistance
-    ),
+    performers: viewer3DState.performerManager.performers.map((performer) => ({
+      position: performer.position,
+      handDistance: performer.handDistance,
+      conjoined: resolveGridJoin3D(performer.loadedSequence),
+    })),
   });
   const defaultPosition = computed.position;
   const defaultTarget = computed.target;

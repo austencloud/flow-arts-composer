@@ -10,6 +10,7 @@
   import EmailPasswordAuth from "./EmailPasswordAuth.svelte";
   import EmailLinkAuth from "./EmailLinkAuth.svelte";
   import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import { getLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
   import { readPendingEmailCode } from "$lib/shared/auth/services/pending-email-code";
@@ -67,7 +68,15 @@
 
 <div class="email-auth-tabs">
   {#if !compact || showMethods}
-    <div class="tab-bar" role="tablist" transition:growFade>
+    <div
+      class="tab-bar"
+      role="tablist"
+      transition:growFade
+      onoutrostart={(event) =>
+        ((event.currentTarget as HTMLElement).inert = true)}
+      onintrostart={(event) =>
+        ((event.currentTarget as HTMLElement).inert = false)}
+    >
       <button
         type="button"
         role="tab"
@@ -109,16 +118,18 @@
     class="tab-content"
     role={!compact || showMethods ? "tabpanel" : undefined}
   >
-    {#if activeTab === "magic"}
-      <EmailLinkAuth {compact} bind:email sendOnOpen={sendCodeOnOpen} />
-    {:else}
-      <EmailPasswordAuth
-        bind:mode
-        bind:email
-        showModeSwitch={showModeSwitch && !compact}
-        onUseCode={useCodeInstead}
-      />
-    {/if}
+    <Crossfade key={activeTab} animateHeight>
+      {#if activeTab === "magic"}
+        <EmailLinkAuth {compact} bind:email sendOnOpen={sendCodeOnOpen} />
+      {:else}
+        <EmailPasswordAuth
+          bind:mode
+          bind:email
+          showModeSwitch={showModeSwitch && !compact}
+          onUseCode={useCodeInstead}
+        />
+      {/if}
+    </Crossfade>
   </div>
 </div>
 
@@ -171,13 +182,13 @@
 
     display: flex;
     flex-direction: column;
-    gap: 0.875rem;
     width: 100%;
   }
 
   .tab-bar {
     display: flex;
     gap: 4px;
+    margin-block-end: 0.875rem;
     /* Extra top padding reserves the space the "Last used" badge straddles
        into, keeping it inside the bar's own border rather than poking over
        it. Unconditional, so the bar's height never depends on the badge. */

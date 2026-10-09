@@ -291,8 +291,8 @@ const ENERGY_SABER_TIP_POINTS: PropTipConfig = {
 };
 
 // Energy Staff is a staff restyle, so both blades reach 126.4 like staff's two
-// ends. Each blade bows off the axis and meets it again at the tip, and the
-// two ends are the same blade turned half a turn, so both tips sit on the axis.
+// ends. The two ends are the same blade turned half a turn, so both tips sit
+// on the axis and the tracked geometry is symmetric.
 const ENERGY_STAFF_TIP_POINTS: PropTipConfig = {
   points: [
     { dx: -126.4, dy: 0 },
