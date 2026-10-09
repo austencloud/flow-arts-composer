@@ -280,6 +280,7 @@ interface OpaqueFadeParams {
    * `opacity` attribute bound to the same value).
    */
   opacity?: number;
+  easing?: (t: number) => number;
 }
 
 /**
@@ -296,14 +297,15 @@ export function opaqueFade(
     delay = 0,
     dimmedBy = [],
     opacity = 1,
+    easing,
   }: OpaqueFadeParams = {}
 ): TransitionConfig {
   const ms = motionDuration(duration);
   if (ms === 0) return { duration: 0 };
   if (dimmedBy.some((name) => node.classList.contains(name))) {
-    return fade(node, { duration: ms, delay });
+    return fade(node, { duration: ms, delay, easing });
   }
-  return { duration: ms, delay, css: (t) => `opacity: ${t * opacity}` };
+  return { duration: ms, delay, easing, css: (t) => `opacity: ${t * opacity}` };
 }
 
 interface PopInParams {
@@ -313,9 +315,13 @@ interface PopInParams {
   start?: number;
 }
 
-/** Scale + fade pop for small controls (icon buttons, badges). */
+/**
+ * Scale + fade pop for small controls (icon buttons, badges). A `start` above 1
+ * settles down to rest size instead. It never reads the node's style, unlike
+ * Svelte's `scale`.
+ */
 export function popIn(
-  node: HTMLElement,
+  node: Element,
   { duration = DURATION.fast, delay = 0, start = 0.8 }: PopInParams = {}
 ): TransitionConfig {
   void node;
