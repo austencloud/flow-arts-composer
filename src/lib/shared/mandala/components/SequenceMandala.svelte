@@ -528,15 +528,13 @@
 
 	// A layout resize (pane drag, phone rotation) re-measures exactly. A canvas
 	// no loop is painting redraws here so it is not left stretched.
+	// The first notification counts too: a card's layout can settle after the
+	// mount draw measured it, and skipping it left card mandalas drawn at that
+	// stale size (soft, pale lines in the live card vs its PNG).
 	$effect(() => {
 		const canvas = canvasEl;
 		if (!canvas || typeof ResizeObserver === "undefined") return;
-		let first = true;
 		const observer = new ResizeObserver(() => {
-			// The first notification reports the box the mount draw just measured.
-			const settled = first && canvasSize.measured !== null;
-			first = false;
-			if (settled) return;
 			canvasSize.invalidate();
 			if (!rafId && !morphRafId && !changeMorphRafId) draw();
 		});
