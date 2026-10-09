@@ -5,7 +5,10 @@ import {
   FEATURE_VIDEO_FILE_FORMAT,
   type FeatureVideoFile,
 } from "$lib/shared/media-composition/domain/feature-video";
-import { createEmptyPostProject } from "$lib/shared/post-studio-plugin";
+import {
+  createEmptyPostProject,
+  editContext,
+} from "$lib/shared/post-studio-plugin";
 import type { PostProject } from "@austencloud/video-editor/core";
 import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
 import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
@@ -336,7 +339,7 @@ describe("a feature video in the Post editor", () => {
             durationSeconds: 10,
           },
         ],
-        { now: NOW + 1 }
+        editContext(NOW + 1)
       ),
     });
     const sync = createFeatureVideoSync(server.file, {

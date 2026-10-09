@@ -15,21 +15,8 @@ import {
   type PostItem,
   type PostProject,
   type CompiledPostProject,
-} from "@austencloud/video-editor/core";
-import {
-  PostProjectSchema,
-  type PostAnimationItem,
-  normalizeProject,
-  compilePostProject,
-  evaluatePresetLayers,
-} from "$lib/shared/post-studio-plugin";
-import {
   addOverlayItem,
-  addTitlesItem,
   addTake,
-  addTunnelHook as addProjectTunnelHook,
-  findTunnelHook,
-  removeTunnelHook as removeProjectTunnelHook,
   cleanLabel,
   appendCardClip,
   appendVideoClip,
@@ -42,6 +29,20 @@ import {
   trimItem,
   type EditContext,
   type NewOverlaySpec,
+} from "@austencloud/video-editor/core";
+import {
+  PostProjectSchema,
+  type PostAnimationItem,
+  normalizeProject,
+  compilePostProject,
+  evaluatePresetLayers,
+  editContext,
+} from "$lib/shared/post-studio-plugin";
+import {
+  addTitlesItem,
+  addTunnelHook as addProjectTunnelHook,
+  findTunnelHook,
+  removeTunnelHook as removeProjectTunnelHook,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import {
   applyTutorialTemplate,
@@ -153,7 +154,7 @@ export type PostEdit = (
 export function createPostEditorState(deps: PostEditorDeps) {
   const now = deps.now ?? (() => Date.now());
   const store = deps.store ?? devicePostEditorStore;
-  const context = (): EditContext => ({ now: now() });
+  const context = (): EditContext => editContext(now());
   const sequence = $derived(deps.getSequence());
   const moveBeats = $derived(sequence.steps.map((step) => step.duration ?? 1));
 

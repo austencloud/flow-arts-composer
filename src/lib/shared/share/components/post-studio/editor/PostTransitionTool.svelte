@@ -1,8 +1,7 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { PostItem } from "@austencloud/video-editor/core";
-  import { itemEnd } from "@austencloud/video-editor/core";
-  import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
+  import { itemEnd, updateItem } from "@austencloud/video-editor/core";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";

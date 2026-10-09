@@ -41,6 +41,14 @@
     isAnimated,
     opacityAt,
     type PostEasingPresetId,
+    setItemFill,
+    setTrackFlag,
+    setVideoSpeed,
+    trimItem,
+    trimItemToSource,
+    updateItem,
+    updateItemAt,
+    type PostItemPatch,
   } from "@austencloud/video-editor/core";
   import {
     POST_MAX_SPOKEN_LENGTH,
@@ -51,19 +59,11 @@
   } from "$lib/shared/post-studio-plugin";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import {
-    setItemFill,
-    setTrackFlag,
-    setVideoSpeed,
     canReplaceOverlayVideoWithAnimation,
     replaceOverlayVideoWithAnimation,
-    trimItem,
     setTunnelAppearance,
     setTunnelHookBackdropFrame,
     setTunnelHookSpeed,
-    trimItemToSource,
-    updateItem,
-    updateItemAt,
-    type PostItemPatch,
   } from "$lib/shared/media-composition/domain/post-project-edits";
   import {
     applyLook,

@@ -14,8 +14,6 @@ import {
   type PostTrack,
   type PostVideoItem,
   clearChannel,
-} from "@austencloud/video-editor/core";
-import {
   appendCardClip,
   appendVideoClip,
   cleanLabel,
@@ -25,7 +23,7 @@ import {
   withTrackItems,
   withoutItems,
   type EditContext,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "@austencloud/video-editor/core";
 
 /**
  * Looks are quick layouts for one main clip, built from ordinary items so

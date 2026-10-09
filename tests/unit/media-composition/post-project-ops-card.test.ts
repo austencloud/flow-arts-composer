@@ -4,14 +4,14 @@ import {
   findItem,
   type PostProject,
 } from "@austencloud/video-editor/core";
-import { POST_QR_URL_RULE } from "$lib/shared/post-studio-plugin";
+import { POST_QR_URL_RULE, editContext } from "$lib/shared/post-studio-plugin";
 import {
   applyPostProjectOps,
   type PostProjectOp,
 } from "$lib/shared/media-composition/domain/post-project-ops";
 import { NOW, card, project, video } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 const LINK = "https://tka.run/s/abc123";
 const apply = (before: PostProject, ...ops: PostProjectOp[]) =>
   applyPostProjectOps(before, ops, ctx);

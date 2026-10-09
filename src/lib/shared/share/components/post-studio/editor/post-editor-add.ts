@@ -4,7 +4,7 @@ import {
   mainItemAt,
   type PostProject,
 } from "@austencloud/video-editor/core";
-import type { NewOverlaySpec } from "$lib/shared/media-composition/domain/post-project-edits";
+import type { NewOverlaySpec } from "@austencloud/video-editor/core";
 
 /**
  * Where the Add tool puts a new item. Videos join the end of the main track;

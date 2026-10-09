@@ -5,18 +5,17 @@ import { importRecoveredInShotDraft } from "$lib/shared/media-composition/domain
 import {
   compilePostProject,
   normalizeProject,
+  editContext,
 } from "$lib/shared/post-studio-plugin";
 import {
   channelValueAt,
   sampleEasing,
   setKeyframe,
-} from "@austencloud/video-editor/core";
-import {
   duplicateItem,
   splitItemAt,
   trimItem,
   updateItemAt,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "@austencloud/video-editor/core";
 
 const matrix = (sx = 0.5625, sy = 1, tx = 0, ty = 0) => [
   sx,
@@ -363,7 +362,7 @@ describe("recovered InShot import", () => {
       second.id,
       { sourceGeometry: { ...value, x: value.x + 0.1 } },
       26,
-      { now: 1235 }
+      editContext(1235)
     );
     const edited = project.tracks[0]!.items[1]!;
     if (edited.kind !== "video") throw new Error("Expected edited video");
@@ -404,7 +403,7 @@ describe("recovered InShot import", () => {
         },
       },
       image.start + 3,
-      { now: 1236 }
+      editContext(1236)
     );
     const editedImage = project.tracks[0]!.items[2]!;
     if (editedImage.kind !== "image") throw new Error("Expected keyed image");
@@ -414,9 +413,12 @@ describe("recovered InShot import", () => {
     expect(
       channelValueAt(editedImage, "sourceGeometry", image.start + 3).x
     ).toBeCloseTo(imageGeometry.x + 0.1);
-    const split = splitItemAt(project, image.id, image.start + 5, {
-      now: 1236,
-    })!;
+    const split = splitItemAt(
+      project,
+      image.id,
+      image.start + 5,
+      editContext(1236)
+    )!;
     expect(split.project.tracks[0]!.items).toHaveLength(4);
     const splitImage = split.project.tracks[0]!.items[3]!;
     if (splitImage.kind !== "image") throw new Error("Expected split image");
@@ -424,15 +426,21 @@ describe("recovered InShot import", () => {
     expect(splitImage.keyframes?.sourceGeometry?.map((key) => key.t)).toEqual([
       -3, -2,
     ]);
-    const trimmed = trimItem(split.project, split.newItemId, "end", 80, {
-      now: 1237,
-    });
+    const trimmed = trimItem(
+      split.project,
+      split.newItemId,
+      "end",
+      80,
+      editContext(1237)
+    );
     expect(trimmed.tracks[0]!.items[3]!.kind).toBe("image");
-    const duplicated = duplicateItem(trimmed, second.id, { now: 1238 })!;
+    const duplicated = duplicateItem(trimmed, second.id, editContext(1238))!;
     expect(duplicated.project.tracks[0]!.items).toHaveLength(5);
-    const duplicatedImage = duplicateItem(trimmed, split.newItemId, {
-      now: 1239,
-    })!;
+    const duplicatedImage = duplicateItem(
+      trimmed,
+      split.newItemId,
+      editContext(1239)
+    )!;
     const imageCopy = duplicatedImage.project.tracks[0]!.items.find(
       (item) => item.id === duplicatedImage.newItemId
     );

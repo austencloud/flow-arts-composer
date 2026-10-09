@@ -5,6 +5,7 @@ import {
   TunnelHookSchema,
   type CoreItemKind,
   type ItemKindDefinition,
+  type PostCardItem,
   type PostItemKind,
   type ShapeExtension,
 } from "@austencloud/video-editor/core";
@@ -47,6 +48,26 @@ declare module "@austencloud/video-editor/core" {
   interface PluginProjectFields extends TkaProjectFields {}
   interface PluginCompiledOutputs {
     titles: TunnelTitlesPlan[];
+  }
+  interface PluginOverlaySpec {
+    mode?: PostMovesMode;
+    /** A titles clip's "how to say it" line. */
+    spoken?: string;
+    overlay?: boolean;
+    animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+    cardAppearance?: PostCardItem["cardAppearance"] | null;
+  }
+  interface PluginItemPatch {
+    overlay?: boolean;
+    mode?: PostMovesMode;
+    /** A titles clip's "how to say it" line; blank removes it. */
+    spoken?: string;
+    /** A clip's effect on its staff ends; null removes it. */
+    staffEffect?: PostStaffEffectId | null;
+    animationAppearance?: PostAnimationItem["animationAppearance"] | null;
+    cardAppearance?: PostCardItem["cardAppearance"] | null;
+    /** A card's scan link; null removes it. A link that breaks the rule is passed over. */
+    qrUrl?: string | null;
   }
 }
 /* eslint-enable @typescript-eslint/no-empty-object-type */
@@ -393,6 +414,11 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
     // An animation's intro is written as its own keys, which may be edited.
     ownsIntroKeys: true,
     compile: compileSequenceItem,
+    create: (base, spec) => ({
+      ...base,
+      kind: "animation",
+      overlay: spec.overlay ?? true,
+    }),
   },
   {
     kind: "moves",
@@ -401,6 +427,11 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
     defaultBox: () => ({ ...POST_BOX.stripSquare }),
     transitionVisual: true,
     compile: compileSequenceItem,
+    create: (base, spec) => ({
+      ...base,
+      kind: "moves",
+      mode: spec.mode ?? "arrows",
+    }),
   },
   {
     kind: "carousel",
@@ -416,5 +447,9 @@ export const TKA_ITEM_KINDS: readonly ItemKindDefinition[] = [
     label: "Titles",
     defaultBox: () => ({ ...POST_BOX.full }),
     compile: compileTitlesItem,
+    create: (base, spec) => {
+      const spoken = spec.spoken?.slice(0, POST_MAX_SPOKEN_LENGTH);
+      return { ...base, kind: "titles", ...(spoken?.trim() ? { spoken } : {}) };
+    },
   },
 ];

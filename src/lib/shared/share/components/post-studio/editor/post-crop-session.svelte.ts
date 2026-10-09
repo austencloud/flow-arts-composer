@@ -19,13 +19,11 @@ import {
   framingAt,
   isAnimated,
   postSecondsOfKeyframe,
-} from "@austencloud/video-editor/core";
-import {
   editItemKeyframes,
   resetFraming,
   updateItem,
   updateItemAt,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "@austencloud/video-editor/core";
 import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import {
   STRAIGHTEN_LIMIT,

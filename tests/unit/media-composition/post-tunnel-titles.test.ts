@@ -12,6 +12,7 @@ import {
   sampleEasing,
   OPENING_TITLES_SHARE,
   titlesRole,
+  updateItem,
 } from "@austencloud/video-editor/core";
 import {
   POST_MAX_SPOKEN_LENGTH,
@@ -21,11 +22,11 @@ import {
   normalizeProject,
   compilePostProject,
   evaluatePresetFrame,
+  editContext,
 } from "$lib/shared/post-studio-plugin";
 import {
   addTitlesItem,
   findTunnelHook,
-  updateItem,
 } from "$lib/shared/media-composition/domain/post-project-edits";
 import {
   titlesPlanOf,
@@ -40,7 +41,7 @@ import {
   video,
 } from "./post-project-fixtures";
 
-const ctx = { now: NOW };
+const ctx = editContext(NOW);
 
 /** Full speed for 12 s, half speed for 20 s, then the closing card. */
 function opening(legacyTitles?: TunnelHook["titles"]) {

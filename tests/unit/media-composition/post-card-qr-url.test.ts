@@ -1,18 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { findItem, type PostItem } from "@austencloud/video-editor/core";
+import {
+  findItem,
+  type PostItem,
+  updateItem,
+} from "@austencloud/video-editor/core";
 import {
   POST_MAX_QR_URL_LENGTH,
   POST_QR_URL_RULE,
   PostProjectSchema,
   isPostCardQrUrl,
+  editContext,
 } from "$lib/shared/post-studio-plugin";
-import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
 import { NOW, card, project, text } from "./post-project-fixtures";
 
 const LINK = "https://tka.run/s/abc123";
 /** Exactly as long as a card's link may be. */
 const LONGEST = `https://tka.run/${"a".repeat(POST_MAX_QR_URL_LENGTH - 16)}`;
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 
 describe("isPostCardQrUrl", () => {
   it("takes an https link up to the longest allowed", () => {

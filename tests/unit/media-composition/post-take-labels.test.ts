@@ -4,8 +4,8 @@ import {
   findItem,
   type PostProject,
   takeDisplayLabel,
+  updateItem,
 } from "@austencloud/video-editor/core";
-import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import {
   loadPostProject,

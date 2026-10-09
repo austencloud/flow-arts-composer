@@ -13,6 +13,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-music-edits";
 import type { PostProject } from "@austencloud/video-editor/core";
 import { NOW, project, video } from "./post-project-fixtures";
+import { editContext } from "$lib/shared/post-studio-plugin";
 
 function music(fields: Partial<PostMusic> = {}): PostMusic {
   return {
@@ -30,7 +31,7 @@ function music(fields: Partial<PostMusic> = {}): PostMusic {
   };
 }
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 const URL = "/api/dev/feature-videos/promo/media/music/derail.wav";
 const OTHER = "/api/dev/feature-videos/promo/media/music/parsec.wav";
 const GRID = { bpm: 85, downbeatSeconds: 0.42, beatsPerBar: 4 };

@@ -15,6 +15,7 @@ import {
   EASING_PRESETS,
   boxAt,
   framingAt,
+  updateItem,
 } from "@austencloud/video-editor/core";
 import {
   compilePostProject,
@@ -24,13 +25,13 @@ import {
   staffEffectRole,
   PostProjectSchema,
   evaluatePresetFrame,
+  editContext,
 } from "$lib/shared/post-studio-plugin";
 import {
   fadeBlackOpacityAt,
   resolvePresetTimePoint,
 } from "@austencloud/video-editor/render";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
 import {
   NOW,
   card,
@@ -41,7 +42,7 @@ import {
   video,
 } from "./post-project-fixtures";
 
-const ctx = { now: NOW };
+const ctx = editContext(NOW);
 
 describe("compilePostProject", () => {
   it("fades out to black, then fades in the next clip at the same cut", () => {

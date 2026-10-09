@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PostSourceGeometry } from "@austencloud/video-editor/core";
-import {
-  updateItemAt,
-  updateItem,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+import { updateItemAt, updateItem } from "@austencloud/video-editor/core";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
 import { dragSourceCrop } from "$lib/shared/share/components/post-studio/editor/post-source-crop";
 

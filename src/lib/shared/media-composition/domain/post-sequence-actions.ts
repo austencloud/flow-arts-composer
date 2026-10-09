@@ -4,10 +4,7 @@ import {
   type PostSequenceAction,
 } from "$lib/shared/post-studio-plugin";
 import type { PostProject } from "@austencloud/video-editor/core";
-import {
-  finish,
-  type EditContext,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+import { finish, type EditContext } from "@austencloud/video-editor/core";
 
 /**
  * The whole-sequence changes a post makes to its notation, in the order they

@@ -12,8 +12,9 @@ import {
   type PostProjectOp,
 } from "$lib/shared/media-composition/domain/post-project-ops";
 import { NOW, card, project, video } from "./post-project-fixtures";
+import { editContext } from "$lib/shared/post-studio-plugin";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 const URL = featureVideoMediaUrl("promo", "music/derail.wav");
 const GRID = { bpm: 120, downbeatSeconds: 5.25, beatsPerBar: 4 };
 

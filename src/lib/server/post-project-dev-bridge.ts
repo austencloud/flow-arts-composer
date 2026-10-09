@@ -14,7 +14,7 @@ import {
   applyPostProjectOps,
   type PostProjectOp,
 } from "$lib/shared/media-composition/domain/post-project-ops";
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import { PostProjectSchema, editContext } from "$lib/shared/post-studio-plugin";
 import type { PostProject } from "@austencloud/video-editor/core";
 
 type Command = {
@@ -341,9 +341,11 @@ export async function queuePostProjectOps(
   const session = sessions.get(input.sessionId);
   if (!session || Date.now() - session.seenAt >= ACTIVE_MS)
     throw new Error("Editor session is not active.");
-  const next = applyPostProjectOps(session.snapshot, input.ops, {
-    now: Date.now(),
-  });
+  const next = applyPostProjectOps(
+    session.snapshot,
+    input.ops,
+    editContext(Date.now())
+  );
   if (fingerprint(next) === session.fingerprint)
     return { commandId: null, status: "unchanged" as const };
   return queuePostProjectEdit(

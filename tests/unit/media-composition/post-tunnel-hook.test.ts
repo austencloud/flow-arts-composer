@@ -5,6 +5,7 @@ import {
   normalizeProject as finishProject,
   compilePostProject,
   evaluatePresetFrame,
+  editContext,
 } from "$lib/shared/post-studio-plugin";
 import {
   POST_BOX,
@@ -48,7 +49,7 @@ import {
   video,
 } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 
 function withAnimation() {
   return project(

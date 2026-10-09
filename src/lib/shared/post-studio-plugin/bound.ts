@@ -7,6 +7,7 @@ import {
   normalizeProject as normalizeCore,
   type CompilePostProjectContext,
   type CompiledPostProject,
+  type EditContext,
   type MediaCompositionPreset,
   type PostItemKind,
   type PostProject,
@@ -31,6 +32,11 @@ export function defaultBoxFor(kind: PostItemKind) {
 
 export function normalizeProject(stored: PostProject): PostProject {
   return normalizeCore(stored, tkaPlugin);
+}
+
+/** The edit context tka passes to every edit: the clock and the TKA plugin. */
+export function editContext(now: number): EditContext {
+  return { now, plugin: tkaPlugin };
 }
 
 export function compilePostProject(

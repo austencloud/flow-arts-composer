@@ -7,6 +7,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-music-edits";
 import PostMusicTool from "$lib/shared/share/components/post-studio/editor/PostMusicTool.svelte";
 import { NOW, project, video } from "./post-project-fixtures";
+import { editContext } from "$lib/shared/post-studio-plugin";
 
 /**
  * Mounts the music's panel the way the workspace does: every change goes
@@ -36,9 +37,11 @@ export function mountMusicTool(target: HTMLElement, initial: PostMusic) {
       playheadSeconds: () => playhead,
       onChange: (key: string, patch: MusicPatch) => {
         changes.push([key, patch]);
-        const next = updateMusic({ ...project([video("v1")]), music }, patch, {
-          now: NOW + 1,
-        });
+        const next = updateMusic(
+          { ...project([video("v1")]), music },
+          patch,
+          editContext(NOW + 1)
+        );
         if (next.music) music = next.music;
       },
       onTrim: (edge: "start" | "end", postSeconds: number) => {
@@ -47,7 +50,7 @@ export function mountMusicTool(target: HTMLElement, initial: PostMusic) {
           { ...project([video("v1")]), music },
           edge,
           postSeconds,
-          { now: NOW + 1 }
+          editContext(NOW + 1)
         );
         if (next.music) music = next.music;
       },

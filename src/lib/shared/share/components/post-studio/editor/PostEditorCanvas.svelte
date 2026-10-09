@@ -56,9 +56,9 @@
     boxAt,
     channelValueAt,
     framingAt,
+    updateItemAt,
   } from "@austencloud/video-editor/core";
   import { itemIdFromStaffEffectRole } from "$lib/shared/post-studio-plugin";
-  import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
   import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";

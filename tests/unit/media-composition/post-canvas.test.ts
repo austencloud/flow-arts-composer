@@ -1,13 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { clipBox, clipShapeFor, postOutputSize, postSafeArea, shapedBox, spotAround, POST_BOX, EASING_PRESETS } from "@austencloud/video-editor/core";
-import { compilePostProject, PostProjectSchema } from "$lib/shared/post-studio-plugin";
-import {
-  setProjectCanvas,
-  updateItem,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+import { clipBox, clipShapeFor, postOutputSize, postSafeArea, shapedBox, spotAround, POST_BOX, EASING_PRESETS, setProjectCanvas, updateItem } from "@austencloud/video-editor/core";
+import { compilePostProject, PostProjectSchema, editContext } from "$lib/shared/post-studio-plugin";
 import { NOW, project, video } from "./post-project-fixtures";
 
-const ctx = { now: NOW };
+const ctx = editContext(NOW);
 const PORTRAIT = postOutputSize("9:16");
 
 function pixels(box: { width: number; height: number }, output = PORTRAIT) {

@@ -3,8 +3,8 @@
   import type {
     PostItemKind,
     PostTextSize,
+    NewOverlaySpec,
   } from "@austencloud/video-editor/core";
-  import type { NewOverlaySpec } from "$lib/shared/media-composition/domain/post-project-edits";
   import type {
     CatalogTakeSource,
     PostEditorState,

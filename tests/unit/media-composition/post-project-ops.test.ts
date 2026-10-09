@@ -14,8 +14,9 @@ import type { PostAnimationItem } from "$lib/shared/post-studio-plugin";
 import { findTunnelHook } from "$lib/shared/media-composition/domain/post-project-edits";
 import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
+import { editContext } from "$lib/shared/post-studio-plugin";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 
 function post() {
   return project(

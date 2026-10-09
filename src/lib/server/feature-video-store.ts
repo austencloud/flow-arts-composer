@@ -27,6 +27,7 @@ import {
 import {
   PostProjectSchema,
   createEmptyPostProject,
+  editContext,
 } from "$lib/shared/post-studio-plugin";
 
 /**
@@ -447,9 +448,11 @@ export function createFeatureVideoStore(
         const current = await readFile(slug);
         let next: PostProject;
         try {
-          next = applyPostProjectOps(current.project, ops as PostProjectOp[], {
-            now,
-          });
+          next = applyPostProjectOps(
+            current.project,
+            ops as PostProjectOp[],
+            editContext(now)
+          );
         } catch (cause) {
           throw new FeatureVideoError(
             cause instanceof Error ? cause.message : String(cause),

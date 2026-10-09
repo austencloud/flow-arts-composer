@@ -6,10 +6,7 @@ import type {
   PostProject,
   PostSourceGeometry,
 } from "@austencloud/video-editor/core";
-import {
-  finish,
-  type EditContext,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+import { finish, type EditContext } from "@austencloud/video-editor/core";
 
 const reverse = (value: number): number => (value === 0 ? 0 : -value);
 

@@ -1,6 +1,7 @@
 import type { VideoEditorPlugin } from "@austencloud/video-editor/core";
 import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video-url";
 import { TKA_COMPILE_HOOKS, TKA_COMPILE_OUTPUTS } from "./compile-hooks";
+import { TKA_EDIT_HOOKS } from "./edit-hooks";
 import { TKA_ITEM_KINDS, TKA_KIND_EXTENSIONS } from "./item-kinds";
 import { TKA_NORMALIZE } from "./normalize-hooks";
 import { TKA_PROJECT_EXTENSION, emptyProjectFields } from "./project-extension";
@@ -19,6 +20,8 @@ export function createTkaPlugin(): TkaPlugin {
     compileHooks: TKA_COMPILE_HOOKS,
     compileOutputs: TKA_COMPILE_OUTPUTS,
     isMediaUrl: isFeatureVideoMediaUrl,
+    subjectKey: "sequenceId",
+    editHooks: TKA_EDIT_HOOKS,
     emptyProjectFields,
   };
 }

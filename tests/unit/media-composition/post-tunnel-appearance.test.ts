@@ -3,6 +3,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import {
   PostProjectSchema,
   type PostAnimationItem,
+  editContext,
 } from "$lib/shared/post-studio-plugin";
 import {
   POST_BOX,
@@ -22,7 +23,7 @@ import {
 import { toolRow } from "$lib/shared/share/components/post-studio/editor/post-editor-tools";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 
 function withTunnel(): PostProject {
   const base = project(

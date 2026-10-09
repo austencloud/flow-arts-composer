@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { POST_MAX_EDGE_BORDER, POST_PLAIN_EDGE, type PostProject, type PostVideoItem, POST_EDGE_COLOR_HEX, mergeEdge, regionEdge } from "@austencloud/video-editor/core";
-import { PostProjectSchema, compilePostProject, staffEffectRole, evaluatePresetFrame } from "$lib/shared/post-studio-plugin";
-import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
+import { POST_MAX_EDGE_BORDER, POST_PLAIN_EDGE, type PostProject, type PostVideoItem, POST_EDGE_COLOR_HEX, mergeEdge, regionEdge, updateItem } from "@austencloud/video-editor/core";
+import { PostProjectSchema, compilePostProject, staffEffectRole, evaluatePresetFrame, editContext } from "$lib/shared/post-studio-plugin";
 import { renderPostStudioFrame, paintEdgeBorder, paintEdgeShadow, regionEdgePixels, traceRoundedRect } from "@austencloud/video-editor/render";
 import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
 import { NOW, project, video } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 
 function valid(p: PostProject): PostProject {
   const parsed = PostProjectSchema.safeParse(p);

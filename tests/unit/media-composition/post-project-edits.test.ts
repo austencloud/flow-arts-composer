@@ -1,35 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PostProjectSchema, normalizeProject, compilePostProject } from "$lib/shared/post-studio-plugin";
-import { POST_BOX, POST_MAX_SPEED, POST_MIN_ITEM_SECONDS, findItem, type PostItem, type PostProject, type PostVideoItem, framingAt, isAnimated, opacityAt, setKeyframe } from "@austencloud/video-editor/core";
-import {
-  addOverlayItem,
-  addTake,
-  appendCardClip,
-  appendVideoClip,
-  deleteItem,
-  duplicateItem,
-  editItemKeyframes,
-  clearProjectKeyframes,
-  moveMainItem,
-  moveOverlayItem,
-  moveSelectedItems,
-  placeMainItem,
-  removeTake,
-  replaceTakeMedia,
-  resetFraming,
-  setMainCutCrossfade,
-  setTrackCutCrossfade,
-  setItemFill,
-  setProjectAudio,
-  setProjectBackground,
-  setTrackFlag,
-  setVideoSpeed,
-  splitItemAt,
-  trimItem,
-  trimItemToSource,
-  updateItem,
-  updateItemAt,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+import { PostProjectSchema, normalizeProject, compilePostProject, editContext } from "$lib/shared/post-studio-plugin";
+import { POST_BOX, POST_MAX_SPEED, POST_MIN_ITEM_SECONDS, findItem, type PostItem, type PostProject, type PostVideoItem, framingAt, isAnimated, opacityAt, setKeyframe, addOverlayItem, addTake, appendCardClip, appendVideoClip, deleteItem, duplicateItem, editItemKeyframes, clearProjectKeyframes, moveMainItem, moveOverlayItem, moveSelectedItems, placeMainItem, removeTake, replaceTakeMedia, resetFraming, setMainCutCrossfade, setTrackCutCrossfade, setItemFill, setProjectAudio, setProjectBackground, setTrackFlag, setVideoSpeed, splitItemAt, trimItem, trimItemToSource, updateItem, updateItemAt } from "@austencloud/video-editor/core";
 import {
   createTakeTiming,
   resolveTakeTiming,
@@ -52,7 +23,7 @@ import {
   video,
 } from "./post-project-fixtures";
 
-const ctx = { now: NOW + 1 };
+const ctx = editContext(NOW + 1);
 
 describe("clearProjectKeyframes", () => {
   it("clears the requested scope atomically, skipping locked tracks and no-ops", () => {
@@ -1308,7 +1279,7 @@ describe("replaceTakeMedia", () => {
 
   it("keeps its landings through the editor's import", () => {
     const replaced = valid(
-      replaceTakeMedia(cutFromRecording(), "a", whole, { now: NOW + 2 })
+      replaceTakeMedia(cutFromRecording(), "a", whole, editContext(NOW + 2))
     );
     // The editor can open a blank timing for the new video before the moved
     // one arrives; the move is the later edit, so its landings outrank it.

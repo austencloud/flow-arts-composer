@@ -9,11 +9,9 @@ import {
   POST_MUSIC_MAX_TEXT,
   type PostMusic,
   type PostMusicGrid,
-} from "@austencloud/video-editor/core";
-import {
   finish,
   type EditContext,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "@austencloud/video-editor/core";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,

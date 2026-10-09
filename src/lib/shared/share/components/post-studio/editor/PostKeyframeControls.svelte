@@ -29,8 +29,8 @@
     keyframeCount,
     clearChannel,
     type PostEasingPresetId,
+    editItemKeyframes,
   } from "@austencloud/video-editor/core";
-  import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
   import type {
     PostEdit,
     PostEditorState,

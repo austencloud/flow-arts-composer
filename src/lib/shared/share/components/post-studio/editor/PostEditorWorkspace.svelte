@@ -55,14 +55,6 @@
     musicAudioKey,
     planMusicAudio,
     planProjectAudio,
-  } from "@austencloud/video-editor/core";
-  import {
-    createTkaSurfaces,
-    itemIdFromMovesAnimationRole,
-    itemIdFromStaffEffectRole,
-    staffEffectRole,
-  } from "$lib/shared/post-studio-plugin";
-  import {
     clearProjectKeyframes,
     editItemKeyframes,
     placeMainItem,
@@ -71,7 +63,13 @@
     setProjectBackground,
     setProjectCanvas,
     setTrackFlag,
-  } from "$lib/shared/media-composition/domain/post-project-edits";
+  } from "@austencloud/video-editor/core";
+  import {
+    createTkaSurfaces,
+    itemIdFromMovesAnimationRole,
+    itemIdFromStaffEffectRole,
+    staffEffectRole,
+  } from "$lib/shared/post-studio-plugin";
   import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
   import type { CompositionSourceBinding } from "@austencloud/video-editor";
   import {

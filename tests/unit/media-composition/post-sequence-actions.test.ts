@@ -6,7 +6,7 @@ import {
   withSequenceAction,
   type PostSequenceTransforms,
 } from "$lib/shared/media-composition/domain/post-sequence-actions";
-import { PostProjectSchema } from "$lib/shared/post-studio-plugin";
+import { PostProjectSchema, editContext } from "$lib/shared/post-studio-plugin";
 import type { PostProject } from "@austencloud/video-editor/core";
 import { project as fixture } from "./post-project-fixtures";
 
@@ -33,14 +33,14 @@ describe("post sequence actions", () => {
   });
 
   it("stamps each press as an edit and removes the list when it empties", () => {
-    const mirrored = pressSequenceAction(project(), "mirror", { now: 5 });
+    const mirrored = pressSequenceAction(project(), "mirror", editContext(5));
     expect(mirrored.sequenceActions).toEqual(["mirror"]);
     expect(mirrored.updatedAt).toBe(5);
-    const undone = pressSequenceAction(mirrored, "mirror", { now: 6 });
+    const undone = pressSequenceAction(mirrored, "mirror", editContext(6));
     expect("sequenceActions" in undone).toBe(false);
     const reset = resetSequenceActions(
       project({ sequenceActions: ["flip", "swap"] }),
-      { now: 7 }
+      editContext(7)
     );
     expect("sequenceActions" in reset).toBe(false);
     expect(reset.updatedAt).toBe(7);

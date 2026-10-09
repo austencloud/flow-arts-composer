@@ -52,7 +52,7 @@
   } from "$lib/shared/post-studio-plugin";
   import { layerTimingParts } from "../builder/post-timing-animation";
   import { itemDisplayLabel } from "./post-editor-labels";
-  import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
+  import { updateItem } from "@austencloud/video-editor/core";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import {
     copyPostAnimationEffects,
