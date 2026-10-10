@@ -1,4 +1,5 @@
 import type { PropBuild } from "@austencloud/scene-3d";
+import type { GridJoin } from "@tka/tka-types";
 import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
 import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
 import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
@@ -6,6 +7,7 @@ import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-typ
 
 export type PerformerHubTab =
   | "prop"
+  | "grid"
   | "planes"
   | "effort"
   | "effects"
@@ -27,6 +29,7 @@ export type PerformerHubEdit =
   | PerformerHubEditBase<"propBuild", Partial<PropBuild>>
   | PerformerHubEditBase<"effort", EffortId>
   | PerformerHubEditBase<"staffLengthCm", number>
+  | PerformerHubEditBase<"gridJoin", GridJoin | null | undefined>
   | PerformerHubEditBase<"effect", EffectType>;
 
 type PerformerHubEditBase<Field extends string, Value> = {

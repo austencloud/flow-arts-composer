@@ -19,6 +19,7 @@ const EMPTY_SCOPE: Record<PerformerHubTab, PerformerHubEmptyScope> = {
   character: { message: "Pick a performer to swap characters", locksTab: true },
   sequence: { message: "Pick a performer to load a sequence", locksTab: true },
   prop: { message: "Pick a performer to change props", locksTab: true },
+  grid: { message: "Pick a performer to change grids", locksTab: true },
   effort: { message: "Pick a performer to change effort", locksTab: true },
   planes: { message: "Pick a performer to move hands", locksTab: false },
   effects: { message: "Effects change the scene default", locksTab: false },
