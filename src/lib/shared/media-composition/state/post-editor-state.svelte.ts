@@ -354,6 +354,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
     },
     /** Selects an animation's opening tunnel, which has a look of its own. */
     selectTunnel: timing.selectTunnel,
+    /** Package parts; tka's only part is the opening tunnel, still held by the timing state. */
+    selectPart(itemId: string, part: string) {
+      if (part === "tunnel") timing.selectTunnel(itemId);
+      else core.selectPart(itemId, part);
+    },
     get tunnelHook() {
       return timing.tunnelHook;
     },

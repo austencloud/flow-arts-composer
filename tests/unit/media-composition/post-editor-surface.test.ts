@@ -28,6 +28,7 @@ const SURFACE = [
   "mode",
   "selectedPart",
   "selectTunnel",
+  "selectPart",
   "tunnelHook",
   "selectedTakeId",
   "timing",
