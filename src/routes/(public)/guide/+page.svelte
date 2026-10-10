@@ -337,9 +337,9 @@
     letter-spacing: -0.025em;
   }
 
-  /* Level 1: the pictographs paragraph, then its three stages as pictures.
-     The word is four pictographs, so it gets four times the width and every
-     pictograph on the row is the same size. */
+  /* Level 1: the pictographs paragraph, then its three stages as three
+     equal squares. The word's four pictographs share their square as a
+     two-by-two block, read left to right, top to bottom. */
   .level-one {
     margin-top: clamp(4rem, 8vw, 7rem);
   }
@@ -355,7 +355,7 @@
 
   .stages {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 4fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: clamp(1rem, 2.4vw, 2rem);
     margin: 2rem 0 0;
     padding: 0;
@@ -382,7 +382,8 @@
   }
 
   .word-stage .stage-art {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    aspect-ratio: 1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1px;
     background: var(--guide-stroke);
   }
@@ -563,20 +564,28 @@
     }
   }
 
-  /* Narrow screens: the two single pictographs side by side, the word as a
-     two-by-two block under them, every pictograph still the same size. */
-  @media (max-width: 900px) {
+  /* Phones: one stage per row, the square beside its label, so the three
+     squares stay equal without shrinking the word's pictographs to dots. */
+  @media (max-width: 600px) {
     .stages {
-      max-width: 30rem;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1rem;
     }
 
-    .word-stage {
-      grid-column: 1 / -1;
+    .stage a {
+      flex-direction: row;
+      align-items: center;
+      gap: 1rem;
     }
 
-    .word-stage .stage-art {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .stage-art {
+      flex: 0 0 auto;
+      width: min(38vw, 12rem);
+    }
+
+    .stage-label {
+      gap: 0.5rem;
+      font-size: 1rem;
     }
   }
 
