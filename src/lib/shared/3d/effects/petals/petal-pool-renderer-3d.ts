@@ -1,4 +1,4 @@
-import { Euler, Object3D, PlaneGeometry, Quaternion } from "three";
+import { Euler, Object3D, PlaneGeometry, Quaternion, Vector3 } from "three";
 import {
   pickPetalSprite,
   pickPetalTint,
@@ -34,6 +34,8 @@ import {
   getPetalAtlasFrame,
   getPetalTextureAtlas,
 } from "./petal-texture-atlas";
+import { createPetalSurfaceGeometry } from "./petal-surface-geometry";
+import { petalFlightWeight, settlePetalOrientation } from "./petal-orientation";
 
 const CAPACITY = 2048;
 const EMBER_MAX_AGE = 1.35;
@@ -56,16 +58,19 @@ export class PetalPoolRenderer3D {
   private readonly rotationX = new Float32Array(CAPACITY);
   private readonly rotationY = new Float32Array(CAPACITY);
   private readonly rotationZ = new Float32Array(CAPACITY);
-  private readonly rotationVelocityX = new Float32Array(CAPACITY);
   private readonly rotationVelocityY = new Float32Array(CAPACITY);
   private readonly rotationVelocityZ = new Float32Array(CAPACITY);
+  private readonly quaternionX = new Float32Array(CAPACITY);
+  private readonly quaternionY = new Float32Array(CAPACITY);
+  private readonly quaternionZ = new Float32Array(CAPACITY);
+  private readonly quaternionW = new Float32Array(CAPACITY);
+  private readonly flutterPhase = new Float32Array(CAPACITY);
   private readonly phase = new Float32Array(CAPACITY);
   private readonly swayFrequency = new Float32Array(CAPACITY);
   private readonly swaySpeed = new Float32Array(CAPACITY);
   private readonly fallVelocity = new Float32Array(CAPACITY);
   private readonly dragBase = new Float32Array(CAPACITY);
   private readonly maxOpacity = new Float32Array(CAPACITY);
-  private readonly tumble = new Uint8Array(CAPACITY);
   private readonly baseRotationX = new Float32Array(CAPACITY);
   private readonly right = new Float32Array(CAPACITY);
   private readonly green = new Float32Array(CAPACITY);
@@ -82,6 +87,12 @@ export class PetalPoolRenderer3D {
   private readonly wakeSources: PetalWakeSource3D[] = [];
   private readonly euler = new Euler();
   private readonly quaternion = new Quaternion();
+  private readonly flightQuaternion = new Quaternion();
+  private readonly floatingQuaternion = new Quaternion();
+  private readonly targetQuaternion = new Quaternion();
+  private readonly twistQuaternion = new Quaternion();
+  private readonly flightDirection = new Vector3();
+  private readonly up = new Vector3(0, 1, 0);
   private readonly color: MutableRgb = { right: 1, green: 1, left: 1 };
   private readonly airflow: PetalAirflow3D = { x: 0, y: 0, z: 0, turn: 0 };
   private readonly writeState: ParticleInstanceWrite = {
@@ -105,7 +116,7 @@ export class PetalPoolRenderer3D {
     const atlas = getPetalTextureAtlas();
     this.petalPool = new ParticleInstancePool3D({
       capacity: CAPACITY,
-      geometry: new PlaneGeometry(1, 1),
+      geometry: createPetalSurfaceGeometry(),
       texture: atlas,
       renderOrder: 103,
       nearFadeStart: 2.2,
@@ -117,6 +128,7 @@ export class PetalPoolRenderer3D {
       fog: true,
       colorManaged: true,
       surfaceLighting: { strength: 0.72, floor: 0.24 },
+      thinSurfaceLighting: true,
       contrastAdaptation: {
         backdropLuminance: NEUTRAL_PETAL_ENVIRONMENT_PROFILE.backdropLuminance,
         minimumSurfaceLuminance:
@@ -229,26 +241,62 @@ export class PetalPoolRenderer3D {
       this.x[index]! += (this.vx[index]! + airflow.x + swayX * 0.24) * dt;
       this.y[index]! += (this.vy[index]! + airflow.y) * dt;
       this.z[index]! += (this.vz[index]! + airflow.z + swayZ * 0.24) * dt;
-      if (this.tumble[index] === 1) {
-        this.rotationX[index]! += this.rotationVelocityX[index]! * dt;
-        this.rotationY[index]! +=
-          (this.rotationVelocityY[index]! + airflow.turn * 0.2) * dt;
-        this.rotationZ[index]! += this.rotationVelocityZ[index]! * dt;
-      } else {
-        // Fluttering petals repeatedly present and hide their face; the small
-        // yaw/roll drift prevents the whole stream from flipping in sync.
-        this.rotationX[index] =
-          this.baseRotationX[index]! + Math.sin(oscillation) * 1.05;
-        this.rotationY[index]! +=
-          (this.rotationVelocityY[index]! + airflow.turn * 0.16) * dt;
-        this.rotationZ[index]! += this.rotationVelocityZ[index]! * dt;
-      }
+      const flutter = this.flutterPhase[index]! + oscillation * 1.17;
+      this.rotationX[index] =
+        this.baseRotationX[index]! + Math.sin(flutter) * 0.72;
+      this.rotationY[index]! +=
+        (this.rotationVelocityY[index]! + airflow.turn * 0.16) * dt;
+      this.rotationZ[index]! +=
+        (this.rotationVelocityZ[index]! + Math.cos(flutter * 0.71) * 0.32) * dt;
       this.euler.set(
         this.rotationX[index]!,
         this.rotationY[index]!,
         this.rotationZ[index]!
       );
-      this.quaternion.setFromEuler(this.euler);
+      this.floatingQuaternion.setFromEuler(this.euler);
+
+      const motionX = this.vx[index]! + airflow.x + swayX * 0.24;
+      const motionY = this.vy[index]! + airflow.y;
+      const motionZ = this.vz[index]! + airflow.z + swayZ * 0.24;
+      const motionLength = Math.hypot(motionX, motionY, motionZ);
+      if (motionLength > 0.0001) {
+        this.flightDirection.set(
+          motionX / motionLength,
+          motionY / motionLength,
+          motionZ / motionLength
+        );
+        this.flightQuaternion.setFromUnitVectors(this.up, this.flightDirection);
+        this.twistQuaternion.setFromAxisAngle(
+          this.up,
+          this.flutterPhase[index]! + Math.sin(flutter) * 0.24
+        );
+        this.flightQuaternion.multiply(this.twistQuaternion);
+      } else {
+        this.flightQuaternion.copy(this.floatingQuaternion);
+      }
+      this.quaternion.set(
+        this.quaternionX[index]!,
+        this.quaternionY[index]!,
+        this.quaternionZ[index]!,
+        this.quaternionW[index]!
+      );
+      settlePetalOrientation(
+        this.quaternion,
+        this.flightQuaternion,
+        this.floatingQuaternion,
+        petalFlightWeight(
+          this.vx[index]!,
+          this.vy[index]!,
+          this.vz[index]!,
+          this.fallVelocity[index]!
+        ),
+        dt,
+        this.targetQuaternion
+      );
+      this.quaternionX[index] = this.quaternion.x;
+      this.quaternionY[index] = this.quaternion.y;
+      this.quaternionZ[index] = this.quaternion.z;
+      this.quaternionW[index] = this.quaternion.w;
 
       const life = this.age[index]! / this.maxAge[index]!;
       const fadeIn =
@@ -263,7 +311,7 @@ export class PetalPoolRenderer3D {
       write.z = this.z[index]!;
       write.scaleX = this.size[index]! * 2;
       write.scaleY = this.size[index]! * 2;
-      write.scaleZ = 1;
+      write.scaleZ = this.size[index]! * 2;
       write.quaternionX = this.quaternion.x;
       write.quaternionY = this.quaternion.y;
       write.quaternionZ = this.quaternion.z;
@@ -401,7 +449,6 @@ export class PetalPoolRenderer3D {
     const fall = params.fallBaseSpeed * (0.3 + 0.7 * params.fallSpeed);
     const fallTarget = -fall * (0.82 + Math.random() * 0.32);
     const spread = ambient ? 0.14 : 0.22;
-    const tumble = Math.random() < 0.28;
     this.active[slot] = 1;
     this.x[slot] = ambient ? x : x + (Math.random() - 0.5) * 0.08;
     this.y[slot] = ambient ? y : y + (Math.random() - 0.5) * 0.06;
@@ -425,16 +472,18 @@ export class PetalPoolRenderer3D {
       shape,
       ambient
     );
-    this.rotationVelocityX[slot] =
-      (Math.random() - 0.5) * (tumble ? 4.2 : 0.45);
-    this.rotationVelocityY[slot] = (Math.random() - 0.5) * (tumble ? 5 : 0.7);
-    this.rotationVelocityZ[slot] =
-      (Math.random() - 0.5) * (tumble ? 3.8 : 0.55);
-    this.rotationX[slot] = Math.random() * Math.PI * 2;
+    this.rotationVelocityY[slot] = (Math.random() - 0.5) * 0.7;
+    this.rotationVelocityZ[slot] = (Math.random() - 0.5) * 0.55;
+    this.rotationX[slot] = (Math.random() - 0.5) * 0.9;
     this.baseRotationX[slot] = this.rotationX[slot]!;
     this.rotationY[slot] = Math.random() * Math.PI * 2;
     this.rotationZ[slot] = Math.random() * Math.PI * 2;
     this.phase[slot] = Math.random() * Math.PI * 2;
+    this.flutterPhase[slot] = Math.random() * Math.PI * 2;
+    this.quaternionX[slot] = 0;
+    this.quaternionY[slot] = 0;
+    this.quaternionZ[slot] = 0;
+    this.quaternionW[slot] = 1;
     this.swayFrequency[slot] =
       params.swayFrequency * (0.65 + Math.random() * 0.7);
     this.swaySpeed[slot] =
@@ -444,7 +493,6 @@ export class PetalPoolRenderer3D {
     this.fallVelocity[slot] = fallTarget;
     this.dragBase[slot] = ambient ? 0.72 : 0.03 + params.streakLength * 0.5;
     this.maxOpacity[slot] = resolvePetalOpacity(shape, ambient);
-    this.tumble[slot] = tumble ? 1 : 0;
     setLinearRgbFromHex(this.color, pickPetalTint(palette));
     this.right[slot] = this.color.right;
     this.green[slot] = this.color.green;

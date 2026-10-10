@@ -60,6 +60,8 @@ export interface ParticleInstancePoolOptions {
   colorManaged?: boolean;
   /** Opts this pool into two-sided ambient and direct scene lighting. */
   surfaceLighting?: ParticleSurfaceLightingOptions;
+  /** Gives a curved thin surface distinct front and transmitted back lighting. */
+  thinSurfaceLighting?: boolean;
   /** Preserves silhouette separation as the scene behind it changes. */
   contrastAdaptation?: ParticleContrastAdaptationOptions;
 }
@@ -165,20 +167,34 @@ const particleLightingFragment = /* glsl */ `
     varying vec3 vViewPosition;
 
     float particleDiffuseWeight(vec3 normal, vec3 lightDirection) {
+      #ifdef USE_PARTICLE_THIN_SURFACE
+        float facing = dot(normal, lightDirection);
+        return 0.2 + 0.68 * max(facing, 0.0) + 0.24 * max(-facing, 0.0);
+      #else
       // Petals and leaves transmit light through both faces. The wrapped floor
       // keeps edge-on particles readable while rotation still changes their tone.
       return 0.28 + 0.72 * abs(dot(normal, lightDirection));
+      #endif
     }
 
     vec3 resolveParticleLighting() {
       vec3 particleNormal = normalize(vViewNormal);
+      #ifdef USE_PARTICLE_THIN_SURFACE
+        if (!gl_FrontFacing) particleNormal = -particleNormal;
+      #endif
       vec3 irradiance = ambientLightColor;
 
       #if NUM_HEMI_LIGHTS > 0
         for (int index = 0; index < NUM_HEMI_LIGHTS; index++) {
-          float skyWeight = 0.28 + 0.72 * abs(
-            dot(particleNormal, hemisphereLights[index].direction)
-          );
+          #ifdef USE_PARTICLE_THIN_SURFACE
+            float skyWeight = 0.5 + 0.5 * dot(
+              particleNormal, hemisphereLights[index].direction
+            );
+          #else
+            float skyWeight = 0.28 + 0.72 * abs(
+              dot(particleNormal, hemisphereLights[index].direction)
+            );
+          #endif
           irradiance += mix(
             hemisphereLights[index].groundColor,
             hemisphereLights[index].skyColor,
@@ -492,6 +508,9 @@ export class ParticleInstancePool3D {
         ? {
             defines: {
               ...(surfaceLighting ? { USE_PARTICLE_SURFACE_LIGHTING: "" } : {}),
+              ...(surfaceLighting && options.thinSurfaceLighting
+                ? { USE_PARTICLE_THIN_SURFACE: "" }
+                : {}),
               ...(options.colorManaged
                 ? { USE_PARTICLE_COLOR_MANAGEMENT: "" }
                 : {}),
