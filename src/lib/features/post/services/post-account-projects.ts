@@ -479,45 +479,60 @@ const cloudRetries = new Map<
   { timer: ReturnType<typeof setTimeout>; attempt: number }
 >();
 
+/** Drops every waiting cloud retry. An account change calls this. */
+export function cancelPostCloudRetries(): void {
+  for (const pending of cloudRetries.values()) clearTimeout(pending.timer);
+  cloudRetries.clear();
+}
+
 /** Keeps a copy in the dev server's draft folder, where there is one. */
-function keepOnDisk(project: PostProject): void {
+function keepOnDisk(project: PostProject, uid: string): void {
   if (!import.meta.env.DEV) return;
-  void savePostDraftRecords([postDraftArchiveRecord(project)]).catch((cause) =>
-    console.warn("[Post] The disk copy was not written:", cause)
+  const archiveId = isIndependentStudioProjectId(project.sequenceId)
+    ? `account:${uid}:${project.sequenceId}`
+    : undefined;
+  void savePostDraftRecords([postDraftArchiveRecord(project, archiveId)]).catch(
+    (cause) => console.warn("[Post] The disk copy was not written:", cause)
+  );
+}
+
+function accountChanged(): Error {
+  return new Error(
+    "The account changed. This post was kept on this device for the account that edited it."
   );
 }
 
 /**
- * Sends a post that is already saved on this device to the account, and
- * keeps a copy on disk in development. A cloud write that does not go
- * through is tried again later with the newest copy, so it never turns a
- * save that landed on this device into a failed one. Returns a later edit
- * saved elsewhere, which the editor takes up instead of this copy.
+ * Sends a post that is already saved on this device to the account that
+ * opened it, and keeps a copy on disk in development. The caller binds the
+ * account: a save or a retry that runs after someone else signs in writes
+ * nothing. A cloud write that does not go through is tried again later with
+ * the newest copy, so it never turns a save that landed on this device into
+ * a failed one. Returns a later edit saved elsewhere, which the editor takes
+ * up instead of this copy.
  */
 export async function saveSyncedPostDraft(
   project: PostProject,
-  sequence: SequenceData | null
+  sequence: SequenceData | null,
+  uid: string
 ): Promise<PostProject | null> {
   if (!sequence && project.sourceKind !== "none")
     throw new Error(
       "The source sequence is missing. This post was kept on this device."
     );
-  keepOnDisk(project);
-  const pending = cloudRetries.get(project.sequenceId);
+  const retryKey = `${uid}:${project.sequenceId}`;
+  const pending = cloudRetries.get(retryKey);
   clearTimeout(pending?.timer);
-  cloudRetries.delete(project.sequenceId);
-  const uid = await currentPostAccount();
-  if (!uid) {
-    console.warn(
-      `[Post] ${project.sequenceId} is saved on this device; sign in to sync it.`
-    );
-    return null;
-  }
+  cloudRetries.delete(retryKey);
+  if ((await currentPostAccount()) !== uid) throw accountChanged();
+  keepOnDisk(project, uid);
   try {
     const newer = await saveAccountPostProject(uid, project, sequence);
     if (newer) {
+      // The device copy is keyed by whoever is signed in at this moment.
+      if (auth.currentUser?.uid !== uid) throw accountChanged();
       savePostProject(newer);
-      keepOnDisk(newer);
+      keepOnDisk(newer, uid);
     }
     return newer;
   } catch (cause) {
@@ -531,12 +546,12 @@ export async function saveSyncedPostDraft(
       `[Post] ${project.sequenceId} is saved on this device and will sync to the cloud shortly:`,
       cause
     );
-    cloudRetries.set(project.sequenceId, {
+    cloudRetries.set(retryKey, {
       attempt,
       // The entry stays until the try, so the wait keeps doubling.
       timer: setTimeout(
         () => {
-          void saveSyncedPostDraft(project, sequence).then(
+          void saveSyncedPostDraft(project, sequence, uid).then(
             () => undefined,
             () => undefined
           );

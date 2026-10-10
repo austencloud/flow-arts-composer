@@ -16,6 +16,7 @@
     loadSyncedPostDraft,
     resolveSyncedPostSequence,
     saveSyncedPostDraft,
+    cancelPostCloudRetries,
   } from "./services/post-account-projects";
   import { savePostDraft } from "#lib/shared/media-composition/services/post-draft-storage.js";
   import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
@@ -100,6 +101,8 @@
     const uid =
       authState.user && !authState.user.isAnonymous ? authState.user.uid : null;
     if (previousAccount === uid) return;
+    // A cloud retry waiting for the previous account must never run as this one.
+    if (previousAccount !== undefined) cancelPostCloudRetries();
     previousAccount = uid;
     initialVisit = true;
     previousParam = null;
@@ -156,11 +159,13 @@
   }
 
   /**
-   * The account save for one sequence, bound when the editor opens: a copy
-   * it still holds when another post opens saves with its own sequence.
+   * The account save for one post, bound when the editor opens: a copy it
+   * still holds when another post opens, or after someone else signs in,
+   * saves with its own sequence and only to its own account.
    */
-  function saveSyncedFor(sequence: SequenceData | null) {
-    return (project: PostProject) => saveSyncedPostDraft(project, sequence);
+  function saveSyncedFor(uid: string, sequence: SequenceData | null) {
+    return (project: PostProject) =>
+      saveSyncedPostDraft(project, sequence, uid);
   }
 </script>
 
@@ -239,7 +244,7 @@
             onSaveDraft={moduleState.feature
               ? moduleState.feature.save
               : authState.user && !authState.user.isAnonymous
-                ? saveSyncedFor(moduleState.sequence)
+                ? saveSyncedFor(authState.user.uid, moduleState.sequence)
                 : moduleState.diskAvailable
                   ? savePostDraft
                   : undefined}

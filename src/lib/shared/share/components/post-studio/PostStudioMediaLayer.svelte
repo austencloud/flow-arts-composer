@@ -50,6 +50,8 @@
     sourceTimeSeconds: number;
     playing: boolean;
     exporting?: boolean;
+    /** The pixel size this layer fills in the exported file. */
+    exportSize?: { width: number; height: number } | null;
     sequence: SequenceData | null;
     qrSequence?: SequenceData;
     /** A card's saved scan link, which its QR shows. */
@@ -93,6 +95,7 @@
     sourceTimeSeconds,
     playing,
     exporting = false,
+    exportSize = null,
     sequence,
     qrSequence,
     qrUrl,
@@ -738,6 +741,7 @@
         {sourceTimeSeconds}
         {playing}
         {exporting}
+        {exportSize}
       />
     {/if}
   {:else if binding.renderMode === "sequence-animation" && sequence && sequencePosition !== undefined}

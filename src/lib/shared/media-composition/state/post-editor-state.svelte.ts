@@ -48,6 +48,7 @@ import {
   compilePostProject,
   type CompiledPostProject,
 } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import type { PostFootageVault } from "#lib/shared/media-composition/services/local-footage-vault.js";
 import {
   confirmTakeTiming,
   resolveTakeTiming,
@@ -131,6 +132,11 @@ type TakeHistoryEntry =
   | { kind: "appearance"; appearance: MappingAppearance | undefined };
 
 export interface PostEditorDeps {
+  /**
+   * This device's kept copies of picked videos, for the account editing, so
+   * a reload brings device footage back without picking it again.
+   */
+  footage?: PostFootageVault;
   getSequence: () => SequenceData | null;
   /** A recovered full draft to open in place of this browser's saved copy. */
   initialProject?: PostProject;
@@ -201,6 +207,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
   } | null>(null);
 
   let media = $state.raw<Record<string, TakeMedia>>({});
+  /** Device takes whose kept copy is being read. */
+  const restoring = new Set<string>();
+  let disposed = false;
   let imageMedia = $state.raw<Record<string, TakeMedia>>({});
   let timings = $state.raw<Record<string, TakeTiming>>({});
   let timingUndo = $state.raw<Record<string, TakeHistoryEntry[]>>({});
@@ -754,6 +763,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
           ...timings,
           [take.id]: openTiming(take, undefined, source),
         };
+        restoreLocalTake(take);
       }
     }
     for (const image of source.images ?? []) {
@@ -765,6 +775,26 @@ export function createPostEditorState(deps: PostEditorDeps) {
       }
     }
   }
+
+  /** Brings back a device take from this device's kept copy, if it has one. */
+  function restoreLocalTake(take: PostTake): void {
+    const footage = deps.footage;
+    if (!footage || media[take.id] || restoring.has(take.id)) return;
+    restoring.add(take.id);
+    void footage
+      .open(take)
+      .then((file) => {
+        // The project may have moved on while the copy was read.
+        const current = project.takes.find(
+          (candidate) => candidate.id === take.id
+        );
+        if (disposed || !file || media[take.id]) return;
+        if (!current || current.takeKey !== take.takeKey) return;
+        attach(current, URL.createObjectURL(file), true);
+      })
+      .finally(() => restoring.delete(take.id));
+  }
+
   loadSavedMedia();
   timingTakeId = takesInUse[0]?.id ?? project.takes[0]?.id ?? null;
 
@@ -835,6 +865,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
         const file = files.get(take.ref.name);
         if (!file) throw new Error(`Missing video: ${take.ref.name}`);
         attach(take, URL.createObjectURL(file), true, undefined, parsed);
+        void deps.footage?.keep(take, file);
       } else
         timings = {
           ...timings,
@@ -1046,6 +1077,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       durationSeconds,
     };
     attach(take, URL.createObjectURL(file), true);
+    void deps.footage?.keep(take, file);
     return placeTake(take);
   }
 
@@ -1074,6 +1106,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     )
       return false;
     attach(take, URL.createObjectURL(file), true);
+    void deps.footage?.keep(take, file);
     return true;
   }
 
@@ -1093,6 +1126,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       const file = matches(take.ref);
       if (file) {
         attach(take, URL.createObjectURL(file), true);
+        void deps.footage?.keep(take, file);
         linked++;
       }
     }
@@ -1522,6 +1556,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
   }
 
   function dispose(): void {
+    disposed = true;
     keepHistory();
     if (typeof window !== "undefined")
       window.removeEventListener("pagehide", keepHistory);
