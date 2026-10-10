@@ -34,7 +34,7 @@
   } = $props();
   let query = $state("");
   let filter = $state<StudioIntent | "all">("all");
-  let sort = $state("recent");
+  let sort = $state<"recent" | "name">("recent");
   let activePreview = $state<string | null>(null);
   let creating = $state(false);
   let intent = $state<StudioIntent | null>(null);
@@ -56,6 +56,10 @@
           : b.updatedAt - a.updatedAt
       )
   );
+  const sorts = [
+    { id: "recent" as const, label: "Recent", icon: "fa-clock-rotate-left" },
+    { id: "name" as const, label: "Name", icon: "fa-arrow-down-a-z" },
+  ];
   const filters = [
     { id: "all" as const, label: "All projects" },
     { id: "tutorial" as const, label: "Sequence videos" },
@@ -143,11 +147,18 @@
           placeholder="Find a project"
         /></label
       >
-      <select bind:value={sort} aria-label="Sort projects"
-        ><option value="recent">Recently edited</option><option value="name"
-          >Name A–Z</option
-        ></select
-      >
+      <div class="sort" role="group" aria-label="Sort projects">
+        {#each sorts as item}
+          <button
+            type="button"
+            class:selected={sort === item.id}
+            aria-pressed={sort === item.id}
+            onclick={() => (sort = item.id)}
+            ><i class="fas {item.icon}" aria-hidden="true"
+            ></i>{item.label}</button
+          >
+        {/each}
+      </div>
     </div>
   </div>
   <div class="filters" role="group" aria-label="Project types">
@@ -283,8 +294,7 @@
     color: var(--theme-text-secondary);
   }
   button,
-  input,
-  select {
+  input {
     font: inherit;
     color: inherit;
   }
@@ -292,8 +302,7 @@
     cursor: pointer;
   }
   button:focus-visible,
-  input:focus-visible,
-  select:focus-visible {
+  input:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 3px;
   }
@@ -404,13 +413,33 @@
     background: transparent;
     font-size: 14px;
   }
-  select {
-    min-height: 42px;
-    padding: 8px;
+  .sort {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
     border: 1px solid var(--theme-stroke);
-    border-radius: 6px;
+    border-radius: 8px;
     background: var(--theme-card-bg);
+  }
+  .sort button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-radius: 6px;
     font-size: 14px;
+    color: var(--theme-text-secondary);
+    background: transparent;
+  }
+  .sort button.selected {
+    border-color: var(--theme-stroke);
+    background: var(--theme-panel-elevated-bg, var(--theme-card-hover-bg));
+    color: var(--theme-text);
+  }
+  .sort button:hover {
+    color: var(--theme-text);
   }
   .filters {
     display: flex;
