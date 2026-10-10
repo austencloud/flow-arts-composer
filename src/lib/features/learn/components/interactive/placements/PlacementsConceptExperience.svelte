@@ -8,6 +8,7 @@
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import UndoButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/UndoButton.svelte";
   import ClearSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
+  import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
   import GridModeToggle from "#lib/features/create/construct/shared/components/GridModeToggle.svelte";
   import "#lib/shared/selection/selection.css";
   import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
@@ -251,12 +252,19 @@
     loadPair(example.left, example.right);
   }
 
-  function transform(action: "rotate" | "mirror" | "swap") {
+  // Same 45-degree steps and reflection axes as the app's transform tools:
+  // Rotate turns a quarter turn either way, Mirror reflects left-right and
+  // Flip reflects top-bottom.
+  function transform(
+    action: "rotate" | "mirror" | "flip" | "swap",
+    rotationSteps = 2
+  ) {
     if (!placement.leftLocation || !placement.rightLocation || !built) return;
     const result = transformPlacement(
       placement.leftLocation,
       placement.rightLocation,
-      action
+      action === "flip" ? "mirror" : action,
+      { rotationSteps, reflectionAxis: action === "flip" ? 2 : 0 }
     );
     loadPair(result.left, result.right);
   }
@@ -554,18 +562,20 @@
               role="group"
               aria-label={t("learn_ui_transform_both_hands")}
             >
-              <PanelButton disabled={!built} onclick={() => transform("rotate")}
-                ><i class="fas fa-rotate-right" aria-hidden="true"></i>
-                {t("learn_ui_rotate")}</PanelButton
-              >
-              <PanelButton disabled={!built} onclick={() => transform("mirror")}
-                ><i class="fas fa-left-right" aria-hidden="true"></i>
-                {t("learn_ui_reflect")}</PanelButton
-              >
-              <PanelButton disabled={!built} onclick={() => transform("swap")}
-                ><i class="fas fa-arrows-rotate" aria-hidden="true"></i>
-                {t("learn_ui_swap_hands")}</PanelButton
-              >
+              <SequenceTransformActions
+                toolbar
+                hasSequence={built}
+                hasSelection={false}
+                isTransforming={false}
+                showEditInConstructor={false}
+                actionSubject={t("learn_ui_placement_subject")}
+                rotationDegrees={90}
+                onMirror={() => transform("mirror")}
+                onFlip={() => transform("flip")}
+                onSwap={() => transform("swap")}
+                onRotateCCW={() => transform("rotate", -2)}
+                onRotateCW={() => transform("rotate", 2)}
+              />
             </div>
           {/if}
         </div>
