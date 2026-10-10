@@ -107,7 +107,7 @@
       <header class="hero">
         <div class="hero-copy">
           <h1>{tDynamic("guide_hub_title")}</h1>
-          <p class="lead">{tDynamic("guide_welcome_what")}</p>
+          <p class="lead">{tDynamic("guide_hub_lead")}</p>
           <div class="intro-actions">
             <a class="primary-action" href={firstLessonHref}>
               {tDynamic("guide_hub_start_lesson")}
