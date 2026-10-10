@@ -449,12 +449,6 @@
   let catalog = $state.raw<readonly LibraryTake[]>([]);
   let catalogLoading = $state(false);
   let catalogError = $state<string | null>(null);
-  /**
-   * The last list failed. A failed list changes the library too, and a
-   * library that loads again on every list would retry forever, so a change
-   * after a failure does not list again; the next editor that opens does.
-   */
-  let lastFailed = false;
   $effect(() => {
     const library = services.mediaLibrary;
     if (!library) return;
@@ -467,13 +461,11 @@
       try {
         const takes = await library.listTakes();
         if (stale) return;
-        lastFailed = false;
         catalog = takes;
         catalogError = null;
         editor.attachLibraryTakes();
       } catch (cause) {
         if (stale) return;
-        lastFailed = true;
         catalog = [];
         catalogError = cause instanceof Error ? cause.message : String(cause);
       } finally {
@@ -483,9 +475,11 @@
     };
     void load();
     // A list in flight reads the library as it settles, so a change it
-    // causes or meets is already in its result.
+    // causes or meets is already in its result, including the writes its own
+    // failure makes. A later change from another surface lists once, joining
+    // that surface's fetch.
     const off = library.onChange?.(() => {
-      if (!listing && !lastFailed) void load();
+      if (!listing) void load();
     });
     return () => {
       stale = true;
