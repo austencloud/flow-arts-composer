@@ -9,10 +9,10 @@
    * step grid's stepCascade keyframes. The dice holds the lead slot, where
    * the step grid's start position sits.
    *
-   * Each turn shows a real sequence from drawMatrixRealization(), the
-   * Firebase-free source behind the home hero, drawn in the background
-   * between turns. When that source fails, turns step through the demo
-   * sequence instead.
+   * Each turn rolls twice, so a second tap shows a different sequence. Each
+   * roll is a real sequence from drawMatrixRealization(), the Firebase-free
+   * source behind the home hero, drawn in the background between turns.
+   * When that source fails, rolls step through the demo sequence instead.
    *
    * Finished picture: the dice and the latest roll's opening steps. Before
    * the first turn, the demo sequence's from Generate's own start
@@ -25,11 +25,16 @@
   import { DEFAULT_ANIMATION_TIMING } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models.js";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
-  import { cellCenter, generateLayout } from "./method-preview-compositions";
+  import {
+    cellCenter,
+    generateLayout,
+    type GenerateLayout,
+  } from "./method-preview-compositions";
   import {
     FIRST_ROLL,
     GENERATE_CLEAR_MS,
     GENERATE_READY_WAIT_MS,
+    GENERATE_ROLLS_PER_TURN,
     generateCellDelayMs,
     generateRevealMs,
     nextRoll,
@@ -42,6 +47,7 @@
     sceneGhost,
     tapAt,
     waitUntil,
+    type SceneFinger,
     type SceneRun,
   } from "./method-preview-run";
   import { playSceneTurns } from "./method-preview-scene-turns.svelte";
@@ -71,11 +77,12 @@
   /** Cells that have drawn the current roll. */
   const readyCells = new SvelteSet<number>();
   let announced = false;
-  /** The next turn's roll, drawn in the background. */
+  /** The next turn's rolls, drawn in the background. */
   const nextRollDraw = createNextSequenceDraw({
     emptyWarning:
       "[method preview] Generate source returned no sequence; using the demo",
     errorWarning: "[method preview] Generate could not draw a sequence",
+    capacity: GENERATE_ROLLS_PER_TURN,
   });
 
   onDestroy(() => {
@@ -107,21 +114,18 @@
     nextRollDraw.request();
   }
 
-  async function play(run: SceneRun): Promise<void> {
-    const box = layout;
-    const last = box?.cells[box.cells.length - 1];
-    if (!box || !last) return;
-    // Nothing is drawn ahead under reduced motion. Turns that come back
-    // after it ask now, and fall back on the demo if the roll is late.
-    nextRollDraw.request();
-    const finger = sceneGhost(run, () => root);
-    pose = finger.ghost;
-    const start = cellCenter(last);
-    placeGhost(finger, start.x, start.y);
-    const dice = cellCenter(box.dice);
-    if (!(await tapAt(finger, run, dice.x, dice.y))) return;
+  /**
+   * Fade the shown roll and wash in the next. The finger leaves before the
+   * last roll washes in. True when the roll landed.
+   */
+  async function rollIn(
+    run: SceneRun,
+    box: GenerateLayout,
+    finger: SceneFinger,
+    last: boolean
+  ): Promise<boolean> {
     phase = "clearing";
-    if (!(await run.wait(GENERATE_CLEAR_MS))) return;
+    if (!(await run.wait(GENERATE_CLEAR_MS))) return false;
     roll = nextRoll(roll, nextRollDraw.take(), box.cells.length);
     readyCells.clear();
     epoch += 1;
@@ -131,11 +135,28 @@
       () => readyCells.size >= box.cells.length,
       GENERATE_READY_WAIT_MS
     );
-    if (run.aborted) return;
-    finger.ghost.visible = false;
+    if (run.aborted) return false;
+    if (last) finger.ghost.visible = false;
     phase = "entering";
-    if (!(await run.wait(generateRevealMs(box.cells.length, box.columns)))) {
-      return;
+    return run.wait(generateRevealMs(box.cells.length, box.columns));
+  }
+
+  async function play(run: SceneRun): Promise<void> {
+    const box = layout;
+    if (!box || box.cells.length === 0) return;
+    // Nothing is drawn ahead under reduced motion. Turns that come back
+    // after it ask now, and fall back on the demo if the roll is late.
+    nextRollDraw.request();
+    const finger = sceneGhost(run, () => root);
+    pose = finger.ghost;
+    // The finger starts on the dice and stays there between rolls: two
+    // rolls leave no time for a glide.
+    const dice = cellCenter(box.dice);
+    placeGhost(finger, dice.x, dice.y);
+    for (let count = 1; count <= GENERATE_ROLLS_PER_TURN; count++) {
+      if (!(await tapAt(finger, run, dice.x, dice.y))) return;
+      const last = count === GENERATE_ROLLS_PER_TURN;
+      if (!(await rollIn(run, box, finger, last))) return;
     }
     settle();
   }
