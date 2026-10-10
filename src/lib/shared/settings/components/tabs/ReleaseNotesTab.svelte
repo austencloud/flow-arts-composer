@@ -10,6 +10,16 @@
   import VersionHistoryEntry from "./release-notes/VersionHistoryEntry.svelte";
   import { getContributorLoader } from "#lib/shared/feedback/get-contributor-loader.js";
   import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
+  import SettingsSubpage from "../SettingsSubpage.svelte";
+
+  let {
+    backLabel,
+    onBack,
+  }: {
+    /** Label of the settings tab the back control returns to. */
+    backLabel?: string;
+    onBack?: () => void;
+  } = $props();
 
   const versionState = createVersionState();
 
@@ -196,159 +206,139 @@
   }
 </script>
 
-<div class="release-notes-tab">
-  <header class="tab-header">
-    <div class="header-content">
-      <h2>
-        <i class="fas fa-gift" aria-hidden="true"></i>
-        {t("tab_settings_release_notes")}
-      </h2>
+<SettingsSubpage
+  icon="fas fa-gift"
+  title={t("tab_settings_release_notes")}
+  headingId="release-notes-title"
+  {backLabel}
+  {onBack}
+>
+  <div class="release-notes-tab">
+    <div class="master-detail-layout">
+      <!-- Master: version list -->
+      <aside
+        class="version-list-panel themed-scrollbar"
+        bind:this={railElement}
+      >
+        {#if versionState.isLoading && versionState.versions.length === 0}
+          <div class="loading-state">
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+          </div>
+        {:else if versionState.error}
+          <div class="error-state">
+            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+            <p>{versionState.error}</p>
+            <button type="button" onclick={() => versionState.loadVersions()}>
+              {t("action_retry")}
+            </button>
+          </div>
+        {:else if versionState.versions.length === 0}
+          <div class="empty-state">
+            <i class="fas fa-rocket" aria-hidden="true"></i>
+            <h3>{t("settings_no_releases_yet")}</h3>
+            <p>{t("settings_check_back_for_updates")}</p>
+          </div>
+        {:else}
+          <!-- Wide mode: compact list items -->
+          <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+          <div
+            class="version-list-compact"
+            role="listbox"
+            tabindex="0"
+            aria-label={t("settings_version_list")}
+            onkeydown={handleListKeydown}
+          >
+            {#each versionState.versions as version (version.version)}
+              <div class="rail-slot" data-rail-version={version.version}>
+                <VersionListItem
+                  {version}
+                  isActive={activeVersion === version.version}
+                  onclick={() => jumpToVersion(version)}
+                />
+              </div>
+            {/each}
+          </div>
+          <!-- Narrow mode: full cards -->
+          <div class="version-list-cards">
+            {#each versionState.versions as version (version.version)}
+              <VersionCard {version} onclick={() => openVersionDetail(version)} />
+            {/each}
+          </div>
+        {/if}
+      </aside>
+
+      <!-- Detail: the full release history (wide mode only) -->
+      <main
+        class="version-detail-panel themed-scrollbar"
+        bind:this={streamElement}
+        use:spyOnScroll
+      >
+        {#if versionState.versions.length > 0}
+          <div class="history-stream">
+            {#each streamVersions as version (version.version)}
+              <div
+                id="release-{version.version}"
+                class="stream-section"
+                data-version={version.version}
+              >
+                {#if selectedVersion?.version === version.version}
+                  <VersionDetailContent
+                    {version}
+                    onVersionUpdated={handleVersionUpdated}
+                    showCloseButton={false}
+                  />
+                {:else}
+                  <VersionHistoryEntry
+                    {version}
+                    {contributorMap}
+                    onOpenFeedback={() => selectVersion(version)}
+                    onSelect={() => selectVersion(version)}
+                  />
+                {/if}
+              </div>
+            {/each}
+
+            {#if visibleCount < versionState.versions.length}
+              <div class="stream-sentinel" use:revealOnScroll aria-hidden="true">
+                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                {t("settings_loading_earlier_releases")}
+              </div>
+            {:else}
+              <p class="stream-end">
+                {t("settings_release_count_end", { count: versionState.versions.length })}
+              </p>
+            {/if}
+          </div>
+        {:else}
+          <div class="no-selection">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <p>{t("settings_select_version_details")}</p>
+          </div>
+        {/if}
+      </main>
     </div>
-  </header>
 
-  <div class="master-detail-layout">
-    <!-- Master: version list -->
-    <aside
-      class="version-list-panel themed-scrollbar"
-      bind:this={railElement}
-    >
-      {#if versionState.isLoading && versionState.versions.length === 0}
-        <div class="loading-state">
-          <div class="skeleton-card"></div>
-          <div class="skeleton-card"></div>
-          <div class="skeleton-card"></div>
-        </div>
-      {:else if versionState.error}
-        <div class="error-state">
-          <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
-          <p>{versionState.error}</p>
-          <button type="button" onclick={() => versionState.loadVersions()}>
-            {t("action_retry")}
-          </button>
-        </div>
-      {:else if versionState.versions.length === 0}
-        <div class="empty-state">
-          <i class="fas fa-rocket" aria-hidden="true"></i>
-          <h3>{t("settings_no_releases_yet")}</h3>
-          <p>{t("settings_check_back_for_updates")}</p>
-        </div>
-      {:else}
-        <!-- Wide mode: compact list items -->
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-        <div
-          class="version-list-compact"
-          role="listbox"
-          tabindex="0"
-          aria-label={t("settings_version_list")}
-          onkeydown={handleListKeydown}
-        >
-          {#each versionState.versions as version (version.version)}
-            <div class="rail-slot" data-rail-version={version.version}>
-              <VersionListItem
-                {version}
-                isActive={activeVersion === version.version}
-                onclick={() => jumpToVersion(version)}
-              />
-            </div>
-          {/each}
-        </div>
-        <!-- Narrow mode: full cards -->
-        <div class="version-list-cards">
-          {#each versionState.versions as version (version.version)}
-            <VersionCard {version} onclick={() => openVersionDetail(version)} />
-          {/each}
-        </div>
-      {/if}
-    </aside>
-
-    <!-- Detail: the full release history (wide mode only) -->
-    <main
-      class="version-detail-panel themed-scrollbar"
-      bind:this={streamElement}
-      use:spyOnScroll
-    >
-      {#if versionState.versions.length > 0}
-        <div class="history-stream">
-          {#each streamVersions as version (version.version)}
-            <div
-              id="release-{version.version}"
-              class="stream-section"
-              data-version={version.version}
-            >
-              {#if selectedVersion?.version === version.version}
-                <VersionDetailContent
-                  {version}
-                  onVersionUpdated={handleVersionUpdated}
-                  showCloseButton={false}
-                />
-              {:else}
-                <VersionHistoryEntry
-                  {version}
-                  {contributorMap}
-                  onOpenFeedback={() => selectVersion(version)}
-                  onSelect={() => selectVersion(version)}
-                />
-              {/if}
-            </div>
-          {/each}
-
-          {#if visibleCount < versionState.versions.length}
-            <div class="stream-sentinel" use:revealOnScroll aria-hidden="true">
-              <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-              {t("settings_loading_earlier_releases")}
-            </div>
-          {:else}
-            <p class="stream-end">
-              {t("settings_release_count_end", { count: versionState.versions.length })}
-            </p>
-          {/if}
-        </div>
-      {:else}
-        <div class="no-selection">
-          <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <p>{t("settings_select_version_details")}</p>
-        </div>
-      {/if}
-    </main>
+    <!-- Drawer for narrow mode -->
+    <VersionDetailPanel
+      version={selectedVersion}
+      bind:isOpen={isPanelOpen}
+      onVersionUpdated={handleVersionUpdated}
+    />
   </div>
-
-  <!-- Drawer for narrow mode -->
-  <VersionDetailPanel
-    version={selectedVersion}
-    bind:isOpen={isPanelOpen}
-    onVersionUpdated={handleVersionUpdated}
-  />
-</div>
+</SettingsSubpage>
 
 <style>
+  /* Fills the subpage panel's body; the rail and the stream each scroll on
+     their own, and the page around them never does. */
   .release-notes-tab {
     display: flex;
+    flex: 1 1 0;
     flex-direction: column;
-    height: 100%;
     width: 100%;
+    min-height: 0;
     container-type: inline-size;
-  }
-
-  .tab-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 0 16px 0;
-    border-bottom: 1px solid var(--theme-stroke);
-  }
-
-  .header-content h2 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0;
-    font-size: var(--font-size-xl);
-    font-weight: 600;
-    color: var(--theme-text);
-  }
-
-  .header-content h2 i {
-    color: var(--theme-accent);
   }
 
   .master-detail-layout {
@@ -363,7 +353,7 @@
     flex-shrink: 0;
     width: 280px;
     overflow-y: auto;
-    background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
+    background: color-mix(in srgb, var(--theme-text) 2%, transparent);
     border-right: 1px solid var(--theme-stroke);
   }
 
@@ -374,13 +364,12 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
   }
 
   .history-stream {
     display: flex;
     flex-direction: column;
-    padding: 0 clamp(1.5rem, 2vw, 4rem) clamp(2rem, 3vw, 5rem);
+    padding: 0 clamp(1.15rem, 2.5cqi, 3rem) clamp(1.5rem, 3cqi, 4rem);
   }
 
   /* The stream owns the horizontal band; the selected release's own editor
@@ -446,6 +435,7 @@
     .version-list-panel {
       width: 100%;
       border-right: none;
+      background: none;
     }
 
     .version-list-compact {
@@ -455,8 +445,10 @@
     .version-list-cards {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      padding: 0 4px;
+    }
+
+    .version-list-cards > :global(* + *) {
+      border-top: 1px solid var(--theme-stroke);
     }
 
     .version-detail-panel {
@@ -490,6 +482,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding: 12px;
   }
 
   .skeleton-card {

@@ -45,6 +45,8 @@ export interface ChoreoCardCell {
   live?: {
     data: PictographData;
     options: PreviewCellRenderOptions;
+    /** Identity the live pictograph glides from; null redraws in place. */
+    transitionKey: string | null;
     epoch: number;
     onSettled: (failed: boolean) => void;
   };
@@ -79,6 +81,8 @@ interface RenderSizingPort {
 
 export interface ChoreoCardRenderDeps {
   readonly livePictographs?: boolean;
+  /** The card's stable identity; each live cell extends it with its index. */
+  readonly transitionKey?: string | null;
   readonly sequence: SequenceData;
   readonly renderOptions: PreviewCellRenderOptions;
   readonly leftPropType: PropType | undefined;
@@ -380,6 +384,9 @@ export function createChoreoCardRenderEngine(
                   ? cell.duration
                   : 1,
             },
+            transitionKey: deps.transitionKey
+              ? `${deps.transitionKey}:${cell.index}`
+              : null,
             epoch: liveEpoch,
             onSettled: (failed: boolean) => {
               if (disposed || generation !== liveGeneration) return;

@@ -149,4 +149,29 @@ describe("live card rendering lifecycle", () => {
     expect(deps.onRenderProgress).toHaveBeenLastCalledWith(2, 2);
     engine.dispose();
   });
+  // A keyed card glides its props and arrows when a transform swaps its
+  // sequence, as the workspace cells do. Each cell needs its own identity,
+  // the same before and after, so the old pose is found for the new one.
+  it("gives each live cell a lasting glide identity only on a keyed card", async () => {
+    const { engine, model, deps, setDeps } = setup();
+    await engine.renderAllCells();
+    expect(model.cells.every((cell) => cell.live!.transitionKey === null)).toBe(
+      true
+    );
+
+    setDeps({ ...deps, transitionKey: "timing-a" });
+    await engine.renderAllCells();
+    const keys = model.cells.map((cell) => cell.live!.transitionKey);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys.every((key) => key?.startsWith("timing-a:"))).toBe(true);
+
+    setDeps({
+      ...deps,
+      transitionKey: "timing-a",
+      sequence: { ...deps.sequence, id: "timing-a-mirrored" },
+    });
+    await engine.renderAllCells();
+    expect(model.cells.map((cell) => cell.live!.transitionKey)).toEqual(keys);
+    engine.dispose();
+  });
 });

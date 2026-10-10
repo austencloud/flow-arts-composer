@@ -1,4 +1,6 @@
-<!-- Notification topic surface: section context followed by descriptive rows. -->
+<!-- Notification topic group: a heading followed by switch rows. Framed, it is
+     a card of its own (Pulse); unframed, it is one section of a settings panel
+     and takes its row padding from --settings-row-inline. -->
 <script lang="ts">
   import type { NotificationPreferences } from "#lib/shared/feedback/domain/models/notification-models.js";
   import PreferenceItemCard from "./PreferenceItemCard.svelte";
@@ -13,7 +15,7 @@
     isBusyKey: (key: keyof NotificationPreferences) => boolean;
     onToggle: (key: keyof NotificationPreferences) => void;
     disabled?: boolean;
-    layout?: "stack" | "grid-2" | "grid-3";
+    framed?: boolean;
   }
 
   let {
@@ -25,16 +27,11 @@
     isBusyKey,
     onToggle,
     disabled = false,
-    layout = "stack",
+    framed = true,
   }: Props = $props();
 </script>
 
-<section
-  class="preference-group"
-  class:grid-layout={layout !== "stack"}
-  class:grid-two={layout === "grid-2"}
-  class:grid-three={layout === "grid-3"}
->
+<section class="preference-group" class:flush={!framed}>
   <header class="group-header">
     <span class="group-icon" aria-hidden="true">
       <i class={`fas ${icon}`}></i>
@@ -53,7 +50,7 @@
         enabled={preferences[item.key]}
         isBusy={isBusyKey(item.key)}
         {disabled}
-        surface={layout === "stack" ? "plain" : "card"}
+        surface="plain"
         onToggle={() => onToggle(item.key)}
       />
     {/each}
@@ -121,30 +118,38 @@
     flex-direction: column;
   }
 
-  .preference-group:not(.grid-layout)
-    .preference-items
-    :global(.setting-toggle + .setting-toggle) {
+  .preference-items :global(.setting-toggle + .setting-toggle) {
     border-top: 1px solid var(--theme-stroke);
   }
 
-  .grid-layout .preference-items {
-    display: grid;
-    gap: 0.6em;
-    padding: 0.6em;
+  /* Unframed: no card; a hairline above every group but the first, a quieter
+     heading than the panel's section bands, and rows aligned with the panel. */
+  .preference-group.flush {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
   }
 
-  @container preference-group (min-width: 38rem) {
-    .grid-two .preference-items {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .preference-group.flush:not(:first-of-type) {
+    border-top: 1px solid var(--theme-stroke);
   }
 
-  /* Three-across only when each column gets real room; a 3-item group can't
-     drop to two columns without orphaning the last card, so it stacks below. */
-  @container preference-group (min-width: 54rem) {
-    .grid-three .preference-items {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+  .flush .group-header {
+    min-height: 0;
+    padding: 1em var(--settings-row-inline, 1.15em) 0.4em;
+    border-bottom: 0;
+    background: none;
+  }
+
+  .flush .group-icon {
+    width: 2em;
+    height: 2em;
+    border-radius: 0.55em;
+  }
+
+  .flush .preference-items :global(.setting-toggle) {
+    padding-inline: var(--settings-row-inline, 1.15em);
   }
 
   @media (prefers-contrast: more) {

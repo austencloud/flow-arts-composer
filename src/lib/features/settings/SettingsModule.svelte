@@ -266,24 +266,16 @@
         class="panel"
         class:theme-background-active={activeTab === "theme"}
       >
-        {#if activeTab === "keyboard" || activeTab === "release-notes"}
-          <button
-            type="button"
-            class="subpage-back"
-            onclick={() => handleSectionChange("preferences")}
-            aria-label={t("action_go_back")}
-          >
-            <i class="fas fa-chevron-left" aria-hidden="true"></i>
-            {t("settings_preferences")}
-          </button>
-        {/if}
         {#if activeTab === "profile"}
           <ProfileTab
             currentSettings={settings}
             onSettingUpdate={handleSettingUpdate}
           />
         {:else if activeTab === "release-notes"}
-          <ReleaseNotesTab />
+          <ReleaseNotesTab
+            backLabel={t("settings_preferences")}
+            onBack={() => handleSectionChange("preferences")}
+          />
         {:else if activeTab === "props"}
           <PropTypeTab {settings} onUpdate={handleSettingUpdate} />
         {:else if activeTab === "theme"}
@@ -296,7 +288,10 @@
             onSettingUpdate={handleSettingUpdate}
           />
         {:else if activeTab === "keyboard"}
-          <ShortcutCenter />
+          <ShortcutCenter
+            backLabel={t("settings_preferences")}
+            onBack={() => handleSectionChange("preferences")}
+          />
         {:else}
           <!-- Fallback to account if unknown tab -->
           <ProfileTab
@@ -324,27 +319,6 @@
     color: var(--foreground, #ffffff);
     font-family:
       -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  }
-
-  .subpage-back {
-    display: inline-flex;
-    align-self: flex-start;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0.75rem 1rem;
-    min-height: 44px;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 999px;
-    background: var(--theme-card-bg);
-    color: var(--theme-text);
-    font-size: var(--font-size-min);
-    cursor: pointer;
-  }
-
-  .subpage-back:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
   }
 
   /* Remove tap highlight across all settings buttons */

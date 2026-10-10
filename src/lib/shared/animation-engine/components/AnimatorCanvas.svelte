@@ -102,6 +102,7 @@ Last audit: 2025-12-27
     letter = null,
     stepData = null,
     sequenceData = null,
+    transitionKey = null,
     currentStep = 0,
     isPlaying = false,
     onCanvasReady = () => {},
@@ -197,6 +198,9 @@ Last audit: 2025-12-27
     letter?: Letter | null;
     stepData?: StartPlacementData | StepData | null;
     sequenceData?: SequenceData | null;
+    /** Same key across a sequence change glides the props to their new pose
+     *  (a transform); see AnimationEngineProps.transitionKey. */
+    transitionKey?: string | null;
     currentStep?: number;
     isPlaying?: boolean;
     onCanvasReady?: (canvas: HTMLCanvasElement | null) => void;
@@ -907,6 +911,7 @@ Last audit: 2025-12-27
       {letter}
       {stepData}
       {sequenceData}
+      {transitionKey}
       {currentStep}
       {isPlaying}
       bind:trailSettings={externalTrailSettings}

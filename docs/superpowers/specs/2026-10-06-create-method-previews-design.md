@@ -210,7 +210,8 @@ across the top, and cells drawn by `ShapeMatrixMandalaArt` from
 cell grows and draws its mandala from start to finish. Each turn is a Surprise
 roll (2026-10-10), as the Matrix's own Surprise button rolls one: the corner
 turns to a different page (another pair of turn bands from the level the
-Matrix opens on) and the light lands on a different crossing. The next page's
+Matrix opens on, less the zero band, whose first flower is a single point and
+reads as an empty tile) and the light lands on a different crossing. The next page's
 paths and tiles paint in the background between turns; a turn whose page is
 not painted yet rolls only a new crossing.
 
@@ -236,9 +237,22 @@ at a time with `PictographContainer`'s `visibleHand`, as `FuseSourceCard`
 shows Fuse's inputs. After they merge, the combined steps play once with props
 traveling their real paths (`motionStartData` and `motionProgress`).
 
+Each turn is a Regenerate (2026-10-10), as Fuse's Regenerate button plays one:
+one hand gets a new path from Fuse's own path maker (`generateSoloLoop` with
+its default recipe) while the other keeps its own, red first, then blue. The
+pair fuses at Fuse's default length of eight steps through `fuseSequences`,
+and its letters come from `deriveLettersForSequence`. At eight steps the path
+maker reads the bundled motion tables, never the Firestore flower catalog,
+and it loads only after the card first draws. The card always shows the fused
+pair's fourth and fifth steps, so the kept hand shows the very steps it showed
+before. The next pair is made and drawn into the hidden sources while the card
+rests; the new hand's halves arrive a beat after the kept hand's with a small
+pop. A pair that is not ready, or a maker that fails, replays the current
+pair.
+
 A strip shows two blue and two red steps meeting as two combined steps. A
 square stacks the blue row over the red row and merges them into one. The
-finished picture is the combined steps.
+finished picture is the latest pair's combined steps.
 
 ### Tunnel
 

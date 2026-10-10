@@ -161,6 +161,9 @@ with pre-prepared data for better performance.
   } = $props<{
     pictographData?: (StepData | PictographData) | null;
     disableTransitions?: boolean;
+    /** Skip the crossfade when the pictograph id changes. With transitions
+     *  still on, a reused cell's props and arrows glide to their new places
+     *  instead of fading between two drawings. */
     disableContentTransitions?: boolean;
     gridMode?: GridMode | null;
     showGrid?: boolean;
@@ -757,7 +760,7 @@ with pre-prepared data for better performance.
   data-pictograph-render-ready={renderReady}
 >
   {#if preparedData}
-    {#if disableTransitions}
+    {#if disableTransitions || disableContentTransitions}
       <PictographRenderer
         pictograph={preparedData}
         {leftReversal}

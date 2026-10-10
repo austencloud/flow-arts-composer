@@ -98,6 +98,13 @@ export interface AnimationEngineProps {
   letter?: Letter | null;
   stepData?: StartPlacementData | StepData | null;
   sequenceData?: SequenceData | null;
+  /**
+   * Stable identity for what the host is showing. When the sequence changes
+   * and this stays the same (a transform, a turn change), the props glide
+   * from where they were drawn to their new pose instead of jumping. Null or
+   * absent snaps, as does any change of key.
+   */
+  transitionKey?: string | null;
   currentStep?: number;
   isPlaying?: boolean;
   externalTrailSettings?: TrailSettings;

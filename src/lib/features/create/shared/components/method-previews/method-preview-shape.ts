@@ -81,9 +81,18 @@ function pick<T>(items: readonly T[], random: () => number): T | undefined {
 }
 
 /**
+ * The turn bands a Surprise rolls between: the opening level's, less the
+ * zero band. That band's first flower (prospin, in, no turns) traces a single
+ * point, so its row or column reads as empty tiles at preview size.
+ */
+const SHAPE_PREVIEW_TURNS = matrixTurnsForLevel(
+  SHAPE_MATRIX_DEFAULT_LEVEL
+).filter((turn) => turn !== 0);
+
+/**
  * The page a Surprise rolls next, as the Matrix rolls it
- * (shape-matrix-app-state surpriseMe): any pair of the opening level's turn
- * bands except the page showing. Only pages that fill the corner qualify.
+ * (shape-matrix-app-state surpriseMe): any pair of the turn bands except the
+ * page showing. Only pages that fill the corner qualify.
  */
 export function nextShapePage(
   previous: ShapePage,
@@ -91,7 +100,7 @@ export function nextShapePage(
   layout: Pick<ShapeLayout, "rows" | "columns">,
   random: () => number = Math.random
 ): ShapePage {
-  const turns = matrixTurnsForLevel(SHAPE_MATRIX_DEFAULT_LEVEL);
+  const turns = SHAPE_PREVIEW_TURNS;
   const pages = turns
     .flatMap((left) => turns.map((right) => ({ left, right })))
     .filter(
