@@ -51,6 +51,7 @@ import {
   gridJoinHandOffsets,
 } from "#lib/shared/grid-join/grid-join-tween.js";
 import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { POSE_GLIDE_MS } from "../pose-glide";
 
 /** Default props sentinel used when lastPropsRef is null */
 const DEFAULT_ENGINE_PROPS: AnimationEngineProps = {
@@ -96,6 +97,8 @@ export class PlaybackSync {
   // The player drops its sequence before every load, so whatever comes next
   // is a new run even when it is the same sequence again.
   private sequenceUnloaded = false;
+  /** The host's `transitionKey` when the current sequence loaded. */
+  private loadedTransitionKey: string | null = null;
 
   private previewDarkModeActive: boolean = false;
   private _prevTrailsActive: boolean = true;
@@ -316,6 +319,24 @@ export class PlaybackSync {
           this.lastTrailSeqStartPlacement === newStart;
         this.lastTrailSeqStartPlacement = newStart;
         this.lastTrailSeqWasCircular = props.sequenceData.isCircular === true;
+
+        // The host kept its key, so this is an edit of what it showed (a
+        // transform or a turn change): glide the props to their new pose.
+        // A first load or a new key snaps.
+        const transitionKey = props.transitionKey ?? null;
+        if (
+          transitionKey !== null &&
+          transitionKey === this.loadedTransitionKey &&
+          frameSystem.lastSequenceContentHash !== null
+        ) {
+          frameSystem.poseGlide.start(
+            performance.now(),
+            motionDuration(POSE_GLIDE_MS)
+          );
+        } else {
+          frameSystem.poseGlide.stop();
+        }
+        this.loadedTransitionKey = transitionKey;
 
         lifecycleManager.orchestrator.initializeWithDomainData(
           props.sequenceData

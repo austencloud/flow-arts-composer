@@ -90,8 +90,16 @@ describe("Shape preview Surprise", () => {
       )
     );
     expect(pages.has(pageKey(SHAPE_PREVIEW_FIRST_PAGE))).toBe(false);
-    // Turn bands 0 to 3 on each hand: sixteen pages, less the one showing.
-    expect(pages.size).toBe(15);
+    // Turn bands 1 to 3 on each hand: nine pages, less the one showing.
+    expect(pages.size).toBe(8);
+  });
+
+  it("never rolls the zero band, whose first flower is a single point", () => {
+    for (const random of spread(64)) {
+      const page = nextShapePage(SHAPE_PREVIEW_FIRST_PAGE, axis, board, random);
+      expect(page.left).not.toBe(0);
+      expect(page.right).not.toBe(0);
+    }
   });
 
   it("only rolls pages that fill the corner", () => {

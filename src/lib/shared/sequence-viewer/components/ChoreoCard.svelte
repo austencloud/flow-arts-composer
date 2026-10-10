@@ -192,6 +192,13 @@
     /** Stable host bounds for Auto selection, separate from contained artwork. */
     layoutAvailableWidth?: number;
     layoutAvailableHeight?: number;
+    /**
+     * Stable identity for this card across edits. Given one, a changed
+     * sequence glides each live cell's props and arrows to their new places and
+     * morphs the mandala, as the workspace cells do after a transform. Keep it
+     * unique on the page; cards without one redraw in place.
+     */
+    transitionKey?: string | null;
   }
 
   const {
@@ -244,6 +251,7 @@
     mandalaPathShape,
     layoutAvailableWidth,
     layoutAvailableHeight,
+    transitionKey = null,
   }: Props = $props();
 
   // Auth-aware WITHOUT dragging Firebase onto pages that never need it.
@@ -925,6 +933,7 @@
     () => ({
       sequence: cardSequence,
       livePictographs,
+      transitionKey: exportPresentation ? null : transitionKey,
       renderOptions: buildRenderOptionsFn(),
       leftPropType,
       rightPropType,
@@ -1299,6 +1308,7 @@
         {formatSoloTurns}
         {shortOrientation}
         {mandalaPathShape}
+        morphMandala={!exportPresentation && transitionKey !== null}
       />
 
       <!-- Footer section -->
