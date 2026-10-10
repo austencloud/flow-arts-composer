@@ -41,6 +41,7 @@
   import ProfileHeroSection from "./profile/ProfileHeroSection.svelte";
   import AuthPrompt from "./profile/AuthPrompt.svelte";
   import ProfilePhotoPicker from "../ProfilePhotoPicker.svelte";
+  import MyPropsCard from "#lib/shared/navigation/components/account/MyPropsCard.svelte";
   import AccountSetupChecklist from "#lib/shared/onboarding/components/account-setup/AccountSetupChecklist.svelte";
   import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
   import {
@@ -538,6 +539,12 @@
             onSignOut={handleSignOut}
             onAvatarClick={handleOpenPhotoPicker}
           />
+          <div class="identity-props">
+            <MyPropsCard
+              propState={setupPropState}
+              onOpenPropEditor={handleOpenPropEditor}
+            />
+          </div>
         </div>
 
         <section
@@ -560,8 +567,6 @@
               onPronounsChanged={(pronouns) => (userPronouns = pronouns)}
               onUsernameChanged={(username) => (userUsername = username)}
               {displayNameEditRequest}
-              propState={setupPropState}
-              onOpenPropEditor={handleOpenPropEditor}
             />
           </div>
         </section>
@@ -578,7 +583,7 @@
               </span>
               <span class="section-action">
                 <PanelButton
-                  variant="secondary"
+                  variant="quiet"
                   onclick={() => (manageSignInMethods = !manageSignInMethods)}
                   ariaLabel={manageSignInMethods
                     ? t("profile_finish_manage_sign_in")
@@ -804,12 +809,20 @@
   }
 
   .identity-pane {
+    display: flex;
+    flex-direction: column;
     padding: clamp(1.25em, 2cqi, 2.25em);
     background: linear-gradient(
       155deg,
       color-mix(in srgb, var(--theme-accent) 12%, transparent),
       transparent 58%
     );
+  }
+
+  .identity-props {
+    margin-top: 1.25em;
+    padding-top: 1.25em;
+    border-top: 1px solid var(--theme-stroke);
   }
 
   .workspace-section {
@@ -976,9 +989,9 @@
   @container profile-tab (min-width: 75rem) {
     .account-workspace {
       grid-template-columns:
-        minmax(16rem, 0.78fr)
-        minmax(28rem, 1.3fr)
-        minmax(23rem, 1fr);
+        minmax(18rem, 1fr)
+        minmax(26rem, 1.15fr)
+        minmax(22rem, 1fr);
       min-height: clamp(30em, 50vh, 42em);
     }
 

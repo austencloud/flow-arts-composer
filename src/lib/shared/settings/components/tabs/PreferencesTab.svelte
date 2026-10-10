@@ -151,7 +151,7 @@
   <!-- Confirmation Dialogs Section -->
   <section class="section">
     <h2 class="section-title">
-      <i class="fas fa-message-question" aria-hidden="true"></i>
+      <i class="fas fa-comment-dots" aria-hidden="true"></i>
       {t("settings_confirmation_dialogs")}
     </h2>
 
