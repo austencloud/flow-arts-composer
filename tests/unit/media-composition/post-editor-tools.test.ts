@@ -1,42 +1,47 @@
 import { describe, expect, it } from "vitest";
 import {
   availablePanels,
+  coreToolRow,
   defaultPanel,
   isPanelTool,
   keyframeChannelFor,
   shownPanel,
-  toolRow,
   type PostToolSelection,
 } from "$lib/shared/share/components/post-studio/editor/post-editor-tools";
 
-const POST: PostToolSelection = { kind: null, hasLayout: false };
-const MAIN_CLIP: PostToolSelection = { kind: "video", hasLayout: true };
-const OVERLAY_CLIP: PostToolSelection = { kind: "video", hasLayout: false };
-const TEXT: PostToolSelection = { kind: "text", hasLayout: false };
-const CARD: PostToolSelection = { kind: "card", hasLayout: false };
+const POST: PostToolSelection = { kind: null };
+const CLIP: PostToolSelection = { kind: "video" };
+const TEXT: PostToolSelection = { kind: "text" };
+const CARD: PostToolSelection = { kind: "card" };
 
-describe("toolRow", () => {
+/** The panel helpers on the core row, as the editor runs them with no plugin. */
+const panels = (selection: PostToolSelection) =>
+  availablePanels(selection, coreToolRow(selection));
+const firstPanel = (selection: PostToolSelection) =>
+  defaultPanel(coreToolRow(selection));
+const shown = (
+  active: string | null,
+  selection: PostToolSelection,
+  wide: boolean
+) => shownPanel(active, selection, coreToolRow(selection), wide);
+
+describe("coreToolRow", () => {
   it("offers the post's tools when nothing is selected", () => {
-    expect(toolRow(POST)).toEqual(["videos", "add", "canvas", "split", "look"]);
+    expect(coreToolRow(POST)).toEqual(["videos", "add", "canvas", "split"]);
   });
 
-  it("puts Crop beside Trim for a clip and Layout only on a main-track clip", () => {
-    const main = toolRow(MAIN_CLIP);
-    expect(main.slice(0, 4)).toEqual(["back", "split", "trim", "crop"]);
-    expect(main).toContain("layout");
-    expect(toolRow(OVERLAY_CLIP)).not.toContain("layout");
+  it("puts Crop beside Trim for a clip", () => {
+    expect(coreToolRow(CLIP).slice(0, 4)).toEqual([
+      "back",
+      "split",
+      "trim",
+      "crop",
+    ]);
   });
 
   it("gives every item Back first and Delete last", () => {
-    for (const kind of [
-      "video",
-      "animation",
-      "moves",
-      "carousel",
-      "text",
-      "card",
-    ] as const) {
-      const row = toolRow({ kind, hasLayout: false });
+    for (const selection of [CLIP, TEXT, CARD]) {
+      const row = coreToolRow(selection);
       expect(row[0]).toBe("back");
       expect(row.at(-1)).toBe("delete");
       expect(new Set(row).size).toBe(row.length);
@@ -44,61 +49,23 @@ describe("toolRow", () => {
   });
 
   it("offers staff Effects on a video clip only, after Fade", () => {
-    const row = toolRow(MAIN_CLIP);
+    const row = coreToolRow(CLIP);
     expect(row.indexOf("effects")).toBe(row.indexOf("fade") + 1);
-    for (const kind of [
-      "animation",
-      "moves",
-      "carousel",
-      "text",
-      "card",
-    ] as const) {
-      expect(toolRow({ kind, hasLayout: false })).not.toContain("effects");
+    for (const selection of [TEXT, CARD]) {
+      expect(coreToolRow(selection)).not.toContain("effects");
     }
   });
 
   it("offers Border on a video clip only, after Position", () => {
-    for (const selection of [MAIN_CLIP, OVERLAY_CLIP]) {
-      const row = toolRow(selection);
-      expect(row.indexOf("border")).toBe(row.indexOf("position") + 1);
-    }
-    for (const kind of [
-      "animation",
-      "moves",
-      "carousel",
-      "text",
-      "card",
-    ] as const) {
-      expect(toolRow({ kind, hasLayout: false })).not.toContain("border");
+    const row = coreToolRow(CLIP);
+    expect(row.indexOf("border")).toBe(row.indexOf("position") + 1);
+    for (const selection of [TEXT, CARD]) {
+      expect(coreToolRow(selection)).not.toContain("border");
     }
   });
 
   it("offers each kind's own tool ahead of the shared ones", () => {
-    expect(toolRow({ kind: "animation", hasLayout: false })[2]).toBe(
-      "appearance"
-    );
-    expect(toolRow({ kind: "moves", hasLayout: false })[2]).toBe("appearance");
-    expect(toolRow({ kind: "moves", hasLayout: false })[3]).toBe("shows");
-    expect(toolRow(TEXT)[2]).toBe("text");
-    expect(toolRow(CARD)[2]).toBe("appearance");
-    expect(
-      toolRow({ kind: "image", hasLayout: false, isQrImage: true })[2]
-    ).toBe("appearance");
-    expect(toolRow({ kind: "image", hasLayout: false })).not.toContain(
-      "appearance"
-    );
-  });
-
-  it("offers Sequence after the look tools for every notation item", () => {
-    expect(toolRow({ kind: "animation", hasLayout: false })[3]).toBe(
-      "sequence"
-    );
-    expect(toolRow({ kind: "moves", hasLayout: false })[4]).toBe("sequence");
-    expect(toolRow(CARD)[3]).toBe("sequence");
-    for (const kind of ["video", "text", "image", "carousel"] as const) {
-      expect(toolRow({ kind, hasLayout: false })).not.toContain("sequence");
-    }
-    expect(toolRow(POST)).not.toContain("sequence");
+    expect(coreToolRow(TEXT)[2]).toBe("text");
   });
 });
 
@@ -110,31 +77,26 @@ describe("panels", () => {
   });
 
   it("offers Export only for the post", () => {
-    expect(availablePanels(POST)).toContain("export");
-    expect(availablePanels(MAIN_CLIP)).not.toContain("export");
+    expect(panels(POST)).toContain("export");
+    expect(panels(CLIP)).not.toContain("export");
   });
 
   it("defaults to the row's first panel tool", () => {
-    expect(defaultPanel(POST)).toBe("videos");
-    expect(defaultPanel(MAIN_CLIP)).toBe("trim");
-    expect(defaultPanel(TEXT)).toBe("text");
-    expect(defaultPanel(CARD)).toBe("appearance");
-    expect(defaultPanel({ kind: "moves", hasLayout: false })).toBe(
-      "appearance"
-    );
+    expect(firstPanel(POST)).toBe("videos");
+    expect(firstPanel(CLIP)).toBe("trim");
+    expect(firstPanel(TEXT)).toBe("text");
   });
 
   it("keeps the chosen panel while the selection has it", () => {
-    expect(shownPanel("crop", MAIN_CLIP, false)).toBe("crop");
-    expect(shownPanel("fade", TEXT, true)).toBe("fade");
-    expect(shownPanel("export", POST, false)).toBe("export");
+    expect(shown("crop", CLIP, false)).toBe("crop");
+    expect(shown("fade", TEXT, true)).toBe("fade");
+    expect(shown("export", POST, false)).toBe("export");
   });
 
   it("drops a panel the new selection lacks: the default on wide, the row on a phone", () => {
-    expect(shownPanel("crop", TEXT, true)).toBe("text");
-    expect(shownPanel("crop", TEXT, false)).toBeNull();
-    expect(shownPanel("layout", OVERLAY_CLIP, true)).toBe("trim");
-    expect(shownPanel(null, POST, false)).toBeNull();
+    expect(shown("crop", TEXT, true)).toBe("text");
+    expect(shown("crop", TEXT, false)).toBeNull();
+    expect(shown(null, POST, false)).toBeNull();
   });
 });
 
@@ -154,34 +116,30 @@ describe("keyframeChannelFor", () => {
 });
 
 describe("the music", () => {
-  const MUSIC: PostToolSelection = {
-    kind: null,
-    hasLayout: false,
-    music: true,
-  };
+  const MUSIC: PostToolSelection = { kind: null, music: true };
 
   it("offers Back, Music and Delete for the selected music", () => {
-    expect(toolRow(MUSIC)).toEqual(["back", "music", "delete"]);
+    expect(coreToolRow(MUSIC)).toEqual(["back", "music", "delete"]);
   });
 
   it("opens the music's panel, which is a panel tool", () => {
     expect(isPanelTool("music")).toBe(true);
-    expect(availablePanels(MUSIC)).toEqual(["music"]);
-    expect(defaultPanel(MUSIC)).toBe("music");
+    expect(panels(MUSIC)).toEqual(["music"]);
+    expect(firstPanel(MUSIC)).toBe("music");
   });
 
   it("keeps the music's panel while the music is selected", () => {
-    expect(shownPanel("music", MUSIC, false)).toBe("music");
-    expect(shownPanel("trim", MUSIC, true)).toBe("music");
+    expect(shown("music", MUSIC, false)).toBe("music");
+    expect(shown("trim", MUSIC, true)).toBe("music");
   });
 
   it("drops the music's panel once the music is not selected", () => {
-    expect(shownPanel("music", POST, true)).toBe("videos");
-    expect(shownPanel("music", POST, false)).toBeNull();
+    expect(shown("music", POST, true)).toBe("videos");
+    expect(shown("music", POST, false)).toBeNull();
   });
 
   it("offers Music nowhere else", () => {
-    expect(toolRow(POST)).not.toContain("music");
-    expect(toolRow(MAIN_CLIP)).not.toContain("music");
+    expect(coreToolRow(POST)).not.toContain("music");
+    expect(coreToolRow(CLIP)).not.toContain("music");
   });
 });

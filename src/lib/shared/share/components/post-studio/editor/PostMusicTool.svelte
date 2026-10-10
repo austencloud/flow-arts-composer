@@ -16,7 +16,7 @@
     POST_MUSIC_MIN_SECONDS,
     type MusicPatch,
   } from "@austencloud/video-editor/core";
-  import { formatTakeClock, parseClock } from "../builder/post-builder-format";
+  import { formatTakeClock, parseClock } from "./post-format";
 
   /**
    * The music's settings: its beat grid, where it plays, its level and

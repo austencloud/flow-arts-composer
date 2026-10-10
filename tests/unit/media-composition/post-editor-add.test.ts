@@ -42,11 +42,11 @@ describe("overlayAt", () => {
   it("makes a sequence view over a clip follow that clip", () => {
     const { project } = editorWithClip();
     expect(
-      overlayAt(project, { kind: "animation", overlay: true }, 4).fill
+      overlayAt(project, { kind: "animation", overlay: true }, 4, true).fill
     ).toBe(true);
-    expect(overlayAt(project, { kind: "moves", mode: "arrows" }, 4).fill).toBe(
-      true
-    );
+    expect(
+      overlayAt(project, { kind: "moves", mode: "arrows" }, 4, true).fill
+    ).toBe(true);
   });
 
   it("gives text its own time, and anything past the clips its own time", () => {
@@ -54,6 +54,6 @@ describe("overlayAt", () => {
     expect(overlayAt(project, { kind: "text", text: "Hi" }, 4).fill).toBe(
       false
     );
-    expect(overlayAt(project, { kind: "carousel" }, 30).fill).toBe(false);
+    expect(overlayAt(project, { kind: "carousel" }, 30, true).fill).toBe(false);
   });
 });

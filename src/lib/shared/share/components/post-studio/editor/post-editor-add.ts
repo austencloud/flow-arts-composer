@@ -8,8 +8,9 @@ import type { NewOverlaySpec } from "@austencloud/video-editor/core";
 
 /**
  * Where the Add tool puts a new item. Videos join the end of the main track;
- * the rest start at the playhead, and the sequence views fill the clip there
- * so they follow it when it moves.
+ * the rest start at the playhead, and an item added to fill over the main
+ * track (tka: the sequence views) fills the clip there so it follows the clip
+ * when it moves.
  */
 
 /** At the end of the post, a new item starts early enough to be seen. */
@@ -23,19 +24,19 @@ export function newItemStart(
     : playheadSeconds;
 }
 
-/** The whole spec for an item added at `at`. */
+/**
+ * The whole spec for an item added at `at`. With `fillOverMain`, the item
+ * fills the main clip under it, if there is one.
+ */
 export function overlayAt(
   project: PostProject,
   spec: Omit<NewOverlaySpec, "at" | "fill">,
-  at: number
+  at: number,
+  fillOverMain = false
 ): NewOverlaySpec {
-  const sequenceView =
-    spec.kind === "animation" ||
-    spec.kind === "moves" ||
-    spec.kind === "carousel";
   return {
     ...spec,
     at,
-    fill: sequenceView && mainItemAt(project, at) !== null,
+    fill: fillOverMain && mainItemAt(project, at) !== null,
   };
 }

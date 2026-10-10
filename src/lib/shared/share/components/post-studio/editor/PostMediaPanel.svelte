@@ -1,12 +1,10 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import type { PostTake } from "@austencloud/video-editor/core";
-  import type {
-    CatalogTakeSource,
-    PostEditorState,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type { LibraryTake } from "@austencloud/video-editor";
+  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { formatPostClock } from "../builder/post-builder-format";
+  import { formatPostClock } from "./post-format";
   import { readVideoFile, videoFileError } from "./post-editor-files";
 
   /**
@@ -16,9 +14,9 @@
    */
   interface Props {
     editor: PostEditorState;
-    catalog: readonly CatalogTakeSource[];
+    catalog: readonly LibraryTake[];
     catalogLoading?: boolean;
-    catalogError?: string;
+    catalogError?: string | null;
     busy?: boolean;
     onAddDeviceVideo: () => void;
     onTapBeats: (takeId: string) => void;
@@ -28,7 +26,7 @@
     editor,
     catalog,
     catalogLoading = false,
-    catalogError = "",
+    catalogError = null,
     busy = false,
     onAddDeviceVideo,
     onTapBeats,
@@ -43,8 +41,7 @@
     catalog.filter(
       (video) =>
         !takes.some(
-          (take) =>
-            take.ref.kind === "catalog" && take.ref.videoId === video.videoId
+          (take) => take.ref.kind === "catalog" && take.ref.videoId === video.id
         )
     )
   );
@@ -187,18 +184,24 @@
     {:else if unused.length > 0}
       <p class="help">{t("share_studio_saved_videos")}</p>
       <ul class="list">
-        {#each unused as video (video.videoId)}
+        {#each unused as video (video.id)}
           <li class="catalog">
             <span class="catalog-name">
               {video.label}
               <span class="meta">
-                {formatPostClock(video.durationSeconds)}{video.legacyStepMap
-                  ? ` · ${t("share_studio_timing_saved")}`
+                {formatPostClock(video.durationSeconds)}{video.detail
+                  ? ` · ${video.detail}`
                   : ""}
               </span>
             </span>
             <PanelButton
-              onclick={() => editor.addCatalogVideo(video)}
+              onclick={() =>
+                editor.addLibraryVideo({
+                  videoId: video.id,
+                  label: video.label,
+                  url: video.url,
+                  durationSeconds: video.durationSeconds,
+                })}
               ariaLabel={`${t("share_studio_add")} ${video.label}`}
             >
               {t("share_studio_add")}

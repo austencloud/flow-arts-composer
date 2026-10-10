@@ -58,6 +58,7 @@
     copyPostAnimationEffects,
     postAnimationTrailSettings,
   } from "./post-animation-effects.svelte";
+  import { tkaEditorOf } from "./tka-editor-context";
 
   let {
     editor,
@@ -121,7 +122,12 @@
   const appliedScope = $derived(
     scopeLabel ??
       (item
-        ? (item.label ?? itemDisplayLabel(item, editor.project))
+        ? (item.label ??
+          itemDisplayLabel(
+            item,
+            editor.project,
+            tkaEditorOf(editor)?.plugin ?? null
+          ))
         : "Timing preview")
   );
   const timingParts = $derived(
@@ -685,7 +691,11 @@
     >
       <span
         >View {otherCustomLayer.item.label ??
-          itemDisplayLabel(otherCustomLayer.item, editor.project)}
+          itemDisplayLabel(
+            otherCustomLayer.item,
+            editor.project,
+            tkaEditorOf(editor)?.plugin ?? null
+          )}
       </span><span aria-hidden="true">›</span>
     </button>
   {/if}

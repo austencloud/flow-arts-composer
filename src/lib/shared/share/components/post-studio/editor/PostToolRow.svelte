@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { PluginTool } from "@austencloud/video-editor";
   import {
     isPanelTool,
     type PostPanelToolId,
@@ -22,9 +23,17 @@
     shown?: PostPanelToolId | null;
     isDisabled: (id: PostToolId) => boolean;
     onpick: (id: PostToolId) => void;
+    /** The plugin's tools, so one that acts at once never reads as pressed. */
+    pluginTools?: readonly PluginTool[];
   }
 
-  let { tools, shown = null, isDisabled, onpick }: Props = $props();
+  let {
+    tools,
+    shown = null,
+    isDisabled,
+    onpick,
+    pluginTools = [],
+  }: Props = $props();
 
   const KEYS: Partial<Record<PostToolId, string>> = {
     back: "Escape",
@@ -54,7 +63,7 @@
       class="tool"
       data-tool={id}
       disabled={isDisabled(id)}
-      aria-pressed={shown !== null && isPanelTool(id)
+      aria-pressed={shown !== null && isPanelTool(id, pluginTools)
         ? shown === id
         : undefined}
       aria-keyshortcuts={KEYS[id]}

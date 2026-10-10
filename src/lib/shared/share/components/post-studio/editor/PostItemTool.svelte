@@ -74,16 +74,13 @@
     PostEdit,
     PostEditorState,
   } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import type { VideoEditorPlugin } from "@austencloud/video-editor";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import {
-    formatPostSpeed,
-    formatTakeClock,
-    parseClock,
-  } from "../builder/post-builder-format";
+  import { formatPostSpeed, formatTakeClock, parseClock } from "./post-format";
   import { easingPresetLabel, itemDisplayLabel } from "./post-editor-labels";
   import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "./PostCurveEditor.svelte";
@@ -117,6 +114,8 @@
    */
   interface Props {
     editor: PostEditorState;
+    /** The plugin whose kinds name an item with no name of its own. */
+    plugin: VideoEditorPlugin | null;
     item: PostItem;
     tool: PostPanelToolId;
     /** The side inspector fills its column; the bottom drawer fits its controls. */
@@ -144,6 +143,7 @@
 
   let {
     editor,
+    plugin,
     item,
     tool,
     appearanceFill = true,
@@ -1565,7 +1565,8 @@
       value={item.label ?? ""}
       placeholder={itemDisplayLabel(
         { ...item, label: undefined },
-        editor.project
+        editor.project,
+        plugin
       )}
       maxlength={POST_MAX_LABEL_LENGTH}
       aria-label={t("post_editor_item_name")}

@@ -12,7 +12,7 @@
     easingPresetOf,
   } from "@austencloud/video-editor/core";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { formatPostClock } from "../../builder/post-builder-format";
+  import { formatPostClock } from "../post-format";
   import {
     channelLabel,
     channelValueMeasure,

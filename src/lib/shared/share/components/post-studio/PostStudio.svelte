@@ -30,6 +30,7 @@
   import type { PostStudioShareExport } from "./post-studio-share-export";
   import { withPostStudioPropType } from "$lib/shared/post-studio-plugin/ui/post-studio-prop-render-options";
   import PostEditorWorkspace from "./editor/PostEditorWorkspace.svelte";
+  import { createTkaEditorPlugin } from "$lib/shared/post-studio-plugin/ui/tka-editor-plugin";
 
   /**
    * Post Studio's host-facing shell. It owns what outlives one sequence (the
@@ -99,6 +100,9 @@
   const animationVisibility =
     getAnimationVisibilityContext() ?? getAnimationVisibilityManager();
   setAnimationVisibilityContext(animationVisibility);
+
+  /** tka's plugin with its editor UI, made once for every post this opens. */
+  const plugin = createTkaEditorPlugin();
 
   // ps slice: a shared link can carry the prop and the sound. See
   // `ps-slice.ts`, "Own-link rule": any non-null URL payload is an override.
@@ -192,6 +196,7 @@
 
 {#key sequence.id}
   <PostEditorWorkspace
+    {plugin}
     {active}
     {sequence}
     {initialProject}

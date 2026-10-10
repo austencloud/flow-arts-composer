@@ -25,7 +25,7 @@
   } from "@austencloud/video-editor/core";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
-  import { formatTakeClock, parseClock } from "../builder/post-builder-format";
+  import { formatTakeClock, parseClock } from "./post-format";
   import { channelLabel } from "./post-editor-labels";
   import { adjacentStepSeconds, type ClipStep } from "./post-crop-steps";
   import PostTimelineKeyLane from "./timeline/PostTimelineKeyLane.svelte";

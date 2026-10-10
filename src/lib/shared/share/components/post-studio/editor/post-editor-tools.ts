@@ -1,4 +1,10 @@
 import type {
+  PluginTool,
+  VideoEditorPlugin,
+  VideoEditorState,
+} from "@austencloud/video-editor";
+import type {
+  PostItem,
   PostItemKind,
   PostKeyframeChannel,
 } from "@austencloud/video-editor/core";
@@ -11,74 +17,54 @@ import type {
  * selection's first panel tool.
  */
 
-/** Tools that open a panel. */
-export type PostPanelToolId =
+/** The core tools that open a panel. */
+export type CorePanelToolId =
   | "videos"
   | "add"
   | "canvas"
-  | "look"
   | "export"
   | "trim"
   | "timing"
   | "crop"
   | "speed"
-  | "titles"
   | "volume"
-  | "layout"
   | "position"
   | "border"
   | "fade"
   | "transition"
   | "effects"
-  | "labels"
-  | "appearance"
-  | "shows"
-  | "sequence"
   | "text"
   | "rename"
   | "music";
 
-/** Tools that act at once. */
-export type PostActionToolId =
-  | "back"
-  | "split"
-  | "beats"
-  | "duplicate"
-  | "delete";
+/** The core tools that act at once. */
+export type CoreActionToolId = "back" | "split" | "duplicate" | "delete";
 
-export type PostToolId = PostPanelToolId | PostActionToolId;
+/** A tool that opens a panel: a core one or a plugin's. */
+export type PostPanelToolId = string;
+
+/** A tool that acts at once: a core one or a plugin's. */
+export type PostActionToolId = string;
+
+/** A core or plugin tool id. */
+export type PostToolId = string;
 
 /** What the row is for: the post itself, or one selected item. */
 export interface PostToolSelection {
   /** `null` when nothing is selected. */
   kind: PostItemKind | null;
-  /** A main-track clip whose layout (dual, breakdown, video only) applies. */
-  hasLayout: boolean;
-  /** A decoded QR image has its own contrast setting. */
-  isQrImage?: boolean;
-  /**
-   * An animation's opening tunnel is what is selected: it has its own look,
-   * its own speed curve and, over footage, its own framing of that footage.
-   */
-  isTunnel?: boolean;
-  /** The opening tunnel hook has its own speed curve. */
-  isTunnelHook?: boolean;
-  /** The hook plays over its footage, which it frames while it fills the frame. */
-  hasBackdrop?: boolean;
   /** The music under the post is selected; it is no item, so `kind` is null. */
   music?: boolean;
 }
 
-const ACTION_TOOLS = new Set<PostToolId>([
-  "back",
-  "split",
-  "beats",
-  "duplicate",
-  "delete",
-]);
+const ACTION_TOOLS = new Set<string>(["back", "split", "duplicate", "delete"]);
 
-export function isPanelTool(id: PostToolId): id is PostPanelToolId {
-  return !ACTION_TOOLS.has(id);
+export function isPanelTool(
+  id: string,
+  tools: readonly PluginTool[] = []
+): boolean {
+  if (ACTION_TOOLS.has(id)) return false;
+  return tools.find((tool) => tool.id === id)?.type !== "action";
 }
 
 const ITEM_TAIL: readonly PostToolId[] = [
@@ -89,12 +75,12 @@ const ITEM_TAIL: readonly PostToolId[] = [
   "delete",
 ];
 
-/** The row's tools, in order, for a selection. */
-export function toolRow(selection: PostToolSelection): PostToolId[] {
+/** The core row for a selection; a plugin arranges it through `ui.toolRow`. */
+export function coreToolRow(selection: PostToolSelection): string[] {
   if (selection.music) return ["back", "music", "delete"];
   switch (selection.kind) {
     case null:
-      return ["videos", "add", "canvas", "split", "look"];
+      return ["videos", "add", "canvas", "split"];
     case "video":
       return [
         "back",
@@ -103,76 +89,39 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "crop",
         "speed",
         "volume",
-        ...(selection.hasLayout ? (["layout"] as const) : []),
         "position",
         "border",
         "fade",
         "effects",
-        "beats",
         "rename",
         "duplicate",
         "delete",
       ];
-    case "animation":
-      if (selection.isTunnel)
-        return [
-          "back",
-          "appearance",
-          "speed",
-          ...(selection.hasBackdrop ? (["crop"] as const) : []),
-          "delete",
-        ];
-      return [
-        "back",
-        "split",
-        "appearance",
-        "sequence",
-        ...(selection.isTunnelHook ? (["speed"] as const) : []),
-        ...(selection.hasBackdrop ? (["crop"] as const) : []),
-        "timing",
-        ...ITEM_TAIL,
-      ];
-    case "moves":
-      return [
-        "back",
-        "split",
-        "appearance",
-        "shows",
-        "sequence",
-        "timing",
-        ...ITEM_TAIL,
-      ];
     case "text":
       return ["back", "split", "text", "timing", ...ITEM_TAIL];
-    case "titles":
-      return ["back", "titles", "timing", ...ITEM_TAIL];
-    case "carousel":
+    default:
       return ["back", "split", "timing", ...ITEM_TAIL];
-    case "image":
-      return [
-        "back",
-        "split",
-        ...(selection.isQrImage ? (["appearance"] as const) : []),
-        "timing",
-        ...ITEM_TAIL,
-      ];
-    case "card":
-      return [
-        "back",
-        "split",
-        "appearance",
-        "sequence",
-        "timing",
-        ...ITEM_TAIL,
-      ];
   }
+}
+
+/** The row's tools, in order, for a selection: the core row as the plugin arranges it. */
+export function toolRow(
+  selection: PostToolSelection,
+  item: PostItem | null,
+  plugin: VideoEditorPlugin | null,
+  editor: VideoEditorState
+): string[] {
+  const core = coreToolRow(selection);
+  return [...(plugin?.ui?.toolRow?.(item, core, editor) ?? core)];
 }
 
 /** Panels the selection can show: its row's, plus Export for the post. */
 export function availablePanels(
-  selection: PostToolSelection
+  selection: PostToolSelection,
+  row: readonly string[],
+  tools: readonly PluginTool[] = []
 ): PostPanelToolId[] {
-  const panels = toolRow(selection).filter(isPanelTool);
+  const panels = row.filter((id) => isPanelTool(id, tools));
   if (selection.music) return panels;
   if (selection.kind === null) return [...panels, "export"];
   return ["video", "image", "card", "animation", "moves", "carousel"].includes(
@@ -184,9 +133,10 @@ export function availablePanels(
 
 /** The first panel tool in the row, which a wide screen shows by default. */
 export function defaultPanel(
-  selection: PostToolSelection
+  row: readonly string[],
+  tools: readonly PluginTool[] = []
 ): PostPanelToolId | null {
-  return toolRow(selection).find(isPanelTool) ?? null;
+  return row.find((id) => isPanelTool(id, tools)) ?? null;
 }
 
 /**
@@ -197,10 +147,13 @@ export function defaultPanel(
 export function shownPanel(
   active: PostPanelToolId | null,
   selection: PostToolSelection,
-  wide: boolean
+  row: readonly string[],
+  wide: boolean,
+  tools: readonly PluginTool[] = []
 ): PostPanelToolId | null {
-  if (active && availablePanels(selection).includes(active)) return active;
-  return wide ? defaultPanel(selection) : null;
+  if (active && availablePanels(selection, row, tools).includes(active))
+    return active;
+  return wide ? defaultPanel(row, tools) : null;
 }
 
 /** The panel's keyframe channel, if it edits an animatable value. */

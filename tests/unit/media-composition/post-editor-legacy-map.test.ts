@@ -72,6 +72,14 @@ describe("post editor legacy step maps", () => {
     state.dispose();
   });
 
+  it("seeds a library video's timing from the catalog's map", () => {
+    const state = editor(() => video(MAP));
+    state.addLibraryVideo(video());
+    const takeId = state.takes[0]!.id;
+    expect(state.timing(takeId)?.sections[0]?.taps).toEqual(SEEDED_TAPS);
+    state.dispose();
+  });
+
   it("seeds a saved catalog take from the catalog's map when the post opens", () => {
     const saved = postWithUntimedCatalogTake();
     const state = editor(() => video(MAP), saved);

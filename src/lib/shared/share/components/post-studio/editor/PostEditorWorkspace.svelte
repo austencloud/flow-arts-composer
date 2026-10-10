@@ -75,7 +75,11 @@
     staffEffectRole,
   } from "$lib/shared/post-studio-plugin";
   import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
-  import type { CompositionSourceBinding } from "@austencloud/video-editor";
+  import type {
+    CompositionSourceBinding,
+    LibraryTake,
+    VideoEditorPlugin,
+  } from "@austencloud/video-editor";
   import {
     createPostEditorState,
     type CatalogTakeSource,
@@ -116,7 +120,7 @@
   import PostTimingTimeline from "../builder/PostTimingTimeline.svelte";
   import PostTimingPanel from "../builder/PostTimingPanel.svelte";
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
-  import { formatTakeClock } from "../builder/post-builder-format";
+  import { formatTakeClock } from "./post-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
   import {
     qrImageForAppearance,
@@ -125,9 +129,12 @@
   import {
     createTabSync,
     createVideoPreviews,
+    provideEditorUi,
+    resolveServices,
   } from "@austencloud/video-editor";
   import { getPreviewVideoCache } from "$lib/shared/media-composition/get-preview-video-cache";
   import { tkaEditorServices } from "$lib/shared/post-studio-plugin/ui/tka-host";
+  import { registerTkaEditor } from "$lib/shared/post-studio-plugin/ui/tka-editor-context";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorActions from "./PostEditorActions.svelte";
   import PostSaveButton from "./PostSaveButton.svelte";
@@ -177,11 +184,7 @@
   import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
   import PostDraftStatus from "./PostDraftStatus.svelte";
   import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
-  import {
-    adjacentStepSeconds,
-    clipSteps,
-    type ClipStep,
-  } from "./post-crop-steps";
+  import { adjacentStepSeconds, type ClipStep } from "./post-crop-steps";
   import {
     CROP_STAGE_MARGIN_PX,
     cropStageRatio,
@@ -237,6 +240,8 @@
     onAudioChange: (audio: "takes" | "silent", chosen: boolean) => void;
     /** Hands the share sheet this workspace's render; returns the release. */
     registerExport: (controls: PostStudioShareExport) => () => void;
+    /** The editor plugin with its UI (tka's, from PostStudio); null for the core editor alone. */
+    plugin: VideoEditorPlugin | null;
   }
 
   let {
@@ -262,6 +267,7 @@
     audioSeed,
     onAudioChange,
     registerExport,
+    plugin,
   }: Props = $props();
 
   const sharedSurfaces = getViewerStudioSurfaces();
@@ -290,11 +296,25 @@
         ...(video.beatMap ? { legacyStepMap: video.beatMap } : {}),
       }))
   );
+  // Today's list as library takes, until Task 15a loads services.mediaLibrary.
+  const libraryCatalog = $derived<LibraryTake[]>(
+    catalog.map((video) => ({
+      id: video.videoId,
+      label: video.label,
+      url: video.url,
+      durationSeconds: video.durationSeconds,
+      ...(video.legacyStepMap
+        ? { detail: t("share_studio_timing_saved") }
+        : {}),
+    }))
+  );
 
   let overlayPainter = $state.raw<PostStudioLayerPainter | null>(null);
 
   // Read once: the Post page opens a new workspace for another feature video.
   const featureVideo = feature;
+
+  let qrImageIds = $state<Record<string, boolean>>({});
 
   const editor = createPostEditorState({
     initialProject,
@@ -307,6 +327,13 @@
     store: featureVideo?.store,
     services: tkaEditorServices(videoLibrary),
   });
+  registerTkaEditor(editor, {
+    wrapper: editor,
+    isQrImage: (id) => qrImageIds[id] === true,
+    plugin,
+  });
+  const services = resolveServices(editor.host);
+  provideEditorUi({ editor, host: editor.host, plugin, services });
 
   onMount(() => {
     if (!import.meta.env.DEV) return;
@@ -855,7 +882,8 @@
     return painters;
   }
 
-  const labelFor = (item: PostItem) => itemDisplayLabel(item, editor.project);
+  const labelFor = (item: PostItem) =>
+    itemDisplayLabel(item, editor.project, plugin);
 
   // ---- Screen state ----------------------------------------------------------
 
@@ -1071,7 +1099,6 @@
 
   // ---- Tools -----------------------------------------------------------------
 
-  let qrImageIds = $state<Record<string, boolean>>({});
   $effect(() => {
     const imageIds = new Set(
       editor.project.tracks.flatMap((track) =>
@@ -1143,30 +1170,22 @@
 
   const selection = $derived.by((): PostToolSelection => {
     const item = editor.selectedItem;
-    if (!item) return { kind: null, hasLayout: false, music: musicSelected };
-    // A tunnel folded into its animation has its own block, which carries its
-    // speed and framing; only a hook saved as a whole item keeps them here.
-    const tunnel = editor.selectedPart === "tunnel";
-    const wholeHook =
-      item.kind === "animation" && item.tunnelHook?.seconds === undefined;
-    return {
-      kind: item.kind,
-      isQrImage: item.kind === "image" && qrImageIds[item.imageId] === true,
-      isTunnel: tunnel,
-      isTunnelHook:
-        item.kind === "animation" && !!item.tunnelHook && (tunnel || wholeHook),
-      hasBackdrop:
-        item.kind === "animation" &&
-        !!item.tunnelHook?.backdrop &&
-        (tunnel || wholeHook),
-      hasLayout:
-        item.kind === "video" &&
-        findItem(editor.project, item.id)?.trackIndex === 0,
-    };
+    // The music counts only with no item selected, as before.
+    return { kind: item?.kind ?? null, music: !item && musicSelected };
   });
-  const tools = $derived(toolRow(selection));
+  const tools = $derived(
+    toolRow(selection, editor.selectedItem ?? null, plugin, editor)
+  );
   const rowKey = $derived(`row:${tools.join(" ")}`);
-  const shown = $derived(shownPanel(activeTool, selection, panelBeside));
+  const shown = $derived(
+    shownPanel(
+      activeTool,
+      selection,
+      tools,
+      panelBeside,
+      plugin?.ui?.tools ?? []
+    )
+  );
   const appearanceDockOpen = $derived(
     layout === "phone" &&
       !cropMode &&
@@ -1385,7 +1404,9 @@
   $effect(() => {
     if (
       activeTool &&
-      (!availablePanels(selection).includes(activeTool) ||
+      (!availablePanels(selection, tools, plugin?.ui?.tools ?? []).includes(
+        activeTool
+      ) ||
         (activeTool === "transition" && !transitionCut))
     ) {
       activeTool = null;
@@ -1446,7 +1467,7 @@
       activeTool = null;
       void tick().then(() => cropFlight.play());
     }
-    if (isPanelTool(id)) {
+    if (isPanelTool(id, plugin?.ui?.tools ?? [])) {
       openTool(id);
       return;
     }
@@ -1551,15 +1572,11 @@
   }
 
   /** The beats tapped for the crop clip's take, where a keyframe likely goes. */
-  const cropSteps = $derived.by((): ClipStep[] => {
-    const clip = cropMode ? crop.item : null;
-    if (!clip) return [];
-    return clipSteps(
-      clip,
-      editor.timing(clip.takeId),
-      editor.resolvedTiming(clip.takeId)
-    );
-  });
+  const cropSteps = $derived<ClipStep[]>(
+    cropMode && crop.item
+      ? [...(plugin?.ui?.cropSteps?.(editor, crop.item.id) ?? [])]
+      : []
+  );
 
   function cropStepName(step: ClipStep): string {
     const time = formatTakeClock(step.seconds - (crop.item?.start ?? 0));
@@ -2628,6 +2645,7 @@
 {#snippet row()}
   <PostToolRow
     {tools}
+    pluginTools={plugin?.ui?.tools ?? []}
     shown={panelBeside ? shown : null}
     isDisabled={toolDisabled}
     onpick={pickTool}
@@ -2675,9 +2693,9 @@
   {#if tool === "videos"}
     <PostMediaPanel
       {editor}
-      {catalog}
+      catalog={libraryCatalog}
       catalogLoading={videoLibrary?.loading ?? false}
-      catalogError={videoLibrary?.error ?? ""}
+      catalogError={videoLibrary?.error || null}
       busy={readingFile}
       onAddDeviceVideo={pickDeviceVideo}
       onTapBeats={openTakeBeats}
@@ -2685,7 +2703,8 @@
   {:else if tool === "add"}
     <PostAddPanel
       {editor}
-      {catalog}
+      {plugin}
+      catalog={libraryCatalog}
       busy={readingFile}
       onAddDeviceVideo={pickDeviceVideo}
       onAdded={itemAdded}
@@ -2760,6 +2779,7 @@
   {:else if editor.selectedItem}
     <PostItemTool
       {editor}
+      {plugin}
       item={editor.selectedItem}
       {tool}
       tunnel={editor.selectedPart === "tunnel"}
@@ -3130,6 +3150,7 @@
         inert={sharing || exporting || cropMode || undefined}
       >
         <PostTimeline
+          {plugin}
           project={editor.project}
           durationSeconds={editor.durationSeconds}
           playheadSeconds={editor.previewSeconds}

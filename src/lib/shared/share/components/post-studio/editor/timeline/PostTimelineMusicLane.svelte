@@ -13,7 +13,7 @@
     type MusicPlacement,
     POST_MUSIC_MIN_SECONDS,
   } from "@austencloud/video-editor/core";
-  import { formatPostClock } from "$lib/shared/share/components/post-studio/builder/post-builder-format";
+  import { formatPostClock } from "../post-format";
   import type { PostMusic } from "@austencloud/video-editor/core";
   import {
     placeDraggedMusic,

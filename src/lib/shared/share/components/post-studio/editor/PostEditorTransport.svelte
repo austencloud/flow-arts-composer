@@ -5,7 +5,7 @@
 } from "@austencloud/video-editor/core";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
-  import { formatTakeClock, parseClock } from "../builder/post-builder-format";
+  import { formatTakeClock, parseClock } from "./post-format";
   import { roundToFrameSeconds } from "./timeline/post-timeline-geometry";
 
   /**

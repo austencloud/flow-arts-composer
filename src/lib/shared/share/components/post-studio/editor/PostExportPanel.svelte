@@ -3,7 +3,7 @@
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { formatPostClock } from "../builder/post-builder-format";
+  import { formatPostClock } from "./post-format";
 
   /**
    * The finished file: its sound, what still needs doing, the render and

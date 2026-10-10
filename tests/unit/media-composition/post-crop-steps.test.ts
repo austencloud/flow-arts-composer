@@ -4,10 +4,8 @@ import {
   resolveTakeTiming,
   type TakeTiming,
 } from "$lib/shared/media-composition/domain/take-timing";
-import {
-  adjacentStepSeconds,
-  clipSteps,
-} from "$lib/shared/share/components/post-studio/editor/post-crop-steps";
+import { adjacentStepSeconds } from "$lib/shared/share/components/post-studio/editor/post-crop-steps";
+import { clipSteps } from "$lib/shared/post-studio-plugin/ui/tka-crop-steps";
 import { video } from "./post-project-fixtures";
 
 /** Four one-beat moves at 60 BPM with move 1 landing at 2 s of the take. */

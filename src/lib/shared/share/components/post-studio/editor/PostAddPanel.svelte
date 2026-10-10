@@ -6,15 +6,18 @@
     NewOverlaySpec,
   } from "@austencloud/video-editor/core";
   import type {
-    CatalogTakeSource,
-    PostEditorState,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+    LibraryTake,
+    PluginAddItem,
+    VideoEditorPlugin,
+  } from "@austencloud/video-editor";
+  import { Icon } from "@austencloud/video-editor/icons";
+  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { formatPostClock } from "../builder/post-builder-format";
+  import { formatPostClock } from "./post-format";
   import {
     ITEM_KIND_ICON,
-    MANDALA_ICON,
     itemKindLabel,
+    translateKey,
   } from "./post-editor-labels";
   import { newItemStart, overlayAt } from "./post-editor-add";
 
@@ -24,7 +27,8 @@
    */
   interface Props {
     editor: PostEditorState;
-    catalog: readonly CatalogTakeSource[];
+    plugin: VideoEditorPlugin | null;
+    catalog: readonly LibraryTake[];
     /** A picked file is being read. */
     busy?: boolean;
     onAddDeviceVideo: () => void;
@@ -34,6 +38,7 @@
 
   let {
     editor,
+    plugin,
     catalog,
     busy = false,
     onAddDeviceVideo,
@@ -45,8 +50,7 @@
     catalog.filter(
       (video) =>
         !editor.takes.some(
-          (take) =>
-            take.ref.kind === "catalog" && take.ref.videoId === video.videoId
+          (take) => take.ref.kind === "catalog" && take.ref.videoId === video.id
         )
     )
   );
@@ -59,15 +63,17 @@
     }
   }
 
-  function addSavedVideo(video: CatalogTakeSource): void {
+  function addSavedVideo(video: LibraryTake): void {
     editor.pause();
-    if (editor.addCatalogVideo(video)) onAdded("video");
-  }
-
-  function addTitles(): void {
-    editor.pause();
-    const at = newItemStart(editor.durationSeconds, editor.previewSeconds);
-    if (editor.addTitles(at)) onAdded("titles");
+    if (
+      editor.addLibraryVideo({
+        videoId: video.id,
+        label: video.label,
+        url: video.url,
+        durationSeconds: video.durationSeconds,
+      })
+    )
+      onAdded("video");
   }
 
   function addCard(): void {
@@ -75,80 +81,61 @@
     if (editor.addCard()) onAdded("card");
   }
 
-  function addTunnelHook(): void {
-    editor.pause();
-    if (editor.addTunnelHook()) onAdded("animation");
-  }
-
-  function removeTunnelHook(): void {
-    editor.pause();
-    editor.removeTunnelHook();
-  }
-
   const TEXT_SIZE: PostTextSize = "m";
 
-  const ITEMS = $derived([
-    {
-      id: "animation",
-      icon: ITEM_KIND_ICON.animation,
-      label: itemKindLabel("animation"),
-      run: () => addOverlay({ kind: "animation", overlay: true }),
-    },
-    {
-      id: "moves",
-      icon: ITEM_KIND_ICON.moves,
-      label: itemKindLabel("moves", "arrows"),
-      run: () => addOverlay({ kind: "moves", mode: "arrows" }),
-    },
-    {
-      id: "mandala",
-      icon: MANDALA_ICON,
-      label: itemKindLabel("moves", "mandala"),
-      run: () => addOverlay({ kind: "moves", mode: "mandala" }),
-    },
-    {
-      id: "carousel",
-      icon: ITEM_KIND_ICON.carousel,
-      label: itemKindLabel("carousel"),
-      run: () => addOverlay({ kind: "carousel" }),
-    },
-    {
-      id: "text",
-      icon: ITEM_KIND_ICON.text,
-      label: itemKindLabel("text"),
-      run: () =>
-        addOverlay({
-          kind: "text",
-          text: t("post_editor_text_placeholder"),
-          size: TEXT_SIZE,
-        }),
-    },
-    {
-      id: "titles",
-      icon: ITEM_KIND_ICON.titles,
-      label: itemKindLabel("titles"),
-      run: addTitles,
-    },
-    {
-      id: "card",
-      icon: ITEM_KIND_ICON.card,
-      label: t("post_editor_add_card_end"),
-      run: addCard,
-    },
-    editor.tunnelHook
+  /** One button: a core entry draws its Font Awesome class, a plugin's its own icon. */
+  interface AddEntry {
+    id: string;
+    icon: string;
+    svg: PluginAddItem["icon"] | null;
+    label: string;
+    run: () => void;
+  }
+
+  const CORE_ITEMS = ["text", "card"];
+  const coreItem = (id: string): AddEntry =>
+    id === "text"
       ? {
-          id: "tunnel-hook",
-          icon: "fa-xmark",
-          label: t("post_editor_remove_tunnel_hook"),
-          run: removeTunnelHook,
+          id,
+          icon: ITEM_KIND_ICON.text,
+          svg: null,
+          label: itemKindLabel("text"),
+          run: () =>
+            addOverlay({
+              kind: "text",
+              text: t("post_editor_text_placeholder"),
+              size: TEXT_SIZE,
+            }),
         }
       : {
-          id: "tunnel-hook",
-          icon: "fa-circle-nodes",
-          label: t("post_editor_add_tunnel_hook"),
-          run: addTunnelHook,
-        },
-  ]);
+          id,
+          icon: ITEM_KIND_ICON.card,
+          svg: null,
+          label: t("post_editor_add_card_end"),
+          run: addCard,
+        };
+  const ITEMS = $derived(
+    (plugin?.ui?.addItems?.(CORE_ITEMS) ?? CORE_ITEMS).flatMap(
+      (entry): AddEntry[] =>
+        typeof entry === "string"
+          ? [coreItem(entry)]
+          : entry.available(editor)
+            ? [
+                {
+                  id: entry.id,
+                  icon: "",
+                  svg: entry.icon,
+                  label: entry.label(translateKey),
+                  run: () => {
+                    editor.pause();
+                    const kind = entry.add(editor);
+                    if (kind) onAdded(kind as PostItemKind);
+                  },
+                },
+              ]
+            : []
+    )
+  );
 </script>
 
 <div class="add-panel">
@@ -164,7 +151,7 @@
         ? t("share_studio_reading_video")
         : t("post_editor_add_video_device")}
     </PanelButton>
-    {#each savedVideos as video (video.videoId)}
+    {#each savedVideos as video (video.id)}
       <PanelButton
         onclick={() => addSavedVideo(video)}
         ariaLabel={`${t("share_studio_add")} ${video.label}`}
@@ -183,7 +170,10 @@
     {/each}
     {#each ITEMS as item (item.id)}
       <PanelButton onclick={item.run} fullWidth>
-        <i class="fa-solid {item.icon}" aria-hidden="true"></i>
+        {#if item.svg}<Icon icon={item.svg} />{:else}<i
+            class="fa-solid {item.icon}"
+            aria-hidden="true"
+          ></i>{/if}
         {item.label}
       </PanelButton>
     {/each}

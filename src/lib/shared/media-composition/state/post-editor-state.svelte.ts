@@ -2,6 +2,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import {
   createVideoEditorState,
+  type LibraryTakeSource,
   type VideoEditorHost,
   type VideoEditorState,
 } from "@austencloud/video-editor";
@@ -188,6 +189,13 @@ export function createPostEditorState(deps: PostEditorDeps) {
 
   function addCatalogVideo(video: CatalogTakeSource): string | null {
     timing.rememberLegacy(video);
+    return core.addLibraryVideo(video);
+  }
+
+  /** A library take added by id; the catalog's own record still seeds an older timing map. */
+  function addLibraryVideo(video: LibraryTakeSource): string | null {
+    const known = deps.getCatalogVideo?.(video.videoId) ?? null;
+    if (known) timing.rememberLegacy(known);
     return core.addLibraryVideo(video);
   }
 
@@ -439,7 +447,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     seedAudio: core.seedAudio,
     addLocalVideo: core.addLocalVideo,
     addCatalogVideo,
-    addLibraryVideo: core.addLibraryVideo,
+    addLibraryVideo,
     appendTakeClip: core.appendTakeClip,
     relinkLocalTake: core.relinkLocalTake,
     relinkProjectFiles: core.relinkProjectFiles,

@@ -38,7 +38,7 @@
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "./PostCurveEditor.svelte";
-  import { formatPostClock } from "../builder/post-builder-format";
+  import { formatPostClock } from "./post-format";
   import { easingPresetLabel } from "./post-editor-labels";
 
   interface Props {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { flushSync, onDestroy, tick, untrack, type Snippet } from "svelte";
+  import type { VideoEditorPlugin } from "@austencloud/video-editor";
   import type {
     PostItem,
     PostKeyframeChannel,
@@ -38,7 +39,6 @@
   import {
     selectTimelineItem,
     timelineGroupOf,
-    timelineHandoffPair,
     timelineItemOrder,
     type TimelineSelection,
   } from "./post-timeline-selection";
@@ -151,6 +151,8 @@
     onTrimMusic?: (edge: "start" | "end", postSeconds: number) => void;
     /** Where bar 1 now falls, in the music file's own seconds. */
     onMoveDownbeat?: (downbeatSeconds: number) => void;
+    /** The plugin whose timeline join draws two items as one block. */
+    plugin?: VideoEditorPlugin | null;
   }
 
   let {
@@ -189,6 +191,7 @@
     onMoveMusic,
     onTrimMusic,
     onMoveDownbeat,
+    plugin = null,
   }: Props = $props();
 
   // Items sit 3px inside a row with a 1px border, so an overlay stays 44px tall.
@@ -224,7 +227,7 @@
   });
 
   // The animation and the square it turns into show as one block.
-  const handoffPair = $derived(timelineHandoffPair(project));
+  const handoffPair = $derived(plugin?.ui?.timelineJoin?.(project) ?? null);
 
   $effect(() => {
     if (selectedItemId !== selection.focusId)
@@ -248,8 +251,8 @@
   }
 
   function rowTrackIndexOf(itemId: string, trackIndex: number): number {
-    return handoffPair && itemId === handoffPair.movesId
-      ? handoffPair.animationTrackIndex
+    return handoffPair && itemId === handoffPair.toId
+      ? handoffPair.fromTrackIndex
       : trackIndex;
   }
 
@@ -285,8 +288,8 @@
     const pair = handoffPair;
     const blocks: RowBlock[] = [];
     for (const item of row.track.items) {
-      if (pair && item.id === pair.movesId) continue;
-      const joined = pair !== null && item.id === pair.animationId;
+      if (pair && item.id === pair.toId) continue;
+      const joined = pair !== null && item.id === pair.fromId;
       const end = joined ? (pair.start + pair.end) / 2 : itemEnd(item);
       const tunnelEnd = tunnelEndOf(item, end);
       if (tunnelEnd !== null)
@@ -309,14 +312,14 @@
         tunnel: false,
       });
     }
-    if (pair && row.trackIndex === pair.animationTrackIndex) {
-      const moves = project.tracks[pair.movesTrackIndex]?.items.find(
-        (item) => item.id === pair.movesId
+    if (pair && row.trackIndex === pair.fromTrackIndex) {
+      const moves = project.tracks[pair.toTrackIndex]?.items.find(
+        (item) => item.id === pair.toId
       );
       if (moves)
         blocks.push({
           item: moves,
-          trackIndex: pair.movesTrackIndex,
+          trackIndex: pair.toTrackIndex,
           start: (pair.start + pair.end) / 2,
           end: itemEnd(moves),
           joinStart: true,
@@ -434,10 +437,7 @@
     for (let index = 0; index < track.items.length - 1; index++) {
       const outgoing = track.items[index]!;
       const incoming = track.items[index + 1]!;
-      if (
-        handoffPair &&
-        [outgoing.id, incoming.id].includes(handoffPair.movesId)
-      )
+      if (handoffPair && [outgoing.id, incoming.id].includes(handoffPair.toId))
         continue;
       if (
         !crossfadeKinds.has(outgoing.kind) ||

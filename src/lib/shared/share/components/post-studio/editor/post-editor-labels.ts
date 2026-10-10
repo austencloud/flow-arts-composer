@@ -1,4 +1,5 @@
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import type { VideoEditorPlugin } from "@austencloud/video-editor";
 import type {
   PostFraming,
   PostItem,
@@ -26,9 +27,16 @@ export const ITEM_KIND_ICON: Record<PostItemKind, string> = {
 
 export const MANDALA_ICON = "fa-sun";
 
+/** tka's `t` with a plain string key, the shape a plugin's `label(t)` takes. */
+export function translateKey(key: string): string {
+  return t(key as Parameters<typeof t>[0]);
+}
+
 export function itemKindLabel(
   kind: PostItemKind,
-  mode?: PostMovesMode
+  mode?: PostMovesMode,
+  plugin: VideoEditorPlugin | null = null,
+  item: PostItem | null = null
 ): string {
   switch (kind) {
     case "video":
@@ -37,18 +45,16 @@ export function itemKindLabel(
       return "Image";
     case "card":
       return t("post_editor_kind_card");
-    case "animation":
-      return t("post_editor_kind_animation");
-    case "moves":
-      return mode === "mandala"
-        ? t("post_editor_kind_mandala")
-        : t("post_editor_kind_moves");
-    case "carousel":
-      return t("post_editor_kind_carousel");
     case "text":
       return t("post_editor_kind_text");
-    case "titles":
-      return t("post_editor_kind_titles");
+    default:
+      return (
+        plugin?.itemKinds
+          .find((d) => d.kind === kind)
+          ?.ui?.label?.(translateKey, item) ??
+        plugin?.itemKinds.find((d) => d.kind === kind)?.label ??
+        kind
+      );
   }
 }
 
@@ -92,7 +98,10 @@ export const TOOL_ICON: Record<PostToolId, string> = {
 };
 
 /** The short name under a tool's icon, also its panel's title. */
-export function toolLabel(id: PostToolId): string {
+export function toolLabel(
+  id: PostToolId,
+  plugin: VideoEditorPlugin | null = null
+): string {
   switch (id) {
     case "transition":
       return t("post_editor_transition");
@@ -152,6 +161,12 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_duplicate");
     case "delete":
       return t("post_editor_delete");
+    default:
+      return (
+        plugin?.ui?.tools
+          ?.find((tool) => tool.id === id)
+          ?.label(translateKey) ?? id
+      );
   }
 }
 
@@ -159,7 +174,11 @@ export function toolLabel(id: PostToolId): string {
  * What a block or a heading calls an item: Austen's own name for it, the
  * words of a text, the take a clip is cut from, or its kind.
  */
-export function itemDisplayLabel(item: PostItem, project: PostProject): string {
+export function itemDisplayLabel(
+  item: PostItem,
+  project: PostProject,
+  plugin: VideoEditorPlugin | null = null
+): string {
   if (item.label) return item.label;
   if (item.kind === "text" && item.text.trim()) return item.text.trim();
   if (item.kind === "video") {
@@ -168,7 +187,9 @@ export function itemDisplayLabel(item: PostItem, project: PostProject): string {
   }
   return itemKindLabel(
     item.kind,
-    item.kind === "moves" ? item.mode : undefined
+    item.kind === "moves" ? item.mode : undefined,
+    plugin,
+    item
   );
 }
 
@@ -185,7 +206,7 @@ export function channelLabel(channel: PostKeyframeChannel): string {
 }
 
 export function channelIcon(channel: PostKeyframeChannel): string {
-  return TOOL_ICON[CHANNEL_TOOL[channel]];
+  return TOOL_ICON[CHANNEL_TOOL[channel]]!;
 }
 
 /** The one number a channel's value reads as: zoom for Crop, opacity for Fade. */
