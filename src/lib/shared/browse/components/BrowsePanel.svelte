@@ -161,6 +161,7 @@
   const isEmpty = $derived(
     !warming &&
       !isInitializing &&
+      engine.isLibraryComplete &&
       !engine.error &&
       engine.sequences.length === 0
   );
@@ -340,6 +341,7 @@
         dangerIcon={selection.openDangerAction ? "fa-trash" : undefined}
         onDangerAction={selection.openDangerAction}
         onSelectAll={selection.selectAll}
+        selectAllDisabled={!engine.isLibraryComplete}
         onClearSelection={selection.clear}
         onExitSelection={selection.exit}
       />
@@ -376,6 +378,16 @@
     bind:this={contentEl}
     onscroll={handleScroll}
   >
+    {#if engine.isLoadingMore}
+      <div role="status" class="library-load-progress">
+        Loading more saved sequences…
+      </div>
+    {:else if engine.loadMoreError}
+      <div role="status" class="library-load-progress">
+        Some saved sequences have not loaded yet.
+        <button onclick={() => engine.refresh()}>Try again</button>
+      </div>
+    {/if}
     {#if engine.error}
       <div class="error-state" role="alert">
         <p>{engine.error}</p>

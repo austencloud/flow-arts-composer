@@ -49,7 +49,8 @@ instead of showing an empty shell.
     toSyntheticCollection,
     isFoundingId,
   } from "#lib/features/browse/collections/config/founding-collections.js";
-  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { getLibraryPageLoader } from "#lib/shared/browse/get-library-page-loader.js";
+  import { getSavedSequenceIds } from "#lib/shared/library/services/saved-sequence-ledger.js";
   import { getGalleryPrefetcher } from "#lib/features/browse/shared/get-gallery-prefetcher.js";
   import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
@@ -171,25 +172,36 @@ instead of showing an empty shell.
   // Synthetic — not a Firestore doc. Its id "all" can't collide with real
   // collections (Firestore auto-ids are 20 chars; system ids use "system_").
   let libraryCount = $state(0);
+  let libraryCountComplete = $state(false);
   let libraryCountRevision = 0;
   $effect(() => {
     const effectiveUserId = authState.effectiveUserId;
+    const fullAccount = authState.isFullAccount;
     const revision = ++libraryCountRevision;
     if (!effectiveUserId) {
+      getLibraryPageLoader().clear();
       libraryCount = 0;
+      libraryCountComplete = true;
       return;
     }
-    getLibraryRepository()
-      .getSequences()
-      .then((seqs) => {
-        if (
-          revision === libraryCountRevision &&
-          authState.effectiveUserId === effectiveUserId
-        ) {
-          libraryCount = seqs.length;
-        }
-      })
-      .catch(() => {});
+    if (!fullAccount) {
+      getLibraryPageLoader().clear();
+      libraryCount = getSavedSequenceIds(effectiveUserId).length;
+      libraryCountComplete = true;
+      return;
+    }
+    const loader = getLibraryPageLoader();
+    const unsubscribe = loader.subscribe(effectiveUserId, (snapshot) => {
+      if (
+        revision !== libraryCountRevision ||
+        authState.effectiveUserId !== effectiveUserId
+      )
+        return;
+      libraryCount = snapshot.rows.length;
+      libraryCountComplete = snapshot.complete;
+    });
+    void loader.load(effectiveUserId);
+    return unsubscribe;
   });
 
   const allShelf = $derived<LibraryCollection>({
@@ -606,6 +618,11 @@ instead of showing an empty shell.
 {#snippet ownShelves(sel: { id: string; ownerId: string | null } | null)}
   <CollectionCard
     collection={allShelf}
+    countLabel={libraryCountComplete
+      ? unitLabel(libraryCount, "sequence", "sequences")
+      : libraryCount > 0
+        ? `${libraryCount}+ sequences loading`
+        : "Loading sequences"}
     readonly
     selected={!!sel && sel.id === "all" && !sel.ownerId}
     onOpen={() => openCollection("all", t("browse_verified_saved_sequences"))}
