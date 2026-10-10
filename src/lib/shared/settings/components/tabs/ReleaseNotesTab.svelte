@@ -213,120 +213,120 @@
   {backLabel}
   {onBack}
 >
-<div class="release-notes-tab">
-  <div class="master-detail-layout">
-    <!-- Master: version list -->
-    <aside
-      class="version-list-panel themed-scrollbar"
-      bind:this={railElement}
-    >
-      {#if versionState.isLoading && versionState.versions.length === 0}
-        <div class="loading-state">
-          <div class="skeleton-card"></div>
-          <div class="skeleton-card"></div>
-          <div class="skeleton-card"></div>
-        </div>
-      {:else if versionState.error}
-        <div class="error-state">
-          <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
-          <p>{versionState.error}</p>
-          <button type="button" onclick={() => versionState.loadVersions()}>
-            {t("action_retry")}
-          </button>
-        </div>
-      {:else if versionState.versions.length === 0}
-        <div class="empty-state">
-          <i class="fas fa-rocket" aria-hidden="true"></i>
-          <h3>{t("settings_no_releases_yet")}</h3>
-          <p>{t("settings_check_back_for_updates")}</p>
-        </div>
-      {:else}
-        <!-- Wide mode: compact list items -->
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-        <div
-          class="version-list-compact"
-          role="listbox"
-          tabindex="0"
-          aria-label={t("settings_version_list")}
-          onkeydown={handleListKeydown}
-        >
-          {#each versionState.versions as version (version.version)}
-            <div class="rail-slot" data-rail-version={version.version}>
-              <VersionListItem
-                {version}
-                isActive={activeVersion === version.version}
-                onclick={() => jumpToVersion(version)}
-              />
-            </div>
-          {/each}
-        </div>
-        <!-- Narrow mode: full cards -->
-        <div class="version-list-cards">
-          {#each versionState.versions as version (version.version)}
-            <VersionCard {version} onclick={() => openVersionDetail(version)} />
-          {/each}
-        </div>
-      {/if}
-    </aside>
-
-    <!-- Detail: the full release history (wide mode only) -->
-    <main
-      class="version-detail-panel themed-scrollbar"
-      bind:this={streamElement}
-      use:spyOnScroll
-    >
-      {#if versionState.versions.length > 0}
-        <div class="history-stream">
-          {#each streamVersions as version (version.version)}
-            <div
-              id="release-{version.version}"
-              class="stream-section"
-              data-version={version.version}
-            >
-              {#if selectedVersion?.version === version.version}
-                <VersionDetailContent
+  <div class="release-notes-tab">
+    <div class="master-detail-layout">
+      <!-- Master: version list -->
+      <aside
+        class="version-list-panel themed-scrollbar"
+        bind:this={railElement}
+      >
+        {#if versionState.isLoading && versionState.versions.length === 0}
+          <div class="loading-state">
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+          </div>
+        {:else if versionState.error}
+          <div class="error-state">
+            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+            <p>{versionState.error}</p>
+            <button type="button" onclick={() => versionState.loadVersions()}>
+              {t("action_retry")}
+            </button>
+          </div>
+        {:else if versionState.versions.length === 0}
+          <div class="empty-state">
+            <i class="fas fa-rocket" aria-hidden="true"></i>
+            <h3>{t("settings_no_releases_yet")}</h3>
+            <p>{t("settings_check_back_for_updates")}</p>
+          </div>
+        {:else}
+          <!-- Wide mode: compact list items -->
+          <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+          <div
+            class="version-list-compact"
+            role="listbox"
+            tabindex="0"
+            aria-label={t("settings_version_list")}
+            onkeydown={handleListKeydown}
+          >
+            {#each versionState.versions as version (version.version)}
+              <div class="rail-slot" data-rail-version={version.version}>
+                <VersionListItem
                   {version}
-                  onVersionUpdated={handleVersionUpdated}
-                  showCloseButton={false}
+                  isActive={activeVersion === version.version}
+                  onclick={() => jumpToVersion(version)}
                 />
-              {:else}
-                <VersionHistoryEntry
-                  {version}
-                  {contributorMap}
-                  onOpenFeedback={() => selectVersion(version)}
-                  onSelect={() => selectVersion(version)}
-                />
-              {/if}
-            </div>
-          {/each}
+              </div>
+            {/each}
+          </div>
+          <!-- Narrow mode: full cards -->
+          <div class="version-list-cards">
+            {#each versionState.versions as version (version.version)}
+              <VersionCard {version} onclick={() => openVersionDetail(version)} />
+            {/each}
+          </div>
+        {/if}
+      </aside>
 
-          {#if visibleCount < versionState.versions.length}
-            <div class="stream-sentinel" use:revealOnScroll aria-hidden="true">
-              <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-              {t("settings_loading_earlier_releases")}
-            </div>
-          {:else}
-            <p class="stream-end">
-              {t("settings_release_count_end", { count: versionState.versions.length })}
-            </p>
-          {/if}
-        </div>
-      {:else}
-        <div class="no-selection">
-          <i class="fas fa-arrow-left" aria-hidden="true"></i>
-          <p>{t("settings_select_version_details")}</p>
-        </div>
-      {/if}
-    </main>
+      <!-- Detail: the full release history (wide mode only) -->
+      <main
+        class="version-detail-panel themed-scrollbar"
+        bind:this={streamElement}
+        use:spyOnScroll
+      >
+        {#if versionState.versions.length > 0}
+          <div class="history-stream">
+            {#each streamVersions as version (version.version)}
+              <div
+                id="release-{version.version}"
+                class="stream-section"
+                data-version={version.version}
+              >
+                {#if selectedVersion?.version === version.version}
+                  <VersionDetailContent
+                    {version}
+                    onVersionUpdated={handleVersionUpdated}
+                    showCloseButton={false}
+                  />
+                {:else}
+                  <VersionHistoryEntry
+                    {version}
+                    {contributorMap}
+                    onOpenFeedback={() => selectVersion(version)}
+                    onSelect={() => selectVersion(version)}
+                  />
+                {/if}
+              </div>
+            {/each}
+
+            {#if visibleCount < versionState.versions.length}
+              <div class="stream-sentinel" use:revealOnScroll aria-hidden="true">
+                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                {t("settings_loading_earlier_releases")}
+              </div>
+            {:else}
+              <p class="stream-end">
+                {t("settings_release_count_end", { count: versionState.versions.length })}
+              </p>
+            {/if}
+          </div>
+        {:else}
+          <div class="no-selection">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <p>{t("settings_select_version_details")}</p>
+          </div>
+        {/if}
+      </main>
+    </div>
+
+    <!-- Drawer for narrow mode -->
+    <VersionDetailPanel
+      version={selectedVersion}
+      bind:isOpen={isPanelOpen}
+      onVersionUpdated={handleVersionUpdated}
+    />
   </div>
-
-  <!-- Drawer for narrow mode -->
-  <VersionDetailPanel
-    version={selectedVersion}
-    bind:isOpen={isPanelOpen}
-    onVersionUpdated={handleVersionUpdated}
-  />
-</div>
 </SettingsSubpage>
 
 <style>
