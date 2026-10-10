@@ -6,6 +6,7 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import MessageMarkup from "#lib/shared/i18n/MessageMarkup.svelte";
+  import { gridTopicText } from "#lib/shared/guide-topics/grid-topic.js";
   import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
   import GridMergeAnimation from "../grid-merge/GridMergeAnimation.svelte";
   import PageDivider from "../PageDivider.svelte";
@@ -16,7 +17,7 @@
   <div class="scroll-section">
     <h1 class="title">{t("learn_ui_grid_title")}</h1>
     <p class="description">
-      <MessageMarkup text={t("learn_ui_grid_intro")} />
+      <MessageMarkup text={gridTopicText("intro")} />
     </p>
     <div class="grid-container">
       <LessonGridDisplay type="diamond" size="large" />
@@ -58,19 +59,13 @@
     <!-- Point types list for scroll mode -->
     <div class="point-types-summary">
       <div class="point-type-row">
-        <strong>{t("learn_ui_center_point")}</strong> – {t(
-          "learn_ui_center_point_desc"
-        )}
+        <MessageMarkup text={gridTopicText("centerPoint")} />
       </div>
       <div class="point-type-row">
-        <strong>{t("learn_ui_four_hand_points")}</strong> – {t(
-          "learn_ui_hand_points_desc"
-        )}
+        <MessageMarkup text={gridTopicText("handPoints")} />
       </div>
       <div class="point-type-row">
-        <strong>{t("learn_ui_four_outer_points")}</strong> – {t(
-          "learn_ui_outer_points_desc"
-        )}
+        <MessageMarkup text={gridTopicText("outerPoints")} />
       </div>
     </div>
 
@@ -215,7 +210,7 @@
     padding: 0.5rem 0;
   }
 
-  .point-type-row strong {
+  .point-type-row :global(strong) {
     color: var(--theme-text);
   }
 
