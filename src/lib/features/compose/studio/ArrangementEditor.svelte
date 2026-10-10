@@ -24,6 +24,10 @@
   const grid = createArrangeGridState({ persist: false });
   grid.restoreSnapshot(untrack(() => snapshot));
   grid.clearUndoHistory();
+  // What the grid opened with, in the form it captures, to tell edits apart.
+  const opened = JSON.stringify(grid.captureSnapshot());
+  let confirmingDiscard = $state(false);
+  const changed = () => JSON.stringify(grid.captureSnapshot()) !== opened;
   const firstVisiblePopulatedCell = grid.cells
     .filter(
       (cell) =>
@@ -41,7 +45,14 @@
 
   function apply(): void {
     grid.stop();
-    onapply(grid.captureSnapshot());
+    // Applying nothing would still add an undo step to the post.
+    if (!changed()) oncancel();
+    else onapply(grid.captureSnapshot());
+  }
+
+  function cancel(): void {
+    if (changed()) confirmingDiscard = true;
+    else oncancel();
   }
 </script>
 
@@ -51,12 +62,23 @@
       <h2>{title}</h2>
       <span>Edit cells and layers</span>
     </div>
-    <div class="actions">
-      <button type="button" onclick={oncancel}>Cancel</button>
-      <button type="button" class="apply" onclick={apply}
-        >Apply arrangement</button
-      >
-    </div>
+    {#if confirmingDiscard}
+      <div class="actions" role="group" aria-label="Discard changes">
+        <span class="question">Discard your changes to this arrangement?</span>
+        <button type="button" onclick={() => (confirmingDiscard = false)}
+          >Keep editing</button
+        >
+        <button type="button" class="discard" onclick={oncancel}>Discard</button
+        >
+      </div>
+    {:else}
+      <div class="actions">
+        <button type="button" onclick={cancel}>Cancel</button>
+        <button type="button" class="apply" onclick={apply}
+          >Apply arrangement</button
+        >
+      </div>
+    {/if}
   </header>
   <div class="body"><ArrangeTab embedded /></div>
 </section>
@@ -96,7 +118,12 @@
   }
   .actions {
     display: flex;
+    align-items: center;
+    flex-wrap: wrap;
     gap: var(--spacing-sm);
+  }
+  .question {
+    font-size: 14px;
   }
   button {
     min-height: 44px;
@@ -116,6 +143,10 @@
   }
   .apply {
     font-weight: 600;
+  }
+  .discard {
+    border-color: var(--semantic-error);
+    color: var(--semantic-error);
   }
   .body {
     flex: 1;
