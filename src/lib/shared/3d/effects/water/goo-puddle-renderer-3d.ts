@@ -8,10 +8,19 @@ import {
 } from "three";
 
 const CAPACITY = 64;
-const SIDES = 24;
-const RINGS = 3;
+const SIDES = 32;
+const RINGS = 9;
 const VERTICES = SIDES * RINGS;
 const MAX_VOLUME = 0.025;
+const MAX_IMPACTS = 4;
+const IMPACT_LIFETIME = 2.2;
+
+interface Impact {
+  x: number;
+  z: number;
+  age: number;
+  amplitude: number;
+}
 
 interface Puddle {
   x: number;
@@ -21,12 +30,12 @@ interface Puddle {
   radius: number;
   viscosity: number;
   tension: number;
-  age: number;
   idle: number;
   color: Color;
   metalness: number;
   alpha: number;
   seed: number;
+  impacts: Impact[];
 }
 
 /** One dynamic mesh keeps ground liquid glossy without a draw call per bead. */
@@ -38,9 +47,10 @@ export class GooPuddleRenderer3D {
   private readonly colors = new Float32Array(CAPACITY * VERTICES * 3);
   private readonly alphas = new Float32Array(CAPACITY * VERTICES);
   private readonly metalnesses = new Float32Array(CAPACITY * VERTICES);
+  private readonly material: MeshPhysicalMaterial;
 
   constructor(material: MeshPhysicalMaterial) {
-    const indices = new Uint16Array(CAPACITY * (RINGS - 1) * SIDES * 6);
+    const indices = new Uint16Array(CAPACITY * SIDES * (3 + (RINGS - 2) * 6));
     let cursor = 0;
     for (let pool = 0; pool < CAPACITY; pool++) {
       const base = pool * VERTICES;
@@ -48,12 +58,20 @@ export class GooPuddleRenderer3D {
         for (let side = 0; side < SIDES; side++) {
           const a = base + ring * SIDES + side;
           const b = base + ring * SIDES + ((side + 1) % SIDES);
-          indices[cursor++] = a;
-          indices[cursor++] = b;
-          indices[cursor++] = a + SIDES;
-          indices[cursor++] = b;
-          indices[cursor++] = b + SIDES;
-          indices[cursor++] = a + SIDES;
+          const outer = a + SIDES;
+          const nextOuter = b + SIDES;
+          if (ring === 0) {
+            indices[cursor++] = a;
+            indices[cursor++] = nextOuter;
+            indices[cursor++] = outer;
+          } else {
+            indices[cursor++] = a;
+            indices[cursor++] = b;
+            indices[cursor++] = outer;
+            indices[cursor++] = b;
+            indices[cursor++] = nextOuter;
+            indices[cursor++] = outer;
+          }
         }
       }
     }
@@ -80,7 +98,15 @@ export class GooPuddleRenderer3D {
         DynamicDrawUsage
       )
     );
-    this.mesh = new Mesh(this.geometry, material);
+    this.material = material.clone();
+    // Three does not clone shader hooks. Keep the per-vertex opacity and metalness
+    // used by the shared wet material while letting the liquid have its own shine.
+    this.material.onBeforeCompile = material.onBeforeCompile;
+    this.material.roughness = 0.11;
+    this.material.clearcoat = 1;
+    this.material.clearcoatRoughness = 0.07;
+    this.material.envMapIntensity = 1.25;
+    this.mesh = new Mesh(this.geometry, this.material);
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = 101;
     this.mesh.visible = false;
@@ -95,10 +121,17 @@ export class GooPuddleRenderer3D {
     tension: number,
     color: Color,
     metalness: number,
-    alpha: number
+    alpha: number,
+    impactSpeed = 1
   ): void {
     if (![x, z, floorY, beadRadius].every(Number.isFinite) || beadRadius <= 0)
       return;
+    viscosity = Number.isFinite(viscosity)
+      ? Math.min(1, Math.max(0, viscosity))
+      : 0;
+    tension = Number.isFinite(tension)
+      ? Math.min(1, Math.max(0, tension))
+      : 0.5;
     const volume = Math.min(MAX_VOLUME, Math.max(0.000001, beadRadius ** 3));
     const incomingRadius = Math.cbrt(volume) * 1.8;
     let nearest: Puddle | undefined;
@@ -132,10 +165,11 @@ export class GooPuddleRenderer3D {
       nearest.idle = 0;
       nearest.alpha = alpha;
       nearest.metalness = metalness;
+      this.addImpact(nearest, x, z, beadRadius, impactSpeed);
       return;
     }
     if (this.puddles.length === CAPACITY) this.puddles.shift();
-    this.puddles.push({
+    const puddle: Puddle = {
       x,
       z,
       floorY,
@@ -143,20 +177,32 @@ export class GooPuddleRenderer3D {
       radius: incomingRadius * 0.68,
       viscosity,
       tension,
-      age: 0,
       idle: 0,
       color: color.clone(),
       metalness,
       alpha,
       seed: Math.sin(x * 12.9898 + z * 78.233 + floorY * 37.719),
-    });
+      impacts: [],
+    };
+    this.addImpact(puddle, x, z, beadRadius, impactSpeed);
+    this.puddles.push(puddle);
   }
 
-  update(dt: number): void {
+  update(delta: number): void {
+    const dt = Number.isFinite(delta) ? Math.max(delta, 0) : 0;
     for (let i = this.puddles.length - 1; i >= 0; i--) {
       const puddle = this.puddles[i]!;
-      puddle.age += dt;
       puddle.idle += dt;
+      for (
+        let impactIndex = puddle.impacts.length - 1;
+        impactIndex >= 0;
+        impactIndex--
+      ) {
+        const impact = puddle.impacts[impactIndex]!;
+        impact.age += dt;
+        if (impact.age >= IMPACT_LIFETIME)
+          puddle.impacts.splice(impactIndex, 1);
+      }
       const target =
         Math.cbrt(puddle.volume) * (1.8 + 0.35 * (1 - puddle.tension));
       puddle.radius +=
@@ -175,34 +221,35 @@ export class GooPuddleRenderer3D {
       const puddle = this.puddles[pool]!;
       const height = Math.min(
         0.027,
-        Math.max(
-          0.008,
-          (puddle.volume / (Math.PI * puddle.radius * puddle.radius)) * 1.8
-        )
+        Math.max(0.008, (puddle.volume / (Math.PI * puddle.radius ** 2)) * 1.8)
       );
       for (let ring = 0; ring < RINGS; ring++) {
-        const fraction = ring === 0 ? 0 : ring === 1 ? 0.68 : 1;
-        const lift = ring === 0 ? height : ring === 1 ? height * 0.72 : 0.0015;
+        const fraction = ring / (RINGS - 1);
+        // The lip curls down to the floor while the center remains gently domed.
+        const dome = Math.sqrt(Math.max(0, 1 - fraction ** 4));
+        const lift = 0.0015 + height * dome * (0.85 + 0.15 * fraction);
         for (let side = 0; side < SIDES; side++) {
           const angle = (side * Math.PI * 2) / SIDES;
           const irregularity =
             1 +
             0.055 * Math.sin(angle * 3 + puddle.seed * 1.7) +
             0.035 * Math.sin(angle * 5 - puddle.seed * 0.9);
+          const radial = puddle.radius * fraction * irregularity;
+          const vx = puddle.x + Math.cos(angle) * radial;
+          const vz = puddle.z + Math.sin(angle) * radial;
           const vertex = pool * VERTICES + ring * SIDES + side;
           const offset = vertex * 3;
-          this.positions[offset] =
-            puddle.x +
-            Math.cos(angle) * puddle.radius * fraction * irregularity;
-          this.positions[offset + 1] = puddle.floorY + lift;
-          this.positions[offset + 2] =
-            puddle.z +
-            Math.sin(angle) * puddle.radius * fraction * irregularity;
+          this.positions[offset] = vx;
+          this.positions[offset + 1] =
+            puddle.floorY +
+            Math.max(0.0015, lift + this.waveHeight(puddle, vx, vz, fraction));
+          this.positions[offset + 2] = vz;
           this.colors[offset] = puddle.color.r;
           this.colors[offset + 1] = puddle.color.g;
           this.colors[offset + 2] = puddle.color.b;
           const fade = Math.min(1, Math.max(0, (18 - puddle.idle) / 3));
-          this.alphas[vertex] = puddle.alpha * fade * (ring === 2 ? 0.94 : 1);
+          this.alphas[vertex] =
+            puddle.alpha * fade * (ring === RINGS - 1 ? 0.94 : 1);
           this.metalnesses[vertex] = puddle.metalness;
         }
       }
@@ -212,7 +259,75 @@ export class GooPuddleRenderer3D {
     this.geometry.getAttribute("aAlpha").needsUpdate = true;
     this.geometry.getAttribute("aMetalness").needsUpdate = true;
     this.geometry.computeVertexNormals();
+    const normals = this.geometry.getAttribute("normal") as BufferAttribute;
+    for (let pool = 0; pool < this.puddles.length; pool++) {
+      let nx = 0;
+      let ny = 0;
+      let nz = 0;
+      for (let side = 0; side < SIDES; side++) {
+        const vertex = pool * VERTICES + side;
+        nx += normals.getX(vertex);
+        ny += normals.getY(vertex);
+        nz += normals.getZ(vertex);
+      }
+      const length = Math.hypot(nx, ny, nz) || 1;
+      for (let side = 0; side < SIDES; side++) {
+        normals.setXYZ(
+          pool * VERTICES + side,
+          nx / length,
+          ny / length,
+          nz / length
+        );
+      }
+    }
+    normals.needsUpdate = true;
     this.mesh.visible = true;
+  }
+
+  private addImpact(
+    puddle: Puddle,
+    x: number,
+    z: number,
+    radius: number,
+    speed: number
+  ): void {
+    const limitedSpeed = Number.isFinite(speed)
+      ? Math.min(8, Math.max(0, speed))
+      : 0;
+    if (limitedSpeed < 0.15) return;
+    if (puddle.impacts.length === MAX_IMPACTS) puddle.impacts.shift();
+    puddle.impacts.push({
+      x,
+      z,
+      age: 0,
+      amplitude: Math.min(
+        0.012,
+        Math.max(0.0045, radius * (0.07 + 0.035 * limitedSpeed))
+      ),
+    });
+  }
+
+  private waveHeight(
+    puddle: Puddle,
+    x: number,
+    z: number,
+    fraction: number
+  ): number {
+    if (fraction >= 1) return 0;
+    let height = 0;
+    for (const impact of puddle.impacts) {
+      const distance = Math.hypot(x - impact.x, z - impact.z);
+      const front = impact.age * (0.28 + 0.25 * (1 - puddle.viscosity));
+      const width = Math.max(0.03, puddle.radius * 0.23);
+      const phase = (distance - front) / width;
+      const envelope = Math.exp(-1.1 * phase * phase);
+      const decay = Math.exp(-(1.4 + 3.4 * puddle.viscosity) * impact.age);
+      height += impact.amplitude * Math.cos(phase * Math.PI) * envelope * decay;
+    }
+    return (
+      Math.min(0.012, Math.max(-0.012, height)) *
+      Math.min(1, (1 - fraction) * 8)
+    );
   }
 
   private coalesce(): void {
@@ -249,6 +364,9 @@ export class GooPuddleRenderer3D {
           Math.cbrt(first.volume) * 1.25
         );
         first.idle = Math.min(first.idle, second.idle);
+        first.impacts = [...first.impacts, ...second.impacts]
+          .sort((left, right) => right.age - left.age)
+          .slice(-MAX_IMPACTS);
         this.puddles.splice(b, 1);
       }
     }
@@ -264,5 +382,6 @@ export class GooPuddleRenderer3D {
   dispose(): void {
     this.mesh.parent?.remove(this.mesh);
     this.geometry.dispose();
+    this.material.dispose();
   }
 }
