@@ -10,11 +10,16 @@ import { DEFAULT_ANIMATION_TIMING } from "#lib/features/create/shared/workspace-
 import { DEMO_SEQUENCE } from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
 import {
   FIRST_ROLL,
+  GENERATE_CLEAR_MS,
+  GENERATE_READY_WAIT_MS,
+  GENERATE_ROLLS_PER_TURN,
   generateCellDelayMs,
   generateRevealMs,
   nextRoll,
   rollStep,
 } from "#lib/features/create/shared/components/method-previews/method-preview-generate.js";
+import { SCENE_TAP } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
+import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 
 /** A four-step roll cut from the demo sequence, standing in for a fresh draw. */
 const fresh: SequenceData = {
@@ -86,5 +91,18 @@ describe("the Generate wave", () => {
     expect(generateRevealMs(8, 3)).toBe(600);
     expect(generateRevealMs(3, 2)).toBe(490);
     expect(generateRevealMs(0, 4)).toBe(0);
+  });
+});
+
+describe("two rolls a turn", () => {
+  it("fit one turn on the longest wave, with room to wait for a slow draw", () => {
+    // The longest waves: a five-slot strip and a 3×3 grid.
+    const wave = Math.max(generateRevealMs(4, 5), generateRevealMs(8, 3));
+    const roll =
+      SCENE_TAP.considerMs + SCENE_TAP.pressMs + GENERATE_CLEAR_MS + wave;
+    expect(GENERATE_ROLLS_PER_TURN).toBe(2);
+    expect(GENERATE_ROLLS_PER_TURN * roll).toBeLessThanOrEqual(
+      METHOD_PREVIEW_TIMING.turnMs - GENERATE_READY_WAIT_MS
+    );
   });
 });

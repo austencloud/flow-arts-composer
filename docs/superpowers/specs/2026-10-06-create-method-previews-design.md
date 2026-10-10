@@ -188,9 +188,12 @@ picture is the start position with its steps.
 
 The dice is pressed and the whole strip washes in at once, in the step grid's
 own diagonal wave: each cell's band is its row plus its column, staggered by
-CSS animation delay. Each turn rolls a different real sequence from
-`drawMatrixRealization()`; if that source fails, turns step through the demo
-sequence instead. The dice is drawn as a plain glyph for `GhostPointer` to
+CSS animation delay. Each turn rolls twice (2026-10-10): the finger starts on
+the dice, taps, a real sequence washes in, then it taps again and a different
+one washes in, so the preview shows that every tap is fresh. Each roll is a
+real sequence from `drawMatrixRealization()`, two kept ready between turns; if
+that source fails, rolls step through the demo sequence instead. The dice is
+drawn as a plain glyph for `GhostPointer` to
 press, never a real button.
 
 Before its first turn, the card rests on the demo sequence half a turn on,

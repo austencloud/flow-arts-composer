@@ -8,6 +8,9 @@ import { DEFAULT_ANIMATION_TIMING } from "#lib/features/create/shared/workspace-
 import { DEMO_SEQUENCE, DEMO_STEP_START } from "./method-preview-demo";
 import { slotWaveBand } from "./method-preview-layout";
 
+/** Rolls in one turn: a second, different roll shows each tap is fresh. */
+export const GENERATE_ROLLS_PER_TURN = 2;
+
 /** How long the last roll fades before the next washes in. */
 export const GENERATE_CLEAR_MS = 150;
 
