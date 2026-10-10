@@ -1,9 +1,9 @@
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { downloadBlobToDisk } from "#lib/shared/foundation/services/file-downloader.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { renderTrajectoryMandalaSVG } from "../../../../../shared/mandala/services/trajectory-mandala-renderer";
   import { getThirdOrderContext } from "../context/third-order-context";
   import { THIRD_ORDER_VIEWBOX_SIZE } from "../domain/third-order-math";

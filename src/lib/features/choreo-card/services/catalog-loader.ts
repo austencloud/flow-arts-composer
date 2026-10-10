@@ -1,10 +1,10 @@
 import type { QueryDocumentSnapshot } from "firebase/firestore";
 import type { Catalog } from "../domain/models/Catalog";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   getSystemCatalogsPath,
   getSystemCatalogSequencesPath,
-} from "$lib/shared/library/data/firestore-paths";
+} from "#lib/shared/library/data/firestore-paths.js";
 import { hydrateSequence } from "./sequence-render-hydrator";
 
 export { hydrateSequence } from "./sequence-render-hydrator";
@@ -63,7 +63,7 @@ function cacheCatalogs(catalogs: Catalog[]): void {
 // Firebase modules themselves: the build's small-chunk merge (vite.config.ts)
 // can fold a small wrapper module back into the page.
 async function loadFirestore() {
-  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
   return getFirestoreInstance();
 }
 

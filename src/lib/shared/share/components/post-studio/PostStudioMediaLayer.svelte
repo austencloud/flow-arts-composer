@@ -1,19 +1,19 @@
 <script lang="ts">
-  import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
-  import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
-  import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
-  import { tryGetMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+  import type { CompositionSourceBinding } from "#lib/shared/media-composition/state/media-composition-state.svelte.js";
+  import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
+  import type { EvaluatedFrameLayer } from "#lib/shared/media-composition/services/frame-evaluator.js";
+  import { tryGetMediaCompositionContext } from "#lib/shared/media-composition/state/media-composition-context.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
   import type {
     PostAnimationItem,
     PostMovesMode,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "#lib/shared/media-composition/domain/post-project.js";
   import {
     qrImageForAppearance,
     type PostQrAppearance,
   } from "./post-qr-image-appearance";
-  import type { TunnelHook } from "$lib/shared/media-composition/domain/tunnel-hook";
+  import type { TunnelHook } from "#lib/shared/media-composition/domain/tunnel-hook.js";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
@@ -22,21 +22,21 @@
     calculateMediaFit,
     calculateSourceCropFit,
     resolvePanOffset,
-  } from "$lib/shared/media-composition/services/media-fit";
-  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
+  } from "#lib/shared/media-composition/services/media-fit.js";
+  import VisualSequenceSaveContextMenuHost from "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import { onDestroy, untrack } from "svelte";
   import {
     previewPlaybackRate,
     rememberFollowLead,
     shouldSeekPreviewVideo,
     type FollowLead,
-  } from "$lib/shared/media-composition/services/video-preview-seek";
-  import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
-  import { PreviewVideoFrameRecovery } from "$lib/shared/media-composition/services/preview-video-frame-recovery";
+  } from "#lib/shared/media-composition/services/video-preview-seek.js";
+  import type { PreviewVideoController } from "#lib/shared/media-composition/services/post-preview-clock.js";
+  import { PreviewVideoFrameRecovery } from "#lib/shared/media-composition/services/preview-video-frame-recovery.js";
   import {
     videoColorFilter,
     type PostVideoColorGrade,
-  } from "$lib/shared/media-composition/domain/post-video-color-grade";
+  } from "#lib/shared/media-composition/domain/post-video-color-grade.js";
 
   interface Props {
     binding: CompositionSourceBinding;

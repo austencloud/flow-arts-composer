@@ -1,10 +1,13 @@
-import { norm, type PositionValue } from "$lib/shared/notation/qft/qft-model";
+import {
+  norm,
+  type PositionValue,
+} from "#lib/shared/notation/qft/qft-model.js";
 import {
   trajectoryPropIndexAt,
   trajectoryReversals,
   type QftPropRateProfile,
   type QftTrajectory,
-} from "$lib/shared/notation/qft/qft-trajectory";
+} from "#lib/shared/notation/qft/qft-trajectory.js";
 
 export type PoiReversalVerdict = "legal" | "illegal" | "unsure";
 export type PoiReversalCalibration = "pendulum" | "extendulum";

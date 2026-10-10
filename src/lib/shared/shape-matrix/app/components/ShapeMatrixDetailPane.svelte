@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import ShapeMatrixDrill from "$lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte";
-  import type { ModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import ShapeMatrixDrill from "#lib/shared/shape-matrix/components/ShapeMatrixDrill.svelte";
+  import type { ModeRealization } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
 
   interface Props {

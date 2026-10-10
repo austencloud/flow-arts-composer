@@ -8,10 +8,10 @@
    * a scene moves its cells itself and must never wait on a fade. The grid,
    * prop artwork, and colors follow the user's settings, as everywhere else.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   let {
     data,

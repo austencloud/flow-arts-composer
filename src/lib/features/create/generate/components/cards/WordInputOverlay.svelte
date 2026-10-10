@@ -6,15 +6,15 @@
   Uses shared MobileInputToolbar for keyboard-aware Done button.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { pushState as svelteKitPushState } from "$app/navigation";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import { getGreekSymbol } from "$lib/shared/keyboard/services/greek-key-mapper";
-  import MobileInputToolbar from "$lib/shared/components/MobileInputToolbar.svelte";
+  import { getGreekSymbol } from "#lib/shared/keyboard/services/greek-key-mapper.js";
+  import MobileInputToolbar from "#lib/shared/components/MobileInputToolbar.svelte";
   import {
     uppercasePreservingGreek,
     insertAtCursor,
-  } from "$lib/shared/keyboard/domain/greek-input-helpers";
+  } from "#lib/shared/keyboard/domain/greek-input-helpers.js";
 
   let {
     wordValue = "",
@@ -40,7 +40,7 @@
       onClose();
     }
     // Push a history entry so back button closes overlay instead of navigating
-    svelteKitPushState("", { wordInputOverlay: true });
+    void goto("", { shallow: true, state: { wordInputOverlay: true } });
     window.addEventListener("popstate", handlePopState);
 
     return () => {

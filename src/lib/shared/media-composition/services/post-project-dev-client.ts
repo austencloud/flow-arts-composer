@@ -1,5 +1,5 @@
-import type { SavedFeatureExport } from "$lib/shared/media-composition/domain/feature-video-export";
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+import type { SavedFeatureExport } from "#lib/shared/media-composition/domain/feature-video-export.js";
+import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
 
 const ENDPOINT = "/api/dev/post-project";
 

@@ -3,7 +3,7 @@
   import { useDraco, useGltf, useMeshopt } from "@threlte/extras";
   import { onDestroy, untrack } from "svelte";
   import type { Group, Object3D } from "three";
-  import type { FlowFestCarDynamics } from "$lib/features/flow-fest-sim/domain/flow-fest-car";
+  import type { FlowFestCarDynamics } from "#lib/features/flow-fest-sim/domain/flow-fest-car.js";
   import {
     FLOW_FEST_DRIVEN_CAR_POSE_TASK,
     FLOW_FEST_WORLD_STEP_TASK,

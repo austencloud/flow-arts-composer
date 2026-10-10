@@ -7,7 +7,7 @@ import {
   type Camera,
   type Group,
 } from "three";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type {
   WorkerGridCanvasFactory,
   WorkerGridCanvasSurface,

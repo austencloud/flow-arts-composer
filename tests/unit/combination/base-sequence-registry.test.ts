@@ -5,11 +5,11 @@ import {
   ambientEligibleBases,
   ambientLetterSet,
   ambientBaseForLetter,
-} from "$lib/shared/combination/domain/base-sequence-registry";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/combination/domain/base-sequence-registry.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import { getAllLetterVariants } from "../../helpers/real-pictograph-loader";
-import { placementGroup } from "$lib/shared/combination/services/placement-groups";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { placementGroup } from "#lib/shared/combination/services/placement-groups.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 describe("base-sequence registry", () => {
   it("contains the MCP-documented compound bases", () => {

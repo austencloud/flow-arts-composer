@@ -1,4 +1,4 @@
-import { LAUNCHPAD_TILES } from "$lib/shared/landing/components/launchpad/launchpad-tiles";
+import { LAUNCHPAD_TILES } from "#lib/shared/landing/components/launchpad/launchpad-tiles.js";
 
 /** Landing destinations with a shared-element counterpart on the home page. */
 export const LAUNCHPAD_MORPH_PATHS: readonly string[] = Object.freeze(

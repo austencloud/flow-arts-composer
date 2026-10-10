@@ -2,7 +2,7 @@
 AntispinPage - Page 4: Antispin rotation + summary comparison
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { ANTISPIN_EXAMPLES } from "../../../../domain/constants/staff-examples";
   import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
 

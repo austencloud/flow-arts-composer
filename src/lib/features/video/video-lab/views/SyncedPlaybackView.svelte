@@ -6,14 +6,14 @@
   Includes playback rate controls for BPM adjustment.
 -->
 <script lang="ts">
-  import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     getStepIndexFromVideo,
     seekTimeForStep,
-  } from "$lib/shared/video-collaboration/utils/step-map-utils";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
+  } from "#lib/shared/video-collaboration/utils/step-map-utils.js";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";
 
   interface Props {
     videoUrl: string;

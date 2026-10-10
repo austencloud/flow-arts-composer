@@ -7,25 +7,25 @@
 
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("$lib/shared/application/state/app-state.svelte", () => ({
+vi.mock("#lib/shared/application/state/app-state.svelte.js", () => ({
   getSettings: () => ({ leftPropType: "staff", rightPropType: "staff" }),
 }));
 
-import { deriveCacheKey } from "$lib/shared/sequence-viewer/services/cell-cache-key-deriver";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PreviewCellRenderOptions } from "$lib/shared/sequence-viewer/services/preview-cell-renderer";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { deriveCacheKey } from "#lib/shared/sequence-viewer/services/cell-cache-key-deriver.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PreviewCellRenderOptions } from "#lib/shared/sequence-viewer/services/preview-cell-renderer.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 // The class-with-injected-hasher collapsed into a standalone function
 // (the hasher is now imported directly inside the module). Bind it to an

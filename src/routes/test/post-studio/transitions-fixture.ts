@@ -2,7 +2,7 @@ import {
   createEmptyPostProject,
   type PostCardItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 
 /** In-memory cuts for transition inspection without changing a saved post. */
 export function transitionsFixture(sequenceId: string): PostProject {

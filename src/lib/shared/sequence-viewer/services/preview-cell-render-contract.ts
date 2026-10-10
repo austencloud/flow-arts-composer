@@ -1,11 +1,11 @@
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PrepareOptions } from "$lib/shared/pictograph/shared/services/types";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PrepareOptions } from "#lib/shared/pictograph/shared/services/types.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
 import type {
   LayerRenderOptions,
   LayerVisibility,
-} from "$lib/shared/render/services/types";
+} from "#lib/shared/render/services/types.js";
 import type { PreviewCellRenderOptions } from "./preview-cell-renderer";
 
 function filterSoloMotions(

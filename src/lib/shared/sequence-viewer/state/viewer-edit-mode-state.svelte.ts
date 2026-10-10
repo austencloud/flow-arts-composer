@@ -1,7 +1,7 @@
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
 import type {
   ExportCoordinatorState,
   ExportRequestOptions,

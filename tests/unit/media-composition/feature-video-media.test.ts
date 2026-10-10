@@ -6,7 +6,7 @@ import {
   mediaResponse,
   parseByteRange,
   resolveFeatureMediaFile,
-} from "$lib/server/feature-video-media";
+} from "#lib/server/feature-video-media.js";
 import { tempFeatureRoot } from "./feature-video-test-helpers";
 
 describe("parseByteRange", () => {

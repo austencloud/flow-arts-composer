@@ -8,8 +8,8 @@ survives the card that opened it disappearing (which is exactly what happens
 when you untick the collection you're currently browsing).
 -->
 <script lang="ts">
-  import { collectionPickerState } from "$lib/features/library/state/collection-picker-state.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import { collectionPickerState } from "#lib/features/library/state/collection-picker-state.svelte.js";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
 </script>
 
 {#if collectionPickerState.sequenceIds.length > 0}

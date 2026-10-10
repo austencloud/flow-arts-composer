@@ -15,7 +15,7 @@
  */
 
 import { MediaQuery } from 'svelte/reactivity';
-import { MIN_3D_VIEWPORT_PX } from '$lib/shared/device/domain/constants/device-constants';
+import { MIN_3D_VIEWPORT_PX } from '#lib/shared/device/domain/constants/device-constants.js';
 
 /** Pure: does a `w × h` viewport clear the 3D shortest-side threshold? */
 export function fits3DViewport(width: number, height: number): boolean {

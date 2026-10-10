@@ -1,8 +1,8 @@
 import type {
   PostCardItem,
   PostImageItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
 import { DARK_POST_QR_STYLE } from "@tka/render-composition";
 import { cardOptionsForItem } from "./post-item-render-options";
 
@@ -71,7 +71,7 @@ export function qrPayloadForImage(sourceUrl: string): Promise<string | null> {
         const bitmap = await createImageBitmap(await response.blob());
         try {
           const { createTkaQrDetector } =
-            await import("$lib/shared/qr/services/tka-qr-detector");
+            await import("#lib/shared/qr/services/tka-qr-detector.js");
           const codes = await createTkaQrDetector().detect(bitmap);
           return isQrArtwork(codes, bitmap.width, bitmap.height);
         } finally {
@@ -99,7 +99,7 @@ export function qrImageForAppearance(
       const payload = await qrPayloadForImage(sourceUrl);
       if (!payload) return null;
       const { getUrlQRCodeGenerator } =
-        await import("$lib/shared/qr/get-qr-code-generator");
+        await import("#lib/shared/qr/get-qr-code-generator.js");
       const generator = getUrlQRCodeGenerator();
       const result = await generator.generateForUrl(payload, {
         size: 512,

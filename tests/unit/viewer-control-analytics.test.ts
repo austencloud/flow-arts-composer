@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { reportViewerControlChange } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+import { reportViewerControlChange } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
 
 describe("viewer control analytics sink", () => {
   it("forwards one scalar transition with intent metadata", () => {

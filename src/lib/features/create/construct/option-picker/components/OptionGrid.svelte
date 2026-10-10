@@ -8,13 +8,13 @@ Computes reversal indicators for options based on current sequence.
 -->
 <script lang="ts">
   import { untrack } from "svelte";
-  import type { PreparedPictographData } from "$lib/shared/pictograph/option/prepared-pictograph-data";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { PreparedPictographData } from "#lib/shared/pictograph/option/prepared-pictograph-data.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     reversalDetector,
     type ReversalDetector,
-  } from "$lib/shared/create/services/reversal-detector";
-  import type { PictographWithReversals } from "$lib/shared/create/services/reversal-detector";
+  } from "#lib/shared/create/services/reversal-detector.js";
+  import type { PictographWithReversals } from "#lib/shared/create/services/reversal-detector.js";
   import OptionCard from "./OptionCard.svelte";
   import DoubleFloatOptionRows from "./DoubleFloatOptionRows.svelte";
   import { buildDoubleFloatOptionRows } from "../services/double-float-option-groups";

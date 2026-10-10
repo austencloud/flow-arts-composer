@@ -1,36 +1,36 @@
 import { describe, expect, it, vi } from "vitest";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { buildSequenceSharePayload } from "$lib/shared/inbox/domain/build-sequence-share-payload";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { buildSequenceSharePayload } from "#lib/shared/inbox/domain/build-sequence-share-payload.js";
 import { createSendAttachmentStateForTest } from "./send-attachment-test-helper.svelte";
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { isFullAccount: true, user: { uid: "sender" } },
 }));
-vi.mock("$lib/shared/auth/state/auth-drawer-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-drawer-state.svelte.js", () => ({
   authDrawerState: { show: vi.fn() },
 }));
-vi.mock("$lib/shared/auth/services/guest-identity", () => ({
+vi.mock("#lib/shared/auth/services/guest-identity.js", () => ({
   ensureGuestIdentity: vi.fn(() => Promise.resolve()),
 }));
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: () => ({
     createShortCode: vi.fn(() => Promise.resolve({ code: "AB3D" })),
   }),
 }));
-vi.mock("$lib/shared/messaging/services/conversation-manager", () => ({
+vi.mock("#lib/shared/messaging/services/conversation-manager.js", () => ({
   conversationService: {
     getOrCreateConversation: vi.fn(() =>
       Promise.resolve({ conversation: { id: "conversation-1" } })
     ),
   },
 }));
-vi.mock("$lib/shared/inbox/state/inbox-state.svelte", () => ({
+vi.mock("#lib/shared/inbox/state/inbox-state.svelte.js", () => ({
   inboxState: { conversations: [] },
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: vi.fn() }),
 }));
 

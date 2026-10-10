@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import FlowFestFieldPositioningPanel from "$lib/features/flow-fest-sim/components/FlowFestFieldPositioningPanel.svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import FlowFestFieldPositioningPanel from "#lib/features/flow-fest-sim/components/FlowFestFieldPositioningPanel.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
 
   interface Props {
     isOpen?: boolean;

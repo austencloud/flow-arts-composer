@@ -7,16 +7,16 @@
  */
 import { mount, unmount } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import demo from "$lib/shared/landing/data/demo-sequence.json";
-import { PLAYBACK_MAX_BPM } from "$lib/shared/animation-engine/domain/constants/timing";
-import type { PreparedSequenceHandoff } from "$lib/shared/animation-engine/domain/chaining-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import demo from "#lib/shared/landing/data/demo-sequence.json";
+import { PLAYBACK_MAX_BPM } from "#lib/shared/animation-engine/domain/constants/timing.js";
+import type { PreparedSequenceHandoff } from "#lib/shared/animation-engine/domain/chaining-types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // Load the player chunk that SequenceHeroDemo's LazyMount imports before the
 // test starts, so the test's time budget covers playback, not a cold import.
-await import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte");
+await import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte");
 const { default: SequenceHeroDemo } =
-  await import("$lib/shared/landing/components/SequenceHeroDemo.svelte");
+  await import("#lib/shared/landing/components/SequenceHeroDemo.svelte");
 
 const realCreateElement = Object.getPrototypeOf(document)
   .createElement as typeof document.createElement;

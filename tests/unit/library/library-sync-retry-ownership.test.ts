@@ -57,7 +57,7 @@ vi.mock("firebase/app", () => ({
     }
   },
 }));
-vi.mock("$lib/shared/persistence/database/tka-database", () => ({
+vi.mock("#lib/shared/persistence/database/tka-database.js", () => ({
   db: {
     sequences: {
       filter: (predicate: (s: unknown) => boolean) => ({
@@ -67,13 +67,13 @@ vi.mock("$lib/shared/persistence/database/tka-database", () => ({
     },
   },
 }));
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: () => ({
     saveSequenceWithMetadata: (...a: unknown[]) =>
       saveSequenceWithMetadataMock(...a),
   }),
 }));
-vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+vi.mock("#lib/shared/library/services/saved-sequence-ledger.js", () => ({
   getSavedSequenceIds: (uid: string | null) => ledger.get(uid ?? "") ?? [],
   getOwnedSequenceIdSet: (uid: string | null) =>
     new Set(ledger.get(uid ?? "") ?? []),
@@ -83,22 +83,22 @@ vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
   getUnownedSequenceIds: () => [],
   adoptUnownedSequenceIds: () => [],
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: authStateMock,
 }));
-vi.mock("$lib/shared/offline/state/network-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/network-status-state.svelte.js", () => ({
   networkStatusState: { onOnline: vi.fn(() => () => {}) },
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { info: vi.fn(), warning: vi.fn(), error: vi.fn(), success: vi.fn() },
 }));
 vi.mock(
-  "$lib/shared/library/services/sequence-persistence-coordinator",
+  "#lib/shared/library/services/sequence-persistence-coordinator.js",
   () => ({ isSequenceDeletionIntended: () => false })
 );
 
 const { retryPendingSyncs } =
-  await import("$lib/features/library/services/library-sync-retry");
+  await import("#lib/features/library/services/library-sync-retry.js");
 
 beforeEach(() => {
   vi.clearAllMocks();

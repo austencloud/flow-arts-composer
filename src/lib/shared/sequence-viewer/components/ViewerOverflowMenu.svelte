@@ -5,20 +5,20 @@
   focus, outside-click dismissal, and viewport collision handling.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
   import type { Snippet } from "svelte";
   import type { HTMLButtonAttributes } from "svelte/elements";
-  import MotionColorChips from "$lib/shared/components/MotionColorChips.svelte";
-  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
+  import MotionColorChips from "#lib/shared/components/MotionColorChips.svelte";
+  import PrimaryPropColorSettings from "#lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
   import {
     getSettings,
     updateSetting,
-  } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     shareTarget,
     saveActionLabel,
-  } from "$lib/shared/mobile/share-action.svelte";
+  } from "#lib/shared/mobile/share-action.svelte.js";
 
   type OverflowOpenReason = "trigger" | "item" | "backdrop" | "escape" | "tab";
 

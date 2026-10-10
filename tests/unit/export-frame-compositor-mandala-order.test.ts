@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ExportFrameCompositor,
   type FrameCompositorConfig,
-} from "$lib/features/compose/services/export-frame-compositor";
+} from "#lib/features/compose/services/export-frame-compositor.js";
 
 function config(): FrameCompositorConfig {
   return {

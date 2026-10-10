@@ -7,23 +7,23 @@
 // renderers roundtrip them exactly. Proof: for 2-turn dashes on every axis, the halved step's midpoint
 // orientation must render (prop AND arrow) at the engine's physical staff angle.
 import { describe, it, expect } from "vitest";
-import { buildHalvedStep } from "$lib/shared/animation-engine/services/build-halved-step";
-import { calculateStaffAngleAt } from "$lib/shared/animation-engine/services/orientation-at";
-import { calculateSegmentRotation } from "$lib/shared/pictograph/arrow/positioning/calculation/services/segment-rotation";
-import PropRotAngleManager from "$lib/shared/pictograph/prop/services/prop-rot-angle-manager";
+import { buildHalvedStep } from "#lib/shared/animation-engine/services/build-halved-step.js";
+import { calculateStaffAngleAt } from "#lib/shared/animation-engine/services/orientation-at.js";
+import { calculateSegmentRotation } from "#lib/shared/pictograph/arrow/positioning/calculation/services/segment-rotation.js";
+import PropRotAngleManager from "#lib/shared/pictograph/prop/services/prop-rot-angle-manager.js";
 import {
   createMotionData,
   createPlaceholderMotion,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const AXES: Array<[GridLocation, GridLocation]> = [
   [GridLocation.SOUTH, GridLocation.NORTH],

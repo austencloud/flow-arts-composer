@@ -3,26 +3,26 @@
   Quick-access submenus for Effects, Efforts, Path Shape.
 -->
 <script lang="ts">
-  import VisualSavePrompt from "$lib/shared/library/components/VisualSavePrompt.svelte";
+  import VisualSavePrompt from "#lib/shared/library/components/VisualSavePrompt.svelte";
   let savePrompt: VisualSavePrompt | undefined = $state();
   import { onDestroy } from "svelte";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuState,
     ContextMenuEntry,
-  } from "$lib/shared/components/context-menu/context-menu-types";
-  import { composeMenu } from "$lib/shared/components/context-menu/compose-menu";
-  import { buildVisualSequenceSaveMenuItem } from "$lib/shared/library/services/visual-sequence-save-menu-item";
-  import { isEmbeddedInAnotherSite } from "$lib/shared/foundation/utils/embedded-in-another-site";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import { composeMenu } from "#lib/shared/components/context-menu/compose-menu.js";
+  import { buildVisualSequenceSaveMenuItem } from "#lib/shared/library/services/visual-sequence-save-menu-item.js";
+  import { isEmbeddedInAnotherSite } from "#lib/shared/foundation/utils/embedded-in-another-site.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { buildCanvasContextMenuItems } from "./canvas-context-menu-builder";
   import {
     getAnimationVisibilityManager,
     type AnimationVisibilityStateManager,
   } from "../../state/animation-visibility-state.svelte";
-  import { getViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { tryGetGridJoinContext } from "$lib/shared/grid-join/grid-join-controller";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import { getViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { tryGetGridJoinContext } from "#lib/shared/grid-join/grid-join-controller.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   interface Props {
     sequence?: SequenceData | null;
     leftPropType?: string | null;

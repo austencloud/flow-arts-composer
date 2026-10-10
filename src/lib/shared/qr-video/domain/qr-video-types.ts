@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { EffectType } from "$lib/shared/effects/domain/effects-config";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
 
 export interface FramePropState {
   centerPathAngle: number;

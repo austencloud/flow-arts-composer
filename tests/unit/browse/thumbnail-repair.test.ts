@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const markMissing = vi.fn();
-vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
+vi.mock("#lib/shared/browse/services/cloud-thumbnail-cache.js", () => ({
   markMissing: (...a: unknown[]) => markMissing(...a),
 }));
 

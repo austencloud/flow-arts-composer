@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getFeedbackManageLayoutMode,
   isFeedbackManageQueueMode,
-} from "$lib/features/feedback/domain/feedback-manage-layout";
+} from "#lib/features/feedback/domain/feedback-manage-layout.js";
 
 describe("feedback Manage layout classification", () => {
   it.each([

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveReceiptId } from "$lib/shared/share-intake/domain/derive-receipt-id";
+import { deriveReceiptId } from "#lib/shared/share-intake/domain/derive-receipt-id.js";
 
 // The delimiters an earlier revision of deriveReceiptId used. Named rather
 // than inlined: raw control bytes are invisible in an editor and easy to

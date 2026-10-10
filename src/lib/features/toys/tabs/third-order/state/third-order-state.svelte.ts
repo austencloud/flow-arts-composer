@@ -1,4 +1,4 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { IThirdOrderCompositionSampler } from "../services/contracts/IThirdOrderCompositionSampler";
 import {
   THIRD_ORDER_COMPOSITION_VERSION,
@@ -12,9 +12,9 @@ import {
   type ThirdOrderSourceTarget,
   type ThirdOrderTimingMode,
 } from "../domain/third-order-composition";
-import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import type { SpinStyle } from "@vtg/domain";
-import type { ProjectedTrajectorySet } from "$lib/shared/mandala/domain/trajectory-types";
+import type { ProjectedTrajectorySet } from "#lib/shared/mandala/domain/trajectory-types.js";
 import {
   bakeThirdOrderTrajectories,
   type ThirdOrderPropTypes,

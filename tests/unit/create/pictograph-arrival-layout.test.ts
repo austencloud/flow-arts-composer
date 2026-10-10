@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getArrivalPresentedStepCount } from "$lib/features/create/shared/workspace-panel/sequence-display/domain/pictograph-arrival-layout";
-import type { PictographArrivalRequest } from "$lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte";
+import { getArrivalPresentedStepCount } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/pictograph-arrival-layout.js";
+import type { PictographArrivalRequest } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
 
 function createRequest(
   overrides: Partial<PictographArrivalRequest> = {}

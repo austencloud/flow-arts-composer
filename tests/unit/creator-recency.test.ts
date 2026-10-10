@@ -4,7 +4,7 @@ import {
   mergeSmallBands,
   ringToneFor,
   type RecencyBand,
-} from "$lib/features/creators/domain/creator-recency";
+} from "#lib/features/creators/domain/creator-recency.js";
 
 const NOW = new Date("2026-07-25T00:00:00.000Z").getTime();
 const DAY_MS = 24 * 60 * 60 * 1000;

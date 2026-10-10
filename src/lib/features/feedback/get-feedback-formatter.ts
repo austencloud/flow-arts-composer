@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import * as feedbackFormatter from './services/feedback-formatter';
 
 export function getFeedbackFormatter() {

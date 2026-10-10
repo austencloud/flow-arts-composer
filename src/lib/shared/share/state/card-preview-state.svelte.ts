@@ -12,17 +12,17 @@
  */
 
 import { onDestroy } from "svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-import { getSharer } from "$lib/shared/share/get-sharer";
-import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
-import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
-import type { CardPresentation } from "$lib/shared/share/domain/models/card-presentation";
-import { buildCardPreviewRenderKey } from "$lib/shared/share/state/card-preview-render-key";
-import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
-import { hashString } from "$lib/shared/foundation/services/content-hasher";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
+import { getSharer } from "#lib/shared/share/get-sharer.js";
+import { buildCardRenderOptions } from "#lib/shared/share/services/card-render-options.js";
+import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
+import type { CardPresentation } from "#lib/shared/share/domain/models/card-presentation.js";
+import { buildCardPreviewRenderKey } from "#lib/shared/share/state/card-preview-render-key.js";
+import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
+import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
 
 interface CardPreviewInputs {
   /** The sequence to draw. Null suspends rendering. */

@@ -20,12 +20,12 @@
  */
 
 import { deriveReversals } from "@tka/sequence-engine";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { getEffectiveRotationDirection } from "$lib/shared/pictograph/shared/domain/utils/effective-rotation-direction";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { getEffectiveRotationDirection } from "#lib/shared/pictograph/shared/domain/utils/effective-rotation-direction.js";
 
 /**
  * Reversal Detection Service Contract

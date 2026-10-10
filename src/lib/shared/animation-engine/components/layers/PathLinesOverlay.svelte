@@ -1,31 +1,31 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
   import {
     isVisibleMotion,
     type MotionData,
-  } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { getPathD } from "$lib/features/hand-paths/hand-path-builder/services/hand-path-animator";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { getPathD } from "#lib/features/hand-paths/hand-path-builder/services/hand-path-animator.js";
   import {
     getAnimationVisibilityManager,
     type AnimationVisibilityStateManager,
   } from "../../state/animation-visibility-state.svelte";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import { fade } from "svelte/transition";
   import { cubicInOut, cubicOut } from "svelte/easing";
   import { Tween } from "svelte/motion";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { GridJoin } from "@tka/tka-types";
   import { gridJoinShiftViewBox } from "../../services/animation-grid-join";
-  import { GRID_JOIN_TWEEN_MS } from "$lib/shared/grid-join/grid-join-tween";
+  import { GRID_JOIN_TWEEN_MS } from "#lib/shared/grid-join/grid-join-tween.js";
 
   let {
     sequenceData = null,

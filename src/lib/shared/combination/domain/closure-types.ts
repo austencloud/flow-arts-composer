@@ -19,9 +19,9 @@
  * Spec: `docs/superpowers/specs/2026-08-05-sequence-combinator-redesign-design.md`.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { LOOPType, Period } from "@tka/sequence-engine/loop";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /**
  * Which family a closure came from.

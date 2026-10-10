@@ -13,7 +13,7 @@
   import { getFirestoreInstance } from "../../../auth/firebase";
   import { onMount, tick } from "svelte";
   import { t } from "../../../i18n/i18n.svelte.js";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import AccountValueRow from "./AccountValueRow.svelte";
 
   interface Props {

@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   FirestoreRest,
   getFirestoreRest,
-} from "$lib/server/firestore/firestore-rest";
-import { ServiceAccountAuthorizer } from "$lib/server/google/service-account-authorizer";
+} from "#lib/server/firestore/firestore-rest.js";
+import { ServiceAccountAuthorizer } from "#lib/server/google/service-account-authorizer.js";
 
 const PLATFORM_CREDENTIAL = JSON.stringify({
   project_id: "request-scoped-project",

@@ -8,7 +8,7 @@
 import type {
   PropState,
   PropStates,
-} from "$lib/shared/foundation/domain/types/prop-state";
+} from "#lib/shared/foundation/domain/types/prop-state.js";
 
 export interface InterpolationResult {
   leftAngles: {

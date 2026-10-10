@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/state';
-  import { canvas2DDirectRenderer } from '$lib/shared/render/services/canvas-2d-direct-renderer';
+  import { canvas2DDirectRenderer } from '#lib/shared/render/services/canvas-2d-direct-renderer.js';
 
   let status = $state('Loading...');
 

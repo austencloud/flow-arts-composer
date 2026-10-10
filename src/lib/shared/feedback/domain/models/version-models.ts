@@ -4,7 +4,7 @@
  * Type definitions for app versioning and release tracking.
  */
 
-import type { FeedbackType } from "$lib/shared/feedback/domain/models/feedback-models";
+import type { FeedbackType } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 /**
  * Summary counts by feedback type

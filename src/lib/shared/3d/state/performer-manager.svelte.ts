@@ -29,8 +29,8 @@ import {
   resolveViewerFormationFacingAngle,
 } from "../domain/viewer-formation-facing";
 import type { CharacterId } from "../domain/character-model";
-import { motionDuration } from "$lib/shared/transitions/motion";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 // FormationManager type inferred from createFormationManager return
 
 const COUNT_CHANGE_TRANSITION_MS = DURATION.emphasis;

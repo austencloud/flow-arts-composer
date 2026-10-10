@@ -1,18 +1,18 @@
-import { dev } from "$app/environment";
-import type { Handle, HandleServerError } from "@sveltejs/kit";
+import { dev } from "$app/env";
+import type { Handle, HandleServerError } from "@sveltejs/kit/hooks";
 import {
   isFirebaseAuthHandlerPath,
   proxyFirebaseAuthHandler,
-} from "$lib/server/auth/firebase-auth-handler-proxy";
+} from "#lib/server/auth/firebase-auth-handler-proxy.js";
 import {
   isMetaOAuthProxyPath,
   proxyMetaOAuthRequest,
-} from "$lib/server/auth/meta-oauth-proxy";
+} from "#lib/server/auth/meta-oauth-proxy.js";
 import {
   createLandingPageTransformer,
   shouldPreloadRouteAsset,
-} from "$lib/server/performance/landing-preload-policy";
-import { normalizeModuleId } from "$lib/shared/navigation/config/module-definitions";
+} from "#lib/server/performance/landing-preload-policy.js";
+import { normalizeModuleId } from "#lib/shared/navigation/config/module-definitions.js";
 import { guardInternalRoute } from "./config/build-flags";
 
 /**
@@ -261,13 +261,18 @@ export const handle: Handle = async ({ event, resolve }) => {
   return response;
 };
 
-export const handleError: HandleServerError = async ({
-  error,
-  event,
-  status,
-  message,
-}) => {
-  const err = error instanceof Error ? error : new Error(String(error));
+// SvelteKit also hands this hook errors thrown with `error(...)` and invalid
+// remote-function input. Those are expected responses, not failures, so only
+// its own errors (such as a 404) and unknown throws are logged, as before.
+export const handleError: HandleServerError = ({ kind, error, event }) => {
+  if (kind === "app" || kind === "validation") return;
+  const status = kind === "framework" ? error.status : 500;
+  const err =
+    kind === "framework"
+      ? new Error(error.message)
+      : error instanceof Error
+        ? error
+        : new Error(String(error));
 
   console.error(
     JSON.stringify({
@@ -275,7 +280,7 @@ export const handleError: HandleServerError = async ({
       type: "server_error",
       status,
       message: err.message,
-      stack: err.stack,
+      stack: kind === "unknown" ? err.stack : undefined,
       url: (() => {
         try {
           return event.url.pathname + event.url.search;
@@ -289,8 +294,6 @@ export const handleError: HandleServerError = async ({
     })
   );
 
-  return {
-    message: dev ? err.message : message,
-    code: status,
-  };
+  // Production keeps SvelteKit's safe message ("Internal Error", "Not Found").
+  return dev ? { message: err.message } : undefined;
 };

@@ -9,7 +9,7 @@
   Also shows pending invites badge.
 -->
 <script lang="ts">
-  import { getUserVideoLibrary } from "$lib/shared/video-collaboration/services/collaborative-video-manager";
+  import { getUserVideoLibrary } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
   import type { UserVideoLibrary } from "../services/types";
   import type { CollaborativeVideo } from "../domain/collaborative-video";
   import { onMount } from "svelte";

@@ -21,11 +21,11 @@
   import CelestialControls from "./components/CelestialControls.svelte";
   import RainbowControls from "./components/RainbowControls.svelte";
   import VoidControls from "./components/VoidControls.svelte";
-  import ComposerPickerPanel from "$lib/shared/3d/scene-composer/ComposerPickerPanel.svelte";
-  import { createComposerEditorState } from "$lib/shared/3d/scene-composer/composer-editor-state.svelte";
-  import { composerRegistry } from "$lib/shared/3d/scene-composer/registry";
-  import { createComposerSaveState } from "$lib/shared/3d/scene-composer/composer-save-state.svelte";
-  import "$lib/shared/3d/scene-composer/register-scene-lab-composer-plugins";
+  import ComposerPickerPanel from "#lib/shared/3d/scene-composer/ComposerPickerPanel.svelte";
+  import { createComposerEditorState } from "#lib/shared/3d/scene-composer/composer-editor-state.svelte.js";
+  import { composerRegistry } from "#lib/shared/3d/scene-composer/registry.js";
+  import { createComposerSaveState } from "#lib/shared/3d/scene-composer/composer-save-state.svelte.js";
+  import "#lib/shared/3d/scene-composer/register-scene-lab-composer-plugins.js";
 
   const sceneState = createSceneLabState();
   const composerState = createComposerEditorState();

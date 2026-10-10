@@ -1,12 +1,12 @@
 import { Box3, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
-import { createProceduralWorkerProp } from "$lib/shared/3d/worker-renderer/worlds/props/worker-procedural-props";
-import type { WorkerPropFactoryOptions } from "$lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory-types";
+import { createProceduralWorkerProp } from "#lib/shared/3d/worker-renderer/worlds/props/worker-procedural-props.js";
+import type { WorkerPropFactoryOptions } from "#lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory-types.js";
 import {
   HOOP_FAMILY_REACH_M,
   HOOP_HARDWARE_M,
   TRIANGLE_STATIONS_M,
-} from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
+} from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
 
 function options(
   propType: string,

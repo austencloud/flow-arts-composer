@@ -1,6 +1,6 @@
 <!-- CatDogToggle.svelte - Chip toggle for CatDog mode (different props per hand) -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let {
     catDogMode = false,
     onToggle,

@@ -3,23 +3,23 @@
  * Based on the exact implementation from standalone_animator.html
  */
 
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import {
   simplifyRepeatedWord,
   compressWord,
-} from "$lib/shared/foundation/utils/word-simplifier";
+} from "#lib/shared/foundation/utils/word-simplifier.js";
 import {
   renderHeader,
   type LOOPComponentId,
   type LoopReflectionAxis,
 } from "@tka/render-composition";
-import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 export {
   getProgressBarHeight,
   renderProgressBarToCanvas,
-} from "$lib/shared/animation-engine/services/sequence-progress-renderer";
+} from "#lib/shared/animation-engine/services/sequence-progress-renderer.js";
 
-import { textRenderer } from "$lib/shared/render/services/text-renderer";
+import { textRenderer } from "#lib/shared/render/services/text-renderer.js";
 
 // Constants from standalone_animator.html
 // Using "strict" hand point offset (actual hand position, further from center)

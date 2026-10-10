@@ -1,9 +1,9 @@
 import "fake-indexeddb/auto";
 import Dexie from "dexie";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { TKADatabase } from "$lib/shared/persistence/database/tka-database";
-import { DATABASE_NAME } from "$lib/shared/persistence/domain/constants/database_constants";
-import { MessageDeliveryRepository } from "$lib/shared/inbox/services/implementations/MessageDeliveryRepository";
+import { TKADatabase } from "#lib/shared/persistence/database/tka-database.js";
+import { DATABASE_NAME } from "#lib/shared/persistence/domain/constants/database_constants.js";
+import { MessageDeliveryRepository } from "#lib/shared/inbox/services/implementations/MessageDeliveryRepository.js";
 
 let database: TKADatabase;
 let repository: MessageDeliveryRepository;

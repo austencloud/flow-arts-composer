@@ -2,7 +2,7 @@
   import ComposerExperience from "./_components/ComposerExperience.svelte";
   import ComposerGlide from "./_glide/ComposerGlide.svelte";
   import { createGlideMemory } from "./_glide/glide-memory";
-  import Seo from "$lib/shared/components/Seo.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
 
   const glideMemory = createGlideMemory();
   export const snapshot = glideMemory.snapshot;

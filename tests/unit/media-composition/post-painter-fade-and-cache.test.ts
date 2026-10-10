@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 // Stand-ins for the pictograph and glyph rasterizers. Each image carries a tag
 // naming what it is (and, for the strip, the size it was rendered at), so a
 // paint shows which cache it drew from.
-vi.mock("$lib/shared/render/services/canvas-2d-direct-renderer", () => ({
+vi.mock("#lib/shared/render/services/canvas-2d-direct-renderer.js", () => ({
   Canvas2DDirectRenderer: class {
     async initialize() {}
     async preparePropSprite() {
@@ -14,13 +14,13 @@ vi.mock("$lib/shared/render/services/canvas-2d-direct-renderer", () => ({
     }
   },
 }));
-vi.mock("$lib/shared/pictograph/shared/services/pictograph-preparer", () => ({
+vi.mock("#lib/shared/pictograph/shared/services/pictograph-preparer.js", () => ({
   pictographPreparer: { prepareSingle: async () => ({ _prepared: undefined }) },
 }));
-vi.mock("$lib/shared/timeline/notation-cell", () => ({
+vi.mock("#lib/shared/timeline/notation-cell.js", () => ({
   buildNotationCells: () => [{ data: {} }, { data: {} }, { data: {} }],
 }));
-vi.mock("$lib/shared/mandala/services/mandala-path-preparer", () => ({
+vi.mock("#lib/shared/mandala/services/mandala-path-preparer.js", () => ({
   MandalaPathPreparer: class {
     prepare() {
       return {
@@ -33,7 +33,7 @@ vi.mock("$lib/shared/mandala/services/mandala-path-preparer", () => ({
   computeEngineAlignedMandalaScale: () => 1,
 }));
 vi.mock(
-  "$lib/shared/animation-engine/services/export-glyph-prerenderer",
+  "#lib/shared/animation-engine/services/export-glyph-prerenderer.js",
   () => ({
     ExportGlyphPrerenderer: class {
       async prerenderGlyphs() {}
@@ -55,19 +55,19 @@ vi.mock(
     },
   })
 );
-vi.mock("$lib/shared/foundation/get-svg-image-converter", () => ({
+vi.mock("#lib/shared/foundation/get-svg-image-converter.js", () => ({
   getSvgImageConverter: () => ({}),
 }));
 
-import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
-import { getSequenceProgressStripHeight } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
-import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
+import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
+import { getSequenceProgressStripHeight } from "#lib/shared/animation-engine/services/sequence-progress-renderer.js";
+import { createSequenceStripPainter } from "#lib/shared/media-composition/services/sequence-strip-painter.js";
 import {
   paintSizeBucket,
   type PaintFrame,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
-import { PostAnimationOverlayPainter } from "$lib/features/compose/services/post-animation-overlay-painter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+import { PostAnimationOverlayPainter } from "#lib/features/compose/services/post-animation-overlay-painter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const BEATS = [1, 1];
 

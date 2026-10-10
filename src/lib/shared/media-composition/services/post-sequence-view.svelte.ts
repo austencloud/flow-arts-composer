@@ -1,25 +1,25 @@
 import { untrack } from "svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
-import type { PostSequenceAction } from "$lib/shared/media-composition/domain/post-project";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
+import type { PostSequenceAction } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   applySequenceActions,
   type PostSequenceTransforms,
-} from "$lib/shared/media-composition/domain/post-sequence-actions";
+} from "#lib/shared/media-composition/domain/post-sequence-actions.js";
 import {
   createHandLabeledCard,
   type HandLabeledCard,
-} from "$lib/shared/sequence-viewer/services/hand-labeled-card.svelte";
+} from "#lib/shared/sequence-viewer/services/hand-labeled-card.svelte.js";
 import {
   sequenceForHandLabeling,
   type HandLabeledSequenceResolver,
-} from "$lib/shared/sequence-viewer/services/hand-labeled-sequence";
+} from "#lib/shared/sequence-viewer/services/hand-labeled-sequence.js";
 import {
   flipSequence,
   mirrorSequence,
   rotateSequence,
   swapHands,
-} from "$lib/shared/create/services/sequence-transformer";
+} from "#lib/shared/create/services/sequence-transformer.js";
 
 interface PostSequenceView extends HandLabeledCard {
   /** A failure to change the current resolved sequence. */

@@ -1,14 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { deriveSequenceLetters } from "./sequence-transforms";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { IMotionQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
 
 describe("deriveSequenceLetters derives gridMode per-step", () => {
   it("looks up the letter under BOX for an intercardinal step even when sequence.gridMode is stale DIAMOND", async () => {

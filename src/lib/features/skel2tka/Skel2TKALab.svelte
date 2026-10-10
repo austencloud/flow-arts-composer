@@ -5,7 +5,7 @@
   Phase 1 (Hand Tracking) is the only interactive phase for now.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { PhaseInfo } from "./domain/models";
   import PhaseOverview from "./components/PhaseOverview.svelte";
   import Phase1Panel from "./components/Phase1Panel.svelte";

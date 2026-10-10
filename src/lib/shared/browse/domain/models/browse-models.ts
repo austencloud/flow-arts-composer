@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
 
 /**
  * Essential Browse Models - Keep It Simple!

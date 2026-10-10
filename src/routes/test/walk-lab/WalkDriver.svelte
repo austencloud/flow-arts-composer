@@ -23,24 +23,24 @@
     ScheduledGaitTimingSample,
     TerminalStepPlan,
   } from "@austencloud/scene-3d";
-  import { stepOf } from "$lib/shared/3d/diagnostics/gait/walk-patterns";
+  import { stepOf } from "#lib/shared/3d/diagnostics/gait/walk-patterns.js";
   import {
     sampleDestinationWalkPlan,
     type DestinationWalkPlan,
-  } from "$lib/shared/3d/locomotion/destination-walk-plan";
+  } from "#lib/shared/3d/locomotion/destination-walk-plan.js";
   import {
     assertGaitTimingPlanMatchesSteps,
     sampleGaitTimingPlan,
     type GaitTimingPlan,
-  } from "$lib/shared/3d/locomotion/gait-timing-plan";
+  } from "#lib/shared/3d/locomotion/gait-timing-plan.js";
   import {
     createPatternTerminalStepPlan,
     samplePatternTerminalTravel,
-  } from "$lib/shared/3d/locomotion/pattern-terminal-step-plan";
+  } from "#lib/shared/3d/locomotion/pattern-terminal-step-plan.js";
   import type {
     WalkPattern,
     WalkTick,
-  } from "$lib/shared/3d/diagnostics/gait/walk-patterns";
+  } from "#lib/shared/3d/diagnostics/gait/walk-patterns.js";
   import type { ManualInput, WalkState } from "./walk-command";
 
   interface Props {

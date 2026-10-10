@@ -1,14 +1,14 @@
 import { error, type RequestHandler } from "@sveltejs/kit";
-import { authorizeLoopback } from "$lib/server/dev-loopback";
+import { authorizeLoopback } from "#lib/server/dev-loopback.js";
 import {
   FeatureMediaError,
   mediaResponse,
   resolveFeatureMediaFile,
-} from "$lib/server/feature-video-media";
+} from "#lib/server/feature-video-media.js";
 import {
   featureVideoFailure,
   featureVideos,
-} from "$lib/server/feature-video-store";
+} from "#lib/server/feature-video-store.js";
 
 /** Dev only: a file from a feature video's media folder, in byte ranges. */
 export const GET: RequestHandler = async ({

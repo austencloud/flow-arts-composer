@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { DesktopInitializer } from "./desktop-initializer";
 
 let instance: DesktopInitializer | null = null;

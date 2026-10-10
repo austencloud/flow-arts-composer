@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   initialScanPlaybackBpm,
   loadSavedScanPlaybackBpm,
@@ -7,7 +7,7 @@ import {
   recommendedScanPlaybackBpm,
   saveScanPlaybackBpm,
   type ScanPlaybackStorage,
-} from "$lib/shared/sequence-viewer/services/scan-playback-tempo";
+} from "#lib/shared/sequence-viewer/services/scan-playback-tempo.js";
 
 type Turns = number | "fl";
 

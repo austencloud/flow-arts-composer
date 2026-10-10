@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     handleKeyDown as arrangeHandleKeyDown,
     findAdjacentCell,
-  } from "$lib/features/compose/tabs/arrange/services/arrange-keyboard-handler";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  } from "#lib/features/compose/tabs/arrange/services/arrange-keyboard-handler.js";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
   /**
    * ArrangeTab - Grid-based composition builder
    *
@@ -31,12 +31,12 @@
   import CellEditorPanel from "./components/grid/cell-editor/CellEditorPanel.svelte";
   import PlaybackBar from "./components/shared/PlaybackBar.svelte";
   import StaggerControls from "./components/shared/StaggerControls.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import SaveCompositionModal from "./components/grid/SaveCompositionModal.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { CellMediaType } from "$lib/shared/animation-engine/domain/compose-types";
-  import type { TransformType } from "$lib/shared/animation-engine/domain/compose-types";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { CellMediaType } from "#lib/shared/animation-engine/domain/compose-types.js";
+  import type { TransformType } from "#lib/shared/animation-engine/domain/compose-types.js";
   import type { KeyboardContext, KeyboardCallbacks } from "./services/types";
 
   // Use singleton grid state

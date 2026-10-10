@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { ImageComposer } from './services/image-composer';
 import { getTextRenderer } from './get-text-renderer';

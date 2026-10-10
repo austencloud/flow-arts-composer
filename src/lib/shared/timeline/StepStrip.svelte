@@ -14,10 +14,10 @@
 -->
 <script lang="ts">
   import { untrack, type Snippet } from "svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { buildNotationCells, type NotationCell } from "./notation-cell";
   import {
     buildStripWindow,

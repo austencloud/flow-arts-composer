@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { FULL_BLEED_DRAWER_QUERY } from "$lib/shared/inbox/domain/full-bleed-drawer";
+import { FULL_BLEED_DRAWER_QUERY } from "#lib/shared/inbox/domain/full-bleed-drawer.js";
 
 const DRAWER = "src/lib/shared/inbox/components/InboxDrawer.svelte";
 

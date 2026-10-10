@@ -1,10 +1,10 @@
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { Snippet } from "svelte";
-import type { UnifiedPlaybackContext } from "$lib/shared/timeline/unified-playback-context";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+import type { UnifiedPlaybackContext } from "#lib/shared/timeline/unified-playback-context.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 
 export interface StudioCardFrame {
   sequence: SequenceData;

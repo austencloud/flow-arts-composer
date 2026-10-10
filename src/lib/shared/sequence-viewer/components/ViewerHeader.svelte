@@ -4,26 +4,26 @@
   visual language. Hosts provide callbacks instead of rebuilding the chrome.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ShareActionMenuItem } from "$lib/shared/share/domain/models/share-action-menu";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import WordHeader from "$lib/shared/animation-engine/components/layers/WordHeader.svelte";
-  import WordActionMenu from "$lib/shared/choreo-card/components/WordActionMenu.svelte";
-  import ShareActionMenu from "$lib/shared/share/components/ShareActionMenu.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ShareActionMenuItem } from "#lib/shared/share/domain/models/share-action-menu.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
+  import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
+  import ShareActionMenu from "#lib/shared/share/components/ShareActionMenu.svelte";
   import { resolveSequenceIdentityTitle } from "../services/viewer-title";
   import MotionVisibilityToggle from "./MotionVisibilityToggle.svelte";
   import ViewerOverflowMenu from "./ViewerOverflowMenu.svelte";
-  import PropViewingControl from "$lib/shared/browse/components/PropViewingControl.svelte";
+  import PropViewingControl from "#lib/shared/browse/components/PropViewingControl.svelte";
   import {
     resolveViewingProps,
     viewingPropLabel,
-  } from "$lib/shared/foundation/services/prop-viewing";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/foundation/services/prop-viewing.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   const handColors = $derived(
     getSettings().primaryPropColors ?? {

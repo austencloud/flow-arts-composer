@@ -5,7 +5,7 @@
  * Shortcuts are registered when the viewer is active.
  */
 
-import type { ShortcutRegistrationOptions } from "$lib/shared/keyboard/domain/types/keyboard-types";
+import type { ShortcutRegistrationOptions } from "#lib/shared/keyboard/domain/types/keyboard-types.js";
 
 /**
  * Shortcut action handlers - injected at registration time

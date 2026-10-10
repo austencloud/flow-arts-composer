@@ -3,9 +3,9 @@
   // route come from the persistent MarketingChrome (root layout). This layout
   // adds the shop-scoped cart affordance (button + drawer) — deliberately NOT
   // in the app-wide nav.
-  import CartButton from "$lib/features/store/components/CartButton.svelte";
-  import CartDrawer from "$lib/features/store/components/CartDrawer.svelte";
-  import { getShopCart } from "$lib/features/store/state/shop-cart.svelte";
+  import CartButton from "#lib/features/store/components/CartButton.svelte";
+  import CartDrawer from "#lib/features/store/components/CartDrawer.svelte";
+  import { getShopCart } from "#lib/features/store/state/shop-cart.svelte.js";
 
   let { children } = $props();
   const cart = getShopCart();

@@ -1,4 +1,4 @@
-import type { ViewportManager } from '$lib/shared/device/services/viewport-manager.svelte'
+import type { ViewportManager } from '#lib/shared/device/services/viewport-manager.svelte.js'
 /**
  * CreateModule Orchestration Types
  *
@@ -6,14 +6,14 @@ import type { ViewportManager } from '$lib/shared/device/services/viewport-manag
  * These types define the contracts between different layers of the system.
  */
 
-import type { DeviceDetector } from '$lib/shared/device/services/device-detector'
-import type { StartPlacementManager } from "$lib/shared/create/services/start-placement-manager";
-import type { CreateModuleOrchestrator } from "$lib/features/create/shared/services/create-module-orchestrator";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import type { SequenceStatsCalculator } from "$lib/features/create/shared/services/sequence-stats-calculator";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { SequenceValidator } from "$lib/features/create/shared/services/sequence-validator";
+import type { DeviceDetector } from '#lib/shared/device/services/device-detector.js'
+import type { StartPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
+import type { CreateModuleOrchestrator } from "#lib/features/create/shared/services/create-module-orchestrator.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import type { SequenceStatsCalculator } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { SequenceValidator } from "#lib/features/create/shared/services/sequence-validator.js";
 import type { createCreateModuleState } from "../state/create-module-state.svelte";
 import type { createConstructTabState } from "../state/construct-tab-state.svelte";
 

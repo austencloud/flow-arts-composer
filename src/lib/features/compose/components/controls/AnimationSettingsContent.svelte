@@ -11,17 +11,17 @@
   Note: Export settings (loop count) are in ExportActionsPanel
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
-  import SimpleTrailControls from "$lib/shared/animation-engine/components/trail/SimpleTrailControls.svelte";
-  import PlaybackModeToggle from "$lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
-  import MotionColorChips from "$lib/shared/components/MotionColorChips.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  import SimpleTrailControls from "#lib/shared/animation-engine/components/trail/SimpleTrailControls.svelte";
+  import PlaybackModeToggle from "#lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
+  import MotionColorChips from "#lib/shared/components/MotionColorChips.svelte";
   import StepModeSettings from "./StepModeSettings.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type {
     PlaybackMode,
     StepPlaybackStepSize,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 
   let {
     bpm = $bindable(60),

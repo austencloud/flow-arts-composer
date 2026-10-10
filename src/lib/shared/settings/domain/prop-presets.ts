@@ -10,14 +10,14 @@
  * preset changes only when the performer saves to it.
  */
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 import {
   hasModelSprite,
   normalizePropLook,
   type PropLook,
-} from "$lib/shared/pictograph/prop/domain/prop-look";
+} from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import type { AppSettings, PropPreset } from "./app-settings";
 
 export const PROP_PRESET_SLOT_COUNT = 10;

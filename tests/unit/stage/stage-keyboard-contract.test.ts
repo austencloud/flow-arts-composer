@@ -6,7 +6,7 @@ import {
   createInertStageHandlers,
   createStageShortcuts,
   type StageShortcutHandlers,
-} from "$lib/shared/keyboard/registration/register-stage-shortcuts";
+} from "#lib/shared/keyboard/registration/register-stage-shortcuts.js";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");

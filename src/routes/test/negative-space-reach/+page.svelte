@@ -6,10 +6,10 @@
   import {
     safeSessionStorageGet,
     safeSessionStorageSet,
-  } from "$lib/shared/foundation/services/storage-manager";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  } from "#lib/shared/foundation/services/storage-manager.js";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { DEFAULT_LAB_CHARACTER_ID } from "../_lab-kit/lab-characters";
   import {
     solveInspectionShot,

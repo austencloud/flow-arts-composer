@@ -1,7 +1,7 @@
 import { Group, Scene } from "three";
 import { describe, expect, it, vi } from "vitest";
-import type { WorkerPerformerSnapshot } from "$lib/shared/3d/worker-renderer/domain/worker-renderer-protocol";
-import { WorkerPerformerStage } from "$lib/shared/3d/worker-renderer/worlds/worker-performer";
+import type { WorkerPerformerSnapshot } from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
+import { WorkerPerformerStage } from "#lib/shared/3d/worker-renderer/worlds/worker-performer.js";
 
 function snapshot(angle: number): WorkerPerformerSnapshot {
   return {

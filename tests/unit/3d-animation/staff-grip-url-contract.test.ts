@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { pruneRouteScopedParams } from "$lib/shared/navigation/services/url-parameter-policy";
+import { pruneRouteScopedParams } from "#lib/shared/navigation/services/url-parameter-policy.js";
 
 import { LAB_PARAM } from "../../../src/routes/test/staff-grip/lab-state.svelte";
 

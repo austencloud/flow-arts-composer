@@ -1,7 +1,7 @@
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { TargetHand } from "../state/panel-coordination-state.svelte";
 import type { ExtensionFlowCoordinator } from "./extension-flow-coordinator";
 import {
@@ -20,7 +20,7 @@ import type {
   SequenceTransformCommandId,
   SequenceTransformCommandOptions,
   SequenceTransformCommandResult,
-} from "$lib/shared/create/domain/sequence-action-types";
+} from "#lib/shared/create/domain/sequence-action-types.js";
 import type { SequenceTransformActionState } from "./sequence-transform-action-dispatcher";
 
 export interface SequenceActionsSequenceState extends SequenceTransformActionState {

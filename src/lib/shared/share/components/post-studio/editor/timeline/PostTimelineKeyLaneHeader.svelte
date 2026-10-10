@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PostKeyframeChannel } from "$lib/shared/media-composition/domain/post-project";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PostKeyframeChannel } from "#lib/shared/media-composition/domain/post-project.js";
   import { channelIcon, channelLabel } from "../post-editor-labels";
 
   /**

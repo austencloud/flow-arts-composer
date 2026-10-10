@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { PublicSequenceHashMatcher } from './services/public-sequence-hash-matcher';
 
 let instance: PublicSequenceHashMatcher | null = null;

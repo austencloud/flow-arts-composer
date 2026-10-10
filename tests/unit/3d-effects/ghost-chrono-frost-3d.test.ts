@@ -11,16 +11,16 @@ import {
   Texture,
   Vector3,
 } from "three";
-import { resolveGhost3D } from "$lib/shared/effects/translators/webgl3d-translator";
-import { QualityTier } from "$lib/shared/3d/effects/types";
+import { resolveGhost3D } from "#lib/shared/effects/translators/webgl3d-translator.js";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
 import {
   createChronoFrostMaterial,
   GhostSourceMaterials,
   resolveGhostAgeVisual,
   resolveGhostPoolSize,
   resolveGhostPoseFrostSeed,
-} from "$lib/shared/3d/effects/motion/ghost-chrono-frost-3d";
-import { createGhostPropPoseKey3D } from "$lib/shared/3d/effects/motion/ghost-prop-pose-3d";
+} from "#lib/shared/3d/effects/motion/ghost-chrono-frost-3d.js";
+import { createGhostPropPoseKey3D } from "#lib/shared/3d/effects/motion/ghost-prop-pose-3d.js";
 
 const GHOST_INTENT = {
   intensity: 0.85,

@@ -21,29 +21,29 @@ import type {
   SequenceStep,
   MotionData as EngineMotionData,
 } from "@tka/sequence-engine/core";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { sequenceMetadataManager as SequenceMetadataManagerSingleton } from "$lib/shared/create/services/sequence-metadata-manager";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { GenerationOptions } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { sequenceMetadataManager as SequenceMetadataManagerSingleton } from "#lib/shared/create/services/sequence-metadata-manager.js";
 type SequenceMetadataManager = typeof SequenceMetadataManagerSingleton;
-import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { PropContinuity } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import { PropContinuity } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   type GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { MotionData as AppMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { LOOPType as AppLOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { MotionData as AppMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { LOOPType as AppLOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 
 export class BuildResultTransformer {
   constructor(
@@ -93,7 +93,7 @@ export class BuildResultTransformer {
       : ["generated", "freeform"];
 
     const { createSequenceData } = await import(
-      "$lib/shared/foundation/domain/models/sequence-data"
+      "#lib/shared/foundation/domain/models/sequence-data.js"
     );
 
     const sequenceData = createSequenceData({

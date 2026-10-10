@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import { overlay, project as buildProject } from "./post-project-fixtures";
 import {
   loadAccountPostProject,
@@ -13,11 +13,11 @@ import {
   resolveSyncedPostSequence,
   saveAccountPostProject,
   saveSyncedPostDraft,
-} from "$lib/features/post/services/post-account-projects";
+} from "#lib/features/post/services/post-account-projects.js";
 import {
   loadPostProject,
   savePostProject,
-} from "$lib/shared/media-composition/services/post-project-store";
+} from "#lib/shared/media-composition/services/post-project-store.js";
 
 const mocks = vi.hoisted(() => ({
   auth: { currentUser: { uid: "owner", isAnonymous: false } },
@@ -29,7 +29,7 @@ const mocks = vi.hoisted(() => ({
   remote: null as Record<string, unknown> | null,
   cachedSource: null as SequenceData | null,
 }));
-vi.mock("$lib/features/post/services/post-workspace-projects", () => ({
+vi.mock("#lib/features/post/services/post-workspace-projects.js", () => ({
   listPostProjects: vi.fn().mockResolvedValue({ projects: [], error: null }),
   cachePostSequence: vi.fn((sequence: SequenceData) => {
     mocks.cachedSource = sequence;
@@ -38,14 +38,14 @@ vi.mock("$lib/features/post/services/post-workspace-projects", () => ({
     .fn()
     .mockImplementation(async () => mocks.cachedSource),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: mocks.auth,
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   awaitAuthSettled: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("$lib/shared/firestore", () => ({
+vi.mock("#lib/shared/firestore/index.js", () => ({
   firestoreGetDetailed: mocks.read,
   firestoreList: vi.fn().mockResolvedValue([]),
 }));

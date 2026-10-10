@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
-import { AnimationRenderLoop } from "$lib/shared/animation-engine/services/animation-render-loop";
+import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
+import { AnimationRenderLoop } from "#lib/shared/animation-engine/services/animation-render-loop.js";
 import type {
   RenderLoopConfig,
   RenderFrameParams,
-} from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
+} from "#lib/shared/animation-engine/services/IAnimationRenderLoop.js";
 import type { RenderActivityGate } from "../render-activity-gate";
 
 // A directly controllable gate. The gate's own signal plumbing is covered in

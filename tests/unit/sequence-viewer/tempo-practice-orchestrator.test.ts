@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { TempoPracticeOrchestrator } from "$lib/shared/sequence-viewer/services/tempo-practice-orchestrator";
+import { TempoPracticeOrchestrator } from "#lib/shared/sequence-viewer/services/tempo-practice-orchestrator.js";
 
 describe("TempoPracticeOrchestrator", () => {
   it("defaults to a gentle per-loop creep (X=1, Y=1), no goal", () => {

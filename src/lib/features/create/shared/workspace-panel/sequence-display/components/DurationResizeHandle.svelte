@@ -1,7 +1,7 @@
 <!-- DurationResizeHandle - Draggable right-edge handle for duration resize -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { formatNumber } from "$lib/shared/i18n/i18n-formatters";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { formatNumber } from "#lib/shared/i18n/i18n-formatters.js";
   import { onDestroy } from "svelte";
   import {
     MIN_DURATION,

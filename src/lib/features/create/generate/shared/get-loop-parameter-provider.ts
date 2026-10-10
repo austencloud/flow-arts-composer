@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { LOOPParameterProvider } from './services/loop-parameter-provider';
 import { getPictographFilter } from './get-pictograph-filter';
 

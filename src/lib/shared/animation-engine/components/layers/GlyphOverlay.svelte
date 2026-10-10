@@ -13,26 +13,26 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
 -->
 <script lang="ts">
   import { cubicOut } from "svelte/easing";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import TKAGlyph from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
-  import TurnsColumn from "$lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
-  import SkewBraces from "$lib/shared/pictograph/tka-glyph/components/SkewBraces.svelte";
-  import StepNumber from "$lib/shared/pictograph/shared/components/StepNumber.svelte";
-  import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
-  import ElementalGlyph from "$lib/shared/pictograph/shared/components/ElementalGlyph.svelte";
-  import { elementalDisplayLabel } from "$lib/shared/pictograph/shared/components/elemental-display-label";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getLetterDimensions } from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
-  import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
-  import { parseTurnsTuple } from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
-  import { getTurnsColumnRightExtent } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
-  import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
-  import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import TKAGlyph from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+  import TurnsColumn from "#lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
+  import SkewBraces from "#lib/shared/pictograph/tka-glyph/components/SkewBraces.svelte";
+  import StepNumber from "#lib/shared/pictograph/shared/components/StepNumber.svelte";
+  import PlacementGlyph from "#lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
+  import ElementalGlyph from "#lib/shared/pictograph/shared/components/ElementalGlyph.svelte";
+  import { elementalDisplayLabel } from "#lib/shared/pictograph/shared/components/elemental-display-label.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getLetterDimensions } from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+  import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import { isSkewedFrameBeat } from "#lib/shared/foundation/services/skewed-frame.js";
+  import { parseTurnsTuple } from "#lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser.js";
+  import { getTurnsColumnRightExtent } from "#lib/shared/pictograph/tka-glyph/utils/turn-position-calculator.js";
+  import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+  import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   // These groups rest at full opacity, so they fade and settle without the
   // computed-style read Svelte's fade and scale make (one forced style pass
   // per label swap on every Play).
@@ -40,13 +40,13 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     motionDuration,
     opaqueFade,
     popIn,
-  } from "$lib/shared/transitions/motion";
-  import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/transitions/motion.js";
+  import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     calculateGlyphOverlayFrame,
     type GlyphOverlayFrameMode,
-  } from "$lib/shared/animation-engine/domain/glyph-overlay-frame";
-  import { glyphTurnsTuple } from "$lib/shared/animation-engine/domain/glyph-turns-tuple";
+  } from "#lib/shared/animation-engine/domain/glyph-overlay-frame.js";
+  import { glyphTurnsTuple } from "#lib/shared/animation-engine/domain/glyph-turns-tuple.js";
 
   let {
     // Current glyph state

@@ -9,7 +9,7 @@ import {
   matrixTurnsForLevel,
   SHAPE_MATRIX_DEFAULT_LEVEL,
   SHAPE_MATRIX_DEFAULT_TURN,
-} from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+} from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
 import { readShapeMatrixRouteState } from "../../../src/routes/(public)/shape-engine/_state/shape-matrix-url";
 
 describe("Shape Matrix default band", () => {

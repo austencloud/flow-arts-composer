@@ -2,21 +2,21 @@
   import { onDestroy, onMount } from "svelte";
   import { BackgroundType } from "@austencloud/backgrounds";
   import { Plane } from "@austencloud/scene-3d";
-  import Viewer3DCanvas from "$lib/shared/3d/components/Viewer3DCanvas.svelte";
-  import type { RendererPerformanceSample } from "$lib/shared/3d/components/renderer-performance-window";
+  import Viewer3DCanvas from "#lib/shared/3d/components/Viewer3DCanvas.svelte";
+  import type { RendererPerformanceSample } from "#lib/shared/3d/components/renderer-performance-window.js";
   import {
     createViewer3DState,
     type StoredPerformerSnapshot,
-  } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createScene3DRenderState } from "$lib/shared/3d/scene-features/state/scene-3d-render-state.svelte";
-  import { setScene3DRenderContext } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import demoSequenceJson from "$lib/shared/landing/data/demo-sequence.json";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { EnvironmentReviewCameraPreset } from "$lib/shared/3d/environments/review/environment-review-camera";
+  } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
+  import { setScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import demoSequenceJson from "#lib/shared/landing/data/demo-sequence.json";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { EnvironmentReviewCameraPreset } from "#lib/shared/3d/environments/review/environment-review-camera.js";
 
   interface Props {
     onSample?: (sample: RendererPerformanceSample) => void;

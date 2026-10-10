@@ -33,11 +33,11 @@ vi.mock("firebase/firestore", () => ({
   writeBatch: writeBatchMock,
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({ __db: true })),
 }));
 
-vi.mock("$lib/shared/library/data/firestore-paths", () => ({
+vi.mock("#lib/shared/library/data/firestore-paths.js", () => ({
   getDeckReleaseCounterPath: () => "deckReleases/counter",
   getDeckReleaseManifestPath: (n: number) => `deckReleases/counter/manifests/${n}`,
   getDeckReleaseManifestsPath: () => "deckReleases/counter/manifests",
@@ -58,8 +58,8 @@ import type {
   DeckRecipe,
   DeckReleaseCard,
 } from "../../domain/models/DeckRelease";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function fakeSequence(id: string): SequenceData {
   return createSequenceData({ id, word: id, steps: [] });

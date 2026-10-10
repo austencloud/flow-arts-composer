@@ -1,4 +1,4 @@
-import type { ViewportManager } from '$lib/shared/device/services/viewport-manager.svelte'
+import type { ViewportManager } from '#lib/shared/device/services/viewport-manager.svelte.js'
 /**
  * CreateModule Layout Service Implementation
  *
@@ -6,7 +6,7 @@ import type { ViewportManager } from '$lib/shared/device/services/viewport-manag
  * Extracted from CreateModule.svelte to separate concerns and enable testing.
  */
 
-import type { DeviceDetector } from '$lib/shared/device/services/device-detector'
+import type { DeviceDetector } from '#lib/shared/device/services/device-detector.js'
 import type { LayoutConfiguration } from "../../orchestration/types";
 import { LAYOUT_BREAKPOINTS } from "../models/layout-state";
 export class CreateModuleLayoutManager {
@@ -100,8 +100,8 @@ export class CreateModuleLayoutManager {
   }
 }
 
-import { deviceDetector } from "$lib/shared/device/services/device-detector";
-import { viewportManager } from "$lib/shared/device/services/viewport-manager.svelte";
+import { deviceDetector } from "#lib/shared/device/services/device-detector.js";
+import { viewportManager } from "#lib/shared/device/services/viewport-manager.svelte.js";
 
 export const createModuleLayoutManager = new CreateModuleLayoutManager(
   deviceDetector,

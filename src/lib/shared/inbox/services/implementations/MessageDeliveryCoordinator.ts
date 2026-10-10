@@ -1,10 +1,10 @@
 import type {
   IMessageImageSender,
   MessageImageSendHandle,
-} from "$lib/shared/messaging/services/contracts/IMessageImageSender";
-import type { MessageAttachment } from "$lib/shared/messaging/domain/models/message-models";
-import type { Messenger } from "$lib/shared/messaging/services/messenger";
-import type { ShortCodeManager } from "$lib/shared/qr/services/short-code-manager";
+} from "#lib/shared/messaging/services/contracts/IMessageImageSender.js";
+import type { MessageAttachment } from "#lib/shared/messaging/domain/models/message-models.js";
+import type { Messenger } from "#lib/shared/messaging/services/messenger.js";
+import type { ShortCodeManager } from "#lib/shared/qr/services/short-code-manager.js";
 import { buildSequenceMessageAttachment } from "../../domain/message-attachment-builders";
 import { createDeliveryCancelledError } from "../../domain/message-delivery-errors";
 import { restoreMessageAttachment } from "../../domain/message-delivery-models";

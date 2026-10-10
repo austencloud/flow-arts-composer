@@ -5,13 +5,13 @@
   and a selectable invite message.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { inviteCollaborator } from "$lib/shared/video-collaboration/services/collaborative-video-manager";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { inviteCollaborator } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { CollaborativeVideo } from "../domain/collaborative-video";
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import AvatarImage from "$lib/shared/browse/components/AvatarImage.svelte";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import AvatarImage from "#lib/shared/browse/components/AvatarImage.svelte";
 
   const {
     show = false,

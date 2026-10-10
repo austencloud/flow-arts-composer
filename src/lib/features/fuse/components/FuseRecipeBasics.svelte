@@ -1,14 +1,14 @@
 <script lang="ts">
-  import GridModeCard from "$lib/features/create/generate/components/cards/GridModeCard.svelte";
-  import LevelCard from "$lib/features/create/generate/components/cards/LevelCard.svelte";
-  import TurnIntensityCard from "$lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
+  import GridModeCard from "#lib/features/create/generate/components/cards/GridModeCard.svelte";
+  import LevelCard from "#lib/features/create/generate/components/cards/LevelCard.svelte";
+  import TurnIntensityCard from "#lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
   import {
     maxTurnIntensitiesForLevel,
     type TurnLevel,
-  } from "$lib/shared/create/services/level-turn-values";
-  import StepperCard from "$lib/shared/components/stepper-card/StepperCard.svelte";
-  import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/create/services/level-turn-values.js";
+  import StepperCard from "#lib/shared/components/stepper-card/StepperCard.svelte";
+  import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { getFuseContext } from "../context/fuse-context";
   import { FUSE_LENGTHS } from "../state/fuse-state.svelte";
 

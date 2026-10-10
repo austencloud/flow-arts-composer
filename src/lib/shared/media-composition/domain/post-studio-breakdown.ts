@@ -6,14 +6,14 @@
 import type {
   MediaCompositionPreset,
   PresetTimePoint,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+} from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
 import {
   BREAKDOWN_MARKER,
   BREAKDOWN_PERFORMANCE_INSIDE,
   BREAKDOWN_REGION,
   FULL_FRAME,
   breakdownKeyframes,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "#lib/shared/media-composition/domain/post-studio-presets.js";
 
 /**
  * How the performance shares the frame with the strip.

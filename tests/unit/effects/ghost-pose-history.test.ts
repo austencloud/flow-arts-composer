@@ -4,13 +4,13 @@ import {
   resolveGhostHistoryCapacity,
   resolveGhostLifetimeSeconds,
   resolveGhostPositionQuantization,
-} from "$lib/shared/effects/domain/ghost-parameters";
+} from "#lib/shared/effects/domain/ghost-parameters.js";
 import {
   GhostPoseHistory,
   selectGhostAgeStratifiedSamples,
   shouldResetGhostHistoryAtStepBoundary,
   type GhostPoseSample,
-} from "$lib/shared/effects/renderers/ghost-pose-history";
+} from "#lib/shared/effects/renderers/ghost-pose-history.js";
 
 describe("GhostPoseHistory", () => {
   it("refreshes a revisited pose instead of duplicating it", () => {

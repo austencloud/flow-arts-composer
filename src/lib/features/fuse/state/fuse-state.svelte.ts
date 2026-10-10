@@ -9,42 +9,42 @@
 import {
   PLAYBACK_MAX_BPM,
   PLAYBACK_MIN_BPM,
-} from "$lib/shared/animation-engine/domain/constants/timing";
-import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
+} from "#lib/shared/animation-engine/domain/constants/timing.js";
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
 import {
   createSequenceData,
   updateSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { SoloPropStepData } from "$lib/shared/foundation/domain/models/solo-prop-step-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
 import {
   extractLeftSoloProp,
   extractRightSoloProp,
-} from "$lib/shared/foundation/services/sequence-decomposer";
-import { createSoloProp } from "$lib/shared/foundation/services/solo-prop-factory";
+} from "#lib/shared/foundation/services/sequence-decomposer.js";
+import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factory.js";
 import {
   deriveWordFromBeats,
   getSequenceDisplayName,
-} from "$lib/shared/foundation/services/word-deriver";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+} from "#lib/shared/foundation/services/word-deriver.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import type {
   HandSide,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { reassignMotionHand } from "$lib/shared/create/services/motion-transforms";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { reassignMotionHand } from "#lib/shared/create/services/motion-transforms.js";
 import {
   asTurnLevel,
   clampMaxTurnIntensity,
   maxTurnIntensitiesForLevel,
   type TurnLevel,
-} from "$lib/shared/create/services/level-turn-values";
-import { startOrientationsForLevel } from "$lib/features/create/generate/domain/level-orientation-policy";
+} from "#lib/shared/create/services/level-turn-values.js";
+import { startOrientationsForLevel } from "#lib/features/create/generate/domain/level-orientation-policy.js";
 import {
   flipSequence,
   invertSequence,
@@ -52,9 +52,9 @@ import {
   rewindSequence,
   rotateSequence,
   shiftStartPlacement,
-} from "$lib/shared/create/services/sequence-transformer";
-import { soloPropToSequence } from "$lib/shared/foundation/services/solo-prop-sequence-adapter";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
+} from "#lib/shared/create/services/sequence-transformer.js";
+import { soloPropToSequence } from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
 import {
   DEFAULT_SOLO_LOOP_RECIPE,
   fitSoloPathToLoop,
@@ -88,7 +88,7 @@ import {
   type FuseSide,
 } from "./fuse-shuffle-pool.svelte";
 import { normalizeLegacyHandPair } from "@tka/tka-types";
-import { DEFAULT_GENERATION_STYLE } from "$lib/shared/create/domain/generation-style";
+import { DEFAULT_GENERATION_STYLE } from "#lib/shared/create/domain/generation-style.js";
 
 const STORAGE_KEY = "fuse-tab-state";
 const STYLE_DEFAULTS_VERSION = 1;

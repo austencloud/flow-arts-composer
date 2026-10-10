@@ -16,9 +16,9 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { AppSettings, PropPreset } from "../../domain/app-settings";
   import {
     defaultPropPresets,
@@ -27,22 +27,22 @@
     presetSlots,
     presetsMatch,
   } from "../../domain/prop-presets";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     DEFAULT_PROP_LOOK,
     normalizePropLook,
     type PropLook,
-  } from "$lib/shared/pictograph/prop/domain/prop-look";
+  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import { localizedPropName } from "./prop-type/localized-prop-name";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import { resolveViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import { resolveViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import CatDogToggle from "./prop-type/CatDogToggle.svelte";
   import PresetChipBar from "./prop-type/PresetChipBar.svelte";
   import PrimaryPropColorSettings from "./prop-type/PrimaryPropColorSettings.svelte";

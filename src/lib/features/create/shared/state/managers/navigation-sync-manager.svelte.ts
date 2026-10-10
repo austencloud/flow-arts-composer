@@ -22,7 +22,7 @@ import { untrack } from "svelte";
 import type { CreateModuleStateForSync } from "../../services/navigation-syncer";
 import type { NavigationSyncer } from "../../services/navigation-syncer";
 import type { createCreateModuleState as CreateModuleStateType } from "../create-module-state.svelte";
-import type { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+import type { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 
 type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
 type NavigationState = typeof navigationState;

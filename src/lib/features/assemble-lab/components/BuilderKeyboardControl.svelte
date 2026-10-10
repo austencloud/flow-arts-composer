@@ -3,8 +3,8 @@
   import {
     HandSide,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { AssembleState } from "../state/assemble-state.svelte";
   import {
     ASSEMBLE_NUMPAD_POSITIONS,

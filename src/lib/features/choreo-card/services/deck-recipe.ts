@@ -1,6 +1,6 @@
 import type { DeckRecipe } from "../domain/models/DeckRelease";
-import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
-import { cyrb128 } from "$lib/shared/foundation/utils/seeded-rng";
+import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
+import { cyrb128 } from "#lib/shared/foundation/utils/seeded-rng.js";
 
 /**
  * Generation-logic pin. Bump when a change to the draw/variation logic would

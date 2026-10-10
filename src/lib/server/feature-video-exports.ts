@@ -6,7 +6,7 @@ import {
   FEATURE_EXPORT_NAME_RULE,
   isFeatureExportName,
   type SavedFeatureExport,
-} from "$lib/shared/media-composition/domain/feature-video-export";
+} from "#lib/shared/media-composition/domain/feature-video-export.js";
 
 /**
  * Keeps a finished render in a feature video's `exports/` folder. The body

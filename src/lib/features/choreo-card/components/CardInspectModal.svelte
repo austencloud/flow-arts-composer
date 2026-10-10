@@ -1,22 +1,22 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { Snippet } from "svelte";
-  import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+  import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import CardPreviewStack from "./designer/CardPreviewStack.svelte";
-  import LiveChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import LiveChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import CardArrowFixGrid from "./CardArrowFixGrid.svelte";
-  import PictographInspectModal from "$lib/features/create/shared/components/sequence-actions/PictographInspectModal.svelte";
+  import PictographInspectModal from "#lib/features/create/shared/components/sequence-actions/PictographInspectModal.svelte";
   import { getCatalogLayoutPolicy } from "../domain/catalog-layout-policy";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { initializeSpecialOverrides } from "$lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton";
-  import { initializeDefaultOverrides } from "$lib/shared/pictograph/arrow/positioning/default-override/services/default-override-singleton";
-  import { getClaudeCodeCopier } from "$lib/shared/browse/get-claude-code-copier";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { initializeSpecialOverrides } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton.js";
+  import { initializeDefaultOverrides } from "#lib/shared/pictograph/arrow/positioning/default-override/services/default-override-singleton.js";
+  import { getClaudeCodeCopier } from "#lib/shared/browse/get-claude-code-copier.js";
 
   interface Props {
     sequence?: SequenceData | null;

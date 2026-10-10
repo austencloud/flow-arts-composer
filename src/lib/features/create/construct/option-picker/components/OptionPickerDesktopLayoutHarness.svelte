@@ -1,8 +1,8 @@
 <!-- Gives responsive layout tests explicit picker dimensions and workspace mode. -->
 <script lang="ts">
-  import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { TurnLevel } from "$lib/shared/create/services/level-turn-values";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { TurnLevel } from "#lib/shared/create/services/level-turn-values.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import OptionPickerContent from "./OptionPickerContent.svelte";
 
   const {

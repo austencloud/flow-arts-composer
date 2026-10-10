@@ -8,9 +8,9 @@
    *
    * persist:false keeps this harness out of the shared tka_effects_config key.
    */
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import TelekineticFormation3D from "$lib/features/museum/components/game/TelekineticFormation3D.svelte";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import TelekineticFormation3D from "#lib/features/museum/components/game/TelekineticFormation3D.svelte";
 
   interface Props {
     stationId: string;

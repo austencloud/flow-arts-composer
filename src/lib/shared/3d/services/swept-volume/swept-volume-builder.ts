@@ -1,8 +1,8 @@
 import { Vector3, Quaternion, Euler } from "three";
 import { STAGE } from "@austencloud/scene-3d";
-import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
+import { calculatePropState } from "#lib/shared/3d/services/prop-state-interpolator.js";
 import type { PropState3D } from "@austencloud/scene-3d";
-import type { MotionConfig3D } from "$lib/shared/3d/domain/models/motion-data-3d";
+import type { MotionConfig3D } from "#lib/shared/3d/domain/models/motion-data-3d.js";
 import type { SweptVolume, SweepSample } from "./types";
 
 // Canonical staff geometry — must match pose-target-mapper.ts so the solver and

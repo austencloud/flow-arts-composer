@@ -1,4 +1,4 @@
-import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
+import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
 
 /**
  * Every effect in the registry, laid out as a 4x4 grid of stations.

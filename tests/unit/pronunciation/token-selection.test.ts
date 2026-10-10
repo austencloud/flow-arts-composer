@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { parsePronunciationManifest } from "$lib/shared/pronunciation/pronunciation-manifest";
-import { selectTokenPath } from "$lib/shared/pronunciation/domain/token-selection";
-import { createPronunciationPlan } from "$lib/shared/pronunciation/pronunciation-plan";
+import { parsePronunciationManifest } from "#lib/shared/pronunciation/pronunciation-manifest.js";
+import { selectTokenPath } from "#lib/shared/pronunciation/domain/token-selection.js";
+import { createPronunciationPlan } from "#lib/shared/pronunciation/pronunciation-plan.js";
 import type {
   PronunciationToken,
   PronunciationTokenBank,
-} from "$lib/shared/pronunciation/pronunciation-plan";
+} from "#lib/shared/pronunciation/pronunciation-plan.js";
 
 /**
  * Build a token whose recorded context is coherent by default: an initial

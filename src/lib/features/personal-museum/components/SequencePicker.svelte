@@ -9,9 +9,9 @@
    * the thumbnail-grid markup/styling lives in one place.
    */
   import { sequenceFirstStep } from "../services/sequence-first-step";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 
   interface Props {
     /** Ordered sequence ids to offer (favorites first, host-ordered). */

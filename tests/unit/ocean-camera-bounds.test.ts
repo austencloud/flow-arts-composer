@@ -3,12 +3,12 @@ import {
   OCEAN_ADDED_DEPTH_METERS,
   OCEAN_BASE_WATER_DEPTH_METERS,
   OCEAN_WATER_DEPTH_METERS,
-} from "$lib/shared/3d/environments/domain/models/ocean-water-depth";
+} from "#lib/shared/3d/environments/domain/models/ocean-water-depth.js";
 import {
   OCEAN_CAMERA_CEILING_Y,
   OCEAN_WATER_SURFACE_Y,
   clampPresetBelowWater,
-} from "$lib/shared/3d/environments/scenes/ocean/ocean-camera-bounds";
+} from "#lib/shared/3d/environments/scenes/ocean/ocean-camera-bounds.js";
 
 describe("clampPresetBelowWater", () => {
   it("leaves a preset already below the water plane untouched", () => {

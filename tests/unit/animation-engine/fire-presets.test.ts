@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FIRE_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/fire-presets";
+import { FIRE_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/fire-presets.js";
 
 describe("Fire presets", () => {
   it("offers Liquid Fire as a complete look", () => {

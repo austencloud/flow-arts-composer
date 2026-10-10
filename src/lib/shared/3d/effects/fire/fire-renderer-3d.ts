@@ -41,7 +41,7 @@ import {
 } from "./fire-particle-material-3d";
 import { SampledCurlGrid2D } from "../smoke/smoke-curl-field";
 import { QualityTier } from "../types";
-import type { Fire3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Fire3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 
 const DEFAULT_MAX_DYNAMIC_LIGHTS = 4;
 

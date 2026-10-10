@@ -5,7 +5,7 @@
   Switching grid mode resets all path state (points change).
 -->
 <script lang="ts">
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { getBuilderContext } from "../context/builder-context";
 
   const builder = getBuilderContext();

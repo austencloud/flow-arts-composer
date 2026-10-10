@@ -6,8 +6,8 @@ import type { Step } from "@tka/tka-types";
 import {
   DifficultyLevel,
   type GenerationOptions,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { DIFFICULTY_TO_LEVEL } from "$lib/shared/create/utils/config-mapper";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { DIFFICULTY_TO_LEVEL } from "#lib/shared/create/utils/config-mapper.js";
 
 export function generateSequenceName(options: GenerationOptions): string {
   const timestamp = new Date().toLocaleString("en-US", {

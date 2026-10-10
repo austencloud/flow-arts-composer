@@ -7,18 +7,18 @@
 import type {
   LibraryCollection,
   SmartFilterSpec,
-} from "$lib/shared/library/domain/models/collection";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import { deriveSpecMembers } from "$lib/shared/browse/services/smart-filter-spec";
-import { sortSequences } from "$lib/shared/browse/services/browse-sorter";
+} from "#lib/shared/library/domain/models/collection.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import { deriveSpecMembers } from "#lib/shared/browse/services/smart-filter-spec.js";
+import { sortSequences } from "#lib/shared/browse/services/browse-sorter.js";
 import {
   CANONICAL_TND_AUTHOR,
   loadCanonicalBookVariations,
   loadCanonicalTnDBaseSequences,
   loadCanonicalTnDSequences,
-} from "$lib/features/browse/gallery-home/canonical-tnd-pool";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export interface FoundingSmartCollection {
   /** Stable id, always prefixed "founding_" (underscore avoids the ":" used by

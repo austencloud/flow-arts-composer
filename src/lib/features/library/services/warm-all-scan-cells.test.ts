@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/navigation/services/sequence-hydrator", () => ({
+vi.mock("#lib/shared/navigation/services/sequence-hydrator.js", () => ({
   hydrateSequence: vi.fn(async (sequence) => sequence),
 }));
 
-vi.mock("$lib/shared/qr/services/scan-prop-resolver", () => ({
+vi.mock("#lib/shared/qr/services/scan-prop-resolver.js", () => ({
   resolveScanPropConfig: vi.fn(() => ({
     leftPropType: "poi",
     rightPropType: "fan",
@@ -17,7 +17,7 @@ import {
   startScanCellWarm,
   startScanQrBake,
 } from "./warm-all-scan-cells";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const sequence = {
   id: "sequence-1",

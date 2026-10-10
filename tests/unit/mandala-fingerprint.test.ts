@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { shapeKey } from "$lib/shared/mandala/services/mandala-fingerprint";
-import { colorSignature, orbitKey } from "$lib/shared/mandala/services/mandala-fingerprint";
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+import { shapeKey } from "#lib/shared/mandala/services/mandala-fingerprint.js";
+import { colorSignature, orbitKey } from "#lib/shared/mandala/services/mandala-fingerprint.js";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 
 function paths(left: string[], right: string[], purple: string[] = []): MandalaPaths {
   return {

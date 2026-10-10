@@ -1,13 +1,13 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
-import { parsePropTypeFromURLValue } from "$lib/shared/navigation/services/sequence-encoder";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
+import { parsePropTypeFromURLValue } from "#lib/shared/navigation/services/sequence-encoder.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   resolveScanPropConfig,
   type ScanPropConfig,
-} from "$lib/shared/qr/services/scan-prop-resolver";
-import { hydrateSequence as hydrateDecodedForRender } from "$lib/shared/navigation/services/sequence-hydrator";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+} from "#lib/shared/qr/services/scan-prop-resolver.js";
+import { hydrateSequence as hydrateDecodedForRender } from "#lib/shared/navigation/services/sequence-hydrator.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import { hydrateSequence } from "../services/sequence-render-hydrator";
 import type {
   IScanActivityWatcher,

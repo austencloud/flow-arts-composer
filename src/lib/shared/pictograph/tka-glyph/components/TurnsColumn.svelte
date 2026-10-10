@@ -34,7 +34,7 @@ Props:
   } from "./TKAGlyph.svelte";
   import { isDashLetter } from "../utils/letter-image-getter";
   import { getAnimationVisibilityManager } from "../../../animation-engine/state/animation-visibility-state.svelte";
-  import { tryGetViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
+  import { tryGetViewerVisibilityContext } from "#lib/shared/sequence-viewer/context/viewer-visibility-context.js";
 
   let {
     leftColorOverride = undefined,

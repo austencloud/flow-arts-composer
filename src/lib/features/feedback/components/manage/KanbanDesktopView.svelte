@@ -1,10 +1,10 @@
 <!-- Desktop view: 4 columns + archive/defer stack -->
 <script lang="ts">
-  import type { FeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
+  import type { FeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
   import type { KanbanBoardState } from "../../state/kanban-board-state.svelte";
   import type {
-    FeedbackItem, FeedbackStatus, } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { STATUS_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+    FeedbackItem, FeedbackStatus, } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { STATUS_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import FeedbackKanbanColumn from "./FeedbackKanbanColumn.svelte";
   import KanbanArchiveDropZone from "./KanbanArchiveDropZone.svelte";
   import KanbanDeferDropZone from "./KanbanDeferDropZone.svelte";

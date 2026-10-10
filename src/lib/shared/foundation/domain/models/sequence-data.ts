@@ -1,5 +1,5 @@
-﻿import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { EffortTimeline } from "$lib/shared/effort/domain/effort-timeline-types";
+﻿import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { EffortTimeline } from "#lib/shared/effort/domain/effort-timeline-types.js";
 import type { TimeSignatureKey } from "./time-signature";
 import type { CreatorIntent } from "./creator-intent";
 /**
@@ -12,25 +12,25 @@ import type { CreatorIntent } from "./creator-intent";
  * The steps array should only contain actual steps (stepNumber >= 1), never start placement.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import type { GridPlacementGroup } from "../../../pictograph/grid/domain/enums/grid-enums";
 import type { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type {
   LOOPComponent,
   LOOPDomain,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import type { LOOPSpecWire } from "@tka/sequence-engine/loop";
 import type { SoloPropData } from "./solo-prop-data";
 import type { StepPairingData } from "./step-pairing-data";
 import type {
   WallFeasibilityMetadata,
   WallPlaneSourceAssessment,
-} from "$lib/shared/3d/domain/models/wall-feasibility";
+} from "#lib/shared/3d/domain/models/wall-feasibility.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
 import type { GridJoin } from "@tka/tka-types";
-import type { CardPresentation } from "$lib/shared/share/domain/models/card-presentation";
+import type { CardPresentation } from "#lib/shared/share/domain/models/card-presentation.js";
 
 export interface SequenceData {
   /** Omitted on legacy prop choreography. Hand paths never imply a prop. */

@@ -1,5 +1,5 @@
 import type { BackgroundController } from "@austencloud/backgrounds";
-import { shouldReduceBackgroundResolution } from "$lib/shared/platform/network-conditions";
+import { shouldReduceBackgroundResolution } from "#lib/shared/platform/network-conditions.js";
 
 // backgrounds 0.7.12 has no public resolution option. Keep its private API
 // adapter here so full-screen themes and previews use the same artwork scale.

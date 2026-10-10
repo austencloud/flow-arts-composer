@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildSequenceRevisionRecord } from "$lib/shared/library/services/sequence-revision";
-import type { PublicSequenceProjectionWrite } from "$lib/shared/library/services/public-sequence-projection";
+import { buildSequenceRevisionRecord } from "#lib/shared/library/services/sequence-revision.js";
+import type { PublicSequenceProjectionWrite } from "#lib/shared/library/services/public-sequence-projection.js";
 
 function projection(
   overrides: Partial<PublicSequenceProjectionWrite> = {}

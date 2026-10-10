@@ -10,8 +10,8 @@ import {
   restoreFlowFestIntegratedJourney,
   setFlowFestIntegratedJourneyBranch,
   type FlowFestIntegratedAreaId,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-integrated-world";
-import { computeFlowFestSiteAudioMix } from "$lib/features/flow-fest-sim/domain/flow-fest-site-audio";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-integrated-world.js";
+import { computeFlowFestSiteAudioMix } from "#lib/features/flow-fest-sim/domain/flow-fest-site-audio.js";
 import {
   parseFlowFestRuntimeContract,
   type FlowFestBranchId,

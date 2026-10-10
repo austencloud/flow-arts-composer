@@ -2,7 +2,7 @@ import type {
   ResolvedLanding,
   ResolvedTakeTiming,
   TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 export interface ShownLanding extends ResolvedLanding {
   sectionId: string;

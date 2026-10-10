@@ -4,12 +4,12 @@
  * without that provider.
  */
 
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import type {
   EffectType,
   TipEffortMap,
 } from "../domain/types/tip-effect-types";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 
 type VisibilityObserver = () => void;
 

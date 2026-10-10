@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   clampStartOrientationToLevel,
   startOrientationsForLevel,
-} from "$lib/features/create/generate/domain/level-orientation-policy";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/features/create/generate/domain/level-orientation-policy.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 describe("Generate level orientation policy", () => {
   it.each([1, 2])(

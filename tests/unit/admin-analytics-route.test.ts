@@ -12,26 +12,29 @@ const mocks = vi.hoisted(() => ({
     POSTHOG_PROJECT_ID: "project",
   } as Record<string, string>,
 }));
-// The route reads $env/dynamic/private, which Vite resolves from .env when the
+// The route reads $app/env/private, which Vite resolves from .env when the
 // config loads — long before any beforeEach can assign process.env. So the
 // process.env writes below never reached it: locally these tests passed on the
 // real key from .env, and in CI (no .env) the route 500'd with
 // "POSTHOG_PROJECT_ID not configured". Mocking the module the route actually
 // imports makes the fixture values authoritative in both places.
-vi.mock("$env/dynamic/private", () => ({ env: mocks.posthogEnv }));
-vi.mock("$lib/server/auth/requireAdmin", () => ({
+vi.mock("$app/env/private", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule(mocks.posthogEnv);
+});
+vi.mock("#lib/server/auth/requireAdmin.js", () => ({
   requireAdmin: mocks.requireAdmin,
 }));
-vi.mock("$lib/server/security/withRateLimit", () => ({
+vi.mock("#lib/server/security/withRateLimit.js", () => ({
   withRateLimit: mocks.withRateLimit,
 }));
-vi.mock("$lib/server/security/rate-limiter", () => ({
+vi.mock("#lib/server/security/rate-limiter.js", () => ({
   RATE_LIMITS: { ADMIN: {} },
 }));
-vi.mock("$lib/server/security/audit-logger", () => ({
+vi.mock("#lib/server/security/audit-logger.js", () => ({
   logAdminAction: mocks.logAdminAction,
 }));
-vi.mock("$lib/server/firebaseAdmin", () => ({
+vi.mock("#lib/server/firebaseAdmin.js", () => ({
   getAdminAuth: () => ({ getUser: mocks.getUser }),
   getAdminDb: mocks.getAdminDb,
 }));

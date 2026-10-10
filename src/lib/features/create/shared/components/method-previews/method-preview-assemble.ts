@@ -8,15 +8,15 @@
  * Assemble's grid. They are the demo's N and M steps: in the opening steps
  * red stands still (Y), so it would add no points.
  */
-import { sequenceToBuilderHydration } from "$lib/features/assemble-lab/services/builder-step-converter";
-import type { BuilderStep } from "$lib/features/assemble-lab/state/assemble-state-types";
-import { getHitTargets } from "$lib/shared/assemble-lab/services/grid-hit-target-calculator";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { sequenceToBuilderHydration } from "#lib/features/assemble-lab/services/builder-step-converter.js";
+import type { BuilderStep } from "#lib/features/assemble-lab/state/assemble-state-types.js";
+import { getHitTargets } from "#lib/shared/assemble-lab/services/grid-hit-target-calculator.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   GridMode,
   type GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { CellRect } from "./method-preview-compositions";
 
 /** The demo steps Assemble builds: N and M (steps 4 and 5). */

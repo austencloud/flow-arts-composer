@@ -1,6 +1,6 @@
 <script lang="ts">
   import { localizePrintLabel } from "../_components/localize-print-label";
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Glyphs / PADS - Level 2 body page 4 (manifest `glyphs-pads`), faithful to
    * old p5. High/low turn slots, the PADS priority list, and the five hybrid
@@ -13,16 +13,16 @@
    *   Type 4           = Φ[4]   (blue e→w dash · red static e)
    *   Left/Right ex.   = A[3]   (blue s→w pro cw · red n→e pro cw)
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const S = 816 / 612;
   const { NORTH: N, EAST: E, SOUTH: SO_, WEST: W } = GridLocation;

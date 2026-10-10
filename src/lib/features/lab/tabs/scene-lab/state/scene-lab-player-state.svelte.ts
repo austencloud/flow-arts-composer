@@ -10,7 +10,10 @@
  * position.x/y/z each frame, clamped to its built-in SCENE_BOUNDS (±50m).
  */
 
-import type { AvatarState, PhysicsProvider } from "$lib/shared/3d/camera/types";
+import type {
+  AvatarState,
+  PhysicsProvider,
+} from "#lib/shared/3d/camera/types.js";
 import { createFlycamPhysicsProvider } from "@austencloud/camera-3d";
 
 export function createSceneLabPlayerState(): {

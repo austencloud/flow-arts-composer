@@ -10,7 +10,7 @@
  * user-specific dimensions that respect their height and staff length.
  */
 
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { DEFAULT_SCENE_DIMENSIONS } from "@austencloud/scene-3d";
 
 // Base radius for hand points (comfortable arm extension)

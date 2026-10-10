@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { POST_MAX_ZOOM } from "$lib/shared/media-composition/domain/post-project";
+import { POST_MAX_ZOOM } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   DEFAULT_EASING,
   EASING_PRESETS,
@@ -36,7 +36,7 @@ import {
   toggleKeyframe,
   writeChannelValue,
   type PostEasingPresetId,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import { text, video } from "./post-project-fixtures";
 
 describe("channelsOf", () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { getSheetPageLayout } from "$lib/features/write/domain/sheet-page-layout";
-import { DEFAULT_SHEET_LAYOUT } from "$lib/features/write/domain/types/choreo-sheet";
+import { getSheetPageLayout } from "#lib/features/write/domain/sheet-page-layout.js";
+import { DEFAULT_SHEET_LAYOUT } from "#lib/features/write/domain/types/choreo-sheet.js";
 
 describe("getSheetPageLayout (letter landscape)", () => {
   const geo = getSheetPageLayout({ columns: 8, rowsPerPage: 6, paperSize: "letter", orientation: "landscape" });

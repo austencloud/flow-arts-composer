@@ -6,20 +6,20 @@
   - Bilateral prop toggle for both ends vs single end
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { onMount } from "svelte";
   import {
     animationSettings,
     TrailMode,
     TrackingMode,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import {
     getAnimationVisibilityManager,
     type TrailVisibility,
-  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { isBilateralProp, getBilateralEndLabels } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { isBilateralProp, getBilateralEndLabels } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const animationVisibilityManager = getAnimationVisibilityManager();
   const settingsState = settingsService;

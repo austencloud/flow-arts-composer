@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { PronunciationPlayer } from "./services/pronunciation-player";
 
 let instance: PronunciationPlayer | null = null;

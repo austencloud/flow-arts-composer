@@ -1,66 +1,66 @@
 <script lang="ts">
-  import { withSavedProps } from "$lib/shared/foundation/services/prop-viewing";
+  import { withSavedProps } from "#lib/shared/foundation/services/prop-viewing.js";
   import {
     captureActivePropConfig,
     resolveRecordedPropConfig,
-  } from "$lib/shared/foundation/services/recorded-prop-intent";
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository";
-  import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import { loadSequencesByIds } from "$lib/features/choreo-card/services/catalog-loader";
+  } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { getSequenceRepository } from "#lib/shared/create/get-sequence-repository.js";
+  import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { loadSequencesByIds } from "#lib/features/choreo-card/services/catalog-loader.js";
   import type { SequenceRouteMeta } from "./sequence-seo";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
-  import { browser } from "$app/environment";
-  import { mutateCurrentUrl } from "$lib/shared/navigation/services/url-state";
+  import { browser } from "$app/env";
+  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import { onMount, onDestroy } from "svelte";
   import {
     configureShortCodeManager,
     getShortCodeManager,
-  } from "$lib/shared/qr/get-short-code-manager";
+  } from "#lib/shared/qr/get-short-code-manager.js";
   import {
     MAX_SHORT_CODE_LENGTH,
     type ShortCodeSequenceLoader,
-  } from "$lib/shared/qr/services/short-code-manager";
-  import { isInlineEncoded } from "$lib/shared/navigation/services/inline-qr-envelope";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
-  import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
-  import { createRouteLoadFence } from "$lib/shared/navigation/services/route-load-fence";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import { registerLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-  import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
+  } from "#lib/shared/qr/services/short-code-manager.js";
+  import { isInlineEncoded } from "#lib/shared/navigation/services/inline-qr-envelope.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+  import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
+  import { createRouteLoadFence } from "#lib/shared/navigation/services/route-load-fence.js";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import { registerLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
   import {
     parsePropsFromURL,
     parseSequenceRouteId,
     decodeSequenceWithCompression,
-  } from "$lib/shared/navigation/services/sequence-encoder";
-  import { decodeViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-  import { getPublicSequenceHashMatcher } from "$lib/shared/sequence-viewer/get-public-sequence-hash-matcher";
-  import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+  } from "#lib/shared/navigation/services/sequence-encoder.js";
+  import { decodeViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+  import { getPublicSequenceHashMatcher } from "#lib/shared/sequence-viewer/get-public-sequence-hash-matcher.js";
+  import { initializeAppServices } from "#lib/shared/application/state/services.svelte.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import {
     consumeSequenceRouteHandoff,
     type SequenceRouteHandoff,
-  } from "$lib/shared/coordinators/sequence-handoff.svelte";
-  import SequenceViewerOrchestrator from "$lib/shared/sequence-viewer/components/SequenceViewerOrchestrator.svelte";
-  import type { OrchestratorContext } from "$lib/shared/sequence-viewer/domain/viewer-orchestrator-context";
-  import SequenceViewerShell from "$lib/shared/sequence-viewer/components/SequenceViewerShell.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
-  import { collectionPickerState } from "$lib/features/library/state/collection-picker-state.svelte";
-  import { initialViewerModeForUrl } from "$lib/shared/sequence-viewer/services/viewer-modes";
+  } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
+  import SequenceViewerOrchestrator from "#lib/shared/sequence-viewer/components/SequenceViewerOrchestrator.svelte";
+  import type { OrchestratorContext } from "#lib/shared/sequence-viewer/domain/viewer-orchestrator-context.js";
+  import SequenceViewerShell from "#lib/shared/sequence-viewer/components/SequenceViewerShell.svelte";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import { inboxState } from "#lib/shared/inbox/state/inbox-state.svelte.js";
+  import { collectionPickerState } from "#lib/features/library/state/collection-picker-state.svelte.js";
+  import { initialViewerModeForUrl } from "#lib/shared/sequence-viewer/services/viewer-modes.js";
 
   import {
     getIabBannerVisible,
     getIabBannerHeight,
     IAB_BANNER_HEIGHT,
-  } from "$lib/shared/auth/state/iab-banner-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import LoadingGate from "$lib/shared/components/loading/LoadingGate.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { registerLibraryRepository } from "$lib/shared/composition-root/register-library-repository";
+  } from "#lib/shared/auth/state/iab-banner-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import LoadingGate from "#lib/shared/components/loading/LoadingGate.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { registerLibraryRepository } from "#lib/shared/composition-root/register-library-repository.js";
   import {
     beginScanVisit,
     captureScanEvent,
@@ -68,20 +68,20 @@
     endScanViewerSession,
     refreshScanSessionAttribution,
     updateScanAttribution,
-  } from "$lib/shared/analytics/scan-analytics";
-  import { initPostHog } from "$lib/shared/analytics/services/posthog";
+  } from "#lib/shared/analytics/scan-analytics.js";
+  import { initPostHog } from "#lib/shared/analytics/services/posthog.js";
   import {
     authState,
     initializeAuthListener,
-  } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getInAppBrowserDetector } from "$lib/shared/auth/get-in-app-browser-detector";
-  import { buildScanAppHandoffHref } from "$lib/shared/qr/services/scan-app-handoff";
-  import { readScanSequenceCode } from "$lib/shared/qr/services/scan-sequence-handoff";
-  import { setScanCardCloudProbe } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
+  } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getInAppBrowserDetector } from "#lib/shared/auth/get-in-app-browser-detector.js";
+  import { buildScanAppHandoffHref } from "#lib/shared/qr/services/scan-app-handoff.js";
+  import { readScanSequenceCode } from "#lib/shared/qr/services/scan-sequence-handoff.js";
+  import { setScanCardCloudProbe } from "#lib/shared/sequence-viewer/scan-card-cloud-context.js";
   import {
     initialScanPlaybackBpm,
     saveScanPlaybackBpm,
-  } from "$lib/shared/sequence-viewer/services/scan-playback-tempo";
+  } from "#lib/shared/sequence-viewer/services/scan-playback-tempo.js";
   import {
     guideTargetForLetter,
     GUIDE_CODEX_SLUG,
@@ -284,8 +284,8 @@
     // does for its bare routes. Lazy: qr-code-styling is not on this route's
     // critical path.
     void Promise.all([
-      import("$lib/shared/render/get-image-composer"),
-      import("$lib/shared/qr/get-qr-code-generator"),
+      import("#lib/shared/render/get-image-composer.js"),
+      import("#lib/shared/qr/get-qr-code-generator.js"),
     ])
       .then(([composer, qr]) =>
         composer.getImageComposer().setQRCodeGenerator(qr.getQRCodeGenerator())
@@ -849,7 +849,7 @@
      this standalone route has no shell, so without its own mount a guest
      clicking Record Scene or Share saw nothing happen at all. -->
 {#if !authState.isFullAccount}
-  {#await import("$lib/shared/auth/components/AuthModal.svelte") then mod}
+  {#await import("#lib/shared/auth/components/AuthModal.svelte") then mod}
     <mod.default
       open={authDrawerState.open}
       initialMode={authDrawerState.initialMode}
@@ -864,10 +864,10 @@
      subscription provider comes with it — the picker lists
      inboxState.conversations, and only the provider fills them. -->
 {#if inboxHostMounted}
-  {#await import("$lib/shared/inbox/components/InboxSubscriptionProvider.svelte") then mod}
+  {#await import("#lib/shared/inbox/components/InboxSubscriptionProvider.svelte") then mod}
     <mod.default />
   {/await}
-  {#await import("$lib/shared/inbox/components/InboxDrawer.svelte") then mod}
+  {#await import("#lib/shared/inbox/components/InboxDrawer.svelte") then mod}
     <mod.default />
   {/await}
 {/if}
@@ -876,7 +876,7 @@
      MainApplication mounts, so without this a signed-in owner's tap opened
      nothing on this route. -->
 {#if collectionPickerHostMounted}
-  {#await import("$lib/features/library/components/collection-picker/CollectionPickerHost.svelte") then mod}
+  {#await import("#lib/features/library/components/collection-picker/CollectionPickerHost.svelte") then mod}
     <mod.default />
   {/await}
 {/if}

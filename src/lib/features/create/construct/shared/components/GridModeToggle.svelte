@@ -3,10 +3,10 @@ GridModeToggle.svelte - Single-button toggle showing opposite grid mode
 Action-oriented pattern: Shows the mode you can switch TO (not current mode)
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
 
   const { currentGridMode = GridMode.DIAMOND, onGridModeChange } = $props<{
     currentGridMode?: GridMode;

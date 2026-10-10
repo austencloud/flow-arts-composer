@@ -1,4 +1,4 @@
-import type { EffortId, EffortParams } from "$lib/shared/effort/domain/effort-types";
+import type { EffortId, EffortParams } from "#lib/shared/effort/domain/effort-types.js";
 
 export interface EffortPhrase {
   readonly id: string;

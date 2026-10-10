@@ -3,8 +3,8 @@ import {
   createDeckReleaserState,
   type DeckReleaserState,
 } from "../state/deck-releaser-state.svelte";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 
 describe("deck-releaser recipe round-trip", () => {
   let releaserState: DeckReleaserState;

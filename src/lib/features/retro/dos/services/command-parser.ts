@@ -14,9 +14,9 @@
 import type { DosFileSystem } from "./dos-file-system";
 import type { DosFile } from "../domain/dos-types";
 import { terminalState } from "../state/terminal-state.svelte";
-import { signInWithEmail } from "$lib/shared/auth/services/authenticator";
-import { signOut } from "$lib/shared/auth/state/auth-state.svelte";
-import { auth } from "$lib/shared/auth/firebase";
+import { signInWithEmail } from "#lib/shared/auth/services/authenticator.js";
+import { signOut } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { auth } from "#lib/shared/auth/firebase.js";
 
 export class CommandParser {
 	private readonly fs: DosFileSystem;

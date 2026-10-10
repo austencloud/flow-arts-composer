@@ -5,13 +5,13 @@
  * Handles saving/loading trail settings and collapse states.
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import {
   type TrailSettings,
   DEFAULT_TRAIL_SETTINGS,
   TRAIL_SETTINGS_STORAGE_KEY,
   TrackingMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 const COLLAPSE_STATE_KEY = "tka_animation_collapse_states";
 

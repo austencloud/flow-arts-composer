@@ -1,4 +1,4 @@
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
 
 /** Disposable mapping data; never loads or saves the creator's draft. */
 export function mappingFixture(): PostProject {

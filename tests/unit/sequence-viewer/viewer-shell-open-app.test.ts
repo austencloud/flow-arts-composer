@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createViewerShellInteractionState } from "$lib/shared/sequence-viewer/state/viewer-shell-interaction-state.svelte";
+import { createViewerShellInteractionState } from "#lib/shared/sequence-viewer/state/viewer-shell-interaction-state.svelte.js";
 
 function makeState() {
   const openExternalHref = vi.fn();

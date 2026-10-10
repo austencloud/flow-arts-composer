@@ -1,12 +1,12 @@
 import { tick } from "svelte";
-import { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
-import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
-import { CanvasFrameCapturer } from "$lib/shared/video-export/services/canvas-frame-capturer";
-import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
-import { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
-import { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
+import { BackgroundVideoEncoder } from "#lib/shared/animation-engine/services/background-video-encoder.js";
+import type { EvaluatedFrameLayer } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import type { MediaCompositionPreset } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import { renderPostStudioFrame } from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
+import { CanvasFrameCapturer } from "#lib/shared/video-export/services/canvas-frame-capturer.js";
+import type { PostStudioLayerPainter } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+import { PostStudioExportVideoFrames } from "#lib/shared/media-composition/services/post-studio-export-video-frames.js";
+import { PostStudioPictographCapture } from "#lib/shared/media-composition/services/post-studio-pictograph-capture.js";
 
 export interface PostStudioExportProgress {
   completedFrames: number;

@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   canReplaceOverlayVideoWithAnimation,
   replaceOverlayVideoWithAnimation,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 import {
   PostProjectSchema,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { takeRole } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
 import { NOW, project, take, video } from "./post-project-fixtures";
 
 const cameraId = "inshot-123-main-1";

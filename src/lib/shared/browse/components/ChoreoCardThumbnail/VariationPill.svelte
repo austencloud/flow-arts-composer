@@ -10,7 +10,7 @@ belongs to the card's chip row.
 -->
 <script lang="ts">
   import CardChip from "./CardChip.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   const {
     currentIndex = 0,

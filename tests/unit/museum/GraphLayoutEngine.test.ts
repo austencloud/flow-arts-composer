@@ -1,19 +1,19 @@
 import { describe, it, expect } from "vitest";
-import { computeLayout } from "$lib/features/museum/services/graph-layout-engine";
-import { routeCorridor } from "$lib/features/museum/services/corridor-router";
-import { buildMuseumGrid } from "$lib/features/museum/services/museum-grid-builder";
+import { computeLayout } from "#lib/features/museum/services/graph-layout-engine.js";
+import { routeCorridor } from "#lib/features/museum/services/corridor-router.js";
+import { buildMuseumGrid } from "#lib/features/museum/services/museum-grid-builder.js";
 import {
   MUSEUM_ROOMS,
   MUSEUM_EDGES,
   GRID_CONFIG,
-} from "$lib/features/museum/data/museum-room-graph";
-import { tileKey } from "$lib/features/museum/domain/museum-grid-types";
-import { isWalkable } from "$lib/features/museum/domain/tile-registry";
+} from "#lib/features/museum/data/museum-room-graph.js";
+import { tileKey } from "#lib/features/museum/domain/museum-grid-types.js";
+import { isWalkable } from "#lib/features/museum/domain/tile-registry.js";
 import type {
   RoomNode,
   RoomEdge,
   GridConfig,
-} from "$lib/features/museum/domain/layout-types";
+} from "#lib/features/museum/domain/layout-types.js";
 
 describe("GraphLayoutEngine", () => {
   it("assigns rooms to non-overlapping grid positions", () => {

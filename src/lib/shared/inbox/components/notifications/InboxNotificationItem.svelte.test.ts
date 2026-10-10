@@ -1,4 +1,4 @@
-import type { UserNotification } from "$lib/shared/notifications/domain/models/notification-models";
+import type { UserNotification } from "#lib/shared/notifications/domain/models/notification-models.js";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -22,19 +22,19 @@ vi.mock("$app/navigation", () => ({
   goto: mocks.goto,
 }));
 
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: mocks.showUserError }),
 }));
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { effectiveUserId: "admin-user" },
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: mocks.getFirestoreInstance,
 }));
 
@@ -43,32 +43,35 @@ vi.mock("firebase/firestore", () => ({
   getDocFromServer: mocks.getDocFromServer,
 }));
 
-vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => ({
+vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => ({
   mapDocToSequence: mocks.mapDocToSequence,
 }));
 
 vi.mock(
-  "$lib/shared/sequence-viewer/services/sequence-viewer-navigator",
+  "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js",
   () => ({ openSequenceViewer: mocks.openSequenceViewer })
 );
 
-vi.mock("$lib/features/creators/state/creators-routing.svelte", () => ({
+vi.mock("#lib/features/creators/state/creators-routing.svelte.js", () => ({
   openCreatorProfile: mocks.openCreatorProfile,
 }));
 
 vi.mock(
-  "$lib/shared/navigation-coordinator/navigation-coordinator.svelte",
+  "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js",
   () => ({
     handleModuleChange: mocks.handleModuleChange,
   })
 );
 
-vi.mock("$lib/shared/feedback/state/notification-action-state.svelte", () => ({
-  setNotificationTargetFeedback: mocks.setNotificationTargetFeedback,
-}));
+vi.mock(
+  "#lib/shared/feedback/state/notification-action-state.svelte.js",
+  () => ({
+    setNotificationTargetFeedback: mocks.setNotificationTargetFeedback,
+  })
+);
 
 vi.mock(
-  "$lib/features/choreo-card/state/scan-notification-target.svelte",
+  "#lib/features/choreo-card/state/scan-notification-target.svelte.js",
   () => ({
     setScanNotificationTarget: mocks.setScanNotificationTarget,
   })
@@ -171,7 +174,7 @@ describe("InboxNotificationItem navigation", () => {
     await vi.waitFor(() => {
       expect(mocks.goto).toHaveBeenCalledWith(
         "/admin/users?inspectUser=agent-codex-claude",
-        { replaceState: true, keepFocus: true, noScroll: true }
+        { replace: true, reset: false }
       );
     });
     expect(mocks.closeInbox).toHaveBeenCalledOnce();

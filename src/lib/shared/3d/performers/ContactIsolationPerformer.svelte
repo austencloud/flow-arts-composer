@@ -13,7 +13,7 @@
     createCharacterInstanceState,
     makeStandaloneDeps,
   } from "../state/character-instance-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { toScenePropType } from "../domain/scene-prop-type";
   import {
     sampleStaffIsolation,

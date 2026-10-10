@@ -5,10 +5,10 @@
   Switches renderers based on current mode and provides unified controls.
 -->
 <script lang="ts">
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { getPlaybackState } from "./state/playback-state.svelte";
   import { getComposeModuleState } from "../../shared/state/compose-module-state.svelte";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
   import { onMount } from "svelte";
   import PlaybackHeader from "./components/PlaybackHeader.svelte";
   import PlaybackControls from "./components/PlaybackControls.svelte";
@@ -19,9 +19,9 @@
   import TunnelRenderer from "./renderers/TunnelRenderer.svelte";
   import MirrorRenderer from "./renderers/MirrorRenderer.svelte";
   import GridRenderer from "./renderers/GridRenderer.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   // Get state instances
   const playbackState = getPlaybackState();

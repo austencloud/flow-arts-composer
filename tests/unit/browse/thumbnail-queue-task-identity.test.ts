@@ -17,18 +17,18 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { ThumbnailRenderInput } from "$lib/shared/browse/services/thumbnail-key-deriver";
-import { ThumbnailRenderQueue } from "$lib/shared/browse/services/thumbnail-render-queue";
-import { ThumbnailRenderOrchestrator } from "$lib/shared/browse/services/thumbnail-render-orchestrator";
-import { ThumbnailRenderer } from "$lib/shared/browse/services/thumbnail-renderer";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { ThumbnailRenderInput } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
+import { ThumbnailRenderQueue } from "#lib/shared/browse/services/thumbnail-render-queue.js";
+import { ThumbnailRenderOrchestrator } from "#lib/shared/browse/services/thumbnail-render-orchestrator.js";
+import { ThumbnailRenderer } from "#lib/shared/browse/services/thumbnail-renderer.js";
 
-vi.mock("$lib/shared/analytics/thumbnail-analytics", () => ({
+vi.mock("#lib/shared/analytics/thumbnail-analytics.js", () => ({
   captureThumbnailRenderFailure: vi.fn(),
 }));
 
-vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
+vi.mock("#lib/shared/browse/services/cloud-thumbnail-cache.js", () => ({
   getCachedUrl: () => null,
   getUrl: vi.fn(async () => null),
   upload: vi.fn(async () => null),

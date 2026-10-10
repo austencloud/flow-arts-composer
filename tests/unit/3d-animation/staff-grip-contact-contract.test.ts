@@ -101,7 +101,7 @@ describe("staff grip contact contract", () => {
     // enforce rather than anything the lab builds for itself, and the lab
     // still opens on the FALG fixture.
     expect(gripTestCatalog).toContain(
-      'import { ALL_FIXTURE_LOOPS } from "$lib/shared/combination/domain/demo-fixtures"'
+      'import { ALL_FIXTURE_LOOPS } from "#lib/shared/combination/domain/demo-fixtures.js"'
     );
     expect(gripTestCatalog).toContain(
       "export const LAB_FIXTURES: readonly LabSequenceOption[] = ALL_FIXTURE_LOOPS.map("

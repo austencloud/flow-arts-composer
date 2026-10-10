@@ -17,16 +17,16 @@ import {
   type WebGLRenderer,
 } from "three";
 
-import { QualityTier } from "$lib/shared/3d/effects/types";
-import { createDefaultEmberConfig } from "$lib/shared/3d/environments/domain/models/scene-configs";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
+import { createDefaultEmberConfig } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
 import {
   EMBER_AUTHORED_RESOURCE_URLS,
   type EmberEnvironmentAssets,
-} from "$lib/shared/3d/environments/worlds/ember/ember-environment-assets";
+} from "#lib/shared/3d/environments/worlds/ember/ember-environment-assets.js";
 import {
   createEmberEnvironmentWorld,
   type EmberEnvironmentWorld,
-} from "$lib/shared/3d/environments/worlds/ember/ember-environment-world";
+} from "#lib/shared/3d/environments/worlds/ember/ember-environment-world.js";
 
 function model(name: string): Group {
   const root = new Group();

@@ -4,12 +4,12 @@
  * this object, so the harness has to be real rune state for the effect to
  * re-run the way it does against the app's actual settings store.
  */
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { followPropSource } from "$lib/shared/shape-matrix/app/state/follow-prop-source.svelte";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { followPropSource } from "#lib/shared/shape-matrix/app/state/follow-prop-source.svelte.js";
 import type {
   ShapeMatrixAppState,
   ShapeMatrixPropSource,
-} from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
+} from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
 
 export interface FollowPropSourceSettings {
   leftPropType: PropType;

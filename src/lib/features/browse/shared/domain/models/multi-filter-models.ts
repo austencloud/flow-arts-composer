@@ -5,8 +5,8 @@
  * Each filter type can have at most one active value.
  */
 
-import type { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
+import type { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
 
 /**
  * Represents a single active filter with display metadata for chip rendering.

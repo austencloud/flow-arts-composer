@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
-import { createMandalaPrimitiveRef } from "$lib/features/sticker-lab/domain/mandala-primitive-reference";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
+import { createMandalaPrimitiveRef } from "#lib/features/sticker-lab/domain/mandala-primitive-reference.js";
 
 const paths: MandalaPaths = {
   left: [{ d: "M 10 0 C 10 0, 20 0, 30 0", tipIndex: 0 }],

@@ -6,8 +6,8 @@
  * Uses Svelte 5 runes for reactivity.
  */
 
-import { getReportQuerier } from '$lib/features/moderation/get-report-querier';
-import { getReportResolver } from '$lib/features/moderation/get-report-resolver';
+import { getReportQuerier } from '#lib/features/moderation/get-report-querier.js';
+import { getReportResolver } from '#lib/features/moderation/get-report-resolver.js';
 import type {
 	UserReport,
 	ReportStatus,

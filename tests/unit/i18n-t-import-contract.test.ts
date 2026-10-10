@@ -59,12 +59,12 @@ describe("t() imports", () => {
     expect(callsTWithoutImport('<h2>{t("browse_ui_you")}</h2>')).toBe(true);
     expect(
       callsTWithoutImport(
-        'import { t } from "$lib/shared/i18n/i18n.svelte.js";\n<h2>{t("x")}</h2>'
+        'import { t } from "#lib/shared/i18n/i18n.svelte.js";\n<h2>{t("x")}</h2>'
       )
     ).toBe(false);
     expect(
       callsTWithoutImport(
-        'import { getLocale, t } from "$lib/shared/i18n/i18n.svelte";\n{t("x")}'
+        'import { getLocale, t } from "#lib/shared/i18n/i18n.svelte.js";\n{t("x")}'
       )
     ).toBe(false);
     expect(

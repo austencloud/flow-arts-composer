@@ -12,11 +12,11 @@
  * not here. This keeps state management separate from persistence concerns.
  */
 
-import type { FeedbackFormData, FeedbackFormErrors, FeedbackSubmitStatus, FeedbackType, FeedbackUploadProgress, StagedImageState, } from "$lib/shared/feedback/domain/models/feedback-models";
-import { feedbackService } from "$lib/shared/feedback/services/feedback-repository";
+import type { FeedbackFormData, FeedbackFormErrors, FeedbackSubmitStatus, FeedbackType, FeedbackUploadProgress, StagedImageState, } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import { feedbackService } from "#lib/shared/feedback/services/feedback-repository.js";
 import * as imageStager from "../services/image-stager";
-import type { StagedUploadHandle } from "$lib/shared/feedback/domain/feedback-contract-types";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import type { StagedUploadHandle } from "#lib/shared/feedback/domain/feedback-contract-types.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import {
   getCapturedModule,
   getCapturedTab,

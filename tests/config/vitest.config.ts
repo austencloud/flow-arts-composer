@@ -1,4 +1,5 @@
 import { sveltekit } from "@sveltejs/kit/vite";
+import { svelteOptions } from "../../src/config/svelte-options.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
@@ -9,7 +10,7 @@ const projectRoot = path.resolve(
 );
 
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [sveltekit(svelteOptions)],
 
   test: {
     environment: "jsdom",
@@ -44,20 +45,34 @@ export default defineConfig({
     ],
 
     alias: {
-      $lib: path.resolve(projectRoot, "src/lib"),
-      "$app/environment": path.resolve(
+      // Shape Engine's sources import the app library as `#lib/...` too, but
+      // their nearest package.json is apps/shape-engine's, and a package's
+      // `imports` field cannot point outside the package. Resolve it here, as
+      // apps/shape-engine/vite.config.ts does.
+      "#lib": path.resolve(projectRoot, "src/lib"),
+      // Listed before `$app/env`, which would otherwise match these as a prefix.
+      "$app/env/public": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-public.ts"
+      ),
+      "$app/env/private": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-private.ts"
+      ),
+      "$app/env": path.resolve(
         projectRoot,
         "tests/setup/stubs/app-environment.ts"
+      ),
+      // The Worker module server code reads bindings from; see the stub.
+      "cloudflare:workers": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/cloudflare-workers.ts"
       ),
       "$app/navigation": path.resolve(
         projectRoot,
         "tests/setup/stubs/app-navigation.ts"
       ),
       "$app/state": path.resolve(projectRoot, "tests/setup/stubs/app-state.ts"),
-      "$app/stores": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/app-stores.ts"
-      ),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
       // node_modules/@tka/render-core is a symlink into the PRIMARY checkout's
       // packages/ (pnpm links the workspace package once and worktrees share

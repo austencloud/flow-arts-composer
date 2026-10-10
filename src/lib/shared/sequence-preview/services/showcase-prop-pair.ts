@@ -1,5 +1,5 @@
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
 
 export interface ShowcasePropPairInput {
   /** Caller override for the whole preview. Null = no override. */

@@ -8,44 +8,44 @@ import type {
   PresetTimeRef,
   PresetSourceGeometry,
   RegionKeyframe,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { ClipTransform } from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import type { ClipTransform } from "#lib/shared/media-composition/domain/media-layout-schema.js";
 import {
   clampBox,
   clampFraming,
-} from "$lib/shared/media-composition/domain/post-project";
-import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { sampleEasing } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   tunnelHookArrival,
   tunnelHookBackdropOpacity,
   type TunnelHook,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
-import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/tunnel-hook.js";
+import { itemIdFromTitlesRole } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import {
   PIP_HANDOFF_EFFECTS_IN_SECONDS,
   pipHandoffEffectsIn,
   pipHandoffLookBlend,
   pipHandoffSample,
   type PipHandoffStep,
-} from "$lib/shared/media-composition/domain/pip-handoff";
-import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
+} from "#lib/shared/media-composition/domain/pip-handoff.js";
+import type { SequenceTimeMap } from "#lib/shared/media-composition/domain/sequence-time-map.js";
 import {
   mediaTimeToSequencePosition,
   sequenceTimeMapConvention,
-} from "$lib/shared/media-composition/domain/sequence-time-map";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/media-composition/domain/sequence-time-map.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   sequencePositionToAnimationTime,
   wrapSequencePosition,
-} from "$lib/shared/animation-engine/services/step-calculator";
+} from "#lib/shared/animation-engine/services/step-calculator.js";
 import {
   sequenceFrameAt,
   type SequenceFrame,
-} from "$lib/shared/media-composition/domain/sequence-frame";
+} from "#lib/shared/media-composition/domain/sequence-frame.js";
 import type {
   TakeSample,
   TakeSampleOptions,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 /**
  * A take's timing, asked by media time. Each take has its own, so a post that

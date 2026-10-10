@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
   import {
     createRenderActivityGate,
     renderGateTarget,
-  } from "$lib/shared/render-gating/render-activity-gate";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/render-gating/render-activity-gate.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { downbeatPulse, type TimingMode } from "./timing-intro-phase";
 
   let { active = true } = $props<{ active?: boolean }>();

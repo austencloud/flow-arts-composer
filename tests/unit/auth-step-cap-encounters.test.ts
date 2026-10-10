@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getAuthPromptContent } from "$lib/shared/auth/domain/auth-nudge-trigger";
-import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+import { getAuthPromptContent } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
+import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
 
-vi.mock("$lib/shared/analytics/auth-events", () => ({
+vi.mock("#lib/shared/analytics/auth-events.js", () => ({
   trackAuthSurfaceOpened: vi.fn(),
 }));
 

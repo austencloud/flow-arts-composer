@@ -1,5 +1,5 @@
 import { CapacitorShareTarget } from "@capgo/capacitor-share-target";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { deriveReceiptId } from "../domain/derive-receipt-id";
 import type {
   SharedFileDescriptor,

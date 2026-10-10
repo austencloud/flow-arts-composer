@@ -5,7 +5,7 @@
   iterating on it.
 -->
 <script lang="ts">
-  import UnderConstruction from "$lib/shared/landing/components/UnderConstruction.svelte";
+  import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
 </script>
 
 <svelte:head><title>Under construction preview | TKA test</title></svelte:head>

@@ -10,8 +10,8 @@ import {
   arrayUnion,
   arrayRemove,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import { mapDocToConversation } from "./conversation-mappers";
 import type {
   Conversation,

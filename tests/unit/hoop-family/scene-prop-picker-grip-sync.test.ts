@@ -5,8 +5,8 @@ import { propFinishState } from "@austencloud/scene-3d";
 import {
   getSettings,
   updateSettings,
-} from "$lib/shared/application/state/app-state.svelte";
-import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
+} from "#lib/shared/application/state/app-state.svelte.js";
+import { initializeAppServices } from "#lib/shared/application/state/services.svelte.js";
 import { mountGripSync } from "./scene-prop-picker-grip-sync-harness.svelte";
 
 /**

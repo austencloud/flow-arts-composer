@@ -9,10 +9,10 @@
  * scene asks again when a turn starts, so turns that come back after motion
  * returns still get a fresh sequence, or the demo when it has not arrived.
  */
-import { previewMotionReduced } from "$lib/features/create/shared/state/method-preview-turns.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { runAtBackgroundPriority } from "$lib/shared/foundation/utils/background-scheduling";
-import { drawMatrixRealization } from "$lib/shared/landing/data/shape-matrix-hero-pool";
+import { previewMotionReduced } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { runAtBackgroundPriority } from "#lib/shared/foundation/utils/background-scheduling.js";
+import { drawMatrixRealization } from "#lib/shared/landing/data/shape-matrix-hero-pool.js";
 
 export interface NextSequenceDraw {
   /** Draw the next sequence, unless one is waiting, drawing, or cannot come. */

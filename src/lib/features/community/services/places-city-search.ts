@@ -17,8 +17,8 @@
  * next search against a closed one.
  */
 
-import { getGoogleMapsLibraryLoader } from "$lib/shared/maps/getGoogleMapsLibraryLoader";
-import type { IGoogleMapsLibraryLoader } from "$lib/shared/maps/services/contracts/IGoogleMapsLibraryLoader";
+import { getGoogleMapsLibraryLoader } from "#lib/shared/maps/getGoogleMapsLibraryLoader.js";
+import type { IGoogleMapsLibraryLoader } from "#lib/shared/maps/services/contracts/IGoogleMapsLibraryLoader.js";
 import {
   CityResolutionError,
   type CanonicalCity,

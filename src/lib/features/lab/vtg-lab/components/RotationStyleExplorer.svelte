@@ -1,7 +1,7 @@
 <script lang="ts">
-  import TurnMatrixGrid from "$lib/features/choreo-card/components/TurnMatrixGrid.svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import TurnMatrixGrid from "#lib/features/choreo-card/components/TurnMatrixGrid.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import VariationPicker from "./VariationPicker.svelte";
   import {
     resolveRotationStyleMatrices,
@@ -10,10 +10,10 @@
     type LabGridMode,
     type StartOriPair,
   } from "../services/resolve-rotation-style-matrices";
-  import { TURN_VALUES } from "$lib/features/choreo-card/domain/turn-pattern-parser";
-  import { TND_TURNS_RATIO_MAP } from "$lib/features/choreo-card/domain/tnd-element";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { browser } from "$app/environment";
+  import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
+  import { TND_TURNS_RATIO_MAP } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { browser } from "$app/env";
 
   type PropKind = "staff" | "club";
 

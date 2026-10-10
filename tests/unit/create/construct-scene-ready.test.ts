@@ -8,7 +8,7 @@ import { fakePictograph } from "./FakeMethodPictograph.svelte";
 import { mountConstructScene } from "./construct-scene-ready-harness.svelte";
 
 vi.mock(
-  "$lib/features/create/shared/components/method-previews/MethodPreviewPictograph.svelte",
+  "#lib/features/create/shared/components/method-previews/MethodPreviewPictograph.svelte",
   async () => ({
     default: (await import("./FakeMethodPictograph.svelte")).default,
   })

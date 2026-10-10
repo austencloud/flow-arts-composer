@@ -14,8 +14,11 @@
  * module only says where the bearings come from.
  */
 import { propTimingBetween, type PropRelationship } from "./prop-relationship";
-import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
-import { propRateForKnobs, angleOf } from "$lib/shared/notation/qft/qft-model";
+import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
+import {
+  propRateForKnobs,
+  angleOf,
+} from "#lib/shared/notation/qft/qft-model.js";
 import { theoryKnobs, type TheoryFlower } from "./theory-flower";
 import type { VtgMode } from "../services/shape-matrix-realizations";
 

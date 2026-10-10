@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   /**
    * Per-hand picking for hosts whose props live in settings. The Props page
@@ -18,10 +18,10 @@
 </script>
 
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import CatDogToggle from "./CatDogToggle.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   let {
     handProps,

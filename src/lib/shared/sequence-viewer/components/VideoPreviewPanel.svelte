@@ -5,9 +5,9 @@
   Displays the exported video with playback controls, re-download, and dismiss.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { fade } from "svelte/transition";
-  import { shareTarget } from "$lib/shared/mobile/share-action.svelte";
+  import { shareTarget } from "#lib/shared/mobile/share-action.svelte.js";
 
   interface Props {
     blobUrl: string;

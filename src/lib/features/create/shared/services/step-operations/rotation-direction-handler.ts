@@ -9,28 +9,28 @@
  * 4. This flip can change the pictograph's letter
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
 import type { ICreateModuleState } from "../../types/create-module-types";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
-import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import { deriveGridMode as _deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
+import type { IMotionQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
+import { deriveGridMode as _deriveGridMode } from "#lib/shared/pictograph/grid/services/grid-mode-deriver.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   createMotionData,
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import {
   getStepDataFromState,
   START_PLACEMENT_BEAT_NUMBER,
@@ -40,7 +40,7 @@ import { calculatePropagatedSteps } from "./orientation-handler";
 import {
   withLoopCertificateCleared,
   invalidateLoopDisplayCache,
-} from "$lib/shared/create/services/loop-certificate";
+} from "#lib/shared/create/services/loop-certificate.js";
 
 const logger = createComponentLogger("RotationDirectionHandler");
 

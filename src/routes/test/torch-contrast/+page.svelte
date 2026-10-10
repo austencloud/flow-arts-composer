@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     applyTorchContrastPalette,
     TORCH_CONTRAST_PALETTE,
-  } from "$lib/shared/pictograph/prop/domain/torch-contrast";
+  } from "#lib/shared/pictograph/prop/domain/torch-contrast.js";
   import {
     applyMotionColorToSvg,
     SELECTIVE_COLOR_PROP_TYPES,
-  } from "$lib/shared/utils/svg-color-utils";
+  } from "#lib/shared/utils/svg-color-utils.js";
 
   type PreviewDefinition = {
     id: "torch" | "bigtorch";

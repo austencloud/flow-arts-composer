@@ -1,8 +1,8 @@
 <!-- InboxNavButton - Circular inbox button for bottom navigation -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import NavButton from "./NavButton.svelte";
-  import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
+  import { inboxState } from "#lib/shared/inbox/state/inbox-state.svelte.js";
 
   let { onLongPress = undefined, longPressMs = 500 } = $props<{
     onLongPress?: () => void;

@@ -3,7 +3,7 @@ LOOPExplanationPanel.svelte - Displays explanation of selected LOOP transformati
 Shows contextual information based on current selection
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let { explanationText } = $props<{
     explanationText: string;
   }>();

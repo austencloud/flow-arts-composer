@@ -4,7 +4,7 @@ import {
   parseFilmKey,
   savedFilmHref,
   savedFilmKey,
-} from "$lib/features/film-director/domain/film-director-link";
+} from "#lib/features/film-director/domain/film-director-link.js";
 
 import { isLibraryFilmKey } from "../../../src/routes/test/film-director/_capabilities/index";
 

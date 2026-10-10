@@ -6,17 +6,17 @@
  * 2. Spatial normalization to a canonical grid orientation
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { CanonicalSequence } from "./types";
 import type { StepSignatureGenerator } from "./step-signature-generator";
-import type { WordCyclicEquivalenceDetector } from "$lib/shared/foundation/utils/word-cyclic-equivalence-detector";
+import type { WordCyclicEquivalenceDetector } from "#lib/shared/foundation/utils/word-cyclic-equivalence-detector.js";
 import type { SequenceSignature, StepSignature } from "../domain/models/signatures";
 import {
   parseWordNotation,
   renderWordNotation,
   rotateWordUnits,
   stripWordNotation,
-} from "$lib/shared/foundation/utils/word-notation";
+} from "#lib/shared/foundation/utils/word-notation.js";
 
 export class SequenceCanonicalizer {
   constructor(

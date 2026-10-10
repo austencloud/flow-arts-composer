@@ -1,16 +1,16 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { flowerKey } from "$lib/shared/shape-matrix/domain/flower-signature";
-import { buildModeRealizationCandidates } from "$lib/shared/shape-matrix/services/build-mode-realizations";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { flowerKey } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { buildModeRealizationCandidates } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
 import {
   CURVE_MATCH_EPS,
   curveDistance,
-} from "$lib/shared/shape-matrix/services/__tests__/curve-distance";
-import { loadShapeMatrix } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/__tests__/curve-distance.js";
+import { loadShapeMatrix } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 const staticPath = path.resolve(process.cwd(), "static");
 vi.stubGlobal("fetch", async (input: string | URL | Request) => {

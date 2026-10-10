@@ -12,8 +12,8 @@
 import {
   Ghost2DRenderer,
   type GhostInput,
-} from "$lib/shared/effects/renderers/ghost-2d-renderer";
-import type { Ghost2DParams } from "$lib/shared/effects/translators/canvas2d-types";
+} from "#lib/shared/effects/renderers/ghost-2d-renderer.js";
+import type { Ghost2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
 import { EffectRenderer } from "./effects/effect-renderer";
 
 export class GhostOverlayRenderer extends EffectRenderer {
@@ -42,8 +42,8 @@ export class GhostOverlayRenderer extends EffectRenderer {
 }
 
 import type { EffectPlugin } from "./effects/effect-plugin";
-import type { GhostIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { GhostIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const ghostEffectPlugin: EffectPlugin<GhostIntent> = {
   id: "ghost",

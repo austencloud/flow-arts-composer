@@ -14,7 +14,7 @@ import {
   resolvePostTime,
   resolveTrackTime,
   trackSecondsAt,
-} from "$lib/shared/media-composition/domain/music-grid";
+} from "#lib/shared/media-composition/domain/music-grid.js";
 
 // 120 BPM in 4: a beat is 0.5 s and a bar 2 s. The file's bar 1 is at its
 // 5.25 s, and the clip plays the file from 5 s at the post's 2 s, so bar 1

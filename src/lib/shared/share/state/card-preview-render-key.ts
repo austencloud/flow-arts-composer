@@ -1,4 +1,4 @@
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
 
 /** Every rendered footer and global visibility flag must invalidate the blob. */
 export function buildCardPreviewRenderKey(

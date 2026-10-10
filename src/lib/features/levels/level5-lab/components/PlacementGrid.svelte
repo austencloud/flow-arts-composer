@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { PlacementSection, CardOrientations } from "../domain/level5-lab-types";
   import PlacementCard from "./PlacementCard.svelte";
 

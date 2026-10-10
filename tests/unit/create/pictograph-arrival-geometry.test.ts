@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculatePictographArrivalTransform,
   hasUsableArrivalRect,
-} from "$lib/features/create/shared/workspace-panel/sequence-display/domain/pictograph-arrival-geometry";
+} from "#lib/features/create/shared/workspace-panel/sequence-display/domain/pictograph-arrival-geometry.js";
 
 describe("pictograph arrival geometry", () => {
   it("maps the live stage card exactly onto the reserved grid cell", () => {

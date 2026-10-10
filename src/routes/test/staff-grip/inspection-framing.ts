@@ -12,7 +12,7 @@
  * reach lab shares. This module owns what is specific to THIS lab: which
  * anatomical regions it frames, and the four panes it puts them in.
  *
- * `$lib/shared/3d/camera/compute-framing-shot` stays the owner of "fit N
+ * `#lib/shared/3d/camera/compute-framing-shot.js` stays the owner of "fit N
  * performers plus their prop clearance in frame" and is used by the quiz, play
  * preview, and film-director surfaces. It is deliberately not used here: it
  * bakes in a 1.2 m per-performer horizontal extent and a 2 m minimum distance,

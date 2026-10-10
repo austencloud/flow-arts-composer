@@ -1,9 +1,9 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { ThumbnailMetricsCollector } from "./services/thumbnail-metrics-collector";
 import {
   installThumbnailAnalyticsSession,
   type ThumbnailAnalyticsSession,
-} from "$lib/shared/analytics/thumbnail-analytics";
+} from "#lib/shared/analytics/thumbnail-analytics.js";
 
 let instance: ThumbnailMetricsCollector | null = null;
 let analyticsSession: ThumbnailAnalyticsSession | null = null;

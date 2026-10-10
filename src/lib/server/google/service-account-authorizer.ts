@@ -1,5 +1,5 @@
-import { dev } from "$app/environment";
-import { env } from "$env/dynamic/private";
+import { dev } from "$app/env";
+import * as env from "$app/env/private";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -52,8 +52,9 @@ export function parseServiceAccount(
 export function loadServiceAccountSource(
   platformCredential?: string
 ): string | undefined {
-  // Cloudflare Pages exposes request bindings on event.platform.env. Prefer
-  // that source so credentialed routes do not depend on adapter env hydration.
+  // Callers pass the Worker's own binding (workerEnv() in
+  // src/lib/server/cloudflare/worker-env.ts). Prefer that source so
+  // credentialed routes do not depend on adapter env hydration.
   const requestScoped = platformCredential?.trim();
   if (requestScoped) return requestScoped;
 

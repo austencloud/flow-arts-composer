@@ -13,10 +13,10 @@
  */
 
 import { createUserTag } from "../tag-manager";
-import type { SequenceTag } from "$lib/shared/library/domain/models/sequence-tag";
-import { createSequenceTag } from "$lib/shared/library/domain/models/sequence-tag";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceTag } from "#lib/shared/library/domain/models/sequence-tag.js";
+import { createSequenceTag } from "#lib/shared/library/domain/models/sequence-tag.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * Migration result

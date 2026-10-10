@@ -34,8 +34,8 @@
 
 ```svelte
 <script lang="ts">
-  import { TrainModePanel } from "$lib/modules/train";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/SequenceData";
+  import { TrainModePanel } from "#lib/modules/train";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/SequenceData";
 
   let currentSequence: SequenceData | null = null;
 
@@ -117,8 +117,8 @@ SETUP
 
 ```svelte
 <script lang="ts">
-  import { TrainModePanel } from "$lib/modules/train";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/SequenceData";
+  import { TrainModePanel } from "#lib/modules/train";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/SequenceData";
   import { goto } from "$app/navigation";
 
   // Could come from route params, store, or API

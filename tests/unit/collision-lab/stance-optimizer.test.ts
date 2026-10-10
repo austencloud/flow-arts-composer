@@ -3,14 +3,14 @@ import { Vector3 } from "three";
 import {
   StanceSimulator,
   restPoseFromHeight,
-} from "$lib/features/lab/tabs/collision-lab/services/stance-simulator";
-import { StanceOptimizer } from "$lib/features/lab/tabs/collision-lab/services/stance-optimizer";
-import type { SimPropTarget } from "$lib/features/lab/tabs/collision-lab/services/contracts/IStanceSimulator";
+} from "#lib/features/lab/tabs/collision-lab/services/stance-simulator.js";
+import { StanceOptimizer } from "#lib/features/lab/tabs/collision-lab/services/stance-optimizer.js";
+import type { SimPropTarget } from "#lib/features/lab/tabs/collision-lab/services/contracts/IStanceSimulator";
 import type {
   OptimizerBounds,
   OptimizerInput,
-} from "$lib/features/lab/tabs/collision-lab/services/contracts/IStanceOptimizer";
-import type { StancePose } from "$lib/features/lab/tabs/collision-lab/domain/types";
+} from "#lib/features/lab/tabs/collision-lab/services/contracts/IStanceOptimizer";
+import type { StancePose } from "#lib/features/lab/tabs/collision-lab/domain/types.js";
 
 const NEUTRAL_STANCE: StancePose = {
   footOffsetX: 0,

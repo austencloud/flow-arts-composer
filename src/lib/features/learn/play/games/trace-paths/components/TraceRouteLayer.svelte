@@ -22,7 +22,7 @@ Three things it is careful about:
   Low stimulus additionally drops the glow.
 -->
 <script lang="ts">
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type {
     NormalizedPoint,
     TraceHand,

@@ -8,7 +8,7 @@
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
 describe("motion policy source", () => {
   let shared: AnimationVisibilityStateManager;

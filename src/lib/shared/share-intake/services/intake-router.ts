@@ -1,9 +1,9 @@
-import { getLibrarySaveService } from "$lib/features/library/get-library-save-service";
-import { openSendAttachmentSheet } from "$lib/shared/inbox/state/send-sequence-state.svelte";
-import { conversationService } from "$lib/shared/messaging/services/conversation-manager";
-import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { getLibrarySaveService } from "#lib/features/library/get-library-save-service.js";
+import { openSendAttachmentSheet } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
+import { conversationService } from "#lib/shared/messaging/services/conversation-manager.js";
+import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   IntakeClassification,
   IntakeItem,

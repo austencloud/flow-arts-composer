@@ -3,24 +3,24 @@ import {
   TrailMode,
   normalizeLegacyTrailSettings,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { EffectType } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-import { EFFECT_LABELS } from "$lib/shared/effects/domain/effect-meta";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { migrateEffectsConfig } from "$lib/shared/effects/domain/migrations";
-import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
-import type { CreatorIntent } from "$lib/shared/foundation/domain/models/creator-intent";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { EffectType } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+import { EFFECT_LABELS } from "#lib/shared/effects/domain/effect-meta.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { migrateEffectsConfig } from "#lib/shared/effects/domain/migrations.js";
+import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
+import type { CreatorIntent } from "#lib/shared/foundation/domain/models/creator-intent.js";
 import type {
   EffectIntentKey,
   PresentationEffectsConfig,
   PresentationIntent,
   PresentationTrailSettings,
-} from "$lib/shared/foundation/domain/models/presentation-intent";
-import { safeClone } from "$lib/shared/foundation/utils/safe-clone";
+} from "#lib/shared/foundation/domain/models/presentation-intent.js";
+import { safeClone } from "#lib/shared/foundation/utils/safe-clone.js";
 import {
   resolveViewerCustomColorPair,
   type ViewerCustomColorPair,
-} from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+} from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 import { normalizeHandHexColor } from "@tka/render-composition";
 
 /** A fully populated look, ready to push into an animation scope. */

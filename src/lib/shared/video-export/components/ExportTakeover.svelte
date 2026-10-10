@@ -16,10 +16,10 @@
   scrim / centerpiece / panel composition is preserved exactly.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
-  import type { ExportPhase } from "$lib/shared/compose/domain/video-export-types";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import type { ExportPhase } from "#lib/shared/compose/domain/video-export-types.js";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
 
   interface Props {
     phase: ExportPhase;

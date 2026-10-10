@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { reportModalState } from '../state/report-modal-state.svelte';
-	import { getReportSubmitter } from '$lib/features/moderation/get-report-submitter';
-	import { toast } from '$lib/shared/toast/state/toast-state.svelte';
+	import { getReportSubmitter } from '#lib/features/moderation/get-report-submitter.js';
+	import { toast } from '#lib/shared/toast/state/toast-state.svelte.js';
 	import ReportCategorySelector from './ReportCategorySelector.svelte';
 	import type { ReportCategory } from '../domain/models/report-models';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 
 	const MAX_DESCRIPTION_LENGTH = 1000;
 

@@ -5,9 +5,9 @@
   Displays pictograph visualization and step information.
 -->
 <script lang="ts">
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     step: StepData | null;

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { VULCAN_CAVE_WINGS } from "$lib/features/museum/data/wing-declarations/vulcan-cave-wings";
-import type { WingDeclaration } from "$lib/features/museum/data/wing-declarations/types";
+import { VULCAN_CAVE_WINGS } from "#lib/features/museum/data/wing-declarations/vulcan-cave-wings.js";
+import type { WingDeclaration } from "#lib/features/museum/data/wing-declarations/types.js";
 import {
 	validateWingDeclarations,
 	type WingValidationContext,
-} from "$lib/features/museum/data/wing-declarations/validate-wing-declarations";
-import { RAW_MUSEUM_SEQUENCES } from "$lib/features/museum/data/museum-exhibit-sequences";
-import { VULCAN_CAVE_ROOMS } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+} from "#lib/features/museum/data/wing-declarations/validate-wing-declarations.js";
+import { RAW_MUSEUM_SEQUENCES } from "#lib/features/museum/data/museum-exhibit-sequences.js";
+import { VULCAN_CAVE_ROOMS } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 
 function buildContext(): WingValidationContext {
 	const catalog = JSON.parse(

@@ -7,8 +7,8 @@
  * symmetry the generator builds in. A hand-edited driver can break it, and
  * this is how the panel finds out which beat.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import type { FuseTnDMode } from "./fuse-tnd-rule";
 
 export interface FuseTnDCheck {

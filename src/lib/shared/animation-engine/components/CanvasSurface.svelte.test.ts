@@ -5,9 +5,9 @@ import {
   AnimationVisibilityStateManager,
   getAnimationVisibilityManager,
 } from "../state/animation-visibility-state.svelte";
-import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import { FIRE_PRESETS } from "./effects-panel/presets/fire-presets";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const mocks = vi.hoisted(() => {
   const initializations: Array<() => Promise<void>> = [];
@@ -71,7 +71,7 @@ vi.mock("../services/animation-engine.svelte", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/render-gating/render-activity-gate", () => ({
+vi.mock("#lib/shared/render-gating/render-activity-gate.js", () => ({
   createRenderActivityGate: () => {
     const gate = { attach: vi.fn(), dispose: vi.fn() };
     mocks.activityGates.push(gate);

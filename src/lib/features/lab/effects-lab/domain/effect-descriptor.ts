@@ -1,5 +1,5 @@
-import type { TipPoint } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import type { TipPoint } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 
 /**
  * Describes how a visual effect behaves in the Effects Lab editor.

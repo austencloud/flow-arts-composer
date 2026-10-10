@@ -4,14 +4,14 @@
   and drive the studio's controls.
 -->
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-  import { setViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+  import { setViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
   import {
     setViewerUrlSessionContext,
     type ViewerUrlSession,
-  } from "$lib/shared/sequence-viewer/services/viewer-url-session";
-  import type { ViewerStudioSurfaces } from "$lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte";
+  } from "#lib/shared/sequence-viewer/services/viewer-url-session.js";
+  import type { ViewerStudioSurfaces } from "#lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte.js";
   import PostStudio from "./PostStudio.svelte";
 
   interface Props {

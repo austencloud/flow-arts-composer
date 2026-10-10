@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import WorkerEnvironmentRenderer from "$lib/shared/3d/worker-renderer/components/WorkerEnvironmentRenderer.svelte";
+  import WorkerEnvironmentRenderer from "#lib/shared/3d/worker-renderer/components/WorkerEnvironmentRenderer.svelte";
   import type {
     WorkerEnvironmentKey,
     WorkerPerformerSnapshot,
     WorkerPropSnapshot,
-  } from "$lib/shared/3d/worker-renderer/domain/worker-renderer-protocol";
-  import type { WorkerSceneSwitchSnapshot } from "$lib/shared/3d/worker-renderer/services/worker-environment-renderer";
+  } from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
+  import type { WorkerSceneSwitchSnapshot } from "#lib/shared/3d/worker-renderer/services/worker-environment-renderer.js";
 
   interface WorkerSceneSwitchBenchmarkApi {
     snapshot: WorkerSceneSwitchSnapshot | null;

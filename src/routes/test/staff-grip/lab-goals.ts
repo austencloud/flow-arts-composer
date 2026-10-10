@@ -15,9 +15,9 @@
  * VTG groups these by hand-path timing (split / together / quarter) and hand-path
  * direction (same / opposite); the labels come from `TND_FAMILIES` in the seeder.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { selectStaticSequence } from "$lib/shared/foundation/services/static-sequence-catalog";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { selectStaticSequence } from "#lib/shared/foundation/services/static-sequence-catalog.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 /** Where the browser reads the baked `l1-tnd-motions` catalog. */
 export const LAB_GOAL_CATALOG_URL = "/data/hero/tnd-base-words.json";

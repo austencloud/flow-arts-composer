@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { suggestSmartCollectionName } from "$lib/shared/browse/services/smart-collection-name";
-  import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { suggestSmartCollectionName } from "#lib/shared/browse/services/smart-collection-name.js";
+  import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
   import SmartCollectionNameField from "./SmartCollectionNameField.svelte";
   import SmartCollectionRuleSummary from "./SmartCollectionRuleSummary.svelte";
 

@@ -4,10 +4,10 @@
   stage, inspector, and editor directly into its persistent panel tracks.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { getSequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { tryGetVideoPlayheadContext } from "../../context/video-playhead-context";
   import { createPerformanceWorkspaceState } from "./state/performance-workspace-state.svelte";
   import { setPerformanceWorkspaceContext } from "./context/performance-workspace-context";

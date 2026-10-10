@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
-  import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
-  import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
-  import { loadSyncedPostDraft, saveSyncedPostDraft } from "$lib/features/post/services/post-account-projects";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
+  import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
+  import PostStudio from "#lib/shared/share/components/post-studio/PostStudio.svelte";
+  import type { PostStudioShareExport } from "#lib/shared/share/components/post-studio/post-studio-share-export.js";
+  import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { savePostDraft } from "#lib/shared/media-composition/services/post-draft-storage.js";
+  import { loadSyncedPostDraft, saveSyncedPostDraft } from "#lib/features/post/services/post-account-projects.js";
 
   /**
    * Post Studio as a sequence-viewer surface.

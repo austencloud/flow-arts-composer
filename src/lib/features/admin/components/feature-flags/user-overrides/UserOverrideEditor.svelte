@@ -12,9 +12,9 @@
   import type {
     FeatureFlagConfig,
     FeatureId,
-  } from "$lib/shared/auth/domain/models/feature-flag";
-  import AdminDetailPanel from "$lib/shared/admin/components/AdminDetailPanel.svelte";
-  import AdminActionButton from "$lib/shared/admin/components/AdminActionButton.svelte";
+  } from "#lib/shared/auth/domain/models/feature-flag.js";
+  import AdminDetailPanel from "#lib/shared/admin/components/AdminDetailPanel.svelte";
+  import AdminActionButton from "#lib/shared/admin/components/AdminActionButton.svelte";
   import RoleBadge from "../shared/RoleBadge.svelte";
   import ThreeStateToggle from "../shared/ThreeStateToggle.svelte";
   import CollapsibleSection from "../shared/CollapsibleSection.svelte";

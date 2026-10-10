@@ -17,11 +17,11 @@ competing ones.
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { createHandPath } from "$lib/shared/foundation/services/hand-path-factory";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { createHandPath } from "#lib/shared/foundation/services/hand-path-factory.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { generateSequenceMatchQuestion } from "../../../quiz/services/sequence-question-generator";
   import { QuizType } from "../../../quiz/domain/enums/quiz-enums";
   import { getArcadeSession } from "../../state/arcade-session-state.svelte";
@@ -43,7 +43,7 @@ competing ones.
   import TraceStage from "./components/TraceStage.svelte";
   import TraceFeedback from "./components/TraceFeedback.svelte";
   import TraceSettings from "./components/TraceSettings.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { constraints }: { constraints: QuestionConstraints } = $props();
 

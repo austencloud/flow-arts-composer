@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { shouldMirrorProp } from "./canvas-2d-transform-helper";
 import { pictographKeyHasher } from "./pictograph-key-hasher";
 import type { DirectRenderOptions } from "./IDirectRenderer";
-import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
-import type { PictographVisibilityOptions } from "$lib/shared/render/utils/pictograph-to-svg";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { PreparedPictographData } from "#lib/shared/pictograph/shared/domain/models/prepared-pictograph-data.js";
+import type { PictographVisibilityOptions } from "#lib/shared/render/utils/pictograph-to-svg.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 // The rasterized path (choreo-card cells, exports, card fronts) draws props
 // through shouldMirrorProp, while the live SVG pictograph draws them through

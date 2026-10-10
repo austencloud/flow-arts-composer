@@ -1,18 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CaptureResult } from "posthog-js";
 
-vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$env/dynamic/public", () => ({
-  env: { PUBLIC_POSTHOG_KEY: "test-key" },
-}));
-vi.mock("$lib/shared/foundation/services/device-id", () => ({
+vi.mock("$app/env", () => ({ browser: true }));
+vi.mock("$app/env/public", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule({ PUBLIC_POSTHOG_KEY: "test-key" });
+});
+vi.mock("#lib/shared/foundation/services/device-id.js", () => ({
   getDeviceId: () => "device-1",
 }));
 vi.mock("posthog-js", () => ({
   default: { init: vi.fn(), reloadFeatureFlags: vi.fn() },
 }));
 
-import { dropKnownNoise } from "$lib/shared/analytics/services/posthog";
+import { dropKnownNoise } from "#lib/shared/analytics/services/posthog.js";
 
 /**
  * `dropKnownNoise` is the `before_send` hook wired into `posthog.init(...)`.

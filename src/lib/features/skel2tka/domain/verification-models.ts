@@ -6,7 +6,7 @@
  * Corrections become training data for future AI models.
  */
 
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /** The three possible outcomes of a phase verification */
 export type PhaseVerdict = "accepted" | "corrected" | "rejected";

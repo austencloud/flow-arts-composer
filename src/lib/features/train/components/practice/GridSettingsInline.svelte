@@ -5,8 +5,8 @@
   Designed to fit within a collapsible section.
 -->
 <script lang="ts">
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     gridScale: number;

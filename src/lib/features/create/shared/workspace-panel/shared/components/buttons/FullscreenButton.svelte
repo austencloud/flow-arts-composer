@@ -6,10 +6,10 @@
 -->
 <script lang="ts">
   // Note: Vendor-prefixed types (webkit*, moz*, ms*) are declared in src/lib/shared/types/vendor-prefixed.d.ts
-  import { getMobileFullscreenManager } from "$lib/shared/mobile/get-mobile-fullscreen-manager";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { MobileFullscreenManager } from '$lib/shared/mobile/services/mobile-fullscreen-manager'
+  import { getMobileFullscreenManager } from "#lib/shared/mobile/get-mobile-fullscreen-manager.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { MobileFullscreenManager } from '#lib/shared/mobile/services/mobile-fullscreen-manager.js'
   import { onMount } from "svelte";
 
   // Services

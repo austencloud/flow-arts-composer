@@ -6,11 +6,11 @@
  * This allows the drawer to be rendered outside the tab's stacking context.
  */
 
-import { mutateCurrentUrl } from "$lib/shared/navigation/services/url-state";
+import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
 import type {
   FeedbackItem,
   FeedbackType,
-} from "$lib/shared/feedback/domain/models/feedback-models";
+} from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 // Singleton state
 let selectedItem = $state<FeedbackItem | null>(null);

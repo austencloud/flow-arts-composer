@@ -6,7 +6,7 @@
 
 import { getContext, setContext } from "svelte";
 import type { SceneLabState } from "../state/scene-lab-state.svelte";
-import type { ComposerEditorState } from "$lib/shared/3d/scene-composer/composer-editor-state.svelte";
+import type { ComposerEditorState } from "#lib/shared/3d/scene-composer/composer-editor-state.svelte.js";
 
 const KEY = Symbol("scene-lab-context");
 

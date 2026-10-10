@@ -30,10 +30,10 @@
  */
 
 import { BackgroundType } from "@austencloud/backgrounds";
-import { setThemeMode } from "$lib/shared/theme/state/theme-mode-state.svelte";
-import { BACKGROUND_THEME_COLORS } from "$lib/shared/theme/config/tka-theme-config";
-import { BREAKPOINTS } from "$lib/shared/device/domain/constants/device-constants";
-import { normalizeBackgroundType } from "$lib/shared/settings/domain/background-type-migration";
+import { setThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
+import { BACKGROUND_THEME_COLORS } from "#lib/shared/theme/config/tka-theme-config.js";
+import { BREAKPOINTS } from "#lib/shared/device/domain/constants/device-constants.js";
+import { normalizeBackgroundType } from "#lib/shared/settings/domain/background-type-migration.js";
 
 /**
  * Calculate relative luminance of a color using WCAG formula

@@ -15,8 +15,8 @@
  * actually call out to someone across a jam.
  */
 
-import type { RotatingFlower } from "$lib/shared/shape-matrix/domain/flower-signature";
-import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+import type { RotatingFlower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import type { QftKnobs } from "./qft-model";
 import {
   trajectoryFromKnobs,

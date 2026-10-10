@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { encodeSequenceWithCompression, verifySequenceRoundTrip } from "$lib/shared/navigation/services/sequence-encoder";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { encodeSequenceWithCompression, verifySequenceRoundTrip } from "#lib/shared/navigation/services/sequence-encoder.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 describe("SequenceEncoder.verifyRoundTrip", () => {
 

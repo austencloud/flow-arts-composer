@@ -12,7 +12,7 @@
 
   import { T, useTask } from "@threlte/core";
   import { CanvasTexture, DoubleSide, type Texture } from "three";
-  import type { Petals3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+  import type { Petals3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
   import {
     drawPetalSilhouette,
     pickPetalSprite,
@@ -20,7 +20,7 @@
     resolvePetalOpacity,
     rollEmberFlag,
     type PetalSpriteShape,
-  } from "$lib/shared/effects/domain/petal-palettes";
+  } from "#lib/shared/effects/domain/petal-palettes.js";
   import {
     resolveEmberWorldSpan,
     resolvePetalWorldSize,

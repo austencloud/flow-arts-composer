@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PostVideoItem } from "$lib/shared/media-composition/domain/post-project";
-import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
-import { setKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-import { isCovered } from "$lib/shared/share/components/post-studio/editor/post-crop-geometry";
-import { createCropSession } from "$lib/shared/share/components/post-studio/editor/post-crop-session.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PostVideoItem } from "#lib/shared/media-composition/domain/post-project.js";
+import { editItemKeyframes } from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { setKeyframe } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+import { isCovered } from "#lib/shared/share/components/post-studio/editor/post-crop-geometry.js";
+import { createCropSession } from "#lib/shared/share/components/post-studio/editor/post-crop-session.svelte.js";
 
 function sequence(): SequenceData {
   return {

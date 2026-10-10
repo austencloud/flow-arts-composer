@@ -21,13 +21,13 @@
  * original artboard.
  */
 import { codexData } from "../../codex/_data/codex-groups";
-import { applyPendingTurnsToOption } from "$lib/shared/create/services/apply-turns-to-motion";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import { applyPendingTurnsToOption } from "#lib/shared/create/services/apply-turns-to-motion.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import {
   MotionType,
   HandSide,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const CW = RotationDirection.CLOCKWISE;
 

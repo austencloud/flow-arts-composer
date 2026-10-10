@@ -5,9 +5,9 @@ import {
   projectPerformerFloorTravel,
   samplePerformerFloorSpeed,
   stageSequenceDisplayName,
-} from "$lib/features/stage/domain/stage-timeline-projection";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StageChoreography } from "$lib/features/stage/domain/stage-types";
+} from "#lib/features/stage/domain/stage-timeline-projection.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StageChoreography } from "#lib/features/stage/domain/stage-types.js";
 
 const choreography: StageChoreography = {
   id: "stage",

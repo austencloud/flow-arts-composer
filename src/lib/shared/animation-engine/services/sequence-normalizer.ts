@@ -5,9 +5,9 @@
  * Always returns StartPlacementData (never StepData) for start positions.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 
 export interface NormalizedSequenceData {
   /**
@@ -20,7 +20,7 @@ export interface NormalizedSequenceData {
    */
   startPlacement: StartPlacementData | null;
 }
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
 
 /**
  * Normalize sequence data by separating start position from steps array.

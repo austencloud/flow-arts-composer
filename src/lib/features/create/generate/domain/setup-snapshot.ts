@@ -6,7 +6,7 @@
  */
 import { GenerationMode } from "../shared/domain/models/generate-models";
 import type { UIGenerationConfig } from "../state/generate-config.svelte";
-import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
+import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 
 export interface SetupSnapshot {
   config: UIGenerationConfig;

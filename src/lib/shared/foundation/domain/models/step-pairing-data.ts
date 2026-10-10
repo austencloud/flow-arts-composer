@@ -1,5 +1,5 @@
 import type { Letter } from "./letter";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export interface StepPairingData {
   readonly letter: Letter | null;

@@ -8,11 +8,11 @@
   Crossfade (fill mode) covers example swaps so a refresh/selection change
   never reflows the stage. Word display goes through simplifyRepeatedWord. -->
 <script lang="ts">
-  import "$lib/shared/selection/selection.css";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import "#lib/shared/selection/selection.css";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { getLoopExplorerContext } from "../state/loop-explorer-state.svelte";
 
   const state = getLoopExplorerContext();

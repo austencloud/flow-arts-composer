@@ -1,7 +1,7 @@
-import { calculateBeatState } from "$lib/shared/animation-engine/services/step-calculator";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import { calculateBeatState } from "#lib/shared/animation-engine/services/step-calculator.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 export interface FusePictographMotionFrame {
   step: StepData;

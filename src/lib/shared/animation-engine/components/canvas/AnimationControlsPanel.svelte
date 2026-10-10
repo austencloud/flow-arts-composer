@@ -10,24 +10,24 @@
   - Desktop: Fixed layout with full controls
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { settingsService as settingsServiceSingleton } from "$lib/shared/settings/state/settings-state.svelte";
-  import { browser } from "$app/environment";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { settingsService as settingsServiceSingleton } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { browser } from "$app/env";
   import { onMount } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
   import {
     animationSettings,
     TrailMode,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
 
   // Subcomponents
-  import QuickBpmPresets from "$lib/shared/animation-engine/components/QuickBpmPresets.svelte";
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
-  import SettingsTogglePanel from "$lib/shared/animation-engine/components/controls/SettingsTogglePanel.svelte";
-  import ExportActionsPanel from "$lib/shared/animation-engine/components/ExportActionsPanel.svelte";
-  import AnimationStepGrid from "$lib/shared/animation-engine/components/AnimationStepGrid.svelte";
+  import QuickBpmPresets from "#lib/shared/animation-engine/components/QuickBpmPresets.svelte";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import SettingsTogglePanel from "#lib/shared/animation-engine/components/controls/SettingsTogglePanel.svelte";
+  import ExportActionsPanel from "#lib/shared/animation-engine/components/ExportActionsPanel.svelte";
+  import AnimationStepGrid from "#lib/shared/animation-engine/components/AnimationStepGrid.svelte";
 
   type MobileToolView = "controls" | "step-grid";
 
@@ -79,9 +79,9 @@
     isPlaying?: boolean;
     leftMotionVisible?: boolean;
     rightMotionVisible?: boolean;
-    playbackMode?: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").PlaybackMode;
+    playbackMode?: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").PlaybackMode;
     stepPlaybackPauseMs?: number;
-    stepPlaybackStepSize?: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").StepPlaybackStepSize;
+    stepPlaybackStepSize?: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").StepPlaybackStepSize;
     isSideBySideLayout?: boolean;
     isExpanded?: boolean;
     scrollContainerRef?: HTMLDivElement | null;
@@ -95,11 +95,11 @@
     onPlaybackStart?: () => void;
     onPlaybackToggle?: () => void;
     onPlaybackModeChange?: (
-      mode: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").PlaybackMode
+      mode: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").PlaybackMode
     ) => void;
     onStepPlaybackPauseMsChange?: (pauseMs: number) => void;
     onStepPlaybackStepSizeChange?: (
-      stepSize: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").StepPlaybackStepSize
+      stepSize: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").StepPlaybackStepSize
     ) => void;
     onStepHalfBeatBackward?: () => void;
     onStepHalfBeatForward?: () => void;
@@ -213,7 +213,7 @@
 >
   <!-- Mobile Compact Mode -->
   {#if !isSideBySideLayout && !isExpanded}
-    {#await import("$lib/features/compose/components/controls/CompactMobileRow.svelte") then mod}
+    {#await import("#lib/features/compose/components/controls/CompactMobileRow.svelte") then mod}
       <mod.default
         {mobileToolView}
         {isPlaying}
@@ -296,7 +296,7 @@
 </div>
 
 <!-- Settings Sheet (Compact mobile - all settings) -->
-{#await import("$lib/features/compose/components/controls/AnimationSettingsSheet.svelte") then mod}
+{#await import("#lib/features/compose/components/controls/AnimationSettingsSheet.svelte") then mod}
   <mod.default
     bind:isOpen={isSettingsSheetOpen}
     bind:bpm

@@ -48,15 +48,15 @@
   } from "../scene-features/context/scene-feature-context";
   import SceneLoadingCurtain from "../scene-features/components/SceneLoadingCurtain.svelte";
   import { createViewerCameraPlayerState } from "@austencloud/camera-3d";
-  import { getInputCapabilities } from "$lib/shared/input/InputCapabilities.svelte";
+  import { getInputCapabilities } from "#lib/shared/input/InputCapabilities.svelte.js";
   import {
     holdBackground,
     releaseBackground,
-  } from "$lib/shared/background/shared/state/background-hold.svelte";
+  } from "#lib/shared/background/shared/state/background-hold.svelte.js";
   import SceneShaderWarmup from "./SceneShaderWarmup.svelte";
   import InteractivePropAssetWarmup from "./InteractivePropAssetWarmup.svelte";
-  import { createCharacterPlaybackAdapter } from "$lib/shared/timeline/adapters/character-playback-adapter.svelte";
-  import type { PlaybackMode } from "$lib/shared/timeline/unified-playback-context";
+  import { createCharacterPlaybackAdapter } from "#lib/shared/timeline/adapters/character-playback-adapter.svelte.js";
+  import type { PlaybackMode } from "#lib/shared/timeline/unified-playback-context.js";
   import { sceneLoadingPlaybackTransition } from "../domain/scene-loading-playback";
   import { selectBeatPlaneStep } from "../domain/beat-plane-step-selection";
   import { getQualityTierDetector } from "../effects/quality/get-quality-tier-detector";
@@ -65,11 +65,11 @@
   import { setEnvironmentTransitionVisualContext } from "../environments/context/environment-transition-visual-context";
   import { createEnvironmentTransitionVisualState } from "../environments/state/environment-transition-visual-state.svelte";
   import type { QualityTier } from "../effects/types";
-  import type { ViewerControlSink } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
-  import { tryGetViewerUrlSessionContext } from "$lib/shared/sequence-viewer/services/viewer-url-session";
-  import { captureT3Slice } from "$lib/shared/sequence-viewer/services/viewer-url-slices/t3-slice";
+  import type { ViewerControlSink } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
+  import { tryGetViewerUrlSessionContext } from "#lib/shared/sequence-viewer/services/viewer-url-session.js";
+  import { captureT3Slice } from "#lib/shared/sequence-viewer/services/viewer-url-slices/t3-slice.js";
 
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { CameraStateSnapshot } from "@austencloud/scene-3d";
   import { BackgroundType } from "@austencloud/backgrounds";
   import type { EnvironmentTransitionObservation } from "../environments/domain/environment-transition";
@@ -228,7 +228,7 @@
   type SceneAudioPlayerModule = typeof import("./SceneAudioPlayer.svelte");
   type StepPlaneStripModule = typeof import("./controls/StepPlaneStrip.svelte");
   type UnifiedTimelineModule =
-    typeof import("$lib/shared/timeline/UnifiedTimeline.svelte");
+    typeof import("#lib/shared/timeline/UnifiedTimeline.svelte");
 
   let scenePostProcessingPromise: Promise<ScenePostProcessingModule> | null =
     null;
@@ -245,7 +245,7 @@
     (stepPlaneStripPromise ??= import("./controls/StepPlaneStrip.svelte"));
   const loadUnifiedTimeline = () =>
     (unifiedTimelinePromise ??=
-      import("$lib/shared/timeline/UnifiedTimeline.svelte"));
+      import("#lib/shared/timeline/UnifiedTimeline.svelte"));
 
   const viewer3DState = getViewer3DContext();
   // Provide one stable, hardware-detected visual tier plus adaptive DPR to the

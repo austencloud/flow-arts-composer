@@ -18,8 +18,8 @@
   Do NOT rebuild scan-specific header/body variants — extend this shell.
 -->
 <script lang="ts">
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
   import { onDestroy, onMount, untrack, type Snippet } from "svelte";
   import { createViewerStudioSurfaces } from "../state/viewer-studio-surfaces.svelte";
   import { setViewerStudioSurfaces } from "../context/viewer-studio-surfaces-context";
@@ -37,11 +37,14 @@
     createVideoPlayheadBridge,
     setVideoPlayheadContext,
   } from "../context/video-playhead-context";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { showToast, toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { getSequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+  import {
+    showToast,
+    toast,
+  } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { createPerformanceWorkspaceState } from "./sequence-videos/state/performance-workspace-state.svelte";
   import { setPerformanceWorkspaceContext } from "./sequence-videos/context/performance-workspace-context";
   import PerformanceStage from "./sequence-videos/PerformanceStage.svelte";
@@ -49,59 +52,59 @@
   import PerformanceEditor from "./sequence-videos/PerformanceEditor.svelte";
   import ViewerHeader from "./ViewerHeader.svelte";
   import FullscreenControls from "./FullscreenControls.svelte";
-  import ExportVideoDrawer from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import ExportVideoDrawer from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
   import ExportImagePanel from "./ExportImagePanel.svelte";
   import VideoPreviewPanel from "./VideoPreviewPanel.svelte";
   import PracticeBar from "./PracticeBar.svelte";
   import PostStudioPane from "./PostStudioPane.svelte";
-  import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
+  import type { PostStudioShareExport } from "#lib/shared/share/components/post-studio/post-studio-share-export.js";
   import { POST_STUDIO_STAGE_MIN_WIDTH } from "../services/viewer-shell-model";
   import { resolveSequenceIdentityTitle } from "../services/viewer-title";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
   import PracticeSetupBar from "./PracticeSetupBar.svelte";
   import ViewerSharePanel from "./ViewerSharePanel.svelte";
-  import { META_POSTING_ENABLED } from "$lib/shared/share/services/meta-publish";
-  import { computeExportSummary } from "$lib/shared/animation-panel/pill-nav/pill-summaries";
-  import { formatExportTimeEstimate } from "$lib/shared/animation-panel/state/export-timing-tracker";
+  import { META_POSTING_ENABLED } from "#lib/shared/share/services/meta-publish.js";
+  import { computeExportSummary } from "#lib/shared/animation-panel/pill-nav/pill-summaries.js";
+  import { formatExportTimeEstimate } from "#lib/shared/animation-panel/state/export-timing-tracker.js";
   import {
     VIEWER_MODE_OPTIONS,
     viewerModeLabel,
   } from "../services/viewer-modes";
   import Recording3DOverlay from "./Recording3DOverlay.svelte";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { toExportTakeoverPhase } from "$lib/shared/video-export/services/export-takeover-phase";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { toExportTakeoverPhase } from "#lib/shared/video-export/services/export-takeover-phase.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import RecordSceneChrome from "./record-scene/RecordSceneChrome.svelte";
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import DeleteConfirmDialog from "./DeleteConfirmDialog.svelte";
-  import PostShareSheet from "$lib/shared/share/components/PostShareSheet.svelte";
-  import type { VideoRenderRequest } from "$lib/shared/share/domain/video-opener";
+  import PostShareSheet from "#lib/shared/share/components/PostShareSheet.svelte";
+  import type { VideoRenderRequest } from "#lib/shared/share/domain/video-opener.js";
   import {
     listRenderedFilms,
     onRenderedFilmsChanged,
     type RenderedFilmSummary,
-  } from "$lib/shared/video-export/services/rendered-film-store";
+  } from "#lib/shared/video-export/services/rendered-film-store.js";
   import {
     describeFilm,
     latestFilmForSequence,
-  } from "$lib/shared/video-export/domain/film-share-summary";
+  } from "#lib/shared/video-export/domain/film-share-summary.js";
   import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
-  import { uploadRenderedFilm } from "$lib/shared/video-collaboration/services/upload-rendered-film";
+  import { uploadRenderedFilm } from "#lib/shared/video-collaboration/services/upload-rendered-film.js";
   import { canAccessPostStudio } from "../services/post-studio-access";
-  import { getPostWorkspaceNavigator } from "$lib/features/post/services/get-post-workspace-navigator";
+  import { getPostWorkspaceNavigator } from "#lib/features/post/services/get-post-workspace-navigator.js";
   import {
     closeSequenceOverlay,
     isSequenceOverlayOpen,
   } from "../state/sequence-viewer-overlay-state.svelte";
   import ChoreoCardContextMenuHost from "./choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
-  import { createSequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
-  import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
-  import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { sendToStickerLab } from "$lib/shared/sequence-viewer/services/send-to-sticker-lab";
-  import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
+  import { createSequenceSendSession } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
+  import { inboxState } from "#lib/shared/inbox/state/inbox-state.svelte.js";
+  import { createGlobalChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { sendToStickerLab } from "#lib/shared/sequence-viewer/services/send-to-sticker-lab.js";
+  import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
   import {
     captureScanAction,
     captureScanExport,
@@ -113,7 +116,7 @@
     endScanViewerSession,
     isScanVisit,
     registerScanSessionCleanup,
-  } from "$lib/shared/analytics/scan-analytics";
+  } from "#lib/shared/analytics/scan-analytics.js";
   import { createViewerShellLayoutState } from "../state/viewer-shell-layout-state.svelte";
   import {
     createViewerShellShareState,
@@ -132,14 +135,14 @@
   import { setViewerInspectorHostContext } from "../context/viewer-inspector-host-context";
   import { createViewerAnimatorInspectorState } from "../state/viewer-animator-inspector-state.svelte";
   import { setViewerAnimatorInspectorContext } from "../context/viewer-animator-inspector-context";
-  import { loadActivePill } from "$lib/shared/animation-panel/state/active-pill-persistence";
-  import { createCardPresentationState } from "$lib/shared/share/state/card-presentation-state.svelte";
+  import { loadActivePill } from "#lib/shared/animation-panel/state/active-pill-persistence.js";
+  import { createCardPresentationState } from "#lib/shared/share/state/card-presentation-state.svelte.js";
   import {
     cardPresentationFromFooterSettings,
     resolveCardFooter,
     type CardPresentation,
-  } from "$lib/shared/share/domain/models/card-presentation";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+  } from "#lib/shared/share/domain/models/card-presentation.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import {
     trackSequenceRemixStarted,
     trackSequenceViewed,
@@ -150,7 +153,7 @@
     trackViewerSettingChanged,
     trackViewerViewChanged,
     type SequenceViewerSource,
-  } from "$lib/shared/sequence-viewer/analytics/viewer-events";
+  } from "#lib/shared/sequence-viewer/analytics/viewer-events.js";
 
   /** Host-owned export pipeline (such as the scan-origin account gate).
       Absent → the orchestrator's own ctx.handleExport pipeline (the app). */

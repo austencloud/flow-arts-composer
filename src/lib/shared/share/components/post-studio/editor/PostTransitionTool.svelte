@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { PostItem } from "$lib/shared/media-composition/domain/post-project";
-  import { itemEnd } from "$lib/shared/media-composition/domain/post-project";
-  import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PostItem } from "#lib/shared/media-composition/domain/post-project.js";
+  import { itemEnd } from "#lib/shared/media-composition/domain/post-project.js";
+  import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
+  import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   let {
     editor,

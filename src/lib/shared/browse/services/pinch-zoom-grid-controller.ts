@@ -13,7 +13,7 @@
 import {
 	MIN_COLUMNS,
 	getMaxColumnsForWidth,
-} from "$lib/shared/browse/services/grid-column-breakpoints";
+} from "#lib/shared/browse/services/grid-column-breakpoints.js";
 
 export interface PinchZoomState {
 	/** Current column count. Width-adaptive: phones 2-3, 4K up to 7. */

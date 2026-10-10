@@ -23,7 +23,7 @@
 import {
   PLAYBACK_MIN_BPM,
   PLAYBACK_MAX_BPM,
-} from "$lib/shared/animation-engine/domain/constants/timing";
+} from "#lib/shared/animation-engine/domain/constants/timing.js";
 
 export interface TempoPracticeConfig {
   /** Starting BPM (default: 15) */

@@ -1,7 +1,7 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { FeatureVideoSummary } from "$lib/shared/media-composition/domain/feature-video";
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { FeatureVideoSummary } from "#lib/shared/media-composition/domain/feature-video.js";
+import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { FeatureVideoSync } from "#lib/shared/media-composition/services/feature-video-client.js";
 import {
   loadSyncedPostDraft,
   listSyncedPostProjects,

@@ -19,7 +19,7 @@
  */
 
 import type { FlowFestMoment } from "../state/flow-fest-progress";
-import { makeRng, childSeed } from "$lib/shared/foundation/utils/seeded-rng";
+import { makeRng, childSeed } from "#lib/shared/foundation/utils/seeded-rng.js";
 import {
   clampInsideFlowFestClearing,
   flowFestCorridorAnchorNode,

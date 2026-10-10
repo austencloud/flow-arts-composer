@@ -1,4 +1,4 @@
-import { turnOf } from "$lib/shared/media-composition/services/media-fit";
+import { turnOf } from "#lib/shared/media-composition/services/media-fit.js";
 import {
   pictureScale,
   type CropCamera,

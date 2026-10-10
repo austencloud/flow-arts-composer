@@ -1,6 +1,5 @@
-import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { requireFullFirebaseUser } from "$lib/server/auth/requireFullFirebaseUser";
+import { requireFullFirebaseUser } from "#lib/server/auth/requireFullFirebaseUser.js";
 import {
   getFirestoreRest,
   readFirestoreInteger,
@@ -8,10 +7,10 @@ import {
   toFirestoreFields,
   type FirestoreDocument,
   type FirestoreWrite,
-} from "$lib/server/firestore/firestore-rest";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { getDeckReleaseManifestPath } from "$lib/shared/library/data/firestore-paths";
+} from "#lib/server/firestore/firestore-rest.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { getDeckReleaseManifestPath } from "#lib/shared/library/data/firestore-paths.js";
 import {
   createPhysicalCardId,
   createPrintRunId,
@@ -20,7 +19,8 @@ import {
   type AllocatedPhysicalCard,
   type PhysicalCardIssueCard,
   type PhysicalCardIssueResponse,
-} from "$lib/shared/qr/domain/physical-card";
+} from "#lib/shared/qr/domain/physical-card.js";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 const MAX_REQUEST_BYTES = 256_000;
 const MAX_COMMIT_WRITES = 450;
@@ -106,7 +106,7 @@ function responseForError(error: unknown): Response {
   if (status >= 500) {
     console.error("[physical-card-issue] failed:", error);
   }
-  return json({ error: message, code }, { status });
+  return Response.json({ error: message, code }, { status });
 }
 
 export const POST: RequestHandler = async (event) => {
@@ -124,7 +124,7 @@ export const POST: RequestHandler = async (event) => {
       event.request.headers.get("content-length") ?? 0
     );
     if (contentLength > MAX_REQUEST_BYTES) {
-      return json(
+      return Response.json(
         { error: "Issuance request is too large", code: "request_too_large" },
         { status: 413 }
       );
@@ -134,21 +134,21 @@ export const POST: RequestHandler = async (event) => {
     try {
       rawBody = await event.request.json();
     } catch {
-      return json(
+      return Response.json(
         { error: "Invalid JSON body", code: "invalid_json" },
         { status: 400 }
       );
     }
     const validation = validatePhysicalCardIssueRequest(rawBody);
     if (!validation.ok) {
-      return json(
+      return Response.json(
         { error: validation.error, code: "invalid_request" },
         { status: 400 }
       );
     }
     const request = validation.value;
     if (request.outputMode === "zip" && request.copies !== 1) {
-      return json(
+      return Response.json(
         {
           error: "Print-service ZIP runs allocate one artwork slot per card",
           code: "invalid_request",
@@ -158,7 +158,7 @@ export const POST: RequestHandler = async (event) => {
     }
 
     const firestore = getFirestoreRest(
-      event.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
+      workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
     );
     const codeDocuments = new Map<string, FirestoreDocument>();
     const uniqueCodes = [
@@ -359,7 +359,7 @@ export const POST: RequestHandler = async (event) => {
       allocatedAt: allocatedAt.toISOString(),
       instances,
     };
-    return json(response, { status: 201 });
+    return Response.json(response, { status: 201 });
   } catch (error) {
     return responseForError(error);
   }

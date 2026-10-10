@@ -8,9 +8,9 @@
 import type { RequestHandler } from "@sveltejs/kit";
 import fs from "fs";
 import path from "path";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types

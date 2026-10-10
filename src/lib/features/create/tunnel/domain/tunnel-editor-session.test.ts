@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   createIndependentTunnelPerformer,
   createTunnelComposition,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import type { TunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import type { TunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import {
   TUNNEL_CREATOR_DRAFT_VERSION,
   type TunnelCreatorDraft,

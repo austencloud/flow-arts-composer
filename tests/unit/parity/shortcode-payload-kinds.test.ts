@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getHandPathReferenceCards } from "$lib/features/choreo-card/domain/hand-path-reference-cards";
-import { buildHandPathShortCodePayload } from "$lib/shared/qr/services/hand-path-short-code-payload";
+import { getHandPathReferenceCards } from "#lib/features/choreo-card/domain/hand-path-reference-cards.js";
+import { buildHandPathShortCodePayload } from "#lib/shared/qr/services/hand-path-short-code-payload.js";
 import {
   isWordPayloadKind,
   validateHandPathRecord,

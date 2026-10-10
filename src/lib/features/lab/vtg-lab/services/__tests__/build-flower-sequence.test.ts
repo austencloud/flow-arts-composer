@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildFlowerSequence } from "../build-flower-sequence";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // Minimal two-hand archetype: one step, both hands pro, south start, in orientation.
 function proArchetype(): SequenceData {

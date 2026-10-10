@@ -81,7 +81,7 @@ vi.mock("firebase/firestore", () => ({
 
 // getFirestoreInstance is deliberately NOT pre-resolved: the whole defect lives
 // in the window between subscribe() returning and this promise settling.
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(
     () =>
       new Promise((resolve) => {
@@ -90,14 +90,14 @@ vi.mock("$lib/shared/auth/firebase", () => ({
   ),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn(), warning: vi.fn(), success: vi.fn(), info: vi.fn() },
   showToast: vi.fn(),
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureEvent: vi.fn(),
 }));
-vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => ({
+vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => ({
   getAuthenticatedUserId: vi.fn(() => "uid-under-test"),
   mapDocToCollection: (data: Record<string, unknown>, id: string) => ({
     id,
@@ -111,8 +111,8 @@ vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => ({
 import {
   subscribeToCollection,
   subscribeToCollections,
-} from "$lib/shared/library/services/collection-manager";
-import { subscribeToAllPublicCollections } from "$lib/features/library/services/public-collection-loader";
+} from "#lib/shared/library/services/collection-manager.js";
+import { subscribeToAllPublicCollections } from "#lib/features/library/services/public-collection-loader.js";
 
 /** Let every already-queued microtask run. */
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));

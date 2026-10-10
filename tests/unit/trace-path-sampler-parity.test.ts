@@ -14,10 +14,10 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation, GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   getPathPoints,
-} from "$lib/features/hand-paths/hand-path-builder/services/hand-path-animator";
+} from "#lib/features/hand-paths/hand-path-builder/services/hand-path-animator.js";
 import {
   DEFAULT_PATH_SEGMENTS,
   pathTypeForSegment,
@@ -26,9 +26,9 @@ import {
   arcLengthResample,
   polylineLength,
   normalizeStagePoint,
-} from "$lib/features/learn/play/games/trace-paths/services/trace-path-sampler";
-import { getHitTargets } from "$lib/shared/assemble-lab/services/grid-hit-target-calculator";
-import { createGridPointData } from "$lib/shared/pictograph/grid/utils/grid-coordinate-utils";
+} from "#lib/features/learn/play/games/trace-paths/services/trace-path-sampler.js";
+import { getHitTargets } from "#lib/shared/assemble-lab/services/grid-hit-target-calculator.js";
+import { createGridPointData } from "#lib/shared/pictograph/grid/utils/grid-coordinate-utils.js";
 
 const DIAMOND_LOCATIONS = [
   GridLocation.NORTH,

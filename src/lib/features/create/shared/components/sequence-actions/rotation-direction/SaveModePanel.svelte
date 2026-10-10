@@ -5,9 +5,9 @@
   Shows a preview grid of the current pattern and a save form.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import { formatRotationValue } from "../../../domain/models/rotation-direction-pattern-data";
 
   interface Props {

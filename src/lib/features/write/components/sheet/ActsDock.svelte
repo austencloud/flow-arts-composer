@@ -21,10 +21,13 @@
 <script lang="ts">
   import { flip } from "svelte/animate";
   import { scale } from "svelte/transition";
-  import { dockSlide } from "$lib/shared/transitions/dock-slide";
-  import { flipDuration, motionDuration } from "$lib/shared/transitions/motion";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { formatTimeAgo } from "$lib/shared/i18n/i18n-formatters";
+  import { dockSlide } from "#lib/shared/transitions/dock-slide.js";
+  import {
+    flipDuration,
+    motionDuration,
+  } from "#lib/shared/transitions/motion.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { formatTimeAgo } from "#lib/shared/i18n/i18n-formatters.js";
   import { getChoreoSheetRepository } from "../../services/choreo-sheet-repository";
   import type { ChoreoSheet } from "../../domain/types/choreo-sheet";
 

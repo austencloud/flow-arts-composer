@@ -1,7 +1,7 @@
 import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { afterEach, describe, expect, it } from "vitest";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 import BaseModalTestHarness from "./BaseModalTestHarness.svelte";
 import BaseModalMorphTestHarness from "./BaseModalMorphTestHarness.svelte";
 

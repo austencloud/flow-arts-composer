@@ -4,17 +4,17 @@
  * must land exactly on its fused cell, and the beats must fit in one turn.
  */
 import { describe, expect, it } from "vitest";
-import { METHOD_PREVIEW_TIMING } from "$lib/features/create/shared/state/method-preview-turns.svelte";
-import { fuseLayout } from "$lib/features/create/shared/components/method-previews/method-preview-compositions";
+import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
+import { fuseLayout } from "#lib/features/create/shared/components/method-previews/method-preview-compositions.js";
 import {
   DEMO_SEQUENCE,
   startPictograph,
-} from "$lib/features/create/shared/components/method-previews/method-preview-demo";
+} from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
 import {
   FUSE_PREVIEW_TIMING,
   fuseFrames,
   fuseSources,
-} from "$lib/features/create/shared/components/method-previews/method-preview-fuse";
+} from "#lib/features/create/shared/components/method-previews/method-preview-fuse.js";
 
 const at = (x: number, y: number, size: number) => ({ x, y, size });
 

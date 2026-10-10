@@ -11,18 +11,18 @@
   import type {
     ViewerActionSink,
     ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
-  import { dockSlide } from "$lib/shared/transitions/dock-slide";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
+  import { dockSlide } from "#lib/shared/transitions/dock-slide.js";
   import { createSheetDismiss } from "./sheet-dismiss";
-  import { shouldDeferEscapeShortcut } from "$lib/shared/keyboard/domain/escape-shortcut-target";
-  import SaveSceneModal from "$lib/features/scene-3d-collection/components/SaveSceneModal.svelte";
+  import { shouldDeferEscapeShortcut } from "#lib/shared/keyboard/domain/escape-shortcut-target.js";
+  import SaveSceneModal from "#lib/features/scene-3d-collection/components/SaveSceneModal.svelte";
   import PerformerSpine from "./PerformerSpine.svelte";
-  import SelectionToolbar from "$lib/shared/components/selection/SelectionToolbar.svelte";
+  import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
   import SceneControlInspector from "./SceneControlInspector.svelte";
   import SceneControlRail from "./SceneControlRail.svelte";
   import type { PerformerEditSink } from "./performer-hub-types";
   import { onMount, type Snippet } from "svelte";
-  import { flyFade, growFade } from "$lib/shared/transitions/motion";
+  import { flyFade, growFade } from "#lib/shared/transitions/motion.js";
   import {
     DIRECT_PERFORMER_SELECTION_EVENT,
     type DirectPerformerSelectionDetail,

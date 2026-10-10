@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { EffectController } from "$lib/shared/animation-engine/services/effect-controller";
+import { EffectController } from "#lib/shared/animation-engine/services/effect-controller.js";
 
 function mockEffectManager() {
   return {

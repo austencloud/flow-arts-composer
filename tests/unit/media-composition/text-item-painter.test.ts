@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
-import type { CompiledTextItem } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { TEXT_BOX_WIDTH } from "$lib/shared/media-composition/domain/post-project";
+import { createTextItemPainter } from "#lib/shared/media-composition/services/text-item-painter.js";
+import type { CompiledTextItem } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { TEXT_BOX_WIDTH } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   CAPTION_LINE_HEIGHT_FRACTION,
   CAPTION_SIZE_FRACTION,
-} from "$lib/shared/media-composition/domain/caption-layout";
+} from "#lib/shared/media-composition/domain/caption-layout.js";
 import type {
   PaintFrame,
   PaintRect,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
 
 const FRAME: PaintFrame = { projectProgress: 0, sourceTimeSeconds: 0 };
 

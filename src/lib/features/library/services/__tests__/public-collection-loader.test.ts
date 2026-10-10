@@ -34,12 +34,12 @@ vi.mock("firebase/firestore", () => ({
     return { field, op, value };
   }),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 // The real mapper drags in authState + the sequence hydrator; count
 // normalization doesn't depend on mapping details, so map 1:1.
-vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => ({
+vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => ({
   mapDocToCollection: (data: Record<string, unknown>, id: string) => ({
     id,
     ...data,

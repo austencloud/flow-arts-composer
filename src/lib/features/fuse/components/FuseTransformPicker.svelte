@@ -14,11 +14,11 @@
   passes drafts.
 -->
 <script lang="ts">
-  import { growFade } from "$lib/shared/transitions/motion";
-  import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import FuseTnDModePicker from "./FuseTnDModePicker.svelte";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import { getFuseContext } from "../context/fuse-context";
   import { fuseComponentColor } from "../domain/fuse-transform-presentation";
   import type { FuseRule } from "../domain/fuse-rule";

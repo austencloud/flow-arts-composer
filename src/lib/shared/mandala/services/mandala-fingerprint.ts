@@ -1,4 +1,4 @@
-import { hashString } from "$lib/shared/foundation/services/content-hasher";
+import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
 import type { MandalaPaths, MandalaPoint, SVGPathData } from "../domain/mandala-types";
 
 /** Quantization grid in px. Coarse enough to absorb FP drift under rotation,

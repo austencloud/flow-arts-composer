@@ -12,13 +12,13 @@
 
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("$lib/shared/application/state/app-state.svelte", () => ({
+vi.mock("#lib/shared/application/state/app-state.svelte.js", () => ({
   getSettings: () => ({ leftPropType: "staff", rightPropType: "staff" }),
 }));
 
-import { getPreviewCacheKey } from "$lib/shared/choreo-card/services/choreo-card-cell-pipeline";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PreviewCellRenderOptions } from "$lib/shared/sequence-viewer/services/preview-cell-renderer";
+import { getPreviewCacheKey } from "#lib/shared/choreo-card/services/choreo-card-cell-pipeline.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PreviewCellRenderOptions } from "#lib/shared/sequence-viewer/services/preview-cell-renderer.js";
 
 function makeSequence(): SequenceData {
   return {

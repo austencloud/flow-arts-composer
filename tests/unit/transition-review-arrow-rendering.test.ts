@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { arrowLifecycleManager } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-lifecycle-manager";
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
+import { arrowLifecycleManager } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-lifecycle-manager.js";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
 import { TRANSITION_REVIEW_SEQUENCE } from "../../src/routes/test/sequence-viewer-transitions/transition-review-fixture";
 
 const projectRoot = path.resolve(

@@ -7,8 +7,8 @@ import {
   type PostSourceGeometry,
   type PostTextItem,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import type { PostTakeRef } from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostTakeRef } from "#lib/shared/media-composition/domain/post-plan.js";
 
 type Native = Record<string, unknown>;
 const US = 1_000_000;

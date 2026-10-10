@@ -5,12 +5,12 @@ import {
   sequencePositionToMediaTime,
   type SequenceTimeAnchor,
   type SequenceTimeMap,
-} from "$lib/shared/media-composition/domain/sequence-time-map";
+} from "#lib/shared/media-composition/domain/sequence-time-map.js";
 import {
   createBeatClock,
   fitTapsToGrid,
   type TapFitResult,
-} from "$lib/shared/media-composition/domain/tap-fit";
+} from "#lib/shared/media-composition/domain/tap-fit.js";
 
 /**
  * How one take lines up with the sequence: Austen's typed tempo and rough

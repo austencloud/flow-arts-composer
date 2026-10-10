@@ -20,7 +20,7 @@ import {
   GLARE_WEIGHT_MIN,
   PROP_REFERENCE_FLUX,
   type LedShutter,
-} from "$lib/shared/animation-engine/domain/led-photometry";
+} from "#lib/shared/animation-engine/domain/led-photometry.js";
 import type { FBO, FBOPool } from "./fbo-pool";
 import type { ShaderLibrary } from "./shader-library";
 

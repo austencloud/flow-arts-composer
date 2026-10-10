@@ -10,11 +10,11 @@
 -->
 <script module lang="ts">
   import type { GridJoin } from "@tka/tka-types";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { RenderCanvas } from "$lib/shared/render/services/types";
-  import { createRenderCanvas } from "$lib/shared/render/services/create-render-canvas";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { RenderCanvas } from "#lib/shared/render/services/types.js";
+  import { createRenderCanvas } from "#lib/shared/render/services/create-render-canvas.js";
 
   /** Enough for every tile of both grid modes in both themes. */
   const CACHE_LIMIT = 48;
@@ -96,8 +96,8 @@
   ): Promise<string | null> {
     const [{ canvas2DDirectRenderer }, { pictographPreparer }] =
       await Promise.all([
-        import("$lib/shared/render/services/canvas-2d-direct-renderer"),
-        import("$lib/shared/pictograph/shared/services/pictograph-preparer"),
+        import("#lib/shared/render/services/canvas-2d-direct-renderer.js"),
+        import("#lib/shared/pictograph/shared/services/pictograph-preparer.js"),
       ]);
     await canvas2DDirectRenderer.initialize();
     const source: PictographData = {

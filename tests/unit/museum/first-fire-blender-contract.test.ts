@@ -8,8 +8,8 @@ import {
   buildFirstFireBlenderContract,
   firstFireBlenderPointToPlan,
   firstFirePlanPointToBlender,
-} from "$lib/features/museum/data/first-fire-blender-contract";
-import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
+} from "#lib/features/museum/data/first-fire-blender-contract.js";
+import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
 
 const contract = buildFirstFireBlenderContract();
 const compiledContract = buildCompiledFirstFireBlenderContract();

@@ -6,14 +6,14 @@ import {
   type PostKeyframe,
   type PostMotionKey,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { boxAt } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { boxAt } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import { pipHandoffOf } from "#lib/shared/media-composition/domain/pip-handoff.js";
 import {
   MOVE_EASING,
   MOVE_END_SHARE,
   MOVE_START_SHARE,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "#lib/shared/media-composition/domain/tunnel-hook.js";
 
 /**
  * The opening tunnel's move from full frame into the animation's box, and the

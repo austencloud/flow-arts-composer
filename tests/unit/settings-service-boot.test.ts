@@ -28,10 +28,10 @@ describe("root layout settings boot", () => {
   it("loads the settings service lazily so public pages never download it", () => {
     const start = functionBody(layout, "function startSettingsService()");
     expect(start).toMatch(
-      /import\("\$lib\/shared\/application\/state\/services\.svelte"\)[\s\S]*initializeAppServices\(\)/
+      /import\("#lib\/shared\/application\/state\/services\.svelte\.js"\)[\s\S]*initializeAppServices\(\)/
     );
     expect(layout).not.toMatch(
-      /^\s*import[^;]*from\s+"\$lib\/shared\/application\/state\/services\.svelte"/m
+      /^\s*import[^;]*from\s+"#lib\/shared\/application\/state\/services\.svelte\.js"/m
     );
   });
 
@@ -64,13 +64,13 @@ describe("app boot state", () => {
     // may still be loading. MainApplication skips restoring the workspace, the
     // saved settings and the theme when the app already reads as booted.
     const services = await import(
-      "$lib/shared/application/state/services.svelte"
+      "#lib/shared/application/state/services.svelte.js"
     );
     await services.initializeAppServices();
     expect(services.areServicesInitialized()).toBe(true);
 
     const boot = await import(
-      "$lib/shared/application/state/initialization-state.svelte"
+      "#lib/shared/application/state/initialization-state.svelte.js"
     );
     expect(boot.getIsInitialized()).toBe(false);
     expect(boot.getInitializationProgress()).toBe(0);

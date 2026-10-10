@@ -29,8 +29,8 @@ import {
   PROP_RED,
   hexToRgb255,
   type LedLook,
-} from "$lib/shared/animation-engine/domain/types/led-types";
-import type { PatternParams } from "$lib/shared/poi/domain/strip-pattern";
+} from "#lib/shared/animation-engine/domain/types/led-types.js";
+import type { PatternParams } from "#lib/shared/poi/domain/strip-pattern.js";
 
 function look(overrides: Partial<LedLook> = {}): LedLook {
   return { ...DEFAULT_LED_LOOK, ...overrides };

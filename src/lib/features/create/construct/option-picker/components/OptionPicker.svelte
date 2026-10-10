@@ -5,54 +5,54 @@ Single responsibility: Coordinate option loading, preparation, and selection.
 Delegates all rendering to child components.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getOptionFilter } from "$lib/features/create/construct/option-picker/get-option-filter";
-  import { getOptionLoader } from "$lib/features/create/construct/option-picker/get-option-loader";
-  import { organizePictographs } from "$lib/features/create/construct/option-picker/services/option-organizer";
-  import { getOptionSorter } from "$lib/features/create/construct/option-picker/get-option-sorter";
-  import { getDarkModeProvider } from "$lib/shared/animation-engine/get-dark-mode-provider";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getOptionFilter } from "#lib/features/create/construct/option-picker/get-option-filter.js";
+  import { getOptionLoader } from "#lib/features/create/construct/option-picker/get-option-loader.js";
+  import { organizePictographs } from "#lib/features/create/construct/option-picker/services/option-organizer.js";
+  import { getOptionSorter } from "#lib/features/create/construct/option-picker/get-option-sorter.js";
+  import { getDarkModeProvider } from "#lib/shared/animation-engine/get-dark-mode-provider.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { GridJoin } from "@tka/tka-types";
   import { gridJoinCellResolver } from "@tka/render-core";
   import { onMount } from "svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-  import { applyPendingTurnsToOption } from "$lib/shared/create/services/apply-turns-to-motion";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+  import { applyPendingTurnsToOption } from "#lib/shared/create/services/apply-turns-to-motion.js";
   import {
     clampTurnToLevel,
     levelForTurns,
     type TurnLevel,
     type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
-  import { filterDirectionContinuousOptions } from "$lib/features/create/construct/option-picker/services/reversal-checker";
-  import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { createPersistenceHelper } from "$lib/shared/state/utils/persistent-state";
+  } from "#lib/shared/create/services/level-turn-values.js";
+  import { filterDirectionContinuousOptions } from "#lib/features/create/construct/option-picker/services/reversal-checker.js";
+  import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
   import { calculateDeviceAwareSize } from "../services/option-grid-fit-calculator";
 
   import { createOptionPickerState } from "../state/option-picker-state.svelte";
-  import { applyPoiLegalComposerFilter } from "$lib/features/levels/poi-lab/services/apply-poi-legal-filter";
-  import type { OptionLoader } from "$lib/features/create/construct/option-picker/services/option-loader";
-  import type { OptionSorter } from "$lib/features/create/construct/option-picker/services/option-sorter";
+  import { applyPoiLegalComposerFilter } from "#lib/features/levels/poi-lab/services/apply-poi-legal-filter.js";
+  import type { OptionLoader } from "#lib/features/create/construct/option-picker/services/option-loader.js";
+  import type { OptionSorter } from "#lib/features/create/construct/option-picker/services/option-sorter.js";
   import type {
     OrganizedSection,
     SortMethod,
-  } from "$lib/features/create/construct/option-picker/domain/option-picker-types";
+  } from "#lib/features/create/construct/option-picker/domain/option-picker-types.js";
   import type {
     DeviceAwareSizingParams,
     DeviceAwareSizingResult,
   } from "../services/types";
-  import type { PreparedPictographData } from "$lib/shared/pictograph/option/prepared-pictograph-data";
+  import type { PreparedPictographData } from "#lib/shared/pictograph/option/prepared-pictograph-data.js";
   import type { PictographPreparer } from "../services/pictograph-preparer";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { DarkModeProvider } from "$lib/shared/animation-engine/services/dark-mode-provider";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { DarkModeProvider } from "#lib/shared/animation-engine/services/dark-mode-provider.js";
   import OptionPickerContent from "./OptionPickerContent.svelte";
-  import { tryGetCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
+  import { tryGetCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
   import { setOptionAuditionContext } from "../context/option-audition-context";
   import { buildAppendedOptionSequence } from "../services/build-appended-option-sequence";
-  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
+  import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
 
   // Props
   interface Props {

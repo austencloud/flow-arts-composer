@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Popover } from "bits-ui";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   /** The −, fit and + cluster that sits above the track headers. */
   interface Props {

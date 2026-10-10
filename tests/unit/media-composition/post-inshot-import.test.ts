@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { importRecoveredInShotDraft } from "$lib/shared/media-composition/domain/post-inshot-import";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+import { importRecoveredInShotDraft } from "#lib/shared/media-composition/domain/post-inshot-import.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
 import {
   channelValueAt,
   sampleEasing,
   setKeyframe,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   duplicateItem,
   splitItemAt,
   trimItem,
   updateItemAt,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 
 const matrix = (sx = 0.5625, sy = 1, tx = 0, ty = 0) => [
   sx,

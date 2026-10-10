@@ -9,9 +9,9 @@
    * Decomposed from 627 lines to ~200 lines + 3 interaction utilities + 1 overlay component.
    */
 
-  import type { TimelineClip as ClipType } from "$lib/shared/animation-engine/domain/timeline-types";
-  import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
-  import { timeToPixels } from "$lib/shared/animation-engine/domain/timeline-types";
+  import type { TimelineClip as ClipType } from "#lib/shared/animation-engine/domain/timeline-types.js";
+  import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
+  import { timeToPixels } from "#lib/shared/animation-engine/domain/timeline-types.js";
   import { createClipMove } from "./clip-interactions/create-clip-move";
   import { createClipTrim } from "./clip-interactions/create-clip-trim";
   import { createClipResize } from "./clip-interactions/create-clip-resize";

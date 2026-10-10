@@ -13,7 +13,7 @@
   so the cqi-based icon size matches the live card.
 -->
 <script lang="ts">
-  import CheckerboardCircleIcon from "$lib/shared/icons/CheckerboardCircleIcon.svelte";
+  import CheckerboardCircleIcon from "#lib/shared/icons/CheckerboardCircleIcon.svelte";
 
   interface Props {
     /** Which kind of icon node to render. */

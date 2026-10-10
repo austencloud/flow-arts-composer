@@ -5,8 +5,8 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getUndismissedModalAnnouncements } from "$lib/features/admin/services/announcement-manager";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getUndismissedModalAnnouncements } from "#lib/features/admin/services/announcement-manager.js";
   import type { Announcement } from "../domain/models/announcement-models";
   import AnnouncementModal from "./AnnouncementModal.svelte";
 

@@ -4,12 +4,12 @@ import {
   closeSheet,
   getCurrentSheet,
   openSheet,
-} from "$lib/shared/navigation/services/sheet-router";
+} from "#lib/shared/navigation/services/sheet-router.js";
 import { page } from "$app/state";
 import { pushState, replaceState } from "$app/navigation";
-import { parseInboxRouteIntent } from "$lib/shared/inbox/domain/inbox-route-intent";
+import { parseInboxRouteIntent } from "#lib/shared/inbox/domain/inbox-route-intent.js";
 
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 vi.mock("$app/navigation", () => ({
   pushState: vi.fn(),
   replaceState: vi.fn(),

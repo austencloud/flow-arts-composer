@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   POST_SHAPE_RATIO_MIN,
   type PostFraming,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   cameraDisplayScale,
   cameraWindowCenter,
@@ -40,7 +40,7 @@ import {
   type CropPoint,
   type CropPose,
   type CropSize,
-} from "$lib/shared/share/components/post-studio/editor/post-crop-geometry";
+} from "#lib/shared/share/components/post-studio/editor/post-crop-geometry.js";
 
 // The DCKΨ- take (720x1280) in the top-half slot of a 1080x1920 post. Fill
 // draws it 1080x1920, twice the slot's height; Show all draws it 540x960.

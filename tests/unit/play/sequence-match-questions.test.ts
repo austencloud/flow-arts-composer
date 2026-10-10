@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Catalog } from "$lib/features/choreo-card/domain/models/Catalog";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { calculate } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { shapeKey } from "$lib/shared/mandala/services/mandala-fingerprint";
-import type { MotionLike, StepLike } from "$lib/shared/mandala/services/types";
-import { QuizType } from "$lib/features/learn/quiz/domain/enums/quiz-enums";
+import type { Catalog } from "#lib/features/choreo-card/domain/models/Catalog.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { shapeKey } from "#lib/shared/mandala/services/mandala-fingerprint.js";
+import type {
+  MotionLike,
+  StepLike,
+} from "#lib/shared/mandala/services/types.js";
+import { QuizType } from "#lib/features/learn/quiz/domain/enums/quiz-enums.js";
 
 const catalogLoader = vi.hoisted(() => ({
   getCachedCatalogs: vi.fn(),
@@ -13,14 +16,14 @@ const catalogLoader = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "$lib/features/choreo-card/services/catalog-loader",
+  "#lib/features/choreo-card/services/catalog-loader.js",
   () => catalogLoader
 );
 
 import {
   generateSequenceMatchQuestion,
   resetState,
-} from "$lib/features/learn/quiz/services/sequence-question-generator";
+} from "#lib/features/learn/quiz/services/sequence-question-generator.js";
 
 const BASE_MOTION: MotionLike = {
   motionType: "pro",

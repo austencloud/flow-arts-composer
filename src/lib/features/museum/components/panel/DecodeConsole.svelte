@@ -8,7 +8,7 @@
    * K's note says the rest.
    */
   import "../museum-theme.css";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { MUSEUM_EXHIBIT_SEQUENCES } from "../../data/museum-exhibit-sequences";
   import { openInComposer } from "../../services/museum-composer-handoff";
   import StickyNote from "./StickyNote.svelte";

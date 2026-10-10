@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import * as screenshotOrchestrator from './services/screenshot-orchestrator';
 

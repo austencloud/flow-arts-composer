@@ -2,8 +2,8 @@
   import { onDestroy, onMount } from "svelte";
   import { T, useTask } from "@threlte/core";
   import { Vector3 } from "three";
-  import { VolumetricFireMesh } from "$lib/shared/3d/effects/fire/volumetric-fire-mesh";
-  import { QualityTier } from "$lib/shared/3d/effects/types";
+  import { VolumetricFireMesh } from "#lib/shared/3d/effects/fire/volumetric-fire-mesh.js";
+  import { QualityTier } from "#lib/shared/3d/effects/types.js";
 
   interface Props {
     shrineId: string;

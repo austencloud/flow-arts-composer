@@ -5,17 +5,17 @@
  * the device pixel ratio, and the engine-aligned scale for the hero floor.
  */
 import { describe, expect, it, vi } from "vitest";
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
-import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
-import type { MandalaGuideImageDependencies } from "$lib/shared/mandala/services/mandala-guide-image";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
+import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
+import type { MandalaGuideImageDependencies } from "#lib/shared/mandala/services/mandala-guide-image.js";
 import type {
   MandalaGuidePaintOptions,
   MandalaGuidePaintTarget,
-} from "$lib/shared/mandala/services/mandala-guide-painter";
-import { mandalaGuideScale } from "$lib/shared/mandala/services/mandala-guide-image";
-import { computeEngineAlignedMandalaScale } from "$lib/shared/mandala/services/mandala-path-preparer";
-import type { PreparedMandalaPath } from "$lib/shared/mandala/services/types";
-import { HERO_TRAIL_PRESET } from "$lib/shared/landing/data/hero-trail-preset";
+} from "#lib/shared/mandala/services/mandala-guide-painter.js";
+import { mandalaGuideScale } from "#lib/shared/mandala/services/mandala-guide-image.js";
+import { computeEngineAlignedMandalaScale } from "#lib/shared/mandala/services/mandala-path-preparer.js";
+import type { PreparedMandalaPath } from "#lib/shared/mandala/services/types.js";
+import { HERO_TRAIL_PRESET } from "#lib/shared/landing/data/hero-trail-preset.js";
 import {
   engineExtentBoxRatio,
   renderCell,
@@ -23,16 +23,16 @@ import {
   renderExtentFit,
   renderHeader,
   SHAPE_MATRIX_GUIDE_COLORS,
-} from "$lib/shared/shape-matrix/services/shape-matrix-render";
+} from "#lib/shared/shape-matrix/services/shape-matrix-render.js";
 import {
   cellArtworkSrc,
   pathsArtworkSrc,
   shapeMatrixArtworkPainterForColors,
   type ShapeMatrixArtworkPainter,
-} from "$lib/shared/shape-matrix/services/shape-matrix-artwork";
-import type { ShapeMatrixData } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
+import type { ShapeMatrixData } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const left: MandalaPaths = {
   left: [{ d: "M 0 0 C 10 0 10 10 20 10", tipIndex: 0 }],

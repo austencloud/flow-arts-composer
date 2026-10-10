@@ -3,7 +3,7 @@ import {
   PostProjectSchema,
   POST_BOX,
   type PostAnimationItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   addTunnelHook,
   findTunnelHook,
@@ -11,10 +11,10 @@ import {
   removeTunnelHook,
   setTunnelHookBackdropFrame,
   setTunnelHookSpeed,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { normalizeProject as finishProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { normalizeProject as finishProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { takeRole } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
 import {
   MOVE_EASING,
   tunnelHookArrival,
@@ -23,7 +23,7 @@ import {
   tunnelHookChromeOpacity,
   tunnelHookCopyOpacity,
   tunnelHookPanelOpacity,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "#lib/shared/media-composition/domain/tunnel-hook.js";
 import {
   createTakeTiming,
   resolveTakeTiming,
@@ -33,14 +33,14 @@ import {
   takeTimingMoveBeats,
   takeTimingMovesKey,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import { sampleEasing } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   itemEnd,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   NOW,
   overlay,

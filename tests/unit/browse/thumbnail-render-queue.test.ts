@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ThumbnailRenderQueue,
   ThumbnailRenderTimeoutError,
-} from "$lib/shared/browse/services/thumbnail-render-queue";
+} from "#lib/shared/browse/services/thumbnail-render-queue.js";
 
 describe("ThumbnailRenderQueue", () => {
   afterEach(() => {

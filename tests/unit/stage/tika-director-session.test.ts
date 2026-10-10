@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { createTikaDirectorSession } from "$lib/features/stage/state/tika-director-session";
-import type { TikaDirectorResponse } from "$lib/features/stage/domain/tika-director";
+import { createTikaDirectorSession } from "#lib/features/stage/state/tika-director-session.js";
+import type { TikaDirectorResponse } from "#lib/features/stage/domain/tika-director.js";
 
 const response: TikaDirectorResponse = {
   kind: "apply",

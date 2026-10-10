@@ -4,7 +4,7 @@ import {
   DEFAULT_EMBER_ATMOSPHERE_LOOK,
   EMBER_ATMOSPHERE_LOOK_IDS,
   createDefaultEmberConfig,
-} from "$lib/shared/3d/environments/domain/models/scene-configs";
+} from "#lib/shared/3d/environments/domain/models/scene-configs.js";
 
 describe("Ember cinematic atmosphere looks", () => {
   it("ships the selected Blackglass Inferno look as the production default", () => {

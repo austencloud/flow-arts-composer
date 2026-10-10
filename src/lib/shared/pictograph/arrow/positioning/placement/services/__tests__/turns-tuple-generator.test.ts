@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { turnsTupleGenerator } from "../turns-tuple-generator";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createPictographData } from "$lib/shared/pictograph/shared/domain/factories/create-pictograph-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createPictographData } from "#lib/shared/pictograph/shared/domain/factories/create-pictograph-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   HandSide,
   MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 // Coverage for the halved-motion "/" marker
 // (docs/superpowers/specs/2026-07-16-half-notation-canon-design.md): a

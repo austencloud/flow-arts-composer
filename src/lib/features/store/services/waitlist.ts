@@ -13,7 +13,7 @@ export async function joinWaitlist(
   const { collection, addDoc, serverTimestamp } = await import(
     "firebase/firestore"
   );
-  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
   const firestore = await getFirestoreInstance();
   await addDoc(collection(firestore, "shop_waitlist"), {
     email: email.trim().toLowerCase(),

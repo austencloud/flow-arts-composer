@@ -1,9 +1,9 @@
 import type {
   ResolvedTimingSection,
   TimingSection,
-} from "$lib/shared/media-composition/domain/take-timing";
-import { judgeTimingFit } from "$lib/shared/media-composition/domain/timing-verdict";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import { judgeTimingFit } from "#lib/shared/media-composition/domain/timing-verdict.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 /**
  * The Timing step's one-line read of a section's fit, in plain words, and

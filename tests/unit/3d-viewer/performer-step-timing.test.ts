@@ -4,7 +4,7 @@ import {
   resolvePerformerPlaybackStep,
   resolvePerformerStepSource,
   synchronizePerformerPlayback,
-} from "$lib/shared/3d/domain/performer-step-timing";
+} from "#lib/shared/3d/domain/performer-step-timing.js";
 
 describe("performer step timing", () => {
   it("wraps a delayed performer through the sequence seam", () => {

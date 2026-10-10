@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { ThumbnailRenderQueue } from './services/thumbnail-render-queue';
-import { CompositionDispatcher } from '$lib/shared/render/services/composition-dispatcher';
+import { CompositionDispatcher } from '#lib/shared/render/services/composition-dispatcher.js';
 
 let instance: ThumbnailRenderQueue | null = null;
 

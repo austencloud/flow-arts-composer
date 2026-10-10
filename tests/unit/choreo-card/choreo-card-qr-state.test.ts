@@ -1,8 +1,8 @@
 import { flushSync } from "svelte";
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { QRCodeResult } from "$lib/shared/qr/services/types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { QRCodeResult } from "#lib/shared/qr/services/types.js";
 import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
 import { createChoreoCardQrStateHarness } from "./choreo-card-qr-state-harness.svelte";
 import { TRANSITION_REVIEW_SEQUENCE } from "../../../src/routes/test/sequence-viewer-transitions/transition-review-fixture";

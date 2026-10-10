@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   canInlineTunnelInspector,
   resolveTunnelWorkspaceMode,
-} from "$lib/features/create/tunnel/domain/tunnel-workspace-layout";
+} from "#lib/features/create/tunnel/domain/tunnel-workspace-layout.js";
 
 describe("Tunnel workspace layout", () => {
   it.each([

@@ -9,19 +9,19 @@
 	import {
 		loadShapeMatrix,
 		type ShapeMatrixData,
-	} from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-	import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
+	} from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+	import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
 	import {
 		renderPoiCell,
 		renderPoiHeader,
-	} from "$lib/shared/shape-matrix/services/shape-matrix-poi-render";
-	import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
+	} from "#lib/shared/shape-matrix/services/shape-matrix-poi-render.js";
+	import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
 	import {
 		matrixFiltersForSize,
 		type MatrixSize,
-	} from "$lib/shared/shape-matrix/domain/matrix-size-preset";
-	import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-	import { createPoiLegalVerdicts } from "$lib/features/levels/poi-lab/services/poi-legal-verdicts.svelte";
+	} from "#lib/shared/shape-matrix/domain/matrix-size-preset.js";
+	import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+	import { createPoiLegalVerdicts } from "#lib/features/levels/poi-lab/services/poi-legal-verdicts.svelte.js";
 
 	let data = $state<ShapeMatrixData | null>(null);
 	let err = $state("");

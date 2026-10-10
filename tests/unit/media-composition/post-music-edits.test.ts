@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   POST_MUSIC_MAX_SECONDS,
   type PostMusic,
-} from "$lib/shared/media-composition/domain/post-music";
+} from "#lib/shared/media-composition/domain/post-music.js";
 import {
   POST_MUSIC_ID,
   removeMusic,
@@ -10,8 +10,8 @@ import {
   syncedSourceIn,
   trimMusic,
   updateMusic,
-} from "$lib/shared/media-composition/domain/post-music-edits";
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-music-edits.js";
+import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
 import { NOW, project, video } from "./post-project-fixtures";
 
 function music(fields: Partial<PostMusic> = {}): PostMusic {

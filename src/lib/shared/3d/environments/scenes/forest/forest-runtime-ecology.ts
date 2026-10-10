@@ -11,7 +11,7 @@ import {
   type Material,
   type Mesh,
 } from "three";
-import { childSeed, makeRng } from "$lib/shared/foundation/utils/seeded-rng";
+import { childSeed, makeRng } from "#lib/shared/foundation/utils/seeded-rng.js";
 
 export interface ForestRuntimeTreePlacement {
   x: number;

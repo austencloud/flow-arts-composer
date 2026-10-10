@@ -2,12 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createFavoriteState,
   type FavoriteStateDeps,
-} from "$lib/features/create/generate/state/favorite-state.svelte";
+} from "#lib/features/create/generate/state/favorite-state.svelte.js";
 import type {
   CommunitySetup,
   SavedGeneratorSetup,
-} from "$lib/features/create/generate/domain/models/favorite-config";
-import { captureSetupSnapshot } from "$lib/features/create/generate/domain/setup-snapshot";
+} from "#lib/features/create/generate/domain/models/favorite-config.js";
+import { captureSetupSnapshot } from "#lib/features/create/generate/domain/setup-snapshot.js";
 import { createLiveConfigHarness } from "./favorite-state-live-harness.svelte";
 
 const NOW = new Date();

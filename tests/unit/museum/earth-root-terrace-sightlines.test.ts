@@ -21,7 +21,7 @@
  * stand at is railed, and the rail is the tallest thing on it.
  */
 import { describe, expect, it } from "vitest";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 import {
   BED_Y,
   EYE_ABOVE_FLOOR,
@@ -32,8 +32,8 @@ import {
   buildEarthRootTerraceLayout,
   heightOnFloor,
   type EarthRootTerraceLayout,
-} from "$lib/features/museum/data/earth-root-terrace-terrain";
-import { inRectClosed, type Point2 } from "$lib/features/museum/data/drowned-gallery-terrain";
+} from "#lib/features/museum/data/earth-root-terrace-terrain.js";
+import { inRectClosed, type Point2 } from "#lib/features/museum/data/drowned-gallery-terrain.js";
 
 /** The criterion, in the units the room is measured in. */
 const MAX_LINE_OF_SIGHT_M = 6.0;

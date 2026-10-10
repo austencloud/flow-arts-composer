@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import PanelSearch from "$lib/shared/components/panel/PanelSearch.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import PanelSearch from "#lib/shared/components/panel/PanelSearch.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ShortcutBindingEditor from "./ShortcutBindingEditor.svelte";
   import ShortcutContextSection from "./settings/ShortcutContextSection.svelte";
   import { keyboardShortcutState } from "../state/keyboard-shortcut-state.svelte";
@@ -19,7 +19,7 @@
     type ShortcutCenterView,
   } from "../domain/shortcut-center-catalog";
   import { localizeShortcut, localizeShortcutLabel } from "../domain/shortcut-presentation";
-  import { getLocale } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale } from "#lib/shared/i18n/i18n.svelte.js";
 
   let registry: ShortcutRegistry | null = null;
   let customizer = $state<ShortcutCustomizer | null>(null);

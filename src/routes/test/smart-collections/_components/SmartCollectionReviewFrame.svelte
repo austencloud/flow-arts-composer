@@ -1,11 +1,11 @@
 <script lang="ts">
-  import CollectionAddTile from "$lib/features/browse/collections/components/CollectionAddTile.svelte";
-  import CollectionCardSurface from "$lib/features/browse/collections/components/CollectionCardSurface.svelte";
-  import SmartCollectionBuilderSheet from "$lib/features/browse/collections/components/SmartCollectionBuilderSheet.svelte";
-  import SmartCollectionDetailSurface from "$lib/features/browse/collections/components/SmartCollectionDetailSurface.svelte";
-  import SmartCollectionRuleSummary from "$lib/features/library/components/SmartCollectionRuleSummary.svelte";
-  import SmartCollectionSaveForm from "$lib/features/library/components/SmartCollectionSaveForm.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import CollectionAddTile from "#lib/features/browse/collections/components/CollectionAddTile.svelte";
+  import CollectionCardSurface from "#lib/features/browse/collections/components/CollectionCardSurface.svelte";
+  import SmartCollectionBuilderSheet from "#lib/features/browse/collections/components/SmartCollectionBuilderSheet.svelte";
+  import SmartCollectionDetailSurface from "#lib/features/browse/collections/components/SmartCollectionDetailSurface.svelte";
+  import SmartCollectionRuleSummary from "#lib/features/library/components/SmartCollectionRuleSummary.svelte";
+  import SmartCollectionSaveForm from "#lib/features/library/components/SmartCollectionSaveForm.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import {
     BUILT_IN_CARD,
     COMMUNITY_RULE,

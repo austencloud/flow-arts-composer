@@ -4,8 +4,8 @@
  * finished, or reduced motion, settles at once.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { SceneRun } from "$lib/features/create/shared/components/method-previews/method-preview-run";
-import type { SceneTurnHooks } from "$lib/features/create/shared/components/method-previews/method-preview-scene-turns.svelte";
+import type { SceneRun } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
+import type { SceneTurnHooks } from "#lib/features/create/shared/components/method-previews/method-preview-scene-turns.svelte.js";
 import { sceneTurnsHarness } from "./method-preview-scene-turns-harness.svelte";
 
 interface FakeAnimation {

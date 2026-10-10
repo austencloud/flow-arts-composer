@@ -6,13 +6,13 @@
  */
 
 import type { DocumentSnapshot } from "firebase/firestore";
-import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-import type { CreatorSortCriteria } from "$lib/shared/community/domain/models/enhanced-user-profile";
+import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+import type { CreatorSortCriteria } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
 import {
   getUsersPaginated,
   getFeaturedCreators,
-} from "$lib/shared/community/services/user-repository";
-import { isEffectiveAdmin } from "$lib/shared/auth/state/auth-state.svelte";
+} from "#lib/shared/community/services/user-repository.js";
+import { isEffectiveAdmin } from "#lib/shared/auth/state/auth-state.svelte.js";
 import { matchesCreatorQuery } from "../domain/creator-search";
 import {
   bandOf,

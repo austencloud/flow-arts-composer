@@ -5,7 +5,7 @@
  * and CollaborativeVideoManager (collaborative metadata).
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   createCollaborativeVideo,
   createSequencePerformanceAssociation,
@@ -15,7 +15,7 @@ import {
 } from "../domain/collaborative-video";
 import type { VideoUploadResult } from "../../share/services/types";
 import { DEFAULT_VIDEO_VISIBILITY } from "../domain/video-visibility";
-import type { ArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
+import type { ArtifactRevisionRef } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
 
 export interface CreateVideoFromUploadOptions {
   /** The upload result from R2VideoUploader */

@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   ArrowPlacer,
   setDefaultOverrideResolver,
-} from "$lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 // Minimal SimpleJsonCache stand-in: returns a fixed canonical/pro map.
 const requestedPaths: string[] = [];
@@ -16,7 +16,7 @@ const fakeCache = {
     }
     return {};
   },
-} as unknown as import("$lib/shared/pictograph/shared/services/simple-json-cache").SimpleJsonCache;
+} as unknown as import("#lib/shared/pictograph/shared/services/simple-json-cache.js").SimpleJsonCache;
 
 beforeEach(() => requestedPaths.splice(0));
 afterEach(() => setDefaultOverrideResolver(null));

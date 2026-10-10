@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ShaderMaterial } from "three";
-import { createVoidEnvironmentWorld } from "$lib/shared/3d/environments/worlds/void/void-environment-world";
+import { createVoidEnvironmentWorld } from "#lib/shared/3d/environments/worlds/void/void-environment-world.js";
 
 describe("createVoidEnvironmentWorld", () => {
   it("constructs the complete production platform and light rig", () => {

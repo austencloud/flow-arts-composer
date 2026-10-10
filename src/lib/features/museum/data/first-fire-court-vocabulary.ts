@@ -6,7 +6,7 @@
  *
  * Design: docs/superpowers/specs/first-fire-cinder-court/2026-08-09-first-fire-gate3-visual-target-design.md
  */
-import type { FirstFireShrineId } from "$lib/features/museum/data/first-fire-procession-plan";
+import type { FirstFireShrineId } from "#lib/features/museum/data/first-fire-procession-plan.js";
 
 export interface FirstFireCourtVoice {
   shrineId: FirstFireShrineId;

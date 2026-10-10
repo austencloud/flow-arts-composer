@@ -7,7 +7,7 @@
 		formatReportDate
 	} from '../domain/models/report-models';
 	import ReportResolutionPanel from './ReportResolutionPanel.svelte';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 
 	const report = $derived(adminReportsState.selectedReport);
 	const categoryConfig = $derived(report ? getCategoryConfig(report.category) : null);

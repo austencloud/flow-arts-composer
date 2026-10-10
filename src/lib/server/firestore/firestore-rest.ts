@@ -5,7 +5,7 @@ import {
 import {
   getServiceAccountAuthorizer,
   type ServiceAccountAuthorizer,
-} from "$lib/server/google/service-account-authorizer";
+} from "#lib/server/google/service-account-authorizer.js";
 
 export {
   fromFirestoreFields,

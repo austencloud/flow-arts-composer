@@ -3,8 +3,8 @@
  * front door opens and closes the board around a mounted preview.
  */
 import { flushSync, mount, unmount } from "svelte";
-import CreateMethodPreview from "$lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
-import type { MethodPreviewSceneModule } from "$lib/features/create/shared/components/method-previews/method-preview-scenes";
+import CreateMethodPreview from "#lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
+import type { MethodPreviewSceneModule } from "#lib/features/create/shared/components/method-previews/method-preview-scenes.js";
 
 export function mountMethodPreview(
   target: HTMLElement,

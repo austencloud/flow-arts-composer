@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
+import { BackgroundVideoEncoder } from "#lib/shared/animation-engine/services/background-video-encoder.js";
 
 // Stub Worker that never posts "ready" — simulates a stalled configure().
 class SilentWorker {

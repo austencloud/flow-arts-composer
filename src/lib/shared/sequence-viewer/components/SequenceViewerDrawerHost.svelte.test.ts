@@ -1,6 +1,6 @@
 import { render } from "vitest-browser-svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const mocks = vi.hoisted(() => ({
   afterNavigateCallback: null as null | ((navigation: unknown) => void),
@@ -16,33 +16,42 @@ vi.mock("$app/navigation", () => ({
     mocks.afterNavigateCallback = callback;
   },
   goto: vi.fn(),
+  // url-state, loaded below through importOriginal, imports these.
+  pushState: vi.fn(),
+  replaceState: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { loading: false },
 }));
 
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: () => ({
     resolveShortCodeWithRecord: mocks.resolveShortCodeWithRecord,
   }),
 }));
 
-vi.mock("$lib/shared/application/state/app-state.svelte", () => ({
+vi.mock("#lib/shared/application/state/app-state.svelte.js", () => ({
   updateSettings: mocks.updateSettings,
 }));
 
-vi.mock("$lib/shared/navigation/services/sequence-hydrator", () => ({
+vi.mock("#lib/shared/navigation/services/sequence-hydrator.js", () => ({
   hydrateSequence: mocks.hydrateSequence,
 }));
 
-vi.mock("$lib/shared/create/get-loop-detector", () => ({
+vi.mock("#lib/shared/create/get-loop-detector.js", () => ({
   getLoopDetector: () => ({ isLoop: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/navigation/services/url-state", () => ({
-  removeCurrentUrlParams: mocks.removeCurrentUrlParams,
-}));
+vi.mock(
+  "#lib/shared/navigation/services/url-state.js",
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import("#lib/shared/navigation/services/url-state.js")
+    >()),
+    removeCurrentUrlParams: mocks.removeCurrentUrlParams,
+  })
+);
 
 vi.mock("../state/sequence-viewer-overlay-state.svelte", () => ({
   getSequenceOverlayState: () => ({

@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { createCollisionLabState } from "$lib/features/lab/tabs/collision-lab/state/collision-lab-state.svelte";
-import { enumerateDiamondInOut } from "$lib/features/lab/tabs/collision-lab/services/diamond-pose-enumerator";
+import { createCollisionLabState } from "#lib/features/lab/tabs/collision-lab/state/collision-lab-state.svelte.js";
+import { enumerateDiamondInOut } from "#lib/features/lab/tabs/collision-lab/services/diamond-pose-enumerator.js";
 import {
   StanceSimulator,
   restPoseFromHeight,
-} from "$lib/features/lab/tabs/collision-lab/services/stance-simulator";
-import { StanceOptimizer } from "$lib/features/lab/tabs/collision-lab/services/stance-optimizer";
+} from "#lib/features/lab/tabs/collision-lab/services/stance-simulator.js";
+import { StanceOptimizer } from "#lib/features/lab/tabs/collision-lab/services/stance-optimizer.js";
 import type {
   PoseLabel,
   CollisionSnapshot,
-} from "$lib/features/lab/tabs/collision-lab/domain/types";
+} from "#lib/features/lab/tabs/collision-lab/domain/types.js";
 import { Plane } from "@austencloud/scene-3d";
 
 class InMemoryLabelRepo {

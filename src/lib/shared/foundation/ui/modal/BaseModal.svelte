@@ -29,7 +29,7 @@
   import {
     createIntrinsicHeightMotion,
     reducedMotion,
-  } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/transitions/motion.js";
   import "./modal-tokens.css";
 
   type CloseReason = "backdrop" | "escape" | "programmatic" | "button";

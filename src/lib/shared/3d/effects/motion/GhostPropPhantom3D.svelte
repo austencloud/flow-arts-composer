@@ -7,7 +7,7 @@
   } from "@austencloud/scene-3d";
   import { onDestroy } from "svelte";
   import type { Group } from "three";
-  import type { GhostPoseSample } from "$lib/shared/effects/renderers/ghost-pose-history";
+  import type { GhostPoseSample } from "#lib/shared/effects/renderers/ghost-pose-history.js";
   import type { GhostPropPose3D } from "./ghost-prop-pose-3d";
   import {
     GhostSourceMaterials,

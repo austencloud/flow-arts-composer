@@ -3,18 +3,18 @@
  * Centralized state management for the MediaBrowserPanel
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import type { BrowseThumbnailProvider } from "$lib/shared/browse/services/browse-thumbnail-provider";
-import { applyFilter as applyBrowseFilter } from "$lib/shared/browse/services/browse-filter";
-import { sortSequences as browseSortSequences } from "$lib/shared/browse/services/browse-sorter";
-import type { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
-import type { DifficultyLevel } from "$lib/shared/domain/models/sequence-parameters";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-import { getBrowseThumbnailProvider } from "$lib/shared/browse/get-browse-thumbnail-provider";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import type { BrowseThumbnailProvider } from "#lib/shared/browse/services/browse-thumbnail-provider.js";
+import { applyFilter as applyBrowseFilter } from "#lib/shared/browse/services/browse-filter.js";
+import { sortSequences as browseSortSequences } from "#lib/shared/browse/services/browse-sorter.js";
+import type { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
+import type { DifficultyLevel } from "#lib/shared/domain/models/sequence-parameters.js";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+import { getBrowseThumbnailProvider } from "#lib/shared/browse/get-browse-thumbnail-provider.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 const BATCH_SIZE = 24;
 

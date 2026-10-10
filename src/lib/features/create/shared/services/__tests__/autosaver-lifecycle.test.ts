@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const mocks = vi.hoisted(() => {
   const draftRows: Array<{
@@ -40,16 +40,16 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: mocks.getFirestoreInstance,
   getAuthSync: vi.fn(() => mocks.auth),
 }));
 
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: mocks.trackWrite,
 }));
 
-vi.mock("$lib/shared/persistence/database/tka-database", () => ({
+vi.mock("#lib/shared/persistence/database/tka-database.js", () => ({
   db: {
     userWork: {
       where: mocks.where,

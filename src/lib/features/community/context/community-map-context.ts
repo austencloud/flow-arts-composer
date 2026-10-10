@@ -17,7 +17,7 @@ export interface CommunityMapContext {
   /**
    * Read as a getter rather than a value: the host derives it from an
    * environment variable that is baked at build time, and reading it through
-   * the context keeps the band from importing `$env/static/public` itself and
+   * the context keeps the band from importing `$app/env/public` itself and
    * dragging a second source of truth for "is the map configured" into the
    * feature.
    */

@@ -2,29 +2,29 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createFuseState,
   type FuseStateDeps,
-} from "$lib/features/fuse/state/fuse-state.svelte";
-import { createFuseRule } from "$lib/features/fuse/domain/fuse-rule";
-import { fuseSequences } from "$lib/features/fuse/services/sequence-fuser";
-import { PLAYBACK_MAX_BPM } from "$lib/shared/animation-engine/domain/constants/timing";
-import type { HandPathData } from "$lib/shared/foundation/domain/models/hand-path-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/features/fuse/state/fuse-state.svelte.js";
+import { createFuseRule } from "#lib/features/fuse/domain/fuse-rule.js";
+import { fuseSequences } from "#lib/features/fuse/services/sequence-fuser.js";
+import { PLAYBACK_MAX_BPM } from "#lib/shared/animation-engine/domain/constants/timing.js";
+import type { HandPathData } from "#lib/shared/foundation/domain/models/hand-path-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   DEFAULT_SOLO_LOOP_RECIPE,
   isStructuredSoloLoop,
   type GeneratedSoloLoop,
-} from "$lib/features/fuse/services/solo-loop-generator";
-import { buildFusePathSource } from "$lib/features/fuse/services/fuse-built-path";
-import { createBuilderStep } from "$lib/features/assemble-lab/services/builder-path-editor";
+} from "#lib/features/fuse/services/solo-loop-generator.js";
+import { buildFusePathSource } from "#lib/features/fuse/services/fuse-built-path.js";
+import { createBuilderStep } from "#lib/features/assemble-lab/services/builder-path-editor.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

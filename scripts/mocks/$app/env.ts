@@ -1,5 +1,5 @@
 /**
- * Mock for $app/environment (SvelteKit virtual module)
+ * Mock for $app/env (SvelteKit runtime module)
  * Provides stub implementations for Node.js CLI context
  */
 

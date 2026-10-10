@@ -1,7 +1,7 @@
-import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { SeamState } from "../domain/types";
 
 const GROUPS = new Set<string>(Object.values(GridPlacementGroup));

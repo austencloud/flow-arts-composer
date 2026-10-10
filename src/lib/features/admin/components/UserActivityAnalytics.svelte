@@ -1,8 +1,8 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import AdminActionButton from "$lib/shared/admin/components/AdminActionButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { getPostHogUserAnalytics } from "$lib/features/admin/get-post-hog-user-analytics";
+  import AdminActionButton from "#lib/shared/admin/components/AdminActionButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { getPostHogUserAnalytics } from "#lib/features/admin/get-post-hog-user-analytics.js";
   import { buildUserAnalyticsSignals } from "../domain/user-analytics-insights";
   import type {
     ContentMetrics,

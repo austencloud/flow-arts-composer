@@ -1,16 +1,16 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
+  import type { PreviewVideoController } from "#lib/shared/media-composition/services/post-preview-clock.js";
   import {
     planMusicAudio,
     segmentGainAt,
-  } from "$lib/shared/media-composition/domain/post-audio-plan";
-  import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+  } from "#lib/shared/media-composition/domain/post-audio-plan.js";
+  import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
   import {
     musicPreviewTarget,
     musicSoundsAt,
     shouldSeekMusic,
-  } from "$lib/shared/media-composition/services/music-preview-sync";
+  } from "#lib/shared/media-composition/services/music-preview-sync.js";
 
   /**
    * Plays the post's music under the preview. The canvas drives it the way

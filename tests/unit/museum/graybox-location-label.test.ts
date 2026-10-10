@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { resolveLocationLabel } from "$lib/features/museum/components/graybox/resolve-location-label";
-import { VULCAN_CAVE_WINGS } from "$lib/features/museum/data/wing-declarations/vulcan-cave-wings";
+import { resolveLocationLabel } from "#lib/features/museum/components/graybox/resolve-location-label.js";
+import { VULCAN_CAVE_WINGS } from "#lib/features/museum/data/wing-declarations/vulcan-cave-wings.js";
 
 const labels = [
 	{ label: "Flooded approach", whenZAbove: 22 },

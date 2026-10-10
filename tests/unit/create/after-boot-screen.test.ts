@@ -2,7 +2,7 @@
 
 /** The Create previews' wait for app.html's boot screen to start leaving. */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runAfterBootScreen } from "$lib/features/create/shared/components/method-previews/after-boot-screen";
+import { runAfterBootScreen } from "#lib/features/create/shared/components/method-previews/after-boot-screen.js";
 
 // vitest-setup.ts stubs document.createElement; the screen must be a real node.
 const realCreateElement = Object.getPrototypeOf(document)

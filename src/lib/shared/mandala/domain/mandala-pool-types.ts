@@ -1,4 +1,4 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /** One generated sequence held in the bounded MandalaLoader pool. */
 export interface GeneratedMandalaEntry {

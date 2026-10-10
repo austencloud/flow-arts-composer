@@ -8,24 +8,24 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   HandSide,
   MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
 
 const mocks = vi.hoisted(() => ({
   getTurnNumberImage: vi.fn(),
 }));
 
-vi.mock("$lib/shared/render/services/svg-asset-loader", () => ({
+vi.mock("#lib/shared/render/services/svg-asset-loader.js", () => ({
   getSvgAssetLoader: () => ({
     getTurnNumberImage: mocks.getTurnNumberImage,
   }),
 }));
 
-import { drawTurnsColumn } from "$lib/shared/render/services/canvas-2d-glyph-renderer";
-import { LayerCompositor } from "$lib/shared/render/services/layer-compositor";
+import { drawTurnsColumn } from "#lib/shared/render/services/canvas-2d-glyph-renderer.js";
+import { LayerCompositor } from "#lib/shared/render/services/layer-compositor.js";
 
 /** Letter A at alpha3 with one turn per hand: blue on top, red below. */
 const letterA = {

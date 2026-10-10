@@ -2,9 +2,9 @@
   MediaFilterPanel.svelte - Advanced filter controls (difficulty, length, letter)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { DifficultyLevel } from "$lib/shared/domain/models/sequence-parameters";
-  import { DIFFICULTY_LEVELS } from "$lib/shared/domain/models/sequence-parameters";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { DifficultyLevel } from "#lib/shared/domain/models/sequence-parameters.js";
+  import { DIFFICULTY_LEVELS } from "#lib/shared/domain/models/sequence-parameters.js";
 
   interface Props {
     currentLevel: DifficultyLevel | null;

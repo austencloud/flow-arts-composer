@@ -5,20 +5,20 @@
   Number inputs for direct value entry, sliders for scrubbing, group rotation.
 -->
 <script lang="ts">
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import {
     getCompositionRecipe,
     getRecipeFamilies,
     type CompositionRecipe,
     type PropTransform,
-  } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
-  import { getSettings, updateSetting } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
+  import { getSettings, updateSetting } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     HandSide,
     type HandSide as HandSideValue,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   const families = getRecipeFamilies();
   const MAX_HISTORY = 100;

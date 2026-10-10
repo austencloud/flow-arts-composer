@@ -2,19 +2,22 @@
 
 import { flushSync, mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Section } from "$lib/shared/navigation/domain/types";
-import { CREATE_TABS } from "$lib/shared/navigation/config/tab-definitions";
+import type { Section } from "#lib/shared/navigation/domain/types.js";
+import { CREATE_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
 
-vi.mock("$lib/features/create/shared/services/create-entry-analytics", () => ({
-  logCreateFrontDoorViewed: vi.fn(),
-  logCreateMethodSelected: vi.fn(),
-}));
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock(
+  "#lib/features/create/shared/services/create-entry-analytics.js",
+  () => ({
+    logCreateFrontDoorViewed: vi.fn(),
+    logCreateMethodSelected: vi.fn(),
+  })
+);
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 
 const { default: CreateFrontDoor } =
-  await import("$lib/features/create/shared/components/CreateFrontDoor.svelte");
+  await import("#lib/features/create/shared/components/CreateFrontDoor.svelte");
 
 // vitest-setup.ts swaps document.createElement for canvas stubs that are not
 // DOM nodes. Mounting a component needs jsdom's own, from document's prototype.

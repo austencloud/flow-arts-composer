@@ -3,14 +3,14 @@
  * open for it. A local take keeps only its file's name, size and date, so a
  * picked file is matched on those three.
  */
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   TakeTimingSchema,
   isTakeTimingMapped,
   resolveTakeTiming,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 export interface PickedFileIdentity {
   readonly name: string;

@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { TunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { TunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import {
   beginTunnelSaveAttempt,
   createTunnelSaveDedupeState,
   createTunnelSaveFingerprint,
   finishTunnelSaveAttempt,
   TUNNEL_SAVE_DEDUPE_WINDOW_MS,
-} from "$lib/shared/sequence-viewer/domain/tunnel-save-deduplication";
+} from "#lib/shared/sequence-viewer/domain/tunnel-save-deduplication.js";
 import {
   createDerivedTunnelPerformer,
   createIndependentTunnelPerformer,
   createTunnelComposition,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
 
 const snapshot = {
   version: 1,

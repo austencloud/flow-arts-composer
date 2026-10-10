@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   resolveLoopDisplay,
   clearLoopDisplayCache,
-} from "$lib/features/loop-labeler/services/loop-display-resolver";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 describe("resolveLoopDisplay — wire-form loopSpec", () => {
   it("derives components + per-component periods from a wire spec", () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { TRAIL_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/trail-presets";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { TRAIL_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/trail-presets.js";
 
 // Same seams as offscreen-export-renderer.layers.test.ts: the real factory pulls
 // a muxer that can't initialize under node, so it hands back a stubbed handle.
@@ -8,15 +8,18 @@ const state = vi.hoisted(() => ({
   handle: null as unknown,
   trailLook: null as unknown,
 }));
-vi.mock("$lib/shared/animation-engine/services/render-context-factory", () => ({
-  RenderContextFactory: class {
-    async createOffscreenContext() {
-      return state.handle;
-    }
-  },
-}));
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-settings-state.svelte",
+  "#lib/shared/animation-engine/services/render-context-factory.js",
+  () => ({
+    RenderContextFactory: class {
+      async createOffscreenContext() {
+        return state.handle;
+      }
+    },
+  })
+);
+vi.mock(
+  "#lib/shared/animation-engine/state/animation-settings-state.svelte.js",
   () => ({
     animationSettings: {
       trail: {
@@ -32,7 +35,7 @@ vi.mock(
   })
 );
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: () => ({
       effectsConfigState: { trails: state.trailLook },

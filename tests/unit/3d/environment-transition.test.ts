@@ -6,7 +6,7 @@ import {
   getEnvironmentVeilOpacity,
   requestEnvironment,
   switchEnvironmentBehindHost,
-} from "$lib/shared/3d/environments/domain/environment-transition";
+} from "#lib/shared/3d/environments/domain/environment-transition.js";
 
 const FAST = { coverDurationMs: 100, revealDurationMs: 100 };
 type TestEnvironment = "forest" | "ocean" | "winter" | "ember";

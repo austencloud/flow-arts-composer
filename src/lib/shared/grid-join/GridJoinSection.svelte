@@ -9,14 +9,14 @@
   options are one native radio group: arrow keys move through them.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy } from "svelte";
   import type { GridJoin } from "@tka/tka-types";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { getAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { getAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
   import { followGridJoin } from "./grid-join-follower.svelte";
   import {
     gridJoinSelection,

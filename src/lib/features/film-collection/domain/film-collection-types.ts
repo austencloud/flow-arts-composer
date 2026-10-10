@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CollectionEntry } from "$lib/shared/collections/collection-entry";
+import type { CollectionEntry } from "#lib/shared/collections/collection-entry.js";
 
 export const FILM_COLLECTION_STORAGE_KEY = "tka:film-collection";
 export const FILM_COLLECTION_SCHEMA_VERSION = 1;

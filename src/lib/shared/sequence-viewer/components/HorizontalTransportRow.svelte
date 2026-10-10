@@ -5,7 +5,7 @@
   Contains step buttons (half/full step) and central play/pause button.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
 

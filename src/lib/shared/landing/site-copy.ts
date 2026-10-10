@@ -4,8 +4,8 @@ import {
   isTranslated,
   t,
   type Locale,
-} from "$lib/shared/i18n/i18n.svelte";
-import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
+} from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 
 // The public navigation and FAQ keep English source copy for their route data
 // and structured data. Resolve visible copy when rendered so locale changes

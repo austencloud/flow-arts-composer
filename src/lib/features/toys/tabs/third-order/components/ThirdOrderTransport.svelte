@@ -1,6 +1,6 @@
 <script lang="ts">
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
-  import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
   import { getThirdOrderContext } from "../context/third-order-context";
 
   const state = getThirdOrderContext();

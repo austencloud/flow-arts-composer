@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
   import ExportTakeover from "./ExportTakeover.svelte";
-  import type { ExportPhase } from "$lib/shared/compose/domain/video-export-types";
+  import type { ExportPhase } from "#lib/shared/compose/domain/video-export-types.js";
 
   interface Props {
     initialPhase?: ExportPhase;

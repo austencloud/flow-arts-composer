@@ -13,15 +13,15 @@
   (it holds the analysis state); this view renders the options body only.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import LOOPPicker from "$lib/shared/components/loop-picker/LOOPPicker.svelte";
-  import BridgePictographGrid from "$lib/shared/components/loop-picker/BridgePictographGrid.svelte";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import LOOPPicker from "#lib/shared/components/loop-picker/LOOPPicker.svelte";
+  import BridgePictographGrid from "#lib/shared/components/loop-picker/BridgePictographGrid.svelte";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type {
     ExtensionAnalysis,
     CircularizationOption,
   } from "../../services/sequence-extender";
-  import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
   interface Props {
     analysis: ExtensionAnalysis | null;

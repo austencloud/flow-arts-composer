@@ -7,24 +7,24 @@ Users can browse what others have created without navigating away.
 Uses singleton state for caching - data persists across tab switches.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { openCreatorProfile } from "$lib/features/creators/state/creators-routing.svelte";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { openCreatorProfile } from "#lib/features/creators/state/creators-routing.svelte.js";
   import {
     collectionsBrowseState,
     type CreatorContentTab,
   } from "../state/collections-browse-state.svelte";
   import CreatorLibraryCard from "./CreatorLibraryCard.svelte";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
-  import PanelContent from "$lib/shared/components/panel/PanelContent.svelte";
-  import PanelSearch from "$lib/shared/components/panel/PanelSearch.svelte";
-  import PanelHeader from "$lib/shared/components/panel/PanelHeader.svelte";
-  import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
+  import PanelContent from "#lib/shared/components/panel/PanelContent.svelte";
+  import PanelSearch from "#lib/shared/components/panel/PanelSearch.svelte";
+  import PanelHeader from "#lib/shared/components/panel/PanelHeader.svelte";
+  import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
 
   // Services
   let libraryService: LibraryRepository;

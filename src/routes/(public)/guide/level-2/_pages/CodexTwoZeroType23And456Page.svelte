@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Codex 2/0 Type 2/3 + 2|0·0|2 Type 4/5/6 - Level 2 body page 27 (manifest
    * `codex-2-0-t23-456`), faithful to old p27. Same 4-quadrant layout as p19 but
@@ -8,10 +8,10 @@
    *   BL Type 4 2/0 (`²`) then 0/2 (`₂`), BR Type 5 2/0 then Type 6 static 2/0.
    * Self-titled.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { codexSlotData, codexOpenCloseData } from "../_data/codex-turns";
 
   const S = 816 / 612;

@@ -40,8 +40,10 @@ vi.mock("firebase/auth", () => ({
   GoogleAuthProvider: { credential: h.credential },
   signInWithCredential: h.signInWithCredential,
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({ auth: { currentUser: null } }));
-vi.mock("$lib/shared/auth/config/google-oauth", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
+  auth: { currentUser: null },
+}));
+vi.mock("#lib/shared/auth/config/google-oauth.js", () => ({
   GOOGLE_CLIENT_ID: "test-client-id.apps.googleusercontent.com",
 }));
 
@@ -94,7 +96,7 @@ async function flush(): Promise<void> {
 }
 
 async function loadBridge() {
-  return await import("$lib/shared/desktop/tauri-auth-bridge");
+  return await import("#lib/shared/desktop/tauri-auth-bridge.js");
 }
 
 // Resolve the bridge's dynamic imports once up front so `flush()` measures the

@@ -11,7 +11,7 @@
     createKinematicPhysicsProvider,
     createViewerCameraPlayerState,
   } from "@austencloud/camera-3d";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
   import {
     DEFAULT_ENVIRONMENT_REVIEW_BOUNDS,
     collectEnvironmentCameraCollisionMeshes,
@@ -20,7 +20,7 @@
     type EnvironmentReviewBounds,
     type EnvironmentReviewCameraPreset,
   } from "./environment-review-camera";
-  import { setCameraUrlPose } from "$lib/shared/3d/domain/camera-url-pose";
+  import { setCameraUrlPose } from "#lib/shared/3d/domain/camera-url-pose.js";
 
   interface Props {
     destinationId: string;

@@ -1,13 +1,13 @@
 <!-- FeedbackArchiveView - Archived feedback organized by version -->
 <script lang="ts">
-  import type { VersionState } from "$lib/shared/feedback/state/version-state.svelte";
-  import type { FeedbackItem } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { getFeedback } from "$lib/shared/feedback/services/feedback-querier";
+  import type { VersionState } from "#lib/shared/feedback/state/version-state.svelte.js";
+  import type { FeedbackItem } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { getFeedback } from "#lib/shared/feedback/services/feedback-querier.js";
   import { loadAllArchived } from "../../services/archive-loader";
-  import type { AppVersion } from "$lib/shared/feedback/domain/models/version-models";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import type { AppVersion } from "#lib/shared/feedback/domain/models/version-models.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import FeedbackDetailPanel from "./FeedbackDetailPanel.svelte";
-  import VersionDetailContent from "$lib/shared/settings/components/tabs/release-notes/VersionDetailContent.svelte";
+  import VersionDetailContent from "#lib/shared/settings/components/tabs/release-notes/VersionDetailContent.svelte";
 
   // Extracted components
   import ArchiveViewToggle from "./archive/ArchiveViewToggle.svelte";

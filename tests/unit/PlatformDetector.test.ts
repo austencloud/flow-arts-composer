@@ -7,11 +7,11 @@ vi.mock("@capacitor/core", () => ({
 	},
 }));
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
 	browser: false,
 }));
 
-import { isNative, isWeb, isIOS, isAndroid, getPlatform } from "$lib/shared/platform/services/platform-detector";
+import { isNative, isWeb, isIOS, isAndroid, getPlatform } from "#lib/shared/platform/services/platform-detector.js";
 import { Capacitor } from "@capacitor/core";
 
 describe("PlatformDetector", () => {

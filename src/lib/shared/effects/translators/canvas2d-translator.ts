@@ -40,7 +40,7 @@ import { resolveWaterPalette } from "../domain/water-palettes";
 import { resolveBubblePalette } from "../domain/bubble-palettes";
 import { resolvePetalPalette } from "../domain/petal-palettes";
 import { resolveSmokePalette } from "../domain/smoke-palettes";
-import { resolveInkPalette } from "$lib/shared/3d/effects/ink/ink-palettes";
+import { resolveInkPalette } from "#lib/shared/3d/effects/ink/ink-palettes.js";
 import { resolveFrostPalette } from "../domain/frost-palettes";
 import { resolveSilkPalette } from "../domain/silk-palettes";
 import { resolveAnimalPalette } from "../domain/animal-palettes";
@@ -48,7 +48,7 @@ import { resolvePulsePalette } from "../domain/pulse-palettes";
 import {
   DEFAULT_TRAIL_GLOW_BLUR,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 /**
  * Fold the effects-config trail VISUALS into a legacy TrailSettings base.

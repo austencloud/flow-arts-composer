@@ -1,14 +1,14 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { PostProjectSchema } from "$lib/shared/media-composition/domain/post-project";
-import { PostPlanSchema } from "$lib/shared/media-composition/domain/post-plan";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
+import { PostPlanSchema } from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   readPostDraftRecords,
   type PostDraftRecord,
-} from "$lib/shared/media-composition/services/post-draft-storage";
-import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-import { auth } from "$lib/shared/auth/firebase";
-import { legacyPostOwner } from "$lib/shared/media-composition/services/post-project-store";
+} from "#lib/shared/media-composition/services/post-draft-storage.js";
+import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+import { auth } from "#lib/shared/auth/firebase.js";
+import { legacyPostOwner } from "#lib/shared/media-composition/services/post-project-store.js";
 
 const SNAPSHOT_PREFIX = "tka:post:sequence:v1:";
 const RECENT_KEY = "tka:post:recent:v1";

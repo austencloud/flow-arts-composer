@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { StepComparisonOrchestrator } from './services/comparison/step-comparison-orchestrator';
 
 let instance: StepComparisonOrchestrator | null = null;

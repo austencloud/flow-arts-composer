@@ -76,7 +76,7 @@ export interface PictographDisplayData {
 }
 
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export type DeepLinkSource = "cache" | "local" | "public" | null;
 export type DeepLinkError = "not_found" | "network" | null;

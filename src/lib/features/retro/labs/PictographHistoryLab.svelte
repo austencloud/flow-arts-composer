@@ -14,17 +14,17 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-  import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     HandSide,
     MotionType,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-  import { getCanvas2DRenderer } from "$lib/shared/render/get-canvas-2d-renderer";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+  import { getCanvas2DRenderer } from "#lib/shared/render/get-canvas-2d-renderer.js";
 
   // Pixel size of the canonical render - each era scales it to fit its
   // own grid diameter when compositing.

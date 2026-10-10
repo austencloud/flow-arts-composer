@@ -1,31 +1,31 @@
 <!-- VersionDetailContent - Changelog content for a single version, usable inline or in a drawer -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getReactiveLocale } from "#lib/shared/i18n/locale-state.svelte.js";
   import { onMount } from "svelte";
   import type {
     AppVersion,
     ChangelogCategory,
     ChangelogEntry,
-  } from "$lib/shared/versioning/domain/models/version-models";
-  import { CHANGELOG_CATEGORIES } from "$lib/shared/versioning/domain/constants/changelog-constants";
-  import { changelogPlainText } from "$lib/shared/versioning/domain/utils/changelog-rich-text";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import type { FeedbackItem } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { feedbackService } from "$lib/shared/feedback/services/feedback-repository";
-  import { createFeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
+  } from "#lib/shared/versioning/domain/models/version-models.js";
+  import { CHANGELOG_CATEGORIES } from "#lib/shared/versioning/domain/constants/changelog-constants.js";
+  import { changelogPlainText } from "#lib/shared/versioning/domain/utils/changelog-rich-text.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import type { FeedbackItem } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { feedbackService } from "#lib/shared/feedback/services/feedback-repository.js";
+  import { createFeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
   import EditableReleaseNotes from "./EditableReleaseNotes.svelte";
   import ChangeGroupSection from "./ChangeGroupSection.svelte";
   import VersionHeader from "./VersionHeader.svelte";
   import NoChangelogState from "./NoChangelogState.svelte";
   import ActionToast from "./ActionToast.svelte";
   import ContributorBadge from "./ContributorBadge.svelte";
-  import { getContributorLoader } from "$lib/shared/feedback/get-contributor-loader";
-  import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { getContributorLoader } from "#lib/shared/feedback/get-contributor-loader.js";
+  import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { changelogEditState } from "./state/changelog-edit-state.svelte";
-  import * as versionService from "$lib/shared/feedback/services/version-service";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  import * as versionService from "#lib/shared/feedback/services/version-service.js";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
 
   let {
     version,
@@ -463,7 +463,7 @@
     placement="right"
     ariaLabel={t("settings_edit_feedback", { title: selectedFeedback.title })}
   >
-    {#await import("$lib/features/feedback/components/manage/FeedbackDetailPanel.svelte") then mod}
+    {#await import("#lib/features/feedback/components/manage/FeedbackDetailPanel.svelte") then mod}
       <mod.default
         item={selectedFeedback}
         {manageState}

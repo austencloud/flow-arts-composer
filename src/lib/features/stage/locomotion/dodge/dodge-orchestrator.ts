@@ -1,7 +1,7 @@
 
-import { restPoseFromHeight } from "$lib/features/lab/tabs/collision-lab/services/stance-simulator";
-import type { RestPoseGeometry } from "$lib/features/lab/tabs/collision-lab/services/types";
-import type { MotionConfig3D } from "$lib/shared/3d/domain/models/motion-data-3d";
+import { restPoseFromHeight } from "#lib/features/lab/tabs/collision-lab/services/stance-simulator.js";
+import type { RestPoseGeometry } from "#lib/features/lab/tabs/collision-lab/services/types.js";
+import type { MotionConfig3D } from "#lib/shared/3d/domain/models/motion-data-3d.js";
 import { buildSweptVolume } from "./swept-volume-builder";
 import { SweptTube } from "./swept-tube";
 import { planVacate } from "./dodge-vacate-planner";

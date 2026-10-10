@@ -12,32 +12,32 @@
 -->
 <script lang="ts">
 
-import { createAnimationPlaybackController } from "$lib/features/compose/services/animation-playback-controller-factory";
-import { sequenceTransformer } from "$lib/shared/create/services/sequence-transformer";
+import { createAnimationPlaybackController } from "#lib/features/compose/services/animation-playback-controller-factory.js";
+import { sequenceTransformer } from "#lib/shared/create/services/sequence-transformer.js";
   import { onMount, onDestroy } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import { createEndlessPlayback, type EndlessPlaybackState } from "$lib/shared/animation-engine/state/endless-playback-state.svelte";
-  import * as propTypeApplier from "$lib/shared/landing/services/prop-type-applier";
-  import { EndlessSpinnerOrchestrator } from "$lib/features/landing/services/endless-spinner-orchestrator";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { startPlacementDeriver as startPlacementDeriverInstance } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-  import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-  import { TrackingMode } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
-  import { setAnimationScopeContext } from "$lib/shared/animation-engine/state/animation-scope-context";
-  import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { SequenceViewerVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-visibility-state.svelte";
-  import { setViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
-  import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
-  import { buildNotationCells, type NotationCell } from "$lib/shared/timeline/notation-cell";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
-  import { trackDemoInteraction } from "$lib/shared/analytics/landing-events";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import AnimationPanel from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import { createEndlessPlayback, type EndlessPlaybackState } from "#lib/shared/animation-engine/state/endless-playback-state.svelte.js";
+  import * as propTypeApplier from "#lib/shared/landing/services/prop-type-applier.js";
+  import { EndlessSpinnerOrchestrator } from "#lib/features/landing/services/endless-spinner-orchestrator.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { startPlacementDeriver as startPlacementDeriverInstance } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+  import { generationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+  import { TrackingMode } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { createAnimationScope } from "#lib/shared/animation-engine/state/animation-scope.svelte.js";
+  import { setAnimationScopeContext } from "#lib/shared/animation-engine/state/animation-scope-context.js";
+  import { setAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { SequenceViewerVisibilityState } from "#lib/shared/sequence-viewer/state/viewer-visibility-state.svelte.js";
+  import { setViewerVisibilityContext } from "#lib/shared/sequence-viewer/context/viewer-visibility-context.js";
+  import StepStrip from "#lib/shared/timeline/StepStrip.svelte";
+  import { buildNotationCells, type NotationCell } from "#lib/shared/timeline/notation-cell.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
+  import { trackDemoInteraction } from "#lib/shared/analytics/landing-events.js";
 
   let playback = $state<EndlessPlaybackState | null>(null);
   let animationReady = $state(false);

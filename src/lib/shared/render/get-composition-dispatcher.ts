@@ -1,5 +1,5 @@
 // src/lib/shared/render/getCompositionDispatcher.ts
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { CompositionDispatcher } from "./services/composition-dispatcher";
 import { getImageComposer } from "./get-image-composer";
 import { getTextRenderer } from "./get-text-renderer";

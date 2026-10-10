@@ -7,14 +7,14 @@
   // The wrapper carries `mkt-shell` because every real /shop route runs inside
   // MarketingChrome. It gives this harness the same public-shell selectors and
   // composition context as the shipped route.
-  import ShopProductShell from "$lib/features/store/components/shell/ShopProductShell.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { createStoreState } from "$lib/features/store/state/store-state.svelte";
-  import { setStoreContext } from "$lib/features/store/context/store-context";
-  import { deriveCrossSell } from "$lib/features/store/domain/catalog-listings";
-  import { formatUsd } from "$lib/features/store/domain/preorder-pricing";
-  import type { PurchaseState } from "$lib/features/store/domain/purchase-state";
-  import type { Product } from "$lib/features/store/domain/models/product";
+  import ShopProductShell from "#lib/features/store/components/shell/ShopProductShell.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { createStoreState } from "#lib/features/store/state/store-state.svelte.js";
+  import { setStoreContext } from "#lib/features/store/context/store-context.js";
+  import { deriveCrossSell } from "#lib/features/store/domain/catalog-listings.js";
+  import { formatUsd } from "#lib/features/store/domain/preorder-pricing.js";
+  import type { PurchaseState } from "#lib/features/store/domain/purchase-state.js";
+  import type { Product } from "#lib/features/store/domain/models/product.js";
 
   function fixture(overrides: Partial<Product> = {}): Product {
     return {

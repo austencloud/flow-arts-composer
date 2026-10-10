@@ -5,12 +5,12 @@
  * Handles transport, shuttle (J/K/L), and audio synchronization.
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import type { ActiveClipInfo } from "$lib/shared/animation-engine/timeline/domain/types";
-import type { TimeSeconds, TimelineClip } from "$lib/shared/animation-engine/domain/timeline-types";
-import { getClipEndTime } from "$lib/shared/animation-engine/domain/timeline-types";
-import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
-import type { ErrorHandler } from '$lib/shared/application/services/error-handler'
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import type { ActiveClipInfo } from "#lib/shared/animation-engine/timeline/domain/types.js";
+import type { TimeSeconds, TimelineClip } from "#lib/shared/animation-engine/domain/timeline-types.js";
+import { getClipEndTime } from "#lib/shared/animation-engine/domain/timeline-types.js";
+import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
+import type { ErrorHandler } from '#lib/shared/application/services/error-handler.js'
 
 export class TimelinePlayer {
   private animationFrameId: number | null = null;

@@ -9,15 +9,15 @@
   - 950x950 viewBox, center at (475, 475)
 -->
 <script lang="ts">
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { TriGridMode } from "../domain/trigrid-types";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { svgPreloader } from "$lib/shared/pictograph/shared/services/svg-preloader";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { svgPreloader } from "#lib/shared/pictograph/shared/services/svg-preloader.js";
   import { getTriGridCalculator } from "../get-tri-grid-calculator";
   import { TRIGRID_SVG_SIZE } from "../domain/trigrid-constants";
-  import { applyColorToSvg } from "$lib/shared/utils/svg-color-utils";
+  import { applyColorToSvg } from "#lib/shared/utils/svg-color-utils.js";
   import { BLUE_PROP_COLOR, RED_PROP_COLOR } from "../domain/trigrid-colors";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   interface Props {
     mode: TriGridMode;

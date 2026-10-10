@@ -3,7 +3,7 @@ import {
   joinedLabel,
   activeLabel,
   hasProfileWork,
-} from "$lib/features/creators/domain/profile-tenure";
+} from "#lib/features/creators/domain/profile-tenure.js";
 
 describe("joinedLabel", () => {
   it("names the month and year, without the day", () => {

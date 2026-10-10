@@ -3,7 +3,7 @@ import type {
   BatchDownloadOptions,
   DownloadResult,
 } from "./types";
-import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
+import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
 
 export type NativeFileShareResult =
   | { status: "shared"; filename: string }

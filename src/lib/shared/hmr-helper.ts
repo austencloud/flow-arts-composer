@@ -2,8 +2,8 @@
  * HMR Helper - Ensures proper handling of hot module replacements
  * Particularly important for Svelte 5 runes state management
  */
-import { forceFreshReload } from "$lib/shared/foundation/services/force-fresh";
-import { recordReloadReason } from "$lib/shared/dev/reload-breadcrumb";
+import { forceFreshReload } from "#lib/shared/foundation/services/force-fresh.js";
+import { recordReloadReason } from "#lib/shared/dev/reload-breadcrumb.js";
 
 // Track if we've already scheduled a reload to prevent multiple reloads
 let reloadScheduled = false;

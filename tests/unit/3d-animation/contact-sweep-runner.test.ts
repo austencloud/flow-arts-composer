@@ -1,6 +1,6 @@
 import { Quaternion, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
-import { runContactCorrectSweep } from "$lib/shared/3d/diagnostics/contact-correct/contact-sweep-runner";
+import { runContactCorrectSweep } from "#lib/shared/3d/diagnostics/contact-correct/contact-sweep-runner.js";
 
 const frame = {
   authoredEndpoints: [new Vector3(), new Vector3(1, 0, 0)] as const,

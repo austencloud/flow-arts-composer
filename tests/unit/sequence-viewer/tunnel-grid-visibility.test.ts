@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { flushSync } from "svelte";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { DEFAULT_TUNNEL_VIEW_STATE } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-state";
-import { createRootedTunnelViewController } from "$lib/shared/sequence-viewer/services/viewer-url-slices/tn-slice-test-harness.svelte";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { DEFAULT_TUNNEL_VIEW_STATE } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-state.js";
+import { createRootedTunnelViewController } from "#lib/shared/sequence-viewer/services/viewer-url-slices/tn-slice-test-harness.svelte.js";
 
 const disposals: Array<() => void> = [];
 

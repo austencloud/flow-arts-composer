@@ -22,33 +22,33 @@
  * (diamond quarter-opp rotates to box tog-opp), so carrying it would mislabel.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { CardVariation } from "$lib/features/choreo-card/domain/models/DeckRelease";
-import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-render-hydrator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { CardVariation } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
+import { hydrateSequence } from "#lib/features/choreo-card/services/sequence-render-hydrator.js";
 import {
   loadDiamondEdges,
   type CsvEdge,
-} from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+} from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 import {
   buildBaseIndex,
   resolveBase,
-} from "$lib/shared/shape-matrix/services/tnd-base-index";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import { rotateSequenceGeometry } from "$lib/shared/create/services/sequence-derived-fields";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+} from "#lib/shared/shape-matrix/services/tnd-base-index.js";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
+import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import {
   buildFlowerAxis,
   type Flower,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
-import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
-import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-import { TURN_VALUES } from "$lib/features/choreo-card/domain/turn-pattern-parser";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
+import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
 import {
   Orientation,
   TnDMode,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { TND_BY_FAMILY, type TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { TND_BY_FAMILY, type TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
 
 const BASE_WORDS_URL = "/data/hero/tnd-base-words.json";
 

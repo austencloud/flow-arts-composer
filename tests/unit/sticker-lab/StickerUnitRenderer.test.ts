@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { renderStickerUnitSVG } from "$lib/features/sticker-lab/services/sticker-unit-renderer";
+import { renderStickerUnitSVG } from "#lib/features/sticker-lab/services/sticker-unit-renderer.js";
 import {
   createDefaultStickerUnit,
   type MandalaPrimitiveRef,
-} from "$lib/features/sticker-lab/domain/sticker-types";
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/features/sticker-lab/domain/sticker-types.js";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
 import {
   STICKER_TILE_SIZE_PX,
   STICKER_ART_DIAMETER_PX,
-} from "$lib/features/sticker-lab/domain/sticker-constants";
+} from "#lib/features/sticker-lab/domain/sticker-constants.js";
 
 const emptyPaths: MandalaPaths = { left: [], right: [], purple: [] };
 

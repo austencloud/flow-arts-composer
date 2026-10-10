@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchPublicShortCodeRecord } from "$lib/shared/qr/services/public-short-code-record-reader";
+import { fetchPublicShortCodeRecord } from "#lib/shared/qr/services/public-short-code-record-reader.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();

@@ -4,8 +4,8 @@ Three touch targets: left arrow cycles back, right arrow cycles forward, and the
 center label opens an anchored popover with all four orientations.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { Popover } from "bits-ui";
   import { scale } from "svelte/transition";
   import { backOut, cubicOut } from "svelte/easing";

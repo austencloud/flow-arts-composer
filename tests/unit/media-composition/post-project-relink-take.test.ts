@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
-import { PostProjectSchema } from "$lib/shared/media-composition/domain/post-project";
-import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
-import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
+import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
+import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
+import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-project-ops.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   TakeTimingSchema,
   createTakeTiming,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import { NOW, project, spans, take, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };

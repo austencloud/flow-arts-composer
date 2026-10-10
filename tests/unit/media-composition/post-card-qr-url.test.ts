@@ -5,8 +5,8 @@ import {
   PostCardItemSchema,
   findItem,
   isPostCardQrUrl,
-} from "$lib/shared/media-composition/domain/post-project";
-import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
 import { NOW, card, project, text } from "./post-project-fixtures";
 
 const LINK = "https://tka.run/s/abc123";

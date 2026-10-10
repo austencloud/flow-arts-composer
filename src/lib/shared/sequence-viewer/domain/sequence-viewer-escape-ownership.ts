@@ -1,7 +1,7 @@
 import {
   activateEscapeShortcutTarget,
   shouldDeferEscapeShortcut,
-} from "$lib/shared/keyboard/domain/escape-shortcut-target";
+} from "#lib/shared/keyboard/domain/escape-shortcut-target.js";
 
 const MODAL_LAYER_SELECTOR = 'dialog[open], [role="dialog"][aria-modal="true"]';
 const VIEWER_SHELL_SELECTOR = "[data-sequence-viewer-shell]";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { createViewer3DStateForTest } from "./viewer3d-test-helpers.svelte";
 
 describe("viewer bulk reset undo", () => {

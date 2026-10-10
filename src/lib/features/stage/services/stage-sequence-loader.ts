@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { loadStaticSequence } from "$lib/shared/foundation/services/static-sequence-catalog";
-import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { loadStaticSequence } from "#lib/shared/foundation/services/static-sequence-catalog.js";
+import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
 
 import {
   DEFAULT_STAGE_SEQUENCE_CATALOG,

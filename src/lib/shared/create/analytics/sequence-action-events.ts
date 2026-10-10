@@ -1,10 +1,10 @@
-import { captureEvent } from "$lib/shared/analytics/services/posthog";
+import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
 import type {
   SequenceActionSource,
   SequenceActionsOpenSource,
   SequenceActionTargetHand,
   SequenceTransformCommandId,
-} from "$lib/shared/create/domain/sequence-action-types";
+} from "#lib/shared/create/domain/sequence-action-types.js";
 
 export interface SequenceActionEventProperties {
   action: SequenceTransformCommandId;

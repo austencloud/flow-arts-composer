@@ -9,7 +9,7 @@
   the resulting content width on its own.
 -->
 <script lang="ts">
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import CardAnatomyExplainer from "./CardAnatomyExplainer.svelte";
   import type { CoverCard } from "../domain/models/product";
 

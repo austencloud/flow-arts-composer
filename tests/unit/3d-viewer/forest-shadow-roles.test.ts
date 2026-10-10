@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   resolveForestNearFrameShadowRole,
   resolveForestShadowRole,
-} from "$lib/shared/3d/environments/scenes/forest/forest-shadow-roles";
+} from "#lib/shared/3d/environments/scenes/forest/forest-shadow-roles.js";
 
 describe("Forest shadow roles", () => {
   it("lets the terrain receive local contact shadows without casting", () => {

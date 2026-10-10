@@ -6,11 +6,11 @@ Handles camera access using MediaDevices API with support for both mobile and de
 Features square aspect ratio for consistent layout and settings dialog for camera controls.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount } from "svelte";
   import CameraSettingsDialog from "./CameraSettingsDialog.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   // Props
   const {

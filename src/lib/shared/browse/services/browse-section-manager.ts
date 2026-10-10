@@ -7,16 +7,16 @@
  * wrapper. (Formerly a class behind getBrowseSectionManager().)
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
 import type {
   SectionConfig,
   SequenceSection,
-} from "$lib/shared/browse/domain/models/browse-models";
-import { sortSequencesByKineticAlphabet } from "$lib/shared/browse/utils/kinetic-alphabet-sort";
-import { deriveWord } from '$lib/shared/foundation/services/word-deriver';
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
-import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
+} from "#lib/shared/browse/domain/models/browse-models.js";
+import { sortSequencesByKineticAlphabet } from "#lib/shared/browse/utils/kinetic-alphabet-sort.js";
+import { deriveWord } from '#lib/shared/foundation/services/word-deriver.js';
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 
 /** Numeric difficulty (1–3). Prefers the stored `level`, else computes from steps. */
 function resolveLevel(sequence: SequenceData): number {

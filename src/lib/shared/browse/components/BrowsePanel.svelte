@@ -1,24 +1,24 @@
 <script lang="ts">
   import PropViewingControl from "./PropViewingControl.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { onMount, onDestroy } from "svelte";
-  import { getBrowseThumbnailProvider } from "$lib/shared/browse/get-browse-thumbnail-provider";
-  import { PinchZoomGridController } from "$lib/shared/browse/services/pinch-zoom-grid-controller";
-  import { getSequenceOverlayState } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
-  import { browseScrollState } from "$lib/shared/browse/state/browse-scroll-state.svelte";
-  import BrowseThumbnailSkeleton from "$lib/shared/browse/components/BrowseThumbnailSkeleton.svelte";
-  import type { BrowseThumbnailProvider } from "$lib/shared/browse/services/browse-thumbnail-provider";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { getBrowseThumbnailProvider } from "#lib/shared/browse/get-browse-thumbnail-provider.js";
+  import { PinchZoomGridController } from "#lib/shared/browse/services/pinch-zoom-grid-controller.js";
+  import { getSequenceOverlayState } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
+  import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
+  import BrowseThumbnailSkeleton from "#lib/shared/browse/components/BrowseThumbnailSkeleton.svelte";
+  import type { BrowseThumbnailProvider } from "#lib/shared/browse/services/browse-thumbnail-provider.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { BrowseEngine } from "../engine/types";
   import BrowseToolbar from "./BrowseToolbar.svelte";
   import BrowseFilterBar from "./BrowseFilterBar.svelte";
   import BrowseSidebar from "./BrowseSidebar.svelte";
   import BrowseGrid from "./BrowseGrid.svelte";
   import type { SectionedGridApi } from "./SectionedVirtualGrid.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SelectionToolbar from "$lib/shared/components/selection/SelectionToolbar.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { withResultsMorph } from "$lib/shared/transitions/results-morph";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { withResultsMorph } from "#lib/shared/transitions/results-morph.js";
 
   interface Props {
     collectionPropType?: PropType | null;

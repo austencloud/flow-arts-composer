@@ -12,17 +12,17 @@
   - PlaybackOverlay used for Browse tab saved compositions
 -->
 <script lang="ts">
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { onMount, untrack } from "svelte";
-  import { removeCurrentUrlParams } from "$lib/shared/navigation/services/url-state";
+  import { removeCurrentUrlParams } from "#lib/shared/navigation/services/url-state.js";
   import { getComposeModuleState } from "./shared/state/compose-module-state.svelte.ts";
   import type { ComposeTab } from "./shared/state/compose-module-state.svelte.ts";
-  import type { URLSyncer } from "$lib/shared/navigation/services/url-syncer";
-  import { getURLSyncer } from "$lib/shared/navigation/get-url-syncer";
-  import { deepLinker } from "$lib/shared/navigation/services/deep-linker";
-  import { consumeSequenceHandoff } from "$lib/shared/coordinators/sequence-handoff.svelte";
+  import type { URLSyncer } from "#lib/shared/navigation/services/url-syncer.js";
+  import { getURLSyncer } from "#lib/shared/navigation/get-url-syncer.js";
+  import { deepLinker } from "#lib/shared/navigation/services/deep-linker.js";
+  import { consumeSequenceHandoff } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
   import { arrangeGridState } from "./tabs/arrange/state/arrange-grid-state.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   import ArrangeTab from "./tabs/arrange/ArrangeTab.svelte";
   import BrowseTab from "./tabs/browse/CompositionBrowseTab.svelte";

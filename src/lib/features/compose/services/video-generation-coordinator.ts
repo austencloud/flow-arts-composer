@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { VideoRenderProgress, VideoRenderResult } from "$lib/shared/animation-engine/services/video-pre-renderer";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { VideoRenderProgress, VideoRenderResult } from "#lib/shared/animation-engine/services/video-pre-renderer.js";
 
 export interface VideoGenerationOptions {
   fps?: number;
@@ -7,7 +7,7 @@ export interface VideoGenerationOptions {
   width?: number;
   height?: number;
 }
-import { getVideoPreRenderer } from "$lib/shared/animation-engine/services/video-pre-renderer";
+import { getVideoPreRenderer } from "#lib/shared/animation-engine/services/video-pre-renderer.js";
 
 /**
  * VideoGenerationCoordinator

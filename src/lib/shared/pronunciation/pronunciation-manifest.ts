@@ -1,4 +1,4 @@
-import { normalizeLetter } from "$lib/shared/foundation/domain/models/letter";
+import { normalizeLetter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   PRONUNCIATION_POSITIONS,
   type AnyPronunciationManifest,

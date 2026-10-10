@@ -8,10 +8,10 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { buildSerializedCardUrl } from "$lib/shared/qr/domain/physical-card";
-import type { QRCodeGenerator } from "$lib/shared/qr/services/qr-code-generator";
-import type { TkaQrDetector } from "$lib/shared/qr/services/tka-qr-detector";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { buildSerializedCardUrl } from "#lib/shared/qr/domain/physical-card.js";
+import type { QRCodeGenerator } from "#lib/shared/qr/services/qr-code-generator.js";
+import type { TkaQrDetector } from "#lib/shared/qr/services/tka-qr-detector.js";
 import {
   createNodeCanvas,
   createNodeQrDetector,

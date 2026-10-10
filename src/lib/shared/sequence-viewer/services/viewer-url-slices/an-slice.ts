@@ -32,17 +32,17 @@ import type {
   AnimationSettings,
   AnimationSettingsState,
   TrailSettings,
-} from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+} from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
 import {
   DEFAULT_ANIMATION_SETTINGS,
   DEFAULT_TRAIL_SETTINGS,
-} from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+} from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
 import {
   AnimationVisibilityStateManager,
   type AnimationVisibilitySettings,
-} from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import type { TipEffortMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+} from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import type { TipEffortMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import { deepEqual } from "../viewer-url-state-codec";
 
 /** `version` is schema metadata the loader always rewrites — never user state. */

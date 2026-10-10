@@ -11,13 +11,13 @@
  * module during SSR (or in jsdom, where `Worker` does not exist) costs nothing
  * and starts nothing.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type {
   PerVisitDemoRequest,
   PerVisitDemoResponse,
-} from "$lib/shared/landing/data/per-visit-demo.worker";
+} from "#lib/shared/landing/data/per-visit-demo.worker.js";
 
 export type WorkerRollResult =
   /** The worker ran the roll and produced a sequence. */

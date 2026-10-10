@@ -8,9 +8,9 @@
  * either implementation is canonical.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export interface InvariantViolation {
   readonly stepIndex: number;

@@ -2,8 +2,8 @@
   import type {
     PaintFrame,
     PostStudioLayerPainter,
-  } from "$lib/shared/media-composition/services/post-studio-layer-painter";
-  import { paintSurfaceGeometry } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+  } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+  import { paintSurfaceGeometry } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
 
   let {
     painter,

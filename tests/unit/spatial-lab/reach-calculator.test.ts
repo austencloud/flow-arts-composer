@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   getShoulderPosition,
   computeReachPercentage,
-} from "$lib/features/lab/tabs/spatial-lab/services/reach-calculator";
+} from "#lib/features/lab/tabs/spatial-lab/services/reach-calculator.js";
 
 describe("getShoulderPosition", () => {
   const body = { x: 300, y: 330 };

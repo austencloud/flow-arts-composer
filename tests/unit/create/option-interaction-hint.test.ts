@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { createOptionInteractionHintState } from "$lib/features/create/construct/option-picker/state/option-interaction-hint-state.svelte";
-import { calculateOptionInteractionHintPosition } from "$lib/features/create/construct/option-picker/services/option-interaction-hint-position";
+import { createOptionInteractionHintState } from "#lib/features/create/construct/option-picker/state/option-interaction-hint-state.svelte.js";
+import { calculateOptionInteractionHintPosition } from "#lib/features/create/construct/option-picker/services/option-interaction-hint-position.js";
 import {
   ROOMY_OPTION_PICKER_WIDTH,
   selectOptionInteractionHintPresentation,
-} from "$lib/features/create/construct/option-picker/services/option-interaction-hint-presentation";
+} from "#lib/features/create/construct/option-picker/services/option-interaction-hint-presentation.js";
 
 describe("option interaction hint", () => {
   it("persists the first dismissal exactly once", () => {

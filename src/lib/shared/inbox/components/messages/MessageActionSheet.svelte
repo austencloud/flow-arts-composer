@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { getMessagePreviewText } from "../../utils/message-preview";
-  import type { Message } from "$lib/shared/messaging/domain/models/message-models";
+  import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
 
   type Action = () => void | Promise<void>;
   type ReactionAction = (emoji: string) => void | Promise<void>;

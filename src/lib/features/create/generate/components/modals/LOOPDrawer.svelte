@@ -4,14 +4,14 @@
   Follows DurationRhythmSheet pattern: portal + Drawer always in DOM.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { portal } from "./portal";
   import LOOPExpandedOverlay from "../cards/LOOPExpandedOverlay.svelte";
-  import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import type { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+  import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import type { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
   import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-  import type { GuestLoopLockKind } from "$lib/shared/create/services/loop-guest-gate";
+  import type { GuestLoopLockKind } from "#lib/shared/create/services/loop-guest-gate.js";
 
   type RhythmValue = {
     rotationInterval: 2 | 4;

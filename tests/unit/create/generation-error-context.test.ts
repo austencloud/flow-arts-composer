@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { captureGenerationErrorContext } from "$lib/shared/create/utils/generation-error-context";
-import { buildErrorCopyText } from "$lib/shared/error/domain/error-report-text";
-import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { UIGenerationConfig } from "$lib/shared/create/utils/config-mapper";
-import type { AppError } from "$lib/shared/error/domain/error-models";
+import { captureGenerationErrorContext } from "#lib/shared/create/utils/generation-error-context.js";
+import { buildErrorCopyText } from "#lib/shared/error/domain/error-report-text.js";
+import type { GenerationOptions } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { UIGenerationConfig } from "#lib/shared/create/utils/config-mapper.js";
+import type { AppError } from "#lib/shared/error/domain/error-models.js";
 
 describe("generation error reports", () => {
   const request = () =>

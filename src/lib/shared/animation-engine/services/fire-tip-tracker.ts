@@ -8,7 +8,7 @@
  * Zero-alloc hot path: reuses StoredTip and output arrays each frame.
  */
 
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type {
   PropTipData,
   RenderedPropTransform,

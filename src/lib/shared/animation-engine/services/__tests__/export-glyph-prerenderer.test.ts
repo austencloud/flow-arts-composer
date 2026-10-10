@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { ExportGlyphPrerenderer } from "../export-glyph-prerenderer";
-import { SvgImageConverter } from "$lib/shared/foundation/services/svg-image-converter";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { SvgImageConverter } from "#lib/shared/foundation/services/svg-image-converter.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   getLetterImagePath,
   isDashLetter,
-} from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
+} from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
 import {
   getTurnNumberImagePath,
   HALF_MARK_IMAGE_PATH,
@@ -14,14 +14,14 @@ import {
   getSlotUnitWidth,
   getSlotOffsetX,
   MARK_GAP,
-} from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
+} from "#lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser.js";
 import {
   DEFAULT_SKEW_BRACE_INK,
   getSkewBraceLayout,
   placeSkewBraceGlyphs,
-} from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
-import { calculateTurnPositions } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/tka-glyph/utils/skew-brace-layout.js";
+import { calculateTurnPositions } from "#lib/shared/pictograph/tka-glyph/utils/turn-position-calculator.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 // Coverage for the halved-motion mark parity fix
 // (docs/superpowers/specs/2026-07-16-half-notation-canon-design.md ledger):

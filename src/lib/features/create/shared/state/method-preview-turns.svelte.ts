@@ -14,9 +14,9 @@
  * drawing, and the front door's render gate calls setActive().
  */
 import { untrack } from "svelte";
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import { DURATION } from "$lib/shared/transitions/transitions";
-import { reducedMotion as systemReducedMotion } from "$lib/shared/transitions/motion";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
+import { reducedMotion as systemReducedMotion } from "#lib/shared/transitions/motion.js";
 
 /**
  * Reduced motion for previews. `reducedMotion()` covers the system setting

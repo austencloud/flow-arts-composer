@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { PropSvgLoader } from "$lib/shared/pictograph/prop/services/prop-svg-loader";
-import { ArrowSvgLoader } from "$lib/shared/pictograph/arrow/rendering/services/arrow-svg-loader";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createPropPlacementFromPosition } from "$lib/shared/pictograph/prop/domain/factories/create-prop-placement-data";
+import { PropSvgLoader } from "#lib/shared/pictograph/prop/services/prop-svg-loader.js";
+import { ArrowSvgLoader } from "#lib/shared/pictograph/arrow/rendering/services/arrow-svg-loader.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createPropPlacementFromPosition } from "#lib/shared/pictograph/prop/domain/factories/create-prop-placement-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const motion = createMotionData({
   hand: HandSide.LEFT,

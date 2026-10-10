@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import ShortcutRow from "./ShortcutRow.svelte";
   import type { ShortcutWithBinding } from "../../services/types";
   import type { ShortcutContext } from "../../domain/types/keyboard-types";

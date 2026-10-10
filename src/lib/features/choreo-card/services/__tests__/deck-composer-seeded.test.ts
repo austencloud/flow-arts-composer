@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { composeDeck } from "../deck-composer";
-import { makeRng } from "$lib/shared/foundation/utils/seeded-rng";
+import { makeRng } from "#lib/shared/foundation/utils/seeded-rng.js";
 import type { StepCountWeight } from "../../domain/models/DeckRelease";
 
 // Minimal pool: 20 entries at step 8, 20 at step 16.

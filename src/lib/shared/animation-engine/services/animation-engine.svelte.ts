@@ -13,22 +13,22 @@
  *   P1.5 PlaybackSync           — per-update orchestration (completes P1)
  */
 
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import { type TrailSettings } from "../domain/types/trail-types";
 import type { AdditionalLayerProps } from "../domain/types/trail-capture-types";
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 import {
   getAnimationVisibilityManager,
   type AnimationVisibilityStateManager,
 } from "../state/animation-visibility-state.svelte";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import type { TipEffortMap } from "../domain/types/tip-effect-types";
 
 // Services
@@ -39,11 +39,11 @@ import type { QualityTier } from "../domain/types/quality-types";
 import { AnimatorCanvasInitializer } from "./animator-canvas-initializer";
 import type { FireOverlayConfig } from "../domain/types/fire-types";
 import type { LedOverlayConfig } from "../domain/types/led-types";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 
 import { LiveRenderContext } from "./render-context";
 import type { RenderContext } from "./render-context-registry";
-import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
+import type { RenderActivityGate } from "#lib/shared/render-gating/render-activity-gate.js";
 
 // Extracted modules
 import {

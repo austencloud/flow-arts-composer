@@ -1,8 +1,8 @@
 <script lang="ts">
 
-import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
-import { ensureVideoExportOrchestrator } from "$lib/shared/animation-engine/get-video-export-orchestrator";
-import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orchestrator";
+import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
+import { ensureVideoExportOrchestrator } from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
+import { getExportOrchestrator } from "#lib/shared/export-panel/get-export-orchestrator.js";
   /**
    * SequenceDrawerHost
    *
@@ -23,39 +23,39 @@ import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orche
    * - Services lazy-loaded when Animation format selected
    */
 
-  import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount, onDestroy } from "svelte";
-  import SequenceDrawer from "$lib/shared/sequence-viewer/components/SequenceDrawer.svelte";
-  import type { ExportSettings } from "$lib/shared/export-panel/domain/models/export-settings";
-  import type { ExportSettings as SequenceViewerExportSettings } from "$lib/shared/sequence-viewer/domain/types";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { ExportOrchestrator } from "$lib/shared/export-panel/services/export-orchestrator";
+  import SequenceDrawer from "#lib/shared/sequence-viewer/components/SequenceDrawer.svelte";
+  import type { ExportSettings } from "#lib/shared/export-panel/domain/models/export-settings.js";
+  import type { ExportSettings as SequenceViewerExportSettings } from "#lib/shared/sequence-viewer/domain/types.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { ExportOrchestrator } from "#lib/shared/export-panel/services/export-orchestrator.js";
 
-  import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository";
-  import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  import { getSequenceRepository } from "#lib/shared/create/get-sequence-repository.js";
+  import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import { getCreateModuleContext } from "../../context/create-module-context";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 
   // Animation imports
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import type { IVideoExportOrchestrator, VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
-  import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-  import { ExportUrlManager } from "$lib/shared/export-panel/services/export-url-manager";
-  import type { ResponsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import type { IVideoExportOrchestrator, VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
+  import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+  import { ExportUrlManager } from "#lib/shared/export-panel/services/export-url-manager.js";
+  import type { ResponsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import {
     createAnimationPanelState,
     type PlaybackMode,
     type StepPlaybackStepSize,
     type AnimationStateKey,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { setAnimationPlaybackRef } from "$lib/shared/coordinators/animation-playback-ref.svelte";
-  import { ANIMATION_AUTO_START_DELAY_MS } from "$lib/shared/animation-engine/domain/constants/timing";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { setAnimationPlaybackRef } from "#lib/shared/coordinators/animation-playback-ref.svelte.js";
+  import { ANIMATION_AUTO_START_DELAY_MS } from "#lib/shared/animation-engine/domain/constants/timing.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   const ctx = getCreateModuleContext();
   const { CreateModuleState, panelState } = ctx;

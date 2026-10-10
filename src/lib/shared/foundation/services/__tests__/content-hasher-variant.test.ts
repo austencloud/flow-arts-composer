@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { hashSequenceContent } from "../content-hasher";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 function seq() {
   const m = () => createMotionData({

@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { InstancedMesh, Scene, ShaderMaterial } from "three";
 import { BackgroundType } from "@austencloud/backgrounds";
-import { SceneEffectsManager3D } from "$lib/shared/3d/effects/scene-effects/scene-effects-manager-3d";
-import { isTrackedTip } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
-import { resolvePetalEnvironmentProfile } from "$lib/shared/3d/effects/petals/petal-world-art-direction";
+import { SceneEffectsManager3D } from "#lib/shared/3d/effects/scene-effects/scene-effects-manager-3d.js";
+import { isTrackedTip } from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d.js";
+import { resolvePetalEnvironmentProfile } from "#lib/shared/3d/effects/petals/petal-world-art-direction.js";
 import {
   resolveBloom3D,
   resolveFire3D,
-} from "$lib/shared/effects/translators/webgl3d-translator";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { QualityTier } from "$lib/shared/3d/effects/types";
+} from "#lib/shared/effects/translators/webgl3d-translator.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
 
 describe("SceneEffectsManager3D", () => {
   it("owns one scene-level mesh per material variant and releases them together", () => {

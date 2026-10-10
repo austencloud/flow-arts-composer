@@ -8,20 +8,20 @@ import {
   userProportionsState,
 } from "@austencloud/scene-3d";
 import { Quaternion, Vector3 } from "three";
-import type { CharacterInstanceState } from "$lib/shared/3d/state/character-instance-state.svelte";
+import type { CharacterInstanceState } from "#lib/shared/3d/state/character-instance-state.svelte.js";
 import {
   createWorkerPerformerSnapshot,
   supportsWorkerPerformer,
   supportsWorkerPerformerEffectIntent,
-} from "$lib/shared/3d/worker-renderer/services/worker-performer-snapshot";
-import { CANONICAL_PERFORMER_ANCHOR_Y } from "$lib/shared/3d/environments/domain/stage-coordinate-frame";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+} from "#lib/shared/3d/worker-renderer/services/worker-performer-snapshot.js";
+import { CANONICAL_PERFORMER_ANCHOR_Y } from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   resolveLed3D,
   resolveTrails3D,
-} from "$lib/shared/effects/translators/webgl3d-translator";
+} from "#lib/shared/effects/translators/webgl3d-translator.js";
 
-vi.mock("$lib/shared/3d/domain/performer-upper-body-stance", () => ({
+vi.mock("#lib/shared/3d/domain/performer-upper-body-stance.js", () => ({
   resolvePerformerUpperBodyStance: () => ({
     yawRad: 0.25,
     pitchRad: -0.1,

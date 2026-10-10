@@ -27,9 +27,9 @@ import { describe, expect, it } from "vitest";
 import {
   ensureComposition,
   hydrate,
-} from "$lib/shared/foundation/services/sequence-hydrator";
+} from "#lib/shared/foundation/services/sequence-hydrator.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 import {
   asStoredDocument,

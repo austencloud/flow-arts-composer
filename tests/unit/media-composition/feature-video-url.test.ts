@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import * as featureVideo from "$lib/shared/media-composition/domain/feature-video";
-import * as featureVideoUrl from "$lib/shared/media-composition/domain/feature-video-url";
+import * as featureVideo from "#lib/shared/media-composition/domain/feature-video.js";
+import * as featureVideoUrl from "#lib/shared/media-composition/domain/feature-video-url.js";
 
 /** What feature-video.ts keeps exporting, now from the URL module. */
 const NAMES = [

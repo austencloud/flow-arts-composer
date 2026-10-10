@@ -17,18 +17,18 @@
   import { page } from "$app/state";
   import { onMount } from "svelte";
   import { WebGLRenderer } from "three";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import EffectGridScene from "./EffectGridScene.svelte";
   import EffectGridWarmup from "./EffectGridWarmup.svelte";
   import PerfProbe from "./PerfProbe.svelte";
   import AnimalPresetReview from "../animal-presets/+page.svelte";
   import { EFFECT_CELLS } from "./effect-grid";
-  import { BLOOM_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/bloom-presets";
-  import { GOO_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/goo-presets";
-  import type { EffectType } from "$lib/shared/effects/domain/effects-config";
+  import { BLOOM_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/bloom-presets.js";
+  import { GOO_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/goo-presets.js";
+  import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
 
   /**
    * One shared effects config for the page, persist:false so the harness never

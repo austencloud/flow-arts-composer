@@ -1,7 +1,7 @@
 import {
   SNAPSHOT_VERSION,
   migrateTunnelSnapshot,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import {
   TUNNEL_ARTIFACT_SCHEMA_VERSION,
   type CollectedTunnel,

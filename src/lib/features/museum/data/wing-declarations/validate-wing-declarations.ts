@@ -1,7 +1,7 @@
 import type { RawMotion, RawSequence } from "../museum-exhibit-sequences";
 import type { ExhibitCase, TndCategory, WingDeclaration } from "./types";
 import { normalizeLegacyStep } from "@tka/tka-types";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 /**
  * The machine-checkable grammar for wing declarations. Reads the owners it

@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
   import { useTask, useThrelte } from "@threlte/core";
   import { Raycaster } from "three";
-  import { registerViewSource } from "$lib/shared/review/view-capture";
+  import { registerViewSource } from "#lib/shared/review/view-capture.js";
   import {
     inspectEnvironmentReviewTarget,
     readEnvironmentReviewPose,

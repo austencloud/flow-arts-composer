@@ -11,9 +11,9 @@ import {
   setTipPointOverrideProvider,
   tipPointSignature,
 } from "../prop-tip-points";
-import { PROP_MODEL_SPRITES } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+import { PROP_MODEL_SPRITES } from "#lib/shared/pictograph/prop/domain/prop-model-sprites.generated.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 import { trailTipEnds } from "../trail-point-types";
 
 const BIGFAN_SCALE = 600 / 325;

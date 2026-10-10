@@ -3,7 +3,7 @@ import {
   type CellWarmDeps,
   type CellWarmHandle,
   type CellWarmProgress,
-} from "$lib/features/library/services/warm-all-scan-cells";
+} from "#lib/features/library/services/warm-all-scan-cells.js";
 
 export type ScanCellWarmScope =
   | { kind: "all" }

@@ -9,7 +9,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { Component } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { loadPreviewSequence } from "./preview-sequences";
 
   let { accent }: { accent: string } = $props();

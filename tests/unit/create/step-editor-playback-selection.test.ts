@@ -13,9 +13,9 @@
 import { flushSync, mount, unmount } from "svelte";
 import { effect_root } from "svelte/internal/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const nav = vi.hoisted(() => ({ activeTab: "generate" }));
 // Props the coordinator passes to its editor bodies. Svelte props are live
@@ -25,28 +25,28 @@ const shown = vi.hoisted(() => ({
   batch: null as Record<string, unknown> | null,
 }));
 
-vi.mock("$lib/shared/navigation/state/navigation-state.svelte", () => ({
+vi.mock("#lib/shared/navigation/state/navigation-state.svelte.js", () => ({
   navigationState: nav,
 }));
 vi.mock(
-  "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte",
+  "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js",
   () => ({ getSequenceOverlayState: () => ({ isOpen: false }) })
 );
-vi.mock("$lib/features/create/shared/get-step-operator", () => ({
+vi.mock("#lib/features/create/shared/get-step-operator.js", () => ({
   getStepOperator: () => ({}),
 }));
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: () => {} }),
 }));
-vi.mock("$lib/shared/application/state/app-state.svelte", () => ({
+vi.mock("#lib/shared/application/state/app-state.svelte.js", () => ({
   getSettings: () => ({}),
   updateSettings: () => {},
 }));
-vi.mock("$lib/shared/components/Crossfade.svelte", async () => ({
+vi.mock("#lib/shared/components/Crossfade.svelte", async () => ({
   default: (await import("./PassthroughStub.svelte")).default,
 }));
 vi.mock(
-  "$lib/features/create/shared/components/sequence-actions/StepEditorPanel.svelte",
+  "#lib/features/create/shared/components/sequence-actions/StepEditorPanel.svelte",
   () => ({
     default: (_anchor: unknown, props: Record<string, unknown>) => {
       shown.editor = props;
@@ -54,7 +54,7 @@ vi.mock(
   })
 );
 vi.mock(
-  "$lib/features/create/shared/components/sequence-actions/BatchStepEditor.svelte",
+  "#lib/features/create/shared/components/sequence-actions/BatchStepEditor.svelte",
   () => ({
     default: (_anchor: unknown, props: Record<string, unknown>) => {
       shown.batch = props;
@@ -62,26 +62,26 @@ vi.mock(
   })
 );
 vi.mock(
-  "$lib/features/create/shared/components/sequence-actions/MandalaViewerPanel.svelte",
+  "#lib/features/create/shared/components/sequence-actions/MandalaViewerPanel.svelte",
   () => ({ default: () => {} })
 );
 vi.mock(
-  "$lib/features/create/shared/components/sequence-actions/StepControlsZone.svelte",
+  "#lib/features/create/shared/components/sequence-actions/StepControlsZone.svelte",
   () => ({ default: () => {} })
 );
 vi.mock(
-  "$lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte",
+  "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte",
   () => ({ default: () => {} })
 );
 
 const { createPanelCoordinationState } =
-  await import("$lib/shared/create/state/panel-coordination-state.svelte");
+  await import("#lib/shared/create/state/panel-coordination-state.svelte.js");
 const { createSequenceSelectionState } =
-  await import("$lib/features/create/shared/state/selection/sequence-selection-state.svelte");
+  await import("#lib/features/create/shared/state/selection/sequence-selection-state.svelte.js");
 const { createAutoEditPanelEffect, createAutoStepEditorEffect } =
-  await import("$lib/features/create/shared/state/managers/auto-edit-panel-manager.svelte");
+  await import("#lib/features/create/shared/state/managers/auto-edit-panel-manager.svelte.js");
 const { default: StepEditorCoordinator } =
-  await import("$lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte");
+  await import("#lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte");
 
 type Selection = ReturnType<typeof createSequenceSelectionState>;
 

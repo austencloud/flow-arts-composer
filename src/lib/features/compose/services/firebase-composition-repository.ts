@@ -9,20 +9,20 @@
  * but don't block the user.
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import { auth } from "$lib/shared/auth/firebase";
-import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import { auth } from "#lib/shared/auth/firebase.js";
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
 import {
   firestoreGet,
   firestoreList,
   firestoreSet,
   firestoreDelete,
-} from "$lib/shared/firestore";
+} from "#lib/shared/firestore/index.js";
 import { CompositionSchema } from "../compose/domain/composition-schemas";
 import {
   getUserCompositionsPath,
 } from "../data/firestore-paths";
-import type { Composition } from "$lib/shared/animation-engine/domain/compose-types";
+import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
 
 /**
  * Get the current authenticated user ID.

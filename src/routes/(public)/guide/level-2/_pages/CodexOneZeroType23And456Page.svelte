@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Codex 1/0 Type 2/3 + 1|0·0|1 Type 4/5/6 - Level 2 body page 19 (manifest
    * `codex-1-0-t23-456`), faithful to old p19. A 4-quadrant page split by one heavy
@@ -11,10 +11,10 @@
    * Cell data from the shared codex path (codex-turns.ts); Λ/Γ cells use the
    * open/close helper. Self-titled (no GuidePage title).
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { codexSlotData, codexOpenCloseData } from "../_data/codex-turns";
 
   const S = 816 / 612;

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { ContentType, ViewerMode } from "../state/viewer-state.svelte";
   import {
     viewerModeOptions,
@@ -8,8 +8,8 @@
     type SelectableViewerMode,
   } from "../services/viewer-modes";
   import { canAccessPostStudio } from "../services/post-studio-access";
-  import { viewportFits3D } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte";
-  import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
+  import { viewportFits3D } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
+  import ResizeHandle from "#lib/shared/panels/ResizeHandle.svelte";
 
   const RAIL_WIDTH_KEY = "tka-viewer-rail-width";
   const DEFAULT_WIDTH = 180;

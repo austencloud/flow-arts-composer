@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { MUSEUM_EXHIBIT_SEQUENCES } from "$lib/features/museum/data/museum-exhibit-sequences";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { MUSEUM_EXHIBIT_SEQUENCES } from "#lib/features/museum/data/museum-exhibit-sequences.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   cycleSlotCount,
   performsStartSlot,
   resolvePreviewCycleStep,
-} from "$lib/shared/timeline/loop-cycle";
+} from "#lib/shared/timeline/loop-cycle.js";
 
 /**
  * Canonical loop semantics for the gallery card preview, against real

@@ -1,12 +1,12 @@
 import { Quaternion, Vector3 } from "three";
 import { PROP_COLORS, type PropState3D } from "@austencloud/scene-3d/worker";
-import { ledBrightnessToFloat } from "$lib/shared/animation-engine/domain/types/led-types";
-import { LedPatternMaterializer } from "$lib/shared/animation-engine/services/led/led-pattern-materializer";
-import { patternFrameIndex } from "$lib/shared/animation-engine/services/led-sampler";
+import { ledBrightnessToFloat } from "#lib/shared/animation-engine/domain/types/led-types.js";
+import { LedPatternMaterializer } from "#lib/shared/animation-engine/services/led/led-pattern-materializer.js";
+import { patternFrameIndex } from "#lib/shared/animation-engine/services/led-sampler.js";
 import {
   getPixel,
   type StripPattern,
-} from "$lib/shared/poi/domain/strip-pattern";
+} from "#lib/shared/poi/domain/strip-pattern.js";
 import {
   resolveTrailSources3D,
   TipPositionBridge3D,
@@ -16,8 +16,8 @@ import type {
   Charcoal3DParams,
   Fire3DParams,
   Goo3DParams,
-} from "$lib/shared/effects/translators/webgl3d-types";
-import type { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/effects/translators/webgl3d-types.js";
+import type { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import { MOON_FAN_LED_COUNT } from "../../effects/led/moon-fan-diffuser-renderer-3d";
 import { shutterToPovPersistence } from "../../effects/poi/pov-strip-renderer-3d";
 import type { SceneEffectTipSource3D } from "../../effects/scene-effects/scene-effect-source-3d";

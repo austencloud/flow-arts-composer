@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { INK_PALETTES } from "$lib/shared/3d/effects/ink/ink-palettes";
+import { INK_PALETTES } from "#lib/shared/3d/effects/ink/ink-palettes.js";
 import {
   Ink2DRenderer,
   resolveInkStrokeWidth,
   resolveInkTurnLoad,
-} from "$lib/shared/effects/renderers/ink-2d-renderer";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
-import type { Ink2DParams } from "$lib/shared/effects/translators/canvas2d-types";
-import { resolveInk2D } from "$lib/shared/effects/translators/canvas2d-translator";
-import type { InkIntent } from "$lib/shared/effects/domain/effects-config";
+} from "#lib/shared/effects/renderers/ink-2d-renderer.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
+import type { Ink2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
+import { resolveInk2D } from "#lib/shared/effects/translators/canvas2d-translator.js";
+import type { InkIntent } from "#lib/shared/effects/domain/effects-config.js";
 
 function makeParams(overrides: Partial<Ink2DParams> = {}): Ink2DParams {
   return {

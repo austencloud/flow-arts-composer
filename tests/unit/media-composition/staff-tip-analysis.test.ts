@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createStaffTipAnalysis,
   type StaffTipAnalysisDeps,
-} from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
-import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
+} from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
+import type { StaffTipTrack } from "#lib/shared/media-composition/domain/staff-tip-track.js";
 
 const TRACK = { version: 1, sampleCount: 0 } as unknown as StaffTipTrack;
 const NEWER = { version: 1, sampleCount: 1 } as unknown as StaffTipTrack;

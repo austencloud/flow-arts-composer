@@ -3,19 +3,19 @@ import {
   evaluateStaffTurnPreparation,
   sampleAuthoredRootYaw,
   type StaffTurnScoreSource,
-} from "$lib/features/lab/tabs/collision-lab/services/staff-turn-preparation-study";
-import { propStateToStaffTarget } from "$lib/shared/3d/services/swept-volume/swept-volume-builder";
+} from "#lib/features/lab/tabs/collision-lab/services/staff-turn-preparation-study.js";
+import { propStateToStaffTarget } from "#lib/shared/3d/services/swept-volume/swept-volume-builder.js";
 import {
   StanceSimulator,
   restPoseFromHeight,
-} from "$lib/features/lab/tabs/collision-lab/services/stance-simulator";
+} from "#lib/features/lab/tabs/collision-lab/services/stance-simulator.js";
 import { PlaneMode } from "@austencloud/scene-3d";
 import { STAGE } from "@austencloud/scene-3d";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
-import { FALG } from "$lib/shared/combination/domain/demo-fixtures";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
+import { FALG } from "#lib/shared/combination/domain/demo-fixtures.js";
 
 const source: StaffTurnScoreSource = {
   motionStepCount: 1,

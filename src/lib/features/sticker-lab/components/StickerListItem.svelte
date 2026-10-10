@@ -2,7 +2,7 @@
   import type { StickerUnit, StickerVariant, StickerBackground } from "../domain/sticker-types";
   import { getStickerLabContext } from "../context/sticker-lab-context";
   import { MAX_COPIES_PER_STICKER } from "../domain/sticker-constants";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   interface Props {
     sticker: StickerUnit;

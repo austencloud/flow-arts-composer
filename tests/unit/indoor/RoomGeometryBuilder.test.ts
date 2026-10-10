@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { buildRoom } from "$lib/shared/3d/indoor/services/room-geometry-builder";
-import type { RoomDefinition } from "$lib/shared/3d/indoor/domain/room-types";
-import { GRID_CELL, snapToGrid } from "$lib/shared/3d/indoor/domain/room-types";
+import { buildRoom } from "#lib/shared/3d/indoor/services/room-geometry-builder.js";
+import type { RoomDefinition } from "#lib/shared/3d/indoor/domain/room-types.js";
+import { GRID_CELL, snapToGrid } from "#lib/shared/3d/indoor/domain/room-types.js";
 
 function makeSimpleRoom(overrides: Partial<RoomDefinition> = {}): RoomDefinition {
 	return {

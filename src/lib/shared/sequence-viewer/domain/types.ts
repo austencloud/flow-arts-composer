@@ -5,7 +5,7 @@
  * Create (preview mode) and Browse (full mode) contexts.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * Viewer mode determines which features are available

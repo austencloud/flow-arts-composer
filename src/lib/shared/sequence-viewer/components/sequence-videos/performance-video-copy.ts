@@ -1,7 +1,7 @@
 import {
   getCreatorDisplayName,
   type CollaborativeVideo,
-} from "$lib/shared/video-collaboration/domain/collaborative-video";
+} from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 
 export function performanceCreatorName(video: CollaborativeVideo): string {
   return getCreatorDisplayName(video) ?? "Anonymous";

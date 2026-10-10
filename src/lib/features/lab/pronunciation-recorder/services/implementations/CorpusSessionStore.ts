@@ -1,4 +1,4 @@
-import { getLetterPronunciation } from "$lib/shared/pronunciation/pronunciation-plan";
+import { getLetterPronunciation } from "#lib/shared/pronunciation/pronunciation-plan.js";
 
 import type {
   ConnectedSessionFolder,

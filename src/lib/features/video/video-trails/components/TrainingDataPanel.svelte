@@ -1,5 +1,5 @@
 <script lang="ts">
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { getVideoTrailsContext } from "../context/video-trails-context";
   import type { DetectedEndpoint, EndpointCorrection } from "../domain/types";
 

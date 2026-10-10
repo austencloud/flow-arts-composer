@@ -1,6 +1,6 @@
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { turnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { turnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
 
 /** The animation glyph's "no turns" tuple: no step, or a hand missing. */
 export const NO_TURNS_TUPLE = "(s, 0, 0)";

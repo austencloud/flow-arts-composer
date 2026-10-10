@@ -2,13 +2,13 @@
 
 import { flushSync, mount, unmount } from "svelte";
 import { afterEach, describe, expect, it } from "vitest";
-import { setLocale } from "$lib/shared/i18n/i18n.svelte.js";
-import { siteCopy } from "$lib/shared/landing/site-copy";
-import { createViewerEditModeState } from "$lib/shared/sequence-viewer/state/viewer-edit-mode-state.svelte";
+import { setLocale } from "#lib/shared/i18n/i18n.svelte.js";
+import { siteCopy } from "#lib/shared/landing/site-copy.js";
+import { createViewerEditModeState } from "#lib/shared/sequence-viewer/state/viewer-edit-mode-state.svelte.js";
 import { guideTurnDisplayWord } from "../../src/routes/(public)/guide/level-1/_data/guide-turn-display-word";
 
 const { default: DurationResizeHandle } =
-  await import("$lib/features/create/shared/workspace-panel/sequence-display/components/DurationResizeHandle.svelte");
+  await import("#lib/features/create/shared/workspace-panel/sequence-display/components/DurationResizeHandle.svelte");
 
 const realCreateElement = Object.getPrototypeOf(document)
   .createElement as typeof document.createElement;

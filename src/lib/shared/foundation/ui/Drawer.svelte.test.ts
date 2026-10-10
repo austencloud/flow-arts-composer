@@ -10,7 +10,7 @@ import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
 import { describe, it, expect, afterEach, vi } from "vitest";
 
-import { registerBackgroundFreezeTarget } from "$lib/shared/background/shared/state/background-hold.svelte";
+import { registerBackgroundFreezeTarget } from "#lib/shared/background/shared/state/background-hold.svelte.js";
 import DrawerKeyboardTestHarness from "./DrawerKeyboardTestHarness.svelte";
 
 function settle(ms = 200) {

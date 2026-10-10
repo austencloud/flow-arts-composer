@@ -21,7 +21,7 @@ import {
 	getDatabaseInstance,
 	getAuthSync,
 	createHMRSafeDatabaseListener
-} from '$lib/shared/auth/firebase';
+} from '#lib/shared/auth/firebase.js';
 import type {
 	SyncSession,
 	SessionParticipant,
@@ -30,7 +30,7 @@ import type {
 	ParticipantFirebaseData
 } from '../domain/models/connect-models';
 import { SESSION_CONFIG, FIREBASE_PATHS } from '../domain/models/connect-constants';
-import { toast } from '$lib/shared/toast/state/toast-state.svelte';
+import { toast } from '#lib/shared/toast/state/toast-state.svelte.js';
 
 export class SessionManager {
 	private _currentSession: SyncSession | null = null;

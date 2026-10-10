@@ -12,10 +12,10 @@
   - Immediate action on click (no selection state)
 -->
 <script lang="ts">
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type { LOOPOption } from "../../../features/create/shared/services/loop-validator";
-  import type { CircularizationOption } from "$lib/shared/create/domain/spell-models";
-  import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  import type { CircularizationOption } from "#lib/shared/create/domain/spell-models.js";
+  import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
   import { slide } from "svelte/transition";
   import {
     loopTypeTint,
@@ -23,9 +23,9 @@
     ORIENTATION_REPEAT_COLOR,
   } from "./loop-option-color";
   import LOOPChoiceButton from "./LOOPChoiceButton.svelte";
-  import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-  import { loopTypeLabel } from "$lib/features/create/generate/components/loop-component-presentation";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+  import { loopTypeLabel } from "#lib/features/create/generate/components/loop-component-presentation.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     /** Direct LOOP options (no bridge letter needed) */

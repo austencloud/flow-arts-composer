@@ -8,11 +8,11 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 // guard, not something this suite is testing. Stub it out so the checkpoint
 // tests exercise the real settingsState write without tripping over it.
 vi.mock(
-  "$lib/shared/settings/utils/background-theme-calculator",
+  "#lib/shared/settings/utils/background-theme-calculator.js",
   async (importOriginal) => {
     const actual =
       await importOriginal<
-        typeof import("$lib/shared/settings/utils/background-theme-calculator")
+        typeof import("#lib/shared/settings/utils/background-theme-calculator.js")
       >();
     return { ...actual, applyThemeForBackground: () => {} };
   }
@@ -21,15 +21,15 @@ vi.mock(
 import {
   captureSettingsCheckpoint,
   revertSettingsCheckpoint,
-} from "$lib/shared/collections/settings-checkpoint.svelte";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/collections/settings-checkpoint.svelte.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import {
   animationSettings,
   TrailMode,
-} from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { EFFECTS_CONFIG_STORAGE_KEY } from "$lib/shared/effects/state/effects-config-state.svelte";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { EFFECTS_CONFIG_STORAGE_KEY } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { BackgroundType } from "@austencloud/backgrounds";
 
 // These raw key literals mirror the ones open-tunnel-in-viewer.ts /

@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RequestEvent } from "@sveltejs/kit";
 
 const mocks = vi.hoisted(() => ({ dev: true, update: vi.fn() }));
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   get dev() {
     return mocks.dev;
   },
 }));
-vi.mock("$lib/server/phone-review-interaction-state", () => ({
+vi.mock("#lib/server/phone-review-interaction-state.js", () => ({
   updatePhoneReviewInteractionState: mocks.update,
 }));
 import { POST } from "./+server";

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import Scene3DSetupGuide from "$lib/shared/3d/components/onboarding/Scene3DSetupGuide.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
+  import Scene3DSetupGuide from "#lib/shared/3d/components/onboarding/Scene3DSetupGuide.svelte";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 
   const viewer = createViewer3DState(undefined, {});
   viewer.enter3D();

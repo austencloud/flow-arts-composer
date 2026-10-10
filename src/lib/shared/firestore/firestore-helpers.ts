@@ -5,7 +5,7 @@ import {
   type DocumentReference,
   type Firestore,
 } from "firebase/firestore";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 
 // firestoreDate lives in its own worker-safe module (no auth/firebase-client
 // import). Re-exported here so existing firestore-helpers / barrel consumers

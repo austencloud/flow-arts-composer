@@ -2,8 +2,8 @@
   import { onMount } from "svelte";
   import { Capacitor } from "@capacitor/core";
   import { App as NativeApp } from "@capacitor/app";
-  import ShapeMatrixApp from "$lib/shared/shape-matrix/app/ShapeMatrixApp.svelte";
-  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
+  import ShapeMatrixApp from "#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte";
+  import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
   import { persistence } from "./persistence";
 
   let engine: ShapeMatrixApp | undefined;

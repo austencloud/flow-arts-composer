@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { stripToSequence } from "./guide-sequence-adapter";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const mk = (step: number | null): StepData =>
   ({

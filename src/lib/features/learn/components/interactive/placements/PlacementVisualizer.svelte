@@ -3,21 +3,21 @@ PlacementVisualizer - Renders a real pictograph showing a static placement.
 Uses PictographContainer (the actual pictograph renderer) instead of custom SVG.
 -->
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     GridLocation,
     GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     HandSide,
     MotionType,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   type HandPosition = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
   type PlacementType = "alpha" | "beta" | "gamma";

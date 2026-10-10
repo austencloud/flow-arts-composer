@@ -1,6 +1,6 @@
-import type { FeedbackItem } from "$lib/shared/feedback/domain/models/feedback-models";
-import { firestoreList } from "$lib/shared/firestore";
-import { FeedbackItemSchema } from "$lib/shared/feedback/domain/models/feedback-schemas";
+import type { FeedbackItem } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import { firestoreList } from "#lib/shared/firestore/index.js";
+import { FeedbackItemSchema } from "#lib/shared/feedback/domain/models/feedback-schemas.js";
 
 /**
  * Loads archived feedback items from Firestore. Stateless — plain module

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   UndoOperationType,
   normalizeUndoHistoryEntries,
-} from "$lib/features/create/shared/services/undo-manager";
+} from "#lib/features/create/shared/services/undo-manager.js";
 
 describe("Create undo history compatibility", () => {
   it("restores literal blue/red motions in both history snapshots", async () => {

@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, untrack } from "svelte";
-  import type { Section } from "$lib/shared/navigation/domain/types";
-  import type { CreateFrontDoorSource } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
+  import type { Section } from "#lib/shared/navigation/domain/types.js";
+  import type { CreateFrontDoorSource } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import LastUsedBadge from "#lib/shared/components/LastUsedBadge.svelte";
   import {
     createRenderActivityGate,
     renderGateTarget,
-  } from "$lib/shared/render-gating/render-activity-gate";
-  import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
+  } from "#lib/shared/render-gating/render-activity-gate.js";
+  import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import {
     logCreateFrontDoorViewed,
     logCreateMethodSelected,

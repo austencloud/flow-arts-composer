@@ -7,7 +7,7 @@
 import type {
   DeviceCapabilities,
   ResponsiveSettings,
-} from "$lib/shared/device/domain/models/device-models";
+} from "#lib/shared/device/domain/models/device-models.js";
 
 /**
  * Creates simple reactive state for device integration

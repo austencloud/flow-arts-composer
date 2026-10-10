@@ -5,7 +5,7 @@
  * Does NOT modify SequenceData - references existing library sequences by ID.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * Performer positioning hint for duet performance

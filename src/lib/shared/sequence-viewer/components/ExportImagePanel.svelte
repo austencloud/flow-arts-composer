@@ -15,26 +15,26 @@
   behind the share button that way everyone knows what to expect."
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy } from "svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
   import {
     DURATION,
     SLIDE,
     STAGGER,
-  } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/transitions/transitions.js";
   import {
     flyFade,
     growFade,
     motionDuration,
-  } from "$lib/shared/transitions/motion";
-  import type { ExportOptionsStateManager } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
-  import "$lib/shared/animation-panel/bento/rail-tile.css";
+  } from "#lib/shared/transitions/motion.js";
+  import type { ExportOptionsStateManager } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
+  import "#lib/shared/animation-panel/bento/rail-tile.css";
   import { columnOptionsFor } from "./bento/columns-stepper";
   import ControlDock, { type ControlDockTab } from "./ControlDock.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     getInfoCellCount,
     type InfoCellChoice,
@@ -42,14 +42,14 @@
   import {
     getStepColumnsForLayout,
     type ResolvedAutoLayout,
-  } from "$lib/shared/render/services/container-aware-layout";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import CardFooterEditor from "$lib/shared/share/components/CardFooterEditor.svelte";
+  } from "#lib/shared/render/services/container-aware-layout.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import CardFooterEditor from "#lib/shared/share/components/CardFooterEditor.svelte";
   import {
     cardPresentationFromFooterSettings,
     resolveCardFooter,
     type CardPresentation,
-  } from "$lib/shared/share/domain/models/card-presentation";
+  } from "#lib/shared/share/domain/models/card-presentation.js";
 
   type PanelLayout = "sidebar" | "bottom" | "inline";
 

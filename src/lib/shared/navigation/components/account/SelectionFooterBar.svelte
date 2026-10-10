@@ -2,9 +2,9 @@
   SelectionFooterBar.svelte - Sticky actions in the My Props drawer.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   interface Props {
     selectedProps: PropType[];

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <GuideSeo

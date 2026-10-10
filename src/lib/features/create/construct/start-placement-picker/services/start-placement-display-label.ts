@@ -1,4 +1,4 @@
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 /**
  * Formats the canonical static letter with its placement number, such as α1.

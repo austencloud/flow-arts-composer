@@ -4,7 +4,7 @@
  * Handles word parsing and bridge letter insertion for spell generation.
  */
 
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type { LetterSource } from "../domain/models/spell-models";
 import type { WordParseResult, WordParseOptions } from "./types";
 import type { LetterTransitionGraph } from "./letter-transition-graph";

@@ -1,4 +1,4 @@
-import type { RhythmDef } from "$lib/shared/create/domain/rhythm/rhythm-catalog";
+import type { RhythmDef } from "#lib/shared/create/domain/rhythm/rhythm-catalog.js";
 
 export type StripValue = number | "fl" | boolean;
 

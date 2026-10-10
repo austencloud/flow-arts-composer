@@ -5,7 +5,7 @@
  * hold, because a locked method's sign-up dialog opens over the card.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { methodPreviewHold } from "$lib/features/create/shared/components/method-previews/method-preview-hold";
+import { methodPreviewHold } from "#lib/features/create/shared/components/method-previews/method-preview-hold.js";
 
 // vitest-setup.ts stubs document.createElement; listeners need a real node.
 const realCreateElement = Object.getPrototypeOf(document)

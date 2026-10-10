@@ -1,7 +1,7 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { analyzeDifficulty } from "$lib/shared/browse/services/sequence-difficulty-calculator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { analyzeDifficulty } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 import {
   loadLevelOneSpace,
   type LevelOneSpace,

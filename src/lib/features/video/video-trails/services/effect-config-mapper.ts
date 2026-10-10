@@ -1,19 +1,19 @@
 import type { EffectConfig } from "../domain/types";
-import type { FireOverlayConfig } from "$lib/shared/animation-engine/domain/types/fire-types";
-import type { LedOverlayConfig } from "$lib/shared/animation-engine/domain/types/led-types";
+import type { FireOverlayConfig } from "#lib/shared/animation-engine/domain/types/fire-types.js";
+import type { LedOverlayConfig } from "#lib/shared/animation-engine/domain/types/led-types.js";
 import {
   CAPSULE_LED_COUNT,
   DEFAULT_LED_LOOK,
   PATTERN_MATERIALIZE_BRIGHTNESS,
   hexToRgb255,
-} from "$lib/shared/animation-engine/domain/types/led-types";
+} from "#lib/shared/animation-engine/domain/types/led-types.js";
 import type {
-  TrailMode} from "$lib/shared/animation-engine/domain/types/trail-types";
+  TrailMode} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   TrailEffect,
   TrackingMode,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 export function toFireConfig(effect: EffectConfig["fire"]): FireOverlayConfig {
   return {

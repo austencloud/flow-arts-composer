@@ -9,9 +9,9 @@
  * Does NOT call the dispatcher. Zero side effects.
  */
 
-import type { VoiceSession, VoiceSessionEvent } from "$lib/shared/voice-control/domain/voice-session-types";
-import type { CommandInterpreter } from "$lib/shared/voice-control/services/command-interpreter";
-import type { VoiceCommand, CommandContext } from "$lib/shared/voice-control/domain/voice-command-types";
+import type { VoiceSession, VoiceSessionEvent } from "#lib/shared/voice-control/domain/voice-session-types.js";
+import type { CommandInterpreter } from "#lib/shared/voice-control/services/command-interpreter.js";
+import type { VoiceCommand, CommandContext } from "#lib/shared/voice-control/domain/voice-command-types.js";
 import type {
   ReplayResult,
   ReplayEventComparison,

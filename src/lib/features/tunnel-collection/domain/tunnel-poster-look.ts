@@ -28,8 +28,8 @@ import {
   TAIL_LENGTH_MAX,
   TrailMode,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { TunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { TunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import type { CollectedTunnel } from "./tunnel-collection-types";
 
 /**

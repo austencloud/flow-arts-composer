@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
 
   interface Props {

@@ -12,13 +12,13 @@
  * - "manual": Triggered by clicking version number (shows feedback + View All Releases)
  */
 
-import { getOnboardingPersister } from "$lib/shared/onboarding/get-onboarding-persister";
+import { getOnboardingPersister } from "#lib/shared/onboarding/get-onboarding-persister.js";
 import {
   compareVersions,
   type AppVersion,
-} from "$lib/shared/versioning/domain/models/version-models";
-import type { OnboardingPersister } from "$lib/shared/onboarding/services/onboarding-persister";
-import * as versionService from "$lib/shared/feedback/services/version-service";
+} from "#lib/shared/versioning/domain/models/version-models.js";
+import type { OnboardingPersister } from "#lib/shared/onboarding/services/onboarding-persister.js";
+import * as versionService from "#lib/shared/feedback/services/version-service.js";
 
 const STORAGE_KEY = "tka-last-seen-version";
 

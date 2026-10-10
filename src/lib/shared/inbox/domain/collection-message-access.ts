@@ -1,7 +1,7 @@
 import type {
   CollectionAccessRole,
   CollectionShareGrant,
-} from "$lib/shared/library/domain/models/collection";
+} from "#lib/shared/library/domain/models/collection.js";
 
 /**
  * A sent message remembers the role at send time so it can render immediately.

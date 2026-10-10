@@ -8,19 +8,19 @@ const mocks = vi.hoisted(() => ({
   logAdminAction: vi.fn(),
 }));
 
-vi.mock("$lib/server/auth/requireAdmin", () => ({
+vi.mock("#lib/server/auth/requireAdmin.js", () => ({
   requireAdmin: mocks.requireAdmin,
 }));
-vi.mock("$lib/server/security/withRateLimit", () => ({
+vi.mock("#lib/server/security/withRateLimit.js", () => ({
   withRateLimit: mocks.withRateLimit,
 }));
-vi.mock("$lib/server/security/audit-logger", () => ({
+vi.mock("#lib/server/security/audit-logger.js", () => ({
   logAdminAction: mocks.logAdminAction,
 }));
-vi.mock("$lib/server/auth/firebase-auth-rest", () => ({
+vi.mock("#lib/server/auth/firebase-auth-rest.js", () => ({
   getFirebaseAuthRest: () => ({ listUsers: mocks.listUsers }),
 }));
-vi.mock("$lib/server/firestore/firestore-rest", () => ({
+vi.mock("#lib/server/firestore/firestore-rest.js", () => ({
   fromFirestoreFields: (fields: {
     isAnonymous?: { booleanValue: boolean };
   }) => ({ isAnonymous: fields.isAnonymous?.booleanValue }),

@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import KeyboardKeyDisplay from "$lib/shared/keyboard/components/settings/KeyboardKeyDisplay.svelte";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
-  import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-  import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
-  import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
-  import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
+  import KeyboardKeyDisplay from "#lib/shared/keyboard/components/settings/KeyboardKeyDisplay.svelte";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  import { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+  import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
+  import { registerEditHistoryShortcuts } from "#lib/shared/keyboard/registration/register-edit-history-shortcuts.js";
+  import { keyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
   import {
     createGripLabShortcuts,
     shouldIgnoreGripLabKey,

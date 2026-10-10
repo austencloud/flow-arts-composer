@@ -1,6 +1,6 @@
 <script lang="ts">
-  import TnDModeGrid from "$lib/features/choreo-card/components/TnDModeGrid.svelte";
-  import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+  import TnDModeGrid from "#lib/features/choreo-card/components/TnDModeGrid.svelte";
+  import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
   let {
     selected,

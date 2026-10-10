@@ -10,12 +10,12 @@
  */
 import { flushSync, mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Section } from "$lib/shared/navigation/domain/types";
-import { CREATE_TABS } from "$lib/shared/navigation/config/tab-definitions";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import { METHOD_PREVIEW_SCENES } from "$lib/features/create/shared/components/method-previews/method-preview-scenes";
-import { METHOD_PREVIEW_TIMING } from "$lib/features/create/shared/state/method-preview-turns.svelte";
-import { __resetRenderGatingSharedState } from "$lib/shared/render-gating/render-activity-gate";
+import type { Section } from "#lib/shared/navigation/domain/types.js";
+import { CREATE_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { METHOD_PREVIEW_SCENES } from "#lib/features/create/shared/components/method-previews/method-preview-scenes.js";
+import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
+import { __resetRenderGatingSharedState } from "#lib/shared/render-gating/render-activity-gate.js";
 
 const analytics = vi.hoisted(() => ({
   logCreateFrontDoorViewed: vi.fn(),
@@ -23,10 +23,10 @@ const analytics = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "$lib/features/create/shared/services/create-entry-analytics",
+  "#lib/features/create/shared/services/create-entry-analytics.js",
   () => analytics
 );
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 // Outside the app shell getSettings() returns a copy read once, so the app's
@@ -38,11 +38,11 @@ const appMotionSetting = await vi.hoisted(async () => {
   return new SvelteMap<"reducedMotion", boolean>();
 });
 vi.mock(
-  "$lib/shared/application/state/app-state.svelte",
+  "#lib/shared/application/state/app-state.svelte.js",
   async (importOriginal) => {
     const original =
       await importOriginal<
-        typeof import("$lib/shared/application/state/app-state.svelte")
+        typeof import("#lib/shared/application/state/app-state.svelte.js")
       >();
     return {
       ...original,
@@ -58,7 +58,7 @@ vi.mock(
 // The real preview box loads scene modules jsdom cannot draw. The stand-in
 // reports ready on mount and shows the props it was given.
 vi.mock(
-  "$lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte",
+  "#lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte",
   async () => ({
     default: (await import("./FakeMethodPreview.svelte")).default,
   })

@@ -7,16 +7,16 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { deriveBuilderMotionGeometry } from "$lib/features/assemble-lab/services/builder-motion-geometry";
-import { BUILDER_HOP_MS } from "$lib/features/assemble-lab/services/svg-prop-animator";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { deriveBuilderMotionGeometry } from "#lib/features/assemble-lab/services/builder-motion-geometry.js";
+import { BUILDER_HOP_MS } from "#lib/features/assemble-lab/services/svg-prop-animator.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { METHOD_PREVIEW_TIMING } from "$lib/features/create/shared/state/method-preview-turns.svelte";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 import {
   ASSEMBLE_CROP,
   ASSEMBLE_STEPS,
@@ -24,9 +24,9 @@ import {
   assembleHops,
   assemblePoint,
   standingHop,
-} from "$lib/features/create/shared/components/method-previews/method-preview-assemble";
-import { DEMO_SEQUENCE } from "$lib/features/create/shared/components/method-previews/method-preview-demo";
-import { SCENE_TAP } from "$lib/features/create/shared/components/method-previews/method-preview-run";
+} from "#lib/features/create/shared/components/method-previews/method-preview-assemble.js";
+import { DEMO_SEQUENCE } from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
+import { SCENE_TAP } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
 
 /** The attract ghost's shortest glide (attract-ghost.svelte.ts). */
 const SHORTEST_GLIDE_MS = 300;

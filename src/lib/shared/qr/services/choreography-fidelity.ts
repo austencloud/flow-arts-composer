@@ -26,10 +26,10 @@
  */
 
 import { normalizeLegacySequence } from "@tka/tka-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { gridJoinToken } from "$lib/shared/foundation/domain/models/grid-join-token";
-import { canonicalDigest } from "$lib/shared/foundation/utils/canonical-digest";
-import { decodeSequenceFromQR } from "$lib/shared/navigation/services/sequence-encoder";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { gridJoinToken } from "#lib/shared/foundation/domain/models/grid-join-token.js";
+import { canonicalDigest } from "#lib/shared/foundation/utils/canonical-digest.js";
+import { decodeSequenceFromQR } from "#lib/shared/navigation/services/sequence-encoder.js";
 
 type Hand = "left" | "right";
 const HANDS: readonly Hand[] = ["left", "right"];

@@ -3,28 +3,26 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { calculateEndOrientation } from "@tka/sequence-engine/core";
 import { Plane } from "@austencloud/scene-3d";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   extractLeftSoloProp,
   extractRightSoloProp,
   extractStepPairings,
-} from "$lib/shared/foundation/services/sequence-decomposer";
-import { deriveSteps } from "$lib/shared/foundation/services/step-deriver";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { gridLocationToPosition3D } from "$lib/shared/3d/services/plane-coordinate-mapper";
-import { isSeamlesslyLoopable3D } from "$lib/shared/3d/services/sequence-loopability-3d";
+} from "#lib/shared/foundation/services/sequence-decomposer.js";
+import { deriveSteps } from "#lib/shared/foundation/services/step-deriver.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+import { gridLocationToPosition3D } from "#lib/shared/3d/services/plane-coordinate-mapper.js";
+import { isSeamlesslyLoopable3D } from "#lib/shared/3d/services/sequence-loopability-3d.js";
 import {
   lookupLetter,
   parseCsvEdges,
-} from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+} from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 import {
   computeHash,
   HASH_VERSION_V2,
   HASH_VERSION_V3,
-} from "$lib/shared/library/services/sequence-content-hasher";
-import { MotionDataSchema } from "$lib/shared/pictograph/shared/domain/schemas/pictograph-schemas";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { isSeamlesslyLoopable3D } from "$lib/shared/3d/services/sequence-loopability-3d";
+} from "#lib/shared/library/services/sequence-content-hasher.js";
+import { MotionDataSchema } from "#lib/shared/pictograph/shared/domain/schemas/pictograph-schemas.js";
 
 type CorpusMotion = {
   hand: "left" | "right";

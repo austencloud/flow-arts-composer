@@ -1,6 +1,6 @@
-import type { CompiledPost } from "$lib/shared/media-composition/domain/post-plan-compiler";
-import type { CompiledPostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+import type { CompiledPost } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
+import type { CompiledPostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
 
 /**
  * The post's own audio track, mixed once and exported alongside the picture

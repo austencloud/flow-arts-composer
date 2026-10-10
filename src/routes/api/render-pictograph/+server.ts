@@ -1,10 +1,10 @@
 import type { RequestHandler } from "@sveltejs/kit";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { dev } from "$app/environment";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { dev } from "$app/env";
 import fs from "fs";
 import path from "path";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
 
 /**
  * Public API endpoint - renders pictograph and returns PNG
@@ -31,7 +31,7 @@ export const GET: RequestHandler = async (event) => {
     // Dynamically import so Node.js canvas works server-side
     const { createCanvas: _createCanvas } = await import("canvas");
     const { canvas2DDirectRenderer } =
-      await import("$lib/shared/render/services/canvas-2d-direct-renderer");
+      await import("#lib/shared/render/services/canvas-2d-direct-renderer.js");
 
     const csvPath = path.join(
       process.cwd(),

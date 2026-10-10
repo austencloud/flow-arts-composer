@@ -16,27 +16,27 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { untrack } from "svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { getTipPointsBaseline } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-  import { engineAlignScale } from "$lib/shared/mandala/services/engine-align";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { getTipPointsBaseline } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+  import { engineAlignScale } from "#lib/shared/mandala/services/engine-align.js";
   import {
     mandalaJoinReach,
     sequenceMandalaHandOffsets,
-  } from "$lib/shared/mandala/services/mandala-grid-join";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
-  import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-  import { resolveViewingPresentation } from "$lib/shared/sequence-preview/services/viewing-presentation";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import WordHeader from "$lib/shared/animation-engine/components/layers/WordHeader.svelte";
+  } from "#lib/shared/mandala/services/mandala-grid-join.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { createAnimationScope } from "#lib/shared/animation-engine/state/animation-scope.svelte.js";
+  import { resolveRecordedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+  import { resolveViewingPresentation } from "#lib/shared/sequence-preview/services/viewing-presentation.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
   import type { LiveSlots, Medium } from "./live-slots.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   let {
     slots,
@@ -332,7 +332,7 @@
               <LazyMount
                 loader={() =>
                   import(
-                    "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"
+                    "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"
                   )}
                 active
                 props={{
@@ -366,7 +366,7 @@
                and simply reads as the sequence's notation. -->
           <div class="strip-zone">
             <LazyMount
-              loader={() => import("$lib/shared/timeline/StepStrip.svelte")}
+              loader={() => import("#lib/shared/timeline/StepStrip.svelte")}
               active
               props={{
                 sequence,
@@ -439,7 +439,7 @@
           <LazyMount
             loader={() =>
               import(
-                "$lib/features/tunnel-collection/components/TunnelDetailPreview.svelte"
+                "#lib/features/tunnel-collection/components/TunnelDetailPreview.svelte"
               )}
             active
             props={{ tunnel }}
@@ -467,7 +467,7 @@
           <LazyMount
             loader={() =>
               import(
-                "$lib/features/scene-3d-collection/components/Scene3DPreview.svelte"
+                "#lib/features/scene-3d-collection/components/Scene3DPreview.svelte"
               )}
             active
             props={{ scene }}

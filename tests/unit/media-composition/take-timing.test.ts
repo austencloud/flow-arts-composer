@@ -30,8 +30,8 @@ import {
   takeTimingStatus,
   type TakeTiming,
   type TimingSection,
-} from "$lib/shared/media-composition/domain/take-timing";
-import { createBeatClock } from "$lib/shared/media-composition/domain/tap-fit";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import { createBeatClock } from "#lib/shared/media-composition/domain/tap-fit.js";
 
 const EIGHT = [1, 1, 1, 1, 1, 1, 1, 1];
 const SIXTEEN = Array.from({ length: 16 }, () => 1);

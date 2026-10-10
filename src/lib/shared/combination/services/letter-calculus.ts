@@ -1,6 +1,6 @@
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { placementGroup, seamEndOf, seamOf } from "./placement-groups";
 
 export interface LetterEdge {
@@ -104,7 +104,7 @@ export function edgesFromSequence(seq: SequenceData): LetterEdge[] {
  * walk for a given edge-cycle is worth emitting as a candidate.
  *
  * This is a DIFFERENT layer from `simplifyRepeatedWord`
- * (`$lib/shared/foundation/utils/word-simplifier.ts`): that utility is
+ * (`#lib/shared/foundation/utils/word-simplifier.ts`): that utility is
  * display-layer — it takes an already-decided, already-realized word (e.g. a
  * LOOP's full expanded letter string) and shortens it for human display
  * after the fact. This function is enumeration-layer — it decides which

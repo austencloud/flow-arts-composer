@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { tokenizeWord } from "$lib/shared/pictograph/tka-glyph/utils/word-tokenizer";
+import { tokenizeWord } from "#lib/shared/pictograph/tka-glyph/utils/word-tokenizer.js";
 
 describe("tokenizeWord", () => {
   it("splits ASCII word into individual letters", () => {

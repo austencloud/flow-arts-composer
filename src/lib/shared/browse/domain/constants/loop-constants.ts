@@ -6,7 +6,7 @@
 import {
   LOOPComponent,
   type LOOPComponentInfo,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 /**
  * Complete list of LOOP components with their display metadata

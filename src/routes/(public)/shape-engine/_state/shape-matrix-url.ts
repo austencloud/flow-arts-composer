@@ -1,38 +1,38 @@
 import {
   buildShapeMatrixAxis,
   flowerKey,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import {
   matrixTurnsForLevel,
   SHAPE_MATRIX_DEFAULT_LEVEL,
   SHAPE_MATRIX_DEFAULT_TURN,
   type MatrixLabelMode,
-} from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+} from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
 import {
   asTurnLevel,
   keyToTurnValue,
   turnValueToKey,
   type TurnLevel,
   type TurnValue,
-} from "$lib/shared/create/services/level-turn-values";
+} from "#lib/shared/create/services/level-turn-values.js";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-import type { ShapeMatrixAppSnapshot } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
-import type { ShapeMatrixAxisTarget } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
-import type { ShapeMatrixSurface } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import type { ShapeMatrixAppSnapshot } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
+import type { ShapeMatrixAxisTarget } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
+import type { ShapeMatrixSurface } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { spinRatioEquals, spinRatioKey, type SpinRatio } from "@vtg/domain";
 import {
   parseTheoryFlowerKey,
   theoryFlowerKey,
   type TheoryFlower,
-} from "$lib/shared/shape-matrix/domain/theory-flower";
+} from "#lib/shared/shape-matrix/domain/theory-flower.js";
 import {
   DEFAULT_THEORY_RATIO,
   theoryRatioFromParts,
-} from "$lib/shared/shape-matrix/domain/theory-ratio";
+} from "#lib/shared/shape-matrix/domain/theory-ratio.js";
 
 const MODES = new Set<VtgMode>(MODE_ORDER);
 const LABEL_MODES = new Set<MatrixLabelMode>(["turns", "ratios"]);

@@ -3,7 +3,7 @@ import {
   createAnimationSettingsState,
   type AnimationSettingsState,
 } from "./animation-settings-state.svelte";
-import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import type { PersistenceMode } from "./persistence-adapter";
 
 export interface AnimationScopeOptions {

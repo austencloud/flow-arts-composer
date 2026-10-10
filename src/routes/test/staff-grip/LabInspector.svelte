@@ -7,21 +7,21 @@
   the rail. Matrix is the sweep mount.
 -->
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
 
   import CoverageMatrixMount from "./CoverageMatrixMount.svelte";
   import StanceTimingChart from "./StanceTimingChart.svelte";
   import type { CoverageMatrix } from "./coverage-matrix-contract";
   import { LAB_SWEEP_AXIS_LABEL } from "./lab-catalog";
   import type { BodyPropFit, FitVerdict } from "./lab-body-fit";
-  import type { ProportionSweepCharacter } from "$lib/shared/3d/domain/proportion-sweep-characters";
+  import type { ProportionSweepCharacter } from "#lib/shared/3d/domain/proportion-sweep-characters.js";
   import type { GripMetric, PoseMetric } from "./lab-metrics";
   import type { LabPanel, StaffLabState } from "./lab-state.svelte";
   import type {
     describeStanceYawTrack,
     StanceYawTrack,
-  } from "$lib/shared/3d/collision/stance-yaw-track";
+  } from "#lib/shared/3d/collision/stance-yaw-track.js";
 
   interface Props {
     lab: StaffLabState;

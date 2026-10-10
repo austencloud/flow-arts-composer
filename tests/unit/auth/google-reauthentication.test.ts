@@ -61,41 +61,43 @@ vi.mock("firebase/auth", () => ({
 
 const authRef = vi.hoisted(() => ({ currentUser: null as any }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: authRef,
   configureAuthPersistence: vi.fn(),
   getAuthInstance: async () => authRef,
 }));
 
-vi.mock("$lib/shared/desktop/is-desktop", () => ({ isDesktop: () => false }));
-vi.mock("$lib/shared/platform/services/platform-detector", () => ({
+vi.mock("#lib/shared/desktop/is-desktop.js", () => ({
+  isDesktop: () => false,
+}));
+vi.mock("#lib/shared/platform/services/platform-detector.js", () => ({
   isNative: () => false,
 }));
-vi.mock("$lib/shared/auth/services/anonymous-upgrade", () => ({
+vi.mock("#lib/shared/auth/services/anonymous-upgrade.js", () => ({
   captureAnonymousDrafts: vi.fn(),
   notifyUpgradeSignup: vi.fn(),
   upgradeAnonymousWithFacebook: vi.fn(),
   upgradeAnonymousWithGoogleCredential: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/state/anonymous-import-prompt.svelte", () => ({
+vi.mock("#lib/shared/auth/state/anonymous-import-prompt.svelte.js", () => ({
   promptAnonymousImport: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/services/pending-credential-link", () => ({
+vi.mock("#lib/shared/auth/services/pending-credential-link.js", () => ({
   clearPendingLink: vi.fn(),
   stashPendingLink: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
+vi.mock("#lib/shared/auth/services/last-auth-method.svelte.js", () => ({
   recordLastAuthMethod: vi.fn(),
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/services/instagram-auth", () => ({
+vi.mock("#lib/shared/auth/services/instagram-auth.js", () => ({
   authenticateWithInstagram: vi.fn(),
   disconnectInstagramAccount: vi.fn(),
 }));
 
-import { reauthenticateWithGoogle } from "$lib/shared/auth/services/authenticator";
+import { reauthenticateWithGoogle } from "#lib/shared/auth/services/authenticator.js";
 
 beforeEach(() => {
   vi.clearAllMocks();

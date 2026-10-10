@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { SequenceFeatureExtractor } from './services/sequence-feature-extractor';
-import { getSequenceAnalyzer } from '$lib/features/create/shared/get-sequence-analyzer';
+import { getSequenceAnalyzer } from '#lib/features/create/shared/get-sequence-analyzer.js';
 
 let instance: SequenceFeatureExtractor | null = null;
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping, PCFSoftShadowMap } from "three";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import {
     TOTAL_LENGTH_M,
     ceilingAt,
@@ -9,7 +9,7 @@
     regionAt,
     relationToWater,
     waterLevelAt,
-  } from "$lib/features/water-traverse/data/water-traverse-terrain";
+  } from "#lib/features/water-traverse/data/water-traverse-terrain.js";
   import WaterTraverseWalkScene from "./WaterTraverseWalkScene.svelte";
 
   let resetToken = $state(0);

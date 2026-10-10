@@ -5,7 +5,7 @@ import {
   endpointContinuityM,
   gradeContactSweep,
   measureContactSweepFrame,
-} from "$lib/shared/3d/diagnostics/contact-correct/contact-sweep-metrics";
+} from "#lib/shared/3d/diagnostics/contact-correct/contact-sweep-metrics.js";
 
 const availableAudit = {
   status: "available" as const,

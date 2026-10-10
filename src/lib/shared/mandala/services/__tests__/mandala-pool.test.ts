@@ -2,10 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 
 // The service module imports the Dexie singleton + generation orchestrator at
 // load time. Stub both so importing the pure helpers never touches IndexedDB.
-vi.mock("$lib/shared/persistence/database/tka-database", () => ({
+vi.mock("#lib/shared/persistence/database/tka-database.js", () => ({
 	db: { generatedMandalaPool: { toArray: async () => [], put: async () => {}, bulkDelete: async () => {} } },
 }));
-vi.mock("$lib/shared/create/services/generation-orchestrator", () => ({
+vi.mock("#lib/shared/create/services/generation-orchestrator.js", () => ({
 	generationOrchestrator: { generateSequence: async () => ({ steps: [] }) },
 }));
 

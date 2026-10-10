@@ -4,8 +4,8 @@ import {
   orientationToStaffAngle,
   centerOrientationToDegrees,
   RADIAL_CYCLE,
-} from "$lib/shared/render/core/calculations/orientation-angle";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+} from "#lib/shared/render/core/calculations/orientation-angle.js";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
 
 /**
  * The center-path angle (RADIANS) for a hand at `location`, i.e. the direction

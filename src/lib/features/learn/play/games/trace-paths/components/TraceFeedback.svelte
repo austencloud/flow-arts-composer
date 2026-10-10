@@ -19,12 +19,12 @@ Presentation constraints, all deliberate:
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
-  import { getSoundPlayer } from "$lib/shared/audio/get-sound-player";
+  import { browser } from "$app/env";
+  import { getSoundPlayer } from "#lib/shared/audio/get-sound-player.js";
   import type { TraceMetrics } from "../domain/trace-types";
   import type { TraceRoundScore } from "../services/score-trace-round";
   import { getTracePaths } from "../state/trace-paths-state.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     metrics: TraceMetrics;

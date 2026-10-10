@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   appendSoloContinuation,
   createSoloContinuationOptions,

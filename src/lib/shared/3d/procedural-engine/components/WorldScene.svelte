@@ -15,16 +15,16 @@
    * - Full Avatar3D, Staff3D, Grid3D support
    */
 
-  import WebGPUCanvas from "$lib/shared/3d/rendering/WebGPUCanvas.svelte";
+  import WebGPUCanvas from "#lib/shared/3d/rendering/WebGPUCanvas.svelte";
   import WorldSceneContent from "./WorldSceneContent.svelte";
-  import VirtualJoystick from "$lib/shared/components/touch/VirtualJoystick.svelte";
+  import VirtualJoystick from "#lib/shared/components/touch/VirtualJoystick.svelte";
 
-  import type { PhysicsWorldState, PlayerControllerState } from "$lib/shared/3d/physics/types";
-  import type { PhysicsProvider } from "$lib/shared/3d/camera/types";
-  import { TerrainPhysicsManager } from "$lib/shared/3d/physics/terrain-collider";
-  import { teleportPlayer } from "$lib/shared/3d/physics/player-controller";
-  import { CameraMode } from "$lib/shared/3d/camera/types";
-  import { cameraPreferences } from "$lib/shared/3d/camera/camera-preferences.svelte";
+  import type { PhysicsWorldState, PlayerControllerState } from "#lib/shared/3d/physics/types.js";
+  import type { PhysicsProvider } from "#lib/shared/3d/camera/types.js";
+  import { TerrainPhysicsManager } from "#lib/shared/3d/physics/terrain-collider.js";
+  import { teleportPlayer } from "#lib/shared/3d/physics/player-controller.js";
+  import { CameraMode } from "#lib/shared/3d/camera/types.js";
+  import { cameraPreferences } from "#lib/shared/3d/camera/camera-preferences.svelte.js";
 
   import { type HybridChunkManager } from "../core/hybrid-chunk-manager";
   import { generateWorldSeed, encodeSeed, SeededNoise } from "../generation/seed-generator";
@@ -33,21 +33,21 @@
   import { WaterManager } from "../rendering/water";
   import type { RealmConfig } from "../core/world-config";
   import { getDefaultRealmConfig } from "../core/world-definitions";
-  import { getInputCapabilities } from "$lib/shared/input/InputCapabilities.svelte";
+  import { getInputCapabilities } from "#lib/shared/input/InputCapabilities.svelte.js";
   import { onMount, onDestroy } from "svelte";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import type { Mesh } from "three";
 
   // Performer/Sequence system
   import {
     createPerformerManager,
     type PerformerManager,
-  } from "$lib/shared/3d/state/performer-manager.svelte";
+  } from "#lib/shared/3d/state/performer-manager.svelte.js";
   import {
     DEFAULT_AVATAR_ID,
     type AvatarId,
   } from "@austencloud/scene-3d";
-  import DuetOrchestrator from "$lib/shared/3d/components/DuetOrchestrator.svelte";
+  import DuetOrchestrator from "#lib/shared/3d/components/DuetOrchestrator.svelte";
 
 
   interface Props {
@@ -153,7 +153,7 @@
         origin?: { x: number; y: number; z: number },
         direction?: { x: number; y: number; z: number },
         maxDistance?: number,
-      ) => import("$lib/shared/3d/debug/game-bridge-types").RaycastResult)
+      ) => import("#lib/shared/3d/debug/game-bridge-types.js").RaycastResult)
     | null
   >(null);
   const showAvatar = $derived(cameraMode !== CameraMode.FIRST_PERSON);
@@ -276,7 +276,7 @@
     if (!physicsProvider || !performerManager) return;
     if (gameBridgeInitialized) return;
 
-    import("$lib/shared/3d/debug/game-bridge").then(async ({ initGameBridge, isGameBridgeEnabled, shouldConnectGameBridge }) => {
+    import("#lib/shared/3d/debug/game-bridge.js").then(async ({ initGameBridge, isGameBridgeEnabled, shouldConnectGameBridge }) => {
       // Opt-in only — see isGameBridgeEnabled. Skip silently otherwise.
       if (!isGameBridgeEnabled()) return;
       gameBridgeInitialized = true;

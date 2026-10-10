@@ -2,12 +2,12 @@ import { describe, it, expect } from "vitest";
 import {
   BUILT_IN_PRESETS,
   type IPatternPreset,
-} from "$lib/shared/poi/domain/pattern-presets";
+} from "#lib/shared/poi/domain/pattern-presets.js";
 import {
   getPixel,
   type PatternParams,
-} from "$lib/shared/poi/domain/strip-pattern";
-import { stripPatternToImageData } from "$lib/shared/poi/domain/strip-pattern-image";
+} from "#lib/shared/poi/domain/strip-pattern.js";
+import { stripPatternToImageData } from "#lib/shared/poi/domain/strip-pattern-image.js";
 
 // Polyfill ImageData for Node environment
 if (typeof globalThis.ImageData === "undefined") {

@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { GlobalFeatureFlagPersister } from './services/global-feature-flag-persister';
 
 let instance: GlobalFeatureFlagPersister | null = null;

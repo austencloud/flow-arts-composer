@@ -1,24 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   FEATURE_VIDEO_API,
   FEATURE_VIDEO_FILE_FORMAT,
   type FeatureVideoFile,
-} from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   createEmptyPostProject,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
-import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-project-ops.js";
+import { addTakeTap } from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   createFeatureVideoSync,
   listFeatureVideos,
   loadFeatureVideo,
   type FeatureVideoSync,
-} from "$lib/shared/media-composition/services/feature-video-client";
-import { createPostDraftAutosave } from "$lib/shared/media-composition/services/post-draft-storage";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+} from "#lib/shared/media-composition/services/feature-video-client.js";
+import { createPostDraftAutosave } from "#lib/shared/media-composition/services/post-draft-storage.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 
 const NOW = 1_780_000_000_000;
 const SEQUENCE = "seq";

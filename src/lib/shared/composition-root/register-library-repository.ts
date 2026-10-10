@@ -13,14 +13,14 @@ export function registerLibraryRepository(): void {
   registerPublicIndexSyncerFactory(() =>
     createLazyPublicIndexSyncer(async () => {
       const { getPublicIndexSyncer } =
-        await import("$lib/features/library/get-public-index-syncer");
+        await import("#lib/features/library/get-public-index-syncer.js");
       return getPublicIndexSyncer();
     })
   );
 
   registerVisualSequenceSaveCoordinatorFactory(async () => {
     const { getVisualSequenceSaveCoordinator } =
-      await import("$lib/features/library/get-visual-sequence-save-coordinator");
+      await import("#lib/features/library/get-visual-sequence-save-coordinator.js");
     return getVisualSequenceSaveCoordinator();
   });
 }

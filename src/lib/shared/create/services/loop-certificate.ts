@@ -4,8 +4,8 @@
  * mutation invalidates it — detection takes over for display. The legacy
  * loopType string is kept (it is display provenance, not a certificate).
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { tryGetLoopDisplayCacheClearer } from "$lib/shared/loop-labeler/get-loop-display-resolver";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { tryGetLoopDisplayCacheClearer } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
 
 export function withLoopCertificateCleared(sequence: SequenceData): SequenceData {
   if (sequence.loopSpec === undefined) return sequence;

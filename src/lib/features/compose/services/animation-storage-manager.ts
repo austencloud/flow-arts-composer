@@ -19,7 +19,7 @@ import {
   serverTimestamp,
   type Timestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import type { Animation } from "../shared/domain/animation";
 import { createAnimation } from "../shared/domain/animation";
 

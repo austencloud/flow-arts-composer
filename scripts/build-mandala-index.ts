@@ -4,16 +4,16 @@ import admin from "firebase-admin";
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { calculate } from "$lib/shared/mandala/services/mandala-geometry-calculator";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
 import {
 	shapeKey,
 	orbitKey,
 	colorSignature,
-} from "$lib/shared/mandala/services/mandala-fingerprint";
+} from "#lib/shared/mandala/services/mandala-fingerprint.js";
 import type {
 	IndexedRef,
 	MandalaIndex,
-} from "$lib/shared/mandala/services/mandala-index-builder";
+} from "#lib/shared/mandala/services/mandala-index-builder.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

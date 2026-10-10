@@ -33,16 +33,16 @@ vi.mock("firebase/firestore", () => ({
   })),
   arrayRemove: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: mocks.toastError },
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureEvent: vi.fn(),
 }));
-vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => {
+vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => {
   class CollectionError extends Error {
     constructor(
       message: string,
@@ -73,7 +73,7 @@ vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => {
   };
 });
 
-import { removeSequencesFromCollection } from "$lib/shared/library/services/collection-manager";
+import { removeSequencesFromCollection } from "#lib/shared/library/services/collection-manager.js";
 
 describe("collection-manager bulk removal", () => {
   beforeEach(() => {

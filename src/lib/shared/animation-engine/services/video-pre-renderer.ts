@@ -17,8 +17,8 @@
  * The result is a video that looks EXACTLY like the live preview.
  */
 
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export interface VideoRenderProgress {
   /** Current frame being rendered */
@@ -64,14 +64,14 @@ export interface VideoRenderOptions {
   /** Video quality (0-1, default: 0.9) */
   quality?: number;
 }
-import { Canvas2DAnimationRenderer } from "$lib/shared/animation-engine/services/canvas-2d-animation-renderer";
-import { generateLeftPropSvg, generateRightPropSvg } from "$lib/shared/animation-engine/services/svg-generator";
-import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
+import { Canvas2DAnimationRenderer } from "#lib/shared/animation-engine/services/canvas-2d-animation-renderer.js";
+import { generateLeftPropSvg, generateRightPropSvg } from "#lib/shared/animation-engine/services/svg-generator.js";
+import { getSequenceAnimationOrchestrator } from "#lib/shared/animation-engine/get-sequence-animation-orchestrator.js";
 
 import {
   DEFAULT_TRAIL_SETTINGS,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 // IndexedDB database name and store for video caching
 const DB_NAME = "tka-video-cache";

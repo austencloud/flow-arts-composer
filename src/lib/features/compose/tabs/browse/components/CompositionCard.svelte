@@ -7,10 +7,10 @@
 -->
 <script lang="ts">
 
-import { resolveThumbnail, generatePlaceholderSvg } from "$lib/features/compose/tabs/browse/services/composition-thumbnail-resolver";
+import { resolveThumbnail, generatePlaceholderSvg } from "#lib/features/compose/tabs/browse/services/composition-thumbnail-resolver.js";
   import type { CompositionBrowseItem } from "../state/composition-browse-state.svelte";
 	import type { CardSize } from "../services/types";
-	import { COMPOSE_MODE_CONFIG } from "$lib/features/compose/shared/domain/compose-mode-config";
+	import { COMPOSE_MODE_CONFIG } from "#lib/features/compose/shared/domain/compose-mode-config.js";
 	import CompositionMiniPreview from "./CompositionMiniPreview.svelte";
 	import CompositionAnimatedPreview from "./CompositionAnimatedPreview.svelte";
 

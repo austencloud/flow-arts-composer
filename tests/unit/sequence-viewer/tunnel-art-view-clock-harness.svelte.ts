@@ -5,9 +5,9 @@
  * component that asks for animation frames.
  */
 import { flushSync, mount, unmount } from "svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
-import type { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import TunnelArtView from "#lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
+import type { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
 
 /** Four steps and a four-step loop: one beat per second at the default 60 BPM. */
 const SEQUENCE = {

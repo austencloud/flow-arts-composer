@@ -5,7 +5,7 @@
  * never stored. UNLOCKABLE_POOL is the play-earned set. Milestones use triangular
  * thresholds: milestone n fires when creationCount reaches n(n+1)/2.
  */
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 /**
  * Master switch for the play-to-unlock mechanic. When false, every prop is

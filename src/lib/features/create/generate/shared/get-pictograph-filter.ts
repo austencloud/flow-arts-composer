@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { pictographFilter } from './services/pictograph-filter';
 
 export function getPictographFilter(): typeof pictographFilter {

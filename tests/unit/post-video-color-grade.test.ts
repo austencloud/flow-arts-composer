@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeVideoColor,
   videoColorFilter,
-} from "$lib/shared/media-composition/domain/post-video-color-grade";
+} from "#lib/shared/media-composition/domain/post-video-color-grade.js";
 
 function frame(colors: readonly [number, number, number][]): ImageData {
   const data = new Uint8ClampedArray(colors.length * 4);

@@ -5,22 +5,22 @@
  * Handles RAF scheduling, trail point gathering, and scene rendering.
  */
 
-import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
+import type { IAnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
 import type { CanvasFrame } from "../domain/types/canvas-frame";
 import type {
   ITrailCapturer,
   AdditionalLayerProps,
-} from "$lib/shared/animation-engine/services/ITrailCapturer";
+} from "#lib/shared/animation-engine/services/ITrailCapturer.js";
 import type { GridJoin } from "@tka/tka-types";
 import type {
   GridJoinTweenSample,
   HandOffsets,
-} from "$lib/shared/grid-join/grid-join-tween";
+} from "#lib/shared/grid-join/grid-join-tween.js";
 import type { MotionSampleSource } from "./motion-sub-sampler";
 import type { TrailSettings } from "../domain/types/trail-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { AnimationPathCache } from "$lib/shared/animation-engine/services/animation-path-cache";
-import type { FrameBudgetMonitor } from "$lib/shared/animation-engine/services/frame-budget-monitor";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { AnimationPathCache } from "#lib/shared/animation-engine/services/animation-path-cache.js";
+import type { FrameBudgetMonitor } from "#lib/shared/animation-engine/services/frame-budget-monitor.js";
 import type { FireTipTracker } from "./fire-tip-tracker";
 import type {
   FireOverlayConfig,
@@ -42,23 +42,23 @@ import type {
   Sparkles2DParams,
   GooParams,
   Zap2DParams,
-} from "$lib/shared/effects/translators/canvas2d-types";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+} from "#lib/shared/effects/translators/canvas2d-types.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import type {
   EffectType,
   TipEffectMap,
 } from "../domain/types/tip-effect-types";
 import type { EffectRendererLike } from "./effects/effect-renderer";
-import type { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
-import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
+import type { MandalaOverlayCanvas } from "#lib/shared/mandala/services/mandala-overlay-canvas.js";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
+import type { RenderActivityGate } from "#lib/shared/render-gating/render-activity-gate.js";
 import type {
   MandalaPathOptions,
   StepLike,
-} from "$lib/shared/mandala/services/types";
+} from "#lib/shared/mandala/services/types.js";
 
 /**
  * Configuration for render loop initialization

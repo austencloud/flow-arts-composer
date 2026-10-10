@@ -1,4 +1,4 @@
-import type { AnimationPathPolicy } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import type { AnimationPathPolicy } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import type { MandalaPathShape } from "../domain/mandala-types";
 
 /**

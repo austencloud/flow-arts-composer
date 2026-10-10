@@ -2,7 +2,7 @@ import type {
   ExtractedStep,
   InternalStepPair,
 } from "../../domain/models/internal-step-models";
-import type { SequenceEntry } from "$lib/shared/loop-labeler/domain/sequence-models";
+import type { SequenceEntry } from "#lib/shared/loop-labeler/domain/sequence-models.js";
 import {
   ROTATE_90_CCW,
   ROTATE_90_CW,

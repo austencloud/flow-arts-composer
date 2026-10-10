@@ -6,17 +6,17 @@ import {
   postSafeArea,
   shapedBox,
   spotAround,
-} from "$lib/shared/media-composition/domain/post-canvas";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-canvas.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { EASING_PRESETS } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   POST_BOX,
   PostProjectSchema,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   setProjectCanvas,
   updateItem,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 import { NOW, project, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW };

@@ -15,13 +15,13 @@ import {
   shapeCellRect,
   shapeLayout,
   tunnelLayout,
-} from "$lib/features/create/shared/components/method-previews/method-preview-compositions";
+} from "#lib/features/create/shared/components/method-previews/method-preview-compositions.js";
 import {
   DEMO_SEQUENCE,
   openingSteps,
   startPictograph,
-} from "$lib/features/create/shared/components/method-previews/method-preview-demo";
-import type { MethodPreviewShape } from "$lib/features/create/shared/components/method-previews/method-preview-layout";
+} from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
+import type { MethodPreviewShape } from "#lib/features/create/shared/components/method-previews/method-preview-layout.js";
 
 const at = (x: number, y: number, size: number) => ({ x, y, size });
 

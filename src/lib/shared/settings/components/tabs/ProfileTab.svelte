@@ -4,65 +4,65 @@
   import { doc, getDoc } from "firebase/firestore";
   import { updateProfile, type User } from "firebase/auth";
 
-  import { getUserDocumentManager } from "$lib/shared/auth/get-user-document-manager";
+  import { getUserDocumentManager } from "#lib/shared/auth/get-user-document-manager.js";
   import {
     deletePreviousStoredProfilePhoto,
     generateAndUploadAvatar,
     uploadProfilePhoto,
-  } from "$lib/shared/auth/services/profile-picture-manager";
-  import { ProfilePhotoError } from "$lib/shared/auth/services/profile-photo-image";
-  import { getAccountManager } from "$lib/shared/auth/get-account-manager";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { signInWithFacebook } from "$lib/shared/auth/services/authenticator";
-  import { trackAuthProviderResult } from "$lib/shared/analytics/auth-events";
-  import { recordAuthSubmission } from "$lib/shared/auth/services/auth-analytics-bridge";
+  } from "#lib/shared/auth/services/profile-picture-manager.js";
+  import { ProfilePhotoError } from "#lib/shared/auth/services/profile-photo-image.js";
+  import { getAccountManager } from "#lib/shared/auth/get-account-manager.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { signInWithFacebook } from "#lib/shared/auth/services/authenticator.js";
+  import { trackAuthProviderResult } from "#lib/shared/analytics/auth-events.js";
+  import { recordAuthSubmission } from "#lib/shared/auth/services/auth-analytics-bridge.js";
   import {
     authState,
     refreshUser,
-  } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-  import { hasInstagramAccount } from "$lib/shared/auth/services/instagram-auth";
+  } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+  import { hasInstagramAccount } from "#lib/shared/auth/services/instagram-auth.js";
   import {
     userPreviewState,
     loadPreviewSection,
     isSectionLoaded,
     type PreviewUserProfile,
-  } from "$lib/shared/debug/state/user-preview-state.svelte";
+  } from "#lib/shared/debug/state/user-preview-state.svelte.js";
   import {
     createProfileSettingsState,
     setProfileSettingsContext,
-  } from "$lib/shared/navigation/state/profile-settings-context.svelte";
-  import ConnectedAccounts from "$lib/shared/navigation/components/profile-settings/ConnectedAccounts.svelte";
-  import ConnectedAccountsPreview from "$lib/shared/navigation/components/profile-settings/ConnectedAccountsPreview.svelte";
-  import AccountSettingsSection from "$lib/shared/navigation/components/profile-settings/AccountSettingsSection.svelte";
-  import AccountValueRow from "$lib/shared/navigation/components/profile-settings/AccountValueRow.svelte";
-  import PasswordChangeForm from "$lib/shared/navigation/components/profile-settings/PasswordChangeForm.svelte";
-  import DangerZone from "$lib/shared/navigation/components/profile-settings/DangerZone.svelte";
+  } from "#lib/shared/navigation/state/profile-settings-context.svelte.js";
+  import ConnectedAccounts from "#lib/shared/navigation/components/profile-settings/ConnectedAccounts.svelte";
+  import ConnectedAccountsPreview from "#lib/shared/navigation/components/profile-settings/ConnectedAccountsPreview.svelte";
+  import AccountSettingsSection from "#lib/shared/navigation/components/profile-settings/AccountSettingsSection.svelte";
+  import AccountValueRow from "#lib/shared/navigation/components/profile-settings/AccountValueRow.svelte";
+  import PasswordChangeForm from "#lib/shared/navigation/components/profile-settings/PasswordChangeForm.svelte";
+  import DangerZone from "#lib/shared/navigation/components/profile-settings/DangerZone.svelte";
   import ProfileHeroSection from "./profile/ProfileHeroSection.svelte";
   import AuthPrompt from "./profile/AuthPrompt.svelte";
   import ProfilePhotoPicker from "../ProfilePhotoPicker.svelte";
-  import AccountSetupChecklist from "$lib/shared/onboarding/components/account-setup/AccountSetupChecklist.svelte";
-  import { tryGetAccountSetupContext } from "$lib/shared/onboarding/context/account-setup-context";
+  import AccountSetupChecklist from "#lib/shared/onboarding/components/account-setup/AccountSetupChecklist.svelte";
+  import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
   import {
     ACCOUNT_SETUP_SETTINGS_DESTINATIONS,
     type AccountSetupTaskId,
-  } from "$lib/shared/onboarding/state/account-setup-state.svelte";
+  } from "#lib/shared/onboarding/state/account-setup-state.svelte.js";
   import {
     createPropPreferenceState,
     type PropPreferenceState,
-  } from "$lib/shared/community/state/prop-preference-state.svelte";
-  import { myPropsDrawerState } from "$lib/shared/navigation/components/account/my-props-drawer-state.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  } from "#lib/shared/community/state/prop-preference-state.svelte.js";
+  import { myPropsDrawerState } from "#lib/shared/navigation/components/account/my-props-drawer-state.svelte.js";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   import type {
     AccountManager,
     DeleteReauth,
-  } from "$lib/shared/auth/services/account-manager";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { PhotoSelection } from "$lib/shared/settings/domain/photo-picker-types";
+  } from "#lib/shared/auth/services/account-manager.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { PhotoSelection } from "#lib/shared/settings/domain/photo-picker-types.js";
 
   interface Props {
     currentSettings?: unknown;

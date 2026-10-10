@@ -2,7 +2,7 @@
  * Placement Identification Quiz data constants
  */
 
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { shuffleArray } from "./shared-types";
 
 export { type PlacementType } from "./shared-types";

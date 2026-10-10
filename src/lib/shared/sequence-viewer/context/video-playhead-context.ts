@@ -16,9 +16,9 @@
  */
 
 import { getContext, setContext } from "svelte";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-import { seekTimeForStep } from "$lib/shared/video-collaboration/utils/step-map-utils";
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import { seekTimeForStep } from "#lib/shared/video-collaboration/utils/step-map-utils.js";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 
 const KEY = Symbol("sequence-viewer-video-playhead");
 

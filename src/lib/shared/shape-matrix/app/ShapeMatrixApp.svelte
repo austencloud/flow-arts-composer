@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { loadShapeMatrix } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
+  import { loadShapeMatrix } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
 
   import { setShapeMatrixAppContext } from "./context/shape-matrix-app-context";
   import ShapeMatrixAboutModal from "./components/ShapeMatrixAboutModal.svelte";
@@ -11,12 +11,12 @@
     type ShapeMatrixPropSource,
   } from "./state/shape-matrix-app-state.svelte";
   import { followPropSource } from "./state/follow-prop-source.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { DEFAULT_THEORY_RATIO } from "$lib/shared/shape-matrix/domain/theory-ratio";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { DEFAULT_THEORY_RATIO } from "#lib/shared/shape-matrix/domain/theory-ratio.js";
   import {
     SHAPE_MATRIX_DEFAULT_LEVEL,
     SHAPE_MATRIX_DEFAULT_TURN,
-  } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
 
   interface Props {
     persistence?: ShapeMatrixAppPersistence;

@@ -16,19 +16,19 @@ import {
   reachMetrics,
   type SweepPhaseSample,
   type SweepReading,
-} from "$lib/shared/3d/diagnostics/sweep/sweep-sample";
+} from "#lib/shared/3d/diagnostics/sweep/sweep-sample.js";
 import {
   bodyClipRatio,
   scoreSweepConfiguration,
   scoreSweepSample,
   SWEEP_THRESHOLDS,
-} from "$lib/shared/3d/diagnostics/sweep/sweep-scoring";
+} from "#lib/shared/3d/diagnostics/sweep/sweep-scoring.js";
 import {
   aggregateConfiguration,
   rollUpByAxis,
   selectWorstMoment,
-} from "$lib/shared/3d/diagnostics/sweep/sweep-aggregation";
-import type { SweepConfiguration } from "$lib/shared/3d/diagnostics/sweep/sweep-space";
+} from "#lib/shared/3d/diagnostics/sweep/sweep-aggregation.js";
+import type { SweepConfiguration } from "#lib/shared/3d/diagnostics/sweep/sweep-space.js";
 
 /** A body that measures cleanly and can hold an ordinary staff. */
 const HEALTHY_POSE = {

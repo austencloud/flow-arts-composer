@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PDFFont } from "pdf-lib";
 
-import { truncateToWidth } from "$lib/features/write/services/sheet-pdf-exporter";
+import { truncateToWidth } from "#lib/features/write/services/sheet-pdf-exporter.js";
 
 // A note gets exactly one line on paper — `estimateBandHeight` budgets the
 // strip at one line per note — so a long one has to be cut, not wrapped.

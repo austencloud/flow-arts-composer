@@ -1,8 +1,8 @@
 <!-- EditableChangelogItem - A changelog entry with inline editing for admins -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { ChangelogEntry } from "$lib/shared/versioning/domain/models/version-models";
-  import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { ChangelogEntry } from "#lib/shared/versioning/domain/models/version-models.js";
+  import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
   import { fly, scale } from "svelte/transition";
   import ContributorBadge from "./ContributorBadge.svelte";
   import ContributorPicker from "./ContributorPicker.svelte";

@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import * as performanceHistoryTracker from './services/performance-history-tracker';
 
 export function getPerformanceHistoryTracker() {

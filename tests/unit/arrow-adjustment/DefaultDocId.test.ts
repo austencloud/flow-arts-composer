@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   generateDefaultDocId,
   parseDefaultDocId,
-} from "$lib/shared/pictograph/arrow/positioning/default-override/domain/default-arrow-placement";
+} from "#lib/shared/pictograph/arrow/positioning/default-override/domain/default-arrow-placement.js";
 
 describe("default doc id (prop-aware)", () => {
   it("encodes placementFrame_propType_motionType", () => {

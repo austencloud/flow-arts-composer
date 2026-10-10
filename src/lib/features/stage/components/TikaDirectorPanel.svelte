@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import type {
     TikaDirectorConversationMessage,
     TikaDirectorResponse,

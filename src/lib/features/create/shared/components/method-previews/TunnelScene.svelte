@@ -22,20 +22,20 @@
    * demo sequence's tunnel.
    */
   import { onDestroy, tick } from "svelte";
-  import { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import { createAnimationSettingsState } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import type { GhostState } from "$lib/shared/attract/services/attract-ghost.svelte";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { createViewerCustomColorState } from "$lib/shared/sequence-viewer/state/viewer-custom-colors-state.svelte";
-  import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
-  import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
-  import { DEFAULT_TUNNEL_VIEW_STATE } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-state";
+  import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import { createAnimationSettingsState } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import type { GhostState } from "#lib/shared/attract/services/attract-ghost.svelte.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import FontAwesomeIcon from "#lib/shared/foundation/ui/FontAwesomeIcon.svelte";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { createViewerCustomColorState } from "#lib/shared/sequence-viewer/state/viewer-custom-colors-state.svelte.js";
+  import TunnelArtView from "#lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
+  import { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
+  import { DEFAULT_TUNNEL_VIEW_STATE } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-state.js";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import { cellCenter, tunnelLayout } from "./method-preview-compositions";
   import { DEMO_SEQUENCE } from "./method-preview-demo";

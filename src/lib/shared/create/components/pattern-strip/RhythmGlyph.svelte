@@ -4,7 +4,7 @@
   `sampleBeats` beats. Used as the leading glyph inside rhythm chips.
 -->
 <script lang="ts">
-  import { maskAt, activeAt } from "$lib/shared/create/domain/rhythm/rhythm-mask";
+  import { maskAt, activeAt } from "#lib/shared/create/domain/rhythm/rhythm-mask.js";
 
   interface Props {
     sym: string;

@@ -1,6 +1,6 @@
 <!-- Formation coordinates the preset browser and the primitive tuner. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TunnelViewController } from "../../tunnel/tunnel-view-controller.svelte";
   import TunnelPresetBrowser from "./TunnelPresetBrowser.svelte";
   import TunnelPrimitiveTuner from "./TunnelPrimitiveTuner.svelte";

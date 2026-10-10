@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { POST_STUDIO_PRESETS } from "$lib/shared/media-composition/domain/post-studio-presets";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { postCardHighlightedStepIndex } from "$lib/shared/share/components/post-studio/post-card-highlight";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { POST_STUDIO_PRESETS } from "#lib/shared/media-composition/domain/post-studio-presets.js";
+import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { postCardHighlightedStepIndex } from "#lib/shared/share/components/post-studio/post-card-highlight.js";
 import { NOW, card, project, video } from "./post-project-fixtures";
 
 describe("post card playback highlight", () => {

@@ -3,8 +3,8 @@ import {
   buildChoreoCardRenderKeys,
   type ChoreoCardRenderKeyInputs,
 } from "../choreo-card-render-keys";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 /**
  * Regression guard for the "download-card flashes out and in" bug (2026-07-02).

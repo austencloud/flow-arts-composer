@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   let { accent }: { accent: string } = $props();
 </script>
 

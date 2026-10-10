@@ -5,15 +5,15 @@
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
-  import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { AssembleState } from "../state/assemble-state.svelte";
   import { getBuilderControlVisibility } from "../services/builder-phase-presentation";
   import BuilderMotionSettings from "./BuilderMotionSettings.svelte";
   import BuilderOrientationPicker from "./BuilderOrientationPicker.svelte";
   import GridModePicker from "./GridModePicker.svelte";
   import OrientationExplainer from "./OrientationExplainer.svelte";
-  import { popIn } from "$lib/shared/transitions/motion";
+  import { popIn } from "#lib/shared/transitions/motion.js";
 
   let { builderState }: { builderState: AssembleState } = $props();
 

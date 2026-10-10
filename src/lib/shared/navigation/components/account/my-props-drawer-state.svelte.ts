@@ -6,7 +6,7 @@
  * position:fixed descendants. AccountPopover sets isOpen to true,
  * and MainInterface renders the drawer at the top level.
  */
-import type { PropPreferenceState } from "$lib/shared/community/state/prop-preference-state.svelte";
+import type { PropPreferenceState } from "#lib/shared/community/state/prop-preference-state.svelte.js";
 
 let isOpen = $state(false);
 let propState = $state<PropPreferenceState | null>(null);

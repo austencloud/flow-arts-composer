@@ -3,7 +3,7 @@ import { page, userEvent } from "vitest/browser";
 import { describe, expect, it, vi } from "vitest";
 import LabeledColorPairPicker from "./LabeledColorPairPicker.svelte";
 import { COLOR_PRESETS } from "../color-presets";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 
 const LEFT = "#ef4444";
 const RIGHT = "#3b82f6";

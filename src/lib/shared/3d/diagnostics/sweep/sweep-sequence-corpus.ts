@@ -15,8 +15,8 @@
  */
 
 import { normalizeLegacySequence } from "@tka/tka-types";
-import { deriveSteps } from "$lib/shared/foundation/services/step-deriver";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { deriveSteps } from "#lib/shared/foundation/services/step-deriver.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { toSweepSequence, type SweepSequence } from "./sweep-space";
 
 /** The shape the snapshot stores. Only the fields a rebuild needs. */

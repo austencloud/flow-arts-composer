@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
 import { createViewer3DStateForTest } from "./viewer3d-test-helpers.svelte";
 import { Viewer3DUndoManager } from "@austencloud/scene-3d";
-import { __resetWebGL2CapabilityForTests } from "$lib/shared/3d/capabilities/webgl-capabilities";
-import { getSceneUndoManager } from "$lib/shared/3d/undo/get-scene-undo-manager";
+import { __resetWebGL2CapabilityForTests } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
+import { getSceneUndoManager } from "#lib/shared/3d/undo/get-scene-undo-manager.js";
 
 // The jsdom test environment doesn't implement canvas.getContext. Patch
 // document.createElement so the WebGL2 capability probe sees a canvas stub

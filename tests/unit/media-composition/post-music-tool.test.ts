@@ -10,17 +10,17 @@
 import { flushSync, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountMusicTool } from "./music-tool-harness.svelte";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
 
 const analyzer = vi.hoisted(() => ({
   analyzeAudioBpm: vi.fn(),
 }));
 
-vi.mock("$lib/shared/audio/bpm-analyzer", () => analyzer);
+vi.mock("#lib/shared/audio/bpm-analyzer.js", () => analyzer);
 
 // The panel imports the analyzer on demand. Load the mock first, or the
 // panel's import can race the mock and get the real analyzer.
-await import("$lib/shared/audio/bpm-analyzer");
+await import("#lib/shared/audio/bpm-analyzer.js");
 
 const URL = "/api/dev/feature-videos/promo/media/music/derail.wav";
 const OTHER_URL = "/api/dev/feature-videos/promo/media/music/thump.wav";

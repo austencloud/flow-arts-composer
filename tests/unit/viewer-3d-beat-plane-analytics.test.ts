@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { selectBeatPlaneStep } from "$lib/shared/3d/domain/beat-plane-step-selection";
+import { selectBeatPlaneStep } from "#lib/shared/3d/domain/beat-plane-step-selection.js";
 
 describe("3D beat-plane step analytics", () => {
   it("moves the editor once and reports its local step selection", () => {

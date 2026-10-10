@@ -19,10 +19,10 @@ import {
   getCachedCatalogs,
   loadCatalogs,
   loadCatalogSequencesPage,
-} from "$lib/features/choreo-card/services/catalog-loader";
-import type { Catalog } from "$lib/features/choreo-card/domain/models/Catalog";
+} from "#lib/features/choreo-card/services/catalog-loader.js";
+import type { Catalog } from "#lib/features/choreo-card/domain/models/Catalog.js";
 import type { CoverCard, Product } from "../domain/models/product";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   LoopFlavor,
   LoopLength,
@@ -31,15 +31,15 @@ import type {
   RecipeSlice,
 } from "../domain/loop-config";
 import { DEFAULT_MAX_TURNS, loopPack } from "../domain/loop-config";
-import { generateLOOPType, resolveLoopConfig } from "$lib/shared/create/services/loop-type-utils";
-import { levelToDifficulty } from "$lib/shared/create/utils/config-mapper";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { generateLOOPType, resolveLoopConfig } from "#lib/shared/create/services/loop-type-utils.js";
+import { levelToDifficulty } from "#lib/shared/create/utils/config-mapper.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   GenerationMode,
   type GenerationOptions,
   type LOOPComponent,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const FAN_SIZE = 6;
 
@@ -158,7 +158,7 @@ async function generateHand(dials: HandDials, n: number): Promise<SequenceData[]
   // Same seam fulfillment uses; dynamic so the shop route doesn't pull the
   // whole generation engine into its initial chunk.
   const { generationOrchestrator } = await import(
-    "$lib/shared/create/services/generation-orchestrator"
+    "#lib/shared/create/services/generation-orchestrator.js"
   );
 
   // Rotated quartered is the printed-deck canon; combos seed halved. Route

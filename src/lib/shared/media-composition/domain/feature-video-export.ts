@@ -1,7 +1,7 @@
 import {
   FEATURE_VIDEO_API,
   isFeatureVideoSlug,
-} from "$lib/shared/media-composition/domain/feature-video-url";
+} from "#lib/shared/media-composition/domain/feature-video-url.js";
 
 /**
  * Names for the renders a feature video keeps in its `exports/` folder, and

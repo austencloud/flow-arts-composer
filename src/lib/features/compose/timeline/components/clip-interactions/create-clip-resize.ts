@@ -4,9 +4,9 @@
  * Returns event handlers for changing a clip's duration (which affects playback speed).
  */
 
-import type { TimelineClip } from "$lib/shared/animation-engine/domain/timeline-types";
-import { pixelsToTime } from "$lib/shared/animation-engine/domain/timeline-types";
-import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+import type { TimelineClip } from "#lib/shared/animation-engine/domain/timeline-types.js";
+import { pixelsToTime } from "#lib/shared/animation-engine/domain/timeline-types.js";
+import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
 
 export interface ClipResizeHandlers {
   handleResizeStart: (e: MouseEvent) => void;

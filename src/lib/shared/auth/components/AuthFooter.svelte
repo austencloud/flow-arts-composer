@@ -7,8 +7,8 @@
 -->
 <script lang="ts">
   import LegalSheet from "../../legal/components/LegalSheet.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // Local sheet state
   let sheetOpen = $state(false);

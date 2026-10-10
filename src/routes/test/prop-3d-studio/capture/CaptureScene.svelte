@@ -11,11 +11,11 @@
 -->
 <script lang="ts">
   import { T, useTask, useThrelte } from "@threlte/core";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import EffectOrchestrator3D from "$lib/shared/3d/effects/EffectOrchestrator3D.svelte";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import EffectOrchestrator3D from "#lib/shared/3d/effects/EffectOrchestrator3D.svelte";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import {
     Box3,
     Color,

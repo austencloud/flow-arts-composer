@@ -1,4 +1,4 @@
-import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 import type {
   GenerationDashChoice,
   GenerationStyleAxis,

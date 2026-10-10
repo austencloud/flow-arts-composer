@@ -5,7 +5,7 @@
   Renders in a 100x100 viewBox; caller controls the rendered size via CSS.
 -->
 <script lang="ts">
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
   interface Props {
     locations: readonly GridLocation[];

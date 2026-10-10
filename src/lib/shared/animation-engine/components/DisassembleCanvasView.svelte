@@ -9,12 +9,12 @@
   AnimatorCanvas -> DisassembleCanvasView -> AnimatorCanvas import cycle.
 -->
 <script lang="ts">
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { FireOverlayConfig } from "../domain/types/fire-types";
   import type { LedOverlayConfig } from "../domain/types/led-types";
   import CanvasSurface from "./CanvasSurface.svelte";

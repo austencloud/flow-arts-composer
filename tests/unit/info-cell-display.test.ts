@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getInfoCellCount, resolveInfoCellDisplay } from "$lib/shared/sequence-viewer/services/info-cell-display";
+import { getInfoCellCount, resolveInfoCellDisplay } from "#lib/shared/sequence-viewer/services/info-cell-display.js";
 
 describe("getInfoCellCount", () => {
   it("returns 0 for one-count and zero-count cards", () => {

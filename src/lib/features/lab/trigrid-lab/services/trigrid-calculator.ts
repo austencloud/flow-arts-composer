@@ -5,8 +5,8 @@
  * All coordinates are in a 950x950 SVG space with center at (475, 475).
  */
 
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { Point, TriGridMode, TriGridArcData } from "../domain/trigrid-types";
 import {
   getAllHandPoints,

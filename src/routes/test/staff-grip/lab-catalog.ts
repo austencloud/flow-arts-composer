@@ -10,12 +10,12 @@
 import {
   SCENE_PROP_FAMILIES,
   SCENE_PROP_TYPES,
-} from "$lib/shared/3d/domain/scene-prop-catalog";
-import { ALL_FIXTURE_LOOPS } from "$lib/shared/combination/domain/demo-fixtures";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
+} from "#lib/shared/3d/domain/scene-prop-catalog.js";
+import { ALL_FIXTURE_LOOPS } from "#lib/shared/combination/domain/demo-fixtures.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
 
 import {
   DEFAULT_LAB_CHARACTER_ID,

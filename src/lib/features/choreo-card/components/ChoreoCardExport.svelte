@@ -6,17 +6,17 @@
 -->
 <script lang="ts">
   import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { getSequenceRenderer } from "$lib/shared/render/get-sequence-renderer";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { getSequenceRenderer } from "#lib/shared/render/get-sequence-renderer.js";
   import { onMount } from "svelte";
-  import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
-  import { ensureFullAccountForExport } from "$lib/shared/auth/domain/export-gate";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
+  import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
+  import { ensureFullAccountForExport } from "#lib/shared/auth/domain/export-gate.js";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
 
   interface Props {
     sequences: SequenceData[];

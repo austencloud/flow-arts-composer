@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
+  import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
   import {
     purgeOneCountSequences,
     type PurgeOneCountResult,
-  } from "$lib/shared/library/services/admin-sequence-actions";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  } from "#lib/shared/library/services/admin-sequence-actions.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   let dryRun = $state<PurgeOneCountResult | null>(null);
   let busy = $state(false);

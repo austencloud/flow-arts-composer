@@ -6,7 +6,7 @@
    * Only visible to the current user viewing another profile.
    */
 
-  import { saveNotes as saveConnectionNotes } from "$lib/shared/community/services/connection-manager";
+  import { saveNotes as saveConnectionNotes } from "#lib/shared/community/services/connection-manager.js";
   import { onDestroy } from "svelte";
 
   interface Props {

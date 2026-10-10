@@ -2,7 +2,7 @@
 QuizBackButton - Back navigation button for quizzes
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let { onclick }: { onclick: () => void } = $props();
 </script>
 

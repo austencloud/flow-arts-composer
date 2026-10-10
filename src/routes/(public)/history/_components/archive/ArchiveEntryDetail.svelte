@@ -5,7 +5,7 @@
   import VtgReleaseVisual from "./VtgReleaseVisual.svelte";
   import ArchiveEntryResources from "./ArchiveEntryResources.svelte";
   import ArchiveRecordVisual from "./ArchiveRecordVisual.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   let { entry }: { entry: ArchiveEntry } = $props();
   const artifact = $derived(archiveArtifact(entry));

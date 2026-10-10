@@ -1,22 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
-import { AnimationRenderLoop } from "$lib/shared/animation-engine/services/animation-render-loop";
+import { AnimationRenderLoop } from "#lib/shared/animation-engine/services/animation-render-loop.js";
 import type {
   RenderFrameParams,
   RenderLoopConfig,
-} from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
-import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
-import type { EffectRendererLike } from "$lib/shared/animation-engine/services/effects/effect-renderer";
+} from "#lib/shared/animation-engine/services/IAnimationRenderLoop.js";
+import type { IAnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
+import type { EffectRendererLike } from "#lib/shared/animation-engine/services/effects/effect-renderer.js";
 import type {
   LedSampler,
   LedSamplerConfig,
-} from "$lib/shared/animation-engine/services/led-sampler";
+} from "#lib/shared/animation-engine/services/led-sampler.js";
 import {
   DEFAULT_LED_CONFIG,
   type LedFrameInput,
   type LedSample,
-} from "$lib/shared/animation-engine/domain/types/led-types";
-import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+} from "#lib/shared/animation-engine/domain/types/led-types.js";
+import { DEFAULT_TRAIL_SETTINGS } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 function prop(angle: number): PropState {
   return {

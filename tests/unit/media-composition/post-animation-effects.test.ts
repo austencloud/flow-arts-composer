@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import {
   copyPostAnimationEffects,
   postAnimationTrailSettings,
-} from "$lib/shared/share/components/post-studio/post-animation-effects.svelte";
+} from "#lib/shared/share/components/post-studio/post-animation-effects.svelte.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrackingMode,
   TrailMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 describe("post animation effects", () => {
   it("copies restored reactive effects for a scoped preview without a DataCloneError", () => {

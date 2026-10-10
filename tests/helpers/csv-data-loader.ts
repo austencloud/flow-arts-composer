@@ -5,9 +5,9 @@
  * NEVER use hardcoded/fake pictographs - always use actual CSV data!
  */
 
-import type { StepBeatData } from "$lib/features/create/shared/domain/models/StepBeatData";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/PictographData";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import type { StepBeatData } from "#lib/features/create/shared/domain/models/StepBeatData";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/PictographData";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 

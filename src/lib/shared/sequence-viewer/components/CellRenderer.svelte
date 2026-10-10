@@ -7,14 +7,14 @@
   per-cell visual presentation.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import LiveCardPictograph from "./LiveCardPictograph.svelte";
   import { fade } from "svelte/transition";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import { getScanCardCloudProbe } from "../scan-card-cloud-context";
 
-  import type { ChoreoCardCell as CellData } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
+  import type { ChoreoCardCell as CellData } from "#lib/shared/choreo-card/services/choreo-card-render-engine.js";
 
   interface Props {
     cell: CellData;

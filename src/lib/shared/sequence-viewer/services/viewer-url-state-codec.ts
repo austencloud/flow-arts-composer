@@ -10,7 +10,7 @@
 import {
   compressForURL,
   decompressFromURL,
-} from "$lib/shared/navigation/services/sequence-codec";
+} from "#lib/shared/navigation/services/sequence-codec.js";
 // The param names live in their own dependency-free module so the root layout's
 // url-parameter-policy can read them without pulling this codec's fflate
 // compression stack onto every route's hydration path. Re-exported below so

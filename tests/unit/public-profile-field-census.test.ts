@@ -7,7 +7,7 @@ import {
   OWNER_PRIVATE_PROFILE_FIELDS,
   PUBLIC_PROFILE_FIELDS,
   unknownPublicProfileFields,
-} from "$lib/shared/community/domain/models/public-profile-contract";
+} from "#lib/shared/community/domain/models/public-profile-contract.js";
 
 // Read-only production census, 2026-07-31: 44 distinct root keys across 78
 // profiles. Values and user IDs were deliberately not collected.

@@ -35,7 +35,7 @@ export function createFirebaseCollectionRepository<T extends CollectionEntry>(
   schema: SchemaLike<unknown>,
 ): FirebaseCollectionRepository<T> {
   const pathFor = (userId: string) => `users/${userId}/${collectionName}`;
-  const crud = () => import("$lib/shared/firestore/firestore-crud");
+  const crud = () => import("#lib/shared/firestore/firestore-crud.js");
 
   return {
     async load(userId: string): Promise<T[]> {

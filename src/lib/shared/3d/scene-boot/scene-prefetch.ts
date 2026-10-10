@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import type { BackgroundType } from "@austencloud/backgrounds";
 
 import {
@@ -6,7 +6,7 @@ import {
   getSceneEnvironmentRendererKey,
   normalizeSceneEnvironmentId,
 } from "../environments/domain/scene-environment";
-import { isDesktop } from "$lib/shared/desktop/is-desktop";
+import { isDesktop } from "#lib/shared/desktop/is-desktop.js";
 
 import { DECODER_RUNTIME_URLS, sceneAssetUrls } from "./scene-asset-manifest";
 import {

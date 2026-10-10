@@ -3,16 +3,16 @@ import {
   derivePropElementalType,
   derivePropElementalTypeForStep,
 } from "./prop-relationship";
-import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // Letter A, diamond: both hands pro, one turn each, starting from alpha1
 // (left at south, right at north) with the props pointing in. The props sit

@@ -1,23 +1,23 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     POST_STAFF_EFFECTS,
     type PostStaffEffectId,
     type PostVideoItem,
-  } from "$lib/shared/media-composition/domain/post-project";
-  import { staffTipCoverage } from "$lib/shared/media-composition/domain/staff-tip-track";
-  import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
+  } from "#lib/shared/media-composition/domain/post-project.js";
+  import { staffTipCoverage } from "#lib/shared/media-composition/domain/staff-tip-track.js";
+  import type { StaffTipAnalysis } from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
   import {
     EFFECT_COLORS,
     EFFECT_LABELS,
-  } from "$lib/shared/effects/domain/effect-meta";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import { fitEffectRoster } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
-  import EffectSelector from "$lib/shared/animation-engine/components/effects-panel/EffectSelector.svelte";
-  import EffectPresetThumbnail from "$lib/shared/animation-engine/components/effects-panel/EffectPresetThumbnail.svelte";
-  import { createEffectLookPreview } from "$lib/shared/animation-engine/components/effects-panel/effect-look-preview";
-  import type { EffectPreset } from "$lib/shared/animation-engine/components/effects-panel/presets/types";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  } from "#lib/shared/effects/domain/effect-meta.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { fitEffectRoster } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
+  import EffectSelector from "#lib/shared/animation-engine/components/effects-panel/EffectSelector.svelte";
+  import EffectPresetThumbnail from "#lib/shared/animation-engine/components/effects-panel/EffectPresetThumbnail.svelte";
+  import { createEffectLookPreview } from "#lib/shared/animation-engine/components/effects-panel/effect-look-preview.js";
+  import type { EffectPreset } from "#lib/shared/animation-engine/components/effects-panel/presets/types.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   /**
    * Effects that follow the LED staffs in a clip's own footage. Finding the

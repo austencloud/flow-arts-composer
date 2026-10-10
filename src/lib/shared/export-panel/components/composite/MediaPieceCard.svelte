@@ -13,11 +13,11 @@
   Domain: Export Panel - Composite Mode - Media Piece
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
   import type { MediaFormat } from "../../domain/models/media-format";
-  import { withSequenceJoinAppliedToAll } from "$lib/shared/grid-join/sequence-grid-join";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { withSequenceJoinAppliedToAll } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
 
   let {
     pieceIndex,

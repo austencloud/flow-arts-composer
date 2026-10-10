@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getLetterPronunciation } from "$lib/shared/pronunciation/pronunciation-plan";
+  import { getLetterPronunciation } from "#lib/shared/pronunciation/pronunciation-plan.js";
 
   import type { ReadState } from "../state/corpus-session-state.svelte";
 

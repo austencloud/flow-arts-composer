@@ -3,16 +3,16 @@ import {
   createTakeTiming,
   createTimingSection,
   type ResolvedTakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   layerTimingParts,
   mappingPreviewAppearance,
   nextMappedLanding,
-} from "$lib/shared/share/components/post-studio/builder/post-timing-animation";
+} from "#lib/shared/share/components/post-studio/builder/post-timing-animation.js";
 import {
   mainItems,
   timingVideoAt,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import { overlay, project, video } from "./post-project-fixtures";
 
 function mappedTiming(hold: number, split?: number) {

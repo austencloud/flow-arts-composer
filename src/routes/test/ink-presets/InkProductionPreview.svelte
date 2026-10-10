@@ -1,28 +1,28 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import { createPlaybackControllerFactory } from "$lib/shared/animation-engine/create-playback-controller-factory";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-  import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { createPlaybackControllerFactory } from "#lib/shared/animation-engine/create-playback-controller-factory.js";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { generationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+  import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     DifficultyLevel,
     GenerationMode,
-  } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import {
     LOOPType,
     Period,
-  } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { InkIntent } from "$lib/shared/effects/domain/effects-config";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { InkIntent } from "#lib/shared/effects/domain/effects-config.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
 
   interface Props {
     intent: InkIntent;

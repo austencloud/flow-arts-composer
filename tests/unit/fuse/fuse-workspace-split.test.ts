@@ -8,7 +8,7 @@ import {
   getFittedFuseCellSize,
   resolveBalancedFuseWorkspaceSplit,
   resolveFuseWingWorkspace,
-} from "$lib/features/fuse/services/fuse-workspace-split";
+} from "#lib/features/fuse/services/fuse-workspace-split.js";
 
 const TALL_PORTRAIT = {
   mobileMaxWidth: 600,

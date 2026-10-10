@@ -5,8 +5,8 @@
   User clicks the correct position to override what the pipeline detected.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
   let {
     selected,

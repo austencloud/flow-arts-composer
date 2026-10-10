@@ -40,12 +40,12 @@
   import { quintOut } from "svelte/easing";
   import { innerHeight, innerWidth } from "svelte/reactivity/window";
   import { portal } from "../modals/portal";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
-  import { isEditableKeyboardTarget } from "$lib/shared/keyboard/domain/shortcut-target-resolution";
-  import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
+  import { isEditableKeyboardTarget } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
+  import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import {
     generateCardMorphName,
     lastGenerateCardMorphRan,

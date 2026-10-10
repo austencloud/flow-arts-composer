@@ -1,7 +1,7 @@
 import type { EffectsConfig } from "./effects-config";
 import { clampSilkIntensity, EFFECTS_CONFIG_VERSION } from "./effects-config";
 import { DEFAULT_EFFECTS_CONFIG } from "./defaults";
-import { migrateLedConfig } from "$lib/shared/animation-engine/domain/types/led-config-migration";
+import { migrateLedConfig } from "#lib/shared/animation-engine/domain/types/led-config-migration.js";
 
 type UnknownRecord = Record<string, unknown>;
 

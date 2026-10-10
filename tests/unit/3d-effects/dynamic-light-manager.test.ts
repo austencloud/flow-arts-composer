@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { DynamicLightManager } from "$lib/shared/3d/effects/lighting/dynamic-light-manager";
+import { DynamicLightManager } from "#lib/shared/3d/effects/lighting/dynamic-light-manager.js";
 import { Vector3, Color, Scene } from "three";
-import { QualityTier, TIER_CONFIGS } from "$lib/shared/3d/effects/types";
+import { QualityTier, TIER_CONFIGS } from "#lib/shared/3d/effects/types.js";
 
 function createManager(maxLights: number) {
   const scene = new Scene();

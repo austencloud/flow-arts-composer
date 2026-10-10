@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { ImageFormatConverter } from './services/image-format-converter';
 
 let instance: ImageFormatConverter | null = null;

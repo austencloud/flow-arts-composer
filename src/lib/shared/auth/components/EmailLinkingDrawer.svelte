@@ -10,7 +10,7 @@
   3. Success - Confirmation that email is linked and verified
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { Dialog as DialogPrimitive } from "bits-ui";
   import { authState } from "../state/auth-state.svelte";
   import type { HapticFeedback } from "../../application/services/haptic-feedback";
@@ -22,7 +22,7 @@
   import EmailLinkingFormStep from "./email-linking/EmailLinkingFormStep.svelte";
   import EmailLinkingVerifyStep from "./email-linking/EmailLinkingVerifyStep.svelte";
   import EmailLinkingSuccessStep from "./email-linking/EmailLinkingSuccessStep.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   const MAX_VERIFICATION_CHECKS = 60;
 

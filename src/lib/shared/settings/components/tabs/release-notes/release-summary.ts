@@ -1,5 +1,5 @@
-import { t } from "$lib/shared/i18n/i18n.svelte";
-import type { AppVersion } from "$lib/shared/versioning/domain/models/version-models";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { AppVersion } from "#lib/shared/versioning/domain/models/version-models.js";
 
 export function releaseSummary(version: AppVersion): string {
   const entries = version.changelogEntries;

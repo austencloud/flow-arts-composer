@@ -31,23 +31,23 @@ vi.mock("firebase/firestore", () => ({
   documentId: vi.fn(() => "document-id"),
 }));
 
-vi.mock("$lib/shared/library/services/public-sequence-persister", () => ({
+vi.mock("#lib/shared/library/services/public-sequence-persister.js", () => ({
   deleteSequenceCompletely: firestoreMocks.deleteSequenceCompletely,
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn(), warning: firestoreMocks.toastWarning },
 }));
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: (operation: () => Promise<unknown>) => operation(),
 }));
-vi.mock("$lib/shared/foundation/services/sequence-hydrator", () => ({
+vi.mock("#lib/shared/foundation/services/sequence-hydrator.js", () => ({
   ensureComposition: (sequence: unknown) => sequence,
 }));
-vi.mock("$lib/shared/library/library-events", () => ({
+vi.mock("#lib/shared/library/library-events.js", () => ({
   notifyLibraryMutated: firestoreMocks.notifyLibraryMutated,
 }));
 
-import { LibraryBatchOperations } from "$lib/shared/library/services/library-batch-operations";
+import { LibraryBatchOperations } from "#lib/shared/library/services/library-batch-operations.js";
 
 function makeOperations() {
   const reportError = vi.fn();

@@ -1,11 +1,11 @@
-import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
-import { isFeatureVideoSlug } from "$lib/shared/media-composition/domain/feature-video";
+import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
+import { isFeatureVideoSlug } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   FEATURE_EXPORT_NAME_RULE,
   isFeatureExportName,
   isSavedFeatureExport,
   type SavedFeatureExport,
-} from "$lib/shared/media-composition/domain/feature-video-export";
+} from "#lib/shared/media-composition/domain/feature-video-export.js";
 import { createHash, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -13,11 +13,11 @@ import path from "node:path";
 import {
   applyPostProjectOps,
   type PostProjectOp,
-} from "$lib/shared/media-composition/domain/post-project-ops";
+} from "#lib/shared/media-composition/domain/post-project-ops.js";
 import {
   PostProjectSchema,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 
 type Command = {
   id: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { GHOST_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/ghost-presets";
-import { EFFECT_CONTROLS } from "$lib/shared/effects/domain/effect-control-manifest";
+import { GHOST_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/ghost-presets.js";
+import { EFFECT_CONTROLS } from "#lib/shared/effects/domain/effect-control-manifest.js";
 import {
   GHOST_REVIEW_PRESETS,
   ghostReviewIntentMatches,

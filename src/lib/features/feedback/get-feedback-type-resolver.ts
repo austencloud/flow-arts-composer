@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import * as feedbackTypeResolver from './services/feedback-type-resolver';
 
 export function getFeedbackTypeResolver() {

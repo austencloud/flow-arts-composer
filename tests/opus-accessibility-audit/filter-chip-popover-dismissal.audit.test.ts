@@ -23,9 +23,9 @@ import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
 import { describe, it, expect, afterEach, vi } from "vitest";
 
-import LengthFilterChip from "$lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
-import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-import { registerEscapeShortcut } from "$lib/shared/keyboard/registration/register-escape-shortcut";
+import LengthFilterChip from "#lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
+import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
+import { registerEscapeShortcut } from "#lib/shared/keyboard/registration/register-escape-shortcut.js";
 
 function settle(ms = 120) {
   return new Promise((resolve) => setTimeout(resolve, ms));

@@ -5,13 +5,13 @@
   Mobile: accordion list of tools (no mockup - user just built the sequence).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { createTutorialState } from "../../../state/create-tutorial-state.svelte";
-  import { pictographDataToStepData } from "$lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { pictographDataToStepData } from "#lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import {
     WORKSPACE_BUTTON_LAYOUT,
     WORKSPACE_BUTTON_TUTORIAL,
@@ -19,8 +19,8 @@
     workspaceButtonsInZone,
     type WorkspaceButtonLayoutEntry,
     type WorkspaceButtonId,
-  } from "$lib/features/create/shared/workspace-panel/shared/workspace-button-layout";
-  import UndoGlyph from "$lib/features/create/shared/workspace-panel/shared/components/buttons/UndoGlyph.svelte";
+  } from "#lib/features/create/shared/workspace-panel/shared/workspace-button-layout.js";
+  import UndoGlyph from "#lib/features/create/shared/workspace-panel/shared/components/buttons/UndoGlyph.svelte";
 
   interface Props {
     onAdvance: () => void;
@@ -128,7 +128,7 @@
 
       <div class="grid-area">
         {#if beatSteps.length > 0}
-          {#await import("$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte") then mod}
+          {#await import("#lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte") then mod}
             <mod.default steps={beatSteps} startPlacement={startPlacementStep} />
           {/await}
         {/if}

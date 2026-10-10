@@ -16,7 +16,7 @@
  * Domain: QR - Code Generation
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 /** Bump to invalidate every cached QR image (e.g. if the QR style changes). */
 export const QR_IMAGE_CACHE_SCHEMA = "v1";

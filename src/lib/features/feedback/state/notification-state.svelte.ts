@@ -5,9 +5,9 @@
  * Uses a factory function to create reactive state.
  */
 
-import type { UserNotification } from "$lib/shared/feedback/domain/models/notification-models";
-import { notificationService } from "$lib/shared/feedback/services/notifier";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import type { UserNotification } from "#lib/shared/feedback/domain/models/notification-models.js";
+import { notificationService } from "#lib/shared/feedback/services/notifier.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 
 /**
  * Creates notification state instance

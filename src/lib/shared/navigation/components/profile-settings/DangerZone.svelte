@@ -6,13 +6,13 @@
   Includes GitHub-style text confirmation barrier.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
-  import type { DeleteReauth } from "$lib/shared/auth/services/account-manager";
+  import type { DeleteReauth } from "#lib/shared/auth/services/account-manager.js";
   import { getProfileSettingsContext } from "../../state/profile-settings-context.svelte";
-  import FacebookIcon from "$lib/shared/auth/components/icons/FacebookIcon.svelte";
-  import GoogleIcon from "$lib/shared/auth/components/icons/GoogleIcon.svelte";
-  import InstagramIcon from "$lib/shared/auth/components/icons/InstagramIcon.svelte";
+  import FacebookIcon from "#lib/shared/auth/components/icons/FacebookIcon.svelte";
+  import GoogleIcon from "#lib/shared/auth/components/icons/GoogleIcon.svelte";
+  import InstagramIcon from "#lib/shared/auth/components/icons/InstagramIcon.svelte";
 
   const ctx = getProfileSettingsContext();
 

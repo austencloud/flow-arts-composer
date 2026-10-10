@@ -18,12 +18,12 @@ import {
   serverTimestamp,
   type Timestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import type {
   TurnPattern,
   TurnPatternCreateData,
-} from "$lib/shared/create/domain/turn-pattern-data";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+} from "#lib/shared/create/domain/turn-pattern-data.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 // Firebase-free transform half — re-exported for backward compatibility so
 // consumers keep importing these from turn-pattern-manager.

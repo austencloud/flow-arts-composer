@@ -11,22 +11,22 @@
  */
 
 import type { Firestore, QueryConstraint } from "firebase/firestore";
-import { type SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
-import { isWellFormedGridJoin } from "$lib/shared/foundation/domain/models/grid-join-token";
+import { type SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { isHandPathSequence } from "#lib/shared/foundation/domain/models/sequence-kind.js";
+import { isWellFormedGridJoin } from "#lib/shared/foundation/domain/models/grid-join-token.js";
 import { buildHandPathShortCodePayload } from "./hand-path-short-code-payload";
 import {
   deriveWordStatusFromSteps,
   IncompleteWordError,
-} from "$lib/shared/foundation/services/word-deriver";
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
+} from "#lib/shared/foundation/services/word-deriver.js";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
 import {
   encodeSequenceForQR,
   isInlineEncoded,
   decodeSequenceFromQR,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { deriveLettersForSequence } from "$lib/shared/navigation/services/letter-deriver";
-import type { PublicSequenceHashMatcher } from "$lib/shared/sequence-viewer/services/public-sequence-hash-matcher";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
+import type { PublicSequenceHashMatcher } from "#lib/shared/sequence-viewer/services/public-sequence-hash-matcher.js";
 import type {
   ShortCodeRecord,
   CreateShortCodeResult,
@@ -35,18 +35,18 @@ import type {
   ShortCodeData,
 } from "./types";
 import { ShortCodeCache, SHORT_CODE_CACHE_SCHEMA } from "./short-code-cache";
-import { assetFetch } from "$lib/shared/net/asset-fetch";
-import { captureEvent } from "$lib/shared/analytics/services/posthog";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { AuthoredHand } from "$lib/shared/foundation/domain/models/authored-hand";
-import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
+import { assetFetch } from "#lib/shared/net/asset-fetch.js";
+import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { AuthoredHand } from "#lib/shared/foundation/domain/models/authored-hand.js";
+import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
 import {
   extractLeftSoloProp,
   extractRightSoloProp,
-} from "$lib/shared/foundation/services/sequence-decomposer";
-import { soloPropToSequence } from "$lib/shared/foundation/services/solo-prop-sequence-adapter";
-import { hashSoloProp } from "$lib/shared/foundation/services/content-hasher";
-import { sha256Hex } from "$lib/shared/foundation/utils/canonical-digest";
+} from "#lib/shared/foundation/services/sequence-decomposer.js";
+import { soloPropToSequence } from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
+import { hashSoloProp } from "#lib/shared/foundation/services/content-hasher.js";
+import { sha256Hex } from "#lib/shared/foundation/utils/canonical-digest.js";
 import { ShortCodeShareError } from "../domain/short-code-error";
 import {
   SHORTCODE_PAYLOAD_SCHEMA_VERSION,
@@ -379,7 +379,7 @@ export class ShortCodeManager {
   private async ensureFirestore(): Promise<Firestore> {
     if (!this.firestore) {
       const { getFirestoreInstance } = await import(
-        "$lib/shared/auth/firebase"
+        "#lib/shared/auth/firebase.js"
       );
       this.firestore = await getFirestoreInstance();
     }

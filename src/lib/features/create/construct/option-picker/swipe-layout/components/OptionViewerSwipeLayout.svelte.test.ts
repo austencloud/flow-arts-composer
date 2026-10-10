@@ -1,7 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 import OptionViewerSwipeLayoutTestHarness from "./OptionViewerSwipeLayoutTestHarness.svelte";
 import type { OrganizedSection } from "../../domain/option-picker-types";
 

@@ -5,26 +5,26 @@ import {
   PostProjectSchema,
   type PostProject,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   POST_EDGE_COLOR_HEX,
   mergeEdge,
   regionEdge,
-} from "$lib/shared/media-composition/domain/post-clip-edge";
-import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-clip-edge.js";
+import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   compilePostProject,
   staffEffectRole,
-} from "$lib/shared/media-composition/domain/post-project-compiler";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
+} from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import { renderPostStudioFrame } from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
 import {
   paintEdgeBorder,
   paintEdgeShadow,
   regionEdgePixels,
-} from "$lib/shared/media-composition/services/region-edge-painter";
-import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
-import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "#lib/shared/media-composition/services/region-edge-painter.js";
+import { traceRoundedRect } from "#lib/shared/render/utils/trace-rounded-rect.js";
+import type { PostStudioLayerPainter } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
 import { NOW, project, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };

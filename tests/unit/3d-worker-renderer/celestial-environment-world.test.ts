@@ -8,14 +8,14 @@ import {
   ShaderMaterial,
 } from "three";
 
-import { createDefaultCelestialConfig } from "$lib/shared/3d/environments/domain/models/scene-configs";
-import { CLOUDBREAK_LAYOUT } from "$lib/shared/3d/environments/scenes/celestial/cloudbreak-layout";
+import { createDefaultCelestialConfig } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
+import { CLOUDBREAK_LAYOUT } from "#lib/shared/3d/environments/scenes/celestial/cloudbreak-layout.js";
 import {
   CELESTIAL_AUTHORED_RESOURCE_URLS,
   createCelestialEnvironmentWorld,
   type CelestialEnvironmentAssets,
-} from "$lib/shared/3d/environments/worlds/celestial/celestial-environment-world";
-import { CELESTIAL_AUTHORED_RESOURCE_COUNT } from "$lib/shared/3d/environments/worlds/celestial/celestial-cloudbreak-world";
+} from "#lib/shared/3d/environments/worlds/celestial/celestial-environment-world.js";
+import { CELESTIAL_AUTHORED_RESOURCE_COUNT } from "#lib/shared/3d/environments/worlds/celestial/celestial-cloudbreak-world.js";
 
 function assets(): CelestialEnvironmentAssets {
   const shell = new Group();

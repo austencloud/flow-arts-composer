@@ -6,8 +6,8 @@
  * In development, all features are available.
  */
 
-import { browser } from "$app/environment";
-import type { ModuleId } from "$lib/shared/navigation/domain/types";
+import { browser } from "$app/env";
+import type { ModuleId } from "#lib/shared/navigation/domain/types.js";
 
 /**
  * Check if running in production environment

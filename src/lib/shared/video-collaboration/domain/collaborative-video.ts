@@ -2,7 +2,7 @@ import {
   DEFAULT_VIDEO_VISIBILITY,
   type VideoVisibility,
 } from "./video-visibility";
-import type { ArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
+import type { ArtifactRevisionRef } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
 import type { HandLabeling } from "./hand-labeling";
 
 export type { VideoVisibility } from "./video-visibility";

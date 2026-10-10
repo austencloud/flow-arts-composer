@@ -12,8 +12,8 @@
  * This is the main entry point for components.
  */
 
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   ThumbnailRenderInput,
   ThumbnailCacheKey,
@@ -23,12 +23,12 @@ import {
   ThumbnailRenderTimeoutError,
   ThumbnailRenderQueue,
 } from "./thumbnail-render-queue";
-import type { ThumbnailRenderer } from "$lib/shared/browse/services/thumbnail-renderer";
-import * as cloudCacheModule from "$lib/shared/browse/services/cloud-thumbnail-cache";
-import type { CloudThumbnailKey } from "$lib/shared/browse/services/cloud-thumbnail-cache";
+import type { ThumbnailRenderer } from "#lib/shared/browse/services/thumbnail-renderer.js";
+import * as cloudCacheModule from "#lib/shared/browse/services/cloud-thumbnail-cache.js";
+import type { CloudThumbnailKey } from "#lib/shared/browse/services/cloud-thumbnail-cache.js";
 import type { ThumbnailLocalCache } from "./thumbnail-local-cache";
 import type { ThumbnailMetricsCollector } from "./thumbnail-metrics-collector";
-import { captureThumbnailRenderFailure } from "$lib/shared/analytics/thumbnail-analytics";
+import { captureThumbnailRenderFailure } from "#lib/shared/analytics/thumbnail-analytics.js";
 
 export interface RenderProgress {
   current: number;

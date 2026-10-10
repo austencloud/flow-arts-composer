@@ -6,11 +6,11 @@
  * Uses $state for reactive primitives, $derived for computed values, $effect for side effects.
  */
 
-import type { FeedbackItem, FeedbackType, FeedbackPriority, FeedbackStatus, } from "$lib/shared/feedback/domain/models/feedback-models";
-import type { FeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
-import { TYPE_CONFIG, PRIORITY_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
-import { getFeedbackEditor } from "$lib/features/feedback/get-feedback-editor";
-import { getFeedbackFormatter } from "$lib/features/feedback/get-feedback-formatter";
+import type { FeedbackItem, FeedbackType, FeedbackPriority, FeedbackStatus, } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import type { FeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
+import { TYPE_CONFIG, PRIORITY_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import { getFeedbackEditor } from "#lib/features/feedback/get-feedback-editor.js";
+import { getFeedbackFormatter } from "#lib/features/feedback/get-feedback-formatter.js";
 
 /**
  * Creates reactive state for feedback detail panel

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * TransferConfirmDialog - Confirmation dialog for sequence transfer
    * Renders as bottom sheet on mobile, modal dialog on desktop
    */
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
 
   let {
     isOpen = $bindable(false),

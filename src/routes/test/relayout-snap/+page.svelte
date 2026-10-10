@@ -5,9 +5,9 @@
   // forceContain) so the same relayoutCells + container-resize path the download
   // card uses runs here. A DevTools probe (window.__snap) samples the
   // preview-stack box + every cell rect across the toggle each animation frame.
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import { loadCatalogs, loadCatalogSequences } from "$lib/features/choreo-card/services/catalog-loader";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { loadCatalogs, loadCatalogSequences } from "#lib/features/choreo-card/services/catalog-loader.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   let seq = $state<SequenceData | null>(null);
   let err = $state<string>("");

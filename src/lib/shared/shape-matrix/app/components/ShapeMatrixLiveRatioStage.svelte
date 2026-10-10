@@ -69,26 +69,26 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import { angleOf, PROP_LENGTH } from "$lib/shared/notation/qft/qft-model";
-  import { ENGINE_GRID_RADIUS } from "$lib/shared/mandala/domain/mandala-constants";
-  import { MANDALA_GUIDE_FLOOR_OPACITY } from "$lib/shared/mandala/domain/mandala-overlay-types";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getAnimationScopeContext } from "$lib/shared/animation-engine/state/animation-scope-context";
-  import { resolveEffectivePropsVisibility } from "$lib/shared/animation-engine/state/effective-prop-visibility";
+  import { angleOf, PROP_LENGTH } from "#lib/shared/notation/qft/qft-model.js";
+  import { ENGINE_GRID_RADIUS } from "#lib/shared/mandala/domain/mandala-constants.js";
+  import { MANDALA_GUIDE_FLOOR_OPACITY } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { getAnimationScopeContext } from "#lib/shared/animation-engine/state/animation-scope-context.js";
+  import { resolveEffectivePropsVisibility } from "#lib/shared/animation-engine/state/effective-prop-visibility.js";
   import {
     generateLeftPropSvg,
     generatePropSvg,
     generateRightPropSvg,
-  } from "$lib/shared/animation-engine/services/svg-generator";
-  import { applyEffort } from "$lib/shared/effort/domain/effort-easing-unified";
+  } from "#lib/shared/animation-engine/services/svg-generator.js";
+  import { applyEffort } from "#lib/shared/effort/domain/effort-easing-unified.js";
   import {
     createCanvas2DEffectHost,
     isCanvas2DHostedEffect,
-  } from "$lib/shared/effects/services/canvas2d-effect-host";
-  import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
-  import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { resolveTheoryPlaybackTick } from "$lib/shared/shape-matrix/services/theory-playback-clock";
+  } from "#lib/shared/effects/services/canvas2d-effect-host.js";
+  import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
+  import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { resolveTheoryPlaybackTick } from "#lib/shared/shape-matrix/services/theory-playback-clock.js";
 
   interface Props {
     hands: LiveHand[];

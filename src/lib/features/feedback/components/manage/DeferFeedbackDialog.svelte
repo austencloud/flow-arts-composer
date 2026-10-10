@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { KanbanBoardState } from "../../state/kanban-board-state.svelte";
-  import type { FeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
+  import type { FeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
 
   interface Props {
     boardState: KanbanBoardState;

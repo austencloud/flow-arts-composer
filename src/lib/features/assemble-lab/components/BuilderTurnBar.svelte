@@ -12,7 +12,7 @@
   import BuilderOrientationPicker from "./BuilderOrientationPicker.svelte";
   import OrientationExplainer from "./OrientationExplainer.svelte";
   import { getBuilderControlVisibility } from "../services/builder-phase-presentation";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   let { builderState }: { builderState: AssembleState } = $props();
 

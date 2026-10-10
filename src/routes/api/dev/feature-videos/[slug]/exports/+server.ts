@@ -1,14 +1,14 @@
-import { error, json, type RequestHandler } from "@sveltejs/kit";
-import { authorizeLoopback } from "$lib/server/dev-loopback";
+import { error, type RequestHandler } from "@sveltejs/kit";
+import { authorizeLoopback } from "#lib/server/dev-loopback.js";
 import {
   FeatureExportError,
   saveFeatureExport,
-} from "$lib/server/feature-video-exports";
+} from "#lib/server/feature-video-exports.js";
 import {
   featureVideoFailure,
   featureVideos,
-} from "$lib/server/feature-video-store";
-import { defaultFeatureExportName } from "$lib/shared/media-composition/domain/feature-video-export";
+} from "#lib/server/feature-video-store.js";
+import { defaultFeatureExportName } from "#lib/shared/media-composition/domain/feature-video-export.js";
 
 /**
  * Dev only: keeps a finished render in a feature video's `exports/` folder.
@@ -35,7 +35,7 @@ export const POST: RequestHandler = async ({
       body: request.body,
       ...(length > 0 ? { declaredBytes: length } : {}),
     });
-    return json(saved, { status: 201 });
+    return Response.json(saved, { status: 201 });
   } catch (cause) {
     if (cause instanceof FeatureExportError) error(cause.status, cause.message);
     featureVideoFailure(cause);

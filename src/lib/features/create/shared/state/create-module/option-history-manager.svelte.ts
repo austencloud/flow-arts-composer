@@ -5,8 +5,8 @@
  * Isolated from the main create module state for clarity and easier testing.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 export type OptionSelectionHistoryEntry = {
   stepIndex: number;

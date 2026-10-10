@@ -12,12 +12,12 @@
  * explicit clear() (e.g. sequence boundary).
  */
 
-import type { Ink2DParams } from "$lib/shared/effects/translators/canvas2d-types";
+import type { Ink2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
 import {
   Ink2DRenderer,
   type InkFrameBoundary,
-} from "$lib/shared/effects/renderers/ink-2d-renderer";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+} from "#lib/shared/effects/renderers/ink-2d-renderer.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 import { EffectRenderer } from "./effects/effect-renderer";
 
 export class InkOverlayRenderer extends EffectRenderer {
@@ -45,8 +45,8 @@ export class InkOverlayRenderer extends EffectRenderer {
 }
 
 import type { EffectPlugin } from "./effects/effect-plugin";
-import type { InkIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { InkIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const inkEffectPlugin: EffectPlugin<InkIntent> = {
   id: "ink",

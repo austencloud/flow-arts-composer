@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const startMorph = vi.fn<(mutate: () => void) => ViewTransition | null>();
-vi.mock("$lib/shared/transitions/results-morph", () => ({
+vi.mock("#lib/shared/transitions/results-morph.js", () => ({
   startMorph: (mutate: () => void) => startMorph(mutate),
 }));
 
 const claims = vi.fn<(name: string) => number>(() => 0);
-vi.mock("$lib/shared/transitions/view-transition-name-registry", () => ({
+vi.mock("#lib/shared/transitions/view-transition-name-registry.js", () => ({
   countViewTransitionNameClaims: (name: string) => claims(name),
 }));
 

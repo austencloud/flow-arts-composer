@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { makeRng } from "$lib/shared/foundation/utils/seeded-rng";
+import { makeRng } from "#lib/shared/foundation/utils/seeded-rng.js";
 import { parseFlowFestRuntimeContract } from "../../src/routes/test/flow-fest-graybox/flow-fest-runtime-contract";
 import {
   allFlowFestCampPlanLines,

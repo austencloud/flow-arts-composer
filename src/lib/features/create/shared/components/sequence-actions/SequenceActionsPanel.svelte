@@ -5,34 +5,37 @@
   Individual beat editing (turns, rotation) is handled by StepEditorPanel.
 -->
 <script lang="ts">
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getExtensionFlowCoordinator } from "$lib/features/create/shared/get-extension-flow-coordinator";
-  import { copyToClipboard } from "$lib/features/create/shared/services/sequence-json-exporter";
-  import * as sequenceTransferHandlerModule from "$lib/features/create/shared/services/sequence-transfer-handler";
-  import * as subDrawerStatePersisterModule from "$lib/features/create/shared/services/sub-drawer-state-persister";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getExtensionFlowCoordinator } from "#lib/features/create/shared/get-extension-flow-coordinator.js";
+  import { copyToClipboard } from "#lib/features/create/shared/services/sequence-json-exporter.js";
+  import * as sequenceTransferHandlerModule from "#lib/features/create/shared/services/sequence-transfer-handler.js";
+  import * as subDrawerStatePersisterModule from "#lib/features/create/shared/services/sub-drawer-state-persister.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { ExtensionAnalysis } from "../../services/sequence-extender";
-  import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+  import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import { UndoOperationType } from "../../services/undo-manager";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { BREAKPOINTS } from "$lib/shared/device/domain/constants/device-constants";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { BREAKPOINTS } from "#lib/shared/device/domain/constants/device-constants.js";
   import { getCreateModuleContext } from "../../context/create-module-context";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { isAdmin, authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import type { AuthNudgeTrigger } from "$lib/shared/auth/domain/auth-nudge-trigger";
-  import { resolveAccessTier } from "$lib/shared/auth/domain/access-tier";
-  import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import {
+    isAdmin,
+    authState,
+  } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import type { AuthNudgeTrigger } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
+  import { resolveAccessTier } from "#lib/shared/auth/domain/access-tier.js";
+  import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
   import { createSequenceActionsPanelState } from "../../state/sequence-actions-panel-state.svelte";
   import { createSequenceActionsOrchestrator } from "../../services/sequence-actions-orchestrator";
   import { quintOut } from "svelte/easing";
   import { fly } from "svelte/transition";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   import CreatePanelDrawer from "../CreatePanelDrawer.svelte";
   import SequencePreviewDialog from "./SequencePreviewDialog.svelte";
-  import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte";
+  import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
   import TransformHelpOverlay from "../transform-help/TransformHelpOverlay.svelte";
   import TransformDetailModal from "../transform-help/TransformDetailModal.svelte";
   import TurnPatternView from "./TurnPatternView.svelte";
@@ -43,19 +46,19 @@
   import DurationPatternView from "./DurationPatternView.svelte";
   import ExtendView from "./ExtendView.svelte";
   import StepGridSection from "./StepGridSection.svelte";
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-  import GridJoinSection from "$lib/shared/grid-join/GridJoinSection.svelte";
-  import { tryGetGridJoinContext } from "$lib/shared/grid-join/grid-join-controller";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import GridJoinSection from "#lib/shared/grid-join/GridJoinSection.svelte";
+  import { tryGetGridJoinContext } from "#lib/shared/grid-join/grid-join-controller.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import FirstStepConfirmDialog from "./FirstStepConfirmDialog.svelte";
   import HandSelector from "./HandSelector.svelte";
   import MobileHandSelector from "./MobileHandSelector.svelte";
   import MobileActionToolbar from "./MobileActionToolbar.svelte";
   import ShareButton from "../../workspace-panel/shared/components/buttons/ShareButton.svelte";
   import { getSequenceActionsPanelHeight } from "./sequence-actions-panel-height";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
-  import { getReturnContext } from "$lib/shared/coordinators/sequence-handoff.svelte";
+  import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
+  import { getReturnContext } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
 
   interface Props {
     show: boolean;

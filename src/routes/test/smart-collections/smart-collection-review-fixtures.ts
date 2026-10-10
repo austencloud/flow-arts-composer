@@ -1,7 +1,7 @@
 import type {
   LibraryCollection,
   SmartFilterSpec,
-} from "$lib/shared/library/domain/models/collection";
+} from "#lib/shared/library/domain/models/collection.js";
 
 export const COMMUNITY_RULE: SmartFilterSpec = {
   source: "community",

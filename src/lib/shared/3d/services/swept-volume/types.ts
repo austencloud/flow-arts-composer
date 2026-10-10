@@ -1,5 +1,5 @@
 
-import type { SimPropTarget } from "$lib/features/lab/tabs/collision-lab/services/types";
+import type { SimPropTarget } from "#lib/features/lab/tabs/collision-lab/services/types.js";
 
 /**
  * One sampled instant of a staff along its motion: the same SimPropTarget the

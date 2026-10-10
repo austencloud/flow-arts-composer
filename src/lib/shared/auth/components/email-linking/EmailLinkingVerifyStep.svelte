@@ -5,8 +5,8 @@
   Includes resend functionality with cooldown timer.
 -->
 <script lang="ts">
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   interface Props {
     email: string;
     checkCount: number;

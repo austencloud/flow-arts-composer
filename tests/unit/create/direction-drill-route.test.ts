@@ -5,7 +5,7 @@ import {
   getDirectionDrillSubtitle,
   getDirectionDrillTitle,
   type DirectionDrillRoute,
-} from "$lib/features/create/shared/components/sequence-actions/direction-drill-route";
+} from "#lib/features/create/shared/components/sequence-actions/direction-drill-route.js";
 
 const ALL_ROUTES: readonly DirectionDrillRoute[] = [
   "hub",

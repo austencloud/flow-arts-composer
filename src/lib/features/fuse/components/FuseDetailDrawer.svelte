@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
 

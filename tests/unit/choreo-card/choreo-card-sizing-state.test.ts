@@ -7,7 +7,7 @@ import {
   createChoreoCardSizingState,
   fitSquareGridCell,
   getContainedCardHeight,
-} from "$lib/shared/choreo-card/state/choreo-card-sizing-state.svelte";
+} from "#lib/shared/choreo-card/state/choreo-card-sizing-state.svelte.js";
 
 const disposals: Array<() => void> = [];
 

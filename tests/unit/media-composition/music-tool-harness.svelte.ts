@@ -1,11 +1,11 @@
 import { flushSync, mount } from "svelte";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
 import {
   trimMusic,
   updateMusic,
   type MusicPatch,
-} from "$lib/shared/media-composition/domain/post-music-edits";
-import PostMusicTool from "$lib/shared/share/components/post-studio/editor/PostMusicTool.svelte";
+} from "#lib/shared/media-composition/domain/post-music-edits.js";
+import PostMusicTool from "#lib/shared/share/components/post-studio/editor/PostMusicTool.svelte";
 import { NOW, project, video } from "./post-project-fixtures";
 
 /**

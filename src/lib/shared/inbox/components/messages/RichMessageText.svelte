@@ -1,6 +1,6 @@
 <script lang="ts">
   import { parseMessageText } from "../../domain/message-link-parts";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   interface Props {
     content: string;

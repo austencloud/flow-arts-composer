@@ -4,11 +4,11 @@ import {
   type TakeTiming,
   type ResolvedTakeTiming,
   type TimingSection,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   createPostTimingSession,
   type TimingHost,
-} from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
+} from "#lib/shared/share/components/post-studio/builder/post-timing-session.svelte.js";
 
 const MOVE_BEATS = [1, 1, 1, 1, 1, 1, 1, 1];
 

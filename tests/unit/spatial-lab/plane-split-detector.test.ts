@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectPlaneSplit } from "$lib/features/lab/tabs/spatial-lab/services/plane-split-detector";
+import { detectPlaneSplit } from "#lib/features/lab/tabs/spatial-lab/services/plane-split-detector.js";
 
 describe("detectPlaneSplit", () => {
   const bodyY = 330;

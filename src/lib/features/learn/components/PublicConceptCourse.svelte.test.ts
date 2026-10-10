@@ -12,7 +12,7 @@ import { getAvailableConcepts } from "../domain/concept-experience-registry";
 import { buildConceptPath } from "../domain/concept-routes";
 import { LANDING_DOMAIN } from "../../../../config/domains";
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   building: false,
   dev: false,

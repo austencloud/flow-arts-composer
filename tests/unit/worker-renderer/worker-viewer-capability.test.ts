@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   decideWorkerViewerCapability,
   type WorkerViewerCapabilitySnapshot,
-} from "$lib/shared/3d/worker-renderer/domain/worker-viewer-capability";
+} from "#lib/shared/3d/worker-renderer/domain/worker-viewer-capability.js";
 
 const migratedEnvironments = new Set(["ocean", "rainbow", "void"] as const);
 

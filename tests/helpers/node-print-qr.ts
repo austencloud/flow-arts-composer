@@ -22,8 +22,8 @@ import type * as NodeCanvas from "canvas";
 import { JSDOM } from "jsdom";
 import QRCodeStyling from "qr-code-styling";
 import { BarcodeDetector, prepareZXingModule } from "barcode-detector/ponyfill";
-import { QRCodeGenerator } from "$lib/shared/qr/services/qr-code-generator";
-import type { TkaQrDetector } from "$lib/shared/qr/services/tka-qr-detector";
+import { QRCodeGenerator } from "#lib/shared/qr/services/qr-code-generator.js";
+import type { TkaQrDetector } from "#lib/shared/qr/services/tka-qr-detector.js";
 
 type NodeCanvasModule = typeof NodeCanvas;
 

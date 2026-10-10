@@ -5,38 +5,38 @@
  * Fast alternative to exhaustive exploration.
  */
 
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import type { VariationConstraints } from "../domain/models/spell-models";
 import type { RandomSequenceGenerationOptions } from "./types";
-import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
+import type { ILetterQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
 import type { StartPlacementValidator } from "./start-placement-validator";
 import type { OrientationContinuityValidator } from "./orientation-continuity-validator";
 import type { SequenceExtender } from "../../shared/services/sequence-extender";
-import type { stepConverter as StepConverterSingleton } from "$lib/features/create/generate/shared/services/step-converter";
+import type { stepConverter as StepConverterSingleton } from "#lib/features/create/generate/shared/services/step-converter.js";
 type StepConverter = typeof StepConverterSingleton;
-import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
+import type { ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 import type { LOOPEndPlacementResolver } from "./loop-end-placement-resolver";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import type {
   ConstraintSet,
   ConstraintStep,
   ConstraintPictographData,
-} from "$lib/shared/sequence-engine/constraints/types";
+} from "#lib/shared/sequence-engine/constraints/types.js";
 import {
   MotionType,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { recalculateAllOrientations } from "#lib/shared/create/services/orientation-propagation.js";
 
 interface RandomWalkState {
   steps: StepData[];
@@ -1028,12 +1028,12 @@ export class RandomSequenceGenerator {
 // ============================================================================
 // DIRECT SINGLETON EXPORT
 // ============================================================================
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
 import { startPlacementValidator } from "./start-placement-validator";
 import * as orientationContinuityValidator from "./orientation-continuity-validator";
-import { sequenceExtender } from "$lib/features/create/shared/services/sequence-extender";
-import { stepConverter } from "$lib/features/create/generate/shared/services/step-converter";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
+import { sequenceExtender } from "#lib/features/create/shared/services/sequence-extender.js";
+import { stepConverter } from "#lib/features/create/generate/shared/services/step-converter.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 import * as loopEndPlacementResolver from "./loop-end-placement-resolver";
 
 export const randomSequenceGenerator = new RandomSequenceGenerator(

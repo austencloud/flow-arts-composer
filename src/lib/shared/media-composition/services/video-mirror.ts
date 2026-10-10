@@ -1,6 +1,6 @@
 import type { Attachment } from "svelte/attachments";
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
-import { calculateMediaFit } from "$lib/shared/media-composition/services/media-fit";
+import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
+import { calculateMediaFit } from "#lib/shared/media-composition/services/media-fit.js";
 
 /**
  * A copy of a preview video, painted into a canvas laid over it.

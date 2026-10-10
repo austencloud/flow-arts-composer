@@ -9,15 +9,15 @@
 
 import { describe, it, expect } from "vitest";
 import { Vector3, Quaternion, Euler } from "three";
-import { Orientation, MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { Orientation, MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { Plane } from "@austencloud/scene-3d";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
 import {
   planeAngleToWorldPosition,
   calculatePropQuaternion,
-} from "$lib/shared/3d/domain/constants/plane-transforms";
-import { mapOrientationToAngle } from "$lib/shared/3d/services/orientation-mapper";
+} from "#lib/shared/3d/domain/constants/plane-transforms.js";
+import { mapOrientationToAngle } from "#lib/shared/3d/services/orientation-mapper.js";
 
 
 function getTBarDirection(staffAngle: number, plane: Plane): Vector3 {

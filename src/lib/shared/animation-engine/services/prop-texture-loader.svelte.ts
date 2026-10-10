@@ -5,15 +5,15 @@
  * Uses reactive state ownership - service owns $state, component derives from it.
  */
 
-import type { IAnimationRenderer as AnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
-import type { ISVGGenerator as SVGGenerator } from "$lib/shared/animation-engine/services/ISVGGenerator";
-import type { ITrailCapturer as TrailCapturer } from "$lib/shared/animation-engine/services/ITrailCapturer";
+import type { IAnimationRenderer as AnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
+import type { ISVGGenerator as SVGGenerator } from "#lib/shared/animation-engine/services/ISVGGenerator.js";
+import type { ITrailCapturer as TrailCapturer } from "#lib/shared/animation-engine/services/ITrailCapturer.js";
 import type { PropTextureState } from "./IPropTextureLoader";
 import {
   DEFAULT_PROP_DIMENSIONS,
   getPropDimensions,
 } from "./IPropTextureLoader";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 
 export class PropTextureLoader {
   // Reactive state - owned by service, read by component via $derived

@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 import { PronunciationRecorder } from "./services/implementations/PronunciationRecorder";
 

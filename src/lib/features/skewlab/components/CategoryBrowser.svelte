@@ -13,14 +13,14 @@
    */
 
   import { onMount, onDestroy } from "svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SkewLabEditorPanel from "./SkewLabEditorPanel.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { selectedArrowState } from "$lib/shared/create/state/selected-arrow-state.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
 
   // Detect if we're on desktop (for push-over effect)
   let isSideBySide = $state(false);

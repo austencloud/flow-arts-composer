@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildNotationCells } from "$lib/shared/timeline/notation-cell";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { buildNotationCells } from "#lib/shared/timeline/notation-cell.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function seq(partial: Partial<SequenceData>): SequenceData {
   return {

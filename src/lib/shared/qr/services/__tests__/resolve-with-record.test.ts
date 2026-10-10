@@ -15,10 +15,10 @@ vi.mock("firebase/firestore", () => ({
   increment: vi.fn(),
   runTransaction: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
-vi.mock("$lib/shared/navigation/services/sequence-encoder", () => ({
+vi.mock("#lib/shared/navigation/services/sequence-encoder.js", () => ({
   encodeSequenceForQR: vi.fn(),
   isInlineEncoded: (s: string) => s.startsWith("s~"),
   decodeSequenceFromQR: vi.fn(async (payload: string) => ({

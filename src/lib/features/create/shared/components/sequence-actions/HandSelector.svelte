@@ -10,8 +10,8 @@
   color policy instead of rebuilding it here.
 -->
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TargetHand } from "../../state/panel-coordination-state.svelte.ts";
 
   interface Props {

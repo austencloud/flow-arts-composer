@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getOceanQualityConfig } from "$lib/shared/3d/environments/scenes/ocean/quality/ocean-quality";
+import { getOceanQualityConfig } from "#lib/shared/3d/environments/scenes/ocean/quality/ocean-quality.js";
 
 describe("ocean quality budgets", () => {
   it("removes the authored reef and continuous runtime systems at LOW", () => {

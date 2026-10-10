@@ -26,18 +26,18 @@
    * opacity. Long props (600-unit artwork) are clipped at the frame.
    */
   import { onDestroy, untrack } from "svelte";
-  import { loadBuilderPropArt } from "$lib/features/assemble-lab/services/builder-prop-art";
+  import { loadBuilderPropArt } from "#lib/features/assemble-lab/services/builder-prop-art.js";
   import {
     BUILDER_HOP_MS,
     SvgPropAnimator,
-  } from "$lib/features/assemble-lab/services/svg-prop-animator";
-  import type { BuilderStep } from "$lib/features/assemble-lab/state/assemble-state-types";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { GhostState } from "$lib/shared/attract/services/attract-ghost.svelte";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PropRenderData } from "$lib/shared/pictograph/prop/domain/models/prop-render-data";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/features/assemble-lab/services/svg-prop-animator.js";
+  import type { BuilderStep } from "#lib/features/assemble-lab/state/assemble-state-types.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { GhostState } from "#lib/shared/attract/services/attract-ghost.svelte.js";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PropRenderData } from "#lib/shared/pictograph/prop/domain/models/prop-render-data.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import {
     ASSEMBLE_VIEW_BOX,

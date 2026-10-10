@@ -24,7 +24,7 @@ import { page } from "vitest/browser";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import CreateTutorialWizard from "./CreateTutorialWizard.svelte";
 import { createTutorialState } from "../../state/create-tutorial-state.svelte";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 
 vi.mock("./steps/PickStartPlacementStep.svelte", async () => {
   const mod = await import("./__test-stubs__/TutorialStepStub.svelte");

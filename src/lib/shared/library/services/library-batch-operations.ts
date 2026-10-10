@@ -12,29 +12,29 @@ import {
   type Firestore,
   type DocumentData,
 } from "firebase/firestore";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
-import { ensureComposition } from "$lib/shared/foundation/services/sequence-hydrator";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
+import { ensureComposition } from "#lib/shared/foundation/services/sequence-hydrator.js";
 import {
   getUserSequencesPath,
   getUserCollectionPath,
   getUserSequencePath,
-} from "$lib/shared/library/data/firestore-paths";
-import { notifyLibraryMutated } from "$lib/shared/library/library-events";
+} from "#lib/shared/library/data/firestore-paths.js";
+import { notifyLibraryMutated } from "#lib/shared/library/library-events.js";
 import type {
   LibrarySequence,
   SequenceVisibility,
-} from "$lib/shared/library/domain/models/library-sequence";
-import type { IPublicIndexSyncer as PublicIndexSyncer } from "$lib/shared/library/services/IPublicIndexSyncer";
+} from "#lib/shared/library/domain/models/library-sequence.js";
+import type { IPublicIndexSyncer as PublicIndexSyncer } from "#lib/shared/library/services/IPublicIndexSyncer.js";
 import {
   deleteSequenceCompletely,
   type DeleteSequenceCompletelyResult,
-} from "$lib/shared/library/services/public-sequence-persister";
-import { LibraryError } from "$lib/shared/library/domain/library-error";
+} from "#lib/shared/library/services/public-sequence-persister.js";
+import { LibraryError } from "#lib/shared/library/domain/library-error.js";
 import {
   meetsCommunityMinimum,
   MIN_COMMUNITY_STEPS,
-} from "$lib/shared/library/domain/sequence-min-length";
+} from "#lib/shared/library/domain/sequence-min-length.js";
 
 type MapDocFn = (doc: DocumentData, id: string) => LibrarySequence;
 

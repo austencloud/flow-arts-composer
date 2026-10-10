@@ -1,11 +1,11 @@
 <script lang="ts">
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
-  import { markViewer3DIntroSeen } from "$lib/shared/onboarding/state/viewer3d-intro-state";
-  import { resolveSceneControlLayout } from "$lib/shared/3d/domain/scene-control-layout";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
+  import { markViewer3DIntroSeen } from "#lib/shared/onboarding/state/viewer3d-intro-state.js";
+  import { resolveSceneControlLayout } from "#lib/shared/3d/domain/scene-control-layout.js";
 
   interface Props {
     onSettingChange?: ViewerControlSink;

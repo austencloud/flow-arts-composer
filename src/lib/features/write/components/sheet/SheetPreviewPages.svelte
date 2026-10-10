@@ -36,7 +36,7 @@
     flyFade,
     growFade,
     flipDuration,
-  } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/transitions/motion.js";
   import type {
     SheetPage,
     SheetCell,

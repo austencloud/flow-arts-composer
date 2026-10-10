@@ -7,10 +7,10 @@
  */
 
 import type { AnimationMode } from "../../../shared/domain/animation-mode";
-import type { CellConfig, Composition, GridLayout } from "$lib/shared/animation-engine/domain/compose-types";
+import type { CellConfig, Composition, GridLayout } from "#lib/shared/animation-engine/domain/compose-types.js";
 import { getComposition as dexieGetComposition } from "../../../services/dexie-composition-repository";
 import { compositionSyncer } from "../../../services/composition-syncer";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 // Types
 

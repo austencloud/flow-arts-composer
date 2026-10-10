@@ -17,10 +17,10 @@
  * Pure module — no sequence-engine / firebase deps, so it loads in unit tests
  * (unlike deck-variation.ts). deck-variation re-exports for backward compat.
  */
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { Orientation, HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { Orientation, HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 
 export type StartOriMode = "radial" | "nonradial" | "split";
 export type PlacementFamily = "alpha" | "beta" | "gamma";

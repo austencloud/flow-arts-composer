@@ -1,18 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
-import { PictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
+import { PictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { DIAMOND_HAND_POINTS } from "$lib/shared/render/core/constants/grid-coordinates";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { DIAMOND_HAND_POINTS } from "#lib/shared/render/core/constants/grid-coordinates.js";
 
 const STAFF_NUDGE = 950 / 45;
 

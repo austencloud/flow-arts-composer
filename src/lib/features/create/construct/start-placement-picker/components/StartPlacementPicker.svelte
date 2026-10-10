@@ -4,23 +4,23 @@ Shows 3 start placements (Alpha, Beta, Gamma) with toggle to view all 16 variati
 Controls moved below the grid for better UX
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { GridJoin } from "@tka/tka-types";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onDestroy, onMount, type Snippet } from "svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     createSimplifiedStartPlacementState,
     type SimplifiedStartPlacementState,
-  } from "$lib/shared/create/state/start-placement-state.svelte";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  } from "#lib/shared/create/state/start-placement-state.svelte.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import AdvancedStartPlacementPicker from "./AdvancedStartPlacementPicker.svelte";
   import BuildStartPlacement from "./BuildStartPlacement.svelte";
   import GridModeToggle from "../../shared/components/GridModeToggle.svelte";

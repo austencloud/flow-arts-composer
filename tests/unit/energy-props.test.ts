@@ -12,8 +12,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   PROP_PICKER_SECTIONS,
   VARIANT_PROP_TYPES,
@@ -23,7 +23,7 @@ import {
   getBasePropsByCategory,
   getNextVariation,
   getPropTypeDisplayInfo,
-} from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+} from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 import {
   isBigProp,
   isBilateralProp,
@@ -31,16 +31,16 @@ import {
   isUnilateralProp,
   getBilateralEndLabels,
   getBetaOffsetSize,
-} from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-import { isUnilateralProp as isUnilateralPropRenderCore } from "$lib/shared/render/core/constants/prop-classification";
-import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
-import { getTipPointsBaseline } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
-import { getCompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
+} from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+import { isUnilateralProp as isUnilateralPropRenderCore } from "#lib/shared/render/core/constants/prop-classification.js";
+import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
+import { getTipPointsBaseline } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { getPropDimensions } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+import { getCompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
 import {
   applyMotionColorToSvg,
   SELECTIVE_COLOR_PROP_TYPES,
-} from "$lib/shared/utils/svg-color-utils";
+} from "#lib/shared/utils/svg-color-utils.js";
 
 const REPO_ROOT = join(__dirname, "..", "..");
 

@@ -1,8 +1,8 @@
 <!-- Two-step editor for prop skills and the optional featured profile skill. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import {
     getLegacyProfileProps,
     getProfilePropFamily,
@@ -13,14 +13,14 @@
     normalizeProfileSkills,
     removeProfileProp,
     toggleProfileSkill,
-  } from "$lib/shared/community/domain/profile-prop-catalog";
-  import type { PropPreferenceState } from "$lib/shared/community/state/prop-preference-state.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import { tryGetAccountSetupContext } from "$lib/shared/onboarding/context/account-setup-context";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { growFade } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/community/domain/profile-prop-catalog.js";
+  import type { PropPreferenceState } from "#lib/shared/community/state/prop-preference-state.svelte.js";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import ProfilePropPicker from "./ProfilePropPicker.svelte";
   import PropFamilyGrid from "./PropFamilyGrid.svelte";
   import SelectionFooterBar from "./SelectionFooterBar.svelte";

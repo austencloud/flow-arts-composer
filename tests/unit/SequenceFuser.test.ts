@@ -7,12 +7,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { fuseSequences } from "$lib/features/fuse/services/sequence-fuser";
-import type { HandPathData } from "$lib/shared/foundation/domain/models/hand-path-data";
+import { fuseSequences } from "#lib/features/fuse/services/sequence-fuser.js";
+import type { HandPathData } from "#lib/shared/foundation/domain/models/hand-path-data.js";
 import {
 	GridLocation,
 	GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 function makeHandPath(length: number): HandPathData {
 	// Build a location sequence of the requested length.

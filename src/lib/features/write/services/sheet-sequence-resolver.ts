@@ -5,9 +5,9 @@
  * (the six-red-rows bug). Pure DI — the view wires the real loaders.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { LibraryError } from "$lib/shared/library/domain/library-error";
-import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { LibraryError } from "#lib/shared/library/domain/library-error.js";
+import { isPermissionDeniedError } from "#lib/shared/auth/utils/is-permission-denied-error.js";
 
 export type ResolveFailure =
   | "transient"

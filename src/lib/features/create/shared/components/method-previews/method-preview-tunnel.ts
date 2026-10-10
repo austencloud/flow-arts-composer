@@ -3,8 +3,8 @@
  * its beats, and the sequence the performer takes when its dice is pressed.
  * Pure, so tests check them without drawing.
  */
-import { rotateSequenceGeometry } from "$lib/shared/create/services/sequence-derived-fields";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /** The Tunnel's own Radial preset (TUNNEL_PRESETS): four performers. */
 export const TUNNEL_PREVIEW_PRESET = "radial";

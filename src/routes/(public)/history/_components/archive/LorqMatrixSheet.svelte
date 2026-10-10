@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ORIGINAL_SHAPE_MATRIX_URL } from "$lib/shared/shape-matrix/app/shape-engine-identity";
+  import { ORIGINAL_SHAPE_MATRIX_URL } from "#lib/shared/shape-matrix/app/shape-engine-identity.js";
   let { active = false }: { active?: boolean } = $props();
 </script>
 

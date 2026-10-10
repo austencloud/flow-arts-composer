@@ -8,22 +8,22 @@ import {
   Period as EnginePeriod,
   loopSpecFromLegacy,
 } from "@tka/sequence-engine/loop";
-import { SequenceExtender } from "$lib/features/create/shared/services/sequence-extender";
-import { LOOPValidator } from "$lib/features/create/shared/services/loop-validator";
-import { SequenceAnalyzer } from "$lib/features/create/shared/services/sequence-analyzer";
+import { SequenceExtender } from "#lib/features/create/shared/services/sequence-extender.js";
+import { LOOPValidator } from "#lib/features/create/shared/services/loop-validator.js";
+import { SequenceAnalyzer } from "#lib/features/create/shared/services/sequence-analyzer.js";
 import {
   LOOPType,
   Period,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { CsvLoader } from "$lib/shared/foundation/services/data/csv-loader";
-import { csvParser } from "$lib/shared/foundation/services/implementations/data/csv-parser";
-import { betaDetector } from "$lib/shared/pictograph/prop/services/beta-detector";
-import { MotionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-import { csvPictographParser } from "$lib/shared/pictograph/shared/services/csv-pictograph-parser";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { CsvLoader } from "#lib/shared/foundation/services/data/csv-loader.js";
+import { csvParser } from "#lib/shared/foundation/services/implementations/data/csv-parser.js";
+import { betaDetector } from "#lib/shared/pictograph/prop/services/beta-detector.js";
+import { MotionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+import { csvPictographParser } from "#lib/shared/pictograph/shared/services/csv-pictograph-parser.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 import {
   buildSeed,

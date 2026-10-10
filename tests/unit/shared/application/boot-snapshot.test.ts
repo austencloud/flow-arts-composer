@@ -5,7 +5,7 @@ import {
   clearBootSnapshot,
   BOOT_SNAPSHOT_KEY,
   BOOT_SNAPSHOT_VERSION,
-} from "$lib/shared/application/services/boot-snapshot";
+} from "#lib/shared/application/services/boot-snapshot.js";
 
 describe("boot-snapshot", () => {
   beforeEach(() => {

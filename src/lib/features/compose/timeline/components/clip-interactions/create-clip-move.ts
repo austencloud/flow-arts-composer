@@ -6,9 +6,9 @@
  * Uses TimelineSnapService for proper snapping behavior.
  */
 
-import type { TimelineClip } from "$lib/shared/animation-engine/domain/timeline-types";
-import { pixelsToTime } from "$lib/shared/animation-engine/domain/timeline-types";
-import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+import type { TimelineClip } from "#lib/shared/animation-engine/domain/timeline-types.js";
+import { pixelsToTime } from "#lib/shared/animation-engine/domain/timeline-types.js";
+import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
 import { getTimelineSnapper } from "../../services/timeline-snap-service";
 
 export interface ClipMoveHandlers {

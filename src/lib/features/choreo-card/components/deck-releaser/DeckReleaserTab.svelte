@@ -2,8 +2,8 @@
   import { onMount, untrack } from "svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     loadCatalogs,
     loadSequencesByIds,
@@ -33,7 +33,7 @@
     getArchivedDeck,
     deleteArchivedDeck,
   } from "../../services/deck-archive-store";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PrintPanel from "../print-preview/PrintPanel.svelte";
   import DeckReleaseNameModal from "./DeckReleaseNameModal.svelte";
   import { createDeckReleaserState } from "./state/deck-releaser-state.svelte";
@@ -47,10 +47,10 @@
     isLoopRelease,
   } from "./deck-release-model";
   import { setDeckReleaserContext } from "./context/deck-releaser-context";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { mintSeed, nextReferenceNumber } from "../../services/deck-recipe";
-  import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-  import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
+  import { generationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+  import { startPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
   import { loadDiamondEdges } from "../../services/pictograph-letter-lookup";
   import FestivalSamplerPrintView from "./FestivalSamplerPrintView.svelte";
   import FestivalSamplerTurnReview from "./FestivalSamplerTurnReview.svelte";
@@ -65,7 +65,7 @@
       x: number,
       y: number,
       rerender: () => void,
-      sequence?: import("$lib/shared/foundation/domain/models/sequence-data").SequenceData
+      sequence?: import("#lib/shared/foundation/domain/models/sequence-data.js").SequenceData
     ) => void;
   }
 
@@ -287,41 +287,37 @@
   }
 
   async function closeFestivalSampler(): Promise<void> {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.delete("pack");
     url.searchParams.delete("review");
     await goto(`${url.pathname}${url.search}${url.hash}`, {
-      keepFocus: true,
-      noScroll: true,
+      reset: false,
     });
   }
 
   async function openFestivalSampler(): Promise<void> {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.set("pack", "festival-sampler-2026");
     url.searchParams.delete("review");
     await goto(`${url.pathname}${url.search}${url.hash}`, {
-      keepFocus: true,
-      noScroll: true,
+      reset: false,
     });
   }
 
   async function openFestivalTurnReview(): Promise<void> {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.set("pack", "festival-sampler-2026");
     url.searchParams.set("review", "turn-patterns");
     await goto(`${url.pathname}${url.search}${url.hash}`, {
-      keepFocus: true,
-      noScroll: true,
+      reset: false,
     });
   }
 
   async function closeFestivalTurnReview(): Promise<void> {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.delete("review");
     await goto(`${url.pathname}${url.search}${url.hash}`, {
-      keepFocus: true,
-      noScroll: true,
+      reset: false,
     });
   }
 

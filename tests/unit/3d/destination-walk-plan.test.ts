@@ -4,7 +4,7 @@ import {
   createDestinationWalkPlan,
   createTerminalStepPlan,
   sampleDestinationWalkPlan,
-} from "$lib/shared/3d/locomotion/destination-walk-plan";
+} from "#lib/shared/3d/locomotion/destination-walk-plan.js";
 
 describe("destination walk plan", () => {
   it("reserves two shorter placements for a real braking window", () => {

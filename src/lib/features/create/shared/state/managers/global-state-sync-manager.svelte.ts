@@ -11,8 +11,8 @@
 import {
   setAnyPanelOpen,
   setSideBySideLayout,
-} from "$lib/shared/application/state/animation-visibility-state.svelte";
-import { sharedAnimationState } from "$lib/shared/animation-engine/state/shared-animation-state.svelte";
+} from "#lib/shared/application/state/animation-visibility-state.svelte.js";
+import { sharedAnimationState } from "#lib/shared/animation-engine/state/shared-animation-state.svelte.js";
 import type { PanelCoordinationState } from "../panel-coordination-state.svelte";
 
 export interface GlobalStateSyncConfig {

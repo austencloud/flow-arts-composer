@@ -26,11 +26,11 @@
  */
 
 import { getContext, setContext } from "svelte";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { reducedMotion } from "$lib/shared/transitions/motion";
-import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { reducedMotion } from "#lib/shared/transitions/motion.js";
+import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 import type {
   NormalizedPoint,
   TraceConversionError,

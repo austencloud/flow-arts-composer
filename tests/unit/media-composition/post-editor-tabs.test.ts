@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import {
   loadPostProject,
   savePostProject,
-} from "$lib/shared/media-composition/services/post-project-store";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/services/post-project-store.js";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
 
 const PREFIX = "tka:post-studio:project:v2:";
 

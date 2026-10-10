@@ -4,7 +4,7 @@
   Shows the placement group (beta/gamma), hand locations, and available letter types.
 -->
 <script lang="ts">
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { TriGridMode } from "../domain/trigrid-types";
   import { getTriGridPlacementResolver } from "../get-tri-grid-placement-resolver";
   import { TRIGRID_AVAILABLE_LETTER_TYPES } from "../domain/trigrid-constants";

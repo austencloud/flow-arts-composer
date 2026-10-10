@@ -1,4 +1,4 @@
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 import {
   MAIN_TRACK_ID,
   POST_BOX,
@@ -10,11 +10,11 @@ import {
   type PostItem,
   type PostProject,
   type PostTrack,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   POST_ACT,
   type PostPlan,
-} from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/post-plan.js";
 
 /**
  * Converts a v1 act plan into a v2 project: every enabled act becomes a main

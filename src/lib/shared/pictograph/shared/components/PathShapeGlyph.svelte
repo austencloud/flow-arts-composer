@@ -7,9 +7,9 @@
   Only shows when a motion has a per-step override set.
 -->
 <script lang="ts">
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import type { MotionData } from "../domain/models/motion-data";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
   import { HandSide } from "../domain/enums/pictograph-enums";
 
   let {

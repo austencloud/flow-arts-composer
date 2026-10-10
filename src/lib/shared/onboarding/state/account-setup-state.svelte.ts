@@ -1,4 +1,4 @@
-import type { PropPreferences } from "$lib/shared/community/services/types";
+import type { PropPreferences } from "#lib/shared/community/services/types.js";
 import {
   createDefaultAccountSetupProgress,
   normalizeAccountSetupProgress,

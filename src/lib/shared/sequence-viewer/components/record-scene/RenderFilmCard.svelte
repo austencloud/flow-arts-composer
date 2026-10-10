@@ -5,16 +5,16 @@
   away nothing. Draft first, look at it, then come back for Final or Cinema.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import type { ExportOptionsStateManager } from "$lib/shared/animation-panel/state/export-options-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import type { ExportOptionsStateManager } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   import {
     FILM_RENDER_PRESETS,
     estimateFilmRenderSeconds,
     formatFilmRenderEstimate,
     matchFilmRenderPreset,
     type FilmRenderPresetId,
-  } from "$lib/shared/video-export/domain/film-render-presets";
+  } from "#lib/shared/video-export/domain/film-render-presets.js";
 
   interface Props {
     durationSeconds: number;

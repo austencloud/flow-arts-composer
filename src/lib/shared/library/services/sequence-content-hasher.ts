@@ -33,13 +33,13 @@
  * data consistent; existing plane-less V2 documents upgrade on their next save.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { gridJoinToken } from "$lib/shared/foundation/domain/models/grid-join-token";
-import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { gridJoinToken } from "#lib/shared/foundation/domain/models/grid-join-token.js";
+import { isHandPathSequence } from "#lib/shared/foundation/domain/models/sequence-kind.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { Plane, type GridJoin } from "@tka/tka-types";
 
 export const HASH_VERSION_V1 = 1;

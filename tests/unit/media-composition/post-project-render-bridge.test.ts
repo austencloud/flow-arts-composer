@@ -10,8 +10,8 @@ import {
   queuePostProjectRender,
   readRenderReport,
   type PostProjectRenderReport,
-} from "$lib/server/post-project-dev-bridge";
-import { FEATURE_EXPORT_NAME_RULE } from "$lib/shared/media-composition/domain/feature-video-export";
+} from "#lib/server/post-project-dev-bridge.js";
+import { FEATURE_EXPORT_NAME_RULE } from "#lib/shared/media-composition/domain/feature-video-export.js";
 import {
   GET as statusRoute,
   POST as postProjectRoute,
@@ -189,7 +189,7 @@ describe("a render job", () => {
     const { renderId } = queuePostProjectRender({ sessionId });
     // As Vite does when a change under a running dev server reaches the bridge.
     vi.resetModules();
-    const reloaded = await import("$lib/server/post-project-dev-bridge");
+    const reloaded = await import("#lib/server/post-project-dev-bridge.js");
     expect(reloaded.postProjectRenderStatus(sessionId, renderId)).toMatchObject(
       {
         id: renderId,

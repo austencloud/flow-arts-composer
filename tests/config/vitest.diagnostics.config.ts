@@ -1,4 +1,5 @@
 import { sveltekit } from "@sveltejs/kit/vite";
+import { svelteOptions } from "../../src/config/svelte-options.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
@@ -19,7 +20,7 @@ const projectRoot = path.resolve(
  *   npx vitest run --config tests/config/vitest.diagnostics.config.ts
  */
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [sveltekit(svelteOptions)],
   test: {
     environment: "jsdom",
     globals: true,
@@ -28,8 +29,16 @@ export default defineConfig({
     exclude: ["**/node_modules/**/*"],
 
     alias: {
-      $lib: path.resolve(projectRoot, "src/lib"),
-      "$app/environment": path.resolve(
+      // Listed before `$app/env`, which would otherwise match these as a prefix.
+      "$app/env/public": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-public.ts"
+      ),
+      "$app/env/private": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-private.ts"
+      ),
+      "$app/env": path.resolve(
         projectRoot,
         "tests/setup/stubs/app-environment.ts"
       ),
@@ -38,10 +47,6 @@ export default defineConfig({
         "tests/setup/stubs/app-navigation.ts"
       ),
       "$app/state": path.resolve(projectRoot, "tests/setup/stubs/app-state.ts"),
-      "$app/stores": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/app-stores.ts"
-      ),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
     },
 

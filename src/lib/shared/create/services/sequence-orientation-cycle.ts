@@ -3,9 +3,9 @@ import type {
   Orientation as EngineOrientation,
   SequenceStep,
 } from "@tka/sequence-engine";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { updateSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { updateSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function resolveStartOrientations(sequence: SequenceData): {
   left: EngineOrientation;

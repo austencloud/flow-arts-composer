@@ -4,8 +4,8 @@ A pictograph appears center screen, user classifies as Alpha/Beta/Gamma via tap 
 Builds automaticity through speed pressure and streak mechanics.
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import PlacementVisualizer from './PlacementVisualizer.svelte';
   import StreakDisplay from './construction-quiz/StreakDisplay.svelte';
   import type { PlacementsExperienceStateManager } from './placement-experience-state.svelte';
@@ -18,7 +18,7 @@ Builds automaticity through speed pressure and streak mechanics.
     BETA_PLACEMENTS,
     GAMMA_PLACEMENTS,
   } from '../../../domain/constants/placement-quiz-data';
-  import { GridMode } from '$lib/shared/pictograph/grid/domain/enums/grid-enums';
+  import { GridMode } from '#lib/shared/pictograph/grid/domain/enums/grid-enums.js';
 import { onDestroy } from 'svelte';
 
   // Props

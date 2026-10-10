@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { isStandaloneAppSurface } from "$lib/shared/navigation/services/app-shell-route";
+import { isStandaloneAppSurface } from "#lib/shared/navigation/services/app-shell-route.js";
 
 const readSource = (path: string): string =>
   readFileSync(resolve(process.cwd(), path), "utf-8");

@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     PostItemKind,
     PostTextSize,
-  } from "$lib/shared/media-composition/domain/post-project";
-  import type { NewOverlaySpec } from "$lib/shared/media-composition/domain/post-project-edits";
+  } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { NewOverlaySpec } from "#lib/shared/media-composition/domain/post-project-edits.js";
   import type {
     CatalogTakeSource,
     PostEditorState,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { formatPostClock } from "../builder/post-builder-format";
   import {
     ITEM_KIND_ICON,

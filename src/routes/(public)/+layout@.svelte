@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, type Snippet } from "svelte";
-  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
-  import { pinLandingSettings } from "$lib/shared/application/state/app-state.svelte";
+  import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
+  import { pinLandingSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import "../../app.css";
 
   let { children } = $props<{

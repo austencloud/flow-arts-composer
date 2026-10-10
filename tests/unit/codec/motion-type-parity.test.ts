@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { deriveMotionType } from "$lib/shared/render/core/calculations/orientation";
+import { deriveMotionType } from "#lib/shared/render/core/calculations/orientation.js";
 
 function loadRows(file: string): Record<string, string>[] {
   const text = readFileSync(resolve(process.cwd(), file), "utf8").trim();

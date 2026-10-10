@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import { FALLBACK_DEMO } from "$lib/shared/landing/data/per-visit-demo";
+  import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import { FALLBACK_DEMO } from "#lib/shared/landing/data/per-visit-demo.js";
   import ThirdOrderSourceRail from "./components/ThirdOrderSourceRail.svelte";
   import ThirdOrderPathControls from "./components/ThirdOrderPathControls.svelte";
   import ThirdOrderStage from "./components/ThirdOrderStage.svelte";
@@ -13,7 +13,7 @@
   import { setThirdOrderContext } from "./context/third-order-context";
   import { createThirdOrderState } from "./state/third-order-state.svelte";
   import { getThirdOrderCompositionSampler } from "./services/getThirdOrderCompositionSampler";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 
   let host = $state<HTMLDivElement | null>(null);
   let compact = $state(false);

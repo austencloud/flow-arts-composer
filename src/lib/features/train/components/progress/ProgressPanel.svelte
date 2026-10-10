@@ -5,23 +5,23 @@
   Shows an engaging placeholder when no data exists yet.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import { getPerformanceHistoryTracker } from "$lib/features/train/get-performance-history-tracker";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getPerformanceHistoryTracker } from "#lib/features/train/get-performance-history-tracker.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type {
     StatsOverview,
     PersonalBest,
   } from "../../services/performance-history-tracker";
-  import type { StoredPerformance } from "$lib/shared/train/domain/train-database-models";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import type { StoredPerformance } from "#lib/shared/train/domain/train-database-models.js";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import StatsOverviewComponent from "./StatsOverview.svelte";
   import PersonalBests from "./PersonalBests.svelte";
   import SessionHistory from "./SessionHistory.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let isLoading = $state(true);
   let stats = $state<StatsOverview | null>(null);

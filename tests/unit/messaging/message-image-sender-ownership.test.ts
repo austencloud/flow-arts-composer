@@ -18,7 +18,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   MessageImageSendHandle,
   MessageImageSendRequest,
-} from "$lib/shared/messaging/services/contracts/IMessageImageSender";
+} from "#lib/shared/messaging/services/contracts/IMessageImageSender.js";
 
 interface UploadTaskDouble {
   emitProgress: (fraction: number) => void;
@@ -64,7 +64,7 @@ function storageError(code: string): Error {
   return Object.assign(new Error(code), { code });
 }
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: async () => {
     if (mocks.initGate) await mocks.initGate;
     return {
@@ -151,7 +151,7 @@ vi.mock("firebase/storage", () => ({
   }),
 }));
 
-import { MessageImageSender } from "$lib/shared/messaging/services/implementations/MessageImageSender";
+import { MessageImageSender } from "#lib/shared/messaging/services/implementations/MessageImageSender.js";
 
 function request(
   overrides: Partial<MessageImageSendRequest> = {}

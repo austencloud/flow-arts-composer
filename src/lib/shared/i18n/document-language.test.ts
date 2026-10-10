@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { pinDocumentLanguage, setLocale } from "./i18n.svelte";
-import { siteCopyLocale } from "$lib/shared/landing/site-copy";
+import { siteCopyLocale } from "#lib/shared/landing/site-copy.js";
 
 // Public pages show English site copy under most locales. If the document
 // followed an Arabic locale there, English sentences would run right-to-left

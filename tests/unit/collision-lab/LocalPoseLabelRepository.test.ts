@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { LocalPoseLabelRepository } from "$lib/features/lab/tabs/collision-lab/services/local-pose-label-repository";
+import { LocalPoseLabelRepository } from "#lib/features/lab/tabs/collision-lab/services/local-pose-label-repository.js";
 import type {
   PoseLabel,
   PoseLabelsFile,
-} from "$lib/features/lab/tabs/collision-lab/domain/types";
+} from "#lib/features/lab/tabs/collision-lab/domain/types.js";
 
 const STORAGE_KEY = "tka:collision-lab:diamond-in-out-labels";
 

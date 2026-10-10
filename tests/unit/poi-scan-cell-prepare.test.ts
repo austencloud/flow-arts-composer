@@ -20,7 +20,7 @@ const staticDir = path.join(projectRoot, "static");
 
 // assetFetch is the single fetch seam every static loader uses (prop svg, arrow
 // svg, placement json). Serve from disk.
-vi.mock("$lib/shared/net/asset-fetch", () => ({
+vi.mock("#lib/shared/net/asset-fetch.js", () => ({
   assetFetch: async (url: string) => {
     const rel = url.split("?")[0]!.replace(/^\//, "");
     const filePath = path.join(staticDir, rel);
@@ -51,17 +51,17 @@ globalThis.fetch = (async (input: any, init?: any) => {
   return realFetch(input, init);
 }) as typeof fetch;
 
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 // Motions shaped like a decoded /q sequence: EMPTY ({}) placement data, as
 // sequence-encoder.ts emits (arrowPlacementData/propPlacementData = {}).

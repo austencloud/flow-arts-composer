@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { resolveRealizationEntryStep } from "$lib/shared/shape-matrix/services/realization-phase-handoff";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { resolveRealizationEntryStep } from "#lib/shared/shape-matrix/services/realization-phase-handoff.js";
 
 interface MotionPathEntryInput {
   outgoing: SequenceData | null;

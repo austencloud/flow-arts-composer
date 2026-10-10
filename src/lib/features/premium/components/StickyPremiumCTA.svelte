@@ -2,7 +2,7 @@
   StickyPremiumCTA - Floating bottom CTA for mobile conversion
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     price: number;

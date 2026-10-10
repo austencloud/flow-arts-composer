@@ -1,7 +1,7 @@
-import type { ScanAnalyticsValue } from "$lib/shared/analytics/scan-analytics";
-import { scanPropProperties } from "$lib/shared/analytics/scan-prop-attribution";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { ShareActionMenuItem } from "$lib/shared/share/domain/models/share-action-menu";
+import type { ScanAnalyticsValue } from "#lib/shared/analytics/scan-analytics.js";
+import { scanPropProperties } from "#lib/shared/analytics/scan-prop-attribution.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { ShareActionMenuItem } from "#lib/shared/share/domain/models/share-action-menu.js";
 import type { TempoPracticeConfig } from "./tempo-practice-orchestrator";
 
 const DEFAULT_RAIL_WIDTH = 180;

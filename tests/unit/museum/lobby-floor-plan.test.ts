@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildLobbyFloorPlan } from "$lib/features/museum/data/lobby-floor-plan";
-import { tileKey } from "$lib/features/museum/domain/museum-grid-types";
-import { isWalkable } from "$lib/features/museum/domain/tile-registry";
+import { buildLobbyFloorPlan } from "#lib/features/museum/data/lobby-floor-plan.js";
+import { tileKey } from "#lib/features/museum/domain/museum-grid-types.js";
+import { isWalkable } from "#lib/features/museum/domain/tile-registry.js";
 
 describe("lobby floor plan", () => {
   const plan = buildLobbyFloorPlan();

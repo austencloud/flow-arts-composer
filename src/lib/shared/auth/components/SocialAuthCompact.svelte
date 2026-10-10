@@ -11,42 +11,42 @@
 <script lang="ts">
   import FacebookIcon from "./icons/FacebookIcon.svelte";
   import GoogleIcon from "./icons/GoogleIcon.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { browser } from "$app/environment";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { browser } from "$app/env";
   import { configureAuthPersistence, getAuthInstance } from "../firebase";
   import {
     signInWithGoogle,
     signInWithInstagram,
-  } from "$lib/shared/auth/services/authenticator";
-  import { isNative } from "$lib/shared/platform/services/platform-detector";
-  import { upgradeAnonymousWithGoogle } from "$lib/shared/auth/services/anonymous-upgrade";
-  import { promptAnonymousImport } from "$lib/shared/auth/state/anonymous-import-prompt.svelte";
+  } from "#lib/shared/auth/services/authenticator.js";
+  import { isNative } from "#lib/shared/platform/services/platform-detector.js";
+  import { upgradeAnonymousWithGoogle } from "#lib/shared/auth/services/anonymous-upgrade.js";
+  import { promptAnonymousImport } from "#lib/shared/auth/state/anonymous-import-prompt.svelte.js";
   import {
     FACEBOOK_LOGIN_ENABLED,
     INSTAGRAM_LOGIN_ENABLED,
-  } from "$lib/shared/auth/services/auth-providers.config";
+  } from "#lib/shared/auth/services/auth-providers.config.js";
   import {
     mapAuthError,
     getAuthErrorCode,
     isExpectedAuthInterruption,
-  } from "$lib/shared/auth/services/auth-error-messages";
-  import { getLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
-  import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
-  import { recordAuthSubmission } from "$lib/shared/auth/services/auth-analytics-bridge";
-  import { trackAuthProviderResult } from "$lib/shared/analytics/auth-events";
+  } from "#lib/shared/auth/services/auth-error-messages.js";
+  import { getLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
+  import LastUsedBadge from "#lib/shared/components/LastUsedBadge.svelte";
+  import { recordAuthSubmission } from "#lib/shared/auth/services/auth-analytics-bridge.js";
+  import { trackAuthProviderResult } from "#lib/shared/analytics/auth-events.js";
   import { page } from "$app/state";
-  import { getInAppBrowserDetector } from "$lib/shared/auth/get-in-app-browser-detector";
+  import { getInAppBrowserDetector } from "#lib/shared/auth/get-in-app-browser-detector.js";
   import {
     captureEvent,
     captureException,
     captureWhenReady,
-  } from "$lib/shared/analytics/services/posthog";
-  import { analyticsRoute } from "$lib/shared/analytics/analytics-context";
-  import { getInstagramAuthErrorMessage } from "$lib/shared/auth/services/instagram-auth";
+  } from "#lib/shared/analytics/services/posthog.js";
+  import { analyticsRoute } from "#lib/shared/analytics/analytics-context.js";
+  import { getInstagramAuthErrorMessage } from "#lib/shared/auth/services/instagram-auth.js";
   import InAppEscapeControls from "./InAppEscapeControls.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { mode = "signin", onFacebookAuth } = $props<{
     mode?: "signin" | "signup";

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte";
+  import { getLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * DateSeparator
    *

@@ -11,13 +11,13 @@
  * Preserves state across HMR updates.
  */
 
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 import {
 	MIN_COLUMNS,
 	getMaxColumnsForWidth,
 	getDefaultColumnsForWidth,
 	getWidthBucketKey,
-} from "$lib/shared/browse/services/grid-column-breakpoints";
+} from "#lib/shared/browse/services/grid-column-breakpoints.js";
 
 // Preserve state across HMR
 function getInitialColumns(): number {

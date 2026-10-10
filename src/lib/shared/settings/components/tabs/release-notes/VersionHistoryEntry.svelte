@@ -1,15 +1,15 @@
 <!-- VersionHistoryEntry - Read-only release block for the continuous history stream -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getReactiveLocale } from "#lib/shared/i18n/locale-state.svelte.js";
   import type {
     AppVersion,
     ChangelogCategory,
     ChangelogEntry,
-  } from "$lib/shared/versioning/domain/models/version-models";
-  import { PRE_RELEASE_VERSION } from "$lib/shared/versioning/domain/models/version-models";
-  import { CHANGELOG_CATEGORIES } from "$lib/shared/versioning/domain/constants/changelog-constants";
-  import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
+  } from "#lib/shared/versioning/domain/models/version-models.js";
+  import { PRE_RELEASE_VERSION } from "#lib/shared/versioning/domain/models/version-models.js";
+  import { CHANGELOG_CATEGORIES } from "#lib/shared/versioning/domain/constants/changelog-constants.js";
+  import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
   import ChangeGroupSection from "./ChangeGroupSection.svelte";
   import ContributorBadge from "./ContributorBadge.svelte";
 

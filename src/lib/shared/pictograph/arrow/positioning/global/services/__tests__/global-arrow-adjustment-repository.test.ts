@@ -9,7 +9,7 @@ import {
 import type { GlobalArrowAdjustmentPersister } from "../global-arrow-adjustment-persister";
 import { GlobalArrowAdjustmentRepository } from "../global-arrow-adjustment-repository";
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { user: { email: "austencloud@gmail.com" } },
 }));
 

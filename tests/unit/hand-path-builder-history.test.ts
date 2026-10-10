@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createBuilderState } from "$lib/features/hand-paths/hand-path-builder/state/builder-state.svelte";
+import { createBuilderState } from "#lib/features/hand-paths/hand-path-builder/state/builder-state.svelte.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 function deferred() {
   let resolve!: () => void;

@@ -1,41 +1,41 @@
 import type {
   MediaCompositionPreset,
   PresetSourceGeometry,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
 import {
   fadeBlackOpacityAt,
   regionRectIsOnFrame,
   type EvaluatedFrameLayer,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+} from "#lib/shared/media-composition/services/frame-evaluator.js";
 import {
   paintSurfaceGeometry,
   toPaintFrame,
   type PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
 import {
   backdropLayer,
   paintBlurredBackdrop,
-} from "$lib/shared/media-composition/services/post-backdrop-painter";
+} from "#lib/shared/media-composition/services/post-backdrop-painter.js";
 import {
   calculateMediaFit,
   calculateSourceCropFit,
   resolvePanOffset,
   type PixelRect,
-} from "$lib/shared/media-composition/services/media-fit";
+} from "#lib/shared/media-composition/services/media-fit.js";
 import {
   paintEdgeBorder,
   paintEdgeShadow,
   regionEdgePixels,
   turnAboutCentre,
-} from "$lib/shared/media-composition/services/region-edge-painter";
-import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
-import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
-import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
-import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
-import { tunnelHookPanelOpacity } from "$lib/shared/media-composition/domain/tunnel-hook";
-import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import type { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
+} from "#lib/shared/media-composition/services/region-edge-painter.js";
+import { traceRoundedRect } from "#lib/shared/render/utils/trace-rounded-rect.js";
+import { videoColorFilter } from "#lib/shared/media-composition/domain/post-video-color-grade.js";
+import type { PostStudioExportVideoFrames } from "#lib/shared/media-composition/services/post-studio-export-video-frames.js";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "#lib/shared/media-composition/services/post-studio-dom-capture.js";
+import { tunnelHookPanelOpacity } from "#lib/shared/media-composition/domain/tunnel-hook.js";
+import { sampleEasing } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import type { PostStudioPictographCapture } from "#lib/shared/media-composition/services/post-studio-pictograph-capture.js";
 
 export interface FrameLayerGeometry {
   region: PixelRect;

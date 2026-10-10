@@ -1,20 +1,20 @@
 import { z } from "zod";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { PROP_LOOKS } from "$lib/shared/pictograph/prop/domain/prop-look";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { PROP_LOOKS } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import {
   PostTakeRefSchema,
   PostTakeSchema,
-} from "$lib/shared/media-composition/domain/post-plan";
-import { BREAKDOWN_GEOMETRY } from "$lib/shared/media-composition/domain/post-studio-presets";
-import { TakeTimingSchema } from "$lib/shared/media-composition/domain/take-timing";
-import { TunnelHookSchema } from "$lib/shared/media-composition/domain/tunnel-hook";
-import { PostMusicSchema } from "$lib/shared/media-composition/domain/post-music";
-import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
+} from "#lib/shared/media-composition/domain/post-plan.js";
+import { BREAKDOWN_GEOMETRY } from "#lib/shared/media-composition/domain/post-studio-presets.js";
+import { TakeTimingSchema } from "#lib/shared/media-composition/domain/take-timing.js";
+import { TunnelHookSchema } from "#lib/shared/media-composition/domain/tunnel-hook.js";
+import { PostMusicSchema } from "#lib/shared/media-composition/domain/post-music.js";
+import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
 import {
   TrackingMode,
   TrailEffect,
   TrailMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 /**
  * A post as Austen edits it on the timeline: tracks of items, InShot style.

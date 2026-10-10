@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Vector3 } from "three";
-import { computeKneeHingeAxis } from "$lib/shared/3d/services/knee-hinge-axis-calibrator";
+import { computeKneeHingeAxis } from "#lib/shared/3d/services/knee-hinge-axis-calibrator.js";
 
 describe("KneeHingeAxisCalibrator", () => {
 

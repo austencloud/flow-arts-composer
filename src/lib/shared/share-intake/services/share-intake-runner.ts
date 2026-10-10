@@ -1,7 +1,7 @@
-import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { inboxState } from "#lib/shared/inbox/state/inbox-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import type {
   IntakeClassification,
   IntakeProblem,

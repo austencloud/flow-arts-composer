@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ContactViewerRequired from "$lib/shared/3d/components/ContactViewerRequired.svelte";
+  import ContactViewerRequired from "#lib/shared/3d/components/ContactViewerRequired.svelte";
 </script>
 
 <svelte:head>

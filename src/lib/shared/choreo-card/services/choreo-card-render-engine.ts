@@ -1,36 +1,36 @@
 import { tick } from "svelte";
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
 import {
   calculateTimelineRowsByBeatCount,
   type TimelineRow,
-} from "$lib/shared/create/utils/grid-calculations";
-import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/create/utils/grid-calculations.js";
+import { createStartPlacementFromBeatStart } from "#lib/shared/create/services/sequence-transforms.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { gridJoinCellResolver } from "@tka/render-core";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { pictographBlobCache } from "$lib/shared/render/services/pictograph-blob-cache";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { pictographBlobCache } from "#lib/shared/render/services/pictograph-blob-cache.js";
 import {
   markScan,
   markScanAfterPaint,
   reportScanToStable,
-} from "$lib/shared/analytics/scan-perf";
+} from "#lib/shared/analytics/scan-perf.js";
 import {
   calculateGridPlacement,
   detectMixedDurations,
   getPreviewCacheKey,
   globalPreviewCache,
   storePreviewInCache,
-} from "$lib/shared/choreo-card/services/choreo-card-cell-pipeline";
-import type { createCrossfaderState } from "$lib/shared/choreo-card/state/crossfader-state.svelte";
-import { deriveCacheKey } from "$lib/shared/sequence-viewer/services/cell-cache-key-deriver";
+} from "#lib/shared/choreo-card/services/choreo-card-cell-pipeline.js";
+import type { createCrossfaderState } from "#lib/shared/choreo-card/state/crossfader-state.svelte.js";
+import { deriveCacheKey } from "#lib/shared/sequence-viewer/services/cell-cache-key-deriver.js";
 import {
   deleteCellCache,
   renderCell,
   type PreviewCellRenderOptions,
-} from "$lib/shared/sequence-viewer/services/preview-cell-renderer";
-import { compositeStepNumberOnBlob } from "$lib/shared/sequence-viewer/services/step-number-compositor";
+} from "#lib/shared/sequence-viewer/services/preview-cell-renderer.js";
+import { compositeStepNumberOnBlob } from "#lib/shared/sequence-viewer/services/step-number-compositor.js";
 
 export interface ChoreoCardCell {
   index: number;
@@ -767,7 +767,7 @@ export function createChoreoCardRenderEngine(
     if (deps.livePictographs) {
       liveEpoch++;
       const { pictographPreparer } =
-        await import("$lib/shared/pictograph/shared/services/pictograph-preparer");
+        await import("#lib/shared/pictograph/shared/services/pictograph-preparer.js");
       pictographPreparer.clearCache();
       return renderAllCells();
     }

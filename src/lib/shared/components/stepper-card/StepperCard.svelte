@@ -5,9 +5,9 @@ Portrait: Top half increments, bottom half decrements (vertical layout)
 Landscape: Left half decrements, right half increments (horizontal layout)
 -->
 <script lang="ts">
-  import { attachRipple } from "$lib/shared/application/services/ripple-effect";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { attachRipple } from "#lib/shared/application/services/ripple-effect.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
   import LandscapeLayout from "./StepperLandscapeLayout.svelte";
   import PortraitLayout from "./StepperPortraitLayout.svelte";

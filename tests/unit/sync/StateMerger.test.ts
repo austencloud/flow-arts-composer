@@ -9,14 +9,14 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { StateMerger } from '$lib/shared/sync/services/state-merger';
-import { HybridLogicalClock } from '$lib/shared/sync/services/hybrid-logical-clock';
+import { StateMerger } from '#lib/shared/sync/services/state-merger.js';
+import { HybridLogicalClock } from '#lib/shared/sync/services/hybrid-logical-clock.js';
 import type {
 	HLCTimestamp,
 	PlaybackIntent,
 	PeerInfo,
 	SyncedRoomState
-} from '$lib/shared/sync/domain/sync-types';
+} from '#lib/shared/sync/domain/sync-types.js';
 
 describe('StateMerger', () => {
 	let hlc: HybridLogicalClock;

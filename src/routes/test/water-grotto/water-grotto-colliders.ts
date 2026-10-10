@@ -9,12 +9,12 @@
 import {
   buildWaterGrottoLayout,
   type WaterGrottoLayout,
-} from "$lib/features/water-traverse/data/water-grotto-terrain";
+} from "#lib/features/water-traverse/data/water-grotto-terrain.js";
 import {
   floorCollider,
   wallCollider,
   type RectCollider,
-} from "$lib/features/water-traverse/data/rect-colliders";
+} from "#lib/features/water-traverse/data/rect-colliders.js";
 
 export type { RectCollider };
 

@@ -4,7 +4,7 @@
  * Complete interfaces for motion generation, sequence generation, and related algorithms.
  * Updated to match exact legacy generation parameters and options.
  */
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type {
   LOOPType,
   Period,
@@ -16,9 +16,9 @@ export type { LOOPType };
 import type {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 // DATA CONTRACTS (Domain Models)
 
@@ -154,4 +154,4 @@ export interface RotationDirections {
 }
 
 // Re-exporting TurnAllocation for backwards compatibility
-export type { TurnAllocation } from "$lib/shared/create/domain/generator-contract-types";
+export type { TurnAllocation } from "#lib/shared/create/domain/generator-contract-types.js";

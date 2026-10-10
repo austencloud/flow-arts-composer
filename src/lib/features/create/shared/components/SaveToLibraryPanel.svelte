@@ -14,27 +14,27 @@
 </script>
 
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PropPairField from "#lib/shared/pictograph/prop/components/PropPairField.svelte";
   import CreatePanelDrawer from "./CreatePanelDrawer.svelte";
-  import SaveProgressOverlay from "$lib/features/library/components/SaveProgressOverlay.svelte";
-  import ExpandableField from "$lib/features/library/components/ExpandableField.svelte";
-  import CollectionPickerContent from "$lib/features/library/components/collection-picker/CollectionPickerContent.svelte";
-  import ContentAppealModal from "$lib/features/moderation/components/ContentAppealModal.svelte";
-  import HallOfShameGate from "$lib/features/hall-of-shame/components/HallOfShameGate.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import SaveProgressOverlay from "#lib/features/library/components/SaveProgressOverlay.svelte";
+  import ExpandableField from "#lib/features/library/components/ExpandableField.svelte";
+  import CollectionPickerContent from "#lib/features/library/components/collection-picker/CollectionPickerContent.svelte";
+  import ContentAppealModal from "#lib/features/moderation/components/ContentAppealModal.svelte";
+  import HallOfShameGate from "#lib/features/hall-of-shame/components/HallOfShameGate.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import { getCreateModuleContext } from "../context/create-module-context";
-  import { getLibrarySaveService } from "$lib/features/library/get-library-save-service";
-  import { getContentModerator } from "$lib/features/moderation/get-content-moderator";
-  import { getHallOfShameSubmitter } from "$lib/features/hall-of-shame/get-hall-of-shame-submitter";
+  import { getLibrarySaveService } from "#lib/features/library/get-library-save-service.js";
+  import { getContentModerator } from "#lib/features/moderation/get-content-moderator.js";
+  import { getHallOfShameSubmitter } from "#lib/features/hall-of-shame/get-hall-of-shame-submitter.js";
   import { createSavePanelState } from "../state/save-panel-state.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { getSoloPropSaveOrchestrator } from "$lib/features/library/get-solo-prop-save-orchestrator";
-  import CardFooterEditor from "$lib/shared/share/components/CardFooterEditor.svelte";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { getSoloPropSaveOrchestrator } from "#lib/features/library/get-solo-prop-save-orchestrator.js";
+  import CardFooterEditor from "#lib/shared/share/components/CardFooterEditor.svelte";
   import {
     cardPresentationFromFooterSettings,
     resolveCardFooter,
-  } from "$lib/shared/share/domain/models/card-presentation";
+  } from "#lib/shared/share/domain/models/card-presentation.js";
 
   // The preview must mirror the artifact the save will actually generate. Both
   // the saved thumbnail (LibrarySaveService.generateAndUploadThumbnail) and this

@@ -5,7 +5,7 @@
   chosen pose are removed, so the user confirms before it happens.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   interface Props {
     show: boolean;
     stepsToRemove: number;

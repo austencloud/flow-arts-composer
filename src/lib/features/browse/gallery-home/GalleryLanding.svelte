@@ -12,11 +12,11 @@
   CategoryTile.svelte.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import SequencePeek from "$lib/shared/browse/components/SequencePeek.svelte";
-  import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SequencePeek from "#lib/shared/browse/components/SequencePeek.svelte";
+  import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import CategoryTile from "./CategoryTile.svelte";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import {
     FAN_TILTS,
     LEVELS,

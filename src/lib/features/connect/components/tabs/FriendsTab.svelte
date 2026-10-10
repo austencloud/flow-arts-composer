@@ -7,8 +7,8 @@
 <script lang="ts">
 	import { connectState } from '../../state/connect-state.svelte';
 	import type { Friend } from '../../domain/models/connect-models';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
-	import { toast } from '$lib/shared/toast/state/toast-state.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
+	import { toast } from '#lib/shared/toast/state/toast-state.svelte.js';
 
 	// Derived state
 	const friends = $derived(connectState.friends);

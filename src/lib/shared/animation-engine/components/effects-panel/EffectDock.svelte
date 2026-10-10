@@ -1,6 +1,6 @@
 <script lang="ts">
   import { effectUiLabel } from "./effect-ui-label";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import EffectLookChips from "./EffectLookChips.svelte";
   import EffectPresetsSection from "./EffectPresetsSection.svelte";
   import type { EffectRegistration } from "./effect-registry";

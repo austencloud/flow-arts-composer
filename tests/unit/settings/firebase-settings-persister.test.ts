@@ -32,8 +32,8 @@ const firestoreReady = vi.hoisted(() => ({
   deferred: false,
 }));
 
-vi.mock("$lib/shared/auth/loaded-auth", () => ({ loadedAuth: auth }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/loaded-auth.js", () => ({ loadedAuth: auth }));
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(() => {
     if (!firestoreReady.deferred) return Promise.resolve({});
     return new Promise((resolve) => {
@@ -42,18 +42,18 @@ vi.mock("$lib/shared/auth/firebase", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn() },
 }));
-vi.mock("$lib/shared/auth/utils/is-permission-denied-error", () => ({
+vi.mock("#lib/shared/auth/utils/is-permission-denied-error.js", () => ({
   isPermissionDeniedError: () => false,
 }));
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: (write: () => Promise<unknown>) => write(),
 }));
 
-import { FirebaseSettingsPersister } from "$lib/shared/settings/services/firebase-settings-persister";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { FirebaseSettingsPersister } from "#lib/shared/settings/services/firebase-settings-persister.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // The persister loads Firestore with import(), which takes longer than a few
 // microtasks under Vitest. Wait for those loads, then for the awaits chained

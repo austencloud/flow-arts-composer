@@ -17,40 +17,40 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import EffectsPanel from "$lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
-  import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
-  import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
-  import { rotateSequence, mirrorSequence } from "$lib/shared/create/services/sequence-transforms";
-  import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-  import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { TipEffectMap, EffectType } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  import { browser } from "$app/env";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import EffectsPanel from "#lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
+  import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+  import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+  import { rotateSequence, mirrorSequence } from "#lib/shared/create/services/sequence-transforms.js";
+  import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+  import { generationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { TipEffectMap, EffectType } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 
   // Isolated effects config — drives the real EffectsPanel via context.
   import {
     createEffectsConfigState,
     isEffectId,
     type EffectId,
-  } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { isBilateralProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-  import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { getRegistration } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
-  import type { EffectPreset } from "$lib/shared/animation-engine/components/effects-panel/presets/types";
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { isBilateralProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { getRegistration } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
+  import type { EffectPreset } from "#lib/shared/animation-engine/components/effects-panel/presets/types.js";
 
   const DEFAULT_PROP_STATE: PropState = { centerPathAngle: 0, staffRotationAngle: 0 };
 

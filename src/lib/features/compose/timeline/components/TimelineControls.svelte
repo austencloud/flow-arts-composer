@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * TimelineControls - Transport and zoom controls
    *
@@ -10,11 +10,11 @@
    * Add media button
    */
 
-  import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+  import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
   import { getTimelinePlayer } from "../services/timeline-playback-service";
   import SnapControls from "./SnapControls.svelte";
   import TimeSignatureChip from "./TimeSignatureChip.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   interface Props {
     onOpenMediaBrowser?: () => void;

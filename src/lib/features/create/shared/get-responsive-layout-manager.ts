@@ -1,7 +1,7 @@
-import { browser } from '$app/environment';
-import { ResponsiveLayoutManager } from '$lib/shared/create/services/responsive-layout-manager';
-import { getDeviceDetector } from '$lib/shared/device/get-device-detector';
-import { getViewportManager } from '$lib/shared/device/get-viewport-manager';
+import { browser } from '$app/env';
+import { ResponsiveLayoutManager } from '#lib/shared/create/services/responsive-layout-manager.js';
+import { getDeviceDetector } from '#lib/shared/device/get-device-detector.js';
+import { getViewportManager } from '#lib/shared/device/get-viewport-manager.js';
 
 let instance: ResponsiveLayoutManager | null = null;
 

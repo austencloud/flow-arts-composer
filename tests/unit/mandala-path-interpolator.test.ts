@@ -5,14 +5,14 @@ import type {
   MandalaPaths,
   MandalaPoint,
   SVGPathData,
-} from "$lib/shared/mandala/domain/mandala-types";
-import { pointsToSVGPath } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { parsePoints } from "$lib/shared/mandala/services/mandala-fingerprint";
+} from "#lib/shared/mandala/domain/mandala-types.js";
+import { pointsToSVGPath } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { parsePoints } from "#lib/shared/mandala/services/mandala-fingerprint.js";
 import {
   createMandalaMorph,
   interpolateMandalaPaths,
   mandalaPathsEqual,
-} from "$lib/shared/mandala/services/mandala-path-interpolator";
+} from "#lib/shared/mandala/services/mandala-path-interpolator.js";
 
 const workspaceGridSource = readFileSync(
   resolve(

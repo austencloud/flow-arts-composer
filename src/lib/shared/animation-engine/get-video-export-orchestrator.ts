@@ -1,4 +1,4 @@
-import type { IVideoExportOrchestrator } from "$lib/shared/compose/domain/video-export-types";
+import type { IVideoExportOrchestrator } from "#lib/shared/compose/domain/video-export-types.js";
 
 let instance: IVideoExportOrchestrator | null = null;
 let factory: (() => IVideoExportOrchestrator) | null = null;
@@ -56,7 +56,7 @@ export function tryGetVideoExportOrchestrator(): IVideoExportOrchestrator | null
  */
 export async function ensureVideoExportOrchestrator(): Promise<IVideoExportOrchestrator> {
   if (!factory) {
-    await import("$lib/shared/composition-root/deferred-registrations");
+    await import("#lib/shared/composition-root/deferred-registrations.js");
   }
   return getVideoExportOrchestrator();
 }

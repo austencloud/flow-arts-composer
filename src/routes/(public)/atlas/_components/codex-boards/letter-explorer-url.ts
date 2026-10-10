@@ -1,12 +1,12 @@
-import type { TurnValue } from "$lib/shared/create/domain/turn-pattern-data";
+import type { TurnValue } from "#lib/shared/create/domain/turn-pattern-data.js";
 import {
   RotationDirection,
   type RotationDirection as RotationDirectionValue,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridMode,
   type GridMode as GridModeValue,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export interface LetterExplorerRouteState {
   letter: string;

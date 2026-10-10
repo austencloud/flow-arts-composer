@@ -207,43 +207,29 @@ if (!document.body) {
   errors: [],
 };
 
-// Mock $app/stores for SvelteKit
-vi.mock("$app/stores", () => ({
-  page: {
-    subscribe: vi.fn(),
-  },
-  navigating: {
-    subscribe: vi.fn(),
-  },
-  updated: {
-    subscribe: vi.fn(),
-  },
-}));
-
-// Mock $app/environment
-vi.mock("$app/environment", () => ({
+// Mock $app/env
+vi.mock("$app/env", () => ({
   browser: false,
   dev: true,
   building: false,
   version: "test",
 }));
 
-// Mock Vite environment variables
-vi.mock("$env/dynamic/public", () => ({
-  env: {},
-}));
+// Environment variables. Unlisted names read as undefined, as unset variables
+// would; a test that needs one mocks the module again with its own values.
+vi.mock("$app/env/public", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule({
+    PUBLIC_POSTHOG_HOST: "https://test.posthog.com",
+    PUBLIC_POSTHOG_KEY: "test-posthog-key",
+    PUBLIC_POSTHOG_PROJECT_ID: "test-posthog-project",
+  });
+});
 
-vi.mock("$env/static/public", () => ({
-  PUBLIC_FIREBASE_API_KEY: "test-api-key",
-  PUBLIC_FIREBASE_AUTH_DOMAIN: "test.firebaseapp.com",
-  PUBLIC_FIREBASE_PROJECT_ID: "test-project",
-  PUBLIC_FIREBASE_STORAGE_BUCKET: "test.appspot.com",
-  PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "123456789",
-  PUBLIC_FIREBASE_APP_ID: "1:123456789:web:abcdef",
-  PUBLIC_POSTHOG_HOST: "https://test.posthog.com",
-  PUBLIC_POSTHOG_KEY: "test-posthog-key",
-  PUBLIC_POSTHOG_PROJECT_ID: "test-posthog-project",
-}));
+vi.mock("$app/env/private", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule();
+});
 
 // Mock Firebase to prevent actual initialization
 vi.mock("firebase/app", () => ({

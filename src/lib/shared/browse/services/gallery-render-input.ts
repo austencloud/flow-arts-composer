@@ -12,14 +12,14 @@
  * image-composition-state. See reference_thumbnail_cache_lockstep memory.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
 import { sequenceGridJoinKey } from "@tka/render-core";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   resolveInfoCellDisplay,
   type InfoCellChoice,
-} from "$lib/shared/sequence-viewer/services/info-cell-display";
+} from "#lib/shared/sequence-viewer/services/info-cell-display.js";
 import type {
   ThumbnailRenderInput,
   ThumbnailVariant,

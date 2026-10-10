@@ -11,10 +11,10 @@
   3. Video plays back smoothly, regardless of device
 -->
 <script lang="ts">
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { onMount, onDestroy } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { VideoRenderProgress, VideoRenderResult } from "$lib/shared/animation-engine/services/video-pre-renderer";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { VideoRenderProgress, VideoRenderResult } from "#lib/shared/animation-engine/services/video-pre-renderer.js";
   import { getVideoPlayer } from "../../services/video-player";
   import { getVideoGenerationCoordinator } from "../../services/video-generation-coordinator";
   import VideoGenerationStatus from "../video-player/VideoGenerationStatus.svelte";

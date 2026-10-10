@@ -6,7 +6,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { METHOD_PREVIEW_SCENES } from "$lib/features/create/shared/components/method-previews/method-preview-scenes";
+import { METHOD_PREVIEW_SCENES } from "#lib/features/create/shared/components/method-previews/method-preview-scenes.js";
 
 const DIR = "src/lib/features/create/shared/components/method-previews";
 

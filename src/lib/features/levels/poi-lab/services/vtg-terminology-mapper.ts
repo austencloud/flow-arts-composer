@@ -4,9 +4,9 @@
  * Maps TKA pictograph data to VTG (Vulcan Tech Gospel) terminology.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import { PoiTimingDirection, PoiPatternRatio } from "../domain/poi-enums";
 import type { VTGTerminologyMapping } from "../domain/poi-models";
 

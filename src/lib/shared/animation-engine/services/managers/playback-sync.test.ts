@@ -3,8 +3,8 @@ import { PlaybackSync, type PlaybackSyncDeps } from "./playback-sync";
 import type { AnimatorState } from "../../state/animator-state.svelte";
 import type { AnimationEngineProps } from "../animation-engine.svelte";
 import type { RenderFrameParams } from "../IAnimationRenderLoop";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function deferred() {
   let resolve!: () => void;

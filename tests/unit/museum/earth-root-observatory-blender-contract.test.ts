@@ -3,15 +3,15 @@ import {
   buildEarthRootObservatoryBlenderContract,
   earthRootObservatoryBlenderPointToPlan,
   earthRootObservatoryPlanPointToBlender,
-} from "$lib/features/museum/data/earth-root-observatory-blender-contract";
+} from "#lib/features/museum/data/earth-root-observatory-blender-contract.js";
 import {
   buildNominalEarthRootObservatoryPlan,
   type EarthRootObservatoryPlan,
-} from "$lib/features/museum/data/earth-root-observatory-plan";
+} from "#lib/features/museum/data/earth-root-observatory-plan.js";
 import {
   createEarthRootObservatoryGrayboxTerrain,
   nearestEarthRootObservatoryRouteProjection,
-} from "$lib/features/museum/data/earth-root-observatory-graybox-terrain";
+} from "#lib/features/museum/data/earth-root-observatory-graybox-terrain.js";
 
 describe("Earth Root Observatory Blender contract", () => {
   it("round-trips plan positions through Blender local space", () => {

@@ -1,14 +1,14 @@
 <!-- Persistent Account-page summary of public prop identity. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import type { PropPreferenceState } from "$lib/shared/community/state/prop-preference-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import type { PropPreferenceState } from "#lib/shared/community/state/prop-preference-state.svelte.js";
   import {
     getProfilePropLabel,
     normalizeProfileSkill,
     normalizeProfileSkills,
-  } from "$lib/shared/community/domain/profile-prop-catalog";
+  } from "#lib/shared/community/domain/profile-prop-catalog.js";
 
   interface Props {
     propState: PropPreferenceState | null;

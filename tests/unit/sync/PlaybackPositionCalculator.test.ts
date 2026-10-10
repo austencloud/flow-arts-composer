@@ -11,8 +11,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { PlaybackPositionCalculator } from '$lib/shared/sync/services/playback-position-calculator';
-import type { PlaybackIntent, HLCTimestamp } from '$lib/shared/sync/domain/sync-types';
+import { PlaybackPositionCalculator } from '#lib/shared/sync/services/playback-position-calculator.js';
+import type { PlaybackIntent, HLCTimestamp } from '#lib/shared/sync/domain/sync-types.js';
 
 describe('PlaybackPositionCalculator', () => {
 	let calculator: PlaybackPositionCalculator;

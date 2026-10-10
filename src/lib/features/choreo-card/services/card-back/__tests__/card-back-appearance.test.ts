@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
 import { resolveStartPlacementColorOverrides } from "../card-back-appearance";
 
 describe("resolveStartPlacementColorOverrides", () => {

@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import type { InkIntent } from "$lib/shared/effects/domain/effects-config";
-  import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
-  import { Ink2DRenderer } from "$lib/shared/effects/renderers/ink-2d-renderer";
-  import { resolveInk2D } from "$lib/shared/effects/translators/canvas2d-translator";
+  import type { InkIntent } from "#lib/shared/effects/domain/effects-config.js";
+  import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
+  import { Ink2DRenderer } from "#lib/shared/effects/renderers/ink-2d-renderer.js";
+  import { resolveInk2D } from "#lib/shared/effects/translators/canvas2d-translator.js";
 
   interface Props {
     intent: InkIntent;

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { FeedbackStatus } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { STATUS_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+  import type { FeedbackStatus } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { STATUS_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import type { FeedbackDetailState } from "../../../state/feedback-detail-state.svelte";
 
   interface Props {

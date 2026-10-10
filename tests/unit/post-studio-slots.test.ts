@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   POST_STUDIO_PRESETS,
   POST_STUDIO_ROLE,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "#lib/shared/media-composition/domain/post-studio-presets.js";
 import {
   DEFAULT_SLOT_SPLIT,
   normalizePresetToSlots,
@@ -13,8 +13,8 @@ import {
   withSlotSource,
   withSlotSplit,
   withSwappedSlots,
-} from "$lib/shared/media-composition/domain/post-studio-slots";
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+} from "#lib/shared/media-composition/domain/post-studio-slots.js";
+import type { MediaCompositionPreset } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
 
 function builtIn(id: string): MediaCompositionPreset {
   const preset = POST_STUDIO_PRESETS.find((candidate) => candidate.id === id);

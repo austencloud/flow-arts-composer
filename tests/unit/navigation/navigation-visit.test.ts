@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { NAVIGATION_VISITS_KEY } from "$lib/shared/navigation/config/storage-keys";
+import { NAVIGATION_VISITS_KEY } from "#lib/shared/navigation/config/storage-keys.js";
 import {
   selectOftenUsedDestinationIds,
   selectRecentDestinationIds,
-} from "$lib/shared/navigation/domain/navigation-visit-ranking";
-import { NavigationVisitPersister } from "$lib/shared/navigation/services/implementations/NavigationVisitPersister";
+} from "#lib/shared/navigation/domain/navigation-visit-ranking.js";
+import { NavigationVisitPersister } from "#lib/shared/navigation/services/implementations/NavigationVisitPersister.js";
 
 describe("NavigationVisitPersister", () => {
   beforeEach(() => localStorage.clear());

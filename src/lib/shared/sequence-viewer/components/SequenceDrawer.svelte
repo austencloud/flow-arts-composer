@@ -19,13 +19,13 @@
     />
 -->
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { CollaborativeVideo } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
   import type { MediaType, MediaFormat, ExportSettings } from "../domain/types";
-  import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import SequencePanel, { type PanelMode, type CreatorInfo } from "./SequencePanel.svelte";
-  import { setAnimationExportContext } from "$lib/shared/export-panel/context/animation-export-context.svelte";
+  import { setAnimationExportContext } from "#lib/shared/export-panel/context/animation-export-context.svelte.js";
 
   let {
     // Drawer props

@@ -4,8 +4,8 @@
   import {
     FirstFireFlameFieldRenderer,
     type FirstFireFlameAnchor,
-  } from "$lib/features/museum/services/first-fire-flame-field";
-  import type { FirstFireFlameGroup } from "$lib/features/museum/data/first-fire-procession-review";
+  } from "#lib/features/museum/services/first-fire-flame-field.js";
+  import type { FirstFireFlameGroup } from "#lib/features/museum/data/first-fire-procession-review.js";
 
   interface Props {
     anchors: readonly FirstFireFlameAnchor[];

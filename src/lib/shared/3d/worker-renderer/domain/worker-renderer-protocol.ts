@@ -1,7 +1,7 @@
 import type { SceneEffectTipSource3D } from "../../effects/scene-effects/scene-effect-source-3d";
 import { QualityTier, TIER_CONFIGS } from "../../effects/types";
-import type { StripPattern } from "$lib/shared/poi/domain/strip-pattern";
-import type { EffectType } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
+import type { EffectType } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 import type {
   Animal3DParams,
   Bloom3DParams,
@@ -17,7 +17,7 @@ import type {
   Smoke3DParams,
   Sparkles3DParams,
   Trails3DParams,
-} from "$lib/shared/effects/translators/webgl3d-types";
+} from "#lib/shared/effects/translators/webgl3d-types.js";
 import type {
   CanonicalWorkerPropType,
   WorkerPropBuild,

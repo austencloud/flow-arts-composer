@@ -1,4 +1,4 @@
-import { getUserSequencePath } from "$lib/shared/library/data/firestore-paths";
+import { getUserSequencePath } from "#lib/shared/library/data/firestore-paths.js";
 
 export interface AdminCreatedSequenceTarget {
   ownerId: string;

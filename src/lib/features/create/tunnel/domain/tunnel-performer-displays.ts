@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { copyOpsLabel } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import type { BuiltTunnelLayer } from "$lib/shared/sequence-viewer/tunnel/tunnel-layer-builder";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { copyOpsLabel } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import type { BuiltTunnelLayer } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-builder.js";
 
 export interface TunnelPerformerDisplay {
   sequence: SequenceData | null;

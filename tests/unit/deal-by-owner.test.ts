@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { dealByOwner } from "$lib/features/browse/gallery-home/pick-representatives";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { dealByOwner } from "#lib/features/browse/gallery-home/pick-representatives.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function sequence(
   id: string,

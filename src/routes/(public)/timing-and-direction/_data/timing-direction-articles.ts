@@ -2,7 +2,7 @@ import {
   MODE_FAMILY_ID,
   MODE_ORDER,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 export type TimingValue = "Together" | "Split" | "Quarter";
 export type DirectionValue = "Same" | "Opposite";

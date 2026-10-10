@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import SmartCollectionBuilderSheet from "$lib/features/browse/collections/components/SmartCollectionBuilderSheet.svelte";
-	import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+	import SmartCollectionBuilderSheet from "#lib/features/browse/collections/components/SmartCollectionBuilderSheet.svelte";
+	import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 	import { COMMUNITY_RULE } from "../smart-collection-review-fixtures";
 
 	const seeded = $derived(page.url.searchParams.get("seed") === "rule");

@@ -4,12 +4,12 @@ import {
   filterDirectionContinuousOptions,
   getReversalCount,
 } from "./reversal-checker";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 function step(
   leftDir: RotationDirection,

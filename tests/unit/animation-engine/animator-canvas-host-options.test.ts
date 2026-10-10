@@ -6,11 +6,11 @@
  */
 import { flushSync, mount, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
 import { surfaceProps } from "./RecordingCanvasSurface.svelte";
 
 vi.mock(
-  "$lib/shared/animation-engine/components/CanvasSurface.svelte",
+  "#lib/shared/animation-engine/components/CanvasSurface.svelte",
   async () => ({
     default: (await import("./RecordingCanvasSurface.svelte")).default,
   })

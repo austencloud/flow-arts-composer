@@ -1,13 +1,13 @@
 import {
   PostProjectSchema,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 import {
   TakeTimingSchema,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import { deepEqual } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import { deepEqual } from "#lib/shared/sequence-viewer/services/viewer-url-state-codec.js";
 
 /**
  * Keeps each post's recent undo history in this tab, so Undo still works

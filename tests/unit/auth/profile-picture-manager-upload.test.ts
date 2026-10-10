@@ -11,11 +11,11 @@ const mocks = vi.hoisted(() => ({
   reportErrorTelemetry: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getStorageInstance: mocks.getStorageInstance,
 }));
 
-vi.mock("$lib/shared/auth/services/profile-photo-image", () => ({
+vi.mock("#lib/shared/auth/services/profile-photo-image.js", () => ({
   prepareProfilePhoto: mocks.prepareProfilePhoto,
 }));
 
@@ -27,18 +27,18 @@ vi.mock("firebase/storage", () => ({
 }));
 
 vi.mock(
-  "$lib/shared/pictograph/prop/domain/prop-type-display-registry",
+  "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js",
   () => ({ PROP_TYPE_DISPLAY_REGISTRY: {} })
 );
 
-vi.mock("$lib/shared/error/services/error-telemetry-reporter", () => ({
+vi.mock("#lib/shared/error/services/error-telemetry-reporter.js", () => ({
   reportErrorTelemetry: mocks.reportErrorTelemetry,
 }));
 
 import {
   deletePreviousStoredProfilePhoto,
   uploadProfilePhoto,
-} from "$lib/shared/auth/services/profile-picture-manager";
+} from "#lib/shared/auth/services/profile-picture-manager.js";
 
 const user = { uid: "user-1" } as User;
 

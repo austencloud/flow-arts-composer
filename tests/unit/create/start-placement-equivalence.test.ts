@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { areStartPlacementsEquivalent } from "$lib/features/create/construct/start-placement-picker/services/start-placement-equivalence";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import { areStartPlacementsEquivalent } from "#lib/features/create/construct/start-placement-picker/services/start-placement-equivalence.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 function placement({
   id,

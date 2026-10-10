@@ -12,7 +12,7 @@ into a first-class sub-tab. List ↔ detail uses the Browse route owner so publi
 collections have stable URLs and ordinary browser back/forward behavior.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import {
     communityCollectionsState,
@@ -20,8 +20,8 @@ collections have stable URLs and ordinary browser back/forward behavior.
   } from "../state/community-collections-state.svelte";
   import CollectionCard from "./CollectionCard.svelte";
   import CollectionDetailView from "./CollectionDetailView.svelte";
-  import { trackBrowseCollectionOpened } from "$lib/shared/analytics/browse-events";
-  import { getBrowseNavigationContext } from "$lib/shared/browse/context/browse-navigation-context";
+  import { trackBrowseCollectionOpened } from "#lib/shared/analytics/browse-events.js";
+  import { getBrowseNavigationContext } from "#lib/shared/browse/context/browse-navigation-context.js";
 
   const browseNavigation = getBrowseNavigationContext();
 

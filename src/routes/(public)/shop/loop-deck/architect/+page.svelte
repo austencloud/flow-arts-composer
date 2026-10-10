@@ -1,7 +1,7 @@
 <script lang="ts">
   // Nav + cosmic background come from the (public)/shop +layout.svelte.
-  import DeckArchitectPage from "$lib/features/store/DeckArchitectPage.svelte";
-  import Seo from "$lib/shared/components/Seo.svelte";
+  import DeckArchitectPage from "#lib/features/store/DeckArchitectPage.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
 </script>
 
 <Seo

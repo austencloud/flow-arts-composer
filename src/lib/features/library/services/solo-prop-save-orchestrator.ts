@@ -7,10 +7,10 @@
  * so it appears in the hand path library too.
  */
 
-import type { SoloPropRepository } from "$lib/shared/foundation/services/solo-prop-repository-store";
-import type { HandPathRepository } from "$lib/shared/foundation/services/hand-path-repository-store";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { ArtifactProvenance } from "$lib/shared/foundation/domain/models/artifact-provenance";
+import type { SoloPropRepository } from "#lib/shared/foundation/services/solo-prop-repository-store.js";
+import type { HandPathRepository } from "#lib/shared/foundation/services/hand-path-repository-store.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { ArtifactProvenance } from "#lib/shared/foundation/domain/models/artifact-provenance.js";
 
 export class SoloPropSaveOrchestrator {
   constructor(

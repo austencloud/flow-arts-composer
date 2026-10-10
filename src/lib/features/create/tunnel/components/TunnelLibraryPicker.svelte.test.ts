@@ -1,9 +1,9 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CollectedTunnel } from "$lib/features/tunnel-collection/domain/tunnel-collection-types";
-import type { PublicArtifactEnvelope } from "$lib/shared/artifact-revisions/domain/public-artifact";
-import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
+import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
+import type { PublicArtifactEnvelope } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
+import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
 import TunnelLibraryPicker from "./TunnelLibraryPicker.svelte";
 
 const services = vi.hoisted(() => ({
@@ -13,12 +13,12 @@ const services = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "$lib/features/tunnel-collection/services/tunnel-poster-refresh",
+  "#lib/features/tunnel-collection/services/tunnel-poster-refresh.js",
   () => ({ refreshTunnelPoster: services.refreshTunnelPoster })
 );
 
 vi.mock(
-  "$lib/features/tunnel-collection/services/tunnel-public-discovery",
+  "#lib/features/tunnel-collection/services/tunnel-public-discovery.js",
   () => ({
     listPublicTunnelDiscovery: services.listPublicTunnelDiscovery,
     hydratePublicTunnelDiscovery: services.hydratePublicTunnelDiscovery,

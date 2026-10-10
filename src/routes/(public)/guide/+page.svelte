@@ -2,7 +2,7 @@
   import GuideShell from "./_components/GuideShell.svelte";
   import { bodyPagesByGroup } from "./level-1/_data/guide-manifest";
   import { seoForSlug } from "./level-1/_data/guide-page-seo";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   const firstTopic = bodyPagesByGroup()[0]?.entries[0]?.entry;
   const firstTopicHref = firstTopic

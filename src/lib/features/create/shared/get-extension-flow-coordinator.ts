@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { ExtensionFlowCoordinator } from './services/extension-flow-coordinator';
 import { getSequenceExtender } from './get-sequence-extender';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { BuiltTunnelLayer } from "./tunnel-layer-builder";
 import { sampleTunnelNotation } from "./tunnel-notation-sampling";
 

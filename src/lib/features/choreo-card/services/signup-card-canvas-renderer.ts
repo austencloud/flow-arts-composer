@@ -19,7 +19,7 @@ import {
   getCardFrameContentInset,
   wrapContentInCardFrame,
 } from "./card-front-frame";
-import { QRCodeGenerator } from "$lib/shared/qr/services/qr-code-generator";
+import { QRCodeGenerator } from "#lib/shared/qr/services/qr-code-generator.js";
 
 export const SIGNUP_CARD_URL = "https://tkaflowarts.com/start";
 export const SIGNUP_CARD_ART_REVISION = "2026-08-14-relay-v1";

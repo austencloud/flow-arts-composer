@@ -9,7 +9,7 @@
 import {
   GridPlacement,
   GridPlacementGroup,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /**
  * Placement Zone Types
@@ -566,8 +566,8 @@ export const QUARTERED_LOOPS = new Set<string>([
  * Location Rotation Maps
  */
 
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 /**
  * Eighth location rotation map - 45° clockwise rotation

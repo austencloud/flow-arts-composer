@@ -2,14 +2,14 @@
   import type {
     AuthMode,
     AuthPromptContent,
-  } from "$lib/shared/auth/domain/auth-nudge-trigger";
-  import { getLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
+  } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
+  import { getLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
   import EmailAuthTabs from "./EmailAuthTabs.svelte";
-  import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import LastUsedBadge from "#lib/shared/components/LastUsedBadge.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
   import SocialAuthCompact from "./SocialAuthCompact.svelte";
-  import { growFade, popIn } from "$lib/shared/transitions/motion";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { growFade, popIn } from "#lib/shared/transitions/motion.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { authPromptCopy } from "../domain/auth-prompt-copy";
   import { tick, untrack } from "svelte";
 

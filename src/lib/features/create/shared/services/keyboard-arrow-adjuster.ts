@@ -19,15 +19,15 @@
  * legacy\src\main_window\main_widget\sequence_workbench\graph_editor\hotkey_graph_adjuster\arrow_movement_manager.py
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createArrowPlacementData } from "$lib/shared/pictograph/arrow/positioning/placement/domain/create-arrow-placement-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createArrowPlacementData } from "#lib/shared/pictograph/arrow/positioning/placement/domain/create-arrow-placement-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 const logger = createComponentLogger("KeyboardArrowAdjustment");
 

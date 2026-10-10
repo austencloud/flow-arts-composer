@@ -7,11 +7,11 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { AppliedTransform } from "$lib/features/compose/compose/domain/types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { AppliedTransform } from "#lib/features/compose/compose/domain/types";
 
 vi.mock(
-  "$lib/features/compose/tabs/arrange/services/arrange-layer-transformer",
+  "#lib/features/compose/tabs/arrange/services/arrange-layer-transformer.js",
   () => ({
     applyTransform: vi.fn(async (seq: SequenceData, type: string) => ({
       success: true,
@@ -25,8 +25,8 @@ import {
   push,
   pop,
   clear,
-} from "$lib/features/compose/tabs/arrange/services/cell-transform-stack";
-import { applyTransform } from "$lib/features/compose/tabs/arrange/services/arrange-layer-transformer";
+} from "#lib/features/compose/tabs/arrange/services/cell-transform-stack.js";
+import { applyTransform } from "#lib/features/compose/tabs/arrange/services/arrange-layer-transformer.js";
 
 const mockedApplyTransform = vi.mocked(applyTransform);
 

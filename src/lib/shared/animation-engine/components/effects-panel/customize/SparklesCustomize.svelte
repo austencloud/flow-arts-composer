@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import OptionChipRow from "../OptionChipRow.svelte";
-  import AdvancedControls from "$lib/shared/effects/components/AdvancedControls.svelte";
-  import type { SparklesIntent } from "$lib/shared/effects/domain/effects-config";
+  import AdvancedControls from "#lib/shared/effects/components/AdvancedControls.svelte";
+  import type { SparklesIntent } from "#lib/shared/effects/domain/effects-config.js";
 
   const MODES: {
     value: SparklesIntent["mode"];

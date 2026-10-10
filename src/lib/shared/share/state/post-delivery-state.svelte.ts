@@ -1,8 +1,8 @@
-import type { InstagramCapabilitySnapshot } from "$lib/shared/share/domain/instagram/instagram-capability-schema";
+import type { InstagramCapabilitySnapshot } from "#lib/shared/share/domain/instagram/instagram-capability-schema.js";
 import type {
   DeliveryIntent,
   PostDeliveryDraft,
-} from "$lib/shared/share/domain/instagram/instagram-post-draft-schema";
+} from "#lib/shared/share/domain/instagram/instagram-post-draft-schema.js";
 
 export interface CreatePostDeliveryStateInput {
   draft: PostDeliveryDraft;

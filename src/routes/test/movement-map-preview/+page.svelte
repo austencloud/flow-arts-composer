@@ -5,11 +5,11 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { FALG } from "$lib/shared/combination/domain/demo-fixtures";
-  import { getMovementAnnotationStore } from "$lib/features/movement-map/services/movement-annotation-store";
-  import { createMovementMapState } from "$lib/features/movement-map/state/movement-map-state.svelte";
-  import { setMovementMapContext } from "$lib/features/movement-map/context/movement-map-context";
-  import AnnotateView from "$lib/features/movement-map/components/AnnotateView.svelte";
+  import { FALG } from "#lib/shared/combination/domain/demo-fixtures.js";
+  import { getMovementAnnotationStore } from "#lib/features/movement-map/services/movement-annotation-store.js";
+  import { createMovementMapState } from "#lib/features/movement-map/state/movement-map-state.svelte.js";
+  import { setMovementMapContext } from "#lib/features/movement-map/context/movement-map-context.js";
+  import AnnotateView from "#lib/features/movement-map/components/AnnotateView.svelte";
 
   const movementMap = createMovementMapState(getMovementAnnotationStore());
   setMovementMapContext({ state: movementMap });

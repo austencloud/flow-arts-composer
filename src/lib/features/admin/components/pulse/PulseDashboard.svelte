@@ -12,8 +12,8 @@
    * Spec: docs/superpowers/specs/2026-07-09-pulse-activity-system-design.md
    */
   import { onMount } from "svelte";
-  import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-  import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
+  import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+  import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
   import {
     collection,
     query as fsQuery,
@@ -23,16 +23,16 @@
     doc,
     Timestamp,
   } from "firebase/firestore";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import type { NotificationPreferences } from "$lib/shared/feedback/domain/models/notification-models";
-  import { DEFAULT_NOTIFICATION_PREFERENCES } from "$lib/shared/feedback/domain/models/notification-models";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import type { NotificationPreferences } from "#lib/shared/feedback/domain/models/notification-models.js";
+  import { DEFAULT_NOTIFICATION_PREFERENCES } from "#lib/shared/feedback/domain/models/notification-models.js";
   import {
     getPreferences,
     togglePreference,
-  } from "$lib/features/feedback/services/notification-preferences-manager";
-  import PreferenceGroup from "$lib/features/feedback/components/notifications/PreferenceGroup.svelte";
-  import type { PreferenceItem } from "$lib/features/feedback/components/notifications/preference-item";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  } from "#lib/features/feedback/services/notification-preferences-manager.js";
+  import PreferenceGroup from "#lib/features/feedback/components/notifications/PreferenceGroup.svelte";
+  import type { PreferenceItem } from "#lib/features/feedback/components/notifications/preference-item.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 
   interface Overview {

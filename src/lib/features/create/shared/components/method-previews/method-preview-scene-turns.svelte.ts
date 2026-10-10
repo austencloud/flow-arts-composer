@@ -12,7 +12,7 @@
  * once.
  */
 import { untrack } from "svelte";
-import { previewMotionReduced } from "$lib/features/create/shared/state/method-preview-turns.svelte";
+import { previewMotionReduced } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 import { startSceneRun, type SceneRun } from "./method-preview-run";
 
 /** The fade through the tint when a run is cut. */

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { GUIDE_MOVES } from "$lib/shared/notation/qft/qft-guide";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { GUIDE_MOVES } from "#lib/shared/notation/qft/qft-guide.js";
   import { getQftAppContext } from "../_context/qft-app-context";
 
   let {

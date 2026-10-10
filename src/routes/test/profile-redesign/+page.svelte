@@ -17,16 +17,16 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
-  import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
-  import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
+  import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PublicSequenceIndex } from "#lib/shared/foundation/domain/models/public-sequence-index.js";
+  import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
   // ── Sample profile (layout evaluation only; not asserted facts) ──────────────
   const profile = {

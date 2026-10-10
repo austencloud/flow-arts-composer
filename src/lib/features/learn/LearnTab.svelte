@@ -10,14 +10,14 @@ Learning destinations:
 Navigation via bottom tabs (mobile-first UX pattern)
 -->
 <script lang="ts">
-  import { getDelightOrchestrator } from "$lib/shared/delight/get-delight-orchestrator";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import { getDelightOrchestrator } from "#lib/shared/delight/get-delight-orchestrator.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { onMount, untrack } from "svelte";
   import { fly } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import ConceptPathView from "./components/ConceptPathView.svelte";
   import ConceptDetailView from "./components/ConceptDetailView.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import type { LearnConcept } from "./domain/types";
   import { getConceptById } from "./domain/concepts";
   import { isConceptExperienceAvailable } from "./domain/concept-experience-registry";
@@ -36,12 +36,12 @@ Navigation via bottom tabs (mobile-first UX pattern)
     setActiveConceptId,
     clearActiveConceptId,
   } from "./state/experience-persistence.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "./domain/localized-concept";
-  import { setDelightOrchestrator } from "$lib/shared/delight/context/delight-context";
-  import ConfettiBurst from "$lib/shared/delight/components/ConfettiBurst.svelte";
-  import AchievementToast from "$lib/shared/delight/components/AchievementToast.svelte";
-  import { mutateCurrentUrl } from "$lib/shared/navigation/services/url-state";
+  import { setDelightOrchestrator } from "#lib/shared/delight/context/delight-context.js";
+  import ConfettiBurst from "#lib/shared/delight/components/ConfettiBurst.svelte";
+  import AchievementToast from "#lib/shared/delight/components/AchievementToast.svelte";
+  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import { withViewTransition } from "./play/state/view-transition";
 
   type LearnMode = "concepts" | "play" | "tika" | "guide";
@@ -276,7 +276,7 @@ Navigation via bottom tabs (mobile-first UX pattern)
   // the app Firebase is already loaded, so they warm during idle instead and
   // the first switch stays instant.
   const loadPlayHub = () => import("./play/components/PlayHub.svelte");
-  const loadTika = () => import("$lib/features/tika/TikaModule.svelte");
+  const loadTika = () => import("#lib/features/tika/TikaModule.svelte");
   const loadGuide = () => import("./guide/GuideTab.svelte");
 </script>
 

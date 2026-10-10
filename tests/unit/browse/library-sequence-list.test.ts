@@ -9,17 +9,20 @@ const mocks = vi.hoisted(() => ({
   getAllSequences: vi.fn(),
   getLibraryRepository: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: mocks.auth,
 }));
-vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => ({
-  getAllSequences: mocks.getAllSequences,
-}));
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock(
+  "#lib/shared/persistence/services/dexie-persistence-service.js",
+  () => ({
+    getAllSequences: mocks.getAllSequences,
+  })
+);
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: mocks.getLibraryRepository,
 }));
 
-import { listLibrarySequences } from "$lib/shared/browse/services/library-sequence-list";
+import { listLibrarySequences } from "#lib/shared/browse/services/library-sequence-list.js";
 
 describe("listLibrarySequences", () => {
   beforeEach(() => {

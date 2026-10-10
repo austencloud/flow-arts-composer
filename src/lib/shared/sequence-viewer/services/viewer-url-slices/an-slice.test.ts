@@ -5,7 +5,7 @@ import { flushSync } from "svelte";
 // `createPersistenceHelper.save()` and would make the settings half of the
 // zero-write guard vacuously pass. Persistence has to be live for that test to
 // mean anything.
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
@@ -20,9 +20,9 @@ const {
   TrackingMode,
   TrailMode,
 } =
-  await import("$lib/shared/animation-engine/state/animation-settings-state.svelte");
+  await import("#lib/shared/animation-engine/state/animation-settings-state.svelte.js");
 const { AnimationVisibilityStateManager } =
-  await import("$lib/shared/animation-engine/state/animation-visibility-state.svelte");
+  await import("#lib/shared/animation-engine/state/animation-visibility-state.svelte.js");
 
 const SETTINGS_KEY = "tka_animation_settings";
 const VISIBILITY_KEY = "animation-visibility-settings";

@@ -4,10 +4,10 @@
   import { untrack } from "svelte";
   import { WebGLRenderer } from "three";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import Environment3D from "$lib/shared/3d/environments/components/Environment3D.svelte";
-  import EnvironmentReviewCamera from "$lib/shared/3d/environments/review/EnvironmentReviewCamera.svelte";
-  import { createSceneFeatureState } from "$lib/shared/3d/scene-features/state/scene-feature-state.svelte";
-  import { setSceneFeatureContext } from "$lib/shared/3d/scene-features/context/scene-feature-context";
+  import Environment3D from "#lib/shared/3d/environments/components/Environment3D.svelte";
+  import EnvironmentReviewCamera from "#lib/shared/3d/environments/review/EnvironmentReviewCamera.svelte";
+  import { createSceneFeatureState } from "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js";
+  import { setSceneFeatureContext } from "#lib/shared/3d/scene-features/context/scene-feature-context.js";
   import HarnessToneMapping from "../winter-scene/HarnessToneMapping.svelte";
   import SceneProbe from "./SceneProbe.svelte";
 

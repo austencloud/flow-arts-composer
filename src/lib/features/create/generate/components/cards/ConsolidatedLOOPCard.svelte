@@ -4,25 +4,25 @@ Shows "Off" when disabled, the LOOP type name plus its canonical component
 icons when enabled. Click opens the expanded overlay.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import {
     LOOPType,
     Period,
-  } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import { onMount, getContext } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import CardHeader from "./shared/CardHeader.svelte";
-  import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
+  import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
   import {
     buildLoopCardDisplay,
     describeLoopRhythm,
   } from "./loop-card-display";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-  import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
+  import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
 
   let {
     loopEnabled,

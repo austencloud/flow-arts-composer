@@ -1,8 +1,8 @@
 import { BackgroundType } from "@austencloud/backgrounds";
-import type { SceneId } from "$lib/features/lab/tabs/scene-lab/domain/scene-lab-types";
+import type { SceneId } from "#lib/features/lab/tabs/scene-lab/domain/scene-lab-types.js";
 // Reading BackgroundType.PRIDE directly leaves this theme with an undefined
 // background on any bundle that still calls the environment Rainbow.
-import { PRIDE_BACKGROUND_TYPE } from "$lib/shared/settings/domain/background-type-migration";
+import { PRIDE_BACKGROUND_TYPE } from "#lib/shared/settings/domain/background-type-migration.js";
 
 export type ThemeId =
   | "ocean"

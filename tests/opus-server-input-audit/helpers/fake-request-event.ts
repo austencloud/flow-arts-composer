@@ -6,6 +6,7 @@
  * without dragging SvelteKit's full runtime into a node test.
  */
 import type { RequestEvent } from "@sveltejs/kit";
+import { setWorkerEnv } from "#test-helpers/worker-env.js";
 
 export interface FakeEventOptions {
   url: string;
@@ -14,7 +15,8 @@ export interface FakeEventOptions {
   body?: BodyInit | null;
   params?: Record<string, string>;
   clientAddress?: string;
-  platformEnv?: Record<string, unknown>;
+  /** The Worker bindings `workerEnv()` returns for this request. */
+  workerEnv?: Partial<Cloudflare.Env>;
 }
 
 export function fakeEvent(options: FakeEventOptions): RequestEvent {
@@ -25,12 +27,13 @@ export function fakeEvent(options: FakeEventOptions): RequestEvent {
     body: options.body ?? undefined,
   });
 
+  setWorkerEnv(options.workerEnv);
+
   return {
     url,
     request,
     params: options.params ?? {},
     getClientAddress: () => options.clientAddress ?? "203.0.113.7",
-    platform: options.platformEnv ? { env: options.platformEnv } : undefined,
   } as unknown as RequestEvent;
 }
 

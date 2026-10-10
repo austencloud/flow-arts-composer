@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   aggregatePresenceTree,
   aggregateStoredPresence,
-} from "$lib/shared/presence/domain/presence-aggregation";
-import type { UserPresence } from "$lib/shared/presence/domain/models/presence-models";
+} from "#lib/shared/presence/domain/presence-aggregation.js";
+import type { UserPresence } from "#lib/shared/presence/domain/models/presence-models.js";
 
 function connection(overrides: Partial<UserPresence> = {}): UserPresence {
   return {

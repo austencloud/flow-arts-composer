@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import { getLetterBorderColors } from "$lib/shared/pictograph/shared/utils/letter-border-utils";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import { getLetterBorderColors } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
 
   let {
     letter,

@@ -10,8 +10,8 @@
  */
 
 import { untrack } from "svelte";
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import type { StepOperator } from "$lib/features/create/shared/services/step-operator";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import type { StepOperator } from "#lib/features/create/shared/services/step-operator.js";
 import type { CreateModuleState } from "../create-module-state.svelte";
 
 export interface PropTypeSyncConfig {

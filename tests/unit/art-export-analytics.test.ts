@@ -3,8 +3,8 @@ import {
   exportDeliveryStage,
   mandalaStageForPhase,
   tunnelStagesForState,
-} from "$lib/shared/sequence-viewer/domain/art-export-analytics";
-import { resolveMandalaExportDelivery } from "$lib/shared/sequence-viewer/services/mandala-export-delivery";
+} from "#lib/shared/sequence-viewer/domain/art-export-analytics.js";
+import { resolveMandalaExportDelivery } from "#lib/shared/sequence-viewer/services/mandala-export-delivery.js";
 
 describe("art export analytics lifecycle", () => {
   it("maps only meaningful mandala phase transitions", () => {

@@ -1,4 +1,4 @@
-import type { CopyOp } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
+import type { CopyOp } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
 
 export type TunnelReflection = "none" | "mirror" | "flip";
 

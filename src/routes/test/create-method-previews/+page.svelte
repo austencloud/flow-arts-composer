@@ -16,17 +16,17 @@
    */
   import { onMount } from "svelte";
   import { page } from "$app/state";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import LastUsedBadge from "$lib/shared/components/LastUsedBadge.svelte";
-  import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
-  import { CREATE_TABS } from "$lib/shared/navigation/config/tab-definitions";
-  import CreateFrontDoor from "$lib/features/create/shared/components/CreateFrontDoor.svelte";
-  import CreateMethodPreview from "$lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
-  import { methodPreviewHold } from "$lib/features/create/shared/components/method-previews/method-preview-hold";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import LastUsedBadge from "#lib/shared/components/LastUsedBadge.svelte";
+  import { isTabAccessible } from "#lib/shared/auth/domain/guest-access-config.js";
+  import { CREATE_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
+  import CreateFrontDoor from "#lib/features/create/shared/components/CreateFrontDoor.svelte";
+  import CreateMethodPreview from "#lib/features/create/shared/components/method-previews/CreateMethodPreview.svelte";
+  import { methodPreviewHold } from "#lib/features/create/shared/components/method-previews/method-preview-hold.js";
   import {
     createMethodPreviewTurns,
     previewMotionReduced,
-  } from "$lib/features/create/shared/state/method-preview-turns.svelte";
+  } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 
   const ORDER = [
     "construct",
@@ -154,7 +154,7 @@
     // This route renders outside the app shell, so nothing has set the theme
     // variables the cards paint with. Reading the device's saved background
     // keeps the cards in the app's palette.
-    void import("$lib/shared/settings/utils/background-theme-calculator").then(
+    void import("#lib/shared/settings/utils/background-theme-calculator.js").then(
       ({ ensureThemeApplied }) => ensureThemeApplied()
     );
     initialPreference = document.documentElement.dataset.motionPreference;

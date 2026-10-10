@@ -14,8 +14,8 @@
 -->
 <script lang="ts">
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import type { VideoFps } from "$lib/shared/animation-panel/state/export-options-state.svelte";
+  import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import type { VideoFps } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
 
   const hubState = getExportPanelState();
   const exportOptions = getExportOptionsState();

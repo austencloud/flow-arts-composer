@@ -7,7 +7,7 @@
  * Path: festivals/{festivalId}/attendance/{userId}
  */
 
-import { firestoreList, firestoreSet, firestoreDelete } from "$lib/shared/firestore";
+import { firestoreList, firestoreSet, firestoreDelete } from "#lib/shared/firestore/index.js";
 import { FestivalAttendanceSchema } from "../domain/models/festival-schemas";
 import type { FestivalAttendance } from "../domain/models/festival";
 

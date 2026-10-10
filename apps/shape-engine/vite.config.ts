@@ -28,23 +28,23 @@ export default defineConfig({
         replacement: `${appRoot}src/native-settings.svelte.ts`,
       },
       {
-        find: "$lib/shared/create/get-sequence-repository",
+        find: "#lib/shared/create/get-sequence-repository.js",
         replacement: `${appRoot}src/local-sequences.ts`,
       },
       {
-        find: "$lib/shared/keyboard/keyboard-shortcut-analytics",
+        find: "#lib/shared/keyboard/keyboard-shortcut-analytics.js",
         replacement: `${appRoot}src/keyboard-analytics.ts`,
       },
       {
-        find: "$lib/shared/hmr-helper",
+        find: "#lib/shared/hmr-helper.js",
         replacement: `${appRoot}src/bundled-import.ts`,
       },
       {
         find: /^(?:.*\/)?BentoPropGrid\.svelte$/,
         replacement: `${appRoot}src/ShapeEnginePropGrid.svelte`,
       },
-      { find: "$lib", replacement: `${repoRoot}src/lib` },
-      { find: "$app/environment", replacement: `${appRoot}src/environment.ts` },
+      { find: "#lib", replacement: `${repoRoot}src/lib` },
+      { find: /^\$app\/env$/, replacement: `${appRoot}src/environment.ts` },
     ],
     dedupe: ["svelte"],
   },

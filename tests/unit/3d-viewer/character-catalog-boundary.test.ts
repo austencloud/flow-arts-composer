@@ -1,9 +1,9 @@
 import {
   CHARACTER_DEFINITIONS,
   getCharacterModelPath,
-} from "$lib/shared/3d/domain/character-model";
-import { DEPLOYED_CHARACTER_DEFINITIONS } from "$lib/shared/3d/config/deployed-characters";
-import { characterThumbnailUrl } from "$lib/shared/3d/constants/r2-cdn";
+} from "#lib/shared/3d/domain/character-model.js";
+import { DEPLOYED_CHARACTER_DEFINITIONS } from "#lib/shared/3d/config/deployed-characters.js";
+import { characterThumbnailUrl } from "#lib/shared/3d/constants/r2-cdn.js";
 import { describe, expect, it } from "vitest";
 
 const PERSONAL_CHARACTER_ID = "personal-metaperson";

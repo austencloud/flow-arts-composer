@@ -5,15 +5,15 @@
  * Provides snap calculations for steps, clip edges, grid, and playhead.
  */
 
-import type { SnapResult, SnapPoint, SnapType } from "$lib/shared/animation-engine/timeline/domain/types";
-import type { TimeSeconds } from "$lib/shared/animation-engine/domain/timeline-types";
+import type { SnapResult, SnapPoint, SnapType } from "#lib/shared/animation-engine/timeline/domain/types.js";
+import type { TimeSeconds } from "#lib/shared/animation-engine/domain/timeline-types.js";
 import {
   snapTimeValue,
   calculateSnapPoints,
   DEFAULT_SNAP_THRESHOLD,
   type SnapContext,
 } from "./snap-service";
-import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
 
 export class TimelineSnapper {
   private _activeSnapResult: SnapResult | null = null;

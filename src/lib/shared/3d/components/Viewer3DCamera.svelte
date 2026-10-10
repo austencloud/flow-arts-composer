@@ -21,7 +21,7 @@
   import { cameraPreferences } from "../camera/camera-preferences.svelte";
   import { CameraMode } from "../camera/types";
   import type { AvatarState, PhysicsProvider } from "../camera/types";
-  import type { ViewerControlSink } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  import type { ViewerControlSink } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
   import {
     sampleInterruptibleVector3,
     type TimedTransition,

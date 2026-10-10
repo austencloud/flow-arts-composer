@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
-  import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import StepStrip from "#lib/shared/timeline/StepStrip.svelte";
   import {
     createEffectsConfigState,
     type EffectsConfigState,
-  } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   let {
     sequence,

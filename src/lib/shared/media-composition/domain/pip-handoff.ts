@@ -5,9 +5,9 @@ import {
   type PostBox,
   type PostMovesItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import type { TakeSample } from "$lib/shared/media-composition/domain/take-timing";
-import { MOVE_EASING } from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import type { TakeSample } from "#lib/shared/media-composition/domain/take-timing.js";
+import { MOVE_EASING } from "#lib/shared/media-composition/domain/tunnel-hook.js";
 
 /**
  * An animation that ends over a picture-in-picture square shrinks into it

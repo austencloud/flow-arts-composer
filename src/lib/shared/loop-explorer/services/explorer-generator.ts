@@ -16,24 +16,24 @@
  *   → loopDetector.detectLOOPType() (delegates to @tka/sequence-engine)
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { GenerationOptions } from "$lib/features/create/generate/shared/domain/models/generate-models";
-import { DifficultyLevel, GenerationMode } from "$lib/features/create/generate/shared/domain/models/generate-models";
-import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-import { loopDetector } from "$lib/shared/create/services/loop-detector";
-import type { LOOPDetectionResult } from "$lib/shared/create/services/ILOOPDetector";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { GenerationOptions } from "#lib/features/create/generate/shared/domain/models/generate-models.js";
+import { DifficultyLevel, GenerationMode } from "#lib/features/create/generate/shared/domain/models/generate-models.js";
+import { generationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+import { loopDetector } from "#lib/shared/create/services/loop-detector.js";
+import type { LOOPDetectionResult } from "#lib/shared/create/services/ILOOPDetector.js";
 import {
   parseLoopComponents,
   resolveLoopConfig,
   expanderMultiplier,
   specHasExpandInversion,
-} from "$lib/shared/create/services/loop-type-utils";
-import { evaluateSelection, resolveEffectiveSlice, type LoopSlice } from "$lib/shared/loop-explorer/domain/legality";
-import { findCuratedSeed } from "$lib/shared/loop-explorer/domain/curated-seeds";
+} from "#lib/shared/create/services/loop-type-utils.js";
+import { evaluateSelection, resolveEffectiveSlice, type LoopSlice } from "#lib/shared/loop-explorer/domain/legality.js";
+import { findCuratedSeed } from "#lib/shared/loop-explorer/domain/curated-seeds.js";
 import { extractPairRelations, defaultInterval, type StepPairRelation } from "./relation-extractor";
 
 export const MAX_ATTEMPTS = 3;

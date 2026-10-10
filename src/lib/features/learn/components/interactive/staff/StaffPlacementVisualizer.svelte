@@ -4,8 +4,8 @@ Shows staffs positioned on the 4-point diamond grid with thumb end markers.
 Demonstrates Alpha, Beta, Gamma placements with thumb orientations (in, out, mixed).
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import {
     GRID_POINTS,
     LEFT_STAFF_COLOR,

@@ -2,12 +2,12 @@ import {
   POST_TIME_EPSILON,
   itemEnd,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { postSecondsOfKeyframe } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import type {
   ResolvedTakeTiming,
   TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import { shownLandings } from "../builder/timing-lane-landings";
 
 /**

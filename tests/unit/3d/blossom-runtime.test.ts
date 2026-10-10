@@ -4,7 +4,7 @@ import {
   createBlossomStageTransform,
   detectBlossomQuality,
   type BlossomQualityTier,
-} from "$lib/shared/3d/environments/scenes/cherry-blossom/blossom-runtime";
+} from "#lib/shared/3d/environments/scenes/cherry-blossom/blossom-runtime.js";
 
 describe("Blossom authored environment runtime", () => {
   describe("stage transform", () => {

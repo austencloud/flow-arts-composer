@@ -19,14 +19,14 @@
  *
  * Spec: docs/superpowers/specs/2026-08-16-museum-pedestal-and-console-design.md
  */
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   rewindSequence,
   swapHands,
-} from "$lib/shared/create/services/sequence-transformer";
-import { MUSEUM_EXHIBIT_SEQUENCES } from "$lib/features/museum/data/museum-exhibit-sequences";
-import type { PerformerSettings } from "$lib/features/museum/domain/exhibit-console";
+} from "#lib/shared/create/services/sequence-transformer.js";
+import { MUSEUM_EXHIBIT_SEQUENCES } from "#lib/features/museum/data/museum-exhibit-sequences.js";
+import type { PerformerSettings } from "#lib/features/museum/domain/exhibit-console.js";
 
 /** The bound record, untouched. Throws rather than guessing at an unknown id. */
 export function boundSteps(sequenceId: string): readonly StepData[] {

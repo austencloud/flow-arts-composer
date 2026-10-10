@@ -5,17 +5,17 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 // test never touch any of them (the constructor's Firebase/visibility calls are
 // gated behind `browser`, false here; saveToStorage no-ops too). Stub the three
 // browser-only dependency modules so the manager imports cleanly.
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthSync: () => ({ currentUser: null }),
 }));
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: { currentSettings: {}, updateSetting: () => {} },
 }));
-vi.mock("$lib/shared/animation-engine/state/animation-visibility-state.svelte", () => ({
+vi.mock("#lib/shared/animation-engine/state/animation-visibility-state.svelte.js", () => ({
   getAnimationVisibilityManager: () => ({ isDarkMode: () => false, registerObserver: () => {} }),
 }));
 
-import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
 
 describe("info-cell choice per-length override", () => {
   let ic: ReturnType<typeof getImageCompositionManager>;

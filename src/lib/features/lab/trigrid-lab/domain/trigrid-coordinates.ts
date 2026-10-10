@@ -14,7 +14,7 @@
  * (upright+inverted or left+right) to produce 6 vertices at 60° intervals.
  */
 
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { Point, TriGridMode } from "./trigrid-types";
 import {
   TRIGRID_CENTER_X,

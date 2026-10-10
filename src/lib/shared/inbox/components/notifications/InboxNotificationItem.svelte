@@ -1,27 +1,27 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * InboxNotificationItem
    *
    * Simple notification card - Facebook/Instagram style
    */
 
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import type { UserNotification } from "$lib/shared/notifications/domain/models/notification-models";
+  import type { UserNotification } from "#lib/shared/notifications/domain/models/notification-models.js";
   import { formatRelativeTimeVerbose } from "../../utils/format";
   import { goto } from "$app/navigation";
   import { inboxState } from "../../state/inbox-state.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { CHOREO_CARD_SCAN_ATLAS_TAB_ID } from "$lib/shared/navigation/config/tab-definitions";
-  import { setNotificationTargetFeedback } from "$lib/shared/feedback/state/notification-action-state.svelte";
-  import { setScanNotificationTarget } from "$lib/features/choreo-card/state/scan-notification-target.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { buildAdminSessionReplayUrl } from "$lib/features/admin/domain/session-replay-target";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { CHOREO_CARD_SCAN_ATLAS_TAB_ID } from "#lib/shared/navigation/config/tab-definitions.js";
+  import { setNotificationTargetFeedback } from "#lib/shared/feedback/state/notification-action-state.svelte.js";
+  import { setScanNotificationTarget } from "#lib/features/choreo-card/state/scan-notification-target.svelte.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { buildAdminSessionReplayUrl } from "#lib/features/admin/domain/session-replay-target.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { resolveAdminCreatedSequenceTarget } from "../../domain/admin-created-sequence-target";
-  import { openCreatorProfile } from "$lib/features/creators/state/creators-routing.svelte";
+  import { openCreatorProfile } from "#lib/features/creators/state/creators-routing.svelte.js";
 
   interface Props {
     notification: UserNotification;
@@ -143,9 +143,8 @@
     try {
       inboxState.close();
       await goto(buildAdminSessionReplayUrl(userId, sessionId), {
-        replaceState: true,
-        keepFocus: true,
-        noScroll: true,
+        replace: true,
+        reset: false,
       });
       // The catch-all app route preserves the shell across goto(). Update its
       // module owner explicitly while keeping the deep-link URL intact.
@@ -200,9 +199,9 @@
         { openSequenceViewer },
       ] = await Promise.all([
         import("firebase/firestore"),
-        import("$lib/shared/auth/firebase"),
-        import("$lib/shared/library/services/collection-firestore-mapper"),
-        import("$lib/shared/sequence-viewer/services/sequence-viewer-navigator"),
+        import("#lib/shared/auth/firebase.js"),
+        import("#lib/shared/library/services/collection-firestore-mapper.js"),
+        import("#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js"),
       ]);
 
       const firestore = await getFirestoreInstance();
@@ -376,8 +375,12 @@
       case "system-announcement":
         // Navigate to action URL if provided
         if (n["actionUrl"]) {
+          const actionUrl = n["actionUrl"] as string;
           inboxState.close();
-          goto(n["actionUrl"] as string);
+          // An admin can link anywhere, and `goto` rejects other sites, so
+          // those open in a new tab like the announcement modal's link.
+          if (actionUrl.startsWith("/")) goto(actionUrl);
+          else window.open(actionUrl, "_blank", "noopener,noreferrer");
         }
         break;
 

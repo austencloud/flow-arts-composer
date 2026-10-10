@@ -1,7 +1,7 @@
 <script lang="ts">
   import LessonStageHeading from "../LessonStageHeading.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import MessageMarkup from "$lib/shared/i18n/MessageMarkup.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import MessageMarkup from "#lib/shared/i18n/MessageMarkup.svelte";
   import type {
     GridPhase,
     PointTypePhase,

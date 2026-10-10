@@ -1,6 +1,6 @@
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
 
 /**
  * The caller's saved sequences as browse metadata, following the same source
@@ -14,7 +14,7 @@ export async function listLibrarySequences(): Promise<SequenceData[]> {
   }
   if (!authState.isFullAccount) {
     const { getAllSequences } =
-      await import("$lib/shared/persistence/services/dexie-persistence-service");
+      await import("#lib/shared/persistence/services/dexie-persistence-service.js");
     return deduplicateById((await getAllSequences()) as SequenceData[]);
   }
   const repository = getLibraryRepository();

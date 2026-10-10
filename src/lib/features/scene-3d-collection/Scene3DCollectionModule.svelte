@@ -21,29 +21,29 @@
     scene3DHasFilm,
     type Collected3DScene,
   } from "./domain/scene-3d-collection-types";
-  import { getSceneEnvironmentDefinition } from "$lib/shared/3d/environments/domain/scene-environment";
+  import { getSceneEnvironmentDefinition } from "#lib/shared/3d/environments/domain/scene-environment.js";
   import {
     openScene3DInStudio,
     openScene3DFilmInStudio,
     applyScene3DLook,
     scene3DHasSteps,
   } from "./services/open-3d-scene";
-  import VideoPreviewPanel from "$lib/shared/sequence-viewer/components/VideoPreviewPanel.svelte";
+  import VideoPreviewPanel from "#lib/shared/sequence-viewer/components/VideoPreviewPanel.svelte";
   import {
     getRenderedFilmsForEntry,
     type RenderedFilmRecord,
-  } from "$lib/shared/video-export/services/rendered-film-store";
+  } from "#lib/shared/video-export/services/rendered-film-store.js";
   import {
     sanitizeFilename,
     shareOrDownloadBlob,
-  } from "$lib/shared/foundation/services/file-downloader";
-  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
-  import CollectionGalleryDetail from "$lib/shared/modules/CollectionGalleryDetail.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { toast, showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { openLineageSource, hasLineageSource } from "$lib/shared/collections/open-lineage-source";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { revertSettingsCheckpoint } from "$lib/shared/collections/settings-checkpoint.svelte";
+  } from "#lib/shared/foundation/services/file-downloader.js";
+  import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
+  import CollectionGalleryDetail from "#lib/shared/modules/CollectionGalleryDetail.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { toast, showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { openLineageSource, hasLineageSource } from "#lib/shared/collections/open-lineage-source.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { revertSettingsCheckpoint } from "#lib/shared/collections/settings-checkpoint.svelte.js";
 
   type Phase = "gallery" | "detail";
   let phase = $state<Phase>("gallery");

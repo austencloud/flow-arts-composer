@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { AuthNudgeTrigger } from "../domain/auth-nudge-trigger";
   import { authNudgeCopy } from "../domain/auth-prompt-copy";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     trigger: AuthNudgeTrigger;

@@ -3,16 +3,16 @@
     getSettings,
     updateSetting,
     updateSettings,
-  } from "$lib/shared/application/state/app-state.svelte";
-  import { isPropUnlocked } from "$lib/shared/gamification/state/prop-collection-state.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
+  import { isPropUnlocked } from "#lib/shared/gamification/state/prop-collection-state.svelte.js";
   import type { ComponentProps } from "svelte";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import PropGrid from "./PropGrid.svelte";
   import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
-  import { growFade, STEP_DRIFT_PX } from "$lib/shared/transitions/motion";
-  import { DEFAULT_TRIANGLE_GRIP } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+  import { growFade, STEP_DRIFT_PX } from "#lib/shared/transitions/motion.js";
+  import { DEFAULT_TRIANGLE_GRIP } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 
   // Public hosts own their appearance without writing global settings.
   let {

@@ -8,10 +8,10 @@
  * This is a plain TypeScript class - no Svelte reactivity needed.
  */
 
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { resolveTrailColors } from "../domain/resolve-trail-colors";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { RenderFrameParams } from "./IAnimationRenderLoop";
 import {
   type TrailSettings,
@@ -29,10 +29,10 @@ import {
   tunnelPerformerPair,
   type TunnelLayerSelection,
   type TunnelPropColorPair,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 import type { AnimationVisibilityStateManager } from "../state/animation-visibility-state.svelte";
-import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 
 import type {
   Bloom2DParams,
@@ -48,7 +48,7 @@ import type {
   Sparkles2DParams,
   GooParams,
   Zap2DParams,
-} from "$lib/shared/effects/translators/canvas2d-types";
+} from "#lib/shared/effects/translators/canvas2d-types.js";
 import {
   resolveBloom2D,
   resolveBubbles2D,
@@ -63,7 +63,7 @@ import {
   resolveSparkles2D,
   resolveGoo2D,
   resolveZap2D,
-} from "$lib/shared/effects/translators/canvas2d-translator";
+} from "#lib/shared/effects/translators/canvas2d-translator.js";
 import type {
   BloomIntent,
   BubblesIntent,
@@ -77,10 +77,10 @@ import type {
   SmokeIntent,
   SparklesIntent,
   GooIntent,
-} from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { isBilateralProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+} from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+import { isBilateralProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
 
 import type { AnimationEngineProps } from "./animation-engine.svelte";
 import type { AnimatorState } from "../state/animator-state.svelte";

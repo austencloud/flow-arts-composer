@@ -80,27 +80,27 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: h.getFirestoreInstance,
 }));
 
 // Partial: the schemas this module pulls in also import `firestoreDate` from
 // here, so only the two call paths the notifier uses are replaced.
-vi.mock("$lib/shared/firestore", async (importOriginal) => ({
+vi.mock("#lib/shared/firestore/index.js", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   firestoreList: vi.fn(),
   firestoreDelete: vi.fn(),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: h.toastError, info: vi.fn(), success: vi.fn() },
 }));
 
-vi.mock("$lib/shared/auth/utils/is-permission-denied-error", () => ({
+vi.mock("#lib/shared/auth/utils/is-permission-denied-error.js", () => ({
   isPermissionDeniedError: h.isPermissionDeniedError,
 }));
 
-const { Notifier } = await import("$lib/shared/feedback/services/notifier");
+const { Notifier } = await import("#lib/shared/feedback/services/notifier.js");
 
 function snapshotOf(ids: string[]) {
   return {

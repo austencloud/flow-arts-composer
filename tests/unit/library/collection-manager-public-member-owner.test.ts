@@ -54,19 +54,19 @@ vi.mock("firebase/firestore", () => ({
   writeBatch: vi.fn(),
   arrayRemove: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn() },
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureEvent: vi.fn(),
 }));
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: () => ({ publishSequence: mocks.publish }),
 }));
-vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => {
+vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => {
   class CollectionError extends Error {
     constructor(
       message: string,
@@ -100,7 +100,7 @@ vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => {
   };
 });
 
-import { addSequenceToCollection } from "$lib/shared/library/services/collection-manager";
+import { addSequenceToCollection } from "#lib/shared/library/services/collection-manager.js";
 
 /** Several awaits stand between the call and the publish; wait for the state. */
 async function waitFor(predicate: () => boolean): Promise<void> {

@@ -6,7 +6,7 @@ import {
   computeElapsed,
   computeSeekTarget,
   computeBeatMarkerPositions,
-} from "$lib/shared/timeline/adapters/animator-playback-adapter.svelte";
+} from "#lib/shared/timeline/adapters/animator-playback-adapter.svelte.js";
 
 describe("animator-playback-adapter", () => {
   describe("computeOverallProgress", () => {

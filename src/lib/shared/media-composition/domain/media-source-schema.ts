@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SequenceRevisionRefSchema } from "$lib/shared/media-composition/domain/sequence-time-map";
+import { SequenceRevisionRefSchema } from "#lib/shared/media-composition/domain/sequence-time-map.js";
 
 const NonEmptyIdSchema = z.string().trim().min(1);
 const TimestampSchema = z.number().finite().int().nonnegative();

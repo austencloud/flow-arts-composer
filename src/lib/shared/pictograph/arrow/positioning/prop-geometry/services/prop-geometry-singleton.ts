@@ -7,7 +7,7 @@
  */
 
 import type { PropGeometryAdjustmentRepository } from "./prop-geometry-adjustment-repository";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { setPropGeometryResolver } from "../../placement/services/override-resolvers";
 
 const logger = createComponentLogger("PropGeometrySingleton");

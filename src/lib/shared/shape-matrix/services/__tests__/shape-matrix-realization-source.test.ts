@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { Flower } from "../../domain/flower-signature";
 import { identifyShapeMatrixRealization } from "../shape-matrix-realization-source";
 

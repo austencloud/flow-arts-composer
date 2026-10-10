@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 vi.mock("$app/navigation", () => ({ goto: vi.fn() }));
 
 import {
   DeepLinker,
   deepLinker,
-} from "$lib/shared/navigation/services/deep-linker";
-import { getDeepLinker } from "$lib/shared/navigation/get-deep-linker";
+} from "#lib/shared/navigation/services/deep-linker.js";
+import { getDeepLinker } from "#lib/shared/navigation/get-deep-linker.js";
 
 const sequence = {
   id: "letter-draft",

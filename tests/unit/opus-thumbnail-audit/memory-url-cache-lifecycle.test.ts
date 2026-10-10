@@ -23,16 +23,16 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { ThumbnailRenderInput } from "$lib/shared/browse/services/thumbnail-key-deriver";
-import { repairThumbnailCaches } from "$lib/shared/browse/services/thumbnail-repair";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { ThumbnailRenderInput } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
+import { repairThumbnailCaches } from "#lib/shared/browse/services/thumbnail-repair.js";
 
-vi.mock("$lib/shared/analytics/thumbnail-analytics", () => ({
+vi.mock("#lib/shared/analytics/thumbnail-analytics.js", () => ({
   captureThumbnailRenderFailure: vi.fn(),
 }));
 
-vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
+vi.mock("#lib/shared/browse/services/cloud-thumbnail-cache.js", () => ({
   getCachedUrl: () => null,
   getUrl: vi.fn(async () => null),
   upload: vi.fn(async () => null),
@@ -66,8 +66,8 @@ let revokedUrls: string[];
 async function createOrchestrator() {
   const [{ ThumbnailRenderOrchestrator }, { ThumbnailRenderQueue }] =
     await Promise.all([
-      import("$lib/shared/browse/services/thumbnail-render-orchestrator"),
-      import("$lib/shared/browse/services/thumbnail-render-queue"),
+      import("#lib/shared/browse/services/thumbnail-render-orchestrator.js"),
+      import("#lib/shared/browse/services/thumbnail-render-queue.js"),
     ]);
   return new ThumbnailRenderOrchestrator(
     new ThumbnailRenderQueue(),

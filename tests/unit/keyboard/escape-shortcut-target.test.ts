@@ -4,7 +4,7 @@ import {
   hasEscapeShortcutTarget,
   resolveEscapeShortcutTarget,
   shouldDeferEscapeShortcut,
-} from "$lib/shared/keyboard/domain/escape-shortcut-target";
+} from "#lib/shared/keyboard/domain/escape-shortcut-target.js";
 
 function makeVisible(element: HTMLElement): void {
   Object.defineProperty(element, "getClientRects", {

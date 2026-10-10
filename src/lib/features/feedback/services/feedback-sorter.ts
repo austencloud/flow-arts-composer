@@ -1,7 +1,7 @@
-import type { FeedbackItem } from "$lib/shared/feedback/domain/models/feedback-models";
+import type { FeedbackItem } from "#lib/shared/feedback/domain/models/feedback-models.js";
 import { ClaimStatusDeriver } from "./claim-status-deriver";
 import { groupByLane } from "./swim-lane-deriver";
-import type { SwimLane } from "$lib/shared/feedback/domain/feedback-contract-types";
+import type { SwimLane } from "#lib/shared/feedback/domain/feedback-contract-types.js";
 
 export class FeedbackSorter {
   private readonly PRIORITY_ORDER: Record<string, number> = {

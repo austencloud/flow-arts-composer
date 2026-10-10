@@ -13,7 +13,7 @@ const undoSpies = vi.hoisted(() => ({
   commitStateCoalescing: vi.fn(),
 }));
 
-vi.mock("$lib/shared/3d/undo/get-scene-undo-manager", () => ({
+vi.mock("#lib/shared/3d/undo/get-scene-undo-manager.js", () => ({
   getSceneUndoManager: () => undoSpies,
 }));
 

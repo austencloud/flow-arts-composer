@@ -17,7 +17,7 @@ import { render } from "vitest-browser-svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import PerformancePreviewLifecycleHarness from "./PerformancePreviewLifecycleHarness.svelte";
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
@@ -40,7 +40,7 @@ const cameraFake = vi.hoisted(() => {
   return { state };
 });
 
-vi.mock("$lib/shared/train/get-camera-manager", () => {
+vi.mock("#lib/shared/train/get-camera-manager.js", () => {
   const { state } = cameraFake;
 
   const manager = {

@@ -8,10 +8,10 @@
    * box the same shape the drawer gives it, so the container queries it depends
    * on resolve exactly as they do in production.
    */
-  import SendAttachmentSheet from "$lib/shared/inbox/components/messages/SendAttachmentSheet.svelte";
-  import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
-  import type { ConversationPreview } from "$lib/shared/messaging/domain/models/conversation-models";
-  import type { PendingMessageAttachment } from "$lib/shared/inbox/domain/pending-message-attachment";
+  import SendAttachmentSheet from "#lib/shared/inbox/components/messages/SendAttachmentSheet.svelte";
+  import { inboxState } from "#lib/shared/inbox/state/inbox-state.svelte.js";
+  import type { ConversationPreview } from "#lib/shared/messaging/domain/models/conversation-models.js";
+  import type { PendingMessageAttachment } from "#lib/shared/inbox/domain/pending-message-attachment.js";
 
   const NAMES = [
     "Adam Molski",

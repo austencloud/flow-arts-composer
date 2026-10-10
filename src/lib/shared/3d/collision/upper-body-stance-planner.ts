@@ -1,7 +1,7 @@
 import {
   planHugReachGeometry,
   type PerformerReachMeasurements,
-} from "$lib/shared/3d/domain/performer-reach-measurements";
+} from "#lib/shared/3d/domain/performer-reach-measurements.js";
 import {
   GRID_OFFSETS,
   PLANE_MODE_CONFIGS,

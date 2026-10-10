@@ -18,8 +18,8 @@
    */
   import { onMount } from "svelte";
   import { getCreateModuleContext } from "../../context/create-module-context";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { ExportUrlManager } from "$lib/shared/export-panel/services/export-url-manager";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { ExportUrlManager } from "#lib/shared/export-panel/services/export-url-manager.js";
 
   const { CreateModuleState, panelState } = getCreateModuleContext();
 
@@ -73,8 +73,8 @@
 
     void (async () => {
       const [{ openSequenceViewer }, { getReturnContext }] = await Promise.all([
-        import("$lib/shared/sequence-viewer/services/sequence-viewer-navigator"),
-        import("$lib/shared/coordinators/sequence-handoff.svelte"),
+        import("#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js"),
+        import("#lib/shared/coordinators/sequence-handoff.svelte.js"),
       ]);
       const { returnPath, returnLabel } = getReturnContext();
       openSequenceViewer(sequenceWithOwner, {

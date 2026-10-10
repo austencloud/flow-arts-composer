@@ -8,17 +8,17 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type {
   TraceBeat,
   TraceSample,
   TraceSegment,
-} from "$lib/features/learn/play/games/trace-paths/domain/trace-types";
+} from "#lib/features/learn/play/games/trace-paths/domain/trace-types.js";
 import {
   arcLengthResample,
   normalizeStagePoint,
   sampleSegmentPath,
-} from "$lib/features/learn/play/games/trace-paths/services/trace-path-sampler";
+} from "#lib/features/learn/play/games/trace-paths/services/trace-path-sampler.js";
 import {
   createTraceEvaluator,
   DEFAULT_TRACE_EVALUATOR_CONFIG,
@@ -26,12 +26,12 @@ import {
   normalizeStageDistance,
   segmentIntersectsCircle,
   type TraceRoundGeometry,
-} from "$lib/features/learn/play/games/trace-paths/services/trace-evaluator";
+} from "#lib/features/learn/play/games/trace-paths/services/trace-evaluator.js";
 import {
   DEFAULT_SHARED_GRID_CONFIG,
   sharedGridPreflight,
-} from "$lib/features/learn/play/games/trace-paths/services/shared-grid-preflight";
-import { scoreTraceRound } from "$lib/features/learn/play/games/trace-paths/services/score-trace-round";
+} from "#lib/features/learn/play/games/trace-paths/services/shared-grid-preflight.js";
+import { scoreTraceRound } from "#lib/features/learn/play/games/trace-paths/services/score-trace-round.js";
 
 const N = GridLocation.NORTH;
 const E = GridLocation.EAST;

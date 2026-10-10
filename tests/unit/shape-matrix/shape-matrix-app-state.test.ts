@@ -5,15 +5,15 @@ const { requestShapeMatrixTransition } = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "$lib/shared/shape-matrix/debug/shape-matrix-transition-recorder",
+  "#lib/shared/shape-matrix/debug/shape-matrix-transition-recorder.js",
   () => ({ requestShapeMatrixTransition })
 );
 
-import { buildFlowerAxis } from "$lib/shared/shape-matrix/domain/flower-signature";
-import { createShapeMatrixAppState } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+import { buildFlowerAxis } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { createShapeMatrixAppState } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 
 const LEVEL_FOUR_TURNS = [
   "fl",

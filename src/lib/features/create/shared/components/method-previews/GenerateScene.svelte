@@ -20,9 +20,9 @@
    */
   import { onDestroy, untrack } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
-  import type { GhostState } from "$lib/shared/attract/services/attract-ghost.svelte";
-  import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import { DEFAULT_ANIMATION_TIMING } from "$lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models";
+  import type { GhostState } from "#lib/shared/attract/services/attract-ghost.svelte.js";
+  import FontAwesomeIcon from "#lib/shared/foundation/ui/FontAwesomeIcon.svelte";
+  import { DEFAULT_ANIMATION_TIMING } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models.js";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
   import { cellCenter, generateLayout } from "./method-preview-compositions";

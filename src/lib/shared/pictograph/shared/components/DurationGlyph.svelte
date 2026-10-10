@@ -8,7 +8,7 @@ Positioned at bottom-center of the pictograph, between the south grid point and 
 Dark mode: Uses white text on dark backgrounds, dark text on light backgrounds.
 -->
 <script lang="ts">
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   let {
     duration = 1,

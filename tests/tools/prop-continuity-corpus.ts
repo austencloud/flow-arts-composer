@@ -17,12 +17,12 @@
  *    harness, and `fx-falg` is the only eight-step sequence in the corpus.
  */
 
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { ALL_FIXTURE_LOOPS } from "$lib/shared/combination/domain/demo-fixtures";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { ALL_FIXTURE_LOOPS } from "#lib/shared/combination/domain/demo-fixtures.js";
 
 import {
   loadCsv,

@@ -1,6 +1,7 @@
 import type { RequestHandler } from "./$types";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 const HASH_RE = /^[0-9a-f]{64}$/;
@@ -31,13 +32,13 @@ export const PUT: RequestHandler = async (event) => {
     return new Response("Cross-origin uploads not allowed", { status: 403 });
   }
 
-  const { params, request, platform } = event;
+  const { params, request } = event;
   const hash = params.hash;
   if (!hash || !HASH_RE.test(hash)) {
     return new Response("Invalid hash", { status: 400 });
   }
 
-  const bucket = platform?.env?.QR_VIDEOS;
+  const bucket = workerEnv()?.QR_VIDEOS;
   if (!bucket) {
     return new Response("R2 not configured", { status: 503 });
   }

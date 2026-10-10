@@ -14,11 +14,11 @@ import {
   type PlacementWorkshopCheckpoint,
 } from "./hand-placement-lesson";
 import type { PlacementType } from "../../../domain/constants/placement-quiz-data";
-import type { PropPlacementChange } from "$lib/shared/pictograph/grid/domain/prop-placement";
+import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
 import type {
   GridMode,
   GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 // Reading time for the successful placement, not an animation duration.
 export const PLACEMENT_SUCCESS_HOLD_MS = 1200;

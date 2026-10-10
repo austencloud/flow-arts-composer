@@ -4,7 +4,7 @@
  * Types for the proactive offline caching system.
  */
 
-import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
+import type { PublicSequenceIndex } from "#lib/shared/foundation/domain/models/public-sequence-index.js";
 
 /** A cached gallery sequence entry in Dexie */
 export interface GalleryCacheEntry {

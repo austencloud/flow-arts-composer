@@ -12,9 +12,9 @@
    */
   import { onDestroy } from "svelte";
   import type { EscapeTarget } from "../services/escape-target";
-  import { captureEvent } from "$lib/shared/analytics/services/posthog";
+  import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
   import { stripEscapeTestParams } from "../config/app-availability";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   /** Immutable attempt context, so every escape event carries the same segmenting
    *  properties (platform / ios_major / app_launched) instead of just `method`. */

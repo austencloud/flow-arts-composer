@@ -1,26 +1,26 @@
 import {
   applyBoxMode,
   applyVariationDescriptor,
-} from "$lib/features/choreo-card/services/deck-variation";
-import { processReversals } from "$lib/shared/create/services/reversal-detector";
+} from "#lib/features/choreo-card/services/deck-variation.js";
+import { processReversals } from "#lib/shared/create/services/reversal-detector.js";
 import {
   flipSequence,
   mirrorSequence,
   rotateSequence,
   swapHands,
-} from "$lib/shared/create/services/sequence-transformer";
+} from "#lib/shared/create/services/sequence-transformer.js";
 import {
   updateSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import {
   MODE_FAMILY_ID,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 export interface ModeLoop {
   readonly id: string;
@@ -131,7 +131,7 @@ export function selectModeLoops(
 
 export async function loadModeLoops(code: VtgMode): Promise<ModeLoop[]> {
   const { loadCanonicalTnDBaseSequences } =
-    await import("$lib/features/browse/gallery-home/canonical-tnd-pool");
+    await import("#lib/features/browse/gallery-home/canonical-tnd-pool.js");
   return selectModeLoops(code, await loadCanonicalTnDBaseSequences());
 }
 

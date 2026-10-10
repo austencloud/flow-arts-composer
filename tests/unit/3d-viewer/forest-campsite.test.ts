@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createDefaultForestFireflyConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config";
+import { createDefaultForestFireflyConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config.js";
 
 interface CampsiteTent {
   id: string;

@@ -6,7 +6,7 @@
   it). The mode is owned + persisted by fuse-state; this bar just drives it.
 -->
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseMode } from "../state/fuse-state.svelte";
 
