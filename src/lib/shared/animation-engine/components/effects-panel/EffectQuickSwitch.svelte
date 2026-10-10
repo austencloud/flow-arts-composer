@@ -141,9 +141,7 @@
     const target = event.target;
     if (!(target instanceof Element) || !player?.contains(target)) return;
     if (triggerEl?.contains(target) || contentEl?.contains(target)) return;
-    if (
-      target.closest('button, a, input, [role="slider"], [role="button"]')
-    ) {
+    if (target.closest('button, a, input, [role="slider"], [role="button"]')) {
       return;
     }
     event.stopPropagation();
@@ -428,7 +426,10 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: var(--bits-popover-content-available-height, calc(100dvh - 24px));
+    max-height: var(
+      --bits-popover-content-available-height,
+      calc(100dvh - 24px)
+    );
     overflow-y: auto;
     padding: 12px;
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));

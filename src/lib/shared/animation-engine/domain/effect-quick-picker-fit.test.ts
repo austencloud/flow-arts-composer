@@ -7,7 +7,11 @@ import {
   QUICK_PICKER_STRIP_PAD,
   sidePanelHeight,
 } from "./effect-quick-picker-fit";
-import { CATALOG_GAP, CATALOG_TILE_BORDER, CATALOG_TILE_PAD } from "./effect-catalog-fit";
+import {
+  CATALOG_GAP,
+  CATALOG_TILE_BORDER,
+  CATALOG_TILE_PAD,
+} from "./effect-catalog-fit";
 
 const COUNT = 20;
 const INSET = CATALOG_TILE_PAD + CATALOG_TILE_BORDER;
@@ -63,28 +67,42 @@ describe("fitEffectQuickPicker", () => {
     expect(fit.arrangement).toBe("side");
     if (fit.arrangement !== "side") return;
     expect(fit.catalog).toBeNull();
-    expect(sidePanelHeight(null, COUNT)).toBeLessThanOrEqual(412 - 2 * QUICK_PICKER_EDGE);
+    expect(sidePanelHeight(null, COUNT)).toBeLessThanOrEqual(
+      412 - 2 * QUICK_PICKER_EDGE
+    );
   });
 
   it.each([
     ["phone", 375, 343],
     ["tablet", 820, 770],
-  ])("lays one scrolling row over a %s player that fills the width", (_, viewportWidth, playerWidth) => {
-    const fit = fitEffectQuickPicker({
-      viewport: { width: viewportWidth, height: 1000 },
-      player: { left: (viewportWidth - playerWidth) / 2, top: 120, width: playerWidth, height: playerWidth + 44 },
-      count: COUNT,
-    });
-    expect(fit.arrangement).toBe("strip");
-    if (fit.arrangement !== "strip") return;
-    expect(fit.catalog.rows).toBe(1);
-    expect(fit.catalog.cols).toBe(COUNT);
-    // The last tile in view is cut part way, so the row reads as scrollable.
-    const room = playerWidth - 2 * QUICK_PICKER_STRIP_PAD - QUICK_PICKER_OFF_WIDTH - CATALOG_GAP;
-    const inView = room / (fit.catalog.portrait + 2 * INSET + CATALOG_GAP);
-    const peek = inView - Math.floor(inView);
-    expect(peek).toBeGreaterThan(0.25);
-    expect(peek).toBeLessThan(0.75);
-    expect(fit.trackWidth).toBeGreaterThan(room);
-  });
+  ])(
+    "lays one scrolling row over a %s player that fills the width",
+    (_, viewportWidth, playerWidth) => {
+      const fit = fitEffectQuickPicker({
+        viewport: { width: viewportWidth, height: 1000 },
+        player: {
+          left: (viewportWidth - playerWidth) / 2,
+          top: 120,
+          width: playerWidth,
+          height: playerWidth + 44,
+        },
+        count: COUNT,
+      });
+      expect(fit.arrangement).toBe("strip");
+      if (fit.arrangement !== "strip") return;
+      expect(fit.catalog.rows).toBe(1);
+      expect(fit.catalog.cols).toBe(COUNT);
+      // The last tile in view is cut part way, so the row reads as scrollable.
+      const room =
+        playerWidth -
+        2 * QUICK_PICKER_STRIP_PAD -
+        QUICK_PICKER_OFF_WIDTH -
+        CATALOG_GAP;
+      const inView = room / (fit.catalog.portrait + 2 * INSET + CATALOG_GAP);
+      const peek = inView - Math.floor(inView);
+      expect(peek).toBeGreaterThan(0.25);
+      expect(peek).toBeLessThan(0.75);
+      expect(fit.trackWidth).toBeGreaterThan(room);
+    }
+  );
 });

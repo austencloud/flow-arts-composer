@@ -33,8 +33,11 @@ export function effectCatalogLooks(
       unknown
     >;
     const current =
-      pickedPresetId(group, config, effectsConfigState.activePresets[meta.id]) ??
-      matchPresetId(group, config);
+      pickedPresetId(
+        group,
+        config,
+        effectsConfigState.activePresets[meta.id]
+      ) ?? matchPresetId(group, config);
     const preset: EffectPreset = group.presets.find(
       (candidate) => candidate.id === current
     ) ??
