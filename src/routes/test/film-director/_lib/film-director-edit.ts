@@ -11,6 +11,7 @@
  */
 
 import type { PropBuild } from "@austencloud/scene-3d";
+import type { GridJoin } from "@tka/tka-types";
 
 import type { DirectorCameraMove } from "./camera-language";
 import type { CameraChannelId } from "./director-camera-channels";
@@ -44,13 +45,16 @@ export type DirectivePerformerField =
 export type PerformerEditableField =
   | DirectivePerformerField
   | "sequence"
-  | "propBuild";
+  | "propBuild"
+  | "gridJoin";
 
 export type PerformerEditValue =
   | string
   | number
   | null
   | DirectorPerformerSequence
+  | GridJoin
+  | undefined
   // The scene's build type. A part the director's schema does not accept
   // still rejects when the patched document is parsed.
   | Partial<PropBuild>;
@@ -199,7 +203,10 @@ export function applyPerformerEdit(
 
   for (const targetIndex of targetIndexes) {
     const slot = layout.slots[targetIndex]!;
-    if (edit.value === null && edit.field !== "staffLengthCm") {
+    if (edit.field === "gridJoin") {
+      if (edit.value === undefined) delete slot.gridJoin;
+      else slot.gridJoin = edit.value as GridJoin | null;
+    } else if (edit.value === null && edit.field !== "staffLengthCm") {
       delete slot[edit.field];
     } else if (edit.field === "propBuild") {
       // A build edit names only the parts one control changed. Merged over
