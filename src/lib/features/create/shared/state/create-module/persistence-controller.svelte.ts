@@ -9,13 +9,13 @@
  * Each tab (construct, generator, assembler) has its own independent sequence state.
  */
 
-import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
+import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
 import type { SequenceState } from "../sequence-state-orchestrator.svelte";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import { deepLinker } from "$lib/shared/navigation/services/deep-linker";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import { deepLinker } from "#lib/shared/navigation/services/deep-linker.js";
 import type { OptionHistoryManager } from "./option-history-manager.svelte";
 
-import { getDeepLinkSequenceHandler } from "$lib/features/create/shared/get-deep-link-sequence-handler";
+import { getDeepLinkSequenceHandler } from "#lib/features/create/shared/get-deep-link-sequence-handler.js";
 
 type ConstructTabState =
   | {

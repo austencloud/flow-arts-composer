@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   createIndependentTunnelPerformer,
   createTunnelComposition,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
 import {
   parseTunnelCreatorDraft,
   TUNNEL_CREATOR_DRAFT_VERSION,
   type TunnelCreatorDraft,
 } from "./tunnel-creator-draft";
-import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import type { TunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import type { TunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 
 const sequence = {
   id: "sequence-1",

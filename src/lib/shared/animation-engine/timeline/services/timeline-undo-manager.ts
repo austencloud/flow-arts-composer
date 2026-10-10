@@ -9,8 +9,8 @@ import type {
   TimelineUndoOperationType,
   TimelineUndoEntry,
   TimelineProjectSnapshot,
-} from "$lib/shared/animation-engine/timeline/domain/types";
-import type { TimelineProject } from "$lib/shared/animation-engine/domain/timeline-types";
+} from "#lib/shared/animation-engine/timeline/domain/types.js";
+import type { TimelineProject } from "#lib/shared/animation-engine/domain/timeline-types.js";
 
 const STORAGE_KEY_UNDO = "timeline-undo-history";
 const STORAGE_KEY_REDO = "timeline-redo-history";

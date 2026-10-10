@@ -1,10 +1,10 @@
 <script lang="ts">
-  import PictographRenderer from "$lib/shared/pictograph/shared/components/PictographRenderer.svelte";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { describePictograph } from "$lib/shared/pictograph/shared/domain/utils/pictograph-description";
+  import PictographRenderer from "#lib/shared/pictograph/shared/components/PictographRenderer.svelte";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { PreparedPictographData } from "#lib/shared/pictograph/shared/domain/models/prepared-pictograph-data.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { describePictograph } from "#lib/shared/pictograph/shared/domain/utils/pictograph-description.js";
   import { getGuidePrintMode } from "../_data/guide-data-context";
 
   let {

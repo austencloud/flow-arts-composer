@@ -11,8 +11,8 @@ import {
   where,
   type DocumentData,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { countryCentroid } from "$lib/features/choreo-card/components/scan-activity/country-centroids";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { countryCentroid } from "#lib/features/choreo-card/components/scan-activity/country-centroids.js";
 
 export interface JourneyRow {
   lat?: number | null;

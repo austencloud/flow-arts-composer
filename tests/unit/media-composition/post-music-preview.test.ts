@@ -9,7 +9,7 @@
 import { flushSync, unmount } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mountMusicPreview } from "./music-preview-harness.svelte";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
 
 const URL = "/api/dev/feature-videos/promo/media/music/derail.wav";
 const OTHER_URL = "/api/dev/feature-videos/promo/media/music/thump.wav";

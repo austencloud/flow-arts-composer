@@ -5,11 +5,11 @@
   When no override is set, all buttons are deselected and a hint shows the global setting.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { handLabel, pathShapeLabel } from "./control-labels";
-  import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   interface Props {
     leftPathShape: PathShapeValue | undefined;

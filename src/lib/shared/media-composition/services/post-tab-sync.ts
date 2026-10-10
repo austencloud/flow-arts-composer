@@ -1,4 +1,4 @@
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
 
 /**
  * Keeps every open tab of one post on the same copy. A tab that saves tells

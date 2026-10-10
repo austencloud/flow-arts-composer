@@ -11,23 +11,23 @@
    * siblings of the main tile link, never nested inside it — nested
    * interactive elements are invalid HTML and break keyboard/AT navigation.
    */
-  import { tilt } from "$lib/actions/tilt";
-  import { cursorGlow } from "$lib/actions/cursor-glow";
-  import { pressSpring } from "$lib/actions/press-spring";
-  import { magnetic } from "$lib/actions/magnetic";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import { tilt } from "#lib/actions/tilt.js";
+  import { cursorGlow } from "#lib/actions/cursor-glow.js";
+  import { pressSpring } from "#lib/actions/press-spring.js";
+  import { magnetic } from "#lib/actions/magnetic.js";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import {
     hrefSlug,
     isProductionTileId,
     type LaunchpadTileDef,
   } from "./launchpad-tiles";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import demoJson from "$lib/shared/landing/data/demo-sequence.json";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import demoJson from "#lib/shared/landing/data/demo-sequence.json";
   import { siteCopy } from "../../site-copy";
   import {
     trackLaunchpadClick,
     type LaunchpadTileId,
-  } from "$lib/shared/analytics/landing-events";
+  } from "#lib/shared/analytics/landing-events.js";
 
   let {
     tile,
@@ -195,7 +195,7 @@
             <span class="mandala-box">
               <LazyMount
                 loader={() =>
-                  import("$lib/shared/mandala/components/SequenceMandala.svelte")}
+                  import("#lib/shared/mandala/components/SequenceMandala.svelte")}
                 {active}
                 prefetch={visible}
                 onStatusChange={handleMediaStatus}
@@ -228,7 +228,7 @@
             <span class="pictograph-box">
               <LazyMount
                 loader={() =>
-                  import("$lib/shared/pictograph/shared/components/PictographContainer.svelte")}
+                  import("#lib/shared/pictograph/shared/components/PictographContainer.svelte")}
                 {active}
                 prefetch={visible}
                 onStatusChange={handleMediaStatus}

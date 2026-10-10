@@ -6,8 +6,8 @@
   Only rendered when playbackMode === "step".
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { StepPlaybackStepSize } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { StepPlaybackStepSize } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 
   let {
     stepPlaybackStepSize = 1,

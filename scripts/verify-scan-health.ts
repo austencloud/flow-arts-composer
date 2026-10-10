@@ -33,13 +33,13 @@
  *   npx tsx --tsconfig scripts/tsconfig.json scripts/verify-scan-health.ts
  *   npm run scan:health   (same thing, wired in package.json)
  *
- * `$lib` imports below only resolve under the `scripts/tsconfig.json` paths
+ * `#lib` imports below only resolve under the `scripts/tsconfig.json` paths
  * config (same trick scripts/build-mandala-index.ts uses) — plain `node` or
  * `tsx` without --tsconfig will fail to resolve them.
  */
 
-import { fetchPublicShortCodeRecord } from "$lib/shared/qr/services/public-short-code-record-reader";
-import { prepareScanViewerPayload } from "$lib/server/scan/scan-viewer-payload-preparer";
+import { fetchPublicShortCodeRecord } from "#lib/shared/qr/services/public-short-code-record-reader.js";
+import { prepareScanViewerPayload } from "#lib/server/scan/scan-viewer-payload-preparer.js";
 import {
   mergeCodesToCheck,
   pickOneCodePerDeck,

@@ -4,7 +4,7 @@
  * workspace itself, the grid panes it covers (they go inert under it) and the
  * shell (it rebalances the split for it).
  */
-import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
+import type { PillId } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
 import type { ShapeMatrixAnimationState } from "./shape-matrix-animation-state.svelte";
 import type { ShapeMatrixAppState } from "./shape-matrix-app-state.svelte";
 

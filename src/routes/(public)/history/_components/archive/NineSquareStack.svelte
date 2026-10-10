@@ -5,7 +5,7 @@
   from the detail view's SourceVideoCard strip.
 -->
 <script lang="ts">
-	import type { CatalogVideo } from "$lib/shared/notation/notation-catalog";
+	import type { CatalogVideo } from "#lib/shared/notation/notation-catalog.js";
 
 	let { videos = [], active = false }: { videos?: CatalogVideo[]; active?: boolean } = $props();
 

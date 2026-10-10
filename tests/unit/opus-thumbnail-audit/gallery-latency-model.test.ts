@@ -19,18 +19,18 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   deriveKey,
   type ThumbnailRenderInput,
-} from "$lib/shared/browse/services/thumbnail-key-deriver";
+} from "#lib/shared/browse/services/thumbnail-key-deriver.js";
 
-vi.mock("$lib/shared/analytics/thumbnail-analytics", () => ({
+vi.mock("#lib/shared/analytics/thumbnail-analytics.js", () => ({
   captureThumbnailRenderFailure: vi.fn(),
 }));
 
-vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => ({
+vi.mock("#lib/shared/browse/services/cloud-thumbnail-cache.js", () => ({
   getCachedUrl: () => null,
   getUrl: vi.fn(async () => null),
   upload: vi.fn(async () => null),
@@ -70,9 +70,9 @@ async function createHarness() {
     { ThumbnailRenderQueue },
     { ThumbnailMetricsCollector },
   ] = await Promise.all([
-    import("$lib/shared/browse/services/thumbnail-render-orchestrator"),
-    import("$lib/shared/browse/services/thumbnail-render-queue"),
-    import("$lib/shared/browse/services/thumbnail-metrics-collector"),
+    import("#lib/shared/browse/services/thumbnail-render-orchestrator.js"),
+    import("#lib/shared/browse/services/thumbnail-render-queue.js"),
+    import("#lib/shared/browse/services/thumbnail-metrics-collector.js"),
   ]);
 
   let peakConcurrent = 0;

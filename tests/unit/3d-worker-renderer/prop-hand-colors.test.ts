@@ -6,11 +6,11 @@ import {
 } from "@austencloud/scene-3d/worker";
 import { Color, Group, Scene, type Material, type Mesh, type Object3D } from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { WorkerPerformerSnapshot } from "$lib/shared/3d/worker-renderer/domain/worker-renderer-protocol";
+import type { WorkerPerformerSnapshot } from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
 import {
   WorkerPerformerStage,
   createWorkerPerformerProp,
-} from "$lib/shared/3d/worker-renderer/worlds/worker-performer";
+} from "#lib/shared/3d/worker-renderer/worlds/worker-performer.js";
 
 function snapshot(
   handColors?: WorkerPerformerSnapshot["handColors"]

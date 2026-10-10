@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Object3D, PlaneGeometry, ShaderMaterial, Texture } from "three";
-import { ParticleInstancePool3D } from "$lib/shared/3d/effects/instancing/particle-instance-pool-3d";
-import { setLinearRgbFromHex } from "$lib/shared/3d/effects/instancing/particle-color";
+import { ParticleInstancePool3D } from "#lib/shared/3d/effects/instancing/particle-instance-pool-3d.js";
+import { setLinearRgbFromHex } from "#lib/shared/3d/effects/instancing/particle-color.js";
 
 describe("ParticleInstancePool3D", () => {
   it("packs visible particles into stable instance attributes", () => {

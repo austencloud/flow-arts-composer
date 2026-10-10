@@ -1,4 +1,4 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type {
   PostFraming,
   PostItem,
@@ -6,11 +6,11 @@ import type {
   PostKeyframeChannel,
   PostMovesMode,
   PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import type {
   PostChannelValue,
   PostEasingPresetId,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import type { PostToolId } from "./post-editor-tools";
 
 /** The names and icons every part of the editor shows for an item kind. */

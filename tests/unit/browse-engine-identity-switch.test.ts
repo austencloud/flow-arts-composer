@@ -1,6 +1,6 @@
 import { tick } from "svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 interface PendingLoad {
   readonly userId: string | null;
@@ -12,21 +12,24 @@ const mocks = vi.hoisted(() => ({
   getAllSequences: vi.fn<() => Promise<SequenceData[]>>(),
 }));
 
-vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => ({
-  getAllSequences: mocks.getAllSequences,
-}));
+vi.mock(
+  "#lib/shared/persistence/services/dexie-persistence-service.js",
+  () => ({
+    getAllSequences: mocks.getAllSequences,
+  })
+);
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", async () => {
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", async () => {
   const { browseEngineAuthTestState } =
     await import("./browse-engine-auth-test-state.svelte");
   return { authState: browseEngineAuthTestState };
 });
 
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   isPreviewReadOnly: () => false,
 }));
 
-vi.mock("$lib/shared/browse/get-browse-loader", () => ({
+vi.mock("#lib/shared/browse/get-browse-loader.js", () => ({
   getBrowseLoader: () => ({
     loadSequenceMetadata: vi.fn(async () => []),
     refreshFromFirestore: vi.fn(async () => []),
@@ -34,7 +37,7 @@ vi.mock("$lib/shared/browse/get-browse-loader", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/library/get-library-repository", async () => {
+vi.mock("#lib/shared/library/get-library-repository.js", async () => {
   const { browseEngineAuthTestState } =
     await import("./browse-engine-auth-test-state.svelte");
   return {
@@ -50,29 +53,29 @@ vi.mock("$lib/shared/library/get-library-repository", async () => {
   };
 });
 
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: {
     settings: { gridZoomByBucket: {} },
     updateSetting: vi.fn(),
   },
 }));
 
-vi.mock("$lib/shared/library/library-events", () => ({
+vi.mock("#lib/shared/library/library-events.js", () => ({
   onLibraryMutated: () => () => {},
   onLibrarySequenceAdded: () => () => {},
 }));
 
-vi.mock("$lib/shared/library/services/collection-manager", () => ({
+vi.mock("#lib/shared/library/services/collection-manager.js", () => ({
   toggleFavorite: vi.fn(),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
 import { browseEngineAuthTestState } from "./browse-engine-auth-test-state.svelte";
 import { createBrowseEngineForTest } from "./browse-engine-test-helpers.svelte";
-import { recordSavedSequenceId } from "$lib/shared/library/services/saved-sequence-ledger";
+import { recordSavedSequenceId } from "#lib/shared/library/services/saved-sequence-ledger.js";
 
 function sequence(id: string): SequenceData {
   return {

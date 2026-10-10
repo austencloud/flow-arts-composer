@@ -15,15 +15,15 @@ Features:
   import { Collapsible, Popover } from "bits-ui";
   import type { EmblaCarouselType } from "embla-carousel";
   import type { Snippet } from "svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import HorizontalSwipeContainer from "$lib/shared/foundation/ui/HorizontalSwipeContainer.svelte";
-  import { runAtBackgroundPriority } from "$lib/shared/foundation/utils/background-scheduling";
-  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import HorizontalSwipeContainer from "#lib/shared/foundation/ui/HorizontalSwipeContainer.svelte";
+  import { runAtBackgroundPriority } from "#lib/shared/foundation/utils/background-scheduling.js";
+  import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import LetterTypeGuide from "../../components/LetterTypeGuide.svelte";
   import OptionPickerIconButton from "../../components/OptionPickerIconButton.svelte";
   import type { OrganizedSection } from "../../domain/option-picker-types";
@@ -629,7 +629,6 @@ Features:
     );
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
     border-radius: var(--radius-lg, 12px);
-    box-shadow: 0 4px 16px var(--theme-shadow, rgba(0, 0, 0, 0.26));
     transition:
       border-radius var(--duration-normal, 200ms) var(--ease-out, ease-out),
       border-color var(--duration-normal, 200ms) var(--ease-out, ease-out);
@@ -675,10 +674,6 @@ Features:
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-bottom: 0;
     border-radius: var(--radius-xl, 16px) var(--radius-xl, 16px) 0 0;
-    box-shadow:
-      0 -18px 48px var(--theme-shadow, rgba(0, 0, 0, 0.48)),
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-accent, #22b8db) 24%, transparent);
     transform-origin: var(
       --bits-popover-content-transform-origin,
       bottom center
@@ -710,7 +705,6 @@ Features:
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-top: 0;
     border-radius: 0 0 var(--radius-xl, 16px) var(--radius-xl, 16px);
-    box-shadow: 0 18px 48px var(--theme-shadow, rgba(0, 0, 0, 0.48));
     opacity: 1;
     transition:
       height var(--duration-emphasis, 280ms) var(--ease-out, ease-out),

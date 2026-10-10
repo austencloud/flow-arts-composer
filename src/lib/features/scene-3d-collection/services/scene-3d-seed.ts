@@ -9,7 +9,7 @@ import {
 import type {
   Viewer3DStateSeed,
   ViewerNavMode,
-} from "$lib/shared/3d/state/viewer-3d-state.svelte";
+} from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 
 /**
  * Build a self-contained construction seed from a saved 3D scene.

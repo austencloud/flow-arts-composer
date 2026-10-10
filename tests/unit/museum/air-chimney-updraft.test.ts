@@ -14,7 +14,7 @@
  *  4. A visitor who never presses jump gets up AND back down.
  */
 import { describe, it, expect } from "vitest";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 import {
   buildAirChimneyLayout,
   createAirChimneyTerrain,
@@ -24,8 +24,8 @@ import {
   UPDRAFT_CEILING_PLAYER_Y,
   UPDRAFT_SPEED,
   SINK_SPEED,
-} from "$lib/features/museum/data/air-chimney-layout";
-import { STANDING_Y } from "$lib/features/museum/services/museum-physics-provider";
+} from "#lib/features/museum/data/air-chimney-layout.js";
+import { STANDING_Y } from "#lib/features/museum/services/museum-physics-provider.js";
 
 const plan = buildVulcanCaveFloorPlan();
 const grid = plan.grid;

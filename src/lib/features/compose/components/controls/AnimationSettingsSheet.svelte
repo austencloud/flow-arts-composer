@@ -5,14 +5,14 @@
   Contains the AnimationSettingsContent component.
 -->
 <script lang="ts">
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import AnimationSettingsContent from "./AnimationSettingsContent.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type {
     PlaybackMode,
     StepPlaybackStepSize,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     isOpen = $bindable(false),

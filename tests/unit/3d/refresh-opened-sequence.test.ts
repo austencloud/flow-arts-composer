@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import demo from "$lib/shared/landing/data/demo-sequence.json";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import demo from "#lib/shared/landing/data/demo-sequence.json";
 import {
   isOpenedSequence,
   refreshOpenedPerformers,
   sequence3DContentSignature,
   type SequenceRefreshPerformer,
-} from "$lib/shared/3d/state/refresh-opened-sequence";
+} from "#lib/shared/3d/state/refresh-opened-sequence.js";
 
 const previous = demo as unknown as SequenceData;
 const joined = {

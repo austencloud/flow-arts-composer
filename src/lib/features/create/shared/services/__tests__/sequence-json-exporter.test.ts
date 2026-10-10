@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   toJsonString,
   toAsciiSafeJsonString,

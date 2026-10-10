@@ -5,7 +5,7 @@ import {
   createCollaborativeVideo,
   getCreatorDisplayName,
   type CollaborativeVideo,
-} from "$lib/shared/video-collaboration/domain/collaborative-video";
+} from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 
 const CREATOR = "creator-uid";
 const STRANGER = "stranger-uid";

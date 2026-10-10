@@ -4,7 +4,7 @@
   outside dev like every /test/* page.
 -->
 <script lang="ts">
-  import HandTunnelToy from "$lib/features/toys/tabs/hand-tunnel/HandTunnelToy.svelte";
+  import HandTunnelToy from "#lib/features/toys/tabs/hand-tunnel/HandTunnelToy.svelte";
 </script>
 
 <div class="page">

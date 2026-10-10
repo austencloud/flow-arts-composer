@@ -9,28 +9,28 @@ import {
   movesAnimationRole,
   staffEffectRole,
   textRole,
-} from "$lib/shared/media-composition/domain/post-project-compiler";
-import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import { evaluatePresetFrame, fadeBlackOpacityAt, resolvePresetTimePoint } from "$lib/shared/media-composition/services/frame-evaluator";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { MediaCompositionPresetSchema } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import { evaluatePresetFrame, fadeBlackOpacityAt, resolvePresetTimePoint } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   clampBox,
   PostProjectSchema,
   wrapDegrees,
   type PostEasing,
-} from "$lib/shared/media-composition/domain/post-project";
-import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   EASING_PRESETS,
   boxAt,
   framingAt,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   ANIMATION_OVERLAY_ROLE,
   stripRole,
   takeRole,
-} from "$lib/shared/media-composition/domain/post-plan-compiler";
-import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "#lib/shared/media-composition/domain/post-plan-compiler.js";
+import { POST_STUDIO_ROLE } from "#lib/shared/media-composition/domain/post-studio-presets.js";
 import { NOW, card, overlay, project, take, text, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW };

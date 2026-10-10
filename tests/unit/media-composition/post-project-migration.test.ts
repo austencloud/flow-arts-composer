@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
+import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
 import {
   POST_BOX,
   PostProjectSchema,
   findItem,
   itemEnd,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   DEFAULT_FRAMING,
   POST_ACT,
   PostPlanSchema,
   addTakeToPlan,
   createDefaultPostPlan,
-} from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/post-plan.js";
 import { NOW, spans, take } from "./post-project-fixtures";
 
 describe("migratePostPlan", () => {

@@ -1,15 +1,15 @@
 import { z } from "zod";
 import type { GridJoin } from "@tka/tka-types";
 import { isGridJoin } from "@tka/render-core";
-import { StepDataSchema } from "$lib/shared/foundation/domain/schemas";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { StepDataSchema } from "#lib/shared/foundation/domain/schemas.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { CameraStateSnapshot } from "@austencloud/scene-3d";
 import {
   normalizeSceneEnvironmentId,
   type SceneEnvironmentId,
-} from "$lib/shared/3d/environments/domain/scene-environment";
-import { normalizeLegacyScene3DSnapshot } from "$lib/shared/3d/state/legacy-viewer-3d-snapshots";
-import type { CameraKeyframe } from "$lib/shared/video-export/domain/camera-keyframe";
+} from "#lib/shared/3d/environments/domain/scene-environment.js";
+import { normalizeLegacyScene3DSnapshot } from "#lib/shared/3d/state/legacy-viewer-3d-snapshots.js";
+import type { CameraKeyframe } from "#lib/shared/video-export/domain/camera-keyframe.js";
 
 /**
  * A reproducible snapshot of the 3D viewer configuration. Aggregates the four

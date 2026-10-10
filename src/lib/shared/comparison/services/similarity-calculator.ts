@@ -9,11 +9,11 @@
  * - Common subsequence detection
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   areWordUnitsCircularEquivalent,
   stripWordNotation,
-} from "$lib/shared/foundation/utils/word-notation";
+} from "#lib/shared/foundation/utils/word-notation.js";
 import type {
   SimilarityReport,
   CommonSubsequence,
@@ -23,8 +23,8 @@ import type {
 } from "./types";
 import type { StepSignatureGenerator } from "./step-signature-generator";
 import type { SequenceAligner } from "./sequence-aligner";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 const DEFAULT_OPTIONS: Required<SimilarityOptions> = {
   wordWeight: 0.2,

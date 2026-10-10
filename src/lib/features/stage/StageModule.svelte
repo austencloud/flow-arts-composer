@@ -2,40 +2,40 @@
   import { onDestroy, tick, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
 
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
-  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
+  import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
   import {
     createInertStageHandlers,
     createStageShortcuts,
-  } from "$lib/shared/keyboard/registration/register-stage-shortcuts";
-  import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
-  import type { PanelDefinition } from "$lib/shared/panels/PanelGroup.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import SceneChromeButton from "$lib/shared/3d/components/controls/SceneChromeButton.svelte";
-  import Viewer3DFullscreen from "$lib/shared/3d/components/Viewer3DFullscreen.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { createFullscreenController } from "$lib/shared/fullscreen/state/fullscreen-controller.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  } from "#lib/shared/keyboard/registration/register-stage-shortcuts.js";
+  import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
+  import type { PanelDefinition } from "#lib/shared/panels/PanelGroup.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import SceneChromeButton from "#lib/shared/3d/components/controls/SceneChromeButton.svelte";
+  import Viewer3DFullscreen from "#lib/shared/3d/components/Viewer3DFullscreen.svelte";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { createFullscreenController } from "#lib/shared/fullscreen/state/fullscreen-controller.svelte.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import {
     SceneEnvironmentId,
     sceneEnvironmentIdForBackground,
-  } from "$lib/shared/3d/environments/domain/scene-environment";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { FILM_DIRECTOR_ROUTE } from "$lib/features/film-director/domain/film-director-link";
-  import { consumeSceneStudioHandoff } from "$lib/features/scene-3d-collection/services/open-3d-scene";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  } from "#lib/shared/3d/environments/domain/scene-environment.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { FILM_DIRECTOR_ROUTE } from "#lib/features/film-director/domain/film-director-link.js";
+  import { consumeSceneStudioHandoff } from "#lib/features/scene-3d-collection/services/open-3d-scene.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
     flyFade,
     growFade,
     motionDuration,
-  } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { FormationPresetId } from "./domain/stage-types";
   import type { TikaDirectorConversationMessage } from "./domain/tika-director";
   import { describeCastForDirectorRevision } from "./domain/tika-director-revision";
@@ -76,8 +76,8 @@
     resolveDirectorSequenceAssignments,
     type DirectorSequenceAssignment,
   } from "./domain/tika-director-sequences";
-  import { listLibrarySequences } from "$lib/shared/browse/services/library-sequence-list";
-  import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
+  import { listLibrarySequences } from "#lib/shared/browse/services/library-sequence-list.js";
+  import { hydrateSequence } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
 
   type SequenceLoadState = "loading" | "ready" | "error";
   type TimelineDisclosure = "hidden" | "dock" | "editor";

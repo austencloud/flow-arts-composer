@@ -1,4 +1,4 @@
-import { syncTriangleGripToScene } from "$lib/shared/3d/components/controls/scene-prop-picker-grip-sync.svelte";
+import { syncTriangleGripToScene } from "#lib/shared/3d/components/controls/scene-prop-picker-grip-sync.svelte.js";
 
 /**
  * Mounts the real `syncTriangleGripToScene` production effect inside

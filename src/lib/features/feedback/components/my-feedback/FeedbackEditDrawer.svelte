@@ -1,15 +1,15 @@
 <!-- FeedbackEditDrawer - Drawer for editing user's own feedback -->
 <script lang="ts">
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
   import type {
     FeedbackItem,
     FeedbackType,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { TYPE_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { TYPE_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     feedbackStatusLabel,
     feedbackTypeLabel,

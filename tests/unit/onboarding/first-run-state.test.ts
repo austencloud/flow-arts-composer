@@ -10,7 +10,7 @@ const h = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({ name: "firestore" })),
 }));
 
@@ -21,21 +21,21 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: vi.fn(() => "server-time"),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: h.authState,
 }));
 
-vi.mock("$lib/shared/analytics/services/onboarding-events", () => ({
+vi.mock("#lib/shared/analytics/services/onboarding-events.js", () => ({
   logOnboardingFirstRunCompleted: vi.fn(),
 }));
 
 type FirstRunState =
-  typeof import("$lib/shared/onboarding/state/first-run-state.svelte").firstRunState;
+  typeof import("#lib/shared/onboarding/state/first-run-state.svelte.js").firstRunState;
 
 async function freshState(): Promise<FirstRunState> {
   vi.resetModules();
   const mod = await import(
-    "$lib/shared/onboarding/state/first-run-state.svelte"
+    "#lib/shared/onboarding/state/first-run-state.svelte.js"
   );
   return mod.firstRunState;
 }

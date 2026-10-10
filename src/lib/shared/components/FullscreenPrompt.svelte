@@ -10,12 +10,12 @@ This creates a better UX than height-based thresholds by directly detecting
 the actual fullscreen state rather than inferring from viewport size.
 -->
 <script lang="ts">
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { getMobileFullscreenManager } from "$lib/shared/mobile/get-mobile-fullscreen-manager";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
-  import type { MobileFullscreenManager } from "$lib/shared/mobile/services/mobile-fullscreen-manager";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { getMobileFullscreenManager } from "#lib/shared/mobile/get-mobile-fullscreen-manager.js";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
+  import type { MobileFullscreenManager } from "#lib/shared/mobile/services/mobile-fullscreen-manager.js";
   import { onMount } from "svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let showPrompt = $state(false);
   let isEmergencyMode = $state(false); // Track if we're in emergency mode

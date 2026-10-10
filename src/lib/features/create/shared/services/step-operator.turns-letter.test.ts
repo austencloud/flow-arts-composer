@@ -1,26 +1,29 @@
 import { describe, it, expect, vi } from "vitest";
 import { StepOperator } from "./step-operator";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { ICreateModuleState } from "../types/create-module-types";
-import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
+import type { IMotionQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
 
 // Keep orientation + reversal + propagation inert so the test exercises only
 // the turns edit + the new letter-reconcile wiring.
-vi.mock("$lib/shared/pictograph/prop/services/orientation-calculator", () => ({
-  calculateEndOrientation: () => "in",
-}));
-vi.mock("$lib/shared/create/services/reversal-detector", () => ({
+vi.mock(
+  "#lib/shared/pictograph/prop/services/orientation-calculator.js",
+  () => ({
+    calculateEndOrientation: () => "in",
+  })
+);
+vi.mock("#lib/shared/create/services/reversal-detector.js", () => ({
   reversalDetector: { processReversals: (seq: unknown) => seq },
 }));
 vi.mock(
-  "$lib/features/create/shared/services/step-operations/orientation-handler",
+  "#lib/features/create/shared/services/step-operations/orientation-handler.js",
   () => ({
     calculatePropagatedSteps: (
       _stepNum: number,

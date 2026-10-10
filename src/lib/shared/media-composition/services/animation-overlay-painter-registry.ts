@@ -1,4 +1,4 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { PostStudioLayerPainter } from "./post-studio-layer-painter";
 
 /**
@@ -44,7 +44,7 @@ export async function loadAnimationOverlayPainter(
   sequence: SequenceData
 ): Promise<PostStudioLayerPainter | null> {
   if (!factory) {
-    await import("$lib/shared/composition-root/deferred-registrations");
+    await import("#lib/shared/composition-root/deferred-registrations.js");
   }
   return createAnimationOverlayPainter(sequence);
 }

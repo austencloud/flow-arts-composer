@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-import { EFFECT_ACTIVATION_READINESS } from "$lib/shared/3d/effects/scene-effects/effect-activation-readiness";
+import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+import { EFFECT_ACTIVATION_READINESS } from "#lib/shared/3d/effects/scene-effects/effect-activation-readiness.js";
 
 describe("instant 3D effect activation", () => {
   it("has an explicit pre-reveal strategy for every registered effect", () => {

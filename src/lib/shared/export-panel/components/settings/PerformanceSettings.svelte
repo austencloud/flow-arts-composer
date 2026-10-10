@@ -13,7 +13,7 @@
   Domain: Export Panel - Settings - Performance Video Format
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
 
   const hubState = getExportPanelState();

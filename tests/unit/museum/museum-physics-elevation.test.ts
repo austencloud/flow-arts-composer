@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { MuseumPhysicsProvider } from "$lib/features/museum/services/museum-physics-provider";
+import { MuseumPhysicsProvider } from "#lib/features/museum/services/museum-physics-provider.js";
 import type {
   MuseumGrid,
   MuseumTerrainProgram,
   MuseumTile,
-} from "$lib/features/museum/domain/museum-grid-types";
+} from "#lib/features/museum/domain/museum-grid-types.js";
 
 const STANDING = 0.85;
 

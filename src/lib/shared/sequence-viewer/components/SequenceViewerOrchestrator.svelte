@@ -1,17 +1,17 @@
 <script lang="ts">
-  import SavePropDialog from "$lib/shared/library/components/SavePropDialog.svelte";
-  import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
+  import SavePropDialog from "#lib/shared/library/components/SavePropDialog.svelte";
+  import { resolveViewingProps } from "#lib/shared/foundation/services/prop-viewing.js";
   import { onMount, onDestroy, untrack, type Snippet } from "svelte";
   import {
     applySequencePathPreview,
     savedSequencePathPolicy,
     countPathOverrides,
   } from "../services/sequence-path-policy";
-  import { clearGridJoinContext } from "$lib/shared/grid-join/grid-join-controller";
+  import { clearGridJoinContext } from "#lib/shared/grid-join/grid-join-controller.js";
   import {
     sequenceGridJoin,
     withSequenceGridJoin,
-  } from "$lib/shared/grid-join/sequence-grid-join";
+  } from "#lib/shared/grid-join/sequence-grid-join.js";
   import {
     captureGjSlice,
     legacyConjoinedOverride,
@@ -19,36 +19,36 @@
     seedFromGjSlice,
     type GridJoinOverride,
   } from "../services/viewer-url-slices/gj-slice";
-  import type { AnimationPathPolicy } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
-  import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
-  import { getLanSyncCoordinator } from "$lib/shared/lan-sync/get-lan-sync-coordinator";
-  import { hydrateSequence as hydrateSequenceData } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { getSequenceMotionVisibility } from "$lib/shared/foundation/services/sequence-motion-profile";
+  import type { AnimationPathPolicy } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
+  import { getSequenceAnimationOrchestrator } from "#lib/shared/animation-engine/get-sequence-animation-orchestrator.js";
+  import { getLanSyncCoordinator } from "#lib/shared/lan-sync/get-lan-sync-coordinator.js";
+  import { hydrateSequence as hydrateSequenceData } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { getSequenceMotionVisibility } from "#lib/shared/foundation/services/sequence-motion-profile.js";
   import type {
     OrchestratorContext,
     ViewMode,
   } from "../domain/viewer-orchestrator-context";
-  import { SCENE_BPM_INTENT_KEY } from "$lib/features/scene-3d-collection/services/open-3d-scene";
+  import { SCENE_BPM_INTENT_KEY } from "#lib/features/scene-3d-collection/services/open-3d-scene.js";
   import { goto } from "$app/navigation";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import {
     generateViewerURL,
     encodePropForURL,
-  } from "$lib/shared/navigation/services/sequence-encoder";
+  } from "#lib/shared/navigation/services/sequence-encoder.js";
   import {
     createAnimationPanelState,
     type PlaybackMode,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { setAnimationPlaybackRef } from "$lib/shared/coordinators/animation-playback-ref.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { setAnimationPlaybackRef } from "#lib/shared/coordinators/animation-playback-ref.svelte.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import {
     createEffectsConfigState,
     loadPersistedEffectsConfig,
-  } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import {
     createViewerUrlSession,
     setViewerUrlSessionContext,
@@ -67,8 +67,8 @@
     type TnSlicePayload,
   } from "../services/viewer-url-slices/tn-slice";
   import { capturePsSlice } from "../services/viewer-url-slices/ps-slice";
-  import { loadTunnelViewState } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-state";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { loadTunnelViewState } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-state.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     captureFxSlice,
     seedFromFxSlice,
@@ -90,66 +90,66 @@
     seedFromCdSlice,
     type CdSlicePayload,
   } from "../services/viewer-url-slices/cd-slice";
-  import type { ExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import type { ImageCompositionSettings } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { mutateCurrentUrl } from "$lib/shared/navigation/services/url-state";
+  import type { ExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import type { ImageCompositionSettings } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
   import {
     loadSplitConfig,
     loadViewerMode,
     type SplitConfig,
   } from "../services/viewer-state-persistence";
-  import type { EffectType } from "$lib/shared/effects/domain/effects-config";
-  import { createScene3DRenderState } from "$lib/shared/3d/scene-features/state/scene-3d-render-state.svelte";
-  import { setScene3DRenderContext } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
-  import { lanSyncState } from "$lib/shared/lan-sync/state/lan-sync-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { logShareAction } from "$lib/shared/analytics/services/posthog-activity-logger";
+  import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
+  import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
+  import { setScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
+  import { lanSyncState } from "#lib/shared/lan-sync/state/lan-sync-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { logShareAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
   import {
     getSettings as getAppSettings,
     updateSettings,
-  } from "$lib/shared/application/state/app-state.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { calculateThumbnailAspectRatio } from "$lib/shared/render/services/layout-calculator";
-  import { loadViewMode } from "$lib/shared/sequence-viewer/services/sequence-modal-persistence";
-  import { legacyViewModeFor } from "$lib/shared/sequence-viewer/services/viewer-modes";
-  import { cellPreWarmer } from "$lib/shared/sequence-viewer/services/cell-pre-warmer";
-  import { getScanCardCloudProbe } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
-  import { isViewerReadyToAutoplay } from "$lib/shared/sequence-viewer/services/viewer-autoplay-readiness";
-  import { shouldAutoplayViewer } from "$lib/shared/sequence-viewer/services/viewer-autoplay-policy";
+  } from "#lib/shared/application/state/app-state.svelte.js";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { calculateThumbnailAspectRatio } from "#lib/shared/render/services/layout-calculator.js";
+  import { loadViewMode } from "#lib/shared/sequence-viewer/services/sequence-modal-persistence.js";
+  import { legacyViewModeFor } from "#lib/shared/sequence-viewer/services/viewer-modes.js";
+  import { cellPreWarmer } from "#lib/shared/sequence-viewer/services/cell-pre-warmer.js";
+  import { getScanCardCloudProbe } from "#lib/shared/sequence-viewer/scan-card-cloud-context.js";
+  import { isViewerReadyToAutoplay } from "#lib/shared/sequence-viewer/services/viewer-autoplay-readiness.js";
+  import { shouldAutoplayViewer } from "#lib/shared/sequence-viewer/services/viewer-autoplay-policy.js";
   import {
     runSequenceViewerEscapeFallback,
     shouldSequenceViewerDeferEscape,
-  } from "$lib/shared/sequence-viewer/domain/sequence-viewer-escape-ownership";
-  import { createModalAccessibilityHelper } from "$lib/shared/sequence-viewer/services/modal-accessibility-helper.svelte";
-  import { saveSequenceHandoff } from "$lib/shared/coordinators/sequence-handoff.svelte";
-  import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { sceneEnvironmentIdForBackground } from "$lib/shared/3d/environments/domain/scene-environment";
-  import { viewportFits3D } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte";
+  } from "#lib/shared/sequence-viewer/domain/sequence-viewer-escape-ownership.js";
+  import { createModalAccessibilityHelper } from "#lib/shared/sequence-viewer/services/modal-accessibility-helper.svelte.js";
+  import { saveSequenceHandoff } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
+  import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { sceneEnvironmentIdForBackground } from "#lib/shared/3d/environments/domain/scene-environment.js";
+  import { viewportFits3D } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
   import { setViewerVisibilityContext } from "../context/viewer-visibility-context";
   import { propFinishState } from "@austencloud/scene-3d";
   import {
     fanAppearanceSignature,
     normalizeFanAppearance,
     type FanAppearance,
-  } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+  } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 
   import { createPlaybackController } from "./playback-controller.svelte";
   import { createExportCoordinator } from "./export-coordinator.svelte";
   import { createImageCompositionSync } from "./image-composition-sync.svelte";
   import { createAuthActionQueue } from "./auth-action-queue.svelte";
-  import { createFullscreenController } from "$lib/shared/fullscreen/state/fullscreen-controller.svelte";
+  import { createFullscreenController } from "#lib/shared/fullscreen/state/fullscreen-controller.svelte.js";
   import { createLibraryActionHandler } from "../state/library-action-handler.svelte";
   import {
     createViewerState,
     type ViewerMode,
   } from "../state/viewer-state.svelte";
-  import { createPracticeViewPrefs } from "$lib/shared/sequence-viewer/state/practice-view-prefs.svelte";
+  import { createPracticeViewPrefs } from "#lib/shared/sequence-viewer/state/practice-view-prefs.svelte.js";
   import { createViewerInteractiveServicesState } from "../state/viewer-interactive-services-state.svelte";
   import { createViewerPlaybackPresentationState } from "../state/viewer-playback-presentation-state.svelte";
   import { createViewerLanSyncState } from "../state/viewer-lan-sync-state.svelte";
@@ -505,13 +505,13 @@
     }),
   });
   let resolvedCardAutoLayout = $state<
-    | import("$lib/shared/render/services/container-aware-layout").ResolvedAutoLayout
+    | import("#lib/shared/render/services/container-aware-layout.js").ResolvedAutoLayout
     | null
   >(null);
 
   function setResolvedCardAutoLayout(
     layout:
-      | import("$lib/shared/render/services/container-aware-layout").ResolvedAutoLayout
+      | import("#lib/shared/render/services/container-aware-layout.js").ResolvedAutoLayout
       | null
   ): void {
     if (hasSameResolvedCardLayout(resolvedCardAutoLayout, layout)) return;
@@ -1359,7 +1359,7 @@
      auth bundle until a guest actually hits a gate. Provider sign-in starts
      only when the person chooses a provider inside that modal. -->
 {#if authQueue.signInSheetOpen}
-  {#await import("$lib/shared/auth/components/AuthModal.svelte") then mod}
+  {#await import("#lib/shared/auth/components/AuthModal.svelte") then mod}
     <mod.default
       open={authQueue.signInSheetOpen}
       reason={authQueue.signInTrigger}

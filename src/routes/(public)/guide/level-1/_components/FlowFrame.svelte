@@ -14,14 +14,14 @@
   import GuideGridExplorer from "./GuideGridExplorer.svelte";
   import GuideStepStrip from "./GuideStepStrip.svelte";
   import SequenceShowcase from "./SequenceShowcase.svelte";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { stripToSequence } from "../_data/guide-sequence-adapter";
-  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type {
     GuideBlock,
     PictographRender,

@@ -4,9 +4,9 @@
     DIFFICULTY_FONT_FAMILY,
     DIFFICULTY_LEVELS,
     DEFAULT_DIFFICULTY_STYLE,
-  } from "$lib/shared/config/difficulty-styles";
-  import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/config/difficulty-styles.js";
+  import { ensureCardFonts } from "#lib/shared/render/services/gelasio-fonts.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     level: number;

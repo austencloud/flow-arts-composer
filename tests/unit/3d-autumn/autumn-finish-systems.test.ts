@@ -10,18 +10,18 @@ import {
 import {
   inheritRootedWindPatch,
   patchRootedWindMaterial,
-} from "$lib/shared/3d/environments/primitives/rooted-wind-material";
-import { sampleAutumnLanternFlicker } from "$lib/shared/3d/environments/scenes/autumn/runtime/lighting/autumn-lantern-flicker";
-import { patchAutumnGroundDetailMaterial } from "$lib/shared/3d/environments/scenes/autumn/runtime/ground/autumn-ground-detail";
+} from "#lib/shared/3d/environments/primitives/rooted-wind-material.js";
+import { sampleAutumnLanternFlicker } from "#lib/shared/3d/environments/scenes/autumn/runtime/lighting/autumn-lantern-flicker.js";
+import { patchAutumnGroundDetailMaterial } from "#lib/shared/3d/environments/scenes/autumn/runtime/ground/autumn-ground-detail.js";
 import {
   createAutumnPondNormalMap,
   createAutumnPondSurfaceMaterial,
-} from "$lib/shared/3d/environments/scenes/autumn/runtime/water/autumn-pond-surface-material";
+} from "#lib/shared/3d/environments/scenes/autumn/runtime/water/autumn-pond-surface-material.js";
 import {
   calculateAutumnDepthFogFactor,
   getAutumnDepthCohesionProfile,
   patchAutumnDepthCohesionMaterial,
-} from "$lib/shared/3d/environments/scenes/autumn/runtime/atmosphere/autumn-depth-cohesion";
+} from "#lib/shared/3d/environments/scenes/autumn/runtime/atmosphere/autumn-depth-cohesion.js";
 
 describe("Autumn finish systems", () => {
   it("builds deterministic seamless pond normals without an asset request", () => {

@@ -17,8 +17,8 @@
     type PropBuild,
     type PropState3D,
   } from "@austencloud/scene-3d";
-  import { getEffectsConfigContext as getUnifiedEffectsState } from "$lib/shared/effects/state/effects-config-context";
-  import { getScene3DRenderContext } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
+  import { getEffectsConfigContext as getUnifiedEffectsState } from "#lib/shared/effects/state/effects-config-context.js";
+  import { getScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
   import {
     resolveGhost3D,
     resolveSparkles3D,
@@ -27,8 +27,8 @@
     resolveBubbles3D,
     resolvePetals3D,
     resolveSmoke3D,
-  } from "$lib/shared/effects/translators/webgl3d-translator";
-  import type { EffectType } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  } from "#lib/shared/effects/translators/webgl3d-translator.js";
+  import type { EffectType } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import { QualityTier, type TipPositionData3D } from "./types";
   import { resolvePropTipAnchors3D } from "./prop-tip-geometry-3d";
 

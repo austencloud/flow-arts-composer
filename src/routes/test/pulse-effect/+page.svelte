@@ -3,11 +3,11 @@
   import {
     Pulse2DRenderer,
     type PulseTipInput,
-  } from "$lib/shared/effects/renderers/pulse-2d-renderer";
-  import { resolvePulse2D } from "$lib/shared/effects/translators/canvas2d-translator";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import { PULSE_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/pulse-presets";
-  import type { PulseIntent } from "$lib/shared/effects/domain/effects-config";
+  } from "#lib/shared/effects/renderers/pulse-2d-renderer.js";
+  import { resolvePulse2D } from "#lib/shared/effects/translators/canvas2d-translator.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { PULSE_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/pulse-presets.js";
+  import type { PulseIntent } from "#lib/shared/effects/domain/effects-config.js";
 
   // Live intent — drives the REAL renderer via resolvePulse2D each frame.
   let intent = $state<PulseIntent>({ ...DEFAULT_EFFECTS_CONFIG.pulse });

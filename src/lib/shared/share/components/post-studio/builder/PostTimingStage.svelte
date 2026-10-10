@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { videoMirror } from "$lib/shared/media-composition/services/video-mirror";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { videoMirror } from "#lib/shared/media-composition/services/video-mirror.js";
   import type { PostTimingSession } from "./post-timing-session.svelte";
 
   /**

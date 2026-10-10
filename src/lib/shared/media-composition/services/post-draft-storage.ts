@@ -1,5 +1,5 @@
 import type { PostProject } from "../domain/post-project";
-import { auth } from "$lib/shared/auth/firebase";
+import { auth } from "#lib/shared/auth/firebase.js";
 import { legacyPostOwner } from "./post-project-store";
 import {
   projectDraftRecord,

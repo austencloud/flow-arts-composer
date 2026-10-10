@@ -1,26 +1,26 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import type { WalkSource } from "$lib/shared/combination/domain/types";
+import type { WalkSource } from "#lib/shared/combination/domain/types.js";
 import {
   buildRotationFaithfulTwin,
   buildTwinSource,
   buildVariants,
   type VariantLiberties,
-} from "$lib/shared/combination/services/variant-generator";
+} from "#lib/shared/combination/services/variant-generator.js";
 import {
   mirrorSequence,
   rotateSequence,
   swapHands,
-} from "$lib/shared/create/services/sequence-transformer";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/create/services/sequence-transformer.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 import { getAllLetterVariants } from "../../helpers/real-pictograph-loader";
 import { FALG, GGGG_CW, HHHH_CW, PHI_PSI_LOOP } from "./fixtures";

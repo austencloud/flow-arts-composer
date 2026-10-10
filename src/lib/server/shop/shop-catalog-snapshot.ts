@@ -27,8 +27,8 @@ import {
   getFirestoreRest,
   type FirestoreDocument,
   type FirestoreRest,
-} from "$lib/server/firestore/firestore-rest";
-import type { Product } from "$lib/features/store/domain/models/product";
+} from "#lib/server/firestore/firestore-rest.js";
+import type { Product } from "#lib/features/store/domain/models/product.js";
 
 /** Everything a product page, the catalog, and the cross-sell rail read,
  *  minus `coverCards`. */

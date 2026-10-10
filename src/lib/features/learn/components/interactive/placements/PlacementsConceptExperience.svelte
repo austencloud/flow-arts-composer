@@ -1,24 +1,24 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, tick, untrack } from "svelte";
-  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import UndoButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/UndoButton.svelte";
-  import ClearSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
-  import GridModeToggle from "$lib/features/create/construct/shared/components/GridModeToggle.svelte";
-  import "$lib/shared/selection/selection.css";
-  import PropPlacementGrid from "$lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import UndoButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/UndoButton.svelte";
+  import ClearSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
+  import GridModeToggle from "#lib/features/create/construct/shared/components/GridModeToggle.svelte";
+  import "#lib/shared/selection/selection.css";
+  import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import {
     GridMode,
     type GridLocation,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PropPlacementChange } from "$lib/shared/pictograph/grid/domain/prop-placement";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
   import {
     PLACEMENT_TYPE_INFO,

@@ -13,22 +13,19 @@
  * Browse touches it anymore, so there is no second host to fight the URL.
  */
 
-import { browser } from "$app/environment";
-import {
-  pushState as svelteKitPushState,
-  replaceState as svelteKitReplaceState,
-} from "$app/navigation";
-import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+import { browser } from "$app/env";
+import { goto } from "$app/navigation";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 import {
   buildCreatorPath,
   parseCreatorPathname,
-} from "$lib/shared/navigation/services/creator-routes";
-import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+} from "#lib/shared/navigation/services/creator-routes.js";
+import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
 import { creatorsViewState } from "./creators-view-state.svelte";
 import {
   trackCreatorProfileOpened,
   type CreatorProfileSource,
-} from "$lib/shared/analytics/social-events";
+} from "#lib/shared/analytics/social-events.js";
 
 // The history-state payload the navigation coordinator's popstate handler reads
 // to keep the module/section in sync as the user goes back/forward.
@@ -64,7 +61,10 @@ function pushCreatorProfileURL(userId: string): void {
   const url = new URL(window.location.href);
   url.pathname = buildCreatorPath(userId);
   url.hash = "";
-  svelteKitPushState(url.toString(), { ...CREATORS_HISTORY_STATE });
+  void goto(url.toString(), {
+    shallow: true,
+    state: { ...CREATORS_HISTORY_STATE },
+  });
 }
 
 /**
@@ -78,7 +78,11 @@ function replaceCreatorsListURL(): void {
   const url = new URL(window.location.href);
   url.pathname = buildCreatorPath();
   url.hash = "";
-  svelteKitReplaceState(url.toString(), { ...CREATORS_HISTORY_STATE });
+  void goto(url.toString(), {
+    shallow: true,
+    replace: true,
+    state: { ...CREATORS_HISTORY_STATE },
+  });
 }
 
 /**

@@ -14,19 +14,19 @@ clipped 415px of that content instead of scrolling.
 Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount, untrack } from "svelte";
-  import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
+  import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import {
     recallCustomizeScreen,
     rememberCustomizeScreen,
-  } from "$lib/shared/create/state/customize-overlay-hmr";
+  } from "#lib/shared/create/state/customize-overlay-hmr.js";
   import {
     GridMode,
     type GridPlacement,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     detectPresetFromBlocked,
     getAllowedPlacements,
@@ -34,13 +34,13 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     getBlockedPlacementsForPreset,
     StartPlacementPreset,
   } from "../../shared/domain/start-placement-presets";
-  import GenerationStylePanel from "$lib/shared/create/components/GenerationStylePanel.svelte";
+  import GenerationStylePanel from "#lib/shared/create/components/GenerationStylePanel.svelte";
   import SettingsDrillPanel, {
     type SettingsDrillItem,
-  } from "$lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
-  import MultiSelectPlacementPicker from "$lib/shared/components/placement-picker/MultiSelectPlacementPicker.svelte";
+  } from "#lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
+  import MultiSelectPlacementPicker from "#lib/shared/components/placement-picker/MultiSelectPlacementPicker.svelte";
   import PropOrientationControl from "../../../shared/components/sequence-actions/PropOrientationControl.svelte";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { buildStartEndOptions } from "./customize-start-end-options";
   import {
     buildCustomizeSummary,
@@ -48,7 +48,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     type CustomizeStyleBaseline,
   } from "./customize-summary";
   import { GENERATE_DEFAULT_CONFIG } from "../../state/generate-config.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
   import {
     clampStartOrientationToLevel,

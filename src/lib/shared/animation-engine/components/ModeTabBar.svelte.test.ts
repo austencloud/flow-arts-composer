@@ -2,7 +2,7 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { describe, it, expect, vi } from "vitest";
 import ModeTabBar from "./ModeTabBar.svelte";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 
 describe("ModeTabBar", () => {
   it("calls onModeChange('visual') when the Visual button is clicked", async () => {

@@ -32,11 +32,11 @@ vi.mock("firebase/firestore", () => ({
   where: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: h.getFirestoreInstance,
 }));
 
-vi.mock("$lib/shared/firestore", async () => {
+vi.mock("#lib/shared/firestore/index.js", async () => {
   const { z } = await import("zod");
   return {
     firestoreDate: z.any(),
@@ -45,15 +45,15 @@ vi.mock("$lib/shared/firestore", async () => {
   };
 });
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn() },
 }));
 
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: h.trackWrite,
 }));
 
-import { getUserProfile } from "$lib/shared/community/services/user-repository";
+import { getUserProfile } from "#lib/shared/community/services/user-repository.js";
 
 const storedProfile = {
   publicProfileVersion: 2,

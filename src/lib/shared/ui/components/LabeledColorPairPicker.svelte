@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import ColorPicker from "svelte-awesome-color-picker";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { COLOR_PRESETS, COLOR_PRESET_COLUMNS } from "../color-presets";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { COLOR_PRESETS } from "../color-presets";
+  import { COOL_PRESETS, WARM_PRESETS } from "../color-temperature";
   import BareWrapper from "./color-picker/BareWrapper.svelte";
   import type { HandSide } from "@tka/tka-types";
 
@@ -53,15 +54,6 @@
     },
   ]);
 
-  const coolHueOrder = [8, 7, 6, 5, 4, 9];
-  const warmHueOrder = [10, 11, 0, 1, 2, 3];
-  const colorRows = ["light", "vivid", "deep"] as const;
-  const coolPresets = colorRows.flatMap((_, row) =>
-    coolHueOrder.map((hue) => COLOR_PRESETS[row * COLOR_PRESET_COLUMNS + hue]!)
-  );
-  const warmPresets = colorRows.flatMap((_, row) =>
-    warmHueOrder.map((hue) => COLOR_PRESETS[row * COLOR_PRESET_COLUMNS + hue]!)
-  );
   const neutralPresets = COLOR_PRESETS.filter(
     (preset) => preset.row === "neutral"
   );
@@ -148,9 +140,7 @@
         </span>
         <span class="color-meta">
           <span class="color-label">{entry.label}</span>
-          <span class="color-value" dir="ltr"
-            >{entry.value.toUpperCase()}</span
-          >
+          <span class="color-value" dir="ltr">{entry.value.toUpperCase()}</span>
         </span>
       </button>
     {/each}
@@ -191,7 +181,7 @@
     >
       <div class="preset-block">
         <div class="hue-groups">
-          {#each [{ label: t("color_cool_colors"), presets: coolPresets }, { label: t("color_warm_colors"), presets: warmPresets }] as group (group.label)}
+          {#each [{ label: t("color_cool_colors"), presets: COOL_PRESETS }, { label: t("color_warm_colors"), presets: WARM_PRESETS }] as group (group.label)}
             <div
               class="preset-group"
               role="group"

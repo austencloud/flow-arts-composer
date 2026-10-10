@@ -16,8 +16,8 @@
  * `static/data/pictographs/*.csv`; nothing is synthesised.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 import {
   buildChains,

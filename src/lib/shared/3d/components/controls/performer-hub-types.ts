@@ -1,8 +1,8 @@
 import type { PropBuild } from "@austencloud/scene-3d";
-import type { CharacterId } from "$lib/shared/3d/domain/character-model";
-import type { EffectType } from "$lib/shared/effects/domain/effects-config";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export type PerformerHubTab =
   | "prop"

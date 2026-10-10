@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { installPerformerEffortResolver } from "$lib/shared/3d/state/viewer-3d-state-effort-wiring";
+import { installPerformerEffortResolver } from "#lib/shared/3d/state/viewer-3d-state-effort-wiring.js";
 
 describe("installPerformerEffortResolver", () => {
   it("registers a resolver that looks up performer effort by id", () => {

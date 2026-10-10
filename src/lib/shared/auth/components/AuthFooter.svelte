@@ -7,8 +7,8 @@
 -->
 <script lang="ts">
   import LegalSheet from "../../legal/components/LegalSheet.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // Local sheet state
   let sheetOpen = $state(false);
@@ -62,7 +62,7 @@
   .auth-footer {
     padding: 16px 24px;
     border-top: 1px solid var(--theme-stroke, var(--theme-stroke));
-    background: color-mix(in srgb, var(--theme-shadow) 20%, transparent);
+    background: rgba(0, 0, 0, 0.2);
     flex-shrink: 0;
   }
 

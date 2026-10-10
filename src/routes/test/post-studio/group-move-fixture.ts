@@ -3,7 +3,7 @@ import {
   type PostCardItem,
   type PostProject,
   type PostTextItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 
 /** Disposable timeline for selection, collisions, and hidden-layer checks. */
 export function groupMoveFixture(sequenceId: string): PostProject {

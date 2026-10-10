@@ -5,13 +5,13 @@ const mocks = vi.hoisted(() => ({
   isWeb: vi.fn(),
 }));
 
-vi.mock("$lib/shared/platform/services/platform-detector", () => ({
+vi.mock("#lib/shared/platform/services/platform-detector.js", () => ({
   isWeb: mocks.isWeb,
 }));
-vi.mock("$lib/shared/auth/services/authenticator", () => ({
+vi.mock("#lib/shared/auth/services/authenticator.js", () => ({
   signInWithGoogleCredential: vi.fn(),
 }));
-vi.mock("$lib/shared/utils/debug-logger", () => ({
+vi.mock("#lib/shared/utils/debug-logger.js", () => ({
   createComponentLogger: () => ({
     info: vi.fn(),
     success: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock("$lib/shared/utils/debug-logger", () => ({
   }),
 }));
 
-import GoogleOneTap from "$lib/shared/auth/components/GoogleOneTap.svelte";
+import GoogleOneTap from "#lib/shared/auth/components/GoogleOneTap.svelte";
 
 describe("GoogleOneTap platform boundary", () => {
   let component: ReturnType<typeof mount> | null;

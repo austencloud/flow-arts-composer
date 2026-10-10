@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hashString } from "$lib/shared/foundation/services/content-hasher";
+import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
 
 describe("hashString", () => {
   it("is deterministic", () => {

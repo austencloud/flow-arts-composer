@@ -1,7 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import PropSelectionSheet from "./PropSelectionSheet.svelte";
 
 const mocks = vi.hoisted(() => ({ updateSettings: vi.fn() }));
@@ -9,12 +9,15 @@ const mocks = vi.hoisted(() => ({ updateSettings: vi.fn() }));
 // The account writer is the one BentoPropGrid falls back to. Component tests
 // never start app services, so the setting itself can't be read back; the
 // write call is what shows whether a pick reached the account.
-vi.mock("$lib/shared/application/state/app-state.svelte", async (original) => ({
-  ...(await original<
-    typeof import("$lib/shared/application/state/app-state.svelte")
-  >()),
-  updateSettings: mocks.updateSettings,
-}));
+vi.mock(
+  "#lib/shared/application/state/app-state.svelte.js",
+  async (original) => ({
+    ...(await original<
+      typeof import("#lib/shared/application/state/app-state.svelte.js")
+    >()),
+    updateSettings: mocks.updateSettings,
+  })
+);
 
 describe("PropSelectionSheet prop version", () => {
   beforeEach(async () => {

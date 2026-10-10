@@ -10,8 +10,8 @@
   No 3D mounts here, so the whole list is on screen while the stage is cold.
 -->
 <script lang="ts">
-  import FilmCollectionModule from "$lib/features/film-collection/FilmCollectionModule.svelte";
-  import type { CollectedFilm } from "$lib/features/film-collection/domain/film-collection-types";
+  import FilmCollectionModule from "#lib/features/film-collection/FilmCollectionModule.svelte";
+  import type { CollectedFilm } from "#lib/features/film-collection/domain/film-collection-types.js";
   import { CAPABILITY_LIBRARY } from "../_capabilities/index";
   import {
     DIRECTOR_SCENE_CATEGORIES,

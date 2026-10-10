@@ -6,9 +6,9 @@
    * Can be dragged to seek.
    */
 
-  import type { TimeSeconds } from "$lib/shared/animation-engine/domain/timeline-types";
-  import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
-  import { timeToPixels, pixelsToTime } from "$lib/shared/animation-engine/domain/timeline-types";
+  import type { TimeSeconds } from "#lib/shared/animation-engine/domain/timeline-types.js";
+  import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
+  import { timeToPixels, pixelsToTime } from "#lib/shared/animation-engine/domain/timeline-types.js";
 
   interface Props {
     position: TimeSeconds;

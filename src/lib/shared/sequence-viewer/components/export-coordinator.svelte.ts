@@ -10,56 +10,56 @@
  * Extracted from SequenceViewerOrchestrator.
  */
 
-import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   capturePosterFrame,
   compositeContainerLayers,
 } from "../tunnel/tunnel-poster";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import {
   sequenceModalExporter,
   type Video3DExportDependencies,
-} from "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte";
-import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
-import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-import { CameraKeyframeBuffer } from "$lib/shared/video-export/domain/camera-keyframe";
+} from "#lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.js";
+import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
+import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+import { CameraKeyframeBuffer } from "#lib/shared/video-export/domain/camera-keyframe.js";
 import {
   saveFilmRecipe,
   updateFilmRenderOptions,
-} from "$lib/features/scene-3d-collection/services/save-film-recipe";
-import type { Scene3DFilmRender } from "$lib/features/scene-3d-collection/domain/scene-3d-collection-types";
+} from "#lib/features/scene-3d-collection/services/save-film-recipe.js";
+import type { Scene3DFilmRender } from "#lib/features/scene-3d-collection/domain/scene-3d-collection-types.js";
 import {
   getRenderedFilm,
   putRenderedFilm,
   pruneRenderedFilms,
-} from "$lib/shared/video-export/services/rendered-film-store";
-import { ensureFullAccountForExport } from "$lib/shared/auth/domain/export-gate";
+} from "#lib/shared/video-export/services/rendered-film-store.js";
+import { ensureFullAccountForExport } from "#lib/shared/auth/domain/export-gate.js";
 import {
   openerAddsHold,
   VIDEO_OPENER_HOLD_BEATS,
   type VideoOpener,
   type VideoOpenerRequest,
-} from "$lib/shared/share/domain/video-opener";
-import { loadOpenerImage } from "$lib/shared/compose/domain/video-opener-frame";
-import { getRenderContextRegistry } from "$lib/shared/animation-engine/get-render-context-registry";
-import { renderMandalaOpener } from "$lib/shared/share/services/video-opener-mandala";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
+} from "#lib/shared/share/domain/video-opener.js";
+import { loadOpenerImage } from "#lib/shared/compose/domain/video-opener-frame.js";
+import { getRenderContextRegistry } from "#lib/shared/animation-engine/get-render-context-registry.js";
+import { renderMandalaOpener } from "#lib/shared/share/services/video-opener-mandala.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { buildCardRenderOptions } from "#lib/shared/share/services/card-render-options.js";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
 import {
   sanitizeFilename,
   shareOrDownloadBlob,
-} from "$lib/shared/foundation/services/file-downloader";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
-import { logShareAction } from "$lib/shared/analytics/services/posthog-activity-logger";
-import type { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-import type { createModalAccessibilityHelper } from "$lib/shared/sequence-viewer/services/modal-accessibility-helper.svelte";
+} from "#lib/shared/foundation/services/file-downloader.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
+import { logShareAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
+import type { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+import type { createModalAccessibilityHelper } from "#lib/shared/sequence-viewer/services/modal-accessibility-helper.svelte.js";
 type ExportType = "animation" | "image" | "both";
 
 /**

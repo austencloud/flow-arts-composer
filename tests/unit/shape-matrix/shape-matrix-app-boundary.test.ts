@@ -72,7 +72,7 @@ describe("Shape Matrix app boundary", () => {
     );
 
     expect(pageSource).toContain(
-      "$lib/shared/shape-matrix/app/ShapeMatrixApp.svelte"
+      "#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte"
     );
     expect(pageSource).toContain("mutateCurrentUrl");
     expect(pageSource).toContain("<ShapeMatrixApp {persistence} />");
@@ -88,7 +88,7 @@ describe("Shape Matrix app boundary", () => {
     // The drill lets the animator pick sidecar vs stacked from its host box.
     expect(drillSource).toContain('disassemblyLayout: "auto"');
     expect(drillSource).toContain(
-      'import("$lib/shared/timeline/StepStrip.svelte")'
+      'import("#lib/shared/timeline/StepStrip.svelte")'
     );
     expect(drillSource).toContain("includeStartPlacement: false");
     expect(drillSource).toContain("currentStep: visibleStep");

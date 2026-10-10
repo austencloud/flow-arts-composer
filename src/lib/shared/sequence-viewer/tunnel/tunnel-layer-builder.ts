@@ -1,13 +1,13 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   rotateSequence,
   mirrorSequence,
   flipSequence,
   invertSequence,
   rewindSequence,
-} from "$lib/shared/create/services/sequence-transforms";
-import { normalizeSequenceDerived } from "$lib/shared/create/services/sequence-derived-fields";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+} from "#lib/shared/create/services/sequence-transforms.js";
+import { normalizeSequenceDerived } from "#lib/shared/create/services/sequence-derived-fields.js";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 import {
   generateCopyOps,
   type CopyOp,

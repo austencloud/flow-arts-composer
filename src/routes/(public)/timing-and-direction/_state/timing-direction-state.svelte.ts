@@ -1,7 +1,7 @@
 import { getContext, setContext, untrack } from "svelte";
-import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
+import { TIMING_DIRECTION_MODES } from "#lib/features/learn/components/interactive/foundations/pictograph-foundation-content.js";
 import { TIMING_DIRECTION_ARTICLES } from "../_data/timing-direction-articles";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export const timingDirectionPreviews = TIMING_DIRECTION_ARTICLES.map(
   (article) => ({
@@ -26,9 +26,9 @@ export function createTimingDirectionState(initialSlug?: string) {
   let seek: ((step: number) => void) | null = null;
   let pendingSeekStep = $state(0);
   let seekVersion = $state(0);
-  let propDisplay = $state<"hands" | "staff">(
-    selected.article.code === "TO" ? "staff" : "hands"
-  );
+  // Mode guides open on props; the hub compares the six modes by hand path.
+  let onArticle = initialSlug !== undefined;
+  let propDisplay = $state<"hands" | "staff">(onArticle ? "staff" : "hands");
 
   return {
     get selected() {
@@ -85,11 +85,19 @@ export function createTimingDirectionState(initialSlug?: string) {
         (mode) => mode.article.slug === slug
       );
       if (next) selected = next;
-      propDisplay = selected.article.code === "TO" ? "staff" : "hands";
       exampleSequence = null;
       step = 0;
       pendingSeekStep = 0;
       seekVersion += 1;
+    },
+    /** Follow the route: a mode slug opens its guide, none returns to the hub. */
+    followRoute(slug: string | undefined) {
+      const article = slug !== undefined;
+      if (article) this.select(slug);
+      // Keep a visitor's choice between guides; reset it only when moving
+      // between the hub and a guide, whose players show different things.
+      if (article !== onArticle) propDisplay = article ? "staff" : "hands";
+      onArticle = article;
     },
     selectExample(sequence: SequenceData, nextStep: number) {
       exampleSequence = sequence;

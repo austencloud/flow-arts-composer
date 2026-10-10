@@ -6,7 +6,7 @@ const auth = vi.hoisted(() => ({
   isInitialized: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => auth);
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => auth);
 
 import { load, ssr } from "../../src/routes/admin/+layout";
 

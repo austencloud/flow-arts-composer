@@ -1,4 +1,4 @@
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 // Fullscreen belongs to the host surface, not to any one viewer shell.
 import {
   supportsNativeFullscreen,

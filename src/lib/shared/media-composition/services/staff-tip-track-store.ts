@@ -2,7 +2,7 @@ import Dexie, { type Table } from "dexie";
 import {
   StaffTipTrackSchema,
   type StaffTipTrack,
-} from "$lib/shared/media-composition/domain/staff-tip-track";
+} from "#lib/shared/media-composition/domain/staff-tip-track.js";
 
 /**
  * Saves each take's staff ends on this device, keyed by the take's key, so

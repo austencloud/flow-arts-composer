@@ -18,11 +18,11 @@ const mocks = vi.hoisted(() => ({
   registerToken: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: mocks.authState,
 }));
 
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   userPreviewState: {
     isActive: false,
     data: { profile: null },
@@ -33,19 +33,19 @@ vi.mock("../state/inbox-state.svelte", () => ({
   inboxState: mocks.inboxState,
 }));
 
-vi.mock("$lib/shared/messaging/services/conversation-manager", () => ({
+vi.mock("#lib/shared/messaging/services/conversation-manager.js", () => ({
   conversationService: {
     subscribeToConversations: mocks.subscribeToConversations,
   },
 }));
 
-vi.mock("$lib/shared/feedback/services/notifier", () => ({
+vi.mock("#lib/shared/feedback/services/notifier.js", () => ({
   notificationService: {
     subscribeToNotifications: mocks.subscribeToNotifications,
   },
 }));
 
-vi.mock("$lib/shared/push/get-fcm-token-manager", () => ({
+vi.mock("#lib/shared/push/get-fcm-token-manager.js", () => ({
   getFCMTokenManager: () => ({
     isSupported: mocks.isSupported,
     getPermissionState: mocks.getPermissionState,
@@ -53,7 +53,7 @@ vi.mock("$lib/shared/push/get-fcm-token-manager", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/push/services/foreground-message-handler", () => ({
+vi.mock("#lib/shared/push/services/foreground-message-handler.js", () => ({
   startForegroundMessageListener: mocks.startForegroundListener,
   stopForegroundMessageListener: mocks.stopForegroundListener,
 }));

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { applyFilter } from "../browse-filter";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 
 function sequence(id: string, word: string): SequenceData {
   return { id, name: id, word, steps: [] } as unknown as SequenceData;

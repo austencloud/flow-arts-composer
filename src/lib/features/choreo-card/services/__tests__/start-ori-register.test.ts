@@ -3,10 +3,10 @@ import {
   resolveStartOrientation,
   placementFamilyOf,
 } from "../start-ori-register";
-import { Orientation, HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import { Orientation, HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 
 const { IN, CLOCK, COUNTER } = Orientation;
 

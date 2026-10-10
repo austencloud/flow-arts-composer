@@ -1,6 +1,6 @@
 import { untrack } from "svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 import {
   sequenceForHandLabeling,
   type HandLabeledSequenceResolver,

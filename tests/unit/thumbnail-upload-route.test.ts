@@ -7,14 +7,15 @@ const rateLimitMocks = vi.hoisted(() => ({
   withRateLimit: vi.fn(),
 }));
 
-vi.mock("$lib/server/auth/requireFirebaseUser", () => ({
+vi.mock("#lib/server/auth/requireFirebaseUser.js", () => ({
   requireFirebaseUser: authMocks.requireFirebaseUser,
 }));
-vi.mock("$lib/server/security/withRateLimit", () => ({
+vi.mock("#lib/server/security/withRateLimit.js", () => ({
   withRateLimit: rateLimitMocks.withRateLimit,
 }));
 
 import { POST } from "../../src/routes/api/thumbnail/+server";
+import { setWorkerEnv } from "#test-helpers/worker-env.js";
 
 const R2_PUBLIC_URL = "https://pub-f5505ed75927471cb198c54336317370.r2.dev";
 const MAX_THUMBNAIL_SIZE = 10 * 1024 * 1024;
@@ -80,15 +81,10 @@ function makeRequest(
 }
 
 function makeEvent(request: Request, bucket?: R2Bucket) {
+  setWorkerEnv({ TKA_ASSETS: bucket, R2_PUBLIC_URL });
   return {
     request,
     url: new URL(request.url),
-    platform: {
-      env: {
-        TKA_ASSETS: bucket,
-        R2_PUBLIC_URL,
-      },
-    },
     getClientAddress: () => "203.0.113.10",
   } as unknown as Parameters<typeof POST>[0];
 }

@@ -5,8 +5,8 @@
   to verify pictograph tiles grow.
 -->
 <script lang="ts">
-  import CreateTutorialWizard from "$lib/shared/onboarding/components/create-tutorial/CreateTutorialWizard.svelte";
-  import { createTutorialState } from "$lib/shared/onboarding/state/create-tutorial-state.svelte";
+  import CreateTutorialWizard from "#lib/shared/onboarding/components/create-tutorial/CreateTutorialWizard.svelte";
+  import { createTutorialState } from "#lib/shared/onboarding/state/create-tutorial-state.svelte.js";
 
   // Always start fresh at the first step. Pass ?step=N (0-3) to jump straight to
   // a step for isolated verification (e.g. ?step=3 lands on the Ready step).

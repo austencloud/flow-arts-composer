@@ -21,10 +21,10 @@
  * (where `mutate` lands) asynchronously, after `startMorph` has returned and
  * `lastRan` is assigned below.
  */
-import { startMorph } from "$lib/shared/transitions/results-morph";
-import { STAGGER } from "$lib/shared/transitions/transitions";
-import { countViewTransitionNameClaims } from "$lib/shared/transitions/view-transition-name-registry";
-import type { GenerateCardPanelId } from "$lib/shared/create/state/panel-coordination-state.svelte";
+import { startMorph } from "#lib/shared/transitions/results-morph.js";
+import { STAGGER } from "#lib/shared/transitions/transitions.js";
+import { countViewTransitionNameClaims } from "#lib/shared/transitions/view-transition-name-registry.js";
+import type { GenerateCardPanelId } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 
 /** The cards that grow. Order is irrelevant; membership is the contract. */
 export const GENERATE_CARD_MORPH_HOSTS = [

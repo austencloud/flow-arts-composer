@@ -7,7 +7,7 @@ import {
   scene3DHasFilm,
   type Scene3DSnapshot,
 } from "../scene-3d-collection-types";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 const snapshot: Scene3DSnapshot = {
   version: 1,

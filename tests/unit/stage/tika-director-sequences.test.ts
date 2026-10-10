@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   TikaDirectorRequestSchema,
   TikaDirectorResponseSchema,
-} from "$lib/features/stage/domain/tika-director";
-import { interpretStageDirectionLocally } from "$lib/features/stage/domain/tika-director-interpreter";
+} from "#lib/features/stage/domain/tika-director.js";
+import { interpretStageDirectionLocally } from "#lib/features/stage/domain/tika-director-interpreter.js";
 
 const scene = {
   id: "scene",

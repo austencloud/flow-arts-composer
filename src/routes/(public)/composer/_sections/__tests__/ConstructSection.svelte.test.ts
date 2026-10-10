@@ -3,25 +3,25 @@ import { render } from "vitest-browser-svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock(
-  "$lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte",
+  "#lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte",
   async () => ({
     default: (await import("./ConstructDemoTestStub.svelte")).default,
   })
 );
 vi.mock(
-  "$lib/features/create/construct/option-picker/components/OptionPicker.svelte",
+  "#lib/features/create/construct/option-picker/components/OptionPicker.svelte",
   async () => ({
     default: (await import("./ConstructDemoTestStub.svelte")).default,
   })
 );
 vi.mock(
-  "$lib/shared/sequence-viewer/components/AnimationPlayer.svelte",
+  "#lib/shared/sequence-viewer/components/AnimationPlayer.svelte",
   async () => ({
     default: (await import("./ConstructDemoTestStub.svelte")).default,
   })
 );
 vi.mock(
-  "$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte",
+  "#lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte",
   async () => ({
     default: (await import("./ConstructDemoTestStub.svelte")).default,
   })

@@ -4,11 +4,19 @@ GridSvg.svelte - Grid Component with Beautiful Rotation Animation
 Loads diamond grid and rotates it 45 deg with cumulative rotation.
 Pure reactive approach - grid mode determines styling, rotation provides animation.
 -->
+<script module lang="ts">
+  // Every pictograph on screen styles the same grid file with one of a few
+  // flag combinations, and an Undo rebuilds 16 grids in one frame. Each
+  // styling pass runs about 20 regex replacements, so keep the results.
+  const styledGridCache = new Map<string, Map<string, string>>();
+  const STYLED_GRID_CACHE_LIMIT = 64;
+</script>
+
 <script lang="ts">
   import { GridMode, GridLocation } from "../domain/enums/grid-enums";
-  import { svgPreloader } from "$lib/shared/pictograph/shared/services/svg-preloader";
+  import { svgPreloader } from "#lib/shared/pictograph/shared/services/svg-preloader.js";
   import { getGridRotationDirection } from "../state/grid-rotation-state.svelte";
-  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
+  import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
 
   let {
     gridMode = GridMode.DIAMOND,
@@ -136,8 +144,6 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   // EXCEPTION: When darkMode is explicitly set (for export), inline colors ARE applied
   const styledGridSvg = $derived.by(() => {
     if (!baseGridSvg) return "";
-    // Strip the outer <svg> wrapper so content respects parent transforms
-    const unwrappedSvg = stripSvgWrapper(baseGridSvg);
     // In preview mode, always pass false for showNonRadial since CSS classes handle visibility
     // This prevents SVG re-rendering when toggling, allowing CSS transitions to work
     const effectiveShowNonRadial =
@@ -145,8 +151,25 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     // In preview mode, always use "active" mode to add classes, but CSS controls actual visibility
     // This prevents re-rendering when toggling hand points, allowing CSS transitions
     const effectiveHandPointMode = previewMode ? "active" : handPointVisibility;
-    return applyGridModeStyles(
-      unwrappedSvg,
+    const key = [
+      gridMode,
+      effectiveShowNonRadial,
+      previewMode,
+      darkMode,
+      effectiveHandPointMode,
+      activeLocations?.join(","),
+      animateVisibility,
+    ].join("|");
+    let byFlags = styledGridCache.get(baseGridSvg);
+    if (!byFlags) {
+      byFlags = new Map();
+      styledGridCache.set(baseGridSvg, byFlags);
+    }
+    const cached = byFlags.get(key);
+    if (cached !== undefined) return cached;
+    const styled = applyGridModeStyles(
+      // Strip the outer <svg> wrapper so content respects parent transforms
+      stripSvgWrapper(baseGridSvg),
       gridMode,
       effectiveShowNonRadial,
       previewMode,
@@ -155,6 +178,9 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
       activeLocations,
       animateVisibility
     );
+    if (byFlags.size >= STYLED_GRID_CACHE_LIMIT) byFlags.clear();
+    byFlags.set(key, styled);
+    return styled;
   });
 
   // Load grid on mount - runs once with initial gridMode value

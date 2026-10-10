@@ -7,15 +7,15 @@
   - Unlink providers (if more than one is linked)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     linkFacebookAccount,
     linkGoogleAccount,
     linkInstagramAccount,
     unlinkInstagramAccount,
     unlinkProvider,
-  } from "$lib/shared/auth/services/authenticator";
+  } from "#lib/shared/auth/services/authenticator.js";
   import { authState } from "../../../auth/state/auth-state.svelte";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import { onMount } from "svelte";
@@ -29,14 +29,14 @@
   import {
     FACEBOOK_LOGIN_ENABLED,
     INSTAGRAM_LOGIN_ENABLED,
-  } from "$lib/shared/auth/services/auth-providers.config";
-  import { browser } from "$app/environment";
-  import { isNative } from "$lib/shared/platform/services/platform-detector";
+  } from "#lib/shared/auth/services/auth-providers.config.js";
+  import { browser } from "$app/env";
+  import { isNative } from "#lib/shared/platform/services/platform-detector.js";
   import ConfirmDialog from "../../../foundation/ui/ConfirmDialog.svelte";
   import {
     getInstagramAuthErrorMessage,
     hasInstagramAccount,
-  } from "$lib/shared/auth/services/instagram-auth";
+  } from "#lib/shared/auth/services/instagram-auth.js";
 
   let { onInstagramChange, managing = false } = $props<{
     onInstagramChange?: (linked: boolean) => void;

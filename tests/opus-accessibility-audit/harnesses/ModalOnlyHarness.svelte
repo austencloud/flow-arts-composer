@@ -6,7 +6,7 @@
   Owned by tests/opus-accessibility-audit. No production behavior lives here.
 -->
 <script lang="ts">
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
 
   let modalOpen = $state(true);
 </script>

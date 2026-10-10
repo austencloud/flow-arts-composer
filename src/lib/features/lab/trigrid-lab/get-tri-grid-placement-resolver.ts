@@ -1,5 +1,5 @@
-import { browser } from '$app/environment';
-import type { GridLocation } from '$lib/shared/pictograph/grid/domain/enums/grid-enums';
+import { browser } from '$app/env';
+import type { GridLocation } from '#lib/shared/pictograph/grid/domain/enums/grid-enums.js';
 import type { TriGridMode, TriGridPlacementInfo } from './domain/trigrid-types';
 import { resolveTriGridPlacement } from './domain/trigrid-placements';
 

@@ -4,7 +4,7 @@ The actual implementation is now in $lib/shared/components/stepper-card
 -->
 <script lang="ts">
   // Re-export all props to maintain the same interface
-  import SharedStepperCard from "$lib/shared/components/stepper-card/StepperCard.svelte";
+  import SharedStepperCard from "#lib/shared/components/stepper-card/StepperCard.svelte";
 
   let {
     title,

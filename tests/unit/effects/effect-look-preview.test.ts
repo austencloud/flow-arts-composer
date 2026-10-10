@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { EFFECT_CONTROLS } from "$lib/shared/effects/domain/effect-control-manifest";
+import { EFFECT_CONTROLS } from "#lib/shared/effects/domain/effect-control-manifest.js";
 import {
   EFFECTS,
   getRegistration,
-} from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-import { createEffectLookPreview } from "$lib/shared/animation-engine/components/effects-panel/effect-look-preview";
+} from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+import { createEffectLookPreview } from "#lib/shared/animation-engine/components/effects-panel/effect-look-preview.js";
 // bloom-look-copy was folded into the shared look-copy module in 8dcbd1cb6f,
 // where the per-effect describeBloomLook became one preset-keyed describeLook.
-import { describeLook } from "$lib/shared/animation-engine/components/effects-panel/thumbnails/look-copy";
+import { describeLook } from "#lib/shared/animation-engine/components/effects-panel/thumbnails/look-copy.js";
 
 describe("effect look previews", () => {
   it("gives every named look a semantic visual model", () => {

@@ -5,8 +5,8 @@ const firestoreMocks = vi.hoisted(() => ({
   set: vi.fn(),
 }));
 
-vi.mock("$lib/shared/firestore", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("$lib/shared/firestore")>()),
+vi.mock("#lib/shared/firestore/index.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("#lib/shared/firestore/index.js")>()),
   firestoreGet: firestoreMocks.get,
   firestoreSet: firestoreMocks.set,
 }));
@@ -15,7 +15,7 @@ import {
   disableAll,
   enableAll,
   setAllEventPreferences,
-} from "$lib/features/feedback/services/notification-preferences-manager";
+} from "#lib/features/feedback/services/notification-preferences-manager.js";
 
 describe("notification preference bulk actions", () => {
   beforeEach(() => {

@@ -6,10 +6,10 @@
  * runs the same three steps — storage upload, collaborative record, shared
  * store — minus the file picker.
  */
-import { getVideoUploader } from "$lib/shared/share/get-video-uploader";
-import { getAuthSync } from "$lib/shared/auth/firebase";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { getCurrentSequenceRevisionRef } from "$lib/shared/library/services/sequence-revision-reader";
+import { getVideoUploader } from "#lib/shared/share/get-video-uploader.js";
+import { getAuthSync } from "#lib/shared/auth/firebase.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { getCurrentSequenceRevisionRef } from "#lib/shared/library/services/sequence-revision-reader.js";
 import {
   createVideoFromUpload,
   getVideoFileMetadata,

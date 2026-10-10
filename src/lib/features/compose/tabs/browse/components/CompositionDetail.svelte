@@ -6,15 +6,15 @@
 	Supports View Transitions API with manual FLIP fallback.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   import {
     resolveThumbnail,
     generatePlaceholderSvg,
-  } from "$lib/features/compose/tabs/browse/services/composition-thumbnail-resolver";
+  } from "#lib/features/compose/tabs/browse/services/composition-thumbnail-resolver.js";
   import { onMount, onDestroy } from "svelte";
   import type { CompositionBrowseItem } from "../state/composition-browse-state.svelte";
-  import { COMPOSE_MODE_CONFIG } from "$lib/features/compose/shared/domain/compose-mode-config";
+  import { COMPOSE_MODE_CONFIG } from "#lib/features/compose/shared/domain/compose-mode-config.js";
   import CompositionDetailActions from "./CompositionDetailActions.svelte";
 
   const {

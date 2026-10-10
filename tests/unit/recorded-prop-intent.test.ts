@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   captureActivePropConfig,
   resolveRecordedPropConfig,
-} from "$lib/shared/foundation/services/recorded-prop-intent";
-import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
+} from "#lib/shared/foundation/services/recorded-prop-intent.js";
+import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
 
 describe("recorded prop intent resolution", () => {
   it("prefers creatorIntent over the legacy intendedProp field", () => {

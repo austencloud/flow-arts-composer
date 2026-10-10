@@ -46,7 +46,7 @@ import { resolveEffectZ } from "./effect-layer";
 import type { AnimationVisibilityStateManager } from "../state/animation-visibility-state.svelte";
 import type { CharcoalSparkParams } from "../domain/types/charcoal-spark-types";
 import { semanticToCharcoalParams } from "../domain/types/charcoal-spark-types";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import type {
   RenderFrameParams,
   RenderLoopConfig,

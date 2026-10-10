@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MAX_IMAGE_BYTES } from "$lib/shared/inbox/domain/image-attachment-limits";
+import { MAX_IMAGE_BYTES } from "#lib/shared/inbox/domain/image-attachment-limits.js";
 import {
   validateIntake,
   screenDescriptors,
@@ -9,7 +9,7 @@ import {
   MAX_INTAKE_TEXT,
   MAX_INTAKE_TITLE,
   MAX_INTAKE_NAME,
-} from "$lib/shared/share-intake/services/intake-validator";
+} from "#lib/shared/share-intake/services/intake-validator.js";
 
 // A control character these tests expect safeName/validateIntake to strip.
 // Named rather than inlined: a raw control byte is invisible in an editor,

@@ -10,22 +10,22 @@
  * Arts MCP.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import type {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 // ── Raw MCP format ──
 

@@ -41,7 +41,7 @@ describe("inbox inline sequence player contract", () => {
     expect(preview).not.toContain('activation="ambient"');
     expect(showcase).toContain("LazyMount");
     expect(showcase).toMatch(
-      /loader=\{\(\) =>[\s\S]*import\("\$lib\/features\/browse\/sequences\/display\/components\/media-viewer\/InlineAnimationPlayer\.svelte"\)/
+      /loader=\{\(\) =>[\s\S]*import\("#lib\/features\/browse\/sequences\/display\/components\/media-viewer\/InlineAnimationPlayer\.svelte"\)/
     );
     expect(showcase).toContain("let manualPlayerRequested = $state(false)");
     expect(showcase).toContain("active={playerMounted}");
@@ -53,7 +53,7 @@ describe("inbox inline sequence player contract", () => {
   it("composes the Choreo Card and compact player in one fixed stage", () => {
     expect(showcase).toContain("PropAwareThumbnail");
     expect(showcase).toContain(
-      'import("$lib/shared/timeline/StepStrip.svelte")'
+      'import("#lib/shared/timeline/StepStrip.svelte")'
     );
     expect(showcase).toContain('class="card-layer"');
     expect(showcase).toContain('class="strip-zone"');
@@ -100,10 +100,10 @@ describe("inbox inline sequence player contract", () => {
       "Open in Sequence Viewer"
     );
     expect(card).toContain(
-      'import("$lib/shared/sequence-viewer/services/sequence-data-provider")'
+      'import("#lib/shared/sequence-viewer/services/sequence-data-provider.js")'
     );
     expect(card).toContain(
-      'import("$lib/shared/sequence-viewer/services/sequence-viewer-navigator")'
+      'import("#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js")'
     );
     expect(card).toContain("openSequenceViewer(viewerSequence");
     expect(card).not.toContain("resolveSequenceRoute");

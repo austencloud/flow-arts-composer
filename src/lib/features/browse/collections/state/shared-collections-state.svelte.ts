@@ -1,10 +1,10 @@
-import type { ICollectionCollaborationManager } from "$lib/shared/library/services/contracts/ICollectionCollaborationManager";
+import type { ICollectionCollaborationManager } from "#lib/shared/library/services/contracts/ICollectionCollaborationManager.js";
 
 export function createSharedCollectionsState(
   collaborationManager: ICollectionCollaborationManager
 ) {
   let items = $state<
-    import("$lib/shared/library/services/contracts/ICollectionCollaborationManager").ReceivedCollectionItem[]
+    import("#lib/shared/library/services/contracts/ICollectionCollaborationManager.js").ReceivedCollectionItem[]
   >([]);
   let loading = $state(false);
   let error = $state<string | null>(null);

@@ -1,18 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DARK_MONOCHROME_IMAGE_COLOR } from "@tka/render-composition";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 const mocks = vi.hoisted(() => ({
   getLetterAsset: vi.fn(),
 }));
 
-vi.mock("$lib/shared/render/services/svg-asset-loader", () => ({
+vi.mock("#lib/shared/render/services/svg-asset-loader.js", () => ({
   getSvgAssetLoader: () => ({
     getLetterAsset: mocks.getLetterAsset,
   }),
 }));
 
-import { drawTKAGlyph } from "$lib/shared/render/services/canvas-2d-glyph-renderer";
+import { drawTKAGlyph } from "#lib/shared/render/services/canvas-2d-glyph-renderer.js";
 
 afterEach(() => {
   vi.unstubAllGlobals();

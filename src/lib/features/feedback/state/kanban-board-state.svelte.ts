@@ -1,13 +1,13 @@
-import type { FeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
+import type { FeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
 import type {
   FeedbackItem,
   FeedbackStatus,
-} from "$lib/shared/feedback/domain/models/feedback-models";
-import { STATUS_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+} from "#lib/shared/feedback/domain/models/feedback-models.js";
+import { STATUS_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
 import {
   safeLocalStorageGet,
   safeLocalStorageSet,
-} from "$lib/shared/foundation/services/storage-manager";
+} from "#lib/shared/foundation/services/storage-manager.js";
 import { FeedbackSorter } from "../services/feedback-sorter";
 import type { FeedbackManageLayoutMode } from "../domain/feedback-manage-layout";
 

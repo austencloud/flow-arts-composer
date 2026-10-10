@@ -8,27 +8,27 @@
  * persisted directly).
  */
 
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import { applyFilter } from "$lib/shared/browse/services/browse-filter";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import { applyFilter } from "#lib/shared/browse/services/browse-filter.js";
 import {
   applyFilters,
   CONNECTIVE_STACKING_TYPES,
   type FilterConnective,
-} from "$lib/shared/browse/services/multi-filter";
+} from "#lib/shared/browse/services/multi-filter.js";
 import {
   legacyAliasesFor,
   resolvePersistedFilterType,
-} from "$lib/shared/browse/services/legacy-filter-type-aliases";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/browse/services/legacy-filter-type-aliases.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   BrowseEngine,
   ActiveFilter,
-} from "$lib/shared/browse/engine/types";
+} from "#lib/shared/browse/engine/types.js";
 import type {
   SmartFilterSpec,
   StoredSmartFilter,
-} from "$lib/shared/library/domain/models/collection";
+} from "#lib/shared/library/domain/models/collection.js";
 
 /**
  * Serialize the engine's current NON-locked filters, source, and sort into a

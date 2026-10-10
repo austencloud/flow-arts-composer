@@ -5,9 +5,9 @@ import {
   endStateOf,
   normalizeToStart,
   loopStatus,
-} from "$lib/features/write/services/sheet-continuity";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/features/write/services/sheet-continuity.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // Minimal fake: only the fields sheet-continuity reads.
 function seq(

@@ -9,21 +9,21 @@ Uses container queries to detect available height and switch layouts.
 Same functionality, different density.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import type { SequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
+  import type { SequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
   import type { SpellTabState } from "../state/spell-tab-state.svelte";
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { VariationExplorationOrchestrator } from "../services/variation-exploration-orchestrator";
   import type { RandomSequenceGenerator } from "../services/random-sequence-generator";
   import * as spellServiceLoaderModule from "../services/spell-service-loader";
-  import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
+  import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
   import { UndoOperationType } from "../../shared/services/undo-manager";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import WordInput from "./WordInput.svelte";
   import SpellSettingsBar from "./SpellSettingsBar.svelte";
   import SpellInputToolbar from "./SpellInputToolbar.svelte";
@@ -31,9 +31,9 @@ Same functionality, different density.
     loadSpellState,
     saveSpellState,
   } from "../state/spell-persistence.svelte";
-  import { createConstraintSet } from "$lib/shared/sequence-engine/constraints";
-  import { tryGetCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
-  import { getVariationExplorationOrchestrator as getVariationExplorationOrchestratorGetter } from "$lib/features/create/spell/get-variation-exploration-orchestrator";
+  import { createConstraintSet } from "#lib/shared/sequence-engine/constraints/index.js";
+  import { tryGetCreateModuleContext } from "#lib/features/create/shared/context/create-module-context.js";
+  import { getVariationExplorationOrchestrator as getVariationExplorationOrchestratorGetter } from "#lib/features/create/spell/get-variation-exploration-orchestrator.js";
 
   // Props
   let {

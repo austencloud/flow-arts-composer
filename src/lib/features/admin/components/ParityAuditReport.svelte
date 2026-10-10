@@ -1,10 +1,10 @@
 <script lang="ts">
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
   import type {
     ParityAuditNotification,
     ParityAuditViolation,
-  } from "$lib/shared/feedback/domain/models/notification-models";
-  import { formatParityAuditAgentBrief } from "$lib/features/admin/domain/parity-audit-agent-brief";
+  } from "#lib/shared/feedback/domain/models/notification-models.js";
+  import { formatParityAuditAgentBrief } from "#lib/features/admin/domain/parity-audit-agent-brief.js";
 
   interface Props {
     notification: ParityAuditNotification;

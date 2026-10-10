@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
 import {
   buildGalleryDeckResult,
   legacyGalleryFiltersToSpec,

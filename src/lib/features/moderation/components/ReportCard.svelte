@@ -5,7 +5,7 @@
 		getStatusConfig,
 		formatReportDate
 	} from '../domain/models/report-models';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 
 	interface Props {
 		report: UserReport;

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * StandardWorkspaceLayout - Workspace and Tool Panel Layout Container
    *
@@ -10,18 +10,18 @@
    */
 
   import { untrack } from "svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import ButtonPanel from "../workspace-panel/shared/components/ButtonPanel.svelte";
   import UndoButton from "../workspace-panel/shared/components/buttons/UndoButton.svelte";
   import SaveToLibraryButton from "../workspace-panel/shared/components/buttons/SaveToLibraryButton.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
   import {
     growFade,
     reducedMotion,
     standardEasing,
-  } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   // CreationWorkspaceArea (85-file subtree) only renders once a sequence exists,
   // so its chunk is deferred via LazyMount — empty/first-paint Create loads skip
   // it and warm it on idle instead.
@@ -30,8 +30,8 @@
   import type { createCreateModuleState as CreateModuleStateType } from "../state/create-module-state.svelte";
   import type { PanelCoordinationState } from "../state/panel-coordination-state.svelte";
   import type { IToolPanelMethods } from "../types/create-module-types";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import type { LetterSource } from "$lib/shared/create/domain/spell-models";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import { logConstructImmediateUndo } from "../../construct/services/construct-analytics";
 
   type CreateModuleState = ReturnType<typeof CreateModuleStateType>;
@@ -347,16 +347,15 @@
       return;
     }
 
-    const updateHeight = () => {
-      buttonPanelHeight = buttonPanelElement?.offsetHeight ?? 0;
-    };
-
-    // Initial measurement
-    updateHeight();
-
-    // Use ResizeObserver to track size changes (responsive layouts, container queries)
-    const resizeObserver = new ResizeObserver(updateHeight);
-    resizeObserver.observe(buttonPanelElement);
+    // Take the height from the observer entry. Reading offsetHeight here
+    // forced a layout whenever an earlier observer callback had dirtied the
+    // page, as a remounting Generate panel does. The first entry arrives
+    // before the first paint, so no synchronous read is needed on mount.
+    const resizeObserver = new ResizeObserver((entries) => {
+      const box = entries.at(-1)?.borderBoxSize?.[0];
+      if (box) buttonPanelHeight = Math.round(box.blockSize);
+    });
+    resizeObserver.observe(buttonPanelElement, { box: "border-box" });
 
     return () => resizeObserver.disconnect();
   });

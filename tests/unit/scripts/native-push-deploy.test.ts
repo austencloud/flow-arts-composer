@@ -15,6 +15,8 @@ import {
   choosePushedCommit,
   createNativeBuildEnv,
   createSnapshotCheckoutPlan,
+  describeNativeOutcome,
+  formatLockHolder,
   inspectNativeReleaseSurface,
   inspectZipFilenameFlags,
   parseAdbDevices,
@@ -410,5 +412,85 @@ describe("native build environment", () => {
     expect(result).toContain("ANTHROPIC_API_KEY=example-placeholder");
     expect(result).not.toContain("local-secret");
     expect(result).not.toContain("example-public");
+  });
+});
+
+describe("native outcome reporting", () => {
+  it("reports a stop before the build as skipped, with exit code 2", () => {
+    expect(
+      describeNativeOutcome(
+        { phase: "setup", stage: null, device: null },
+        new Error(
+          "Another Android push build is already running (pid 69148, started 2026-10-08T05:20:04Z, 8 min ago)."
+        )
+      )
+    ).toEqual({
+      exitCode: 2,
+      line:
+        "[native] Skipped before building: Another Android push build is already running (pid 69148, started 2026-10-08T05:20:04Z, 8 min ago). Nothing was built or installed.",
+    });
+  });
+
+  it("names the build step that failed, with exit code 1", () => {
+    expect(
+      describeNativeOutcome(
+        { phase: "build", stage: "4/4 Assemble debug APK", device: null },
+        new Error(
+          ".\\gradlew.bat assembleDebug --console=plain --no-daemon exited with 1"
+        )
+      )
+    ).toEqual({
+      exitCode: 1,
+      line:
+        "[native] Build failed at 4/4 Assemble debug APK: .\\gradlew.bat assembleDebug --console=plain --no-daemon exited with 1.",
+    });
+  });
+
+  it("names the device when the install fails and points at the built APK", () => {
+    expect(
+      describeNativeOutcome(
+        {
+          phase: "install",
+          stage: "install",
+          device: "SM F956U (RFCX71MRJ6J)",
+        },
+        new Error("adb.exe -s RFCX71MRJ6J install -r app-debug.apk exited with 1")
+      )
+    ).toEqual({
+      exitCode: 1,
+      line:
+        "[native] Install failed on SM F956U (RFCX71MRJ6J): adb.exe -s RFCX71MRJ6J install -r app-debug.apk exited with 1. The APK was built and is at android/app/build/outputs/apk/debug/app-debug.apk.",
+    });
+  });
+
+  it("describes the lock holder by pid, start time, and age", () => {
+    expect(
+      formatLockHolder(
+        { pid: 69148, createdAt: "2026-10-08T05:20:04.123Z" },
+        Date.parse("2026-10-08T05:28:21Z")
+      )
+    ).toBe("pid 69148, started 2026-10-08T05:20:04Z, 8 min ago");
+    expect(formatLockHolder({}, Date.now())).toBe("details unreadable");
+  });
+
+  it("prints the outcome on stdout and exits 2 when the commit cannot be resolved", () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        resolve("scripts/native-push-deploy.mjs"),
+        "--dry-run",
+        "--ref",
+        "0".repeat(40),
+      ],
+      { encoding: "utf8" }
+    );
+
+    expect(result.status).toBe(2);
+    expect(result.stdout).toContain(
+      "[native] Skipped before building: git rev-parse "
+    );
+    expect(result.stdout).toContain(
+      "exited with 128. Nothing was built or installed."
+    );
   });
 });

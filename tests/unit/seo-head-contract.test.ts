@@ -23,7 +23,7 @@ describe("SEO head contract", () => {
       it("uses either the complete shared SEO primitive or a complete direct head", () => {
         if (src.includes("<Seo")) {
           expect(src).toContain(
-            'import Seo from "$lib/shared/components/Seo.svelte"'
+            'import Seo from "#lib/shared/components/Seo.svelte"'
           );
           expect(src).toContain("canonical=");
           return;
@@ -69,7 +69,7 @@ describe("SEO head contract", () => {
     );
 
     expect(composer).toContain(
-      'import Seo from "$lib/shared/components/Seo.svelte"'
+      'import Seo from "#lib/shared/components/Seo.svelte"'
     );
     expect(composer).toContain(
       "Flow Arts Composer | Free Flow Arts Software for Choreography"
@@ -161,7 +161,7 @@ describe("SEO head contract", () => {
     // analyticsRoute() in analytics-context.ts — which still resolves to the
     // composer surface for this route and stays correct for both.
     expect(composer).toContain(
-      'import { analyticsRoute } from "$lib/shared/analytics/analytics-context";'
+      'import { analyticsRoute } from "#lib/shared/analytics/analytics-context.js";'
     );
     expect(composer).toContain("page: analyticsRoute()");
     expect(composer).toContain('cta_type: "open_composer"');
@@ -169,6 +169,6 @@ describe("SEO head contract", () => {
     expect(posthog).toContain("capture_performance:");
     expect(posthog).toContain("web_vitals: captureEnabled");
     expect(posthog).toContain('["LCP", "INP", "CLS"]');
-    expect(layout).toContain('import("$lib/shared/analytics/web-vitals")');
+    expect(layout).toContain('import("#lib/shared/analytics/web-vitals.js")');
   });
 });

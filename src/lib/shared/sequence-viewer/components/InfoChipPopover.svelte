@@ -1,7 +1,7 @@
 <script lang="ts">
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
   import { scale } from "svelte/transition";
   import { backOut, cubicOut } from "svelte/easing";
 

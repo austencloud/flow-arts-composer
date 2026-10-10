@@ -105,7 +105,7 @@ export class NativeInitializer {
     // where InboxDrawer and SequenceViewerDrawerHost do not exist, so the
     // share opened as state nothing rendered.
     const { ensureShareTargetRegistered } =
-      await import("$lib/shared/share-intake/get-share-intake");
+      await import("#lib/shared/share-intake/get-share-intake.js");
     await ensureShareTargetRegistered();
 
     // Handle deep links from both cold start and warm resume.
@@ -142,9 +142,9 @@ export class NativeInitializer {
     });
   }
 
-  // Navigate off the "/" landing into the app's front page. replaceState so the
-  // Android back button from the app entry exits the app (via the backButton
-  // handler) rather than returning to the landing page.
+  // Navigate off the "/" landing into the app's front page, replacing the
+  // history entry so the Android back button from the app entry exits the app
+  // (via the backButton handler) rather than returning to the landing page.
   private async bootIntoApp(): Promise<void> {
     const appUrlOpenNavigation = this.appUrlOpenNavigation;
     if (appUrlOpenNavigation && (await appUrlOpenNavigation)) return;
@@ -161,11 +161,11 @@ export class NativeInitializer {
     )
       return;
 
-    await goto("/create", { replaceState: true });
+    await goto("/create", { replace: true });
   }
 
   private recordCardScan(url: string): void {
-    void import("$lib/shared/qr/services/native-card-scan")
+    void import("#lib/shared/qr/services/native-card-scan.js")
       .then(({ recordNativeCardScan }) => recordNativeCardScan(url))
       .catch((error: unknown) => {
         console.warn("[NativeInitializer] Card scan not recorded:", error);
@@ -216,7 +216,7 @@ export class NativeInitializer {
       // navigation observable by the already-mounted sequence viewer host,
       // instead of asking it to recover a route that completed during boot.
       const { awaitAuthSettled } =
-        await import("$lib/shared/auth/state/auth-state.svelte");
+        await import("#lib/shared/auth/state/auth-state.svelte.js");
       await awaitAuthSettled();
       if (scanCode) markNativeScanTransitionStage(scanCode, "auth-settled");
 

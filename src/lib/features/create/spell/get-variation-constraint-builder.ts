@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { VariationConstraintBuilder } from './services/variation-constraint-builder';
 import * as letterTypeClassifier from './services/letter-type-classifier';
 

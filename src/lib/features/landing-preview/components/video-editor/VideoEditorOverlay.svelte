@@ -7,7 +7,7 @@
    * Curate mode uses 3-column layout: sequence | video | metadata
    */
   import { onMount } from "svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import VideoStage from "./VideoStage.svelte";
   import KeyboardHintsBar from "./KeyboardHintsBar.svelte";
   import BrowsePanel from "./panels/BrowsePanel.svelte";

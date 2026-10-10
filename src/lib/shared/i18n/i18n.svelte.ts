@@ -180,16 +180,41 @@ export function getLocaleDirection(
   return rtlLocales.includes(locale) ? "rtl" : "ltr";
 }
 
+// The language a page is actually written in, when it differs from the chosen
+// locale. Public pages fall back to English copy for most locales, and turning
+// English text right-to-left for an Arabic reader mirrors the layout and moves
+// sentence punctuation to the wrong end.
+let pinnedDocumentLocale: Locale | null = null;
+
 /**
  * Keep assistive technology in sync with the displayed language.
  * Automatically called by setLocale()
  */
 function updateHtmlLanguage(): void {
   if (typeof document !== "undefined") {
-    const direction = getLocaleDirection();
-    document.documentElement.setAttribute("lang", currentLocale);
-    document.documentElement.setAttribute("dir", direction);
+    const locale = pinnedDocumentLocale ?? currentLocale;
+    document.documentElement.setAttribute("lang", locale);
+    document.documentElement.setAttribute("dir", getLocaleDirection(locale));
   }
+}
+
+/**
+ * Declare the language the current page is written in, or null to follow the
+ * chosen locale again. Sets the document's lang and text direction.
+ */
+export function pinDocumentLanguage(locale: Locale | null): void {
+  pinnedDocumentLocale = locale;
+  updateHtmlLanguage();
+}
+
+/**
+ * Whether the chosen locale (or its base language) translates this key itself,
+ * rather than falling back to English.
+ */
+export function isTranslated(key: TranslationKey): boolean {
+  if (messages[key]) return true;
+  const base = getBaseLocale(currentLocale);
+  return base !== currentLocale && Boolean(localeCache.get(base)?.[key]);
 }
 
 /**

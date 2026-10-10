@@ -1,4 +1,4 @@
-import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
+import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
 import {
   flowerPetals,
   type Flower,

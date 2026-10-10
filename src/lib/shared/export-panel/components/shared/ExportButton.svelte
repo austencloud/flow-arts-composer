@@ -14,7 +14,7 @@
   Domain: Export Panel - Export Action
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let {
     label = "Export",
     loading = false,
@@ -77,9 +77,6 @@
     color: white;
     cursor: pointer;
     transition: all var(--duration-normal) ease;
-    box-shadow:
-      0 4px 16px var(--theme-shadow),
-      0 0 0 1px var(--theme-accent-glow);
     overflow: hidden;
   }
 

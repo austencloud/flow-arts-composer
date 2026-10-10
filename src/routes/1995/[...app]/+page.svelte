@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
   import { page } from "$app/state";
-  import RetroDesktop from "$lib/features/retro/win95/components/shell/RetroDesktop.svelte";
+  import RetroDesktop from "#lib/features/retro/win95/components/shell/RetroDesktop.svelte";
 
   // Extract the app path from the catch-all route param
   const appPath = $derived(page.params.app);

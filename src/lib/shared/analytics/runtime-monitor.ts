@@ -5,7 +5,7 @@
  * Uses PerformanceObserver to detect performance issues as they happen.
  *
  * Usage:
- *   import { runtimeMonitor } from '$lib/shared/analytics/runtime-monitor';
+ *   import { runtimeMonitor } from '#lib/shared/analytics/runtime-monitor.js';
  *   runtimeMonitor.start();
  */
 

@@ -16,10 +16,10 @@
 import type {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { HandPathData } from "$lib/shared/foundation/domain/models/hand-path-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { HandPathData } from "#lib/shared/foundation/domain/models/hand-path-data.js";
 
 /**
  * Which hand a trace belongs to.

@@ -9,16 +9,16 @@
   Reads/writes SequenceViewerVisibilityState via context.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { scale } from "svelte/transition";
   import { backOut, cubicOut } from "svelte/easing";
   import { getViewerVisibilityContext } from "../context/viewer-visibility-context";
-  import MotionColorChips from "$lib/shared/components/MotionColorChips.svelte";
-  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
+  import MotionColorChips from "#lib/shared/components/MotionColorChips.svelte";
+  import PrimaryPropColorSettings from "#lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
   import {
     getSettings,
     updateSetting,
-  } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
 
   const visibility = getViewerVisibilityContext();
   interface Props {
@@ -143,11 +143,6 @@
         transparent 72%
       ),
       var(--theme-card-bg, rgba(255, 255, 255, 0.05));
-    box-shadow:
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-text, #ffffff) 8%, transparent),
-      0 2px 6px
-        color-mix(in srgb, var(--theme-shadow, #000000) 32%, transparent);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -165,11 +160,6 @@
   .motion-vis-btn.open {
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.24));
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
-    box-shadow:
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-text, #ffffff) 13%, transparent),
-      0 5px 14px
-        color-mix(in srgb, var(--theme-shadow, #000000) 38%, transparent);
     transform: translateY(-1px);
   }
 
@@ -224,7 +214,6 @@
     background: var(--theme-panel-bg, #141620);
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;
-    box-shadow: 0 8px 24px var(--theme-shadow, rgba(0, 0, 0, 0.45));
     z-index: 20;
   }
 

@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import type { VideoCropData, AspectRatioPreset } from "../types";
   import { ASPECT_RATIO_VALUES } from "../types";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   interface Props {
     videoUrl: string;

@@ -4,9 +4,9 @@ Uses 4x4 pictograph grid with all 16 variations
 50px touch targets, modern Material 2026 design
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import PlacementPickerGrid from "./PlacementPickerGrid.svelte";
 
   let {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveWorkerScenePreparationProgress } from "$lib/shared/3d/worker-renderer/domain/worker-scene-preparation-progress";
+import { resolveWorkerScenePreparationProgress } from "#lib/shared/3d/worker-renderer/domain/worker-scene-preparation-progress.js";
 
 describe("resolveWorkerScenePreparationProgress", () => {
   it("maps every worker asset phase onto one monotonic asset timeline", () => {

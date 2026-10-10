@@ -5,14 +5,14 @@ import {
   type PostItem,
   type PostMovesItem,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   selectTimelineItem,
   timelineGroupOf,
   timelineHandoffPair,
   timelineItemOrder,
   type TimelineSelection,
-} from "$lib/shared/share/components/post-studio/editor/timeline/post-timeline-selection";
+} from "#lib/shared/share/components/post-studio/editor/timeline/post-timeline-selection.js";
 import { overlay, project, text, video } from "./post-project-fixtures";
 
 describe("timeline selection", () => {

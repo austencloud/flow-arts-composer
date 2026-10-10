@@ -7,13 +7,13 @@
  * change. Create is not a keep-alive module, so switching to it remounts the
  * module and its initializer consumes the stored sequence at boot.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { deepLinker } from "$lib/shared/navigation/services/deep-linker";
-import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { deepLinker } from "#lib/shared/navigation/services/deep-linker.js";
+import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
 import { MUSEUM_EXHIBIT_SEQUENCES } from "../data/museum-exhibit-sequences";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
 
 const PENDING_EDIT_KEY = "tka-pending-edit-sequence";
 

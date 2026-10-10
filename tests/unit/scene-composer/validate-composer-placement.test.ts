@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { validateComposerPlacement } from "$lib/shared/3d/scene-composer/validate-composer-placement";
+import { validateComposerPlacement } from "#lib/shared/3d/scene-composer/validate-composer-placement.js";
 import type {
   ComposerPlacement,
   PlacementConstraints,
-} from "$lib/shared/3d/scene-composer/types";
+} from "#lib/shared/3d/scene-composer/types.js";
 
 function placement(
   id: string,

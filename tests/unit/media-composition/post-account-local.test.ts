@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   accountPostProjectKeys,
   claimLegacyPosts,
   legacyPostOwner,
   loadPostProject,
   savePostProject,
-} from "$lib/shared/media-composition/services/post-project-store";
-import { readPostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";
-import { listPostProjects } from "$lib/features/post/services/post-workspace-projects";
+} from "#lib/shared/media-composition/services/post-project-store.js";
+import { readPostDraftRecords } from "#lib/shared/media-composition/services/post-draft-storage.js";
+import { listPostProjects } from "#lib/features/post/services/post-workspace-projects.js";
 
 const authMock = vi.hoisted(() => ({ currentUser: null as { uid: string; isAnonymous: boolean } | null }));
-vi.mock("$lib/shared/auth/firebase", () => ({ auth: authMock }));
+vi.mock("#lib/shared/auth/firebase.js", () => ({ auth: authMock }));
 
 beforeEach(() => {
   authMock.currentUser = null;

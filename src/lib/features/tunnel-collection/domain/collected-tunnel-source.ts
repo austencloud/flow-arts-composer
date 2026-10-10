@@ -1,13 +1,13 @@
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveStartPlacementFromSteps } from "$lib/shared/foundation/services/sequence-hydrator";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveStartPlacementFromSteps } from "#lib/shared/foundation/services/sequence-hydrator.js";
 import {
   createIndependentTunnelPerformer,
   createTunnelComposition,
   type TunnelComposition,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
 import type { CollectedTunnel } from "./tunnel-collection-types";
 
 /**

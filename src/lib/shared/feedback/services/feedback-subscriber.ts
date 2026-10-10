@@ -17,12 +17,12 @@ import {
   type QuerySnapshot,
   type DocumentData,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { isPermissionDeniedError } from "#lib/shared/auth/utils/is-permission-denied-error.js";
 
-import type { FeedbackItem } from "$lib/shared/feedback/domain/models/feedback-models";
-import * as feedbackDocumentMapper from "$lib/shared/feedback/services/feedback-document-mapper";
+import type { FeedbackItem } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import * as feedbackDocumentMapper from "#lib/shared/feedback/services/feedback-document-mapper.js";
 
 const COLLECTION_NAME = "feedback";
 

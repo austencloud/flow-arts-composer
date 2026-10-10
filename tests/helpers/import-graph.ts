@@ -29,7 +29,7 @@ const RESOLVE_SUFFIXES = [
   "/index.js",
 ];
 
-const VIRTUAL_PREFIXES = ["$app/", "$env/", "$service-worker"];
+const VIRTUAL_PREFIXES = ["$app/", "cloudflare:"];
 
 /** `import`/`export … from` specifiers, minus `import type`, plus `import()` on request. */
 export function importSpecifiers(
@@ -53,19 +53,24 @@ export function importSpecifiers(
   return [...specs];
 }
 
-/** The source file a `$lib/` or relative specifier names, or null for a package. */
+/** The source file a `#lib/` or relative specifier names, or null for a package. */
 export function resolveLocal(spec: string, importer: string): string | null {
   let base: string;
-  if (spec === "$lib") base = path.join(SRC, "lib/index");
-  else if (spec.startsWith("$lib/"))
+  if (spec === "#lib") base = path.join(SRC, "lib/index");
+  else if (spec.startsWith("#lib/"))
     base = path.join(SRC, "lib", spec.slice(5));
   else if (spec.startsWith("."))
     base = path.resolve(path.dirname(importer), spec);
   else return null;
-  for (const suffix of RESOLVE_SUFFIXES) {
-    const candidate = base + suffix;
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile())
-      return candidate;
+  // `#lib` imports name the emitted `.js` file; the source beside it is
+  // `.ts` or `.svelte.ts`.
+  const bases = base.endsWith(".js") ? [base, base.slice(0, -3)] : [base];
+  for (const stem of bases) {
+    for (const suffix of RESOLVE_SUFFIXES) {
+      const candidate = stem + suffix;
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile())
+        return candidate;
+    }
   }
   return null;
 }

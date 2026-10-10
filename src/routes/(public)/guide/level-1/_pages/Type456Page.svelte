@@ -42,23 +42,23 @@
    * 4-step". Geometry measured off the artboard border grid (4px/pt): Type 4 boxes
    * 100pt, Type 5/6 boxes 95pt. Edit mode (press E) can still nudge + Copy.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
-  import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
+  import { getSequenceSelection } from "#lib/shared/selection/sequence-selection.svelte.js";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     GridMode,
     GridLocation,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { describePictograph } from "$lib/shared/pictograph/shared/domain/utils/pictograph-description";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { describePictograph } from "#lib/shared/pictograph/shared/domain/utils/pictograph-description.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
     pt,
     ptDrag,

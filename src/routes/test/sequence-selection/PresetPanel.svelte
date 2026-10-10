@@ -1,22 +1,22 @@
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
   import {
     SequenceSelection,
     setSequenceSelection,
-  } from "$lib/shared/selection/sequence-selection.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  } from "#lib/shared/selection/sequence-selection.svelte.js";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     GridMode,
     GridLocation,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
   let {
     presetClass,

@@ -4,12 +4,12 @@ import {
   type PostAnimationItem,
   type PostMovesItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { withMotionKeys } from "$lib/shared/media-composition/domain/post-project-motion-keys";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { withMotionKeys } from "#lib/shared/media-composition/domain/post-project-motion-keys.js";
 import {
   moveKeyframe,
   setSegmentEasing,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import { overlay, project, video } from "./post-project-fixtures";
 
 const CORNER = { x: 0.6, y: 0.78, width: 0.4, height: 0.22 };

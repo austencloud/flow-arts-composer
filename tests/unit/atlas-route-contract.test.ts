@@ -19,7 +19,7 @@ describe("Kinetic Atlas route contract", () => {
 
   it("treats Atlas hashes as client-managed view state during prerender", () => {
     const svelteConfig = readFileSync(
-      resolve(process.cwd(), "svelte.config.js"),
+      resolve(process.cwd(), "vite.config.ts"),
       "utf8"
     );
 

@@ -5,7 +5,7 @@ import {
   markSequenceLocalDeletionComplete,
   runSequencePermanentDeletion,
   runSequencePersistenceMutation,
-} from "$lib/shared/library/services/sequence-persistence-coordinator";
+} from "#lib/shared/library/services/sequence-persistence-coordinator.js";
 
 describe("sequence-persistence-coordinator", () => {
   it("waits for an active save before running permanent deletion", async () => {

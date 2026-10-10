@@ -4,8 +4,8 @@
  * Maps grid positions to their "gravity" orientations for poi physics.
  */
 
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 /**
  * Static mapping of grid locations to gravity orientations.

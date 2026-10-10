@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import PanelGroup, {
     type PanelDefinition,
-  } from "$lib/shared/panels/PanelGroup.svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/panels/PanelGroup.svelte";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     VIEWER_INSPECTOR_HANDLE_SIZE,
     VIEWER_STAGE_MIN_WIDTH,

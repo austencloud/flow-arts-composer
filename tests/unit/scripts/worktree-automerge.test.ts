@@ -11,10 +11,20 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const SCRIPT = join(process.cwd(), "scripts", "worktree-automerge.mjs");
 const BRANCH = "codex/test-finish";
+
+// Each test's beforeEach builds a repository with a worktree through nine git
+// processes, and most tests then run the finish script, which spawns several
+// more: 0.6 to 4.5 s per test and 22 s for the file with the cores free
+// (ten-file runs, 2026-10-08 and 2026-10-09). Under the full suite's 31 forks
+// each process start waits on every other worker: the file took 120 to 133 s
+// in both full runs on 2026-10-08, and one of them timed its hooks out at the
+// 10 s default. Tests get the 120 s tests/unit/3d-animation gives a loaded
+// machine; the repository hooks get 60 s.
+vi.setConfig({ testTimeout: 120_000, hookTimeout: 60_000 });
 
 function git(cwd: string, ...args: string[]) {
   return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();

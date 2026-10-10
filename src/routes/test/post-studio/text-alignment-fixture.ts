@@ -2,7 +2,7 @@ import {
   createEmptyPostProject,
   type PostProject,
   type PostTextItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 
 /** Disposable native text for alignment checks, independent of saved drafts. */
 export function textAlignmentFixture(sequenceId: string): PostProject {

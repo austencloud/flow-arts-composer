@@ -11,7 +11,7 @@ const service = vi.hoisted(() => ({
   getSessionEvents: vi.fn(),
   getSessionReplayAccess: vi.fn(),
 }));
-vi.mock("$lib/features/admin/get-post-hog-user-analytics", () => ({
+vi.mock("#lib/features/admin/get-post-hog-user-analytics.js", () => ({
   getPostHogUserAnalytics: () => service,
 }));
 

@@ -7,56 +7,56 @@
   Uses the shared animation engine with BPM preset controls.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy, untrack } from "svelte";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import {
     createRenderActivityGate,
     renderGateTarget,
     type RenderActivityGate,
-  } from "$lib/shared/render-gating/render-activity-gate";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import type { FireOverlayConfig } from "$lib/shared/animation-engine/domain/types/fire-types";
-  import type { PreparedSequenceHandoff } from "$lib/shared/animation-engine/domain/chaining-types";
+  } from "#lib/shared/render-gating/render-activity-gate.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import type { FireOverlayConfig } from "#lib/shared/animation-engine/domain/types/fire-types.js";
+  import type { PreparedSequenceHandoff } from "#lib/shared/animation-engine/domain/chaining-types.js";
   import type {
     TipEffectMap,
     TipEffortMap,
-  } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import {
     createAnimationPanelState,
     type PlaybackMode,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { QualityTier } from "$lib/shared/animation-engine/domain/types/quality-types";
-  import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { GlyphOverlayFrameMode } from "$lib/shared/animation-engine/domain/glyph-overlay-frame";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { QualityTier } from "#lib/shared/animation-engine/domain/types/quality-types.js";
+  import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { GlyphOverlayFrameMode } from "#lib/shared/animation-engine/domain/glyph-overlay-frame.js";
 
   // Per-instance playback stack imports (avoid shared singleton)
-  import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
-  import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-  import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
+  import { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
+  import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+  import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
 
   // Canvas-menu video download (opt-in via `videoDownload`). The export
   // orchestrator loads inside downloadAnimationVideo() because the export
   // stack imports Firebase, and the home page hero runs this player for
   // visitors who never download anything.
-  import { ensureVideoExportOrchestrator } from "$lib/shared/animation-engine/get-video-export-orchestrator";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
-  import { toExportTakeoverPhase } from "$lib/shared/video-export/services/export-takeover-phase";
-  import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
-  import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
+  import { ensureVideoExportOrchestrator } from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
+  import { toExportTakeoverPhase } from "#lib/shared/video-export/services/export-takeover-phase.js";
+  import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
+  import type { ContextMenuEntry } from "#lib/shared/components/context-menu/context-menu-types.js";
   import { createInlineVideoExportAttempt } from "./inline-video-export-attempt";
 
   // BPM/Speed conversion constant
@@ -478,7 +478,7 @@
       // here, so it registers the same lazily-loaded singleton rather than
       // failing with "orchestrator not available".
       const { getExportOrchestrator } =
-        await import("$lib/shared/export-panel/get-export-orchestrator");
+        await import("#lib/shared/export-panel/get-export-orchestrator.js");
       const exportOrchestrator = getExportOrchestrator();
       const videoExportOrchestrator = await ensureVideoExportOrchestrator();
       if (attempt.cancelled) return;
@@ -941,7 +941,7 @@
     const identifier = seq.word || seq.name || seq.id;
     if (identifier) {
       const { getSequenceRepository } =
-        await import("$lib/shared/create/get-sequence-repository");
+        await import("#lib/shared/create/get-sequence-repository.js");
       const loaded = await getSequenceRepository().getSequence(identifier);
       if (loaded && hasMotionData(loaded)) {
         return loaded;

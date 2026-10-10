@@ -144,7 +144,7 @@ export const DARK_DENYLIST = [
 /**
  * Extract PRODUCTION_MODULES from the environment-features source text into a
  * plain { moduleId: boolean } map. Regex, not a TS import — the real module
- * pulls in `$app/environment` and `import.meta.env`, which won't run in Node.
+ * pulls in `$app/env` and `import.meta.env`, which won't run in Node.
  *
  * @param {string} source - contents of environment-features.ts
  * @returns {Record<string, boolean>}

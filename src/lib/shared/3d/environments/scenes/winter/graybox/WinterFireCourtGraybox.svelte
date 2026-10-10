@@ -10,15 +10,15 @@
   import { useGltf } from "@threlte/extras";
   import { onDestroy } from "svelte";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import type { CharacterId } from "$lib/shared/3d/domain/character-model";
+  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import type { Object3D } from "three";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     GGGG_CW,
     GHGH,
     HHHH_CCW,
-  } from "$lib/shared/combination/domain/demo-fixtures";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/combination/domain/demo-fixtures.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import WinterFireCourtAudience, {
     type FireCourtFriendPlacement,
   } from "./WinterFireCourtAudience.svelte";

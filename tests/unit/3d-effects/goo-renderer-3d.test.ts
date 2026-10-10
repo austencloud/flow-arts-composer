@@ -9,10 +9,10 @@ import {
   Quaternion,
   Vector3,
 } from "three";
-import { GooRenderer3D } from "$lib/shared/3d/effects/water/goo-renderer-3d";
-import { GooPuddleRenderer3D } from "$lib/shared/3d/effects/water/goo-puddle-renderer-3d";
-import type { GooTipSource3D } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
-import { resolveGoo3D } from "$lib/shared/effects/translators/webgl3d-translator";
+import { GooRenderer3D } from "#lib/shared/3d/effects/water/goo-renderer-3d.js";
+import { GooPuddleRenderer3D } from "#lib/shared/3d/effects/water/goo-puddle-renderer-3d.js";
+import type { GooTipSource3D } from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d.js";
+import { resolveGoo3D } from "#lib/shared/effects/translators/webgl3d-translator.js";
 
 const RINGS = 25;
 const SIDES = 12;

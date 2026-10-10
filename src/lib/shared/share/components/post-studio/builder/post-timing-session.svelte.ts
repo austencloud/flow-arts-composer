@@ -1,4 +1,4 @@
-import type { PaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import type { PaintFrame } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
 import {
   MIN_MOVE_SECONDS,
   TAKE_MAX_BPM,
@@ -20,16 +20,16 @@ import {
   type TakeTiming,
   type TakeTimingStatus,
   type TimingSection,
-} from "$lib/shared/media-composition/domain/take-timing";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
 import { untrack } from "svelte";
-import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
+import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
 import {
   landingName,
   summarizeTiming,
-} from "$lib/shared/media-composition/domain/timing-summary";
+} from "#lib/shared/media-composition/domain/timing-summary.js";
 import { shownLanding } from "./timing-lane-landings";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import { nextMappedLanding } from "./post-timing-animation";
 
 export interface LandingRef {

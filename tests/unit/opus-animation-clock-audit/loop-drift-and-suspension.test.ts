@@ -15,20 +15,23 @@
  *   correct clock spreads each frame's time across the boundary instead of
  *   dropping the part that landed past it.
  *
- * The measurements below show laps that are never shorter than nominal and
- * usually longer — the clock can only run late, and the lateness accumulates.
+ * The audit first measured laps that were never shorter than nominal: the
+ * controller dropped the slice of the boundary frame that landed past the end,
+ * so the clock could only run late and the lateness accumulated. The loop wrap
+ * now carries that overrun into the next lap, so a lap boundary lands within
+ * one frame of its nominal time no matter how many laps have played.
  */
 
 import { describe, it, expect, afterEach } from "vitest";
-import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
-import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
+import { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
+import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
 import {
   createRenderActivityGate,
   __resetRenderGatingSharedState,
-} from "$lib/shared/render-gating/render-activity-gate";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/render-gating/render-activity-gate.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   canonicalFreeformSequence,
   canonicalSeamlessSequence,
@@ -117,7 +120,7 @@ function describeLaps(lapTimes: readonly number[]): {
 }
 
 describe("animation clock — loop-boundary drift", () => {
-  it("runs a seamless lap LONG by the frame remainder it drops at the boundary", () => {
+  it("keeps a seamless lap at its nominal length by carrying the boundary overrun", () => {
     const sequence = withStepDurations(
       canonicalSeamlessSequence("rotated", 0),
       REAL_DURATIONS
@@ -138,17 +141,13 @@ describe("animation clock — loop-boundary drift", () => {
     const { laps, mean, min, max } = describeLaps(rig.lapTimes);
     const totalDrift = mean * laps.length - nominalLapMs * laps.length;
 
-    // MEASURED, current behavior. The clock can only run late: the slice of the
-    // boundary frame that landed past the end of the sequence is discarded
-    // instead of being carried into the new lap.
-    expect(min).toBeGreaterThan(nominalLapMs);
-    expect(mean).toBeGreaterThan(nominalLapMs);
-    // A uniform 60Hz cadence makes the loss identical every lap, so the error
-    // is a straight line, not noise that cancels.
-    expect(max - min).toBeLessThan(1e-6);
-    expect(mean - nominalLapMs).toBeGreaterThan(FRAME_MS / 4);
-    expect(mean - nominalLapMs).toBeLessThan(FRAME_MS);
-    expect(totalDrift).toBeGreaterThan(100); // ms of lateness after 20 laps
+    // A lap is only observed on a frame, so one lap can read a frame long or
+    // short, but the boundaries keep to the nominal schedule: after 20 laps
+    // the total error is still under one frame. Dropping the overrun used to
+    // leave more than 100ms of lateness here.
+    expect(nominalLapMs - min).toBeLessThan(FRAME_MS);
+    expect(max - nominalLapMs).toBeLessThan(FRAME_MS);
+    expect(Math.abs(totalDrift)).toBeLessThan(FRAME_MS);
 
     // eslint-disable-next-line no-console
     console.log(
@@ -159,7 +158,7 @@ describe("animation clock — loop-boundary drift", () => {
     );
   });
 
-  it("runs a freeform lap long the same way, start hold and end hold included", () => {
+  it("keeps a freeform lap at its nominal length, start hold and end hold included", () => {
     const sequence = withStepDurations(
       canonicalFreeformSequence("rotated", 0),
       REAL_DURATIONS
@@ -176,9 +175,10 @@ describe("animation clock — loop-boundary drift", () => {
       rig.clock.runFrames(1, FRAME_MS);
     }
 
-    const { mean, min } = describeLaps(rig.lapTimes);
-    expect(min).toBeGreaterThan(nominalLapMs);
-    expect(mean - nominalLapMs).toBeLessThan(FRAME_MS);
+    const { laps, mean } = describeLaps(rig.lapTimes);
+    expect(Math.abs((mean - nominalLapMs) * laps.length)).toBeLessThan(
+      FRAME_MS
+    );
 
     // eslint-disable-next-line no-console
     console.log(
@@ -188,10 +188,10 @@ describe("animation clock — loop-boundary drift", () => {
     );
   });
 
-  it("keeps dropping the remainder under a jittered frame cadence", () => {
-    // Real rAF deltas are not a constant 16.667ms. Jitter changes how much is
-    // dropped per lap but never turns the loss into a gain, so the error still
-    // only ever accumulates in one direction.
+  it("does not accumulate drift under a jittered frame cadence", () => {
+    // Real rAF deltas are not a constant 16.667ms. Jitter moves where each
+    // boundary is observed, but the carried overrun keeps the schedule, so the
+    // total error stays under the longest frame instead of growing.
     const sequence = withStepDurations(
       canonicalSeamlessSequence("mirrored", 0),
       REAL_DURATIONS
@@ -206,10 +206,10 @@ describe("animation clock — loop-boundary drift", () => {
       rig.clock.runFrames(1, jitter[guard % jitter.length]!);
     }
 
-    const { laps, mean, min } = describeLaps(rig.lapTimes);
-    expect(min).toBeGreaterThan(nominalLapMs);
-    expect(mean).toBeGreaterThan(nominalLapMs);
-    expect(laps.every((lap) => lap > nominalLapMs)).toBe(true);
+    const { laps, mean } = describeLaps(rig.lapTimes);
+    expect(Math.abs((mean - nominalLapMs) * laps.length)).toBeLessThan(
+      Math.max(...jitter)
+    );
 
     // eslint-disable-next-line no-console
     console.log(
@@ -217,7 +217,7 @@ describe("animation clock — loop-boundary drift", () => {
     );
   });
 
-  it("scales the lap by the speed multiplier, and the per-lap loss scales with it", () => {
+  it("scales the lap by the speed multiplier without drift", () => {
     const sequence = withStepDurations(
       canonicalSeamlessSequence("rotated", 0),
       REAL_DURATIONS
@@ -231,11 +231,12 @@ describe("animation clock — loop-boundary drift", () => {
       rig.clock.runFrames(1, FRAME_MS);
     }
 
-    const { mean, min } = describeLaps(rig.lapTimes);
-    expect(min).toBeGreaterThan(nominalLapMs);
-    // The dropped slice is a slice of SEQUENCE time, so at 3x it costs at most
-    // one frame of wall clock but three frames' worth of sequence time.
-    expect(mean - nominalLapMs).toBeLessThan(FRAME_MS);
+    const { laps, mean } = describeLaps(rig.lapTimes);
+    // The carried overrun is SEQUENCE time, so at 3x a frame carries three
+    // frames' worth of it; the schedule still holds to one wall-clock frame.
+    expect(Math.abs((mean - nominalLapMs) * laps.length)).toBeLessThan(
+      FRAME_MS
+    );
 
     // eslint-disable-next-line no-console
     console.log(

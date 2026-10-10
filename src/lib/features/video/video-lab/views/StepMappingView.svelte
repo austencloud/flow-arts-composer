@@ -5,12 +5,12 @@
   parent decides whether the result is local or belongs to a saved TKA video.
 -->
 <script lang="ts">
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-  import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import StepMapEditor from "$lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import StepMapEditor from "#lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   interface Props {
     videoUrl: string;

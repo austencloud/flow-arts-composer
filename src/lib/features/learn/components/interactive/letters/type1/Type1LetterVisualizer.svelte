@@ -3,18 +3,18 @@ Type1LetterVisualizer - Displays a Type 1 (Dual-Shift) letter using the Pictogra
 Shows letters A-V with their start/end placements and prospin/antispin motions
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { Type1LetterData } from "./type1-letter-data";
-  import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
+  import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
   import {
     GridMode,
     GridPlacementGroup,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import { onMount } from "svelte";
 
   let {
@@ -273,7 +273,6 @@ Shows letters A-V with their start/end placements and prospin/antispin motions
     background: white;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   /* Loading state */

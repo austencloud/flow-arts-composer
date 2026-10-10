@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { getPrintCardRenderer } from "$lib/features/choreo-card/getPrintCardRenderer";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { getPrintCardRenderer } from "#lib/features/choreo-card/getPrintCardRenderer.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { CardFooter } from "../../domain/models/DeckRelease";
   import type { CardSizeId } from "../../domain/card-sizes";
   import type { CardPair } from "../../services/types";
   import type { PrintRenderOptions } from "../../services/types";
   import type { TnDElement } from "../../domain/tnd-element";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     getPageLayout,
     CARD_SIZES,
@@ -17,8 +17,8 @@
     planPrintSlots,
     type PlannedSlot,
   } from "../../services/print-slot-planner";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import { calculatePhysicalCardLayout } from "../../services/physical-card-layout-calculator";
   import {
     cardCache,
@@ -29,14 +29,14 @@
     deckCardBlobCache,
     canvasToBlob,
   } from "../../services/DeckCardBlobCache";
-  import { hashSequenceContent } from "$lib/shared/foundation/services/content-hasher";
-  import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-  import { getCompositionDispatcher } from "$lib/shared/render/get-composition-dispatcher";
-  import { buildOverridePlacementBundle } from "$lib/shared/render/services/override-placement-bundle";
-  import { prewarmCardPool } from "$lib/shared/render/services/card-pool-prewarm";
+  import { hashSequenceContent } from "#lib/shared/foundation/services/content-hasher.js";
+  import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+  import { getCompositionDispatcher } from "#lib/shared/render/get-composition-dispatcher.js";
+  import { buildOverridePlacementBundle } from "#lib/shared/render/services/override-placement-bundle.js";
+  import { prewarmCardPool } from "#lib/shared/render/services/card-pool-prewarm.js";
   import { warmCardBackCachesAsync } from "../../services/card-back/warm-card-back-caches";
-  import ShimmerBlock from "$lib/shared/components/loading/ShimmerBlock.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+  import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   // Render-schema version baked into every card cache key (memory + IndexedDB).
   // Bump when rendered pixels change for reasons NOT captured by the keyed

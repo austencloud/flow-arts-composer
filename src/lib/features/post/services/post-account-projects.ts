@@ -1,16 +1,16 @@
 import { z } from "zod";
 import { doc, runTransaction } from "firebase/firestore";
-import { auth, getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { firestoreGetDetailed, firestoreList } from "$lib/shared/firestore";
-import { awaitAuthSettled } from "$lib/shared/auth/state/auth-state.svelte";
-import { PostProjectSchema, type PostProject } from "$lib/shared/media-composition/domain/post-project";
-import { loadDiskPostDraft, loadPostDraft, savePostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";
-import { projectDraftRecord } from "$lib/shared/media-composition/services/post-project-backup";
-import { accountPostProjectKeys, claimLegacyPosts, legacyPostOwner, loadPostProject, savePostProject } from "$lib/shared/media-composition/services/post-project-store";
+import { auth, getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { firestoreGetDetailed, firestoreList } from "#lib/shared/firestore/index.js";
+import { awaitAuthSettled } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { PostProjectSchema, type PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import { loadDiskPostDraft, loadPostDraft, savePostDraftRecords } from "#lib/shared/media-composition/services/post-draft-storage.js";
+import { projectDraftRecord } from "#lib/shared/media-composition/services/post-project-backup.js";
+import { accountPostProjectKeys, claimLegacyPosts, legacyPostOwner, loadPostProject, savePostProject } from "#lib/shared/media-composition/services/post-project-store.js";
 import { listPostProjects, type PostProjectChoice } from "./post-workspace-projects";
-import { loadPostPlan } from "$lib/shared/media-composition/services/post-plan-store";
-import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { loadPostPlan } from "#lib/shared/media-composition/services/post-plan-store.js";
+import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { cachePostSequence, resolvePostSequence } from "./post-workspace-projects";
 
 const CloudPostSchema = z.object({

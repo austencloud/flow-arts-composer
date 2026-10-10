@@ -1,8 +1,8 @@
 import {
   createArtifactRevisionRef,
   type ArtifactRevisionRef,
-} from "$lib/shared/artifact-revisions/domain/artifact-revision";
-import { canonicalDigest } from "$lib/shared/foundation/utils/canonical-digest";
+} from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
+import { canonicalDigest } from "#lib/shared/foundation/utils/canonical-digest.js";
 import type { PublicSequenceProjectionWrite } from "./public-sequence-projection";
 
 const REVISION_PAYLOAD_EXCLUDED_KEYS = new Set([

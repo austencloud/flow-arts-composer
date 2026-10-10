@@ -5,47 +5,47 @@
  * Single responsibility: Coordinate animation services and manage sequence lifecycle.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type {
   PropState,
   PropStates,
-} from "$lib/shared/foundation/domain/types/prop-state";
+} from "#lib/shared/foundation/domain/types/prop-state.js";
 import type {
   SequenceData,
   SequenceMetadata,
-} from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   DEFAULT_ANIMATION_PROP_CONFIG,
   type AnimationPropConfig,
   type AnimationPropConfigProvider,
-} from "$lib/shared/animation-engine/domain/animation-prop-config";
+} from "#lib/shared/animation-engine/domain/animation-prop-config.js";
 import type {
   AnimationStateManager,
   InterpolationResult,
-} from "$lib/shared/animation-engine/services/animation-state-manager";
+} from "#lib/shared/animation-engine/services/animation-state-manager.js";
 import {
   validateSteps,
   calculateBeatState,
   calculateTotalDuration,
   calculateBeatStateDurationAware,
   sequencePositionToAnimationTime,
-} from "$lib/shared/animation-engine/services/step-calculator";
+} from "#lib/shared/animation-engine/services/step-calculator.js";
 import {
   interpolatePropAngles,
   calculateInitialAngles,
-} from "$lib/shared/animation-engine/services/prop-interpolator";
+} from "#lib/shared/animation-engine/services/prop-interpolator.js";
 import {
   getAnimationVisibilityManager,
   type AnimationVisibilityStateManager,
-} from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { applyEffort } from "$lib/shared/effort/domain/effort-easing-unified";
-import { interpolatePhrase } from "$lib/shared/phrase-effort-lab/services/phrase-interpolator";
-import { findPhraseAtBeat } from "$lib/shared/effort/domain/effort-timeline-types";
-import type { EffortTimeline } from "$lib/shared/effort/domain/effort-timeline-types";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
+} from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { applyEffort } from "#lib/shared/effort/domain/effort-easing-unified.js";
+import { interpolatePhrase } from "#lib/shared/phrase-effort-lab/services/phrase-interpolator.js";
+import { findPhraseAtBeat } from "#lib/shared/effort/domain/effort-timeline-types.js";
+import type { EffortTimeline } from "#lib/shared/effort/domain/effort-timeline-types.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
 
 /**
  * Lightweight Animation Orchestrator

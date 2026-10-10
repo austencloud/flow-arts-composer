@@ -13,6 +13,7 @@ import type { RequestEvent } from "@sveltejs/kit";
 import { error } from "@sveltejs/kit";
 import { requireFirebaseUser, type FirebaseUser } from "./requireFirebaseUser";
 import { getFirebaseAuthRest } from "./firebase-auth-rest";
+import { workerEnv } from "../cloudflare/worker-env";
 
 export function hasAdminClaim(user: {
   admin?: unknown;
@@ -35,7 +36,7 @@ export async function requireAdmin(event: RequestEvent): Promise<FirebaseUser> {
   let liveUser;
   try {
     liveUser = await getFirebaseAuthRest(
-      event.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
+      workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
     ).getUser(caller.uid);
   } catch (cause) {
     const code = firebaseErrorCode(cause);

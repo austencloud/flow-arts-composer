@@ -1,4 +1,4 @@
-import type { PoiImageLibraryEntry } from "$lib/shared/poi/domain/poi-image-library-entry";
+import type { PoiImageLibraryEntry } from "#lib/shared/poi/domain/poi-image-library-entry.js";
 
 // Account-uploaded POV images belong to Composer's Pattern Lab. Shape Engine
 // uses its bundled pattern generators and has no account image collection.

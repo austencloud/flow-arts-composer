@@ -3,9 +3,9 @@
  * Uses existing TKA enums for type safety
  */
 
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export interface Type1LetterData {
   letter: Letter;

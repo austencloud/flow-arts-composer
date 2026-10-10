@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { createStickerLabState } from "$lib/features/sticker-lab/state/sticker-lab-state.svelte";
-import type { IStickerPrimitiveMigrator } from "$lib/features/sticker-lab/services/contracts/IStickerPrimitiveMigrator";
-import type { IStickerSheetRepository } from "$lib/features/sticker-lab/services/contracts/IStickerSheetRepository";
+import { createStickerLabState } from "#lib/features/sticker-lab/state/sticker-lab-state.svelte.js";
+import type { IStickerPrimitiveMigrator } from "#lib/features/sticker-lab/services/contracts/IStickerPrimitiveMigrator.js";
+import type { IStickerSheetRepository } from "#lib/features/sticker-lab/services/contracts/IStickerSheetRepository.js";
 import {
   createDefaultStickerSheet,
   type MandalaPrimitiveRef,
   type StickerSheet,
-} from "$lib/features/sticker-lab/domain/sticker-types";
+} from "#lib/features/sticker-lab/domain/sticker-types.js";
 
 function mockRepo(
   initial: StickerSheet | null = null

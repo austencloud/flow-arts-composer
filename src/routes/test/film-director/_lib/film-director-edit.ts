@@ -18,7 +18,7 @@ import {
   isDirectiveExpression,
   normalizeDirective,
   type DirectiveValue,
-} from "$lib/features/film-director/domain/directives";
+} from "#lib/features/film-director/domain/directives.js";
 import { FilmDirectorInputSchema } from "./film-director-schema";
 import type {
   DirectorPerformerSequence,

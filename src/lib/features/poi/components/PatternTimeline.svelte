@@ -14,7 +14,7 @@
 <script lang="ts">
   import { getPoiContext } from "../context/poi-context";
   import PatternClipRegion from "./PatternClipRegion.svelte";
-  import ScrubValue from "$lib/shared/ui/components/ScrubbableNumber.svelte";
+  import ScrubValue from "#lib/shared/ui/components/ScrubbableNumber.svelte";
 
   const poi = getPoiContext();
 

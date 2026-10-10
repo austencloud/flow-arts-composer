@@ -18,7 +18,7 @@ import {
 	getDatabaseInstance,
 	getAuthSync,
 	createHMRSafeDatabaseListener
-} from '$lib/shared/auth/firebase';
+} from '#lib/shared/auth/firebase.js';
 import type { Invite, InviteFirebaseData, InviteStatus } from '../domain/models/connect-models';
 import { INVITE_CONFIG, FIREBASE_PATHS } from '../domain/models/connect-constants';
 

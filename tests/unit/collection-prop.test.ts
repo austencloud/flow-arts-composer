@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   createCollection,
   createSmartCollectionModel,
-} from "$lib/shared/library/domain/models/collection";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { collectionPropSettings } from "$lib/shared/library/domain/collection-prop";
+} from "#lib/shared/library/domain/models/collection.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { collectionPropSettings } from "#lib/shared/library/domain/collection-prop.js";
 
 describe("collection prop", () => {
   it("retains the optional prop when creating manual and smart collections", () => {

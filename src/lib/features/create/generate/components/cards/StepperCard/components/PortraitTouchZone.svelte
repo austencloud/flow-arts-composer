@@ -3,7 +3,7 @@ PortraitTouchZone.svelte - Invisible touch zone for portrait stepper
 Covers top or bottom half of the card for increment/decrement
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let { type, title, disabled, onclick, onkeydown } = $props<{
     type: "increment" | "decrement";
     title: string;

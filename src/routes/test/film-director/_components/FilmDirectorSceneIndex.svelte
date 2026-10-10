@@ -11,7 +11,7 @@
   is a list of titles and durations, not a card grid.
 -->
 <script lang="ts">
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
 
   import { getFilmDirectorContext } from "../_lib/film-director-context";
 

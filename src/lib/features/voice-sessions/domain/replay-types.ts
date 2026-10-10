@@ -1,8 +1,8 @@
 import type {
   VoiceSessionEvent,
   ResolutionTier,
-} from "$lib/shared/voice-control/domain/voice-session-types";
-import type { VoiceCommand } from "$lib/shared/voice-control/domain/voice-command-types";
+} from "#lib/shared/voice-control/domain/voice-session-types.js";
+import type { VoiceCommand } from "#lib/shared/voice-control/domain/voice-command-types.js";
 
 /**
  * How the current interpretation differs from what was originally recorded:

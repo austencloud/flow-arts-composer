@@ -1,4 +1,4 @@
-import { refreshInteractiveCanvasFrame } from "$lib/shared/3d/rendering/interactive-canvas-frame";
+import { refreshInteractiveCanvasFrame } from "#lib/shared/3d/rendering/interactive-canvas-frame.js";
 
 /** Edge length of the square poster thumbnail stored per saved tunnel. Small so
  *  the WebP data URL stays a few KB (well under the Firestore 1MB doc limit),

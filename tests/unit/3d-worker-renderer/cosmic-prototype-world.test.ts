@@ -4,12 +4,12 @@ import { FogExp2, Group, PerspectiveCamera, type WebGLRenderer } from "three";
 const factory = vi.hoisted(() => vi.fn());
 
 vi.mock(
-  "$lib/shared/3d/environments/worlds/cosmic/cosmic-environment-world",
+  "#lib/shared/3d/environments/worlds/cosmic/cosmic-environment-world.js",
   () => ({ createCosmicEnvironmentWorld: factory })
 );
 
-import { getWorkerEnvironmentCamera } from "$lib/shared/3d/worker-renderer/domain/worker-environment-camera";
-import { createCosmicPrototypeWorld } from "$lib/shared/3d/worker-renderer/worlds/cosmic-prototype-world";
+import { getWorkerEnvironmentCamera } from "#lib/shared/3d/worker-renderer/domain/worker-environment-camera.js";
+import { createCosmicPrototypeWorld } from "#lib/shared/3d/worker-renderer/worlds/cosmic-prototype-world.js";
 
 describe("createCosmicPrototypeWorld", () => {
   beforeEach(() => {

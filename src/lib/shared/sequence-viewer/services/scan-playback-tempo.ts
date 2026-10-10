@@ -2,10 +2,10 @@ import {
   PLAYBACK_BASELINE_BPM,
   PLAYBACK_MAX_BPM,
   PLAYBACK_MIN_BPM,
-} from "$lib/shared/animation-engine/domain/constants/timing";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { hashString } from "$lib/shared/foundation/services/content-hasher";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/animation-engine/domain/constants/timing.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 export const SCAN_PLAYBACK_MIN_BPM = 20;
 export const SCAN_PLAYBACK_MAX_BPM = PLAYBACK_BASELINE_BPM;

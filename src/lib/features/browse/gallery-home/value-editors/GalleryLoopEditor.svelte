@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import { localizeFilterChip } from "$lib/shared/browse/components/localize-filter-chip";
-  import { loopComponentDescription } from "$lib/features/create/generate/components/loop-component-presentation";
-  import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import { localizeFilterChip } from "#lib/shared/browse/components/localize-filter-chip.js";
+  import { loopComponentDescription } from "#lib/features/create/generate/components/loop-component-presentation.js";
+  import { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
   import type {
     GalleryValueHeadSnippet,
     GalleryWorkspaceProps,

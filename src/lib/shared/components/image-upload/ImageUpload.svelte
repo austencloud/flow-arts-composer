@@ -1,6 +1,6 @@
 <!-- ImageUpload - Shared image selection, paste, drop, and preview control -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
 
   export interface ImageUploadState {

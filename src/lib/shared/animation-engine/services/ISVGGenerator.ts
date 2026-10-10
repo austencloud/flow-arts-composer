@@ -4,12 +4,12 @@
  * Handles generation of SVG strings for grid and prop staffs.
  */
 
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PropSpriteSide } from "$lib/shared/pictograph/prop/domain/prop-look";
-import type { PropSvgData } from "$lib/shared/animation-engine/domain/types/svg-types";
-import type { ThemeMode } from "$lib/shared/utils/svg-color-utils";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PropSpriteSide } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import type { PropSvgData } from "#lib/shared/animation-engine/domain/types/svg-types.js";
+import type { ThemeMode } from "#lib/shared/utils/svg-color-utils.js";
 
-export type { PropSvgData } from "$lib/shared/animation-engine/domain/types/svg-types";
+export type { PropSvgData } from "#lib/shared/animation-engine/domain/types/svg-types.js";
 
 export interface ISVGGenerator {
   /**

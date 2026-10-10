@@ -5,24 +5,24 @@
  * Integrates with LibraryRepository for Firestore operations.
  */
 
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import {
   userPreviewState,
   type PreviewSequence,
-} from "$lib/shared/debug/state/user-preview-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/debug/state/user-preview-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import type { LibraryQueryOptions, LibraryStats } from "../services/types";
 import type {
   LibrarySequence,
   SequenceVisibility,
-} from "$lib/shared/library/domain/models/library-sequence";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { compareKineticLetters, extractBaseLetter } from "$lib/shared/browse/utils/kinetic-alphabet-sort";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+} from "#lib/shared/library/domain/models/library-sequence.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { compareKineticLetters, extractBaseLetter } from "#lib/shared/browse/utils/kinetic-alphabet-sort.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
 
 export type LibraryViewSection =
   | "sequences"

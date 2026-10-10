@@ -1,8 +1,8 @@
-import { captureEvent } from "$lib/shared/analytics/services/posthog";
+import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
 import type {
   KeyModifier,
   ShortcutContext,
-} from "$lib/shared/keyboard/domain/types/keyboard-types";
+} from "#lib/shared/keyboard/domain/types/keyboard-types.js";
 
 export interface KeyboardShortcutExecutionProperties {
   shortcutId: string;

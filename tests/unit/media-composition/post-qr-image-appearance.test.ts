@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isQrArtwork,
   posterQrAppearance,
-} from "$lib/shared/share/components/post-studio/post-qr-image-appearance";
+} from "#lib/shared/share/components/post-studio/post-qr-image-appearance.js";
 
 describe("QR artwork detection", () => {
   it("accepts a full-image link code and retains its exact payload", () => {

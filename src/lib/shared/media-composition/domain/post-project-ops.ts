@@ -1,15 +1,18 @@
 import {
   POST_BACKGROUNDS,
   POST_CANVAS_RATIOS,
+  POST_QR_URL_RULE,
   findItem,
+  isPostCardQrUrl,
   type PostAnimationItem,
   type PostItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   addTake,
   addTitlesItem,
   addTunnelHook,
+  appendCardClip,
   appendVideoClip,
   deleteItem,
   findTunnelHook,
@@ -17,6 +20,7 @@ import {
   relinkTake,
   removeTake,
   removeTunnelHook,
+  setProjectAudio,
   setProjectBackground,
   setProjectCanvas,
   setTunnelHookBackdropFrame,
@@ -25,22 +29,22 @@ import {
   updateItem,
   type EditContext,
   type PostItemPatch,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   PostTakeSchema,
   takeFileKey,
-} from "$lib/shared/media-composition/domain/post-plan";
-import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-plan.js";
+import { EASING_PRESETS } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   TunnelHookSchema,
   type TunnelHook,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "#lib/shared/media-composition/domain/tunnel-hook.js";
 import {
   resolvePostTime,
   resolveTrackTime,
   type PostTimeRef,
-} from "$lib/shared/media-composition/domain/music-grid";
+} from "#lib/shared/media-composition/domain/music-grid.js";
 import {
   POST_MUSIC_MIN_SECONDS,
   removeMusic,
@@ -48,18 +52,18 @@ import {
   syncedSourceIn,
   updateMusic,
   type MusicPatch,
-} from "$lib/shared/media-composition/domain/post-music-edits";
+} from "#lib/shared/media-composition/domain/post-music-edits.js";
 import {
   POST_MUSIC_LENGTH_SLACK,
   POST_MUSIC_MAX_BEATS_PER_BAR,
   POST_MUSIC_MAX_GAIN,
   POST_MUSIC_MAX_SECONDS,
   type PostMusic,
-} from "$lib/shared/media-composition/domain/post-music";
+} from "#lib/shared/media-composition/domain/post-music.js";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 /**
  * Named edits for saved posts, in a form a command line can send. Each op is
@@ -152,6 +156,14 @@ export type PostProjectOp =
     }
   | ({ op: "music" } & MusicOpPatch)
   | { op: "remove-music" }
+  | {
+      op: "add-card";
+      label?: string;
+      /** The link the card's QR shows; it also puts the QR in the card's info cell. */
+      qrUrl?: string;
+      fadeIn?: number;
+    }
+  | { op: "sound"; sound: PostProject["audio"] }
   | {
       op: "sync-to-music";
       item: string;
@@ -439,9 +451,34 @@ function applyOp(
       return next;
     }
     case "item": {
+      const qrUrl = (op.patch as { qrUrl?: unknown } | undefined)?.qrUrl;
+      // updateItem passes over a link that breaks the rule; a script should hear why.
+      if (qrUrl !== undefined && qrUrl !== null && !isPostCardQrUrl(qrUrl))
+        throw new Error(POST_QR_URL_RULE);
+      const ids = itemIds(project, op.item);
+      if (
+        qrUrl !== undefined &&
+        !ids.some((id) => findItem(project, id)?.item.kind === "card")
+      )
+        throw new Error("Only a card keeps a scan link.");
       let next = project;
-      for (const id of itemIds(project, op.item))
-        next = updateItem(next, id, op.patch, ctx);
+      for (const id of ids) {
+        const item = findItem(next, id)?.item;
+        // As in the editor, a card given a link shows it in its QR cell.
+        const patch =
+          typeof qrUrl === "string" &&
+          item?.kind === "card" &&
+          op.patch.cardAppearance === undefined
+            ? {
+                ...op.patch,
+                cardAppearance: {
+                  ...item.cardAppearance,
+                  infoCellChoice: "qr" as const,
+                },
+              }
+            : op.patch;
+        next = updateItem(next, id, patch, ctx);
+      }
       return next;
     }
     case "trim": {
@@ -636,6 +673,35 @@ function applyOp(
     case "remove-music":
       if (!project.music) throw new Error(NO_MUSIC);
       return removeMusic(project, ctx);
+    case "add-card": {
+      if (op.qrUrl !== undefined && !isPostCardQrUrl(op.qrUrl))
+        throw new Error(POST_QR_URL_RULE);
+      if (
+        op.fadeIn !== undefined &&
+        (typeof op.fadeIn !== "number" ||
+          !Number.isFinite(op.fadeIn) ||
+          op.fadeIn < 0)
+      )
+        throw new Error("fadeIn must be 0 or more.");
+      if (op.label !== undefined && typeof op.label !== "string")
+        throw new Error("label must be text.");
+      const added = appendCardClip(project, ctx, {
+        ...(op.label !== undefined ? { label: op.label } : {}),
+        ...(op.fadeIn !== undefined ? { fadeIn: op.fadeIn } : {}),
+      });
+      if (op.qrUrl === undefined) return added.project;
+      // The link shows only in the QR cell, so a card given one shows that cell.
+      return updateItem(
+        added.project,
+        added.itemId,
+        { qrUrl: op.qrUrl, cardAppearance: { infoCellChoice: "qr" } },
+        ctx
+      );
+    }
+    case "sound":
+      if (op.sound !== "takes" && op.sound !== "silent")
+        throw new Error("sound must be takes or silent.");
+      return setProjectAudio(project, op.sound, ctx);
     case "sync-to-music": {
       const music = project.music;
       if (!music) throw new Error(NO_MUSIC);

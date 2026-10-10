@@ -3,9 +3,9 @@
   // ModuleSwitcher with a chosen number of modules, so the admin-sized list
   // can be checked while signed out. ?count=3|5|7|13 sets the starting size.
   import { page } from "$app/state";
-  import ModuleSwitcher from "$lib/shared/navigation/components/ModuleSwitcher.svelte";
-  import { MODULE_DEFINITIONS } from "$lib/shared/navigation/config/module-definitions";
-  import type { ModuleId } from "$lib/shared/navigation/domain/types";
+  import ModuleSwitcher from "#lib/shared/navigation/components/ModuleSwitcher.svelte";
+  import { MODULE_DEFINITIONS } from "#lib/shared/navigation/config/module-definitions.js";
+  import type { ModuleId } from "#lib/shared/navigation/domain/types.js";
 
   const COUNTS = [3, 5, 7, 13];
   const candidates = MODULE_DEFINITIONS.filter(

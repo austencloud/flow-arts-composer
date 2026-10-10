@@ -38,7 +38,7 @@
     type Mesh,
     type Object3D,
   } from "three";
-  import GltfAsset from "$lib/shared/3d/environments/primitives/GltfAsset.svelte";
+  import GltfAsset from "#lib/shared/3d/environments/primitives/GltfAsset.svelte";
   import PedestalMesh from "../graybox/PedestalMesh.svelte";
   import MuseumPerformerStation3D from "./MuseumPerformerStation3D.svelte";
   import type { MuseumGrid } from "../../domain/museum-grid-types";

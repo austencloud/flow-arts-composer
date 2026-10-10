@@ -7,11 +7,11 @@ const { mockAuthState, batchSetSpy, mockBatch } = vi.hoisted(() => ({
   mockBatch: { set: vi.fn() },
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: mockAuthState,
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 
@@ -23,7 +23,7 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: vi.fn(() => "server-timestamp"),
 }));
 
-import { OnboardingPersister } from "$lib/shared/onboarding/services/onboarding-persister";
+import { OnboardingPersister } from "#lib/shared/onboarding/services/onboarding-persister.js";
 
 describe("OnboardingPersister terminal state", () => {
   beforeEach(() => {

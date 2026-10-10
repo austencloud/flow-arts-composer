@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { PropType } from "@austencloud/scene-3d";
-import { resolvePropTipAnchors3D } from "$lib/shared/3d/effects/prop-tip-geometry-3d";
-import { PROP_TIP_POINTS } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import { resolvePropTipAnchors3D } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
+import { PROP_TIP_POINTS } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import {
   QUIAD_ARM_LENGTH,
   QUIAD_PROP,

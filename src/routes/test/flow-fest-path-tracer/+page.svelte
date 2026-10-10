@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     FLOW_FEST_TRACE_VIEW,
     createTraceSubmission,

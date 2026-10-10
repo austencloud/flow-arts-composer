@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import ProgressBar from "$lib/shared/components/loading/ProgressBar.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import ProgressBar from "#lib/shared/components/loading/ProgressBar.svelte";
 
   interface Props {
     word?: string;

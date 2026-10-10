@@ -10,8 +10,8 @@ import {
   MandalaOverlapMasks,
   paintMandalaGuide,
   type MandalaGuideContext,
-} from "$lib/shared/mandala/services/mandala-guide-painter";
-import type { PreparedMandalaPath } from "$lib/shared/mandala/services/types";
+} from "#lib/shared/mandala/services/mandala-guide-painter.js";
+import type { PreparedMandalaPath } from "#lib/shared/mandala/services/types.js";
 
 function fakeContext() {
   const context = {

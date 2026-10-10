@@ -3,10 +3,10 @@ import { Plane } from "@austencloud/scene-3d";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { FanViewpoint } from "$lib/features/lab/tabs/fan-relations/domain/fan-relation-types";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { FanViewpoint } from "#lib/features/lab/tabs/fan-relations/domain/fan-relation-types.js";
 import {
   buildFanPropState,
   describeHeadingSeparation,
@@ -16,7 +16,7 @@ import {
   getHeadingSeparationDegrees,
   getProjectionDescription,
   getWorldHeadingVector,
-} from "$lib/features/lab/tabs/fan-relations/services/fan-relation-geometry";
+} from "#lib/features/lab/tabs/fan-relations/services/fan-relation-geometry.js";
 
 describe("fan relation geometry", () => {
   it("preserves the supplied W observation as two local labels with one world heading", () => {

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { LearnConcept, ConceptStatus } from "../domain/types";
   import ConceptPreview from "./ConceptPreview.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "../domain/localized-concept";
 
   let {

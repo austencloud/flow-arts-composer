@@ -99,9 +99,10 @@ function fingerprint() {
   const hash = createHash("sha1");
   // Route shape. Sorted so directory-read order can never flip the hash.
   hash.update(routeManifest(ROUTES).sort().join("\n"));
-  // svelte.config.js owns outDir, aliases and adapter — all of which change
-  // what sync writes.
-  hash.update(read(join(ROOT, "svelte.config.js")));
+  // The sveltekit() options in vite.config.ts own outDir and the adapter, and
+  // src/env.ts declares the env modules — all of which change what sync writes.
+  hash.update(read(join(ROOT, "vite.config.ts")));
+  hash.update(read(join(ROOT, "src", "env.ts")));
   // A Kit upgrade can change the generator itself.
   hash.update(installedKitVersion());
   return hash.digest("hex");

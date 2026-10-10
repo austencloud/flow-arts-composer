@@ -6,7 +6,7 @@
  * @example
  * ```svelte
  * <script>
- *   import { MorphChipGroup, MorphChip } from "$lib/shared/foundation/ui/morph-chip";
+ *   import { MorphChipGroup, MorphChip } from "#lib/shared/foundation/ui/morph-chip/index.js";
  *
  *   let dashes = $state("Mixed");
  *   const options = [

@@ -10,16 +10,16 @@
   import {
     gridLocationToPosition3D,
     calculatePropRotation,
-  } from "$lib/shared/3d/services/plane-coordinate-mapper";
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+  } from "#lib/shared/3d/services/plane-coordinate-mapper.js";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
   import { Plane } from "@austencloud/scene-3d";
   import type { PropState3D } from "@austencloud/scene-3d";
-  import Scene3D from "$lib/shared/3d/components/Scene3D.svelte";
+  import Scene3D from "#lib/shared/3d/components/Scene3D.svelte";
   import { Avatar3D } from "@austencloud/scene-3d";
   import { Prop3D } from "@austencloud/scene-3d";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
 
   // Grid locations
   let leftLocation: GridLocation = $state(GridLocation.NORTH);

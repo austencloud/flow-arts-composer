@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import ArtPane from "./ArtPane.svelte";
   import ChoreoCard from "./ChoreoCard.svelte";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
@@ -125,6 +125,7 @@
           ? studioCard.handLabeling
           : labeledCard.labeling}
         qrSequence={studioCard ? studioCard.qrSequence : sequence}
+        qrUrl={studioCard?.qrUrl}
         customTitleText={sequence.sequenceKind === "hand-path"
           ? sequence.displayName || sequence.name
           : undefined}

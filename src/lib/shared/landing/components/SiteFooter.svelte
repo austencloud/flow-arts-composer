@@ -1,5 +1,5 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   /**
    * SiteFooter owns three compositions of the same navigation: the full
    * interior footer, the compact homepage footer, and a sitemap-only handoff
@@ -10,8 +10,8 @@
    * Terms/Privacy keep LandingFooter's behavior: on narrow viewports they
    * open the in-place LegalSheet instead of navigating.
    */
-  import LegalSheet from "$lib/shared/legal/components/LegalSheet.svelte";
-  import { trackCtaClick } from "$lib/shared/analytics/landing-events";
+  import LegalSheet from "#lib/shared/legal/components/LegalSheet.svelte";
+  import { trackCtaClick } from "#lib/shared/analytics/landing-events.js";
   import { siteCopy } from "../site-copy";
 
   let {

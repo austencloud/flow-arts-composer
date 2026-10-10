@@ -1,6 +1,6 @@
 import { getAppCanonicalURL } from "../../../../config/domains";
-import { auth } from "$lib/shared/auth/firebase";
-import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
+import { auth } from "#lib/shared/auth/firebase.js";
+import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
 import {
   PHYSICAL_CARD_SCHEMA_VERSION,
   isPhysicalCardId,

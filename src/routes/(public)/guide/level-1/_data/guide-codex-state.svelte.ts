@@ -19,16 +19,16 @@
 import {
   HandSide,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { applyPendingTurnsToOption } from "$lib/shared/create/services/apply-turns-to-motion";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { applyPendingTurnsToOption } from "#lib/shared/create/services/apply-turns-to-motion.js";
 import {
   rotateAllPictographs,
   mirrorAllPictographs,
   handSwapAllPictographs,
-} from "$lib/features/learn/codex/services/codex-pictograph-updater";
+} from "#lib/features/learn/codex/services/codex-pictograph-updater.js";
 import {
   codexData,
   SHEET1,

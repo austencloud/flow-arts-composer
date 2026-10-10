@@ -9,7 +9,7 @@ import {
   captionLineYPositions,
   wrapCaptionText,
   type CaptionLayoutInput,
-} from "$lib/shared/media-composition/domain/caption-layout";
+} from "#lib/shared/media-composition/domain/caption-layout.js";
 
 function caption(
   overrides: Partial<CaptionLayoutInput> = {}

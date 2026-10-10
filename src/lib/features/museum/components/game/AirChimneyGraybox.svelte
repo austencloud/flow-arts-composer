@@ -20,7 +20,7 @@
     MeshStandardMaterial,
     DoubleSide,
   } from "three";
-  import FallingParticles from "$lib/shared/3d/environments/primitives/FallingParticles.svelte";
+  import FallingParticles from "#lib/shared/3d/environments/primitives/FallingParticles.svelte";
   import type { MuseumGrid } from "../../domain/museum-grid-types";
   import type { AuthoredPointLightPlanChange } from "../../services/museum-room-light-pool";
   import {

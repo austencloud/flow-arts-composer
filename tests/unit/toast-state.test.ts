@@ -4,7 +4,7 @@ import {
   removeToast,
   showToast,
   toastQueue,
-} from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/toast/state/toast-state.svelte.js";
 
 describe("toast dismissal callbacks", () => {
   beforeEach(() => {

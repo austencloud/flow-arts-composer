@@ -1,9 +1,9 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import {
   safeLocalStorageGet,
   safeLocalStorageSet,
-} from "$lib/shared/foundation/services/storage-manager";
+} from "#lib/shared/foundation/services/storage-manager.js";
 
 const LOCAL_MARKER_PREFIX = "tka-push-permission-prompt-seen:";
 const LEGACY_DISMISSAL_KEY = "tka-push-prompt-dismissed";

@@ -272,7 +272,7 @@ describe("canonical concept lesson composition", () => {
     );
     // Static diagrams delegate their selection transitions to the reduced-motion-aware owner.
     expect(timingIntro).toContain(
-      'import Crossfade from "$lib/shared/components/Crossfade.svelte"'
+      'import Crossfade from "#lib/shared/components/Crossfade.svelte"'
     );
     expect(timingIntro).not.toContain("timing-bounce");
     expect(timingIntro).not.toContain("bounce-stage");

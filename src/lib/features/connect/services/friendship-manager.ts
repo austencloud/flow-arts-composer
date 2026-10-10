@@ -23,7 +23,7 @@ import {
 	getDatabaseInstance,
 	getAuthSync,
 	createHMRSafeDatabaseListener
-} from '$lib/shared/auth/firebase';
+} from '#lib/shared/auth/firebase.js';
 import type {
 	Friend,
 	UserSearchResult,

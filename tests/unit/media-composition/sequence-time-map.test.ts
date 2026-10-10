@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 import {
   SequenceTimeMapSchema,
   createBpmTimeMap,
@@ -7,7 +7,7 @@ import {
   mediaTimeToSequencePosition,
   migrateLegacyStepMap,
   sequencePositionToMediaTime,
-} from "$lib/shared/media-composition/domain/sequence-time-map";
+} from "#lib/shared/media-composition/domain/sequence-time-map.js";
 
 const sequenceRef = {
   sequenceId: "sequence-a",

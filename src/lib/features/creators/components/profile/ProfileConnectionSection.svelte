@@ -8,8 +8,8 @@
    */
 
   import { onMount } from "svelte";
-  import { getConnectionInfo } from "$lib/shared/community/services/connection-manager";
-  import type { ConnectionInfo } from "$lib/shared/community/services/types";
+  import { getConnectionInfo } from "#lib/shared/community/services/connection-manager.js";
+  import type { ConnectionInfo } from "#lib/shared/community/services/types.js";
   import ConnectionNotes from "./ConnectionNotes.svelte";
   import ConnectionMutualStatus from "./ConnectionMutualStatus.svelte";
   import ConnectionSharedSequences from "./ConnectionSharedSequences.svelte";

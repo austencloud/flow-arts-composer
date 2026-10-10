@@ -5,7 +5,7 @@
  * Extracted from the component to enable testing and keep layout logic centralized.
  */
 
-import type { LayoutConfig } from "$lib/shared/settings/domain/photo-picker-types";
+import type { LayoutConfig } from "#lib/shared/settings/domain/photo-picker-types.js";
 
 /**
  * Layout breakpoints with documented rationale

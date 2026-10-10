@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { ThumbnailResult } from "$lib/shared/browse/services/thumbnail-render-orchestrator";
-import { startGalleryWarm } from "$lib/shared/browse/services/gallery-thumbnail-warmer";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { ThumbnailResult } from "#lib/shared/browse/services/thumbnail-render-orchestrator.js";
+import { startGalleryWarm } from "#lib/shared/browse/services/gallery-thumbnail-warmer.js";
 
 const sequence = {
   id: "public-1",

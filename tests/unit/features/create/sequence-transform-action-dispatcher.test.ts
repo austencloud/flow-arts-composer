@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   createSequenceTransformActionDispatcher,
   type SequenceTransformActionState,
-} from "$lib/features/create/shared/services/sequence-transform-action-dispatcher";
-import { UndoOperationType } from "$lib/features/create/shared/services/undo-manager";
+} from "#lib/features/create/shared/services/sequence-transform-action-dispatcher.js";
+import { UndoOperationType } from "#lib/features/create/shared/services/undo-manager.js";
 
 const analytics = vi.hoisted(() => ({
   invoked: vi.fn(),
   result: vi.fn(),
 }));
 
-vi.mock("$lib/shared/create/analytics/sequence-action-events", () => ({
+vi.mock("#lib/shared/create/analytics/sequence-action-events.js", () => ({
   logSequenceActionInvoked: analytics.invoked,
   logSequenceActionResult: analytics.result,
 }));

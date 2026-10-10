@@ -1,51 +1,50 @@
 <script lang="ts">
-  import { flushSync, onDestroy, onMount, untrack } from "svelte";
+  import { flushSync, onMount, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { activateWhenNear } from "$lib/actions/activate-when-near";
+  import { activateWhenNear } from "#lib/actions/activate-when-near.js";
   import { observeComposerStopVisibility } from "./observe-composer-stop-visibility";
   import { holdWhenStopLeaves } from "./hold-when-stop-leaves";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import SceneChromeButton from "$lib/shared/3d/components/controls/SceneChromeButton.svelte";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { startMorph } from "$lib/shared/transitions/results-morph";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import SceneChromeButton from "#lib/shared/3d/components/controls/SceneChromeButton.svelte";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { startMorph } from "#lib/shared/transitions/results-morph.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import {
     DEFAULT_FAN_APPEARANCE,
     type FanAppearance,
-  } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import {
     DEFAULT_PROP_LOOK,
     versionAfterPick,
     type PropLook,
-  } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { pinLandingSettings } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import type { PropChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import {
     trackCtaClick,
     trackDemoInteraction,
     trackSectionView,
-  } from "$lib/shared/analytics/landing-events";
-  import { analyticsRoute } from "$lib/shared/analytics/analytics-context";
-  import { isWebGL2Available } from "$lib/shared/3d/capabilities/webgl-capabilities";
-  import { viewportFits3D } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte";
-  import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte";
-  import { createHeroAct } from "$lib/shared/landing/data/hero-act.svelte";
-  import { FALLBACK_DEMO } from "$lib/shared/landing/data/per-visit-demo";
+  } from "#lib/shared/analytics/landing-events.js";
+  import { analyticsRoute } from "#lib/shared/analytics/analytics-context.js";
+  import { isWebGL2Available } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
+  import { viewportFits3D } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
+  import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte";
+  import { createHeroAct } from "#lib/shared/landing/data/hero-act.svelte.js";
+  import { FALLBACK_DEMO } from "#lib/shared/landing/data/per-visit-demo.js";
   import {
     HERO_TRAIL_PRESET,
     HERO_TIP_EFFECT_MAP,
-  } from "$lib/shared/landing/data/hero-trail-preset";
-  import { isConstrainedConnection } from "$lib/shared/platform/network-conditions";
-  import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/landing/data/hero-trail-preset.js";
+  import { isConstrainedConnection } from "#lib/shared/platform/network-conditions.js";
+  import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import ComposerBackgroundCycle from "./ComposerBackgroundCycle.svelte";
   import ComposerPropPicker from "./ComposerPropPicker.svelte";
   import {
@@ -124,13 +123,9 @@
   }
 
   let selectedProp = $state<PropType>(PropType.STAFF);
-  // Every demo on this page draws the canonical hands, blue left and red
-  // right, whatever this browser saved in the app: the page is prerendered
-  // with them, its poster and card images carry them, and its own prop picker
-  // is the only color control here. Pinned before any child reads settings;
-  // the picker's choice reaches the demos as explicit overrides.
-  pinLandingSettings({ primaryPropColors: null });
-  onDestroy(() => pinLandingSettings(null));
+  // The demos draw the canonical hands, blue left and red right, because the
+  // public layout pins the settings every public page reads. The picker's
+  // choice reaches the demos as explicit overrides.
 
   // Appearance and colors stay with this public page's prop choice. There is
   // no app settings service here, so writing to it would lose these edits.
@@ -427,8 +422,8 @@
     if (!viewportFits3D() || (webglChecked && !webglAvailable)) return;
     warmViewer();
     void Promise.all([
-      import("$lib/shared/3d/scene-boot/scene-prefetch"),
-      import("$lib/shared/3d/environments/worlds/cosmic/cosmic-environment-assets"),
+      import("#lib/shared/3d/scene-boot/scene-prefetch.js"),
+      import("#lib/shared/3d/environments/worlds/cosmic/cosmic-environment-assets.js"),
     ])
       .then(([prefetch, cosmic]) => {
         prefetch.warmSceneUrls([cosmic.COSMIC_RELIQUARY_URL]);
@@ -876,7 +871,7 @@
         <div class="keeping-card-art">
           <LazyMount
             loader={() =>
-              import("$lib/shared/landing/components/launchpad/ChoreoCardPreview.svelte")}
+              import("#lib/shared/landing/components/launchpad/ChoreoCardPreview.svelte")}
             active={shelfActive}
             props={{ sequence: pageSequence.sequence }}
             debugName="composer keep card"

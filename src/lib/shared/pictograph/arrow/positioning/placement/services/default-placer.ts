@@ -1,4 +1,4 @@
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 /**
  * Default Placement Service
  *
@@ -7,7 +7,7 @@ import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enu
  */
 
 import type { MotionType } from "../../../../shared/domain/enums/pictograph-enums";
-import type { SimpleJsonCache } from '$lib/shared/pictograph/shared/services/simple-json-cache'
+import type { SimpleJsonCache } from '#lib/shared/pictograph/shared/services/simple-json-cache.js'
 import { ArrowPlacer } from "./arrow-placer";
 
 /**

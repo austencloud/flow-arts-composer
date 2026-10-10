@@ -7,25 +7,25 @@ Renders a section with:
 - Index-keyed slots so props/arrows transition in place on data change
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     reversalDetector as _reversalDetector,
     type ReversalDetector,
-  } from "$lib/shared/create/services/reversal-detector";
-  import type { PictographWithReversals } from "$lib/shared/create/services/reversal-detector";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  } from "#lib/shared/create/services/reversal-detector.js";
+  import type { PictographWithReversals } from "#lib/shared/create/services/reversal-detector.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import {
     calculateFitSize as calculateGridFitSize,
     calculateOptimalColumnLayout,
   } from "../../services/option-grid-fit-calculator";
   import { onMount, untrack } from "svelte";
-  import { getLetterBorderColors } from "$lib/shared/pictograph/shared/utils/letter-border-utils";
+  import { getLetterBorderColors } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import OptionPictographCell from "./OptionPictographCell.svelte";
   import SectionHeader from "./SectionHeader.svelte";
-  import PictographContextMenuHost from "$lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
-  import type { PreparedPictographData } from "$lib/shared/pictograph/option/prepared-pictograph-data";
+  import PictographContextMenuHost from "#lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
+  import type { PreparedPictographData } from "#lib/shared/pictograph/option/prepared-pictograph-data.js";
   import { tryGetOptionAuditionContext } from "../../context/option-audition-context";
   import { createHoldToAuditionAttachment } from "../../services/hold-to-audition";
   import DoubleFloatOptionRows from "../../components/DoubleFloatOptionRows.svelte";

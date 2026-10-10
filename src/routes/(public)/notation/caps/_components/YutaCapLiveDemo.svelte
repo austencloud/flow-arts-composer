@@ -11,20 +11,20 @@
 -->
 <script lang="ts">
   import { MediaQuery } from "svelte/reactivity";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import MandalaHeroLayer from "$lib/shared/shape-matrix/components/MandalaHeroLayer.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import MandalaHeroLayer from "#lib/shared/shape-matrix/components/MandalaHeroLayer.svelte";
   import { buildYutaCapSequence } from "./yuta-cap-sequence";
-  import { setPerHand } from "$lib/shared/animation-engine/services/tip-effect-resolver";
-  import { setTipPointOverrideProvider } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-  import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-  import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { setPerHand } from "#lib/shared/animation-engine/services/tip-effect-resolver.js";
+  import { setTipPointOverrideProvider } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+  import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+  import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import {
     TrailMode,
     TrailEffect,
     DEFAULT_TRAIL_SETTINGS,
     type TrailSettings,
-  } from "$lib/shared/animation-engine/domain/types/trail-types";
+  } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
   const sequence = buildYutaCapSequence();
 
@@ -150,7 +150,7 @@
         <LazyMount
           loader={() =>
             import(
-              "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"
+              "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte"
             )}
           active={true}
           props={playerProps}

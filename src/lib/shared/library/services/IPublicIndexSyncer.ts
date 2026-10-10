@@ -1,4 +1,4 @@
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 
 export interface IPublicIndexSyncer {
   syncToPublicIndex(sequence: LibrarySequence, userId: string): Promise<void>;

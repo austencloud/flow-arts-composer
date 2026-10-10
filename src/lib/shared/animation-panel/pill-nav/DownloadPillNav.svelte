@@ -20,7 +20,7 @@
   button (e.g. for focus restoration after a mobile sheet closes).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { PillId, PillSpec } from "./pill-types";
 
   interface Props {

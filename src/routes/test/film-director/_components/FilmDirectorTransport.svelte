@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import { getFilmDirectorContext } from "../_lib/film-director-context";
   import FilmTimeline from "./FilmTimeline.svelte";
 

@@ -1,17 +1,17 @@
 <script lang="ts">
   import { tick } from "svelte";
   import { effectUiLabel } from "./effect-ui-label";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     EffectId,
     EffectsConfigState,
-  } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import type { EffectControlOverrides } from "$lib/shared/effects/effect-control-fields";
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import type { EffectControlOverrides } from "#lib/shared/effects/effect-control-fields.js";
   import {
     advancedControls,
     primaryControls,
-  } from "$lib/shared/effects/domain/effect-control-manifest";
-  import EffectControlStack from "$lib/shared/effects/components/EffectControlStack.svelte";
+  } from "#lib/shared/effects/domain/effect-control-manifest.js";
+  import EffectControlStack from "#lib/shared/effects/components/EffectControlStack.svelte";
   import EffectPresetsSection from "./EffectPresetsSection.svelte";
   import LedCustomize from "./customize/LedCustomize.svelte";
   import type { EffectRegistration } from "./effect-registry";

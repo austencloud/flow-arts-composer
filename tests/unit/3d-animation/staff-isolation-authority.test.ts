@@ -6,7 +6,7 @@ import {
   ISOLATION_STAFF_CONTACT,
   isolationStaffContact,
   sampleStaffIsolation,
-} from "$lib/shared/3d/performers/staff-isolation";
+} from "#lib/shared/3d/performers/staff-isolation.js";
 
 describe("authored rigid staff isolation", () => {
   it("holds the thumb endpoint through all cardinal and intermediate phases", () => {

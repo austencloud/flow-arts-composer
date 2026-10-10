@@ -5,7 +5,7 @@ import type {
   SmokeIntent,
   CharcoalIntent,
   SparklesIntent,
-} from "$lib/shared/effects/domain/effects-config";
+} from "#lib/shared/effects/domain/effects-config.js";
 import type {
   ParticlePassPayload,
   ParticleTipState,

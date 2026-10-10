@@ -18,7 +18,7 @@
  * Domain: QR - URL Shortening
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 /** Bump to invalidate every cached code (e.g. if the URL scheme changes).
  *  v2 (2026-07-05): values became code-only — URLs are derived per caller

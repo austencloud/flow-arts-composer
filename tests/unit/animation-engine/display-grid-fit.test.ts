@@ -8,7 +8,7 @@ import {
   DISPLAY_GROUP_GAP,
   fitDisplayGrid,
   MIN_FIT_ART,
-} from "$lib/shared/animation-engine/domain/display-grid-fit";
+} from "#lib/shared/animation-engine/domain/display-grid-fit.js";
 
 // Metrics as DisplayPanel's chips render them: 10px side padding, 12px top
 // and bottom, a 7px gap and an 11px label.

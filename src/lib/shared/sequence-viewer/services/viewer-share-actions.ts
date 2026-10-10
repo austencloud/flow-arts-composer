@@ -1,8 +1,8 @@
-import type { logShareAction } from "$lib/shared/analytics/services/posthog-activity-logger";
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ShareURLMetadata } from "$lib/shared/navigation/services/types";
-import type { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+import type { logShareAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ShareURLMetadata } from "#lib/shared/navigation/services/types.js";
+import type { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import type { PendingActionType } from "./pending-action-queue";
 import type { ViewerUrlParamPatch } from "./viewer-url-state-codec";
 import {

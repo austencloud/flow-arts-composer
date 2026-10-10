@@ -6,29 +6,29 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import { getFCMTokenManager } from "$lib/shared/push/get-fcm-token-manager";
-  import type { PushDeviceRegistrationState } from "$lib/shared/push/services/fcm-token-manager";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import { getFCMTokenManager } from "#lib/shared/push/get-fcm-token-manager.js";
+  import type { PushDeviceRegistrationState } from "#lib/shared/push/services/fcm-token-manager.js";
   import {
     userPreviewState,
     getPreviewNotificationPreferences,
-  } from "$lib/shared/debug/state/user-preview-state.svelte";
+  } from "#lib/shared/debug/state/user-preview-state.svelte.js";
   import type {
     NotificationPreferences,
     NotificationType,
-  } from "$lib/shared/feedback/domain/models/notification-models";
+  } from "#lib/shared/feedback/domain/models/notification-models.js";
   import {
     DEFAULT_NOTIFICATION_PREFERENCES,
     NOTIFICATION_TYPE_CONFIG,
     getPreferenceKeyForType,
-  } from "$lib/shared/feedback/domain/models/notification-models";
-  import * as notificationPreferencesManager from "$lib/features/feedback/services/notification-preferences-manager";
-  import { getNotificationPreferenceGroup } from "$lib/features/feedback/domain/notification-preference-group";
+  } from "#lib/shared/feedback/domain/models/notification-models.js";
+  import * as notificationPreferencesManager from "#lib/features/feedback/services/notification-preferences-manager.js";
+  import { getNotificationPreferenceGroup } from "#lib/features/feedback/domain/notification-preference-group.js";
   import NotificationDeliverySection from "./notifications/NotificationDeliverySection.svelte";
   import PreferenceGroup from "./notifications/PreferenceGroup.svelte";
   import type { PreferenceItem } from "./notifications/preference-item";

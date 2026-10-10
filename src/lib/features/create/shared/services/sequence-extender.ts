@@ -5,24 +5,24 @@
  * using the LOOP (Linked Orbital Offset Pattern) executor infrastructure.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   GridMode,
   type GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { LOOPOption } from "./loop-validator";
 import type { OrientationAlignment } from "./orientation-alignment-calculator";
 import {
   Period,
   LOOPType,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { orientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
-import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { orientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
+import { recalculateAllOrientations } from "#lib/shared/create/services/orientation-propagation.js";
 
 /**
  * Describes the type of extension available for a sequence
@@ -147,12 +147,12 @@ export interface ExtensionApplyResult {
   /** Message to display to user */
   message: string;
 }
-import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
+import type { ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 import type {
   ILetterQueryHandler,
   IMotionQueryHandler,
-} from "$lib/shared/foundation/services/data/data-contracts";
-import type { stepConverter as StepConverterSingleton } from "$lib/features/create/generate/shared/services/step-converter";
+} from "#lib/shared/foundation/services/data/data-contracts.js";
+import type { stepConverter as StepConverterSingleton } from "#lib/features/create/generate/shared/services/step-converter.js";
 type StepConverter = typeof StepConverterSingleton;
 import type { LOOPValidator } from "./loop-validator";
 import type { SequenceAnalyzer } from "./sequence-analyzer";
@@ -160,7 +160,7 @@ import type { BridgeFinder } from "./bridge-finder";
 import {
   HALVED_LOOPS,
   QUARTERED_LOOPS,
-} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
+} from "#lib/shared/foundation/domain/models/generation/circular-placement-maps.js";
 import {
   completeLOOPExtension,
   LOOPType as EngineLOOPType,
@@ -553,13 +553,13 @@ function toEngineLOOPType(loopType: LOOPType): EngineLOOPType {
 // ============================================================================
 // DIRECT SINGLETON EXPORT
 // ============================================================================
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import { stepConverter } from "$lib/features/create/generate/shared/services/step-converter";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+import { stepConverter } from "#lib/features/create/generate/shared/services/step-converter.js";
 import { loopValidator } from "./loop-validator";
 import { sequenceAnalyzer } from "./sequence-analyzer";
 import { bridgeFinder } from "./bridge-finder";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 
 export const sequenceExtender = new SequenceExtender(
   reversalDetector,

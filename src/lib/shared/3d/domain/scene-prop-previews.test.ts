@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   fanBuildPreviewOptions,
   fanCoverPreviewOptions,

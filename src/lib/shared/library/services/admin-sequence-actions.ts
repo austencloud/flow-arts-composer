@@ -1,4 +1,4 @@
-import { getFunctionsInstance } from "$lib/shared/auth/firebase";
+import { getFunctionsInstance } from "#lib/shared/auth/firebase.js";
 
 export interface PurgeOneCountResult {
   scanned: number;

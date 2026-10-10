@@ -39,7 +39,8 @@ export class DesktopInitializer {
 	//
 	// 1. Boot into the app. The webview loads "/" — the marketing landing. Like
 	//    the Capacitor shell (NativeInitializer.bootIntoApp), a standalone app
-	//    boots straight into the Composer. replaceState so Back exits cleanly.
+	//    boots straight into the Composer, replacing the history entry so Back
+	//    exits cleanly.
 	// 2. Neutralize data-sveltekit-reload. Landing chrome marks /create links
 	//    with data-sveltekit-reload to cross from public pages into the app
 	//    shell via a full document load. On desktop that full load can only
@@ -69,7 +70,7 @@ export class DesktopInitializer {
 		);
 
 		if (location.pathname === "/") {
-			await goto("/create", { replaceState: true });
+			await goto("/create", { replace: true });
 		}
 	}
 

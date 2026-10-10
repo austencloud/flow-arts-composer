@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
-import { SCENE_OPTIONS } from "$lib/features/lab/tabs/scene-lab/domain/scene-lab-types";
-import { composerRegistry } from "$lib/shared/3d/scene-composer/registry";
-import "$lib/shared/3d/scene-composer/register-scene-lab-composer-plugins";
+import { SCENE_OPTIONS } from "#lib/features/lab/tabs/scene-lab/domain/scene-lab-types.js";
+import { composerRegistry } from "#lib/shared/3d/scene-composer/registry.js";
+import "#lib/shared/3d/scene-composer/register-scene-lab-composer-plugins.js";
 
 const trackedStaticPaths = new Set(
   execFileSync("git", ["ls-files", "static"], { encoding: "utf8" })

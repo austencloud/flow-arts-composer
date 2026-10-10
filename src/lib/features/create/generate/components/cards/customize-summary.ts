@@ -19,11 +19,11 @@
 import {
   GridMode,
   type GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 import {
   detectPresetFromBlocked,
   getAllowedPlacements,
@@ -34,7 +34,7 @@ import {
   type GenerationMotionTypeFilter,
   type GenerationStyleAxis,
   type GenerationStylePolicy,
-} from "$lib/shared/create/domain/generation-style";
+} from "#lib/shared/create/domain/generation-style.js";
 
 export type StyleAxisValue = GenerationStyleAxis;
 export type DashFilter = GenerationMotionTypeFilter;

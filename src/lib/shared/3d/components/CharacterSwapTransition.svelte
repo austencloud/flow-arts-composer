@@ -39,8 +39,8 @@
   import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
   import { getPerformerColor } from "../constants/performer-colors";
   import { getSceneUndoManager } from "../undo/get-scene-undo-manager";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     performer: CharacterInstanceState;

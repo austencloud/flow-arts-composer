@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { validateWinterComposerPlacement } from "$lib/shared/3d/environments/scenes/winter/winter-composer-plugin";
-import type { ComposerPlacement } from "$lib/shared/3d/scene-composer/types";
+import { validateWinterComposerPlacement } from "#lib/shared/3d/environments/scenes/winter/winter-composer-plugin.js";
+import type { ComposerPlacement } from "#lib/shared/3d/scene-composer/types.js";
 
 function placementAt(x: number, z: number): ComposerPlacement {
   return {

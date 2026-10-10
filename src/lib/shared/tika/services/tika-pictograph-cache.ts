@@ -9,7 +9,7 @@
  * Typical pictograph size: 5-15KB base64, so 47 letters × 15KB = ~700KB total.
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 
 export interface TikaPictographCacheStats {
   memoryCount: number;

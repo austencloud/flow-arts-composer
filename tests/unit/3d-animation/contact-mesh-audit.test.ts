@@ -9,7 +9,7 @@ import {
   Vector3,
 } from "three";
 import { describe, expect, it } from "vitest";
-import { auditPosedMeshAgainstStaff } from "$lib/shared/3d/diagnostics/contact-correct/posed-mesh-audit";
+import { auditPosedMeshAgainstStaff } from "#lib/shared/3d/diagnostics/contact-correct/posed-mesh-audit.js";
 
 function meshWithTriangle(
   name: string,

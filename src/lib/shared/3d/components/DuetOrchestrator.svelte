@@ -6,13 +6,13 @@
    * Extracted from the 3D viewer to reduce complexity.
    */
 
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { DuetSequenceWithData } from "../domain/duet-sequence";
   import type { PerformerManager } from "../state/performer-manager.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import DuetBrowserPanel from "./panels/DuetBrowserPanel.svelte";
   import DuetCreatorPanel from "./panels/DuetCreatorPanel.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   type BrowserViewMode = "sequences" | "duets";
 

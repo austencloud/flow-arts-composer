@@ -19,8 +19,8 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { selectStaticSequence } from "$lib/shared/foundation/services/static-sequence-catalog";
-import { continuityReport } from "$lib/shared/3d/diagnostics/prop-continuity-findings";
+import { selectStaticSequence } from "#lib/shared/foundation/services/static-sequence-catalog.js";
+import { continuityReport } from "#lib/shared/3d/diagnostics/prop-continuity-findings.js";
 
 import {
   LAB_GOALS,

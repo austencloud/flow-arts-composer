@@ -14,9 +14,9 @@
   import { Canvas, T } from "@threlte/core";
   import { page } from "$app/state";
   import { WebGLRenderer } from "three";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { getRegistration } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { getRegistration } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
   import ElementMotifScene from "./ElementMotifScene.svelte";
   import { ELEMENT_MOTIFS } from "./element-motifs";
 

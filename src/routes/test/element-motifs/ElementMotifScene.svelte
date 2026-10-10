@@ -10,9 +10,9 @@
   import { T } from "@threlte/core";
   import MotifStation from "./MotifStation.svelte";
   import { ELEMENT_MOTIFS, motifPosition } from "./element-motifs";
-  import SceneEffectsCoordinator3D from "$lib/shared/3d/effects/scene-effects/SceneEffectsCoordinator3D.svelte";
-  import { SceneEffectsManager3D } from "$lib/shared/3d/effects/scene-effects/scene-effects-manager-3d";
-  import { setSceneEffectsContext } from "$lib/shared/3d/effects/scene-effects/scene-effects-context";
+  import SceneEffectsCoordinator3D from "#lib/shared/3d/effects/scene-effects/SceneEffectsCoordinator3D.svelte";
+  import { SceneEffectsManager3D } from "#lib/shared/3d/effects/scene-effects/scene-effects-manager-3d.js";
+  import { setSceneEffectsContext } from "#lib/shared/3d/effects/scene-effects/scene-effects-context.js";
 
   interface Props {
     /** Per-room effect override, keyed by roomId. */

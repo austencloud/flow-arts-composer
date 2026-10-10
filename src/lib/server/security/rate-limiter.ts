@@ -53,7 +53,7 @@ export interface RateLimitConfig {
   /** Window duration in milliseconds */
   windowMs: number;
   /**
-   * Name of the native Cloudflare ratelimit binding on `platform.env` that
+   * Name of the native Cloudflare ratelimit binding on the Worker's env that
    * enforces this preset cross-isolate. When present at runtime it takes
    * precedence over the in-memory window; absent (e.g. `vite dev`), the
    * in-memory window is used. Only set for 10s/60s-window presets — the native

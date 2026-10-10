@@ -6,8 +6,8 @@ import {
   type EffectView,
 } from "./effect-control-manifest";
 import { DEFAULT_EFFECTS_CONFIG } from "./defaults";
-import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-import { GOO_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/goo-presets";
+import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+import { GOO_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/goo-presets.js";
 
 describe("effect-control-manifest", () => {
   const crossStoreFields = new Set([

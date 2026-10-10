@@ -8,8 +8,8 @@
  * pathOptions).
  */
 import { describe, it, expect } from "vitest";
-import { calculate } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import type { StepLike } from "$lib/shared/mandala/services/types";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import type { StepLike } from "#lib/shared/mandala/services/types.js";
 
 const TIP = { dx: 120, dy: 0 }; // MANDALA_STANDARD_TIP_DX — the card-back tip (also skips the module cache)
 

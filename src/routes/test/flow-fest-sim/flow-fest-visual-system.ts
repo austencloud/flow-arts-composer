@@ -1,4 +1,4 @@
-import type { FlowFestMoment } from "$lib/features/flow-fest-sim/state/flow-fest-progress";
+import type { FlowFestMoment } from "#lib/features/flow-fest-sim/state/flow-fest-progress.js";
 import type { FlowFestBranchId } from "../flow-fest-graybox/flow-fest-runtime-contract";
 
 export type FlowFestGate3MomentId = "day" | "dusk" | "night";

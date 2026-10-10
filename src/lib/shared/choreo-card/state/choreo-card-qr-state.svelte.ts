@@ -1,12 +1,12 @@
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-import { encodeViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { QRCodeGenerator } from "$lib/shared/qr/services/qr-code-generator";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+import { encodeViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { QRCodeGenerator } from "#lib/shared/qr/services/qr-code-generator.js";
 import {
   encodeSequence,
   UnencodableMotionError,
-} from "$lib/shared/navigation/services/sequence-encoder";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
 import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
 
 export interface ChoreoCardQrDeps {
@@ -35,7 +35,7 @@ export interface ChoreoCardQrServices {
 
 function lazyQrGenerator(forUrl: boolean): ChoreoCardQrGenerator {
   const load = async () => {
-    const qr = await import("$lib/shared/qr/get-qr-code-generator");
+    const qr = await import("#lib/shared/qr/get-qr-code-generator.js");
     return forUrl ? qr.getUrlQRCodeGenerator() : qr.getQRCodeGenerator();
   };
   return {

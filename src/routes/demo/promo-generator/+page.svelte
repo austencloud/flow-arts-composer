@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PromoGeneratorModule from "$lib/features/promo-generator/PromoGeneratorModule.svelte";
+  import PromoGeneratorModule from "#lib/features/promo-generator/PromoGeneratorModule.svelte";
 </script>
 
 <svelte:head>

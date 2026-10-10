@@ -1,17 +1,17 @@
 import { describe, it, expect, vi } from "vitest";
-import { RecombinationSystem } from "$lib/features/village/engine/systems/recombination-system";
+import { RecombinationSystem } from "#lib/features/village/engine/systems/recombination-system.js";
 import {
 	createVillageWorld,
 	createAvatarEntity,
-} from "$lib/features/village/engine/village-world";
-import type * as SequenceMutatorModule from "$lib/features/village/services/sequence-mutator";
-import * as personalityGenerator from "$lib/features/village/services/personality-generator";
-import { createDefaultConfig } from "$lib/features/village/engine/village-config";
+} from "#lib/features/village/engine/village-world.js";
+import type * as SequenceMutatorModule from "#lib/features/village/services/sequence-mutator.js";
+import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
+import { createDefaultConfig } from "#lib/features/village/engine/village-config.js";
 import type {
 	LearnedSequence,
 	VillageEventMap,
 	VillageEventKey,
-} from "$lib/features/village/domain/village-types";
+} from "#lib/features/village/domain/village-types.js";
 
 type SequenceMutator = typeof SequenceMutatorModule;
 

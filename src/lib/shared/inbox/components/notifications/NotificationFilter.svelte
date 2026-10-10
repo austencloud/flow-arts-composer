@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import type { UserNotification } from "$lib/shared/notifications/domain/models/notification-models";
+  import type { UserNotification } from "#lib/shared/notifications/domain/models/notification-models.js";
 
   export interface FilterState {
     readStatus: "all" | "unread" | "read";
@@ -9,13 +9,13 @@
 </script>
 
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * NotificationFilter - Modern chip-based filter controls
    */
 
   import { slide } from "svelte/transition";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   // Note: UserNotification type is imported in the module script above
 
   interface Props {
@@ -371,7 +371,6 @@
     max-height: 70vh;
     background: var(--theme-panel-bg);
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -4px 24px var(--theme-shadow);
     animation: slideUp var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
   }
 

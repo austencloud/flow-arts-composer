@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { MandalaPrimitiveRef } from "$lib/features/sticker-lab/domain/sticker-types";
+import type { MandalaPrimitiveRef } from "#lib/features/sticker-lab/domain/sticker-types.js";
 
 const mocks = vi.hoisted(() => ({
   getSequence: vi.fn(),
   calculate: vi.fn(),
 }));
 
-vi.mock("$lib/shared/create/get-sequence-repository", () => ({
+vi.mock("#lib/shared/create/get-sequence-repository.js", () => ({
   getSequenceRepository: () => ({ getSequence: mocks.getSequence }),
 }));
-vi.mock("$lib/shared/mandala/services/mandala-geometry-calculator", () => ({
+vi.mock("#lib/shared/mandala/services/mandala-geometry-calculator.js", () => ({
   calculate: mocks.calculate,
 }));
 
@@ -17,7 +17,7 @@ import {
   clearMandalaPathsCache,
   getPrimitivePaths,
   loadPrimitivePaths,
-} from "$lib/features/sticker-lab/state/mandala-paths-cache.svelte";
+} from "#lib/features/sticker-lab/state/mandala-paths-cache.svelte.js";
 
 const ref: MandalaPrimitiveRef = {
   shapeHash: "geometric-shape",

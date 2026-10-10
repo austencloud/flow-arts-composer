@@ -1,7 +1,7 @@
-import type { ContextMenuItem } from "$lib/shared/components/context-menu/context-menu-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { VisualSequenceSaveIntent } from "$lib/shared/library/services/contracts/IVisualSequenceSaveCoordinator";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+import type { ContextMenuItem } from "#lib/shared/components/context-menu/context-menu-types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { VisualSequenceSaveIntent } from "#lib/shared/library/services/contracts/IVisualSequenceSaveCoordinator.js";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 export function buildVisualSequenceSaveMenuItem(
   sequence: SequenceData,
@@ -24,7 +24,7 @@ export function buildVisualSequenceSaveMenuItem(
       // otherwise vanish instead of reaching the person.
       try {
         const { getVisualSequenceSaveCoordinator } =
-          await import("$lib/shared/library/get-visual-sequence-save-coordinator");
+          await import("#lib/shared/library/get-visual-sequence-save-coordinator.js");
         const coordinator = await getVisualSequenceSaveCoordinator();
         await coordinator.save(sequence, intent);
       } catch (error) {

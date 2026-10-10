@@ -4,7 +4,7 @@
    *
    * Shows the thesis (Pro+Pro), antithesis (Anti+Anti), synthesis (Pro+Anti) pattern.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import {
     LETTER_TRIAD,
     createLetterAPictograph,
@@ -143,7 +143,6 @@
   .letter-card:hover {
     border-color: var(--card-accent);
     transform: translateY(-4px);
-    box-shadow: 0 12px 40px var(--theme-shadow, rgba(0, 0, 0, 0.2));
   }
 
   .letter-card.thesis {

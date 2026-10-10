@@ -3,12 +3,12 @@
  * These interfaces define the shape of data stored in IndexedDB
  */
 
-import type { DetectionSource } from "$lib/shared/train/domain/detection-frame";
+import type { DetectionSource } from "#lib/shared/train/domain/detection-frame.js";
 import type {
   PerformanceGrade,
   TimingGrade,
-} from "$lib/shared/train/domain/performance-data";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/train/domain/performance-data.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /**
  * Stored performance record in database

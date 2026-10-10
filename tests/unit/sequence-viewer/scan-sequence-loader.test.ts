@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getScanLoaderBaseLetters } from "$lib/shared/sequence-viewer/services/scan-sequence-loader";
+import { getScanLoaderBaseLetters } from "#lib/shared/sequence-viewer/services/scan-sequence-loader.js";
 
 describe("getScanLoaderBaseLetters", () => {
   it("deduplicates rendered base glyphs while preserving word order", () => {

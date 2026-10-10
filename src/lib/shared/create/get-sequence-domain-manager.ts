@@ -2,7 +2,7 @@ import {
 	createSequence,
 	updateStep,
 } from './services/sequence-domain-manager';
-import type { SequenceData } from '$lib/shared/foundation/domain/models/sequence-data';
+import type { SequenceData } from '#lib/shared/foundation/domain/models/sequence-data.js';
 
 /** Structural type matching what SequenceRepository expects. */
 type SequenceDomainManager = {

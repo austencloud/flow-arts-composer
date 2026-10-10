@@ -6,7 +6,7 @@
  * Persists open state to localStorage so panel restores on refresh.
  */
 
-import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 
 const STORAGE_KEY = "tka-quick-feedback-open";
 

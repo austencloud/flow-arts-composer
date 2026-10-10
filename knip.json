@@ -19,7 +19,7 @@
     "tests/config/*.ts",
     "firebase-functions/src/index.ts",
     "vite.config.ts",
-    "svelte.config.js"
+    "src/config/svelte-options.js"
   ],
   "project": [
     "src/**/*.{ts,svelte}",

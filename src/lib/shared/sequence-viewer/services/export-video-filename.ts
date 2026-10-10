@@ -1,6 +1,6 @@
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { sanitizeFilename } from "$lib/shared/foundation/services/file-downloader";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { sanitizeFilename } from "#lib/shared/foundation/services/file-downloader.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * Canonical exported-video filename. Collapses repeated kernels so the file is

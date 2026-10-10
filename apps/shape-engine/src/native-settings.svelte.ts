@@ -1,15 +1,15 @@
 import { BackgroundType } from "@austencloud/backgrounds";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   DEFAULT_FAN_APPEARANCE,
   normalizeFanAppearance,
-} from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import { DEFAULT_PROP_LOOK } from "$lib/shared/pictograph/prop/domain/prop-look";
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import { DEFAULT_PROP_LOOK } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import {
   normalizeLegacyAppSettings,
   type AppSettings,
-} from "$lib/shared/settings/domain/app-settings";
+} from "#lib/shared/settings/domain/app-settings.js";
 
 const STORAGE_KEY = "tka-shape-engine-settings";
 

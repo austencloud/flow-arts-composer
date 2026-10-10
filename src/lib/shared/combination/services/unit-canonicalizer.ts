@@ -28,8 +28,8 @@
  * not reproduce them, the key is wrong.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   LOCATION_MAP_EIGHTH_CW,
   VERTICAL_MIRROR_LOCATION_MAP,

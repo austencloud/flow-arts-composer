@@ -28,17 +28,17 @@ canvas rendering. This ensures the entire glyph fades as a unified unit.
   import TKAGlyph, {
     getLetterDimensions,
     preloadLetterDimensions,
-  } from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
-  import TurnsColumn from "$lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
-  import SkewBraces from "$lib/shared/pictograph/tka-glyph/components/SkewBraces.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { glyphTurnsTuple } from "$lib/shared/animation-engine/domain/glyph-turns-tuple";
-  import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
-  import { parseTurnsTuple } from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
-  import { getTurnsColumnRightExtent } from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
+  } from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+  import TurnsColumn from "#lib/shared/pictograph/tka-glyph/components/TurnsColumn.svelte";
+  import SkewBraces from "#lib/shared/pictograph/tka-glyph/components/SkewBraces.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { glyphTurnsTuple } from "#lib/shared/animation-engine/domain/glyph-turns-tuple.js";
+  import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import { isSkewedFrameBeat } from "#lib/shared/foundation/services/skewed-frame.js";
+  import { parseTurnsTuple } from "#lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser.js";
+  import { getTurnsColumnRightExtent } from "#lib/shared/pictograph/tka-glyph/utils/turn-position-calculator.js";
   import { onMount } from "svelte";
 
   let {

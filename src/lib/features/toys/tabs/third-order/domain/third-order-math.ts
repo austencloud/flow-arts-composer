@@ -1,9 +1,9 @@
 import {
   OUTER_POINT_MULTIPLIER,
   SVG_CENTER,
-} from "$lib/shared/multi-grid/domain/constants/grid-mode-offsets";
-import { calculatePropCenter } from "$lib/shared/animation-engine/services/prop-position-calculator";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+} from "#lib/shared/multi-grid/domain/constants/grid-mode-offsets.js";
+import { calculatePropCenter } from "#lib/shared/animation-engine/services/prop-position-calculator.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type {
   ThirdOrderGridPose,
   ThirdOrderOrientationMode,

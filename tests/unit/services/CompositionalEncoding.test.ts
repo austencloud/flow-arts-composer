@@ -2,46 +2,46 @@ import { describe, expect, it } from "vitest";
 import {
   compressForQR,
   decompressFromQR,
-} from "$lib/shared/navigation/services/sequence-codec";
+} from "#lib/shared/navigation/services/sequence-codec.js";
 import {
   encodeSequence,
   decodeSequence,
   encodeSequenceForQR,
   decodeSequenceFromQR,
   isInlineEncoded,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { CompositionalDecoder } from "$lib/shared/qr/services/compositional-decoder";
-import { CompositionalEncoder } from "$lib/shared/qr/services/compositional-encoder";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { CompositionalDecoder } from "#lib/shared/qr/services/compositional-decoder.js";
+import { CompositionalEncoder } from "#lib/shared/qr/services/compositional-encoder.js";
 import {
   RECIPE_PREFIX,
   LOOP_TYPE_TAGS,
   TAG_TO_LOOP_TYPE,
-} from "$lib/shared/qr/services/types";
-import { computeRecipeHash } from "$lib/shared/qr/services/compositional-utils";
-import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
+} from "#lib/shared/qr/services/types.js";
+import { computeRecipeHash } from "#lib/shared/qr/services/compositional-utils.js";
+import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
 import {
   LOOPType as EngineLOOPType,
   Period as EnginePeriod,
   loopExecutorSelector,
 } from "@tka/sequence-engine/loop";
-import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 function makeStep(
   stepNumber: number,

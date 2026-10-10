@@ -9,9 +9,9 @@
 import {
   StanceSimulator,
   restPoseFromHeight,
-} from "$lib/features/lab/tabs/collision-lab/services/stance-simulator";
-import type { SimCollision } from "$lib/features/lab/tabs/collision-lab/services/types";
-import type { StancePose } from "$lib/features/lab/tabs/collision-lab/domain/types";
+} from "#lib/features/lab/tabs/collision-lab/services/stance-simulator.js";
+import type { SimCollision } from "#lib/features/lab/tabs/collision-lab/services/types.js";
+import type { StancePose } from "#lib/features/lab/tabs/collision-lab/domain/types.js";
 import { buildSweptVolume } from "./swept-volume/swept-volume-builder";
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 

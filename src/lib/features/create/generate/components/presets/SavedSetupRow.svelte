@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import OverflowMenu from "#lib/shared/ui/components/OverflowMenu.svelte";
   import type { SavedGeneratorSetup } from "../../domain/models/favorite-config";
 
   let {

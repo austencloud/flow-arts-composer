@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { updateSequenceStartPlacement } from "$lib/features/create/construct/start-placement-picker/services/update-sequence-start-placement";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { updateSequenceStartPlacement } from "#lib/features/create/construct/start-placement-picker/services/update-sequence-start-placement.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 function staticMotion(
   color: HandSide,

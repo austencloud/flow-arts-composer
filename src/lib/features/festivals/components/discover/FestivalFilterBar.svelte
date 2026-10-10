@@ -1,8 +1,8 @@
 <script lang="ts">
   import { getFestivalContext } from "../../context/festival-context";
-  import { auth } from "$lib/shared/auth/firebase";
+  import { auth } from "#lib/shared/auth/firebase.js";
   import type { FestivalRegion } from "../../domain/models/festival";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   const { state } = getFestivalContext();
 

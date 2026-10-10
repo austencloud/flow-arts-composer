@@ -7,9 +7,9 @@ export {
   MotionType,
   RotationDirection,
   Orientation,
-} from '$lib/shared/pictograph/shared/domain/enums/pictograph-enums';
+} from '#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js';
 export type {
   MotionType as MotionTypeT,
   RotationDirection as RotationDirectionT,
   Orientation as OrientationT,
-} from '$lib/shared/pictograph/shared/domain/enums/pictograph-enums';
+} from '#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js';

@@ -1,55 +1,36 @@
 {
-  "extends": "./.svelte-kit/tsconfig.json",
+  "extends": "$app/tsconfig",
   "compilerOptions": {
-    "strict": true, // ✅ ENABLED: Full strict type checking including strictNullChecks
-    "noUncheckedIndexedAccess": true, // 2026: Prevent undefined access errors
-    "noImplicitOverride": true, // 2026: Explicit override declarations
-    "exactOptionalPropertyTypes": false, // Disabled: Too pedantic for Svelte 5 (causes false positives with optional props)
-
-    "moduleResolution": "Bundler", // 2026: Bundler mode for Vite/SvelteKit
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+    "moduleResolution": "Bundler",
     "customConditions": ["svelte"],
     "module": "ESNext",
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
-    "resolveJsonModule": true,
-    "allowImportingTsExtensions": true, // Performance: direct .ts/.tsx imports
-
-    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true, // 2026: Required for Vite HMR
-    "verbatimModuleSyntax": true, // 2026: Enforce import type for type-only imports
-
-    "noEmit": true,
     "sourceMap": true,
     "inlineSourceMap": false,
     "inlineSources": false,
 
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo",
-    "skipLibCheck": true, // Faster builds, skip type checking in node_modules
-
-    "allowJs": true,
     "checkJs": false,
-
-    "types": ["vite/client", "web-bluetooth"],
-
+    "types": ["$app/types", "vite/client", "web-bluetooth"],
     "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true, // ⭐ ENABLED: Require explicit returns in all code paths
-    "allowUnreachableCode": false, // Prevent dead code
-    "allowUnusedLabels": false, // No unused labels
-    "noUnusedLocals": false, // Disabled: Too many false positives in Svelte 5
-    "noUnusedParameters": false, // Disabled: Svelte event handlers often have unused params
-    "noPropertyAccessFromIndexSignature": false // Disabled: too noisy for existing Record-based access patterns
+    "noImplicitReturns": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.svelte"],
   "exclude": [
     "node_modules",
     "dist",
-    // 🚨 CRITICAL: TypeScript exclude patterns match at ANY depth!
-    // Using just "build" would exclude the wrong directories.
-    // We need to be specific: only exclude the root-level build output directory.
-    // Patterns starting with "./" are relative to the tsconfig.json location.
     "./build",
     "./build/**",
     ".svelte-kit",

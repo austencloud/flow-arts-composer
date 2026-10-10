@@ -3,8 +3,8 @@ import {
   buildArrowHaloFilter,
   haloColor,
   HALO_STD_DEVIATION,
-} from "$lib/shared/pictograph/arrow/rendering/arrow-halo";
-import { wrapSvgContent } from "$lib/shared/render/services/canvas-2d-transform-helper";
+} from "#lib/shared/pictograph/arrow/rendering/arrow-halo.js";
+import { wrapSvgContent } from "#lib/shared/render/services/canvas-2d-transform-helper.js";
 
 describe("arrow halo — shared definition", () => {
   it("dark/light halo colors match the pictograph background", () => {

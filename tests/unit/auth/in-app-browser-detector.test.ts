@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { InAppBrowserDetector } from "$lib/shared/auth/services/in-app-browser-detector";
+import { InAppBrowserDetector } from "#lib/shared/auth/services/in-app-browser-detector.js";
 
 // Capacitor.isNativePlatform() is called first in detect(); force it false so
 // these UA cases exercise the web-detection path, not the native carve-out.

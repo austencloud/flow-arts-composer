@@ -7,8 +7,8 @@
 <script lang="ts">
 	import { connectState } from '../../state/connect-state.svelte';
 	import SessionCard from './SessionCard.svelte';
-	import ProgressRing from '$lib/shared/components/loading/ProgressRing.svelte';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import ProgressRing from '#lib/shared/components/loading/ProgressRing.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 
 	// Derived from connectState
 	const nearbySessions = $derived(connectState.nearbySessions);

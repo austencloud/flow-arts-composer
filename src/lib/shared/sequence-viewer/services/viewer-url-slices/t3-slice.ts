@@ -88,9 +88,9 @@ import {
   VIEWER_3D_ENVIRONMENT_STORAGE_KEY,
   normalizeSceneEnvironmentId,
   type SceneEnvironmentId,
-} from "$lib/shared/3d/environments/domain/scene-environment";
-import { SCENE_FEATURES } from "$lib/shared/3d/scene-features/domain/scene-feature-registry";
-import { SCENE_FEATURES_STORAGE_KEY } from "$lib/shared/3d/scene-features/state/scene-feature-state.svelte";
+} from "#lib/shared/3d/environments/domain/scene-environment.js";
+import { SCENE_FEATURES } from "#lib/shared/3d/scene-features/domain/scene-feature-registry.js";
+import { SCENE_FEATURES_STORAGE_KEY } from "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js";
 
 export interface T3SlicePayload {
   /** `tka-viewer3d-environment`, elided at `DEFAULT_SCENE_ENVIRONMENT_ID`. */

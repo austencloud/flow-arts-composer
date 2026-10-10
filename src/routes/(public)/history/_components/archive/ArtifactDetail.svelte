@@ -5,9 +5,9 @@
   verbatim; nothing is added.
 -->
 <script lang="ts">
-	import type { CatalogEntry } from "$lib/shared/notation/notation-catalog";
-	import SourceVideoCard from "$lib/shared/components/SourceVideoCard.svelte";
-	import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+	import type { CatalogEntry } from "#lib/shared/notation/notation-catalog.js";
+	import SourceVideoCard from "#lib/shared/components/SourceVideoCard.svelte";
+	import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 	import ArtifactVisual from "./ArtifactVisual.svelte";
 	import { VTG_DECADE } from "./_lib/vtg-chronicle.svelte";
 

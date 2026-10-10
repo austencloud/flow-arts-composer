@@ -13,12 +13,12 @@ vi.mock("$app/navigation", () => ({
   goto: navigation.goto,
 }));
 
-vi.mock("$lib/shared/navigation/services/sheet-router", () => ({
+vi.mock("#lib/shared/navigation/services/sheet-router.js", () => ({
   openSheet: navigation.openSheet,
 }));
 
 vi.mock(
-  "$lib/shared/navigation-coordinator/navigation-coordinator.svelte",
+  "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js",
   () => ({
     handleModuleChange: navigation.handleModuleChange,
   })
@@ -47,10 +47,10 @@ describe("ChangelogRichText navigation", () => {
       tabId: "construct",
     },
     {
-      label: "Gallery",
-      href: "/browse/gallery",
+      label: "Explore",
+      href: "/browse/explore",
       moduleId: "browse",
-      tabId: "gallery",
+      tabId: "explore",
     },
     {
       label: "Creators",

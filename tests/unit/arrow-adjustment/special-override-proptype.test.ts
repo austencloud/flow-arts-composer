@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 // Mock firebase/auth before importing anything that touches the firestore chain.
 // SpecialArrowPlacementSchema uses firestoreDate which imports from $lib/shared/auth
 // which pulls in firebase/auth → protobufjs at module-load time.
-vi.mock("$lib/shared/auth/state/authState.svelte", () => ({
+vi.mock("#lib/shared/auth/state/authState.svelte", () => ({
   authState: { effectiveUserId: null },
 }));
 
@@ -16,8 +16,8 @@ import {
   generateSpecialOverrideKey,
   parseSpecialOverrideKey,
   SpecialArrowPlacementSchema,
-} from "$lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement";
-import { createSpecialArrowPlacementState } from "$lib/shared/pictograph/arrow/positioning/special-override/state/special-arrow-placement-state.svelte";
+} from "#lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement.js";
+import { createSpecialArrowPlacementState } from "#lib/shared/pictograph/arrow/positioning/special-override/state/special-arrow-placement-state.svelte.js";
 
 describe("special override key — propType dimension", () => {
   it("includes propType as the 7th segment", () => {

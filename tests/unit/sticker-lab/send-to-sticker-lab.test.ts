@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const mocks = vi.hoisted(() => ({
   goto: vi.fn(),
@@ -14,21 +14,24 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("$app/navigation", () => ({ goto: mocks.goto }));
-vi.mock("$lib/shared/mandala/services/mandala-geometry-calculator", () => ({
+vi.mock("#lib/shared/mandala/services/mandala-geometry-calculator.js", () => ({
   calculate: vi.fn(() => mocks.paths),
 }));
-vi.mock("$lib/features/sticker-lab/get-sticker-sheet-repository", () => ({
+vi.mock("#lib/features/sticker-lab/get-sticker-sheet-repository.js", () => ({
   getStickerSheetRepository: () => ({
     load: mocks.load,
     save: mocks.save,
     clear: vi.fn(),
   }),
 }));
-vi.mock("$lib/features/sticker-lab/state/mandala-paths-cache.svelte", () => ({
-  cachePrimitivePaths: mocks.cache,
-}));
+vi.mock(
+  "#lib/features/sticker-lab/state/mandala-paths-cache.svelte.js",
+  () => ({
+    cachePrimitivePaths: mocks.cache,
+  })
+);
 
-import { sendToStickerLab } from "$lib/shared/sequence-viewer/services/send-to-sticker-lab";
+import { sendToStickerLab } from "#lib/shared/sequence-viewer/services/send-to-sticker-lab.js";
 
 describe("sendToStickerLab", () => {
   beforeEach(() => {

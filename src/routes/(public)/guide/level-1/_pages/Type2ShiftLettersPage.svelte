@@ -22,28 +22,28 @@
    * at x 97/334.9, rows y 193.6/325.5; word rows 99.9pt cells at x 156.1,
    * y 494.3/594.2, shared Start (56.1, 544.2). Text at PROOF_TEXT coords.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
-  import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
-  import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
+  import { getSequenceSelection } from "#lib/shared/selection/sequence-selection.svelte.js";
+  import PlacementGlyph from "#lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     GridMode,
     GridLocation,
     GridPlacement,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import { LETTER_TYPE_COLORS } from "$lib/shared/pictograph/shared/domain/constants/pictograph-constants";
-  import { LetterType } from "$lib/shared/foundation/domain/models/letter-type";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
+  import { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
     pt,
     ptDrag,

@@ -2,8 +2,8 @@ import type {
   GridTopology,
   PointRef,
   Junction,
-} from "$lib/shared/multi-grid/domain/models/grid-topology";
-import type { JunctionOverlap, PropPlacement } from "$lib/shared/conjoined-grid/domain/types";
+} from "#lib/shared/multi-grid/domain/models/grid-topology.js";
+import type { JunctionOverlap, PropPlacement } from "#lib/shared/conjoined-grid/domain/types.js";
 
 /**
  * Iterates over all junctions in a topology and checks whether both the blue

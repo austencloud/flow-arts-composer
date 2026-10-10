@@ -2,10 +2,10 @@
   import CodexCell from "./CodexCell.svelte";
   import CodexTransitionGlyph from "./CodexTransitionGlyph.svelte";
   import type { CodexBoxDef } from "../_data/codex-groups";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { GuideCodexVisibility } from "../../level-1/_data/guide-codex-persistence";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     box,

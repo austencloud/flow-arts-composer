@@ -7,7 +7,7 @@
    */
 
   import { getSceneFeatureContext } from "../context/scene-feature-context";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   const sceneFeatures = getSceneFeatureContext();
 </script>

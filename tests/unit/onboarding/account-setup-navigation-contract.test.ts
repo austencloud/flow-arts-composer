@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { SETTINGS_TABS } from "$lib/shared/navigation/config/tab-definitions";
+import { SETTINGS_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
 import {
   ACCOUNT_SETUP_SETTINGS_DESTINATIONS,
   type AccountSetupTaskId,
-} from "$lib/shared/onboarding/state/account-setup-state.svelte";
+} from "#lib/shared/onboarding/state/account-setup-state.svelte.js";
 
 describe("account setup navigation contract", () => {
   it("routes every setup task to a registered Settings tab", () => {

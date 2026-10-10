@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 
+import { flushSync } from "svelte";
 import { effect_root } from "svelte/internal/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createChoreoCardSizingState,
   fitSquareGridCell,
   getContainedCardHeight,
-} from "$lib/shared/choreo-card/state/choreo-card-sizing-state.svelte";
+} from "#lib/shared/choreo-card/state/choreo-card-sizing-state.svelte.js";
 
 const disposals: Array<() => void> = [];
 
@@ -159,6 +160,67 @@ describe("ChoreoCard contained sizing motion", () => {
     update(8, 280);
     expect([sizing.containedWidth, sizing.containedHeight]).toEqual([322, 280]);
     expect(sizing.flipSuppressed).toBe(true);
+  });
+});
+
+describe("ChoreoCard container observer", () => {
+  it("keeps one observer when its fractional size disagrees with the rounded clientHeight", () => {
+    const observers: Array<(entries: ResizeObserverEntry[]) => void> = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: (entries: ResizeObserverEntry[]) => void) {
+          observers.push(callback);
+        }
+        observe(): void {}
+        disconnect(): void {}
+      }
+    );
+    // A 308.5px tall container: clientHeight rounds it, the observer does not.
+    vi.stubGlobal("getComputedStyle", () => ({
+      paddingLeft: "0px",
+      paddingRight: "0px",
+      paddingTop: "0px",
+      paddingBottom: "0px",
+    }));
+    const container = document.createElement("div");
+    Object.defineProperty(container, "clientWidth", { value: 675 });
+    Object.defineProperty(container, "clientHeight", { value: 309 });
+    let sizing!: ReturnType<typeof createChoreoCardSizingState>;
+    disposals.push(
+      effect_root(() => {
+        sizing = createChoreoCardSizingState(() => ({
+          containerElement: container,
+          previewStackElement: undefined,
+          previewAspectRatio: 15 / 7,
+          forceContain: false,
+          needsScroll: false,
+          fitWidth: false,
+          containSizeMotion: null,
+          containMotionBox: null,
+          containModel: {
+            cols: 4,
+            gridHeightUnits: 3,
+            headerUnits: 0,
+            footerUnits: 0,
+            headerMinPx: 0,
+          },
+        }));
+      })
+    );
+    flushSync();
+    expect(sizing.containedWidth).toBeCloseTo(309 * (15 / 7));
+
+    // Each observer delivers its first size on creation. When writing that
+    // size re-ran the effect, the rebuilt observer delivered it again and the
+    // Card's width flipped by a pixel on every frame.
+    observers[0]([
+      { contentRect: { width: 675, height: 308.5 } } as ResizeObserverEntry,
+    ]);
+    flushSync();
+
+    expect(observers).toHaveLength(1);
+    expect(sizing.containedWidth).toBeCloseTo(308.5 * (15 / 7));
   });
 });
 

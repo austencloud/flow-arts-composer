@@ -7,21 +7,21 @@ import {
   imagineActivityFutures,
   scoreActivities,
   startNextActivity,
-} from "$lib/shared/attract/domain/activities";
+} from "#lib/shared/attract/domain/activities.js";
 import {
   activitySituation,
   beginActivityExperience,
   finishActivityExperience,
-} from "$lib/shared/attract/domain/activity-experience";
-import { predictActivityOutcome } from "$lib/shared/attract/domain/activity-prediction";
+} from "#lib/shared/attract/domain/activity-experience.js";
+import { predictActivityOutcome } from "#lib/shared/attract/domain/activity-prediction.js";
 import {
   EMPTY_WORLD,
   type GhostContext,
-} from "$lib/shared/attract/domain/intention";
-import { createMemory } from "$lib/shared/attract/domain/scoring";
-import { ALL_INTENTIONS } from "$lib/shared/attract/intentions";
-import { createRng } from "$lib/shared/attract/services/rng";
-import { createTrail } from "$lib/shared/attract/services/trail";
+} from "#lib/shared/attract/domain/intention.js";
+import { createMemory } from "#lib/shared/attract/domain/scoring.js";
+import { ALL_INTENTIONS } from "#lib/shared/attract/intentions/index.js";
+import { createRng } from "#lib/shared/attract/services/rng.js";
+import { createTrail } from "#lib/shared/attract/services/trail.js";
 
 function context(seed = 7): GhostContext {
   const rng = createRng(seed);

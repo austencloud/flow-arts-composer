@@ -9,12 +9,12 @@
  * can gate "Enter 3D" before attempting any WebGL work.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   isOpenedSequence,
   refreshOpenedPerformers,
 } from "./refresh-opened-sequence";
-import { reducedMotion } from "$lib/shared/transitions/motion";
+import { reducedMotion } from "#lib/shared/transitions/motion.js";
 // propInterpolator / sequenceConverter are now module-level functions; no type imports needed
 import type { CameraStateSnapshot } from "@austencloud/scene-3d";
 import { getSceneUndoManager } from "../undo/get-scene-undo-manager";
@@ -38,9 +38,9 @@ import type {
   DefaultPerformerSettings,
   CascadeCategory,
 } from "./performer-settings-types";
-import type { EffectType } from "$lib/shared/effects/domain/effects-config";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import {
   createPerformerManager,
   type PerformerManager,
@@ -67,8 +67,8 @@ import { levelJoinedViewerOpeningShot } from "../camera/viewer-camera-framing";
 import { resolveGridJoin3D } from "../services/grid-join-3d";
 import { fits3DViewportNow } from "../capabilities/viewport-3d-gate.svelte";
 import { userProportionsState } from "@austencloud/scene-3d";
-import { createCameraChoreographyState } from "$lib/shared/sequence-viewer/camera-choreography/state.svelte";
-import { computeChoreographerShot } from "$lib/shared/sequence-viewer/camera-choreography/presets/shots";
+import { createCameraChoreographyState } from "#lib/shared/sequence-viewer/camera-choreography/state.svelte.js";
+import { computeChoreographerShot } from "#lib/shared/sequence-viewer/camera-choreography/presets/shots.js";
 import type { OceanVariant } from "../environments/domain/enums/environment-enums";
 import type { TimedTransition } from "../camera/transitions";
 import {

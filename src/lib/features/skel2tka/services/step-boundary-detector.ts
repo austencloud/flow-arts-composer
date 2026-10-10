@@ -9,8 +9,8 @@
  * previous beat to filter out noise from brief detection glitches.
  */
 
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { DetectionFrame } from "$lib/shared/train/domain/detection-frame";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { DetectionFrame } from "#lib/shared/train/domain/detection-frame.js";
 import type { HandTimeline, DetectedBeat, StepPosition } from "../domain/models";
 import type { StepDetectionOptions } from "./types";
 

@@ -1,4 +1,5 @@
 import { sveltekit } from "@sveltejs/kit/vite";
+import { svelteOptions } from "../../src/config/svelte-options.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
@@ -9,7 +10,7 @@ const projectRoot = path.resolve(
 );
 
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [sveltekit(svelteOptions)],
 
   test: {
     environment: "jsdom",
@@ -44,20 +45,34 @@ export default defineConfig({
     ],
 
     alias: {
-      $lib: path.resolve(projectRoot, "src/lib"),
-      "$app/environment": path.resolve(
+      // Shape Engine's sources import the app library as `#lib/...` too, but
+      // their nearest package.json is apps/shape-engine's, and a package's
+      // `imports` field cannot point outside the package. Resolve it here, as
+      // apps/shape-engine/vite.config.ts does.
+      "#lib": path.resolve(projectRoot, "src/lib"),
+      // Listed before `$app/env`, which would otherwise match these as a prefix.
+      "$app/env/public": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-public.ts"
+      ),
+      "$app/env/private": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-private.ts"
+      ),
+      "$app/env": path.resolve(
         projectRoot,
         "tests/setup/stubs/app-environment.ts"
+      ),
+      // The Worker module server code reads bindings from; see the stub.
+      "cloudflare:workers": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/cloudflare-workers.ts"
       ),
       "$app/navigation": path.resolve(
         projectRoot,
         "tests/setup/stubs/app-navigation.ts"
       ),
       "$app/state": path.resolve(projectRoot, "tests/setup/stubs/app-state.ts"),
-      "$app/stores": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/app-stores.ts"
-      ),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
       // node_modules/@tka/render-core is a symlink into the PRIMARY checkout's
       // packages/ (pnpm links the workspace package once and worktrees share
@@ -70,17 +85,35 @@ export default defineConfig({
       ),
     },
 
-    // Vitest 4.0: poolOptions deprecated, use pool config directly
+    // Worker pool. `pool: "forks"` is Vitest 4's default; it stays explicit so
+    // a future default change cannot quietly move the suite into worker
+    // threads. Vitest 4 removed `poolOptions` and with it `singleFork`: the
+    // `forks: { singleFork: true }` that sat here from 2025-11 to 2026-10 was
+    // an unknown key Vitest 4 ignored without a warning, so the suite has
+    // fanned files out across Vitest's default worker count (cores minus one
+    // in `run` mode, half the cores in watch mode: 31 forks on the 32-core dev
+    // machine, fewer on CI's runner) ever since Vitest 4 arrived in 2025-12.
+    // That fan-out is the intended shape. Measured 2026-10-08 in a task
+    // worktree, two full 2,566-file runs took 6 min 34 s and 6 min 38 s of
+    // wall time on 31 forks while each summed to 3.1 hours of worker time
+    // (environment 72 to 87 min, import 35 to 47 min, tests 27 to 33 min,
+    // transform 18 to 27 min, setup 12 min); one fork would serialize all of
+    // it. Saturated like that, a file can run five to eight times slower than
+    // in a small run (worktree-automerge.test.ts: 22 s in a ten-file run, 120
+    // to 133 s in the full run; german-catalog-contract: 13 s against 27 to
+    // 110 s), so a test that spawns processes, scans the repo or solves avatar
+    // contacts sets its own budget the way tests/unit/3d-animation does
+    // instead of leaning on the 30 s default below. To bisect a cross-file
+    // leak, pass `--no-file-parallelism` on the command line rather than
+    // pinning a single worker here.
     pool: "forks",
-    forks: {
-      singleFork: true,
-    },
 
-    // The default five-second budget is too short once the full 1,600+ file
-    // suite shares one fork: otherwise-fast dynamic imports and repository
-    // scans can spend several seconds behind unrelated transforms. Keep real
-    // hangs bounded while allowing the release gate to produce deterministic
-    // results under normal shared-machine load.
+    // The default five-second budget is too short when 2,566 files share the
+    // machine across worker forks: otherwise-fast dynamic imports and
+    // repository scans can spend several seconds behind other workers'
+    // transforms and disk reads. Keep real hangs bounded while allowing the
+    // release gate to produce deterministic results under normal
+    // shared-machine load.
     testTimeout: 30_000,
 
     isolate: true,

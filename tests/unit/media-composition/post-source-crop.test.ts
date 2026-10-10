@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { PostSourceGeometry } from "$lib/shared/media-composition/domain/post-project";
+import type { PostSourceGeometry } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   dragSourceCrop,
   setSourceCropEdge,
   sourceCropAtRatio,
   sourceFillBox,
-} from "$lib/shared/share/components/post-studio/editor/post-source-crop";
+} from "#lib/shared/share/components/post-studio/editor/post-source-crop.js";
 
 const geometry: PostSourceGeometry = {
   x: -0.2,

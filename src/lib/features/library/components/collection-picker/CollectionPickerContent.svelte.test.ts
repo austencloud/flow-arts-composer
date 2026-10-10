@@ -2,8 +2,8 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import CollectionPickerContent from "./CollectionPickerContent.svelte";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 
 // Isolate the picker from the Firestore-backed singleton: the UI contract under
 // test is "given these collections + selection, render the right pressed state
@@ -15,7 +15,7 @@ const stub = vi.hoisted(() => ({
   addMany: vi.fn(),
   createAndAddMany: vi.fn(),
 }));
-vi.mock("$lib/features/library/state/collections-state.svelte", () => ({
+vi.mock("#lib/features/library/state/collections-state.svelte.js", () => ({
   collectionsState: {
     get collections() {
       return stub.collections;

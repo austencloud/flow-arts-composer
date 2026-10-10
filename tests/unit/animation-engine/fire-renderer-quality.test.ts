@@ -7,20 +7,20 @@ import {
   computeFireVisualCacheKey,
   computeFirePresentationResolution,
   shouldUseMacCormackScalars,
-} from "$lib/shared/animation-engine/services/fire/web-gl-fire-renderer";
+} from "#lib/shared/animation-engine/services/fire/web-gl-fire-renderer.js";
 import {
   computeFireFrameCacheCapacity,
   hasReachedFireFrameCacheCapacity,
   canPromoteFireFrameRecording,
   FireFrameCache,
-} from "$lib/shared/animation-engine/services/fire/fire-frame-cache";
-import { DEFAULT_FIRE_CONFIG } from "$lib/shared/animation-engine/domain/types/fire-types";
+} from "#lib/shared/animation-engine/services/fire/fire-frame-cache.js";
+import { DEFAULT_FIRE_CONFIG } from "#lib/shared/animation-engine/domain/types/fire-types.js";
 import {
   BLOOM_COMPOSITE_FRAG,
   DISPLAY_FRAG,
   PROP_VISIBILITY_MATTE_FRAG,
-} from "$lib/shared/animation-engine/services/fire/fluid-shader-sources";
-import { computeFirePropVisibilityScale } from "$lib/shared/animation-engine/services/fire/fire-prop-visibility";
+} from "#lib/shared/animation-engine/services/fire/fluid-shader-sources.js";
+import { computeFirePropVisibilityScale } from "#lib/shared/animation-engine/services/fire/fire-prop-visibility.js";
 
 describe("2D fire quality controls", () => {
   it("reconstructs HDR fire above the simulation grid without unbounded targets", () => {

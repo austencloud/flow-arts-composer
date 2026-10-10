@@ -15,9 +15,9 @@ import {
   startAfter as firestoreStartAfter,
   serverTimestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
-import { reportErrorTelemetry } from "$lib/shared/error/services/error-telemetry-reporter";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
+import { reportErrorTelemetry } from "#lib/shared/error/services/error-telemetry-reporter.js";
 import { stripUndefined } from "./firestore-helpers";
 import type { ListOptions, ReadOptions, WriteOptions } from "./firestore-types";
 import type { Firestore, QueryConstraint } from 'firebase/firestore';

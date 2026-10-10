@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getFirestoreInstance } from "../firebase";
-import { getDeviceId } from "$lib/shared/foundation/services/device-id";
+import { getDeviceId } from "#lib/shared/foundation/services/device-id.js";
 import { isActivityStale } from "../domain/activity-refresh";
 
 // The device id itself now lives in foundation/services/device-id.ts, which has

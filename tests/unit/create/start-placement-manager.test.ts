@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { StartPlacementManager } from "$lib/shared/create/services/start-placement-manager";
+import { StartPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getPlacementGridPoints } from "$lib/shared/pictograph/grid/services/placement-grid-points";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   HandSide,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 describe("StartPlacementManager: direct construction", () => {
   const manager = new StartPlacementManager();

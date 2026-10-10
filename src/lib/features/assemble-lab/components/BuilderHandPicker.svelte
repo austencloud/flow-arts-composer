@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   let {
     activeHand,

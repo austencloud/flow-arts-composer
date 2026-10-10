@@ -9,11 +9,11 @@ import type {
   SelectionState,
   TimelineClip,
   TimeSeconds,
-} from "$lib/shared/animation-engine/domain/timeline-types";
+} from "#lib/shared/animation-engine/domain/timeline-types.js";
 import {
   createDefaultSelectionState,
   getClipEndTime,
-} from "$lib/shared/animation-engine/domain/timeline-types";
+} from "#lib/shared/animation-engine/domain/timeline-types.js";
 
 export interface SelectionContext {
   getSelection: () => SelectionState;

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import manifests from "$lib/features/choreo-card/data/festival-sampler-manifests.json";
+import manifests from "#lib/features/choreo-card/data/festival-sampler-manifests.json";
 import {
   festivalSamplerCardKey,
   type FestivalSamplerCardManifest,
-} from "$lib/features/choreo-card/services/festival-sampler-manifest";
+} from "#lib/features/choreo-card/services/festival-sampler-manifest.js";
 import {
   applyFestivalSamplerTurnAssignment,
   loadFestivalSamplerBaseSequence,
   resolveFestivalSamplerCardSequence,
-} from "$lib/features/choreo-card/services/festival-sampler-turns";
+} from "#lib/features/choreo-card/services/festival-sampler-turns.js";
 
 describe("festival sampler frozen turn assignments", () => {
   it("resolves the first-page JD card from its approved four-step family", async () => {

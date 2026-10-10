@@ -1,12 +1,12 @@
 import { BackgroundType } from "@austencloud/backgrounds";
 import { describe, expect, it } from "vitest";
 
-import { PRIDE_BACKGROUND_TYPE } from "$lib/shared/settings/domain/background-type-migration";
+import { PRIDE_BACKGROUND_TYPE } from "#lib/shared/settings/domain/background-type-migration.js";
 import {
   getShowroomTheme,
   getShowroomThemeFromId,
   SHOWROOM_THEMES,
-} from "$lib/shared/settings/components/tabs/background/showroom/theme-showroom-data";
+} from "#lib/shared/settings/components/tabs/background/showroom/theme-showroom-data.js";
 
 describe("theme showroom data", () => {
   it("covers every selectable environment exactly once", () => {

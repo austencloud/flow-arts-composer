@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   pruneParamsForNavigation,
   pruneRouteScopedParams,
-} from "$lib/shared/navigation/services/url-parameter-policy";
+} from "#lib/shared/navigation/services/url-parameter-policy.js";
 
 describe("route-scoped URL parameters", () => {
   it("drops recovery and source-route state on module navigation", () => {

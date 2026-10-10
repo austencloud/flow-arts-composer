@@ -2,14 +2,14 @@ import type {
   ShowErrorOptions,
   ErrorContext,
   AppError,
-} from "$lib/shared/error/domain/error-models";
+} from "#lib/shared/error/domain/error-models.js";
 import {
   showError as showErrorState,
   dismissError as dismissErrorState,
   clearErrorHistory,
   getErrorHistory,
-} from "$lib/shared/error/state/error-state.svelte";
-import { showErrorToast } from "$lib/shared/error/state/error-toast-state.svelte";
+} from "#lib/shared/error/state/error-state.svelte.js";
+import { showErrorToast } from "#lib/shared/error/state/error-toast-state.svelte.js";
 
 /**
  * Error Handling Service Implementation
@@ -135,7 +135,7 @@ export class ErrorHandler {
    * warning actually fires (same pattern as reportBug).
    */
   private reportToTelemetry(options: ShowErrorOptions): void {
-    import("$lib/shared/error/services/error-telemetry-reporter")
+    import("#lib/shared/error/services/error-telemetry-reporter.js")
       .then(({ reportErrorTelemetry }) => {
         reportErrorTelemetry(options);
       })
@@ -165,7 +165,7 @@ export class ErrorHandler {
 
       // Dynamically import feedback service singleton to avoid circular dependencies
       const { feedbackService } =
-        await import("$lib/shared/feedback/services/feedback-repository");
+        await import("#lib/shared/feedback/services/feedback-repository.js");
 
       // Build bug report
       const errorReport = this.buildErrorReport(appError, additionalComment);

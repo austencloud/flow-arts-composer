@@ -1,7 +1,7 @@
 import type { User } from "firebase/auth";
 import { logSessionStart } from "../../analytics/services/posthog-activity-logger";
 import { getPresenceTracker } from "../../presence/get-presence-tracker";
-import { ensureSystemCollections } from "$lib/shared/library/services/collection-manager";
+import { ensureSystemCollections } from "#lib/shared/library/services/collection-manager.js";
 
 /** Keep an earlier auth boot from repointing saved mandala writes after a user change. */
 export async function initializeMandalaCollection(
@@ -9,8 +9,8 @@ export async function initializeMandalaCollection(
   getUserFromState: () => User | null
 ): Promise<void> {
   const { mandalaCollectionState } =
-    await import("$lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte");
-  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+    await import("#lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte.js");
+  const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
   await getFirestoreInstance();
   if (getUserFromState()?.uid !== user.uid) return;
   await mandalaCollectionState.init(user.uid);
@@ -41,10 +41,10 @@ export async function initializeChildServices(
   })();
 
   // Initialize settings Firebase sync (non-blocking)
-  import("$lib/shared/settings/state/settings-state.svelte")
+  import("#lib/shared/settings/state/settings-state.svelte.js")
     .then(async (settingsModule) => {
       const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
       await settingsModule.settingsService.initializeFirebaseSync();
     })
@@ -56,10 +56,10 @@ export async function initializeChildServices(
     });
 
   // Sync first-run status FROM cloud
-  import("$lib/shared/onboarding/state/first-run-state.svelte")
+  import("#lib/shared/onboarding/state/first-run-state.svelte.js")
     .then(async ({ firstRunState }) => {
       const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
       await firstRunState.syncFromCloud();
     })
@@ -67,7 +67,7 @@ export async function initializeChildServices(
       console.warn("⚠️ [authState] First-run sync failed:", error);
       try {
         const { firstRunState } =
-          await import("$lib/shared/onboarding/state/first-run-state.svelte");
+          await import("#lib/shared/onboarding/state/first-run-state.svelte.js");
         firstRunState.markCloudSyncComplete();
       } catch {
         // If even the import fails, app is in a very bad state
@@ -77,10 +77,10 @@ export async function initializeChildServices(
   // Sync generate-tour status FROM cloud (suppresses the "First time
   // generating?" offer on this device if the user took or dismissed it on
   // another). Non-blocking; localStorage carries the flag if this fails.
-  import("$lib/shared/onboarding/state/generate-tour-state.svelte")
+  import("#lib/shared/onboarding/state/generate-tour-state.svelte.js")
     .then(async ({ generateTourState }) => {
       const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
       await generateTourState.syncFromCloud();
     })
@@ -88,7 +88,7 @@ export async function initializeChildServices(
       console.warn("⚠️ [authState] Generate-tour sync failed:", error);
       try {
         const { generateTourState } =
-          await import("$lib/shared/onboarding/state/generate-tour-state.svelte");
+          await import("#lib/shared/onboarding/state/generate-tour-state.svelte.js");
         generateTourState.markCloudSyncComplete();
       } catch {
         // Non-fatal; localStorage carries the flag
@@ -98,10 +98,10 @@ export async function initializeChildServices(
   // Sync app-entry status FROM cloud (suppresses a re-offered create-tutorial
   // prompt on a device where onboarding was already completed elsewhere).
   // Previously write-only - this was the missing read-back call.
-  import("$lib/shared/onboarding/state/app-entry-state.svelte")
+  import("#lib/shared/onboarding/state/app-entry-state.svelte.js")
     .then(async ({ appEntryState }) => {
       const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
       await appEntryState.syncFromCloud();
     })
@@ -109,7 +109,7 @@ export async function initializeChildServices(
       console.warn("⚠️ [authState] App-entry sync failed:", error);
       try {
         const { appEntryState } =
-          await import("$lib/shared/onboarding/state/app-entry-state.svelte");
+          await import("#lib/shared/onboarding/state/app-entry-state.svelte.js");
         appEntryState.markCloudSyncComplete();
       } catch {
         // Non-fatal; the pending offer would otherwise stay deferred forever
@@ -117,10 +117,10 @@ export async function initializeChildServices(
     });
 
   // Initialize onboarding Firebase sync (non-blocking)
-  import("$lib/shared/onboarding/config/storage-keys")
+  import("#lib/shared/onboarding/config/storage-keys.js")
     .then(async (onboardingModule) => {
       const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
       await onboardingModule.syncOnboardingToCloud();
     })
@@ -132,7 +132,7 @@ export async function initializeChildServices(
   (async () => {
     try {
       const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
 
       // Re-check auth after async gap
@@ -148,14 +148,14 @@ export async function initializeChildServices(
   // written well before the user opens Library — the panel's own ensureStarted()
   // is idempotent per-uid, so its call becomes a no-op and Library paints from
   // the fresh mirror instantly. (non-blocking)
-  import("$lib/features/library/state/collections-state.svelte")
+  import("#lib/features/library/state/collections-state.svelte.js")
     .then(({ collectionsState }) => {
       if (getUserFromState()) collectionsState.ensureStarted();
     })
     .catch((error) => {
       console.warn("⚠️ [authState] Collections prewarm failed:", error);
     });
-  import("$lib/features/library/state/followed-collections-state.svelte")
+  import("#lib/features/library/state/followed-collections-state.svelte.js")
     .then(({ followedCollectionsState }) => {
       if (getUserFromState()) followedCollectionsState.ensureStarted();
     })
@@ -172,10 +172,10 @@ export async function initializeChildServices(
   });
 
   // Initialize tunnel collection Firebase sync (non-blocking)
-  import("$lib/features/tunnel-collection/state/tunnel-collection-state.svelte")
+  import("#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js")
     .then(async ({ tunnelCollectionState }) => {
       const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
       await tunnelCollectionState.init(user.uid);
     })
@@ -184,10 +184,10 @@ export async function initializeChildServices(
     });
 
   // Initialize 3D scene collection Firebase sync (non-blocking)
-  import("$lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte")
+  import("#lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte.js")
     .then(async ({ scene3dCollectionState }) => {
       const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
       await scene3dCollectionState.init(user.uid);
     })
@@ -196,10 +196,10 @@ export async function initializeChildServices(
     });
 
   // Initialize film collection Firebase sync (non-blocking)
-  import("$lib/features/film-collection/state/film-collection-state.svelte")
+  import("#lib/features/film-collection/state/film-collection-state.svelte.js")
     .then(async ({ filmCollectionState }) => {
       const { getFirestoreInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       await getFirestoreInstance();
       await filmCollectionState.init(user.uid);
     })

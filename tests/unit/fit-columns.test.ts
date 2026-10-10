@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fitColumns } from "$lib/features/creators/domain/fit-columns";
+import { fitColumns } from "#lib/features/creators/domain/fit-columns.js";
 
 describe("fitColumns", () => {
   it("drops from 6 to 5 columns so 7 items never leave a lone last row (5+2)", () => {

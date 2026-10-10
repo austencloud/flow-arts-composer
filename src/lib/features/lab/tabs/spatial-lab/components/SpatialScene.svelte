@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import type { SpatialLabState } from "../state/spatial-lab-state.svelte";
-  import Scene3D from "$lib/shared/3d/components/Scene3D.svelte";
+  import Scene3D from "#lib/shared/3d/components/Scene3D.svelte";
   import { Avatar3D, Prop3D, STAGE, WALL_OFFSET } from "@austencloud/scene-3d";
   import { T } from "@threlte/core";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { snapToNearestGridLocation } from "../services/grid-snap";
   import { Vector3, type Group } from "three";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
 
   interface Props {
     state: SpatialLabState;

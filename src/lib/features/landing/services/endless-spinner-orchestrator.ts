@@ -6,37 +6,37 @@
  * Falls back to rotating circular sequences or generating bridges when no direct match.
  */
 
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import type { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { StartPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import type { GenerationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { StartPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 import type {
   EndState,
   PlacementGroup,
   SpinnerStats,
-} from "$lib/shared/landing/domain/types";
+} from "#lib/shared/landing/domain/types.js";
 import {
   GridMode,
   GridPlacement,
   GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GenerationMode,
   DifficultyLevel,
   PropContinuity,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import {} from "$lib/shared/create/services/sequence-transforms";
-import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import {} from "#lib/shared/create/services/sequence-transforms.js";
+import { recalculateAllOrientations } from "#lib/shared/create/services/orientation-propagation.js";
 // Cardinal locations (for DIAMOND grid) and intercardinal (for BOX grid)
 const CARDINAL_LOCATIONS: ReadonlySet<GridLocation> = new Set<GridLocation>([
   GridLocation.NORTH,

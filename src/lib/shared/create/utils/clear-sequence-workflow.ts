@@ -16,13 +16,13 @@
  * Domain: Create module - Sequence management
  */
 
-import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 import type {
   CreateModuleState,
   ConstructTabState,
-} from "$lib/shared/create/state/create-module-state-types";
-import type { createPanelCoordinationState as PanelCoordinationStateType } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import { UndoOperationType } from "$lib/shared/create/domain/undo-operation-types";
+} from "#lib/shared/create/state/create-module-state-types.js";
+import type { createPanelCoordinationState as PanelCoordinationStateType } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import { UndoOperationType } from "#lib/shared/create/domain/undo-operation-types.js";
 
 type PanelCoordinationState = ReturnType<typeof PanelCoordinationStateType>;
 

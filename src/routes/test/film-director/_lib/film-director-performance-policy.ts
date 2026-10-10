@@ -1,4 +1,4 @@
-import { QualityTier } from "$lib/shared/3d/effects/types";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
 
 /**
  * A close trio can spend its budget on dense effects. Once the cast becomes a

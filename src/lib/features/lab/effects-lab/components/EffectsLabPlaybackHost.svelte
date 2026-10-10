@@ -8,49 +8,49 @@
 -->
 <script lang="ts">
 
-import { getGenerationOrchestrator } from "$lib/features/create/generate/shared/get-generation-orchestrator";
-import { sequenceTransformer } from "$lib/shared/create/services/sequence-transformer";
+import { getGenerationOrchestrator } from "#lib/features/create/generate/shared/get-generation-orchestrator.js";
+import { sequenceTransformer } from "#lib/shared/create/services/sequence-transformer.js";
   import { onMount, onDestroy, untrack } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-  import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+  import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { getSequenceRepository } from "#lib/shared/create/get-sequence-repository.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
 
-  import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
-  import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-  import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
+  import { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
+  import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+  import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
 
   // Auto-chaining
-  import { EndlessSpinnerOrchestrator } from "$lib/features/landing/services/endless-spinner-orchestrator";
-  import { InfiniteSequenceGenerator } from "$lib/features/landing/services/infinite-sequence-generator";
-  import { SpinnerMetricsRepository } from "$lib/features/landing/services/spinner-metrics-repository";
-  import { orientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
-  import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-  import { createEndlessPlayback, type EndlessPlaybackState } from "$lib/shared/animation-engine/state/endless-playback-state.svelte";
-  import type { SourceMode } from "$lib/shared/animation-engine/domain/chaining-types";
+  import { EndlessSpinnerOrchestrator } from "#lib/features/landing/services/endless-spinner-orchestrator.js";
+  import { InfiniteSequenceGenerator } from "#lib/features/landing/services/infinite-sequence-generator.js";
+  import { SpinnerMetricsRepository } from "#lib/features/landing/services/spinner-metrics-repository.js";
+  import { orientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
+  import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+  import { createEndlessPlayback, type EndlessPlaybackState } from "#lib/shared/animation-engine/state/endless-playback-state.svelte.js";
+  import type { SourceMode } from "#lib/shared/animation-engine/domain/chaining-types.js";
 
   import { getEffectDescriptor } from "../domain/effect-descriptor";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
 
-  import EffectsPanel from "$lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
-  import SourceControls from "$lib/shared/animation-engine/components/SourceControls.svelte";
+  import EffectsPanel from "#lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
+  import SourceControls from "#lib/shared/animation-engine/components/SourceControls.svelte";
   import SequenceHistoryPanel from "./SequenceHistoryPanel.svelte";
-  import { getClaudeCodeCopier } from "$lib/shared/browse/get-claude-code-copier";
-  import { saveSequence as persistSaveSequence } from "$lib/shared/persistence/services/dexie-persistence-service";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
+  import { getClaudeCodeCopier } from "#lib/shared/browse/get-claude-code-copier.js";
+  import { saveSequence as persistSaveSequence } from "#lib/shared/persistence/services/dexie-persistence-service.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
 
   const DEFAULT_BPM = 60;
   const STORAGE_KEY = "effects-lab-state";

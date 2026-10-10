@@ -1,16 +1,16 @@
 import {
   getFunctionsInstance,
   getFirestoreInstance,
-} from "$lib/shared/auth/firebase";
+} from "#lib/shared/auth/firebase.js";
 import type {
   CollectionAccessRole,
   CollectionShareGrant,
-} from "$lib/shared/library/domain/models/collection";
+} from "#lib/shared/library/domain/models/collection.js";
 import {
   mapDocToCollection,
   mapDocToSequence,
   toDate,
-} from "$lib/shared/library/services/collection-firestore-mapper";
+} from "#lib/shared/library/services/collection-firestore-mapper.js";
 import { httpsCallable } from "firebase/functions";
 import {
   collection,
@@ -32,7 +32,7 @@ import type {
   ShareCollectionRequest,
   SharedCollectionMutation,
 } from "../contracts/ICollectionCollaborationManager";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 
 interface ShareCollectionResult {
   collectionId: string;

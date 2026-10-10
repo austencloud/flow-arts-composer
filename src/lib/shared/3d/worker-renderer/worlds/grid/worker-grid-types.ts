@@ -1,6 +1,6 @@
 import type { Camera, Group } from "three";
 import type { Plane, PlaneMode } from "@austencloud/scene-3d";
-import type { GridMode } from "$lib/shared/3d/domain/constants/grid-layout";
+import type { GridMode } from "#lib/shared/3d/domain/constants/grid-layout.js";
 
 export type WorkerGridParityLimitation =
   | "labels-require-offscreen-canvas"

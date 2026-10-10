@@ -7,9 +7,9 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
-  import { startMorph } from "$lib/shared/transitions/results-morph";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import ResizeHandle from "#lib/shared/panels/ResizeHandle.svelte";
+  import { startMorph } from "#lib/shared/transitions/results-morph.js";
   import GalleryPaneLeft from "./GalleryPaneLeft.svelte";
   import type {
     CategoryEntry,

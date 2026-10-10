@@ -1,11 +1,11 @@
 import {
   buildFlowerAxis,
   type RotatingFlower,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import { flowerToTrajectory, relateTrajectories } from "./qft-flower-bridge";
 import { GUIDE_MOVES } from "./qft-guide";
 import type { QftHandCount, QftSessionHand } from "./qft-session";

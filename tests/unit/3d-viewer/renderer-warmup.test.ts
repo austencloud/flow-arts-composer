@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Mesh, MeshBasicMaterial, PerspectiveCamera, Scene } from "three";
-import { warmupRenderer } from "$lib/shared/3d/scene-boot/renderer-warmup";
+import { warmupRenderer } from "#lib/shared/3d/scene-boot/renderer-warmup.js";
 
 describe("warmupRenderer", () => {
   it("compiles hidden effect materials and restores their live visibility", async () => {

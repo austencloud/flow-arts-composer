@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
 
   let {
     onAction,

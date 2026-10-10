@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveStageDeleteCommand } from "$lib/features/stage/domain/stage-delete-command";
-import type { StageSelection } from "$lib/features/stage/state/stage-edit-mode.svelte";
+import { resolveStageDeleteCommand } from "#lib/features/stage/domain/stage-delete-command.js";
+import type { StageSelection } from "#lib/features/stage/state/stage-edit-mode.svelte.js";
 
 describe("Stage Delete command", () => {
   const cases: Array<[StageSelection, object]> = [

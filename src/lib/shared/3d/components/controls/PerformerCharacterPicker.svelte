@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
 
-  import { type CharacterId } from "$lib/shared/3d/domain/character-model";
-  import type { CharacterInstanceState } from "$lib/shared/3d/state/character-instance-state.svelte";
+  import { type CharacterId } from "#lib/shared/3d/domain/character-model.js";
+  import type { CharacterInstanceState } from "#lib/shared/3d/state/character-instance-state.svelte.js";
   import { characterThumbnailUrl } from "../../constants/r2-cdn";
   import CharacterCardLivePreview from "./character-select/CharacterCardLivePreview.svelte";
   import { getCharacterCatalogContext } from "../../context/character-catalog-context";

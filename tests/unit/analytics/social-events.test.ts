@@ -1,22 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady: vi.fn(),
 }));
 
-vi.mock("$lib/shared/analytics/analytics-context", () => ({
+vi.mock("#lib/shared/analytics/analytics-context.js", () => ({
   withRoute: (properties: Record<string, unknown>) => ({
     page: "/creators",
     ...properties,
   }),
 }));
 
-import { captureWhenReady } from "$lib/shared/analytics/services/posthog";
+import { captureWhenReady } from "#lib/shared/analytics/services/posthog.js";
 import {
   trackCollectionFollowChanged,
   trackCreatorProfileOpened,
   trackUserFollowChanged,
-} from "$lib/shared/analytics/social-events";
+} from "#lib/shared/analytics/social-events.js";
 
 describe("social decision events", () => {
   beforeEach(() => vi.mocked(captureWhenReady).mockClear());

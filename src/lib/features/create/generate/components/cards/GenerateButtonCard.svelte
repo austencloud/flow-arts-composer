@@ -3,17 +3,17 @@ GenerateButtonCard.svelte - Generate button as a card in the grid
 Always renders as a pure button. Word input is now in WordInputCard.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { UIGenerationConfig } from "../../state/generate-config.svelte";
-  import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
-  import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { uiConfigToGenerationOptions } from "$lib/shared/create/utils/config-mapper";
-  import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import type { StartFeasibilityResult } from "$lib/shared/create/domain/start-feasibility";
+  import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+  import FontAwesomeIcon from "#lib/shared/foundation/ui/FontAwesomeIcon.svelte";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { uiConfigToGenerationOptions } from "#lib/shared/create/utils/config-mapper.js";
+  import type { GenerationOptions } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import type { StartFeasibilityResult } from "#lib/shared/create/domain/start-feasibility.js";
 
   let {
     isGenerating,
@@ -136,9 +136,10 @@ Always renders as a pure button. Word input is now in WordInputCard.
         100%
     );
 
-    animation:
-      meshGradientFlow 8s ease infinite,
-      subtlePulse 2s ease-in-out infinite;
+    /* Only the transform pulse loops, so the compositor runs it. The gradient
+       fills the button exactly, so the old background-position "flow" never
+       moved; it only repainted the button every frame. */
+    animation: subtlePulse 2s ease-in-out infinite;
 
     color: var(--theme-text, white);
     border-radius: 20px;
@@ -153,36 +154,11 @@ Always renders as a pure button. Word input is now in WordInputCard.
     display: flex;
     align-items: center;
     justify-content: center;
-
-    box-shadow:
-      0 4px 12px
-        color-mix(
-          in srgb,
-          var(--semantic-success, var(--semantic-success)) 40%,
-          transparent
-        ),
-      0 2px 6px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke-strong),
-      inset 0 -1px 0 var(--theme-shadow);
   }
 
   .generate-button-card:focus-visible {
     outline: 2px solid var(--theme-text, white);
     outline-offset: 2px;
-  }
-
-  .generate-button-card.dirty {
-    box-shadow:
-      0 0 0 3px var(--semantic-warning, #f59e0b),
-      0 4px 12px
-        color-mix(
-          in srgb,
-          var(--semantic-success, var(--semantic-success)) 40%,
-          transparent
-        ),
-      0 2px 6px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke-strong),
-      inset 0 -1px 0 var(--theme-shadow);
   }
 
   .button-content {
@@ -198,28 +174,15 @@ Always renders as a pure button. Word input is now in WordInputCard.
     filter: brightness(1.2) saturate(1.15);
     transform: scale(1.02);
 
-    box-shadow:
-      0 8px 20px
-        color-mix(
-          in srgb,
-          var(--semantic-success, var(--semantic-success)) 60%,
-          transparent
-        ),
-      0 4px 12px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke-strong),
-      inset 0 -1px 0 var(--theme-shadow);
-
     text-shadow:
       0 2px 6px rgba(0, 0, 0, 0.6),
       0 0 25px color-mix(in srgb, var(--theme-text) 40%, transparent);
 
-    animation-duration: 6s, 1.5s;
+    animation-duration: 1.5s;
   }
 
   .generate-button-card.pulse-suspended:not(:disabled) {
-    animation:
-      meshGradientFlow 8s ease infinite,
-      settlePulse var(--duration-emphasis) var(--ease-out) both;
+    animation: settlePulse var(--duration-emphasis) var(--ease-out) both;
   }
 
   .generate-button-card:active:not(:disabled) {
@@ -249,22 +212,6 @@ Always renders as a pure button. Word input is now in WordInputCard.
   @media (prefers-reduced-motion: reduce) {
     .generate-button-card {
       animation: none;
-    }
-  }
-
-  @keyframes meshGradientFlow {
-    0%,
-    100% {
-      background-position: 0% 50%;
-    }
-    25% {
-      background-position: 50% 100%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    75% {
-      background-position: 50% 0%;
     }
   }
 

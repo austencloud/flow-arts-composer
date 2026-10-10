@@ -25,7 +25,7 @@
   import { useDraco, useKtx2, useMeshopt } from "@threlte/extras";
   import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
   import type { Group, Mesh, MeshStandardMaterial } from "three";
-  import { R2_CDN } from "$lib/shared/3d/constants/r2-cdn";
+  import { R2_CDN } from "#lib/shared/3d/constants/r2-cdn.js";
 
   interface Props {
     /** Seabed elevation. Placement y is measured from it. */

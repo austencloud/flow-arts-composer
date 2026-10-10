@@ -4,11 +4,11 @@ Asks users to tap specific points on both Diamond and Box grids.
 Provides instant visual feedback (correct = green glow, wrong = red shake).
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onDestroy } from "svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
 
   let { onComplete } = $props<{
     onComplete?: () => void;
@@ -314,14 +314,7 @@ Provides instant visual feedback (correct = green glow, wrong = red shake).
     max-width: 360px;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 16px var(--theme-shadow);
     transition: box-shadow var(--duration-emphasis) ease;
-  }
-
-  .grid-wrapper.feedback-correct {
-    box-shadow:
-      0 4px 16px var(--theme-shadow),
-      0 0 24px color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
   }
 
   .quiz-grid {

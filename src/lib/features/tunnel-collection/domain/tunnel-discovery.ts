@@ -1,11 +1,11 @@
-import { EFFECT_LABELS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+import { EFFECT_LABELS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 import {
   configsEqual,
   imageCount,
   propCount,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
 import type { CollectedTunnel } from "./tunnel-collection-types";
 
 export type TunnelDiscoverySort =

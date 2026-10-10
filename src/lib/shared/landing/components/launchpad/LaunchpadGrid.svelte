@@ -17,7 +17,7 @@
     isNamedRouteMorphActive,
     runAfterNamedRouteMorph,
     runAfterNamedRouteMorphIdle,
-  } from "$lib/shared/transitions/named-route-morph-state.svelte";
+  } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import LaunchpadTile from "./LaunchpadTile.svelte";
   import {
     LAUNCHPAD_TILES,
@@ -25,8 +25,8 @@
     hrefSlug,
     type LaunchpadTileDef,
   } from "./launchpad-tiles";
-  import { trackLaunchpadClick } from "$lib/shared/analytics/landing-events";
-  import { prefersReducedData } from "$lib/shared/platform/network-conditions";
+  import { trackLaunchpadClick } from "#lib/shared/analytics/landing-events.js";
+  import { prefersReducedData } from "#lib/shared/platform/network-conditions.js";
   import { siteCopy } from "../../site-copy";
 
   // Every prop defaults to the homepage's current behavior, so `<LaunchpadGrid />`

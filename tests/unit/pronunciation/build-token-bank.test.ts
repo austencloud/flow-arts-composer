@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isPronunciationTokenBank } from "$lib/shared/pronunciation/pronunciation-manifest";
+import { isPronunciationTokenBank } from "#lib/shared/pronunciation/pronunciation-manifest.js";
 import { assembleBank, type PartialToken } from "../../../scripts/build-token-bank";
 
 const PARTIAL: PartialToken[] = [

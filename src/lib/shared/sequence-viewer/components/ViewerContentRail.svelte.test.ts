@@ -6,7 +6,7 @@ import ViewerContentRail from "./ViewerContentRail.svelte";
 vi.mock("../services/post-studio-access", () => ({
   canAccessPostStudio: () => false,
 }));
-vi.mock("$lib/shared/3d/capabilities/viewport-3d-gate.svelte", () => ({
+vi.mock("#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js", () => ({
   viewportFits3D: () => false,
 }));
 vi.mock("../services/viewer-modes", () => ({

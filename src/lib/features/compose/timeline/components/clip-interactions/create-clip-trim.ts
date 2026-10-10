@@ -4,8 +4,8 @@
  * Returns event handlers for adjusting a clip's in and out points.
  */
 
-import type { TimelineClip } from "$lib/shared/animation-engine/domain/timeline-types";
-import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+import type { TimelineClip } from "#lib/shared/animation-engine/domain/timeline-types.js";
+import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
 
 export interface ClipTrimHandlers {
   handleTrimLeftStart: (e: MouseEvent) => void;

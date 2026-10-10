@@ -1,6 +1,6 @@
 <script lang="ts">
 
-import { getDuetPersister } from "$lib/shared/3d/get-duet-persister";
+import { getDuetPersister } from "#lib/shared/3d/get-duet-persister.js";
   /**
    * DuetBrowserPanel
    *
@@ -9,7 +9,7 @@ import { getDuetPersister } from "$lib/shared/3d/get-duet-persister";
    */
 
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { DuetPersister } from "../../services/duet-persister";
   import type {
     DuetSequence,

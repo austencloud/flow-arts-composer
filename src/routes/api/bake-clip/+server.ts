@@ -1,7 +1,7 @@
-import { error, json } from "@sveltejs/kit";
+import { error } from "@sveltejs/kit";
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { dev } from "$app/environment";
+import { dev } from "$app/env";
 import type { RequestHandler } from "./$types";
 
 // Dev-only sink for the Mandala Rosetta bake. The browser renders each clip
@@ -27,5 +27,9 @@ export const POST: RequestHandler = async ({ request, url }) => {
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, name), buf);
 
-  return json({ ok: true, bytes: buf.length, path: `${effort}/${name}` });
+  return Response.json({
+    ok: true,
+    bytes: buf.length,
+    path: `${effort}/${name}`,
+  });
 };

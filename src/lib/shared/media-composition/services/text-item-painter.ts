@@ -1,5 +1,5 @@
-import type { CompiledTextItem } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { TEXT_BOX_WIDTH } from "$lib/shared/media-composition/domain/post-project";
+import type { CompiledTextItem } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { TEXT_BOX_WIDTH } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   CAPTION_LINE_HEIGHT_FRACTION,
   CAPTION_SIZE_FRACTION,
@@ -8,13 +8,13 @@ import {
   captionFontString,
   captionLineYPositions,
   wrapCaptionText,
-} from "$lib/shared/media-composition/domain/caption-layout";
+} from "#lib/shared/media-composition/domain/caption-layout.js";
 import type {
   PaintFrame,
   PaintInsets,
   PaintRect,
   PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
 
 /** Same ink as a caption, so a text item and a caption read as one family. */
 const FILL_COLOR = "#ffffff";

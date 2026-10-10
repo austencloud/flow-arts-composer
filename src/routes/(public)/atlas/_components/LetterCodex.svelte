@@ -4,13 +4,13 @@
 -->
 <script lang="ts">
   import { onMount, tick } from "svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
   import {
     SequenceSelection,
     setSequenceSelection,
-  } from "$lib/shared/selection/sequence-selection.svelte";
-  import "$lib/shared/selection/selection.css";
+  } from "#lib/shared/selection/sequence-selection.svelte.js";
+  import "#lib/shared/selection/selection.css";
   import "./codex-boards/codex-dark.css";
   import BoardSheets from "./codex-boards/BoardSheets.svelte";
   import BoardAtlas from "./codex-boards/BoardAtlas.svelte";
@@ -33,27 +33,27 @@
     buildComposerDraftHref,
     buildLetterDraftSequence,
   } from "./codex-boards/letter-explorer-draft";
-  import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
+  import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
   import {
     GridMode,
     type GridMode as GridModeValue,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     HandSide,
     RotationDirection,
     type RotationDirection as RotationDirectionValue,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { TurnValue } from "$lib/shared/create/domain/turn-pattern-data";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { TurnValue } from "#lib/shared/create/domain/turn-pattern-data.js";
   import {
     applyTurnsToVariations,
     motionAllowsFloat,
   } from "./codex-boards/letter-explorer-variations";
-  import { loadFoundingCollectionSequences } from "$lib/features/browse/collections/config/founding-collections";
-  import { filterSequencesByExactLetter } from "$lib/shared/browse/services/sequence-letter-occurrence";
-  import { mutateCurrentUrl } from "$lib/shared/navigation/services/url-state";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { loadFoundingCollectionSequences } from "#lib/features/browse/collections/config/founding-collections.js";
+  import { filterSequencesByExactLetter } from "#lib/shared/browse/services/sequence-letter-occurrence.js";
+  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   let {
     initialLetter = "A",

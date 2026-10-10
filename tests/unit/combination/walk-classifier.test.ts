@@ -29,25 +29,25 @@ import {
   type CombinationResult,
   type WalkBlock,
   type WalkSource,
-} from "$lib/shared/combination/domain/types";
-import { findCombinations } from "$lib/shared/combination/services/sequence-combinator";
+} from "#lib/shared/combination/domain/types.js";
+import { findCombinations } from "#lib/shared/combination/services/sequence-combinator.js";
 import {
   classifyAndRank,
   classifyBlocks,
   contentDedupKey,
   rankResults,
   type RawWalk,
-} from "$lib/shared/combination/services/walk-classifier";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/combination/services/walk-classifier.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 import { FALG, GGGG_CW, GHGH, HHHH_CCW } from "./fixtures";
 import { loadPictographDatasetForTests } from "./pictograph-dataset";

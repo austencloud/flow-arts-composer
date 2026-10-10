@@ -12,13 +12,13 @@
     WingRegion,
   } from "../../domain/museum-grid-types";
   import type { RoomEdge } from "../../domain/layout-types";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { SOLID_TYPES } from "../../services/museum-physics-provider";
-  import VirtualJoystick from "$lib/shared/components/touch/VirtualJoystick.svelte";
+  import VirtualJoystick from "#lib/shared/components/touch/VirtualJoystick.svelte";
   import { museum3dEditorState } from "../../state/museum-3d-editor-state.svelte";
   import PlacementPickerPanel from "../editor/PlacementPickerPanel.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import type { ModuleId } from "$lib/shared/navigation/domain/types";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import type { ModuleId } from "#lib/shared/navigation/domain/types.js";
   import PlaqueView from "../panel/PlaqueView.svelte";
   import SequenceView from "../panel/SequenceView.svelte";
   import DocumentView from "../panel/DocumentView.svelte";
@@ -30,9 +30,9 @@
   import { placeFreeNotes, type PlacedNote } from "../../services/museum-free-notes";
   import { openInComposer } from "../../services/museum-composer-handoff";
   import { goto } from "$app/navigation";
-  import SequenceBrowserOverlay from "$lib/features/museum/scenes/procedural/overlay/SequenceBrowserOverlay.svelte";
-  import { getMuseumDocent } from "$lib/features/museum/services/museum-docent.svelte";
-  import PerfMonitor from "$lib/shared/3d/components/PerfMonitor.svelte";
+  import SequenceBrowserOverlay from "#lib/features/museum/scenes/procedural/overlay/SequenceBrowserOverlay.svelte";
+  import { getMuseumDocent } from "#lib/features/museum/services/museum-docent.svelte.js";
+  import PerfMonitor from "#lib/shared/3d/components/PerfMonitor.svelte";
   import { getMuseumPerformanceRecorder } from "../../get-museum-performance-recorder";
 
   import { onMount } from "svelte";

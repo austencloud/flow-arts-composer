@@ -14,11 +14,11 @@
   - BPM intensity color coding
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     PLAYBACK_MIN_BPM,
     PLAYBACK_MAX_BPM,
-  } from "$lib/shared/animation-engine/domain/constants/timing";
+  } from "#lib/shared/animation-engine/domain/constants/timing.js";
   import {
     NUMERIC_TEMPO_PRESETS,
     SEMANTIC_TEMPO_PRESETS,
@@ -26,8 +26,8 @@
     calculateTapTempo,
     clampTempoBpm,
     recordTempoTap,
-  } from "$lib/shared/animation-engine/domain/tempo-behavior";
-  import ScrubbableNumber from "$lib/shared/ui/components/ScrubbableNumber.svelte";
+  } from "#lib/shared/animation-engine/domain/tempo-behavior.js";
+  import ScrubbableNumber from "#lib/shared/ui/components/ScrubbableNumber.svelte";
 
   // Engine-derived: offering a BPM the playback clamp rejects makes the
   // buttons silent no-ops (readout freezes at the real ceiling).

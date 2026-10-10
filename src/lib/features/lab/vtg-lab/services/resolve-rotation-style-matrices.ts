@@ -1,8 +1,8 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import type { CardVariation } from "$lib/features/choreo-card/domain/models/DeckRelease";
-import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import type { RotationStyle } from "$lib/shared/shape-matrix/domain/rotation-style";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
+import type { CardVariation } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
+import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import type { RotationStyle } from "#lib/shared/shape-matrix/domain/rotation-style.js";
 import {
   classifyRotationStyleMembers,
   loadRotationStyleBases,
@@ -10,11 +10,11 @@ import {
   ROTATION_STYLE_ORDER,
   type RotationGridMode,
   type StartOrientationPair,
-} from "$lib/shared/shape-matrix/services/rotation-style-archetypes";
+} from "#lib/shared/shape-matrix/services/rotation-style-archetypes.js";
 import { allTurnPatterns } from "../domain/tnd-turn-patterns";
-import { getPrintCardRenderer } from "$lib/features/choreo-card/getPrintCardRenderer";
-import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { getPrintCardRenderer } from "#lib/features/choreo-card/getPrintCardRenderer.js";
+import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 /** Diamond vs box grid — drives which TnD family each seed lands in. */
 export type LabGridMode = RotationGridMode;

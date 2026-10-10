@@ -1,5 +1,5 @@
 import type { RequestHandler } from "@sveltejs/kit";
-import { dev } from "$app/environment";
+import { dev } from "$app/env";
 import fs from "fs";
 import path from "path";
 

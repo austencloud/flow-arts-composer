@@ -6,19 +6,19 @@
  * - Frame pre-rendering for perfect smooth playback
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { TrailSettings } from "../domain/types/trail-types";
-import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import type { ITrailCapturer } from "$lib/shared/animation-engine/services/ITrailCapturer";
-import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
+import type { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import type { ITrailCapturer } from "#lib/shared/animation-engine/services/ITrailCapturer.js";
+import type { IAnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
 import type {
   AnimationPathCache,
   AnimationPathCacheData,
-} from "$lib/shared/animation-engine/services/animation-path-cache";
+} from "#lib/shared/animation-engine/services/animation-path-cache.js";
 import type {
   SequenceFramePreRenderer,
   PreRenderProgress,
-} from "$lib/shared/animation-engine/services/sequence-frame-pre-renderer";
+} from "#lib/shared/animation-engine/services/sequence-frame-pre-renderer.js";
 
 /**
  * Prop dimensions for cache configuration

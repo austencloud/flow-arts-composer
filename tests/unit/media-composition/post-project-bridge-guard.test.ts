@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
+import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
 import { project, take, video } from "./post-project-fixtures";
 
 describe("manifest bridge guard", () => {

@@ -1,13 +1,13 @@
-import type { Handle } from "@sveltejs/kit";
+import type { Handle } from "@sveltejs/kit/hooks";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { INTERNAL_ROUTE_FALLBACK } from "../../src/config/build-flags";
 
-vi.mock("$lib/server/auth/firebase-auth-handler-proxy", () => ({
+vi.mock("#lib/server/auth/firebase-auth-handler-proxy.js", () => ({
   isFirebaseAuthHandlerPath: () => false,
   proxyFirebaseAuthHandler: vi.fn(),
 }));
 
-vi.mock("$lib/server/auth/meta-oauth-proxy", () => ({
+vi.mock("#lib/server/auth/meta-oauth-proxy.js", () => ({
   isMetaOAuthProxyPath: () => false,
   proxyMetaOAuthRequest: vi.fn(),
 }));
@@ -15,7 +15,7 @@ vi.mock("$lib/server/auth/meta-oauth-proxy", () => ({
 /** hooks.server.ts as the dev server (`dev: true`) or a build loads it. */
 async function loadHandle(dev: boolean): Promise<Handle> {
   vi.resetModules();
-  vi.doMock("$app/environment", () => ({
+  vi.doMock("$app/env", () => ({
     dev,
     browser: false,
     building: false,
@@ -25,7 +25,7 @@ async function loadHandle(dev: boolean): Promise<Handle> {
 }
 
 afterEach(() => {
-  vi.doUnmock("$app/environment");
+  vi.doUnmock("$app/env");
   vi.resetModules();
 });
 

@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { SequenceRenderer } from './services/sequence-renderer';
 import { getImageComposer } from './get-image-composer';
 import { getImageFormatConverter } from './get-image-format-converter';

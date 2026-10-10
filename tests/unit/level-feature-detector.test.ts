@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { detectLevelFeatures } from "$lib/shared/domain/curriculum/level-feature-detector";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { detectLevelFeatures } from "#lib/shared/domain/curriculum/level-feature-detector.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function seq(partial: Partial<SequenceData>): SequenceData {
   return {

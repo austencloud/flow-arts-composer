@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   getShortestRotationStepsBetweenLocations,
   rotateLocation,
-} from "$lib/shared/create/services/rotation-helpers";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/create/services/rotation-helpers.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 describe("getShortestRotationStepsBetweenLocations", () => {
   it.each([

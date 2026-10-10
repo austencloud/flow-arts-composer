@@ -1,14 +1,14 @@
 <!-- ChangeGroupSection - Single changelog category with admin editing -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     ChangelogCategory,
     ChangelogEntry,
-  } from "$lib/shared/versioning/domain/models/version-models";
-  import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
+  } from "#lib/shared/versioning/domain/models/version-models.js";
+  import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
   import {
     CATEGORY_ICONS,
-  } from "$lib/shared/versioning/domain/constants/changelog-constants";
+  } from "#lib/shared/versioning/domain/constants/changelog-constants.js";
   import EditableChangelogItem from "./EditableChangelogItem.svelte";
 
   let {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DirectionValue } from "../utils/turn-tuple-parser";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   // Constants from legacy implementation
   const DOT_PADDING = 10;

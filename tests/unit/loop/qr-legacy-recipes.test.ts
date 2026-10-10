@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   encodeSequence,
   decodeSequence,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { CompositionalDecoder } from "$lib/shared/qr/services/compositional-decoder";
-import { computeRecipeHash } from "$lib/shared/qr/services/compositional-utils";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { CompositionalDecoder } from "#lib/shared/qr/services/compositional-decoder.js";
+import { computeRecipeHash } from "#lib/shared/qr/services/compositional-utils.js";
 import witnesses from "../../fixtures/loop-audit/qr-legacy-recipes.json";
 
 // Captured from the six app executors at witnesses.sourceCommit, before their

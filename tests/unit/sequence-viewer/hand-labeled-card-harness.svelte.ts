@@ -1,10 +1,10 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
-import type { HandLabeledSequenceResolver } from "$lib/shared/sequence-viewer/services/hand-labeled-sequence";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
+import type { HandLabeledSequenceResolver } from "#lib/shared/sequence-viewer/services/hand-labeled-sequence.js";
 import {
   createHandLabeledCard,
   type HandLabeledCard,
-} from "$lib/shared/sequence-viewer/services/hand-labeled-card.svelte";
+} from "#lib/shared/sequence-viewer/services/hand-labeled-card.svelte.js";
 
 /**
  * Runs `createHandLabeledCard` inside an effect root with reactive inputs the

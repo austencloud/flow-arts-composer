@@ -1,4 +1,4 @@
-import type { EffortPhrase } from "$lib/shared/effort/domain/effort-timeline-types";
+import type { EffortPhrase } from "#lib/shared/effort/domain/effort-timeline-types.js";
 
 export type { EffortPhrase };
 

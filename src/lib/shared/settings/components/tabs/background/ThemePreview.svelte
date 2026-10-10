@@ -4,7 +4,7 @@
     type BackgroundType,
   } from "@austencloud/backgrounds";
   import { onMount } from "svelte";
-  import { mountBackgroundAtDisplayResolution } from "$lib/shared/background/shared/background-canvas-resolution";
+  import { mountBackgroundAtDisplayResolution } from "#lib/shared/background/shared/background-canvas-resolution.js";
 
   let { type, fallback }: { type: BackgroundType; fallback: string } = $props();
 

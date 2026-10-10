@@ -1,7 +1,7 @@
 <!-- NavButton - Reusable Navigation Button Component -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import { onMount } from "svelte";
   import type { Snippet } from "svelte";
@@ -281,7 +281,6 @@
     font-weight: 600;
     line-height: 16px;
     text-align: center;
-    box-shadow: 0 1px 3px var(--theme-shadow);
     animation: badgePop var(--duration-emphasis) ease;
     pointer-events: none;
     z-index: 5;

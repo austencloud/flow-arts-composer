@@ -5,20 +5,20 @@
   focus, outside-click dismissal, and viewport collision handling.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
   import type { Snippet } from "svelte";
   import type { HTMLButtonAttributes } from "svelte/elements";
-  import MotionColorChips from "$lib/shared/components/MotionColorChips.svelte";
-  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
+  import MotionColorChips from "#lib/shared/components/MotionColorChips.svelte";
+  import PrimaryPropColorSettings from "#lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
   import {
     getSettings,
     updateSetting,
-  } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     shareTarget,
     saveActionLabel,
-  } from "$lib/shared/mobile/share-action.svelte";
+  } from "#lib/shared/mobile/share-action.svelte.js";
 
   type OverflowOpenReason = "trigger" | "item" | "backdrop" | "escape" | "tab";
 
@@ -447,11 +447,6 @@
         transparent 72%
       ),
       var(--theme-card-bg, rgba(255, 255, 255, 0.05));
-    box-shadow:
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-text, #ffffff) 9%, transparent),
-      0 2px 6px
-        color-mix(in srgb, var(--theme-shadow, #000000) 32%, transparent);
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.76));
   }
 
@@ -473,7 +468,6 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--radius-md, 12px);
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
-    box-shadow: 0 8px 32px var(--theme-shadow, rgba(0, 0, 0, 0.4));
     outline: none;
     transform-origin: var(--bits-popover-content-transform-origin);
   }

@@ -5,15 +5,15 @@
    * Mounts the real Viewer3DFullscreen overlay with a real catalog sequence.
    */
   import { onMount } from "svelte";
-  import Viewer3DFullscreen from "$lib/shared/3d/components/Viewer3DFullscreen.svelte";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { createFullscreenController } from "$lib/shared/fullscreen/state/fullscreen-controller.svelte";
+  import Viewer3DFullscreen from "#lib/shared/3d/components/Viewer3DFullscreen.svelte";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { createFullscreenController } from "#lib/shared/fullscreen/state/fullscreen-controller.svelte.js";
   import {
     loadCatalogs,
     loadCatalogSequences,
-  } from "$lib/features/choreo-card/services/catalog-loader";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/features/choreo-card/services/catalog-loader.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   const viewer = createViewer3DState();
   setViewer3DContext(viewer);

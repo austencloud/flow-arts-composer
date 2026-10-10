@@ -3,24 +3,24 @@
   surfaces own their own lazy mounting, keep-alive, and practice behavior.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import {
     getScene3DRenderContext,
     setScene3DRenderContext,
-  } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
-  import { createScene3DRenderState } from "$lib/shared/3d/scene-features/state/scene-3d-render-state.svelte";
-  import { startSceneAssetPreload } from "$lib/shared/3d/services/scene-asset-preloader.svelte";
-  import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
+  } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
+  import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
+  import { startSceneAssetPreload } from "#lib/shared/3d/services/scene-asset-preloader.svelte.js";
+  import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
   import {
     getEffectsConfigContext,
     setEffectsConfigContext,
-  } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
-  import { isBilateralProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+  } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
+  import { isBilateralProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
   import ViewerCompanionSurface from "./ViewerCompanionSurface.svelte";
   import ViewerMotionSurface from "./ViewerMotionSurface.svelte";
   import ViewerPracticeLane from "./ViewerPracticeLane.svelte";
@@ -36,10 +36,11 @@
     resolveViewerPaneDestinationBox,
     resolveViewerPaneRevealReady,
     type ViewerFocusedPane,
+    type ViewerPaneBox,
     type ViewerPanelDirection,
   } from "./viewer-panel-layout";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { ViewerSplitPaneProps } from "./viewer-split-pane-types";
   import { VIEWER_INSPECTOR_HANDLE_SIZE as VIEWER_SPLIT_HANDLE_SIZE } from "../services/viewer-shell-model";
   import { onDestroy } from "svelte";
@@ -139,8 +140,13 @@
   // The tunnel's controls, renderer, and export path all steer this one
   // controller. Keeping it above both pane surfaces lets the already-mounted 2D
   // canvas adopt the tunnel without growing a second controller or render loop.
+  // `playback` is rebuilt whenever any viewer setting changes. Settle on the
+  // sequence itself so the tunnel rebuilds only when the sequence does.
+  const tunnelSequence = $derived(
+    playback.animationState.sequenceData ?? sequence
+  );
   const tunnelController = new TunnelViewController({
-    getSequence: () => playback.animationState.sequenceData ?? sequence,
+    getSequence: () => tunnelSequence,
     getComposition: () => tunnelComposition,
     // The base pair and Tunnel copies occupy one persistent Animator canvas.
     // Give both settings panels the same visibility owner so a Grid change is
@@ -457,9 +463,13 @@
     };
   });
 
+  // The live box is a fresh object whenever the layout re-derives. Hand the
+  // Card the previous one while the size is unchanged: a new identity re-runs
+  // its resize observer setup and forces a layout read.
+  let lastCardContainMotionBox: ViewerPaneBox | null = null;
   const cardContainMotionBox = $derived.by(() => {
     void cardPaneBoxMemoVersion;
-    return resolveViewerCardMotionBox({
+    const box = resolveViewerCardMotionBox({
       remembered: readViewerCardPaneBox(
         cardPaneBoxKey,
         window.innerWidth,
@@ -468,6 +478,11 @@
       live: liveCardPaneBox,
       inMotion: cardContainSizeMotion !== null,
     });
+    const last = lastCardContainMotionBox;
+    if (box && last && box.width === last.width && box.height === last.height)
+      return last;
+    lastCardContainMotionBox = box;
+    return box;
   });
 
   $effect(() => {

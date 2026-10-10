@@ -1,4 +1,4 @@
-import type { PositionValue } from "$lib/shared/notation/qft/qft-model";
+import type { PositionValue } from "#lib/shared/notation/qft/qft-model.js";
 import {
   POI_REVERSAL_CANDIDATES,
   selectNextPoiReversalCandidate,

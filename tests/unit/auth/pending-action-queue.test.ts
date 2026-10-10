@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   PendingActionQueue,
   PENDING_ACTION_TTL_MS,
-} from "$lib/shared/sequence-viewer/services/pending-action-queue";
+} from "#lib/shared/sequence-viewer/services/pending-action-queue.js";
 
 describe("PendingActionQueue", () => {
   it("restores a gated download from a QR browser-handoff URL", () => {

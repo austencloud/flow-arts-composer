@@ -10,7 +10,7 @@ desktop the same gesture instead of long-press-versus-hover.
 -->
 <script lang="ts">
   import CardChip from "./CardChip.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   const {
     playing,

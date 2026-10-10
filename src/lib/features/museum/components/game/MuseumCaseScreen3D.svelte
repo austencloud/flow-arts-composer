@@ -92,8 +92,8 @@
    */
   import { T } from "@threlte/core";
   import { onDestroy } from "svelte";
-  import { canvas2DDirectRenderer } from "$lib/shared/render/services/canvas-2d-direct-renderer";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import { canvas2DDirectRenderer } from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import { MUSEUM_EXHIBIT_SEQUENCES } from "../../data/museum-exhibit-sequences";
   import type { CaveCaseCard } from "../../data/museum-narration";
 

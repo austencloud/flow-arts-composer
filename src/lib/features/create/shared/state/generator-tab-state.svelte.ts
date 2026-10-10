@@ -11,12 +11,12 @@
  * ✅ Each tab maintains its own independent sequence state
  */
 
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import type { SequenceStatsCalculator } from "$lib/features/create/shared/services/sequence-stats-calculator";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { SequenceValidator } from "$lib/features/create/shared/services/sequence-validator";
-import { reversalDetector, type ReversalDetector } from "$lib/shared/create/services/reversal-detector";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { SequenceStatsCalculator } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { SequenceValidator } from "#lib/features/create/shared/services/sequence-validator.js";
+import { reversalDetector, type ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 import { createSequenceState } from "./sequence-state-orchestrator.svelte";
 import type { SequenceState } from "./sequence-state-orchestrator.svelte";
 import type { UndoMetadata } from "../services/undo-manager";

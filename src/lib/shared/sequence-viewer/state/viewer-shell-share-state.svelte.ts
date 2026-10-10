@@ -1,13 +1,13 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
 import { buildViewerShareActions } from "../services/viewer-shell-model";
 import { extractViewerStateQuery } from "../services/viewer-orchestrator-model";
 import type { MandalaViewerController } from "./mandala-viewer-controller.svelte";
 import type { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
-import type { ShareArtifact } from "$lib/shared/share/services/post-handoff";
-import { copyEmbedCode } from "$lib/shared/share/services/post-handoff";
-import { buildEmbedSnippet } from "$lib/shared/share/services/embed-snippet";
-import type { SequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+import type { ShareArtifact } from "#lib/shared/share/services/post-handoff.js";
+import { copyEmbedCode } from "#lib/shared/share/services/post-handoff.js";
+import { buildEmbedSnippet } from "#lib/shared/share/services/embed-snippet.js";
+import type { SequenceSendSession } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
 
 type ViewerShareActionId = "share-sequence" | "send-sequence" | "copy-link";
 /** Where the file sheet opens: straight into preparing a file, or posting. */
@@ -44,12 +44,12 @@ interface ViewerShellShareInputs {
 }
 
 interface ViewerShellShareDependencies {
-  createSequenceSendSession: typeof import("$lib/shared/inbox/state/send-sequence-state.svelte").createSequenceSendSession;
+  createSequenceSendSession: typeof import("#lib/shared/inbox/state/send-sequence-state.svelte.js").createSequenceSendSession;
   /** Recipients need an account; a guest's panel offers sign-up instead. */
   isFullAccount: () => boolean;
   /** The Choreo Card the current pipeline draws for this sequence. */
   sendToStickerLab: typeof import("../services/send-to-sticker-lab").sendToStickerLab;
-  captureScanAction: typeof import("$lib/shared/analytics/scan-analytics").captureScanAction;
+  captureScanAction: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanAction;
 }
 
 export function createViewerShellShareState(

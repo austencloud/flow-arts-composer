@@ -1,22 +1,22 @@
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { ExtensionAnalysis } from "$lib/features/create/shared/services/sequence-extender";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { ExtensionAnalysis } from "#lib/features/create/shared/services/sequence-extender.js";
 import { COMPACT_LOOP_REVIEW_OPTIONS } from "../loop-picker/loop-picker-review-fixtures";
 
 function motion(

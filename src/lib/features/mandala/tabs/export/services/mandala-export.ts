@@ -6,15 +6,15 @@
  * rasterizes to a canvas for blob export.
  */
 
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { renderMandalaToCanvas } from "$lib/shared/mandala/services/mandala-renderer";
-import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
-import type { StepLike } from "$lib/shared/mandala/services/types";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { renderMandalaToCanvas } from "#lib/shared/mandala/services/mandala-renderer.js";
+import { pairTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
+import type { StepLike } from "#lib/shared/mandala/services/types.js";
 import type {
 	MandalaPathShape,
 	MandalaRenderOptions,
-} from "$lib/shared/mandala/domain/mandala-types";
-import { getMandalaPathOptions } from "$lib/shared/mandala/services/mandala-path-options";
+} from "#lib/shared/mandala/domain/mandala-types.js";
+import { getMandalaPathOptions } from "#lib/shared/mandala/services/mandala-path-options.js";
 
 export interface ExportOptions {
 	size: number;

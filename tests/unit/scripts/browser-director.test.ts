@@ -4,6 +4,15 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDirector } from "../../../scripts/demo-capture/browser-director.mjs";
 
+// The director steps its pointer and waits for the page's hover on real
+// timers, so these tests take 0.6 to 4.2 s with the cores free (ten-file run,
+// 2026-10-09), and each one makes and removes a folder of frames in its
+// hooks. Under the full suite's 31 forks a file runs five to eight times
+// slower, and on 2026-10-08 one full run timed this file out in those hooks
+// at the 10 s default. Tests get the 120 s tests/unit/3d-animation gives a
+// loaded machine; the folder hooks get 60 s.
+vi.setConfig({ testTimeout: 120_000, hookTimeout: 60_000 });
+
 let root: string;
 beforeEach(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), "director-"));
@@ -163,5 +172,72 @@ describe("createDirector shot", () => {
     expect(proof.failure).toContain("The page crashed.");
     expect(proof.url).toBeNull();
     expect(proof.snapshot).toBeNull();
+  });
+});
+
+describe("createDirector pick", () => {
+  /** A page whose nth match sits at (300, 400) and takes the hover when `hovered`. */
+  function pickFakes(hovered: boolean) {
+    const made = fakes({ width: 432, height: 768 });
+    const asked: unknown[] = [];
+    made.page.evaluate = vi.fn(
+      async (fn: () => unknown, arg?: { hover?: boolean }) => {
+        if (!arg) return { width: 432, height: 768 };
+        asked.push(arg);
+        return arg.hover ? hovered : { x: 300, y: 400 };
+      }
+    );
+    return { ...made, asked };
+  }
+
+  it("clicks the nth on-screen match of a selector and logs it", async () => {
+    const { cdp, page, sent, asked } = pickFakes(true);
+    const director = createDirector(page, cdp, root);
+    await director.shot("pick", 0.05, async () => {
+      await director.pick('[data-letter="C"]', 3);
+    });
+    expect(asked).toEqual([
+      { selector: '[data-letter="C"]', index: 3 },
+      { selector: '[data-letter="C"]', index: 3, hover: true },
+    ]);
+    const mouse = sent
+      .filter(([method]) => method === "Input.dispatchMouseEvent")
+      .map(([, params]) => params);
+    const pressed = mouse.find((event) => event.type === "mousePressed");
+    expect(pressed).toMatchObject({ x: 300, y: 400, button: "left" });
+    const released = mouse.find((event) => event.type === "mouseReleased");
+    expect(released).toMatchObject({ x: 300, y: 400 });
+    const proof = JSON.parse(
+      await fs.readFile(
+        path.join(root, "production", "frames", "pick", "capture.json"),
+        "utf8"
+      )
+    );
+    expect(proof.events).toEqual([
+      expect.objectContaining({
+        label: '[data-letter="C"] #3',
+        action: "click",
+        hover: true,
+        x: 300,
+        y: 400,
+      }),
+    ]);
+  });
+
+  it("refuses to click when the page's own hover misses the target", async () => {
+    const { cdp, page, sent } = pickFakes(false);
+    const director = createDirector(page, cdp, root);
+    await expect(
+      director.shot("covered", 0.05, async () => {
+        await director.pick(".tile", 0);
+      })
+    ).rejects.toThrow("Native hover did not reach .tile #0");
+    expect(
+      sent.some(
+        ([method, params]) =>
+          method === "Input.dispatchMouseEvent" &&
+          params.type === "mousePressed"
+      )
+    ).toBe(false);
   });
 });

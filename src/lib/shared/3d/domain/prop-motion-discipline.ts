@@ -1,5 +1,5 @@
-import type { PropCategory } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropCategory } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export type PropMotionDiscipline = "spinner" | "contact";
 

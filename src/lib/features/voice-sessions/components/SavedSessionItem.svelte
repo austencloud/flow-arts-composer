@@ -6,9 +6,9 @@
   Hover-reveal delete button.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { VoiceSessionPreview } from "$lib/shared/voice-control/domain/voice-session-types";
-  import type { ResolutionTier } from "$lib/shared/voice-control/domain/voice-session-types";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { VoiceSessionPreview } from "#lib/shared/voice-control/domain/voice-session-types.js";
+  import type { ResolutionTier } from "#lib/shared/voice-control/domain/voice-session-types.js";
 
   let {
     preview,

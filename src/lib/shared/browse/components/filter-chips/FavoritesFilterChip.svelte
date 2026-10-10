@@ -4,7 +4,7 @@ Turns pink when active.
 -->
 <script lang="ts">
   import FilterChipBase from "./FilterChipBase.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     active: boolean;

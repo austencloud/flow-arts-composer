@@ -5,7 +5,7 @@ import curatedSeedsJson from "../../../../../../static/data/loop-explorer/curate
 import teaserSeedJson from "../notation-loop-teaser-seed.json";
 import { getCuratedSeed } from "../curated-seeds";
 import { NOTATION_LOOP_TEASER_SEQUENCE } from "../notation-loop-teaser";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type { LoopSlice } from "../legality";
 
 const sequences = await Promise.all(

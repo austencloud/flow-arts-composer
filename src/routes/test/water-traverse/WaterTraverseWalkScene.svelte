@@ -57,23 +57,23 @@
   import {
     MUSEUM_GRAVITY,
     MUSEUM_JUMP_VELOCITY,
-  } from "$lib/features/museum/domain/museum-design-rules";
+  } from "#lib/features/museum/domain/museum-design-rules.js";
   import {
     createPhysicsWorldState,
     createRigidBody,
     disposePhysicsWorld,
     initPhysicsWorld,
     stepPhysics,
-  } from "$lib/shared/3d/physics/rapier-world";
+  } from "#lib/shared/3d/physics/rapier-world.js";
   import {
     createPlayerController,
     disposePlayerController,
-  } from "$lib/shared/3d/physics/player-controller";
-  import { createRapierPhysicsProvider } from "$lib/shared/3d/physics/rapier-physics-provider";
+  } from "#lib/shared/3d/physics/player-controller.js";
+  import { createRapierPhysicsProvider } from "#lib/shared/3d/physics/rapier-physics-provider.js";
   import type {
     PhysicsWorldState,
     PlayerControllerState,
-  } from "$lib/shared/3d/physics/types";
+  } from "#lib/shared/3d/physics/types.js";
   import {
     CHANNEL_HALF_W,
     EYE_ABOVE_FLOOR,
@@ -82,7 +82,7 @@
     TOTAL_LENGTH_M,
     WATERLINE_Y,
     legAt,
-  } from "$lib/features/water-traverse/data/water-traverse-terrain";
+  } from "#lib/features/water-traverse/data/water-traverse-terrain.js";
   import {
     buildWaterTraverseSetup,
     type TraverseCollider,

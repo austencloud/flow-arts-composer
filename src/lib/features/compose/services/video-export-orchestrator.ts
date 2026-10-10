@@ -15,24 +15,24 @@
 import {
   VIDEO_EXPORT_FPS,
   VIDEO_INITIAL_CAPTURE_DELAY_MS,
-} from "$lib/shared/animation-engine/domain/constants/timing";
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+} from "#lib/shared/animation-engine/domain/constants/timing.js";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 import {
   downloadBlob,
   generateTimestampedFilename,
-} from "$lib/shared/foundation/services/file-downloader";
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
+} from "#lib/shared/foundation/services/file-downloader.js";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
 import { getHeaderHeight, getProgressBarHeight } from "./canvas-renderer";
-import type { VideoExporter } from "$lib/shared/animation-engine/services/video-exporter";
-import type { CompositeVideoRenderer } from "$lib/shared/animation-engine/services/composite-video-renderer";
-import type { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
+import type { VideoExporter } from "#lib/shared/animation-engine/services/video-exporter.js";
+import type { CompositeVideoRenderer } from "#lib/shared/animation-engine/services/composite-video-renderer.js";
+import type { ExportGlyphPrerenderer } from "#lib/shared/animation-engine/services/export-glyph-prerenderer.js";
 import {
   ExportFrameCompositor,
   type FrameCompositorConfig,
 } from "./export-frame-compositor";
-import { OffscreenExportRenderer } from "$lib/shared/video-export/services/offscreen-export-renderer";
-import { drawOpenerFrame } from "$lib/shared/compose/domain/video-opener-frame";
-import { holdFrameCount } from "$lib/shared/share/domain/video-opener";
+import { OffscreenExportRenderer } from "#lib/shared/video-export/services/offscreen-export-renderer.js";
+import { drawOpenerFrame } from "#lib/shared/compose/domain/video-opener-frame.js";
+import { holdFrameCount } from "#lib/shared/share/domain/video-opener.js";
 
 import type {
   VideoExportFormat,
@@ -40,27 +40,27 @@ import type {
   VideoEffectOverrides,
   IVideoExportOrchestrator,
   VideoExportOrchestratorOptions,
-} from "$lib/shared/compose/domain/video-export-types";
+} from "#lib/shared/compose/domain/video-export-types.js";
 export type {
   VideoExportFormat,
   VideoExportProgress,
   VideoResolution,
   VideoEffectOverrides,
   VideoExportOrchestratorOptions,
-} from "$lib/shared/compose/domain/video-export-types";
-import type { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-import { fireCacheInvalidation } from "$lib/shared/animation-engine/state/fire-invalidation-signal.svelte";
+} from "#lib/shared/compose/domain/video-export-types.js";
+import type { BackgroundVideoEncoder } from "#lib/shared/animation-engine/services/background-video-encoder.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+import { fireCacheInvalidation } from "#lib/shared/animation-engine/state/fire-invalidation-signal.svelte.js";
 import {
   getExportDimensions,
   calculateBitrate,
-} from "$lib/shared/animation-engine/domain/video-export-calculations";
-import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
-import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
-import type { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+} from "#lib/shared/animation-engine/domain/video-export-calculations.js";
+import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
+import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 
 export class VideoExportOrchestrator implements IVideoExportOrchestrator {
   private _isExporting = false;

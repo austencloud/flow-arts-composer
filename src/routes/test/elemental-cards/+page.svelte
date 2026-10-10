@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { getPrintCardRenderer } from "$lib/features/choreo-card/getPrintCardRenderer";
-  import { TND_ELEMENTS, type TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
-  import { loadCatalogs, loadSequencesByIds } from "$lib/features/choreo-card/services/catalog-loader";
-  import type { Catalog } from "$lib/features/choreo-card/domain/models/Catalog";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PrintRenderOptions } from "$lib/features/choreo-card/services/types";
+  import { getPrintCardRenderer } from "#lib/features/choreo-card/getPrintCardRenderer.js";
+  import { TND_ELEMENTS, type TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import { loadCatalogs, loadSequencesByIds } from "#lib/features/choreo-card/services/catalog-loader.js";
+  import type { Catalog } from "#lib/features/choreo-card/domain/models/Catalog.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PrintRenderOptions } from "#lib/features/choreo-card/services/types.js";
 
   interface ElementCard {
     element: TnDElement;

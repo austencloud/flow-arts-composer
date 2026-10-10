@@ -24,14 +24,14 @@ import { createMotion, createStep, type Motion, type Step } from "@tka/tka-types
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {
   HandSide,
   type MotionType as AppMotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { Letter as AppLetter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { Letter as AppLetter } from "#lib/shared/foundation/domain/models/letter.js";
 
 /** Project an app `MotionData` onto the lean structural `Motion`. */
 export function motionDataToMotion(md: MotionData): Motion {

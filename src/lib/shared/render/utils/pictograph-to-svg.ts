@@ -1,6 +1,6 @@
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 /**
  * Utility for rendering Pictograph component to SVG string
  *
@@ -14,7 +14,7 @@ import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-a
  */
 
 import type { PictographData } from "../../pictograph/shared/domain/models/pictograph-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import PictographContainer from "../../pictograph/shared/components/PictographContainer.svelte";
 import { mount, tick, unmount } from "svelte";

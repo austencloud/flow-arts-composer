@@ -11,8 +11,8 @@
   import UsernameEditor from "./UsernameEditor.svelte";
   import InstagramUsernameEditor from "./InstagramUsernameEditor.svelte";
   import PronounsEditor from "./PronounsEditor.svelte";
-  import MyPropsCard from "$lib/shared/navigation/components/account/MyPropsCard.svelte";
-  import type { PropPreferenceState } from "$lib/shared/community/state/prop-preference-state.svelte";
+  import MyPropsCard from "#lib/shared/navigation/components/account/MyPropsCard.svelte";
+  import type { PropPreferenceState } from "#lib/shared/community/state/prop-preference-state.svelte.js";
 
   interface Props {
     user: User;

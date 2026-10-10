@@ -1,8 +1,8 @@
 
-import { PI } from "$lib/shared/foundation/domain/math-constants";
-import type { AnimationParams } from "$lib/shared/assemble-lab/domain/types";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { applyEffort } from "$lib/shared/effort/domain/effort-easing-unified";
+import { PI } from "#lib/shared/foundation/domain/math-constants.js";
+import type { AnimationParams } from "#lib/shared/assemble-lab/domain/types.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { applyEffort } from "#lib/shared/effort/domain/effort-easing-unified.js";
 import {
   deriveBuilderMotionGeometry,
   lerpAngle,
@@ -13,6 +13,9 @@ import {
 // 950x950 SVG coordinate space
 const CENTER = 475;
 const GRID_RADIUS = 143.1; // distance from center to hand points
+
+/** One builder hop: a tap on Assemble's grid, and the Create front door's Assemble preview. */
+export const BUILDER_HOP_MS = 400;
 
 /** Apply the user's chosen effort easing, defaulting to linear */
 function applyEasing(t: number): number {

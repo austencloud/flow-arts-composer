@@ -6,27 +6,27 @@
     getCharacterModelPath,
     prepareCharacterForDisplay,
     type CharacterId,
-  } from "$lib/shared/3d/domain/character-model";
+  } from "#lib/shared/3d/domain/character-model.js";
   import { getViewer3DContext } from "../../context/viewer-3d-context";
   import { getPerformerColor } from "../../constants/performer-colors";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import PerformerPropSizeSlider from "./PerformerPropSizeSlider.svelte";
   import CharacterSelectWorkspace from "./character-select/CharacterSelectWorkspace.svelte";
   import { resolveCharacterPreviewPerformer } from "./character-select/character-preview-source";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import PerformerSequencePanel from "./PerformerSequencePanel.svelte";
   import PerformerIdentityHeader from "./PerformerIdentityHeader.svelte";
-  import EffortPalette from "$lib/shared/phrase-effort-lab/components/EffortPalette.svelte";
+  import EffortPalette from "#lib/shared/phrase-effort-lab/components/EffortPalette.svelte";
   import EffectsSettingsPanel from "./EffectsSettingsPanel.svelte";
   import PlanesPopover from "../PlanesPopover.svelte";
   import ScenePropPicker from "./ScenePropPicker.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
   import type {
     PerformerEditSink,
     PerformerHubEdit,

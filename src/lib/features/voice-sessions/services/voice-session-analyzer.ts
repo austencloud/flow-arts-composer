@@ -2,8 +2,8 @@ import type {
   VoiceSession,
   VoiceSessionEvent,
   ResolutionTier,
-} from "$lib/shared/voice-control/domain/voice-session-types";
-import type { VoiceCommandCategory } from "$lib/shared/voice-control/domain/voice-command-types";
+} from "#lib/shared/voice-control/domain/voice-session-types.js";
+import type { VoiceCommandCategory } from "#lib/shared/voice-control/domain/voice-command-types.js";
 import type {
   SessionAnalysis,
   FailingTranscript,

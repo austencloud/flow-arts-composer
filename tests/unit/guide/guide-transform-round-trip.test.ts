@@ -35,16 +35,16 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: () => mockServerTimestamp(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
 
 let mockIsAdmin = true;
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   getEffectiveUserId: () => "test-uid",
 }));
 
-import { registerLoadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
+import { registerLoadedAuthState } from "#lib/shared/auth/state/loaded-auth-state.svelte.js";
 import { saveOverride } from "../../../src/routes/(public)/guide/level-1/_data/guide-overrides.svelte";
 import { sequenceToStrip } from "../../../src/routes/(public)/guide/level-1/_data/guide-sequence-adapter";
 import { handSwapSequence } from "../../../src/lib/shared/create/services/sequence-transforms";

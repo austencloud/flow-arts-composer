@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { buildStartEndOptions } from "../customize-start-end-options";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 const SNAPSHOT: StartEndOptions = {
   blockedStartPlacements: [],

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Real-pictograph diagram for the 1-turn dash breakdown, mirroring
    * DashStaticTurnsPage.svelte's dash row (`ROWS[0]`) exactly - same motion/
@@ -14,20 +14,20 @@
   import {
     createMotionData,
     createPlaceholderMotion,
-  } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import { buildHalvedStep } from "$lib/shared/animation-engine/services/build-halved-step";
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import { buildHalvedStep } from "#lib/shared/animation-engine/services/build-halved-step.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     GridMode,
     GridLocation,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import {
     bakeReversals,
     stripToSequence,

@@ -10,10 +10,10 @@
 
 import type { Unsubscribe } from "firebase/firestore";
 import { loadedAuth } from "../../auth/loaded-auth";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { isPermissionDeniedError } from "#lib/shared/auth/utils/is-permission-denied-error.js";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
 import {
   normalizeLegacyAppSettings,
   type AppSettings,

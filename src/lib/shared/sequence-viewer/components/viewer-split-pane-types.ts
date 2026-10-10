@@ -1,9 +1,9 @@
-import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 import type { ArtExportEventSink } from "../domain/art-export-analytics";
 import type { MandalaViewerController } from "../state/mandala-viewer-controller.svelte";
 import type { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";

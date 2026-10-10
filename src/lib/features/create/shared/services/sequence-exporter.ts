@@ -1,5 +1,5 @@
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 /**
  * Input sequence data structure with required fields for export

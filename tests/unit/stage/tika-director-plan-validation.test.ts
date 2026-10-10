@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   validateTikaDirectorPlan,
   validateTikaDirectorPlanTiming,
-} from "$lib/features/stage/domain/tika-director-plan-validation";
+} from "#lib/features/stage/domain/tika-director-plan-validation.js";
 import type {
   TikaDirectorConversationMessage,
   TikaDirectorResponse,
-} from "$lib/features/stage/domain/tika-director";
+} from "#lib/features/stage/domain/tika-director.js";
 
 function plan(durationBeats = 4): TikaDirectorResponse {
   return {

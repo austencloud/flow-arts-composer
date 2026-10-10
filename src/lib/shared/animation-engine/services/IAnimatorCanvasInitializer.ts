@@ -6,8 +6,8 @@
  */
 
 import type { GridJoin } from "@tka/tka-types";
-import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { IAnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /**
  * Initialization result

@@ -13,19 +13,19 @@
  * it renders 315° (up-right) — what the bug report screenshot showed.
  */
 import { describe, it, expect } from "vitest";
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { ArrowRotationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-rotation-calculator";
-import { ArrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-import { shouldMirrorArrow } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator";
-import type { ArrowPlacementData } from "$lib/shared/pictograph/arrow/positioning/placement/domain/arrow-placement-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { ArrowRotationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-rotation-calculator.js";
+import { ArrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+import { shouldMirrorArrow } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator.js";
+import type { ArrowPlacementData } from "#lib/shared/pictograph/arrow/positioning/placement/domain/arrow-placement-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import {
   floatClockwiseHandpathMap,
   floatCounterClockwiseHandpathMap,
-} from "$lib/shared/pictograph/arrow/positioning/calculation/config/float-rotation-maps";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/arrow/positioning/calculation/config/float-rotation-maps.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /** Level 1 gamma Quarter-Opp step 1: blue S→W (cw handpath), red E→N (ccw). */
 function gammaQuarterOppStep1(): PictographData {

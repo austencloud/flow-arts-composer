@@ -1,6 +1,6 @@
 import type { AppSettings } from "../../settings/domain/app-settings";
-import type { CompleteBrowseState } from "$lib/shared/browse/domain/models/browse-models";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import type { CompleteBrowseState } from "#lib/shared/browse/domain/models/browse-models.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import type { TabId } from "../../navigation/domain/types";
 import {
   createSequenceData,
@@ -16,7 +16,7 @@ import {
   normalizeLegacySequence,
   normalizeLegacyStep,
 } from "@tka/tka-types";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 export async function initialize(): Promise<void> {
   try {

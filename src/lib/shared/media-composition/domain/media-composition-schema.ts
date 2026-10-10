@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { SequenceTimeMapSchema } from "$lib/shared/media-composition/domain/sequence-time-map";
-import type { SequenceRevisionRefSchema } from "$lib/shared/media-composition/domain/sequence-time-map";
+import { SequenceTimeMapSchema } from "#lib/shared/media-composition/domain/sequence-time-map.js";
+import type { SequenceRevisionRefSchema } from "#lib/shared/media-composition/domain/sequence-time-map.js";
 import {
   MediaSourceSchema,
   type MediaSource,
-} from "$lib/shared/media-composition/domain/media-source-schema";
+} from "#lib/shared/media-composition/domain/media-source-schema.js";
 import {
   AudioMixSchema,
   DurationPolicySchema,
@@ -13,7 +13,7 @@ import {
   MediaTransitionSchema,
   OutputFormatSchema,
   PublishTargetOverridesSchema,
-} from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "#lib/shared/media-composition/domain/media-layout-schema.js";
 
 const NonEmptyIdSchema = z.string().trim().min(1);
 const TimestampSchema = z.number().finite().int().nonnegative();

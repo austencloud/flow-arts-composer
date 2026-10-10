@@ -5,7 +5,7 @@
  * Lab settings are persisted via the app settings service for localStorage + Firebase sync.
  */
 
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 import { BackgroundType } from "@austencloud/backgrounds";
 import {
   DEFAULT_COSMIC_SETTINGS,
@@ -22,8 +22,8 @@ import {
   type CelestialLabSettings,
   type VoidLabSettings,
   type BackgroundLabSettings,
-} from "$lib/shared/background-builder/domain/lab-settings-types";
-import { normalizeCelestialLabSettings } from "$lib/shared/background-builder/domain/celestial-lab-settings";
+} from "#lib/shared/background-builder/domain/lab-settings-types.js";
+import { normalizeCelestialLabSettings } from "#lib/shared/background-builder/domain/celestial-lab-settings.js";
 
 const STORAGE_KEY = "tka-background-builder-active-tab";
 

@@ -1,15 +1,15 @@
 <!-- ReleaseNotesTab - Master-detail version history with container query responsive layout -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { createVersionState } from "$lib/shared/feedback/state/version-state.svelte";
-  import type { AppVersion } from "$lib/shared/versioning/domain/models/version-models";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { createVersionState } from "#lib/shared/feedback/state/version-state.svelte.js";
+  import type { AppVersion } from "#lib/shared/versioning/domain/models/version-models.js";
   import VersionCard from "./release-notes/VersionCard.svelte";
   import VersionListItem from "./release-notes/VersionListItem.svelte";
   import VersionDetailContent from "./release-notes/VersionDetailContent.svelte";
   import VersionDetailPanel from "./release-notes/VersionDetailPanel.svelte";
   import VersionHistoryEntry from "./release-notes/VersionHistoryEntry.svelte";
-  import { getContributorLoader } from "$lib/shared/feedback/get-contributor-loader";
-  import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
+  import { getContributorLoader } from "#lib/shared/feedback/get-contributor-loader.js";
+  import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
 
   const versionState = createVersionState();
 

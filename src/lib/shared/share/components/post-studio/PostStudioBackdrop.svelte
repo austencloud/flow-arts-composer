@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
-  import { paintBlurredBackdrop } from "$lib/shared/media-composition/services/post-backdrop-painter";
+  import type { EvaluatedFrameLayer } from "#lib/shared/media-composition/services/frame-evaluator.js";
+  import { paintBlurredBackdrop } from "#lib/shared/media-composition/services/post-backdrop-painter.js";
   import {
     mediaDimensions,
     mediaForClip,
-  } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
+  } from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
 
   /**
    * The blurred background under the preview's items, painted by the export's

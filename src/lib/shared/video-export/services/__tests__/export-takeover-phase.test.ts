@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { toExportTakeoverPhase, exportPhaseLabelKey } from "../export-takeover-phase";
-import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
+import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
 
 const p = (stage: VideoExportProgress["stage"], extra: Partial<VideoExportProgress> = {}): VideoExportProgress =>
   ({ progress: 0.5, stage, ...extra }) as VideoExportProgress;

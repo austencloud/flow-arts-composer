@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-  import type { PresentationSummary } from "$lib/shared/foundation/services/presentation-intent";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import PropPairField from "#lib/shared/pictograph/prop/components/PropPairField.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+  import type { PresentationSummary } from "#lib/shared/foundation/services/presentation-intent.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   let {
     value = $bindable(),
     presentationSummary = null,

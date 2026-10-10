@@ -1,11 +1,10 @@
-import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { dev } from "$app/environment";
+import { dev } from "$app/env";
 import {
   checkRateLimit,
   rateLimitResponse,
   RATE_LIMITS,
-} from "$lib/server/security/rate-limiter";
+} from "#lib/server/security/rate-limiter.js";
 
 /**
  * Sanitize log input to prevent log injection attacks.
@@ -65,9 +64,9 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
         break;
     }
 
-    return json({ success: true });
+    return Response.json({ success: true });
   } catch (error) {
     console.error("[SERVER] Failed to log browser message:", error);
-    return json({ success: false }, { status: 500 });
+    return Response.json({ success: false }, { status: 500 });
   }
 };

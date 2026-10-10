@@ -1,5 +1,5 @@
-import { getLocale, t } from "$lib/shared/i18n/i18n.svelte";
-import { formatRelativeTime as formatLocalizedRelativeTime } from "$lib/shared/i18n/i18n-formatters";
+import { getLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
+import { formatRelativeTime as formatLocalizedRelativeTime } from "#lib/shared/i18n/i18n-formatters.js";
 
 /**
  * Inbox Formatting Utilities

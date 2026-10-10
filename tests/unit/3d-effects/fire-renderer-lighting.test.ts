@@ -1,9 +1,9 @@
 import { InstancedMesh, Object3D, PointLight, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
-import { FireRenderer3D } from "$lib/shared/3d/effects/fire/fire-renderer-3d";
-import { QualityTier } from "$lib/shared/3d/effects/types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { resolveFire3D } from "$lib/shared/effects/translators/webgl3d-translator";
+import { FireRenderer3D } from "#lib/shared/3d/effects/fire/fire-renderer-3d.js";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { resolveFire3D } from "#lib/shared/effects/translators/webgl3d-translator.js";
 
 describe("FireRenderer3D local lighting", () => {
   it("keeps zero-intensity lights in the startup shader signature", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { stripEscapeTestParams } from "$lib/shared/auth/config/app-availability";
+import { stripEscapeTestParams } from "#lib/shared/auth/config/app-availability.js";
 
 describe("stripEscapeTestParams", () => {
   it("removes forceIAB and appLaunched, keeps everything else", () => {

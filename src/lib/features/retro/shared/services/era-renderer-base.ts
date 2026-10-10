@@ -11,17 +11,17 @@
  * - drawTintedImage mirrors Canvas2DDirectRenderer.drawColoredImage (OffscreenCanvas tint)
  */
 
-import type { PictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import type { PreparedRenderData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { PictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import type { PreparedRenderData } from "#lib/shared/pictograph/shared/domain/models/prepared-pictograph-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import type { RetroPictographData, RetroHandData } from "../domain/pictograph-types";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getSvgImageCache, type DrawableImage } from "$lib/shared/render/services/svg-image-cache";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getSvgImageCache, type DrawableImage } from "#lib/shared/render/services/svg-image-cache.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 // The canonical viewBox size used throughout the TKA rendering system
 const VIEWBOX_SIZE = 950;

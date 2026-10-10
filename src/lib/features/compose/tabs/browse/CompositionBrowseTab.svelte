@@ -5,7 +5,7 @@
 	Wires together: filter bar, grid, empty state, detail view, and delete confirmation.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { getCompositionBrowseState } from "./state/composition-browse-state.svelte";
   import type {
@@ -16,9 +16,9 @@
   } from "./state/composition-browse-state.svelte";
   import { getComposeModuleState } from "../../shared/state/compose-module-state.svelte";
   import { arrangeGridState } from "../arrange/state/arrange-grid-state.svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import CompositionFilterBar from "./components/CompositionFilterBar.svelte";
   import CompositionGrid from "./components/CompositionGrid.svelte";
   import CompositionViewerDrawer from "./components/CompositionViewerDrawer.svelte";

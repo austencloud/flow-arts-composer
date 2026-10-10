@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
   import type { StatsOverview as StatsOverviewData } from "../../services/performance-history-tracker";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     stats: StatsOverviewData;
@@ -85,7 +85,6 @@
     padding: 1.5rem;
     background: var(--gradient);
     border-radius: 1rem;
-    box-shadow: 0 4px 6px var(--theme-shadow);
     transition: transform var(--duration-normal);
   }
 

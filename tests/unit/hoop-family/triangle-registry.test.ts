@@ -1,23 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   SMALL_UNILATERAL_PROPS,
   isUnilateralProp as isUnilateralPropDomain,
-} from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-import { isUnilateralProp as isUnilateralPropRenderCore } from "$lib/shared/render/core/constants/prop-classification";
+} from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+import { isUnilateralProp as isUnilateralPropRenderCore } from "#lib/shared/render/core/constants/prop-classification.js";
 import {
   getAllVariations,
   getBasePropType,
   getPropTypeDisplayInfo,
   PROP_PICKER_SECTIONS,
   VARIANT_PROP_TYPES,
-} from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-import { getCompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
+} from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+import { getCompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
 import {
   encodePropForURL,
   parsePropTypeFromURLValue,
-} from "$lib/shared/navigation/services/sequence-encoder";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
 import {
   applyMotionColorToSvg,
   getMotionColor,

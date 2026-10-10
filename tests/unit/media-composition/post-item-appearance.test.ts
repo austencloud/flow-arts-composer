@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   PostProjectSchema,
   findItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
-import { animationAppearanceForItem, cardOptionsForItem } from "$lib/shared/share/components/post-studio/post-item-render-options";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { animationAppearanceForItem, cardOptionsForItem } from "#lib/shared/share/components/post-studio/post-item-render-options.js";
 import { card, overlay, project } from "./post-project-fixtures";
 
 const ctx = { now: 1_700_000_000_001 };

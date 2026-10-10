@@ -17,7 +17,7 @@
  * moves into the Sequence Actions header and Clear into its Edit category. The
  * tutorial diagram describes the regular two-row layout.
  */
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 export type WorkspaceButtonId =
   | "undo"

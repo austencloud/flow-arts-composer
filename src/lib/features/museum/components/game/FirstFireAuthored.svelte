@@ -31,7 +31,7 @@
    */
   import { T, useTask } from "@threlte/core";
   import { Box3, Mesh, MeshStandardMaterial, type Object3D } from "three";
-  import GltfAsset from "$lib/shared/3d/environments/primitives/GltfAsset.svelte";
+  import GltfAsset from "#lib/shared/3d/environments/primitives/GltfAsset.svelte";
   import MuseumPerformerStation3D from "./MuseumPerformerStation3D.svelte";
   import FirstFireProcessionFlames from "./first-fire/FirstFireProcessionFlames.svelte";
   import FirstFireShrineVolumes from "./first-fire/FirstFireShrineVolumes.svelte";

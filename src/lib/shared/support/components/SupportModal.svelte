@@ -13,8 +13,8 @@
    * supportModalState. The /support route still exists (printed-guide QR +
    * Stripe-return redirect) and shares the SAME SupportContent.
    */
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
   import SupportContent from "./SupportContent.svelte";
   import { supportModalState } from "../state/support-modal-state.svelte";
 </script>

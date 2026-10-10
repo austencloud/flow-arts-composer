@@ -1,5 +1,5 @@
 import { cubicInOut, cubicOut } from "svelte/easing";
-import type { TransitionConfig } from "svelte/transition";
+import { fade, type TransitionConfig } from "svelte/transition";
 import { DURATION } from "./transitions";
 import { cssCubicBezier } from "./ws-ease";
 
@@ -267,6 +267,47 @@ export function growFade(
   };
 }
 
+interface OpaqueFadeParams {
+  duration?: number;
+  delay?: number;
+  /**
+   * Classes that hold the node below full opacity. A node carrying one falls
+   * back to Svelte's `fade`, which reads the opacity it should fade from.
+   */
+  dimmedBy?: readonly string[];
+  /**
+   * The opacity the node rests at, when the caller sets it itself (an SVG
+   * `opacity` attribute bound to the same value).
+   */
+  opacity?: number;
+  easing?: (t: number) => number;
+}
+
+/**
+ * Svelte's `fade` for nodes whose resting opacity is known: full, or the
+ * `opacity` the caller passes. `fade` reads the node's computed opacity before
+ * it starts, even at zero duration, which forces a style recalc (and layout
+ * inside size containers) for every element. Undo in the sequence grid paid
+ * that once per entering and leaving cell, ~18 times in one frame.
+ */
+export function opaqueFade(
+  node: Element,
+  {
+    duration = DURATION.fast,
+    delay = 0,
+    dimmedBy = [],
+    opacity = 1,
+    easing,
+  }: OpaqueFadeParams = {}
+): TransitionConfig {
+  const ms = motionDuration(duration);
+  if (ms === 0) return { duration: 0 };
+  if (dimmedBy.some((name) => node.classList.contains(name))) {
+    return fade(node, { duration: ms, delay, easing });
+  }
+  return { duration: ms, delay, easing, css: (t) => `opacity: ${t * opacity}` };
+}
+
 interface PopInParams {
   duration?: number;
   delay?: number;
@@ -274,9 +315,13 @@ interface PopInParams {
   start?: number;
 }
 
-/** Scale + fade pop for small controls (icon buttons, badges). */
+/**
+ * Scale + fade pop for small controls (icon buttons, badges). A `start` above 1
+ * settles down to rest size instead. It never reads the node's style, unlike
+ * Svelte's `scale`.
+ */
 export function popIn(
-  node: HTMLElement,
+  node: Element,
   { duration = DURATION.fast, delay = 0, start = 0.8 }: PopInParams = {}
 ): TransitionConfig {
   void node;

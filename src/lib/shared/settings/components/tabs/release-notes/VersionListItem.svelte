@@ -1,9 +1,9 @@
 <!-- VersionListItem - Compact clickable item for master panel version list -->
 <script lang="ts">
-  import type { AppVersion } from "$lib/shared/versioning/domain/models/version-models";
-  import { PRE_RELEASE_VERSION } from "$lib/shared/versioning/domain/models/version-models";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
+  import type { AppVersion } from "#lib/shared/versioning/domain/models/version-models.js";
+  import { PRE_RELEASE_VERSION } from "#lib/shared/versioning/domain/models/version-models.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getReactiveLocale } from "#lib/shared/i18n/locale-state.svelte.js";
   import { releaseSummary } from "./release-summary";
 
   const { version, isActive, onclick } = $props<{

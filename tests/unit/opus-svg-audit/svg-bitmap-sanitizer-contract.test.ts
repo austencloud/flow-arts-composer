@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { sanitizeSvgForBitmap } from "$lib/shared/render/services/svg-bitmap-sanitize";
+import { sanitizeSvgForBitmap } from "#lib/shared/render/services/svg-bitmap-sanitize.js";
 import { listSvgFiles, readSvg, type SvgRecord } from "./svg-corpus";
 
 const CORPUS: SvgRecord[] = listSvgFiles("static").map(readSvg);

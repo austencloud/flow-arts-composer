@@ -5,7 +5,7 @@ import {
   panelFlexStyle,
   resolvePanelFlex,
   settledPanelSizes,
-} from "$lib/shared/panels/panel-flex";
+} from "#lib/shared/panels/panel-flex.js";
 
 /**
  * The stacked viewer dock as the shell declares it: the performances gallery

@@ -1,5 +1,5 @@
-import type { LOOPOption } from "$lib/features/create/shared/services/loop-validator";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import type { LOOPOption } from "#lib/features/create/shared/services/loop-validator.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 // These match LOOPValidator's production labels and descriptions. Keeping the
 // review routes on one fixture set prevents a compact drawer from being judged

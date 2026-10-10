@@ -1,9 +1,9 @@
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-import { getVisibleOwnerNames } from "$lib/shared/community/services/user-repository";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+import { getVisibleOwnerNames } from "#lib/shared/community/services/user-repository.js";
 import {
 	subscribeToAllPublicCollections,
 	type PublicCollectionWithOwner,
-} from "$lib/features/library/services/public-collection-loader";
+} from "#lib/features/library/services/public-collection-loader.js";
 
 /**
  * community-collections-state - everyone's public collections, flattened.

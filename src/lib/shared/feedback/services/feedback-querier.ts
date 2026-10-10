@@ -15,15 +15,15 @@ import {
   where,
   startAfter,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { firestoreGet, firestoreList } from "$lib/shared/firestore";
-import type { FeedbackQueryResult } from "$lib/shared/feedback/domain/feedback-contract-types";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { firestoreGet, firestoreList } from "#lib/shared/firestore/index.js";
+import type { FeedbackQueryResult } from "#lib/shared/feedback/domain/feedback-contract-types.js";
 import type {
   FeedbackItem,
   FeedbackFilterOptions,
-} from "$lib/shared/feedback/domain/models/feedback-models";
+} from "#lib/shared/feedback/domain/models/feedback-models.js";
 import { FeedbackItemSchema } from "../domain/models/feedback-schemas";
-import * as feedbackDocumentMapper from "$lib/shared/feedback/services/feedback-document-mapper";
+import * as feedbackDocumentMapper from "#lib/shared/feedback/services/feedback-document-mapper.js";
 
 const COLLECTION_NAME = "feedback";
 

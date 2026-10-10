@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import type { Component } from "svelte";
-  import LoadingGate from "$lib/shared/components/loading/LoadingGate.svelte";
+  import LoadingGate from "#lib/shared/components/loading/LoadingGate.svelte";
   import {
     clearModuleChunkRecoveryGuard,
     recoverFromModuleChunkFailure,
     resilientLazyImport,
-  } from "$lib/shared/hmr-helper";
+  } from "#lib/shared/hmr-helper.js";
 
   let MainApp = $state<Component | null>(null);
   let loadError = $state<unknown>(null);
@@ -18,13 +18,13 @@
 
     loadError = null;
     mainAppLoad = resilientLazyImport(
-      () => import("$lib/shared/application/components/MainApplication.svelte"),
+      () => import("#lib/shared/application/components/MainApplication.svelte"),
       4
     )()
       .then((mod) => {
         MainApp = mod.default;
         clearModuleChunkRecoveryGuard("app-shell");
-        void import("$lib/shared/analytics/boot-profiler")
+        void import("#lib/shared/analytics/boot-profiler.js")
           .then(({ bootProfiler }) => bootProfiler.end("shell:main-app-chunk"))
           .catch(() => {});
       })
@@ -41,7 +41,7 @@
 
   onMount(() => {
     (window as any).__tkaLoadProgress?.(84, t("app_loading_services"));
-    void import("$lib/shared/analytics/boot-profiler")
+    void import("#lib/shared/analytics/boot-profiler.js")
       .then(({ bootProfiler }) => bootProfiler.mark("shell:main-app-chunk"))
       .catch(() => {});
     void loadMainApp();
@@ -64,7 +64,7 @@
      MainApplication.svelte so it catches the link before MainApp finishes
      loading. See EmailLinkConfirmModal.svelte for why completion requires an
      explicit click. -->
-{#await import("$lib/shared/auth/components/EmailLinkConfirmModal.svelte") then mod}
+{#await import("#lib/shared/auth/components/EmailLinkConfirmModal.svelte") then mod}
   <mod.default />
 {/await}
 

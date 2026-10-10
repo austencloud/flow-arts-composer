@@ -1,7 +1,7 @@
 import {
   db,
   type TKADatabase,
-} from "$lib/shared/persistence/database/tka-database";
+} from "#lib/shared/persistence/database/tka-database.js";
 import type {
   MessageDraftRecord,
   MessageOutboxRecord,

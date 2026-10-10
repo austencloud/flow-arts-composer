@@ -4,10 +4,10 @@ import { beforeEach, expect, it, vi } from "vitest";
 import InboxNavButton from "./InboxNavButton.svelte";
 
 const { open } = vi.hoisted(() => ({ open: vi.fn() }));
-vi.mock("$lib/shared/inbox/state/inbox-state.svelte", () => ({
+vi.mock("#lib/shared/inbox/state/inbox-state.svelte.js", () => ({
   inboxState: { totalUnreadCount: 2, open },
 }));
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 

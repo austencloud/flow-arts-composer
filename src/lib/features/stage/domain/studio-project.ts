@@ -1,5 +1,5 @@
-import type { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 import type { FormationPresetId, StageChoreography } from "./stage-types";
 

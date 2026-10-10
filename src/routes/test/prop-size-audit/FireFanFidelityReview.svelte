@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { generatePropSvg } from "$lib/shared/animation-engine/services/svg-generator";
+  import { generatePropSvg } from "#lib/shared/animation-engine/services/svg-generator.js";
 
   interface ReviewFan {
     id: "fire-bare" | "fire-covered" | "lotus" | "flat-grip" | "star";

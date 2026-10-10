@@ -5,15 +5,15 @@
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
-  import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { AssembleState } from "../state/assemble-state.svelte";
   import { getBuilderControlVisibility } from "../services/builder-phase-presentation";
   import BuilderMotionSettings from "./BuilderMotionSettings.svelte";
   import BuilderOrientationPicker from "./BuilderOrientationPicker.svelte";
   import GridModePicker from "./GridModePicker.svelte";
   import OrientationExplainer from "./OrientationExplainer.svelte";
-  import { popIn } from "$lib/shared/transitions/motion";
+  import { popIn } from "#lib/shared/transitions/motion.js";
 
   let { builderState }: { builderState: AssembleState } = $props();
 
@@ -276,7 +276,6 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--settings-radius-md, 14px);
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
-    box-shadow: 0 8px 32px var(--theme-shadow, rgba(0, 0, 0, 0.3));
     animation: assemble-popover-in var(--duration-fast, 150ms) ease-out;
     z-index: var(--z-dropdown, 100);
   }

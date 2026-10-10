@@ -1,5 +1,5 @@
 import type { PictographData } from "../../pictograph/shared/domain/models/pictograph-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
 import { getSvgImageCache, type DrawableImage } from "./svg-image-cache";
 import { getSvgAssetLoader } from "./svg-asset-loader";
@@ -34,7 +34,7 @@ import {
 } from "../core";
 import type { GridPlacement } from "../../pictograph/grid/domain/enums/grid-enums";
 import { isVisibleMotion, type MotionData } from "../../pictograph/shared/domain/models/motion-data";
-import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
+import { isSkewedFrameBeat } from "#lib/shared/foundation/services/skewed-frame.js";
 import {
   HandSide,
   getElementImagePath,
@@ -43,7 +43,7 @@ import {
   containElementalGlyph,
   getElementalGlyphBox,
 } from "../../pictograph/shared/domain/constants/elemental-glyph-layout";
-import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
+import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
 import { getMotionColor } from "../../utils/svg-color-utils";
 import { drawMonochromeImage, drawTintedImage } from "@tka/render-composition";
 import { drawSkewBraces } from "../utils/draw-skew-braces";

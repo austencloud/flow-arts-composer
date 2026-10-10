@@ -5,13 +5,13 @@ import {
   Orientation,
   RotationDirection,
   TnDMode,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import {
   buildDoubleFloatOptionRows,
   countDoubleFloatPathGroups,
-} from "$lib/features/create/construct/option-picker/services/double-float-option-groups";
+} from "#lib/features/create/construct/option-picker/services/double-float-option-groups.js";
 
 function floatMotion(start: string, end: string): MotionData {
   return {

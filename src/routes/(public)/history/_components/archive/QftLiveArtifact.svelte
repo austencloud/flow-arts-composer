@@ -9,8 +9,8 @@
 	import {
 		buildIncrements,
 		type QftKnobs,
-	} from "$lib/shared/notation/qft/qft-model";
-	import QftStage from "$lib/shared/notation/qft/components/QftStage.svelte";
+	} from "#lib/shared/notation/qft/qft-model.js";
+	import QftStage from "#lib/shared/notation/qft/components/QftStage.svelte";
 
 	let { active = false }: { active?: boolean } = $props();
 

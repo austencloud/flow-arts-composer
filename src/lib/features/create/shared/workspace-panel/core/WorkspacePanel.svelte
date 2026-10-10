@@ -5,19 +5,19 @@
 	Main area for viewing and interacting with the sequence.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getStepOperator } from "#lib/features/create/shared/get-step-operator.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { tryGetCreateModuleContext } from "../../context/create-module-context";
   import { onMount } from "svelte";
   import Toast from "../components/Toast.svelte";
   import SequenceDisplay from "../sequence-display/components/SequenceDisplay.svelte";
-  import type { StepOperator } from "$lib/features/create/shared/services/step-operator";
+  import type { StepOperator } from "#lib/features/create/shared/services/step-operator.js";
   import type { SequenceState } from "../../state/sequence-state-orchestrator.svelte";
   import type { CreateModuleState } from "../../state/create-module-state.svelte";
   import type { IAnimationStateRef } from "../../types/create-module-types";
   import type { PanelCoordinationState } from "../../state/panel-coordination-state.svelte";
-  import type { LetterSource } from "$lib/shared/create/domain/spell-models";
+  import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
 
   // Services
   let StepOperator: StepOperator | null = null;

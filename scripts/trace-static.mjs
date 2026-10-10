@@ -1,6 +1,6 @@
 import fs from 'fs'; import path from 'path';
 function norm(p){return p.split(path.sep).join('/');}
-function resolve(spec,from){ if(spec.startsWith('$app/')||spec.startsWith('@sveltejs/kit'))return{kit:spec}; let p; if(spec.startsWith('$lib'))p=spec.replace('$lib','src/lib'); else if(spec.startsWith('.'))p=norm(path.join(path.dirname(from),spec)); else return null; for(const e of ['','.ts','.svelte.ts','.svelte','/index.ts','.js']){const f=p+e; try{if(fs.statSync(f).isFile())return{file:f};}catch{}} return null;}
+function resolve(spec,from){ if(spec.startsWith('$app/')||spec.startsWith('@sveltejs/kit'))return{kit:spec}; let p; if(spec.startsWith('#lib/'))p=spec.replace('#lib','src/lib').replace(/\.js$/,''); else if(spec.startsWith('.'))p=norm(path.join(path.dirname(from),spec)); else return null; for(const e of ['','.ts','.svelte.ts','.svelte','/index.ts','.js']){const f=p+e; try{if(fs.statSync(f).isFile())return{file:f};}catch{}} return null;}
 const RE=/(?:^|\n)\s*(import|export)\b[\s\S]*?\sfrom\s*['"]([^'"]+)['"]/g;
 let seen,chains;
 function walk(file,stack){ if(seen.has(file)||stack.length>45)return; seen.add(file); let s; try{s=fs.readFileSync(file,'utf8');}catch{return;} let m; RE.lastIndex=0; while((m=RE.exec(s))){ if(/^(import|export)\s+type\b/.test(m[0].trimStart()))continue; const r=resolve(m[2],file); if(!r)continue; if(r.kit){ if(/navigation|forms|stores|paths|@sveltejs\/kit/.test(r.kit))chains.push([...stack,file,'>>> '+r.kit]); continue;} walk(r.file,[...stack,file]);}}

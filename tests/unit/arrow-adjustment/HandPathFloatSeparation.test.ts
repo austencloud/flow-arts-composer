@@ -27,22 +27,22 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { Point } from "fabric";
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { SpecialPlacementLookup } from "$lib/shared/pictograph/arrow/positioning/placement/services/special-placement-lookup";
-import { turnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { SpecialPlacementLookup } from "#lib/shared/pictograph/arrow/positioning/placement/services/special-placement-lookup.js";
+import { turnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
 import {
   generateOrientationKey,
   resolveEffectiveOriKey,
   mapToLegacyBucket,
-} from "$lib/shared/pictograph/arrow/positioning/key-generation/services/special-placement-ori-key-generator";
-import { generatePlacementKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/arrow/positioning/key-generation/services/special-placement-ori-key-generator.js";
+import { generatePlacementKey } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import {
   floatClockwiseHandpathMap,
   floatCounterClockwiseHandpathMap,
-} from "$lib/shared/pictograph/arrow/positioning/calculation/config/float-rotation-maps";
+} from "#lib/shared/pictograph/arrow/positioning/calculation/config/float-rotation-maps.js";
 
 const STATIC_ROOT = resolve(process.cwd(), "static");
 

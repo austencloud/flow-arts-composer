@@ -3,13 +3,13 @@ import { flushSync } from "svelte";
 import {
   POST_STUDIO_PRESETS,
   POST_STUDIO_ROLE,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "#lib/shared/media-composition/domain/post-studio-presets.js";
 import {
   createMediaCompositionState,
   type CompositionSourceBinding,
-} from "$lib/shared/media-composition/state/media-composition-state.svelte";
-import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/media-composition/state/media-composition-state.svelte.js";
+import type { SequenceTimeMap } from "#lib/shared/media-composition/domain/sequence-time-map.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const timeMap: SequenceTimeMap = {
   schemaVersion: 1,

@@ -10,18 +10,18 @@ import type { SequenceState } from "./sequence-state-orchestrator.svelte";
 import { createCreateModulePersistenceController } from "./create-module/persistence-controller.svelte";
 import { createNavigationController } from "./create-module/navigation-controller.svelte";
 import { createOptionHistoryManager } from "./create-module/option-history-manager.svelte";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import type { SequenceStatsCalculator } from "$lib/features/create/shared/services/sequence-stats-calculator";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { SequenceValidator } from "$lib/features/create/shared/services/sequence-validator";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { SequenceStatsCalculator } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { SequenceValidator } from "#lib/features/create/shared/services/sequence-validator.js";
 import {
   reversalDetector,
   type ReversalDetector,
-} from "$lib/shared/create/services/reversal-detector";
-import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
+} from "#lib/shared/create/services/reversal-detector.js";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
 // ARCHIVED: AssemblerTabState import removed (Feb 2026) - files kept for reference
 import type { GeneratorTabState } from "./generator-tab-state.svelte";
 import type { ConstructTabState } from "./construct-tab-state.svelte";

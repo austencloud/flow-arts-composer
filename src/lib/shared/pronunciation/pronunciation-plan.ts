@@ -1,10 +1,10 @@
-import { GREEK_TO_ASCII } from "$lib/shared/create/domain/spell-constants";
+import { GREEK_TO_ASCII } from "#lib/shared/create/domain/spell-constants.js";
 import {
   Letter,
   normalizeLetter,
   type Letter as TkaLetter,
-} from "$lib/shared/foundation/domain/models/letter";
-import { tokenizeWord } from "$lib/shared/pictograph/tka-glyph/utils/word-tokenizer";
+} from "#lib/shared/foundation/domain/models/letter.js";
+import { tokenizeWord } from "#lib/shared/pictograph/tka-glyph/utils/word-tokenizer.js";
 
 export const PRONUNCIATION_POSITIONS = [
   "isolated",

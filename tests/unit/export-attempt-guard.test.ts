@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ExportAttemptGuard } from "$lib/shared/sequence-viewer/domain/export-attempt-guard";
+import { ExportAttemptGuard } from "#lib/shared/sequence-viewer/domain/export-attempt-guard.js";
 
 describe("ExportAttemptGuard", () => {
   it("rejects re-entry and permits exactly one terminal outcome", () => {

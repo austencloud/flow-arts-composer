@@ -9,7 +9,7 @@ import {
   DEFAULT_VIDEO_OPENER,
   isVideoOpener,
   type VideoOpener,
-} from "$lib/shared/share/domain/video-opener";
+} from "#lib/shared/share/domain/video-opener.js";
 
 // Video FPS options
 export type VideoFps = 30 | 60 | 120;

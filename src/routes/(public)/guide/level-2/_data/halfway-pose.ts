@@ -14,17 +14,17 @@
  * drawn `translate(cx,cy) rotate(deg) translate(-126.4,-38.9)` (its crossbar
  * sits at the +x end), identical to StaffMotionsPage's overlay.
  */
-import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridMode, type GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridMode, type GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const VIEWBOX = 950;
 const CENTER = VIEWBOX / 2; // 475

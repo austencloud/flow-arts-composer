@@ -28,8 +28,8 @@
    */
   import { tick } from "svelte";
   import { page } from "$app/state";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     bodyPagesByGroup,
     GROUP_TITLES,
@@ -71,6 +71,12 @@
       })),
     })
   );
+
+  // "/guide/level-1" itself redirects into the app shell, so the chapter
+  // title opens the first public topic, the same door the guide hub uses.
+  const level1StartHref = level1Groups[0]?.rows[0]
+    ? `/guide/level-1/${level1Groups[0].rows[0].id}`
+    : "/guide";
 
   function isLevel1Active(id: string): boolean {
     return pathname === `/guide/level-1/${id}`;
@@ -159,7 +165,7 @@
     <div class="level-header">
       <a
         class="nav-title-link"
-        href="/guide/level-1"
+        href={level1StartHref}
         onclick={() => onLinkClick?.()}
       >
         {tDynamic("guide_hub_level1_title")}

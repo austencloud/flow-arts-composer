@@ -6,10 +6,10 @@
 -->
 <script lang="ts">
   import { getContext } from "svelte";
-  import PanelHeader from "$lib/shared/create/components/PanelHeader.svelte";
+  import PanelHeader from "#lib/shared/create/components/PanelHeader.svelte";
   import VideoRecordPanel from "./VideoRecordPanel.svelte";
   import type { RecordingResult } from "../services/types";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   let {
     show = $bindable(false),
@@ -44,7 +44,7 @@
   let CreatePanelDrawer = $state<any>(null);
   let isSideBySideLayout = $derived(createModuleCtx?.layout.shouldUseSideBySideLayout ?? false);
 
-  import("$lib/features/create/shared/components/CreatePanelDrawer.svelte").then(m => { CreatePanelDrawer = m.default; });
+  import("#lib/features/create/shared/components/CreatePanelDrawer.svelte").then(m => { CreatePanelDrawer = m.default; });
 </script>
 
 {#if CreatePanelDrawer}

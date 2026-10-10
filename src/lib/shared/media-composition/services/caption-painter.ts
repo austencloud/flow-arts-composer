@@ -1,4 +1,4 @@
-import type { CompiledCaption } from "$lib/shared/media-composition/domain/post-plan-compiler";
+import type { CompiledCaption } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
 import {
   CAPTION_FADE_SECONDS,
   CAPTION_LINE_HEIGHT_FRACTION,
@@ -11,12 +11,12 @@ import {
   captionFontString,
   captionLineYPositions,
   wrapCaptionText,
-} from "$lib/shared/media-composition/domain/caption-layout";
+} from "#lib/shared/media-composition/domain/caption-layout.js";
 import type {
   PaintFrame,
   PaintRect,
   PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
 
 /** InShot-style caption ink: heavy dark outline under a solid white fill. */
 const FILL_COLOR = "#ffffff";

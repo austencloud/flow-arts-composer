@@ -5,8 +5,8 @@
  * to full SequenceData using the browse loader.
  */
 
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   DuetSequence,
   DuetSequenceWithData,

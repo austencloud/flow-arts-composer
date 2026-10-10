@@ -11,8 +11,8 @@
  * The plugin is imported dynamically so web builds never load it.
  */
 import { Capacitor } from "@capacitor/core";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-import { t } from "$lib/shared/i18n/i18n.svelte";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 type Updater = (typeof import("@capgo/capacitor-updater"))["CapacitorUpdater"];
 

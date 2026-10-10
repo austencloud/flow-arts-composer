@@ -24,13 +24,13 @@ const getDocsMock = vi.fn();
 const setDocMock = vi.fn().mockResolvedValue(undefined);
 const collectionMock = vi.fn((_db: unknown, path: string) => ({ path }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: async () => {
     if (firestoreGate) await firestoreGate;
     return {} as any;
   },
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     get effectiveUserId() {
       return liveUid.value;
@@ -57,7 +57,7 @@ vi.mock("firebase/firestore", () => ({
 }));
 
 const { findTagByName, createUserTag } =
-  await import("$lib/features/library/services/tag-manager");
+  await import("#lib/features/library/services/tag-manager.js");
 
 beforeEach(() => {
   vi.clearAllMocks();

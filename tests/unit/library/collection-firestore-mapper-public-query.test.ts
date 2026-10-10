@@ -18,21 +18,21 @@ vi.mock("firebase/firestore", () => ({
   query: mocks.query,
   where: mocks.where,
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { effectiveUserId: "viewer" },
 }));
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   isPreviewReadOnly: () => false,
 }));
-vi.mock("$lib/shared/foundation/services/sequence-hydrator", () => ({
+vi.mock("#lib/shared/foundation/services/sequence-hydrator.js", () => ({
   hydrate: vi.fn(),
 }));
 
 import {
   batchFetchPublicSequences,
   mapDocToCollection,
-} from "$lib/shared/library/services/collection-firestore-mapper";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/library/services/collection-firestore-mapper.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 describe("collection prop storage", () => {
   it("reads a saved prop and treats missing, cleared, or invalid values as normal selection", () => {

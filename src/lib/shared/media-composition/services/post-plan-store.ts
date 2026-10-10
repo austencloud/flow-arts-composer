@@ -2,7 +2,7 @@ import {
   PostPlanSchema,
   createDefaultPostPlan,
   type PostPlan,
-} from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/post-plan.js";
 
 /**
  * Saves a sequence's post plan on this device, beside its takes' timing.

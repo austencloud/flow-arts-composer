@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   calculateReversalPositions,
   getReversalColors,
-} from "$lib/shared/render/core/calculations/reversal-positions";
+} from "#lib/shared/render/core/calculations/reversal-positions.js";
 
 /**
  * Reversal dots flag which prop reverses direction. The positioning rules:

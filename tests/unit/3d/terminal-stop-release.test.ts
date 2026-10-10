@@ -25,7 +25,7 @@ import {
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { LocomotionAnimator } from "@austencloud/scene-3d";
 
-import { createPatternTerminalStepPlan } from "$lib/shared/3d/locomotion/pattern-terminal-step-plan";
+import { createPatternTerminalStepPlan } from "#lib/shared/3d/locomotion/pattern-terminal-step-plan.js";
 import {
   avatar,
   avatarAssetsPresent,

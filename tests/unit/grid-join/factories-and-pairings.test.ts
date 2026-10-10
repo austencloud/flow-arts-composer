@@ -4,15 +4,15 @@
  * on read. Steps and the start cell carry no join of their own.
  */
 import { describe, expect, it } from "vitest";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
-import { createStartPlacementData as createStartPlacementDataFromCreate } from "$lib/shared/create/factories/create-start-placement-data";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
+import { createStartPlacementData as createStartPlacementDataFromCreate } from "#lib/shared/create/factories/create-start-placement-data.js";
 import {
   ensureComposition,
   hydrate,
-} from "$lib/shared/foundation/services/sequence-hydrator";
-import { extractStepPairings } from "$lib/shared/foundation/services/sequence-decomposer";
-import { deriveSteps } from "$lib/shared/foundation/services/step-deriver";
+} from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { extractStepPairings } from "#lib/shared/foundation/services/sequence-decomposer.js";
+import { deriveSteps } from "#lib/shared/foundation/services/step-deriver.js";
 import { buildJoinFixture, joinOf, JOIN_EAST_ONE } from "./grid-join-fixtures";
 
 describe("cell factories", () => {

@@ -5,7 +5,7 @@
  * with comprehensive client-side fuzzy search fallback.
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import {
   collection,
   getDocs,
@@ -14,8 +14,8 @@ import {
   orderBy,
   limit as firestoreLimit,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { PUBLIC_PROFILE_VERSION } from "$lib/shared/community/domain/models/public-profile-contract";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
 import type { UserSearchResult, UserSearchOptions } from "./types";
 
 function fuzzyMatch(text: string, queryTerms: string[]): boolean {

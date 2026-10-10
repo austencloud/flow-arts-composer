@@ -1,8 +1,8 @@
 import { PropType } from "@austencloud/scene-3d/worker";
-import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
-import { getTipPointsBaseline } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { getDefaultTrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
-import { HOOP_FAMILY_REACH_M } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
+import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
+import { getTipPointsBaseline } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { getDefaultTrailPointConfig } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import { HOOP_FAMILY_REACH_M } from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
 import {
   resolveBuildTipAnchors3D,
   type PropBuildTipGeometry3D,

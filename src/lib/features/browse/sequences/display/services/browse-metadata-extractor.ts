@@ -5,24 +5,24 @@
  * with proper error handling and type safety.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   GridLocation,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { extractMetadata as extractUniversalMetadata } from "$lib/shared/services/universal-metadata-extractor";
-import * as difficultyCalculator from "$lib/shared/browse/services/sequence-difficulty-calculator";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { extractMetadata as extractUniversalMetadata } from "#lib/shared/services/universal-metadata-extractor.js";
+import * as difficultyCalculator from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 
 export interface SequenceMetadata {
   steps: StepData[];

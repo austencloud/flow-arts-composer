@@ -4,10 +4,10 @@
  * adoption effect follows the Construct prop sheet and the settings drawer;
  * writes go through updateSettings so a pick in Shape is a pick everywhere.
  */
-import type { ShapeMatrixPropSource } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import { propPairFromLegacy } from "$lib/shared/shape-matrix/domain/prop-pair";
+import type { ShapeMatrixPropSource } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import { propPairFromLegacy } from "#lib/shared/shape-matrix/domain/prop-pair.js";
 
 /** AppSettings keeps these optional; older saves carry only `propType`. */
 interface ShapeEnginePropSettings {

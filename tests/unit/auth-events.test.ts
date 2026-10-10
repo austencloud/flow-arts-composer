@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const captureWhenReady = vi.hoisted(() => vi.fn());
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady,
 }));
 
@@ -12,7 +12,7 @@ import {
   trackAuthModalSubmitted,
   trackAuthProviderResult,
   trackAuthSurfaceOpened,
-} from "$lib/shared/analytics/auth-events";
+} from "#lib/shared/analytics/auth-events.js";
 
 describe("auth encounter analytics", () => {
   beforeEach(() => {

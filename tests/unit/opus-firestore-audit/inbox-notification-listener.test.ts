@@ -66,21 +66,21 @@ vi.mock("firebase/firestore", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 // Partial: the schema modules pull `firestoreDate` from here at import time.
-vi.mock("$lib/shared/firestore", async (importOriginal) => ({
+vi.mock("#lib/shared/firestore/index.js", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   firestoreList: vi.fn(async () => []),
   firestoreDelete: vi.fn(),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn(), warning: vi.fn(), success: vi.fn(), info: vi.fn() },
   showToast: vi.fn(),
 }));
 
-import { notificationService } from "$lib/shared/feedback/services/notifier";
+import { notificationService } from "#lib/shared/feedback/services/notifier.js";
 
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 

@@ -1,5 +1,5 @@
-import type { SerializedTileBuckets } from "$lib/features/museum/domain/room-descriptor";
-import type { WingTheme } from "$lib/features/museum/domain/museum-grid-types";
+import type { SerializedTileBuckets } from "#lib/features/museum/domain/room-descriptor.js";
+import type { WingTheme } from "#lib/features/museum/domain/museum-grid-types.js";
 
 // ─── Request types (main thread → worker) ────────────────────────────────────
 

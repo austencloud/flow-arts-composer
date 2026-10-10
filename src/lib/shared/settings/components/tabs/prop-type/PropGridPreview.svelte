@@ -1,12 +1,12 @@
 <script lang="ts">
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import { getBasePropType } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { CompositionRecipe } from "$lib/shared/pictograph/prop/domain/prop-composition-recipes";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import { getBasePropType } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { CompositionRecipe } from "#lib/shared/pictograph/prop/domain/prop-composition-recipes.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 
   let {
     propType,

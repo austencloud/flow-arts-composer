@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   buildSessionExceptionReport,
   groupSessionExceptions,
-} from "$lib/features/admin/domain/session-exception-report";
+} from "#lib/features/admin/domain/session-exception-report.js";
 import type {
   PostHogSessionEvent,
   PostHogSessionSummary,
-} from "$lib/features/admin/services/types";
+} from "#lib/features/admin/services/types.js";
 
 const session: PostHogSessionSummary = {
   source: "posthog",

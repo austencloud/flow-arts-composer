@@ -13,7 +13,7 @@ import {
   getStorageInstance,
   getFirestoreInstance,
   getAuthSync,
-} from "$lib/shared/auth/firebase";
+} from "#lib/shared/auth/firebase.js";
 
 export async function uploadScreenshot(params: UploadScreenshotParams): Promise<ScreenshotMetadata> {
   const auth = getAuthSync();

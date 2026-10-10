@@ -3,14 +3,14 @@ import { LOOPComponent } from "@tka/sequence-engine/loop";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   DEFAULT_SOLO_LOOP_RECIPE,
   chooseFuseFlowerGenerationVariation,
@@ -20,8 +20,8 @@ import {
   generateRewoundSoloLoopFromMotions,
   generateStructuredSoloLoopFromMotions,
   reverseSoloLoopTraversal,
-} from "$lib/features/fuse/services/solo-loop-generator";
-import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+} from "#lib/features/fuse/services/solo-loop-generator.js";
+import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 
 const templates = [
   createMotionData({

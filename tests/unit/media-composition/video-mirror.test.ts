@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   startVideoMirror,
   type VideoMirrorEnvironment,
-} from "$lib/shared/media-composition/services/video-mirror";
+} from "#lib/shared/media-composition/services/video-mirror.js";
 
 class FakeVideo extends EventTarget {
   readyState = 4;

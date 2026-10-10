@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { MotionSignatureGenerator } from "$lib/shared/comparison/services/motion-signature-generator";
+import { MotionSignatureGenerator } from "#lib/shared/comparison/services/motion-signature-generator.js";
 import { createMotionData } from "../../../src/lib/shared/pictograph/shared/domain/models/motion-data";
 import { GridLocation, GridMode } from "../../../src/lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {

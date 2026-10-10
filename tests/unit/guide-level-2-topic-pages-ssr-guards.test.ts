@@ -60,7 +60,7 @@ const SECTION_FILES = [
  *  CLIENT_ONLY_COMPONENTS in timing-direction-ssr-guards.test.ts — there is
  *  no exact level-2 equivalent today, so this also asserts none of these
  *  stubbed-path imports exist at all, which is the actual current contract). */
-const STUBBED_PATH = /\$lib\/(shared\/(animation-engine|3d)\/|features\/(?!browse\/|creators\/|create\/|feedback\/))[^"'`]*\.svelte/;
+const STUBBED_PATH = /#lib\/(shared\/(animation-engine|3d)\/|features\/(?!browse\/|creators\/|create\/|feedback\/))[^"'`]*\.svelte/;
 
 describe("Level 2 per-topic route SSR guards", () => {
   it("the new route + host files import nothing from an SSR-stubbed .svelte path", () => {

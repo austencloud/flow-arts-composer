@@ -1,9 +1,9 @@
 import type { AuthoredContactPose } from "@austencloud/scene-3d";
-import { sampleIsolationChannel } from "$lib/shared/3d/performers/isolation-keyframes";
+import { sampleIsolationChannel } from "#lib/shared/3d/performers/isolation-keyframes.js";
 import {
   ISOLATION_STAFF_CONTACT,
   wrapStaffIsolationPhase,
-} from "$lib/shared/3d/performers/staff-isolation";
+} from "#lib/shared/3d/performers/staff-isolation.js";
 
 export const POSE_CHANNELS = [
   "turn",

@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { EFFECTS_CONFIG_VERSION } from "$lib/shared/effects/domain/effects-config";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { EFFECTS_CONFIG_VERSION } from "#lib/shared/effects/domain/effects-config.js";
 import {
   CAPSULE_LED_COUNT,
   CYCLE_DURATION_MAX,
   CYCLE_DURATION_MIN,
-} from "$lib/shared/animation-engine/domain/types/led-types";
+} from "#lib/shared/animation-engine/domain/types/led-types.js";
 import {
   GLARE_WEIGHT_MAX,
   GLARE_WEIGHT_MIN,
-} from "$lib/shared/animation-engine/domain/led-photometry";
+} from "#lib/shared/animation-engine/domain/led-photometry.js";
 
 describe("DEFAULT_EFFECTS_CONFIG", () => {
   it("has the current schema version", () => {

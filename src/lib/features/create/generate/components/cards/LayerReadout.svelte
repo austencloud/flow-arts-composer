@@ -7,7 +7,7 @@ where every sequence sits in layer 1 from beginning to end and the reading
 carries no information.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let {
     signature,
     uncertain = false,

@@ -33,7 +33,7 @@ describe("results morph layout stabilization", () => {
     installViewTransitionMock();
     const events: string[] = [];
     const { registerResultsLayoutStabilizer, startMorph } =
-      await import("$lib/shared/transitions/results-morph");
+      await import("#lib/shared/transitions/results-morph.js");
 
     registerResultsLayoutStabilizer(() => events.push("stabilize"));
     startMorph(() => events.push("mutate"));
@@ -45,7 +45,7 @@ describe("results morph layout stabilization", () => {
     installViewTransitionMock();
     const stabilize = vi.fn();
     const { registerResultsLayoutStabilizer, startMorph } =
-      await import("$lib/shared/transitions/results-morph");
+      await import("#lib/shared/transitions/results-morph.js");
 
     const unregister = registerResultsLayoutStabilizer(stabilize);
     unregister();
@@ -65,12 +65,55 @@ describe("results morph reduced motion", () => {
     document.documentElement.dataset.motionPreference = "reduce";
     const mutate = vi.fn();
     const { startMorph } =
-      await import("$lib/shared/transitions/results-morph");
+      await import("#lib/shared/transitions/results-morph.js");
 
     const transition = startMorph(mutate);
 
     expect(transition).toBeNull();
     expect(mutate).toHaveBeenCalledTimes(1);
     expect(document.startViewTransition).not.toHaveBeenCalled();
+  });
+});
+
+describe("results morph backdrop hold", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("holds the animated backdrop until the morph finishes, then lets it run", async () => {
+    vi.useFakeTimers();
+    let finish!: () => void;
+    const finished = new Promise<void>((resolve) => (finish = resolve));
+    Object.defineProperty(document, "startViewTransition", {
+      configurable: true,
+      value: vi.fn((update: () => void) => {
+        update();
+        return {
+          ready: Promise.resolve(),
+          updateCallbackDone: Promise.resolve(),
+          finished,
+          skipTransition: vi.fn(),
+        } satisfies TestViewTransition;
+      }),
+    });
+    const backdrop = { freeze: vi.fn(), unfreeze: vi.fn() };
+    const { registerBackgroundFreezeTarget } =
+      await import("#lib/shared/background/shared/state/background-hold.svelte.js");
+    registerBackgroundFreezeTarget(backdrop);
+    const { startMorph } =
+      await import("#lib/shared/transitions/results-morph.js");
+
+    startMorph(() => {});
+    expect(backdrop.freeze).toHaveBeenCalledTimes(1);
+
+    // A morph can outlast a fixed window; the hold follows `finished`.
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(backdrop.unfreeze).not.toHaveBeenCalled();
+
+    finish();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(backdrop.unfreeze).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(backdrop.unfreeze).toHaveBeenCalledTimes(1);
   });
 });

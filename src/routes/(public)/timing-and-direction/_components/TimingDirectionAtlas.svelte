@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
-  import TimingDirectionIntro from "$lib/features/learn/components/interactive/motions/TimingDirectionIntro.svelte";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
-  import HandMotionPlayer from "$lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
-  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import { browser } from "$app/env";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import TimingDirectionIntro from "#lib/features/learn/components/interactive/motions/TimingDirectionIntro.svelte";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
+  import HandMotionPlayer from "#lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import type { DirectionValue } from "../_data/timing-direction-articles";
   import {
     getTimingDirectionState,
@@ -194,8 +194,13 @@
     font-size: 0.875rem;
   }
 
+  /* Two rows, the lesson board then its link. The board fills its own row
+     (its root is height: 100%), so it can no longer take the whole section
+     and push "Open full lesson" under the "Mode guides" heading below. */
   .intro {
     container-type: inline-size;
+    display: grid;
+    grid-template-rows: auto auto;
     width: min(100%, 96rem);
     margin-inline: auto;
     margin-top: 2rem;

@@ -5,14 +5,14 @@
   The front is the "reading" face: word, level, LOOP icons, pictographs, footer.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { onMount } from "svelte";
-  import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
+  import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import VisualSequenceSaveContextMenuHost from "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
 
   interface Props {
     sequence: SequenceData;

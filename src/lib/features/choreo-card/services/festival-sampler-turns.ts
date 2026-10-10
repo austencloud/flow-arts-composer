@@ -3,9 +3,9 @@ import { applyVariationDescriptor, parseTurnUnit } from "./deck-variation";
 import {
   updateSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { hydrate as hydrateCompositionalSequence } from "$lib/shared/foundation/services/sequence-hydrator";
-import { jsonCache } from "$lib/shared/pictograph/shared/services/simple-json-cache";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { hydrate as hydrateCompositionalSequence } from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { jsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
 import type { FestivalSamplerCardManifest } from "./festival-sampler-manifest";
 import { loadTndBaseWords } from "./tnd-base-word-snapshot";
 

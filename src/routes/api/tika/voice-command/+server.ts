@@ -12,13 +12,13 @@
 
 import type { RequestHandler } from "@sveltejs/kit";
 import { generateObject, jsonSchema } from "ai";
-import { env } from "$env/dynamic/private";
-import { requireFirebaseUser } from "$lib/server/auth/requireFirebaseUser";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { getTikaServerContainer } from "$lib/features/tika/services/server/tika-server-container";
-import { buildVoiceCommandPrompt } from "$lib/shared/voice-control/ai/voice-command-prompt";
-import type { VoiceCommandRequest, VoiceCommandResponse } from "$lib/shared/voice-control/domain/intent-resolution-types";
+import * as env from "$app/env/private";
+import { requireFirebaseUser } from "#lib/server/auth/requireFirebaseUser.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { getTikaServerContainer } from "#lib/features/tika/services/server/tika-server-container.js";
+import { buildVoiceCommandPrompt } from "#lib/shared/voice-control/ai/voice-command-prompt.js";
+import type { VoiceCommandRequest, VoiceCommandResponse } from "#lib/shared/voice-control/domain/intent-resolution-types.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // JSON Schema for structured LLM output

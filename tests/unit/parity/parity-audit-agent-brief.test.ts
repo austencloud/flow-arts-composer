@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ParityAuditNotification } from "$lib/shared/feedback/domain/models/notification-models";
-import { formatParityAuditAgentBrief } from "$lib/features/admin/domain/parity-audit-agent-brief";
+import type { ParityAuditNotification } from "#lib/shared/feedback/domain/models/notification-models.js";
+import { formatParityAuditAgentBrief } from "#lib/features/admin/domain/parity-audit-agent-brief.js";
 
 function notification(
   overrides: Partial<ParityAuditNotification> = {}

@@ -1,18 +1,19 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   buildTnDSeedClasses,
   getTnDFamilyOptions,
-} from "$lib/features/choreo-card/services/deck-composer";
-import { loadTndBaseWords } from "$lib/features/choreo-card/services/tnd-base-word-snapshot";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import type { CardVariation } from "$lib/features/choreo-card/domain/models/DeckRelease";
-import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+} from "#lib/features/choreo-card/services/deck-composer.js";
+import { loadTndBaseWords } from "#lib/features/choreo-card/services/tnd-base-word-snapshot.js";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
+import type { CardVariation } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
+import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 import {
   classifyRotationStyle,
   type RotationStyle,
 } from "../domain/rotation-style";
 import { normalizeLegacySequence } from "@tka/tka-types";
+import { yieldToScheduler } from "#lib/shared/foundation/utils/background-scheduling.js";
 
 export type RotationGridMode = "diamond" | "box";
 export type StartOrientationPair = {
@@ -47,11 +48,11 @@ export function loadRotationStyleBases(): Promise<SequenceData[]> {
   return basesPromise;
 }
 
-export function classifyRotationStyleMembers(
-  bases: SequenceData[],
+/** Each base word's TnD family, by sequence id. */
+function rotationStyleFamilies(
+  normalizedBases: SequenceData[],
   grid: RotationGridMode
-): Map<RotationStyle, ClassifiedRotationStyleMember[]> {
-  const normalizedBases = bases.map(normalizeLegacySequence);
+): Map<string, string> {
   const seedClasses = buildTnDSeedClasses(normalizedBases);
   const familyBySeed = new Map<string, string>();
   for (const family of getTnDFamilyOptions(seedClasses, [grid])) {
@@ -59,7 +60,13 @@ export function classifyRotationStyleMembers(
       familyBySeed.set(entry.sequenceId, family.familyId);
     }
   }
+  return familyBySeed;
+}
 
+function groupRotationStyleMembers(
+  normalizedBases: SequenceData[],
+  familyBySeed: Map<string, string>
+): Map<RotationStyle, ClassifiedRotationStyleMember[]> {
   const baseById = new Map(normalizedBases.map((base) => [base.id, base]));
   const byStyle = new Map<RotationStyle, ClassifiedRotationStyleMember[]>();
   for (const [seedId, familyId] of familyBySeed) {
@@ -71,6 +78,17 @@ export function classifyRotationStyleMembers(
     byStyle.set(style, members);
   }
   return byStyle;
+}
+
+export function classifyRotationStyleMembers(
+  bases: SequenceData[],
+  grid: RotationGridMode
+): Map<RotationStyle, ClassifiedRotationStyleMember[]> {
+  const normalizedBases = bases.map(normalizeLegacySequence);
+  return groupRotationStyleMembers(
+    normalizedBases,
+    rotationStyleFamilies(normalizedBases, grid)
+  );
 }
 
 export function representativeRotationStyleMember(
@@ -95,12 +113,19 @@ export async function resolveRotationStyleArchetypes(
     loadRotationStyleBases(),
     loadDiamondEdges(),
   ]);
-  const byStyle = classifyRotationStyleMembers(bases, grid);
+  // One stage per task, so a phone never blocks input for the whole set
+  // (Create method previews' cost gate).
+  const normalizedBases = bases.map(normalizeLegacySequence);
+  await yieldToScheduler();
+  const familyBySeed = rotationStyleFamilies(normalizedBases, grid);
+  await yieldToScheduler();
+  const byStyle = groupRotationStyleMembers(normalizedBases, familyBySeed);
   const archetypes: RotationStyleArchetype[] = [];
 
   for (const style of ROTATION_STYLE_ORDER) {
     const members = byStyle.get(style) ?? [];
     if (members.length === 0) continue;
+    await yieldToScheduler();
     const representative = representativeRotationStyleMember(members);
     const sequence = applyVariationDescriptor(
       representative,

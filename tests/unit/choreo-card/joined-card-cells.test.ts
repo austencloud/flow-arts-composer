@@ -8,22 +8,25 @@ import {
   createChoreoCardRenderEngine,
   type ChoreoCardRenderModel,
   type ChoreoCardRenderDeps,
-} from "$lib/shared/choreo-card/services/choreo-card-render-engine";
-import { globalPreviewCache } from "$lib/shared/choreo-card/services/choreo-card-cell-pipeline";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { pictographBlobCache } from "$lib/shared/render/services/pictograph-blob-cache";
-import { renderCell } from "$lib/shared/sequence-viewer/services/preview-cell-renderer";
+} from "#lib/shared/choreo-card/services/choreo-card-render-engine.js";
+import { globalPreviewCache } from "#lib/shared/choreo-card/services/choreo-card-cell-pipeline.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { pictographBlobCache } from "#lib/shared/render/services/pictograph-blob-cache.js";
+import { renderCell } from "#lib/shared/sequence-viewer/services/preview-cell-renderer.js";
 import { TRANSITION_REVIEW_SEQUENCE } from "../../../src/routes/test/sequence-viewer-transitions/transition-review-fixture";
 
-vi.mock("$lib/shared/sequence-viewer/services/preview-cell-renderer", () => ({
-  renderCell: vi.fn(
-    async (_data: unknown, stepNumber?: number) =>
-      `mock:cell-${stepNumber ?? "start"}`
-  ),
-  deleteCellCache: vi.fn(),
-}));
+vi.mock(
+  "#lib/shared/sequence-viewer/services/preview-cell-renderer.js",
+  () => ({
+    renderCell: vi.fn(
+      async (_data: unknown, stepNumber?: number) =>
+        `mock:cell-${stepNumber ?? "start"}`
+    ),
+    deleteCellCache: vi.fn(),
+  })
+);
 // Every cell misses the image cache, so the card draws each one.
-vi.mock("$lib/shared/render/services/pictograph-blob-cache", () => ({
+vi.mock("#lib/shared/render/services/pictograph-blob-cache.js", () => ({
   pictographBlobCache: { get: vi.fn(async () => null) },
 }));
 

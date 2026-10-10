@@ -1,4 +1,4 @@
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { PropType as ScenePropType } from "@austencloud/scene-3d";
 
 /**

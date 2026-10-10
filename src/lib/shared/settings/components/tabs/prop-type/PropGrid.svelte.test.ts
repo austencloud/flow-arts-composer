@@ -1,8 +1,8 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import PropGrid from "./PropGrid.svelte";
 
 const FIRE_FAN = {

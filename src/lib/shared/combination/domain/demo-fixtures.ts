@@ -30,30 +30,30 @@
  * the dataframe CHECKS (which live in the test file) read the CSV from disk.
  */
 
-import { withCalculatedArrowLocations } from "$lib/features/assemble-lab/services/builder-step-converter";
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { withCalculatedArrowLocations } from "#lib/features/assemble-lab/services/builder-step-converter.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 export interface MotionSpec {
   readonly type: MotionType;

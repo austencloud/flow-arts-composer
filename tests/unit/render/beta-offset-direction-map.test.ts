@@ -3,25 +3,25 @@ import {
   calculateBetaOffset as calculateBrowserBetaOffset,
   type BetaMotionInput,
   type BetaOffsetInput,
-} from "$lib/shared/render/core/calculations/beta-offset";
-import { getBetaOffsetSize } from "$lib/shared/render/core/constants/prop-classification";
+} from "#lib/shared/render/core/calculations/beta-offset.js";
+import { getBetaOffsetSize } from "#lib/shared/render/core/constants/prop-classification.js";
 import { calculateBetaOffset as calculatePackageBetaOffset } from "../../../packages/render-core/src/calculations/beta-offset";
-import { propPlacer } from "$lib/shared/pictograph/prop/services/prop-placer";
-import DefaultPropPositioner from "$lib/shared/pictograph/prop/services/default-prop-positioner";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { propPlacer } from "#lib/shared/pictograph/prop/services/prop-placer.js";
+import DefaultPropPositioner from "#lib/shared/pictograph/prop/services/default-prop-positioner.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 type Offset = { x: number; y: number };
 type OffsetCalculator = (

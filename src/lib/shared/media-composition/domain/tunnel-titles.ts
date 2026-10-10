@@ -2,11 +2,11 @@ import {
   itemEnd,
   type PostProject,
   type PostTitlesItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   LIFT_EASING,
   MOVE_START_SHARE,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "#lib/shared/media-composition/domain/tunnel-hook.js";
 
 /**
  * A titles clip: the sequence's name in its glyphs, with how to say it under

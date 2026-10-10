@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createWorkerSelectionMarker,
   type WorkerSelectionMarkerSnapshot,
-} from "$lib/shared/3d/worker-renderer/worlds/selection-markers/worker-selection-marker";
+} from "#lib/shared/3d/worker-renderer/worlds/selection-markers/worker-selection-marker.js";
 
 function snapshot(
   overrides: Partial<WorkerSelectionMarkerSnapshot> = {}

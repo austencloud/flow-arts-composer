@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const navigation = vi.hoisted(() => ({ replaceState: vi.fn() }));
 const appPage = vi.hoisted(() => ({
@@ -7,17 +7,17 @@ const appPage = vi.hoisted(() => ({
 }));
 const generateShareURL = vi.hoisted(() => vi.fn());
 
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 vi.mock("$app/navigation", () => ({
   pushState: vi.fn(),
   replaceState: navigation.replaceState,
 }));
 vi.mock("$app/state", () => ({ page: appPage }));
-vi.mock("$lib/shared/navigation/services/sequence-encoder", () => ({
+vi.mock("#lib/shared/navigation/services/sequence-encoder.js", () => ({
   generateShareURL,
 }));
 
-import { URLSyncer } from "$lib/shared/navigation/services/url-syncer";
+import { URLSyncer } from "#lib/shared/navigation/services/url-syncer.js";
 
 const sequence = { steps: [{}] } as SequenceData;
 

@@ -1,17 +1,17 @@
 <script lang="ts">
-  import type { PostCardItem } from "$lib/shared/media-composition/domain/post-project";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { ExportOptionsStateManager } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
-  import ExportImagePanel from "$lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
+  import type { PostCardItem } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+  import type { ExportOptionsStateManager } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
+  import ExportImagePanel from "#lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
   import { cardOptionsForItem } from "../post-item-render-options";
   import {
     cardPresentationFromFooterSettings,
     resolveCardFooter,
     type CardPresentation,
-  } from "$lib/shared/share/domain/models/card-presentation";
-  import type { InfoCellChoice } from "$lib/shared/sequence-viewer/services/info-cell-display";
+  } from "#lib/shared/share/domain/models/card-presentation.js";
+  import type { InfoCellChoice } from "#lib/shared/sequence-viewer/services/info-cell-display.js";
 
   type Appearance = NonNullable<PostCardItem["cardAppearance"]>;
   let {

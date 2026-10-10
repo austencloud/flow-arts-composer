@@ -21,7 +21,7 @@ import {
   LOOPComponent,
   type DetectedComponent,
   type LOOPDomain,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 export interface LoopCopyArgs {
   period: number;

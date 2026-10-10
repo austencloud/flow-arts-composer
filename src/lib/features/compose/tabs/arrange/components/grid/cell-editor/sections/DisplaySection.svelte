@@ -5,8 +5,8 @@
   Choreo Card is disabled when layerCount > 1 (requires a single layer).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { CellMediaType } from "$lib/shared/animation-engine/domain/compose-types";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { CellMediaType } from "#lib/shared/animation-engine/domain/compose-types.js";
 
   let {
     currentMediaType,

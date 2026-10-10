@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Vector3 } from "three";
 import { PlaneMode } from "@austencloud/scene-3d";
-import type { CharacterInstanceState } from "$lib/shared/3d/state/character-instance-state.svelte";
-import { resolvePerformerUpperBodyStance } from "$lib/shared/3d/domain/performer-upper-body-stance";
+import type { CharacterInstanceState } from "#lib/shared/3d/state/character-instance-state.svelte.js";
+import { resolvePerformerUpperBodyStance } from "#lib/shared/3d/domain/performer-upper-body-stance.js";
 import {
   getAnimationVisibilityManager,
   type AnimationPathPolicy,
-} from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-import type { EffortTimeline } from "$lib/shared/effort/domain/effort-timeline-types";
+} from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+import type { EffortTimeline } from "#lib/shared/effort/domain/effort-timeline-types.js";
 
 /**
  * A stand-in performer holding a still pair. Planning a torso track samples the

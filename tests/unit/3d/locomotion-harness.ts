@@ -39,12 +39,12 @@ import {
 import {
   analyzeGait,
   type GaitReport,
-} from "$lib/shared/3d/diagnostics/gait/gait-analysis";
-import type { GaitFrame } from "$lib/shared/3d/diagnostics/gait/gait-frame";
+} from "#lib/shared/3d/diagnostics/gait/gait-analysis.js";
+import type { GaitFrame } from "#lib/shared/3d/diagnostics/gait/gait-frame.js";
 import {
   collectRiggedAvatars,
   sampleRig,
-} from "$lib/shared/3d/diagnostics/gait/gait-rig-sampler";
+} from "#lib/shared/3d/diagnostics/gait/gait-rig-sampler.js";
 
 const AVATAR_DIR = "static/models/avatars/_optimized";
 

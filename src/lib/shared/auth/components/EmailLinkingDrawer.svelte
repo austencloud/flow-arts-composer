@@ -10,7 +10,7 @@
   3. Success - Confirmation that email is linked and verified
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { Dialog as DialogPrimitive } from "bits-ui";
   import { authState } from "../state/auth-state.svelte";
   import type { HapticFeedback } from "../../application/services/haptic-feedback";
@@ -22,7 +22,7 @@
   import EmailLinkingFormStep from "./email-linking/EmailLinkingFormStep.svelte";
   import EmailLinkingVerifyStep from "./email-linking/EmailLinkingVerifyStep.svelte";
   import EmailLinkingSuccessStep from "./email-linking/EmailLinkingSuccessStep.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   const MAX_VERIFICATION_CHECKS = 60;
 
@@ -175,7 +175,7 @@
   :global(.email-modal-backdrop) {
     position: fixed;
     inset: 0;
-    background: color-mix(in srgb, var(--theme-shadow) 70%, transparent);
+    background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: var(--z-modal);
@@ -201,20 +201,6 @@
     width: calc(100% - 40px);
     max-height: calc(100vh - 40px);
     overflow-y: auto;
-    box-shadow:
-      0 0 0 1px
-        color-mix(
-          in srgb,
-          var(--theme-accent-strong, var(--theme-accent-strong)) 10%,
-          transparent
-        ),
-      0 20px 60px var(--theme-shadow),
-      0 0 100px
-        color-mix(
-          in srgb,
-          var(--theme-accent-strong, var(--theme-accent-strong)) 10%,
-          transparent
-        );
     z-index: calc(var(--z-modal) + 1);
     animation: modalSlideIn var(--duration-emphasis) ease-out;
   }

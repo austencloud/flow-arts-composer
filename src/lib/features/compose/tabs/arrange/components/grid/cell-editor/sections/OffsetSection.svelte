@@ -5,7 +5,7 @@
   increment button, and "beats" label. Minimum value is 0.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let {
     currentOffset,
     onSetOffset,

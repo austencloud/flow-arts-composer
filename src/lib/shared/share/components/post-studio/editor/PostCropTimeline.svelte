@@ -13,18 +13,18 @@
 -->
 <script lang="ts">
   import { tick, untrack, type Snippet } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import TimeRuler from "#lib/shared/timeline/TimeRuler.svelte";
   import {
     POST_FRAME_RATE,
     POST_KEYFRAME_MERGE_SECONDS,
     POST_TIME_EPSILON,
     itemEnd,
     type PostVideoItem,
-  } from "$lib/shared/media-composition/domain/post-project";
-  import { moveKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
+  } from "#lib/shared/media-composition/domain/post-project.js";
+  import { moveKeyframe } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+  import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import TypeableValue from "#lib/shared/ui/components/TypeableValue.svelte";
   import { formatTakeClock, parseClock } from "../builder/post-builder-format";
   import { channelLabel } from "./post-editor-labels";
   import { adjacentStepSeconds, type ClipStep } from "./post-crop-steps";

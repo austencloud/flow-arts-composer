@@ -7,7 +7,7 @@
  * turn axis used everywhere else in the create module.
  */
 
-import type { TurnValue } from "$lib/shared/create/domain/turn-pattern-data";
+import type { TurnValue } from "#lib/shared/create/domain/turn-pattern-data.js";
 
 export interface TurnsAggregate {
   /** True when the selected steps do NOT all share the same turn value. */

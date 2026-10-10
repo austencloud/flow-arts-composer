@@ -1,35 +1,35 @@
 import { describe, expect, it } from "vitest";
 import { Plane } from "@austencloud/scene-3d";
 import type { GridJoinSpec } from "@tka/render-core";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   GRID_RADIUS_3D,
   planeAngleToWorldPosition,
-} from "$lib/shared/3d/domain/constants/plane-transforms";
+} from "#lib/shared/3d/domain/constants/plane-transforms.js";
 import {
   fixedHandDistance,
   type HandDistance,
-} from "$lib/shared/3d/domain/performer-hand-distance";
+} from "#lib/shared/3d/domain/performer-hand-distance.js";
 import {
   gridJoinOffset3D,
   resolveGridJoin3D,
-} from "$lib/shared/3d/services/grid-join-3d";
-import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
+} from "#lib/shared/3d/services/grid-join-3d.js";
+import { calculatePropState } from "#lib/shared/3d/services/prop-state-interpolator.js";
 import {
   getStartPlacementConfigs,
   sequenceToMotionConfigs,
-} from "$lib/shared/3d/services/sequence-converter";
+} from "#lib/shared/3d/services/sequence-converter.js";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 
 function sequence(join?: unknown, gridMode = "diamond"): SequenceData {
   const beat = (stepNumber: number, motionType: MotionType) =>

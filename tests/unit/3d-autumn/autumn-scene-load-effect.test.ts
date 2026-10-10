@@ -5,11 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   AutumnEnvironmentAssets,
   LoadAutumnEnvironmentAssetsOptions,
-} from "$lib/shared/3d/environments/worlds/autumn/autumn-environment-assets";
+} from "#lib/shared/3d/environments/worlds/autumn/autumn-environment-assets.js";
 import {
   createSceneFeatureState,
   type SceneFeatureState,
-} from "$lib/shared/3d/scene-features/state/scene-feature-state.svelte";
+} from "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js";
 
 import AutumnSceneHarness from "./AutumnSceneHarness.svelte";
 
@@ -42,7 +42,7 @@ vi.mock("@austencloud/scene-3d", () => ({
 }));
 
 vi.mock(
-  "$lib/shared/3d/environments/worlds/autumn/autumn-environment-assets",
+  "#lib/shared/3d/environments/worlds/autumn/autumn-environment-assets.js",
   () => ({
     AutumnEnvironmentLoadError: class AutumnEnvironmentLoadError extends Error {},
     loadAutumnEnvironmentAssets: stubs.loadAssets,
@@ -50,7 +50,7 @@ vi.mock(
 );
 
 vi.mock(
-  "$lib/shared/3d/environments/worlds/autumn/autumn-environment-world",
+  "#lib/shared/3d/environments/worlds/autumn/autumn-environment-world.js",
   () => ({
     createAutumnEnvironmentWorld: stubs.createWorld,
     attachAutumnEnvironmentWorld: () => () => {},

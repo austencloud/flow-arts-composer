@@ -1,4 +1,4 @@
-import { downloadBlob } from "$lib/shared/foundation/services/file-downloader";
+import { downloadBlob } from "#lib/shared/foundation/services/file-downloader.js";
 import { createRenderCanvas } from "./create-render-canvas";
 import type { RenderCanvas } from "./types";
 

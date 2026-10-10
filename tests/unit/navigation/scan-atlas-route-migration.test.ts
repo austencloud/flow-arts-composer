@@ -4,12 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CHOREO_CARD_SCAN_ATLAS_TAB_ID,
   CHOREO_CARD_TABS,
-} from "$lib/shared/navigation/config/tab-definitions";
-import { normalizeSectionId } from "$lib/shared/navigation/config/module-definitions";
-import { MODULE_LAST_TABS_KEY } from "$lib/shared/navigation/config/storage-keys";
-import { createNavigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+} from "#lib/shared/navigation/config/tab-definitions.js";
+import { normalizeSectionId } from "#lib/shared/navigation/config/module-definitions.js";
+import { MODULE_LAST_TABS_KEY } from "#lib/shared/navigation/config/storage-keys.js";
+import { createNavigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
@@ -77,7 +77,7 @@ describe("Scan Atlas route migration", () => {
     history.replaceState({}, "", "/choreo_card/scan-activity?source=bookmark");
 
     const { initializeNavigationHistory } =
-      await import("$lib/shared/navigation-coordinator/navigation-coordinator.svelte");
+      await import("#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js");
     initializeNavigationHistory();
 
     expect(location.pathname).toBe("/choreo_card/scan-atlas");

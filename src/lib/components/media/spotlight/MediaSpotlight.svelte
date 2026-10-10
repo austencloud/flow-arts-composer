@@ -18,7 +18,7 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy, untrack } from "svelte";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { SpotlightGestureHandler, type GestureState } from "./SpotlightGestures.svelte.ts";
   import SpotlightImage from "./SpotlightImage.svelte";
   import SpotlightChrome from "./SpotlightChrome.svelte";

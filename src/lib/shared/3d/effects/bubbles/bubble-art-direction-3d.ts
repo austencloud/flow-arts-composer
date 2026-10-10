@@ -1,4 +1,4 @@
-import type { Bubbles3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Bubbles3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 
 export const BUBBLE_POP_DURATION_SECONDS = 0.18;
 export const BUBBLE_LIFETIME_SWELL = 0.08;

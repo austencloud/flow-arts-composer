@@ -3,17 +3,17 @@ import {
   loadPostProject,
   openPostProject,
   savePostProject,
-} from "$lib/shared/media-composition/services/post-project-store";
-import { savePostPlan } from "$lib/shared/media-composition/services/post-plan-store";
-import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { createDefaultPostPlan } from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/services/post-project-store.js";
+import { savePostPlan } from "#lib/shared/media-composition/services/post-plan-store.js";
+import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
+import { createDefaultPostPlan } from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import { NOW, card, overlay, project, video } from "./post-project-fixtures";
 
 const PREFIX = "tka:post-studio:project:v2:";

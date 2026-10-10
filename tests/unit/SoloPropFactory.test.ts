@@ -7,14 +7,14 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { createSoloProp } from "$lib/shared/foundation/services/solo-prop-factory";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factory.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   Orientation,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { SoloPropStepData } from "$lib/shared/foundation/domain/models/solo-prop-step-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
 
 function makeStep(
   startLocation: GridLocation,

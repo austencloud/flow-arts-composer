@@ -11,8 +11,8 @@ import {
   getAuthPromptContent,
   moduleNudgeTrigger,
   type AuthNudgeTrigger,
-} from "$lib/shared/auth/domain/auth-nudge-trigger";
-import { GUEST_SAVE_CAP } from "$lib/shared/auth/domain/guest-access-config";
+} from "#lib/shared/auth/domain/auth-nudge-trigger.js";
+import { GUEST_SAVE_CAP } from "#lib/shared/auth/domain/guest-access-config.js";
 
 const BANNED_PHRASES = [
   "Sign up free",

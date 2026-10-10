@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import type { GaitReport } from "$lib/shared/3d/diagnostics/gait/gait-analysis";
-import { EMPTY_KNEE_ANATOMY } from "$lib/shared/3d/diagnostics/gait/knee-anatomy";
-import { verdictRows } from "$lib/shared/3d/diagnostics/gait/gait-verdicts";
+import type { GaitReport } from "#lib/shared/3d/diagnostics/gait/gait-analysis.js";
+import { EMPTY_KNEE_ANATOMY } from "#lib/shared/3d/diagnostics/gait/knee-anatomy.js";
+import { verdictRows } from "#lib/shared/3d/diagnostics/gait/gait-verdicts.js";
 
 const report: GaitReport = {
   frameCount: 120,

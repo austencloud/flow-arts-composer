@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { ScanCellWarmState } from "$lib/features/choreo-card/state/scan-cell-warm-state.svelte";
-  import AdminActionButton from "$lib/shared/admin/components/AdminActionButton.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import ProgressBar from "$lib/shared/components/loading/ProgressBar.svelte";
+  import type { ScanCellWarmState } from "#lib/features/choreo-card/state/scan-cell-warm-state.svelte.js";
+  import AdminActionButton from "#lib/shared/admin/components/AdminActionButton.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import ProgressBar from "#lib/shared/components/loading/ProgressBar.svelte";
 
   interface Props {
     state: ScanCellWarmState;

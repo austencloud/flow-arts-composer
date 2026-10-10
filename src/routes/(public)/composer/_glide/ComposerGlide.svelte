@@ -21,8 +21,9 @@
   import type { Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { afterNavigate } from "$app/navigation";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { isShallowGoto } from "#lib/shared/navigation/services/url-state.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import GlideControls from "./GlideControls.svelte";
   import GlideStars from "./GlideStars.svelte";
   import type { GlideMemory } from "./glide-memory";
@@ -64,6 +65,7 @@
   let arrived = $state(false);
   let arrival: Arrival | null = null;
   afterNavigate((navigation) => {
+    if (isShallowGoto(navigation)) return;
     const restored = memory.takeRestored();
     if (arrived || !CSS.supports("overflow", "clip")) return;
     const hash = navigation.to?.url.hash.slice(1);

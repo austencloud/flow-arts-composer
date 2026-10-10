@@ -7,7 +7,7 @@
 <script lang="ts">
   import type { ArenaLeaderboardEntry } from "../../domain/models/arena-models";
   import ArenaRatingBadge from "./ArenaRatingBadge.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     entry,

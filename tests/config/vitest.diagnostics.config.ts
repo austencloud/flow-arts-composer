@@ -1,4 +1,5 @@
 import { sveltekit } from "@sveltejs/kit/vite";
+import { svelteOptions } from "../../src/config/svelte-options.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
@@ -19,7 +20,7 @@ const projectRoot = path.resolve(
  *   npx vitest run --config tests/config/vitest.diagnostics.config.ts
  */
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [sveltekit(svelteOptions)],
   test: {
     environment: "jsdom",
     globals: true,
@@ -28,8 +29,16 @@ export default defineConfig({
     exclude: ["**/node_modules/**/*"],
 
     alias: {
-      $lib: path.resolve(projectRoot, "src/lib"),
-      "$app/environment": path.resolve(
+      // Listed before `$app/env`, which would otherwise match these as a prefix.
+      "$app/env/public": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-public.ts"
+      ),
+      "$app/env/private": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-private.ts"
+      ),
+      "$app/env": path.resolve(
         projectRoot,
         "tests/setup/stubs/app-environment.ts"
       ),
@@ -38,15 +47,19 @@ export default defineConfig({
         "tests/setup/stubs/app-navigation.ts"
       ),
       "$app/state": path.resolve(projectRoot, "tests/setup/stubs/app-state.ts"),
-      "$app/stores": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/app-stores.ts"
-      ),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
     },
 
+    // One harness file today (tests/tools/prop-continuity-artifact.test.ts)
+    // and nothing shared between harnesses: no emulator, port or temp dir, and
+    // each one writes its own artifact. So there is nothing to serialize and
+    // Vitest's default worker fan-out stays. (Vitest 4 removed `poolOptions`
+    // and with it `singleFork`; the `forks: { singleFork: true }` that used to
+    // sit here was an unknown key Vitest ignored without a warning, so dropping
+    // it changes nothing.)
     pool: "forks",
-    forks: { singleFork: true },
+    // A sweep walks every corpus sequence at a 0.002 phase step, far past the
+    // five-second default budget.
     testTimeout: 300_000,
     isolate: true,
   },

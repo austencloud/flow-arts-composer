@@ -8,9 +8,9 @@
   Plus: stop button, beat counter, loop mode toggle
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import HorizontalTransportRow from "$lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
-  import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import HorizontalTransportRow from "#lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
+  import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
 
   let {
     isPlaying,

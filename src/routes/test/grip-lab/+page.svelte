@@ -12,30 +12,30 @@
     getCharacterModelPath,
     type CharacterDefinition,
     type CharacterId,
-  } from "$lib/shared/3d/domain/character-model";
-  import { setCharacterCatalogContext } from "$lib/shared/3d/context/character-catalog-context";
-  import PerformerCharacterPicker from "$lib/shared/3d/components/controls/PerformerCharacterPicker.svelte";
-  import ContactIsolationPerformer from "$lib/shared/3d/performers/ContactIsolationPerformer.svelte";
+  } from "#lib/shared/3d/domain/character-model.js";
+  import { setCharacterCatalogContext } from "#lib/shared/3d/context/character-catalog-context.js";
+  import PerformerCharacterPicker from "#lib/shared/3d/components/controls/PerformerCharacterPicker.svelte";
+  import ContactIsolationPerformer from "#lib/shared/3d/performers/ContactIsolationPerformer.svelte";
   import {
     ISOLATION_ENDPOINT,
     MIN_LAB_STAFF_LENGTH_M,
     MAX_LAB_STAFF_LENGTH_M,
     sampleStaffIsolation,
-  } from "$lib/shared/3d/performers/staff-isolation";
-  import { auditFireStaffProfile } from "$lib/shared/3d/diagnostics/contact-correct/fire-staff-mesh-audit";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import type { CameraControls } from "$lib/shared/3d/camera/camera-controls-runtime";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  } from "#lib/shared/3d/performers/staff-isolation.js";
+  import { auditFireStaffProfile } from "#lib/shared/3d/diagnostics/contact-correct/fire-staff-mesh-audit.js";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import type { CameraControls } from "#lib/shared/3d/camera/camera-controls-runtime.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import {
     solveInspectionShot,
     INSPECTION_FOV_DEG,
   } from "../_lab-kit/inspection-shot";
   import ContactDiagnostics from "./ContactDiagnostics.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { copyTextToClipboard } from "$lib/shared/share/services/link-share";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { copyTextToClipboard } from "#lib/shared/share/services/link-share.js";
   import PoseHandles from "./PoseHandles.svelte";
   import PoseEditor from "./PoseEditor.svelte";
   import KeyframeTimeline from "./KeyframeTimeline.svelte";

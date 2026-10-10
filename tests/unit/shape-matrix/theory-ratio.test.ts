@@ -6,7 +6,7 @@ import {
   theoryRatioLabel,
   theoryRatioSpokenLabel,
   THEORY_RATIO_MAX_PART,
-} from "$lib/shared/shape-matrix/domain/theory-ratio";
+} from "#lib/shared/shape-matrix/domain/theory-ratio.js";
 
 describe("theory ratios", () => {
   it("accepts any two parts through 15 and reduces the result", () => {

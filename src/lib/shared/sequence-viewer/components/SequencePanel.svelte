@@ -9,31 +9,31 @@
   Unified sequence viewer panel that works in both Browse (Browse) and Edit (Create) modes.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { SequenceImageSharer } from "$lib/shared/share/services/sequence-image-sharer";
-  import { getSequenceImageSharer } from "$lib/shared/share/get-sequence-image-sharer";
-  import type { SequenceDetailLoader } from "$lib/shared/browse/services/sequence-detail-loader";
-  import type { VideoCountManager } from "$lib/shared/browse/services/video-count-manager";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { SequenceImageSharer } from "#lib/shared/share/services/sequence-image-sharer.js";
+  import { getSequenceImageSharer } from "#lib/shared/share/get-sequence-image-sharer.js";
+  import type { SequenceDetailLoader } from "#lib/shared/browse/services/sequence-detail-loader.js";
+  import type { VideoCountManager } from "#lib/shared/browse/services/video-count-manager.js";
   import type { MediaType, MediaFormat, ExportSettings } from "../domain/types";
-  import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
+  import type { CollaborativeVideo } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
   import type {
     PlaybackMode,
     StepPlaybackStepSize,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 
-  import { getSequenceDetailLoader } from "$lib/shared/browse/get-sequence-detail-loader";
-  import { getVideoCountManager } from "$lib/shared/browse/get-video-count-manager";
+  import { getSequenceDetailLoader } from "#lib/shared/browse/get-sequence-detail-loader.js";
+  import { getVideoCountManager } from "#lib/shared/browse/get-video-count-manager.js";
   import { onMount, untrack } from "svelte";
 
   import SequenceViewer from "./SequenceViewer.svelte";
   import QuickShareRow from "./QuickShareRow.svelte";
   // ExportControlsSection removed - edit mode now uses inline action buttons
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { openCreatorProfile } from "$lib/features/creators/state/creators-routing.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { openCreatorProfile } from "#lib/features/creators/state/creators-routing.svelte.js";
 
   /**
    * Panel mode determines which features and actions are available
@@ -580,7 +580,7 @@
 
 <!-- Videos Panel (Browse mode) -->
 {#if mode === "browse" && showVideosPanel}
-  {#await import("$lib/shared/video-collaboration/components/VideosPanel.svelte") then { default: VideosPanel }}
+  {#await import("#lib/shared/video-collaboration/components/VideosPanel.svelte") then { default: VideosPanel }}
     <VideosPanel
       sequence={effectiveSequence}
       onClose={handleVideosPanelClose}
@@ -719,12 +719,11 @@
     left: 24px;
     z-index: 10;
     padding: 0;
-    background: color-mix(in srgb, var(--theme-shadow) 50%, transparent);
+    background: rgba(0, 0, 0, 0.5);
     border: 2px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-radius: 50%;
     cursor: pointer;
     transition: all var(--duration-normal, 200ms) ease;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .creator-badge:hover {

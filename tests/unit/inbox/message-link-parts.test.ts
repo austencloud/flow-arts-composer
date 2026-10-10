@@ -5,7 +5,7 @@ import {
   findMessageSequenceLink,
   messageHasSequencePreview,
   parseMessageText,
-} from "$lib/shared/inbox/domain/message-link-parts";
+} from "#lib/shared/inbox/domain/message-link-parts.js";
 
 describe("message link parsing", () => {
   it("preserves surrounding text while normalizing fuzzy links to HTTPS", () => {

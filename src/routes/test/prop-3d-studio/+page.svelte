@@ -1,47 +1,47 @@
 <script lang="ts">
   import { BackgroundType } from "@austencloud/backgrounds";
   import type { CameraStateSnapshot } from "@austencloud/scene-3d";
-  import { replaceState } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { onDestroy, onMount, untrack } from "svelte";
-  import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
+  import { initializeAppServices } from "#lib/shared/application/state/services.svelte.js";
 
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
   import {
     clearCameraUrlPose,
     readCameraUrlPose,
     setCameraUrlPose,
-  } from "$lib/shared/3d/domain/camera-url-pose";
-  import { createScene3DRenderState } from "$lib/shared/3d/scene-features/state/scene-3d-render-state.svelte";
-  import { setScene3DRenderContext } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import SceneControlWorkspace from "$lib/shared/3d/components/controls/SceneControlWorkspace.svelte";
-  import type { SceneControlLayout } from "$lib/shared/3d/domain/scene-control-layout";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import HorizontalTransportRow from "$lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
-  import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
+  } from "#lib/shared/3d/domain/camera-url-pose.js";
+  import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
+  import { setScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import SceneControlWorkspace from "#lib/shared/3d/components/controls/SceneControlWorkspace.svelte";
+  import type { SceneControlLayout } from "#lib/shared/3d/domain/scene-control-layout.js";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import HorizontalTransportRow from "#lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
+  import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
   import {
     LOOPType,
     Period,
-  } from "$lib/shared/foundation/domain/models/generation/circular-models";
+  } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
   import type {
     DifficultyLevel,
     GenerationMode,
     PropContinuity,
-  } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { SCENE_PROP_TYPES } from "$lib/shared/3d/domain/scene-prop-catalog";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { isEffectPreviewLoop } from "$lib/shared/effects/domain/effect-preview-loop-policy";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { SCENE_PROP_TYPES } from "#lib/shared/3d/domain/scene-prop-catalog.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { isEffectPreviewLoop } from "#lib/shared/effects/domain/effect-preview-loop-policy.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   type Viewer3DCanvasComponent =
-    typeof import("$lib/shared/3d/components/Viewer3DCanvas.svelte").default;
+    typeof import("#lib/shared/3d/components/Viewer3DCanvas.svelte").default;
 
   type ReviewAngle =
     | "front"
@@ -256,7 +256,7 @@
       url.searchParams.set("angle", activeAngle);
       clearCameraUrlPose(url);
     }
-    replaceState(url, {});
+    goto(url, { shallow: true, replace: true });
   }
 
   function syncFreeCameraToUrl(snapshot: CameraStateSnapshot): void {
@@ -269,7 +269,7 @@
     // This page reads its starting camera before constructing the viewer rather
     // than reacting to every URL change, so the router-safe replacement lets the
     // URL follow the view without feeding rounded coordinates back into it.
-    replaceState(url, {});
+    goto(url, { shallow: true, replace: true });
   }
 
   function applyCamera(): void {
@@ -321,8 +321,8 @@
   async function generateRotatedLoop(): Promise<SequenceData> {
     const [{ getGenerationOrchestrator }, { orientationCycleExtender }] =
       await Promise.all([
-        import("$lib/features/create/generate/shared/get-generation-orchestrator"),
-        import("$lib/features/create/generate/circular/services/orientation-cycle-extender"),
+        import("#lib/features/create/generate/shared/get-generation-orchestrator.js"),
+        import("#lib/features/create/generate/circular/services/orientation-cycle-extender.js"),
       ]);
     const generated = await getGenerationOrchestrator().generateSequence({
       mode: CIRCULAR_MODE,
@@ -353,10 +353,10 @@
    */
   function loadPlaybackController(): Promise<AnimationPlaybackController> {
     playbackLoadPromise ??= Promise.all([
-      import("$lib/shared/animation-engine/services/animation-playback-controller"),
-      import("$lib/shared/animation-engine/services/animation-loop"),
-      import("$lib/shared/animation-engine/services/animation-state-manager"),
-      import("$lib/shared/animation-engine/services/sequence-animation-orchestrator"),
+      import("#lib/shared/animation-engine/services/animation-playback-controller.js"),
+      import("#lib/shared/animation-engine/services/animation-loop.js"),
+      import("#lib/shared/animation-engine/services/animation-state-manager.js"),
+      import("#lib/shared/animation-engine/services/sequence-animation-orchestrator.js"),
     ]).then(
       ([
         { AnimationPlaybackController },
@@ -463,7 +463,8 @@
    * The shareable link follows whatever prop the rail put on stage. Guarded on
    * an actual change, not merely on the effect running: the first pass happens
    * during mount, when the value still matches the URL it was read from and
-   * `replaceState` would throw for being called before the router initializes.
+   * the shallow `goto` would throw for being called before the router
+   * initializes.
    */
   let lastSyncedProp: PropType = initialProp;
   $effect(() => {
@@ -500,7 +501,7 @@
       ? Promise.resolve(cachedSequence)
       : generateRotatedLoop();
 
-    void import("$lib/shared/3d/components/Viewer3DCanvas.svelte")
+    void import("#lib/shared/3d/components/Viewer3DCanvas.svelte")
       .then(({ default: component }) => {
         if (token !== generationToken) return;
         ViewerCanvasComponent = component;

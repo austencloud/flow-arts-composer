@@ -5,7 +5,7 @@
     PostKeyframeChannel,
     PostProject,
     PostTrack,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "#lib/shared/media-composition/domain/post-project.js";
   import {
     MAIN_TRACK_INDEX,
     POST_FRAME_RATE,
@@ -14,7 +14,7 @@
     findItem,
     itemEnd,
     mainItems,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "#lib/shared/media-composition/domain/post-project.js";
   import {
     channelKeyframeSeconds,
     channelValueAt,
@@ -22,16 +22,16 @@
     isAnimated,
     keyframeIndexAt,
     moveKeyframe,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
   import {
     hasGrid,
     musicBarMarks,
     musicSnapTargets,
     musicSpan,
-  } from "$lib/shared/media-composition/domain/music-grid";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
+  } from "#lib/shared/media-composition/domain/music-grid.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import TimeRuler from "#lib/shared/timeline/TimeRuler.svelte";
   import { channelValueText } from "../post-editor-labels";
   import PostTimelineItem from "./PostTimelineItem.svelte";
   import PostTimelineKeyLane from "./PostTimelineKeyLane.svelte";

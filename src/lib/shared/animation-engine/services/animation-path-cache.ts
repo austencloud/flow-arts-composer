@@ -10,12 +10,12 @@
  * - Performance: One-time computation, reused for entire playback
  */
 
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { TrailPoint } from "$lib/shared/animation-engine/domain/types/trail-types";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { TrailPoint } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   calculatePropEndpoints,
   type PropEndpointConfig,
-} from "$lib/shared/animation-engine/services/prop-position-calculator";
+} from "#lib/shared/animation-engine/services/prop-position-calculator.js";
 
 
 /** Default cache FPS - high for ultra-smooth trails */

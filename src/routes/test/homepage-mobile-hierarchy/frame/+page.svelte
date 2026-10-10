@@ -9,12 +9,12 @@
    * and a wrapper class driving CSS overrides.
    */
   import { page } from "$app/state";
-  import HomeHero from "$lib/shared/landing/components/HomeHero.svelte";
-  import LaunchpadGrid from "$lib/shared/landing/components/launchpad/LaunchpadGrid.svelte";
+  import HomeHero from "#lib/shared/landing/components/HomeHero.svelte";
+  import LaunchpadGrid from "#lib/shared/landing/components/launchpad/LaunchpadGrid.svelte";
   import {
     LAUNCHPAD_TILES,
     STRIP_LINKS,
-  } from "$lib/shared/landing/components/launchpad/launchpad-tiles";
+  } from "#lib/shared/landing/components/launchpad/launchpad-tiles.js";
 
   const variant = $derived(page.url.searchParams.get("v") ?? "current");
 

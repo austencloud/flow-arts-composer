@@ -2,8 +2,8 @@ import type {
   InstagramCapabilityRecoveryAction,
   InstagramCapabilitySnapshot,
   InstagramFeatureKey,
-} from "$lib/shared/share/domain/instagram/instagram-capability-schema";
-import type { PostDeliveryDraft } from "$lib/shared/share/domain/instagram/instagram-post-draft-schema";
+} from "#lib/shared/share/domain/instagram/instagram-capability-schema.js";
+import type { PostDeliveryDraft } from "#lib/shared/share/domain/instagram/instagram-post-draft-schema.js";
 
 export interface InstagramPublishEligibility {
   canPublishDirectly: boolean;

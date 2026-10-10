@@ -1,4 +1,4 @@
-import { getAuthSync, getStorageInstance } from "$lib/shared/auth/firebase";
+import { getAuthSync, getStorageInstance } from "#lib/shared/auth/firebase.js";
 
 import type {
   ConnectedSessionFolder,

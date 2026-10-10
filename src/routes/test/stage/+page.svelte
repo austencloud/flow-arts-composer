@@ -14,8 +14,8 @@
    * included — never starts and the harness silently swallows every key.
    */
   import { onMount } from "svelte";
-  import KeyboardShortcutCoordinator from "$lib/shared/keyboard/coordinators/KeyboardShortcutCoordinator.svelte";
-  import StageModule from "$lib/features/stage/StageModule.svelte";
+  import KeyboardShortcutCoordinator from "#lib/shared/keyboard/coordinators/KeyboardShortcutCoordinator.svelte";
+  import StageModule from "#lib/features/stage/StageModule.svelte";
 
   // The boot bar in app.html waits for the app layout to report 100%, and a
   // /test route never runs that layout, so without this the splash sits over

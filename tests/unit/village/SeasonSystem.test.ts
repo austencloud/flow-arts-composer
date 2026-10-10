@@ -1,18 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { SeasonSystem } from "$lib/features/village/engine/systems/season-system";
+import { SeasonSystem } from "#lib/features/village/engine/systems/season-system.js";
 import {
 	createVillageWorld,
 	createAvatarEntity,
-} from "$lib/features/village/engine/village-world";
-import * as personalityGenerator from "$lib/features/village/services/personality-generator";
+} from "#lib/features/village/engine/village-world.js";
+import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
 import {
 	SEASON_DURATION,
 	SEASON_CYCLE,
-} from "$lib/features/village/domain/village-constants";
+} from "#lib/features/village/domain/village-constants.js";
 import type {
 	VillageEventMap,
 	VillageEventKey,
-} from "$lib/features/village/domain/village-types";
+} from "#lib/features/village/domain/village-types.js";
 
 function makeEmitter() {
 	const events: Record<string, unknown[][]> = {};

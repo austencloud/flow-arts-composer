@@ -5,24 +5,24 @@
   Tap toggles the prop selection drawer (mounted at CreateModule level).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     getSettings,
     updateSettings,
-  } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     getPropTypeDisplayInfo,
     getAllPropTypes,
-  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { propDrawerState } from "$lib/shared/settings/state/prop-drawer-state.svelte";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { propDrawerState } from "#lib/shared/settings/state/prop-drawer-state.svelte.js";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
   import {
     propCollection,
     remainingLockedProps,
-  } from "$lib/shared/gamification/state/prop-collection-state.svelte";
-  import { openPropCelebration } from "$lib/shared/gamification/state/prop-celebration-state.svelte";
+  } from "#lib/shared/gamification/state/prop-collection-state.svelte.js";
+  import { openPropCelebration } from "#lib/shared/gamification/state/prop-celebration-state.svelte.js";
 
   const settings = $derived(getSettings());
   const leftPropType = $derived(settings.leftPropType ?? PropType.STAFF);

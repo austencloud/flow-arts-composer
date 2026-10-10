@@ -3,12 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   buildFlowerAxis,
   flowerKey,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import {
   readShapeMatrixRouteState,
   writeShapeMatrixRouteState,
 } from "../../../src/routes/(public)/shape-engine/_state/shape-matrix-url";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const COMMON = {
   surface: "matrix" as const,

@@ -7,7 +7,7 @@ vi.mock("../svg-generator", () => ({
 }));
 
 import { PropTypeManager } from "../prop-type-manager";
-import { PROP_MODEL_SPRITES } from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
+import { PROP_MODEL_SPRITES } from "#lib/shared/pictograph/prop/domain/prop-model-sprites.generated.js";
 
 /**
  * The 3D model look is one setting for every 2D surface. Pictographs paint

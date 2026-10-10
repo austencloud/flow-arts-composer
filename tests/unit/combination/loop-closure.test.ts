@@ -15,7 +15,7 @@ import { LOOPType, Period } from "@tka/sequence-engine/loop";
 import {
   admissibleClosures,
   isFreeformPair,
-} from "$lib/shared/combination/services/loop-closure";
+} from "#lib/shared/combination/services/loop-closure.js";
 
 const idsOf = (start: string, end: string, options = {}) =>
   admissibleClosures(start, end, options).map((closure) => closure.id);

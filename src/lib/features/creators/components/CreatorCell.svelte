@@ -25,13 +25,13 @@
    * rule, so the evidence line rendered as "— Staff · 3 days ago" and the
    * index rows ended in what looked like a "→" navigation arrow.
    */
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import FollowButton from "$lib/shared/community/components/FollowButton.svelte";
-  import { getEffectiveProp } from "$lib/shared/community/domain/get-effective-prop";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { formatTimeAgo } from "$lib/shared/i18n/i18n-formatters";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import FollowButton from "#lib/shared/community/components/FollowButton.svelte";
+  import { getEffectiveProp } from "#lib/shared/community/domain/get-effective-prop.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { formatTimeAgo } from "#lib/shared/i18n/i18n-formatters.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
   import type { BandKey } from "../domain/creator-recency";
   import { ringToneFor } from "../domain/creator-recency";
 

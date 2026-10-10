@@ -15,7 +15,10 @@ import {
   spinRatioKey,
   type SpinRatio,
 } from "@vtg/domain";
-import { handIndexAt, propIndexAt } from "$lib/shared/notation/qft/qft-model";
+import {
+  handIndexAt,
+  propIndexAt,
+} from "#lib/shared/notation/qft/qft-model.js";
 import {
   buildTheoryAxis,
   theoryFlowerKey,
@@ -23,11 +26,11 @@ import {
   theorySoloKnobs,
   STATIONARY_RATIO,
   type TheoryFlower,
-} from "$lib/shared/shape-matrix/domain/theory-flower";
+} from "#lib/shared/shape-matrix/domain/theory-flower.js";
 import {
   MODE_ORDER,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 /** The eighths a timing puts between the two hands. */
 const TIMING_OFFSET: Record<string, number> = { S: 4, T: 0, Q: 2 };

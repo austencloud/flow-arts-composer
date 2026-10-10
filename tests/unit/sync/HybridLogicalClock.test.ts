@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { HybridLogicalClock } from '$lib/shared/sync/services/hybrid-logical-clock';
-import type { HLCTimestamp } from '$lib/shared/sync/domain/sync-types';
+import { HybridLogicalClock } from '#lib/shared/sync/services/hybrid-logical-clock.js';
+import type { HLCTimestamp } from '#lib/shared/sync/domain/sync-types.js';
 
 describe('HybridLogicalClock', () => {
 	let clock: HybridLogicalClock;

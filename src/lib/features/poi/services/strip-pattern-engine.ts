@@ -1,8 +1,8 @@
 import { fromImageData } from "./image-pattern-loader";
-import type { StripPattern, PatternParams, StripFrame } from "$lib/shared/poi/domain/strip-pattern";
-import type { IPatternPreset } from "$lib/shared/poi/domain/pattern-presets";
-import { BUILT_IN_PRESETS } from "$lib/shared/poi/domain/pattern-presets";
-import { stripPatternToImageData } from "$lib/shared/poi/domain/strip-pattern-image";
+import type { StripPattern, PatternParams, StripFrame } from "#lib/shared/poi/domain/strip-pattern.js";
+import type { IPatternPreset } from "#lib/shared/poi/domain/pattern-presets.js";
+import { BUILT_IN_PRESETS } from "#lib/shared/poi/domain/pattern-presets.js";
+import { stripPatternToImageData } from "#lib/shared/poi/domain/strip-pattern-image.js";
 
 /**
  * Orchestrates pattern generation from presets and image loading.

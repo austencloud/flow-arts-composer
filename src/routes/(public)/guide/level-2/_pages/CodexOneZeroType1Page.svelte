@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Codex 1|0 - Type 1 - Level 2 body page 17 (manifest `codex-1-0-t1`), faithful
    * to old p17. Every Type-1 letter (A–V) with a single turn on one hand: `¹` = turn

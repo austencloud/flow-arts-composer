@@ -20,18 +20,18 @@
  * Built by mirroring the proven engine-sampling pattern in `poseAt`
  * (src/routes/(public)/guide/level-2/_data/halfway-pose.ts:55-90).
  */
-import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
-import { staffAngleToOrientation } from "$lib/shared/render/core/calculations/orientation-angle";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+import { staffAngleToOrientation } from "#lib/shared/render/core/calculations/orientation-angle.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridMode, type GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridMode, type GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 export type OrientationAtInput = {
   motionType: MotionType;

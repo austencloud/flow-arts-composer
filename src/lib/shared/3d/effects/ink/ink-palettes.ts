@@ -16,7 +16,7 @@
  * source of truth.
  */
 
-import type { InkIntent } from "$lib/shared/effects/domain/effects-config";
+import type { InkIntent } from "#lib/shared/effects/domain/effects-config.js";
 
 export interface InkPalette {
   readonly id: InkIntent["palette"];

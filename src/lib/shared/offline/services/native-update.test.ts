@@ -19,7 +19,7 @@ const showToast = vi.fn();
 const isNativePlatform = vi.fn(() => true);
 
 vi.mock("@capgo/capacitor-updater", () => ({ CapacitorUpdater: plugin }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({ showToast }));
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({ showToast }));
 vi.mock("@capacitor/core", () => ({ Capacitor: { isNativePlatform } }));
 
 type ToastCall = { action: { label: string; onClick: () => Promise<void> } };

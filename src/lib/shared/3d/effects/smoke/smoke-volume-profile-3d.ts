@@ -1,5 +1,5 @@
-import type { SmokePalette } from "$lib/shared/effects/domain/smoke-palettes";
-import type { SmokeVolumeProfile3D } from "$lib/shared/effects/translators/webgl3d-types";
+import type { SmokePalette } from "#lib/shared/effects/domain/smoke-palettes.js";
+import type { SmokeVolumeProfile3D } from "#lib/shared/effects/translators/webgl3d-types.js";
 
 const PROFILES: Record<SmokePalette["id"], Readonly<SmokeVolumeProfile3D>> = {
   incense: {

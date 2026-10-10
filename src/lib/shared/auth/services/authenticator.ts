@@ -35,7 +35,7 @@ import {
   upgradeAnonymousWithGoogleCredential,
   type UpgradeResult,
 } from "./anonymous-upgrade";
-import { promptAnonymousImport } from "$lib/shared/auth/state/anonymous-import-prompt.svelte";
+import { promptAnonymousImport } from "#lib/shared/auth/state/anonymous-import-prompt.svelte.js";
 import { clearPendingLink, stashPendingLink } from "./pending-credential-link";
 import { recordLastAuthMethod } from "./last-auth-method.svelte";
 import {
@@ -113,10 +113,10 @@ export async function signInWithGoogle(): Promise<void> {
   );
   if (guestUpgrade) return;
 
-  const { isDesktop } = await import("$lib/shared/desktop/is-desktop");
+  const { isDesktop } = await import("#lib/shared/desktop/is-desktop.js");
   if (isDesktop()) {
     const { signInWithDesktopOAuth } =
-      await import("$lib/shared/desktop/tauri-auth-bridge");
+      await import("#lib/shared/desktop/tauri-auth-bridge.js");
     await signInWithDesktopOAuth();
     recordLastAuthMethod("google");
     return;
@@ -129,7 +129,7 @@ export async function signInWithGoogle(): Promise<void> {
   // with the credential. skipNativeAuth (capacitor.config) keeps the JS Firebase
   // SDK authoritative, matching every other auth path in the app.
   const { isNative } =
-    await import("$lib/shared/platform/services/platform-detector");
+    await import("#lib/shared/platform/services/platform-detector.js");
   if (isNative()) {
     const { nativeGoogleCredential } = await import("./native-google-auth");
     await signInWithCredential(auth, await nativeGoogleCredential());
@@ -288,7 +288,7 @@ export async function linkGoogleAccount(): Promise<void> {
 
   // Native: popups dead-end in the WebView — link with a native-SDK credential.
   const { isNative } =
-    await import("$lib/shared/platform/services/platform-detector");
+    await import("#lib/shared/platform/services/platform-detector.js");
   if (isNative()) {
     const { nativeGoogleCredential } = await import("./native-google-auth");
     await linkWithCredential(currentUser, await nativeGoogleCredential());
@@ -296,10 +296,10 @@ export async function linkGoogleAccount(): Promise<void> {
   }
 
   // Desktop (Tauri): same popup wall — link with a bridge credential.
-  const { isDesktop } = await import("$lib/shared/desktop/is-desktop");
+  const { isDesktop } = await import("#lib/shared/desktop/is-desktop.js");
   if (isDesktop()) {
     const { desktopGoogleCredential } =
-      await import("$lib/shared/desktop/tauri-auth-bridge");
+      await import("#lib/shared/desktop/tauri-auth-bridge.js");
     await linkWithCredential(currentUser, await desktopGoogleCredential());
     return;
   }
@@ -350,7 +350,7 @@ export async function reauthenticateWithGoogle(): Promise<void> {
 
   // Native: popups dead-end in the WebView — reauth with a native-SDK credential.
   const { isNative } =
-    await import("$lib/shared/platform/services/platform-detector");
+    await import("#lib/shared/platform/services/platform-detector.js");
   if (isNative()) {
     const { nativeGoogleCredential } = await import("./native-google-auth");
     await reauthenticateWithCredential(
@@ -361,10 +361,10 @@ export async function reauthenticateWithGoogle(): Promise<void> {
   }
 
   // Desktop (Tauri): same popup wall — reauth with a bridge credential.
-  const { isDesktop } = await import("$lib/shared/desktop/is-desktop");
+  const { isDesktop } = await import("#lib/shared/desktop/is-desktop.js");
   if (isDesktop()) {
     const { desktopGoogleCredential } =
-      await import("$lib/shared/desktop/tauri-auth-bridge");
+      await import("#lib/shared/desktop/tauri-auth-bridge.js");
     await reauthenticateWithCredential(
       currentUser,
       await desktopGoogleCredential()

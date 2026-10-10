@@ -1,16 +1,16 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { flowerKey } from "$lib/shared/shape-matrix/domain/flower-signature";
-import { buildModeRealizationCandidates } from "$lib/shared/shape-matrix/services/build-mode-realizations";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { flowerKey } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { buildModeRealizationCandidates } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
 import {
   CURVE_MATCH_EPS,
   curveDistance,
-} from "$lib/shared/shape-matrix/services/__tests__/curve-distance";
-import { loadShapeMatrix } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/__tests__/curve-distance.js";
+import { loadShapeMatrix } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 const staticPath = path.resolve(process.cwd(), "static");
 vi.stubGlobal("fetch", async (input: string | URL | Request) => {
@@ -30,6 +30,12 @@ vi.stubGlobal("fetch", async (input: string | URL | Request) => {
 });
 
 describe("three-petal and four-petal matrix realizations", () => {
+  // Every three-petal x four-petal cell in both axis orders and all timing
+  // modes, with each candidate's geometry recomputed: 17.6 s of pure CPU in a
+  // three-file run on 2026-10-10. Under the full suite's 31 forks the same test
+  // took 62,721 ms on 2026-10-09 and timed out against its 60 s budget; a file
+  // there runs five to eight times slower than alone. 120 s is the budget
+  // tests/unit/3d-animation gives a loaded machine.
   it("keeps every selected hand flower in both axis orders and all timing modes", async () => {
     const data = await loadShapeMatrix(PropType.STAFF);
     const flowers = (petals: number) =>
@@ -83,5 +89,5 @@ describe("three-petal and four-petal matrix realizations", () => {
           }
         }
     }
-  }, 60_000);
+  }, 120_000);
 });

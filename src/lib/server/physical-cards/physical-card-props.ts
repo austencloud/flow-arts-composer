@@ -1,9 +1,9 @@
 import {
   readFirestoreString,
   type FirestoreRest,
-} from "$lib/server/firestore/firestore-rest";
-import { physicalCardPropCandidate } from "$lib/shared/qr/services/physical-card-props";
-import type { ScanPropCandidate } from "$lib/shared/qr/services/scan-prop-resolver";
+} from "#lib/server/firestore/firestore-rest.js";
+import { physicalCardPropCandidate } from "#lib/shared/qr/services/physical-card-props.js";
+import type { ScanPropCandidate } from "#lib/shared/qr/services/scan-prop-resolver.js";
 
 const PHYSICAL_CARD_PROPS_MASK = [
   "shortCode",

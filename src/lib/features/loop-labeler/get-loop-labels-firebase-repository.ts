@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { LOOPLabelsFirebaseRepository } from './services/loop-labels-firebase-repository';
 
 let instance: LOOPLabelsFirebaseRepository | null = null;

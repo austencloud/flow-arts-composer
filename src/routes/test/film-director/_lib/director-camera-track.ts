@@ -1,4 +1,4 @@
-import { computeFramingShot } from "$lib/shared/3d/camera/compute-framing-shot";
+import { computeFramingShot } from "#lib/shared/3d/camera/compute-framing-shot.js";
 
 import {
   buildCameraChannels,
@@ -25,7 +25,7 @@ import {
   axisSeedValue,
   resolveFilmSeed,
   type FilmSeed,
-} from "$lib/features/film-director/domain/directive-random";
+} from "#lib/features/film-director/domain/directive-random.js";
 import type {
   DirectorCameraInput,
   DirectorCameraPreset,

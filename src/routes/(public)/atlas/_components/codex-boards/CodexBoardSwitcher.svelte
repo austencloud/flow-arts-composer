@@ -6,7 +6,7 @@
   stretch into a progress bar across the screen.
 -->
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { BOARDS, type BoardKey } from "./board-choice";
 
   let {

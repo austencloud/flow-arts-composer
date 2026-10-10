@@ -14,7 +14,7 @@
 import { World } from "miniplex";
 import type { Object3D } from "three";
 import type { RigidBody, Collider } from "@dimforge/rapier3d-compat";
-import { CameraMode } from "$lib/shared/3d/camera/types";
+import { CameraMode } from "#lib/shared/3d/camera/types.js";
 
 
 /**

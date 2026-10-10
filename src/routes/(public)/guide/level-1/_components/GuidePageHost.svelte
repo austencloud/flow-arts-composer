@@ -1,5 +1,5 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   /**
    * GuidePageHost - ONE guide topic rendered as its own page: the crawlable,
    * prerendered SEO surface AND the interactive reader for that topic, in one
@@ -24,8 +24,8 @@
   import FlowFrame from "./FlowFrame.svelte";
   import GuidePage from "./GuidePage.svelte";
   import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
-  import { getConceptExperienceForGuideSlug } from "$lib/features/learn/domain/concept-experience-registry";
-  import { buildConceptPath } from "$lib/features/learn/domain/concept-routes";
+  import { getConceptExperienceForGuideSlug } from "#lib/features/learn/domain/concept-experience-registry.js";
+  import { buildConceptPath } from "#lib/features/learn/domain/concept-routes.js";
   import { setGuidePrintMode } from "../_data/guide-data-context";
   import { loadOverrides } from "../_data/guide-overrides.svelte";
   import "../_styles/guide.css";

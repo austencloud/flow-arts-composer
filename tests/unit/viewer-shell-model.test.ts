@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   buildCardExportAnalyticsConfig,
   buildPracticeConfigProperties,
@@ -8,7 +8,7 @@ import {
   resolveExportSidebarMinWidth,
   resolvePostStudioShareDockMinWidth,
   viewerInspectorConstraints,
-} from "$lib/shared/sequence-viewer/services/viewer-shell-model";
+} from "#lib/shared/sequence-viewer/services/viewer-shell-model.js";
 
 describe("viewer shell model", () => {
   it("uses only valid persisted rail widths in the export threshold", () => {

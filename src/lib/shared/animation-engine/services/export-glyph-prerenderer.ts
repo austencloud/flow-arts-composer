@@ -11,22 +11,22 @@
  * without pre-rendering, the export would only show a bare letter SVG.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { SvgImageConverter } from '$lib/shared/foundation/services/svg-image-converter'
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { SvgImageConverter } from '#lib/shared/foundation/services/svg-image-converter.js'
 import {
   type ElementalType,
   getElementImagePath,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import {
   getLetterType,
   type Letter,
-} from "$lib/shared/foundation/domain/models/letter";
-import { LetterType } from "$lib/shared/foundation/domain/models/letter-type";
+} from "#lib/shared/foundation/domain/models/letter.js";
+import { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
 import {
   getSvgImageCache,
   type DrawableImage,
-} from "$lib/shared/render/services/svg-image-cache";
+} from "#lib/shared/render/services/svg-image-cache.js";
 
 export interface GlyphAsset {
   image: HTMLImageElement;
@@ -46,12 +46,12 @@ export interface ElementalGlyphAsset {
   sourceWidth: number;
   sourceHeight: number;
 }
-import { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
-import { interpretTurnColors, resolveTurnDisplayColor } from "$lib/shared/pictograph/tka-glyph/services/turn-color-interpreter";
+import { TurnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
+import { interpretTurnColors, resolveTurnDisplayColor } from "#lib/shared/pictograph/tka-glyph/services/turn-color-interpreter.js";
 import {
   getLetterImagePath,
   isDashLetter,
-} from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
+} from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
 import {
   parseTurnsTuple,
   shouldDisplayTurn,
@@ -62,24 +62,24 @@ import {
   MARK_GAP,
   getSlotUnitWidth,
   getSlotOffsetX,
-} from "$lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser";
+} from "#lib/shared/pictograph/tka-glyph/utils/turn-tuple-parser.js";
 import {
   calculateTurnPositions,
   getTurnsColumnRightExtent,
-} from "$lib/shared/pictograph/tka-glyph/utils/turn-position-calculator";
+} from "#lib/shared/pictograph/tka-glyph/utils/turn-position-calculator.js";
 import {
   getSkewBraceInk,
   getSkewBraceLayout,
   placeSkewBraceGlyphs,
-} from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
+} from "#lib/shared/pictograph/tka-glyph/utils/skew-brace-layout.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { isSkewedFrameBeat } from "#lib/shared/foundation/services/skewed-frame.js";
 import {
   SKEW_BRACE_FILL_DARK,
   SKEW_BRACE_FILL_LIGHT,
   SKEW_BRACE_FONT_FAMILY,
   SKEW_BRACE_FONT_WEIGHT,
-} from "$lib/shared/render/utils/draw-skew-braces";
+} from "#lib/shared/render/utils/draw-skew-braces.js";
 
 /** Glyph units of clear space kept beside a brace's measured ink. */
 const BRACE_INK_MARGIN = 4;

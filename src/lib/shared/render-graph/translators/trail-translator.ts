@@ -7,7 +7,7 @@
  * so this translator stays format-neutral.
  */
 
-import type { TrailsIntent } from "$lib/shared/effects/domain/effects-config";
+import type { TrailsIntent } from "#lib/shared/effects/domain/effects-config.js";
 import { MIN_TAIL_WIDTH_RATIO, FADE_EXPONENT } from "../math/trail-mesh";
 import type {
   TrailPassPayload,

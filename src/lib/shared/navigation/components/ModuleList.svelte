@@ -18,12 +18,12 @@
 </script>
 
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { ModuleDefinition, ModuleId } from "../domain/types";
   import type { HapticFeedback } from "../../application/services/haptic-feedback";
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getReactiveLocale } from "#lib/shared/i18n/locale-state.svelte.js";
   import {
     getModuleGridLayout,
     MODULE_GRID_GAP,
@@ -555,7 +555,6 @@
     font-weight: 600;
     line-height: 18px;
     text-align: center;
-    box-shadow: 0 2px 4px var(--theme-shadow);
     animation: badgePop var(--duration-emphasis) ease;
     z-index: 3;
   }

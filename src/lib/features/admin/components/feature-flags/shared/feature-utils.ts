@@ -7,13 +7,13 @@ import type {
   FeatureId,
   FeatureFlagConfig,
   UserFeatureOverrides,
-} from "$lib/shared/auth/domain/models/feature-flag";
-import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
+} from "#lib/shared/auth/domain/models/feature-flag.js";
+import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
 import {
   ROLE_DISPLAY,
   hasRolePrivilege,
-} from "$lib/shared/auth/domain/models/user-role";
-import { MODULE_DEFINITIONS } from "$lib/shared/navigation/config/module-definitions";
+} from "#lib/shared/auth/domain/models/user-role.js";
+import { MODULE_DEFINITIONS } from "#lib/shared/navigation/config/module-definitions.js";
 
 /**
  * Override state for a single feature

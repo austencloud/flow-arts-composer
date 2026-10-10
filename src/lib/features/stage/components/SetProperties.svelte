@@ -1,6 +1,6 @@
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import CountStepper from "./CountStepper.svelte";
   import { getStageChoreographyContext } from "../context/stage-choreography-context";
   import { resolveActiveFormationIndex } from "../domain/active-formation";

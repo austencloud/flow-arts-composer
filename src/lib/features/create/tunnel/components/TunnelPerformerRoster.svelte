@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { getBaseMotionColors } from "$lib/shared/animation-engine/services/svg-generator";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { getBaseMotionColors } from "#lib/shared/animation-engine/services/svg-generator.js";
   import {
     tunnelPropColor,
     tunnelPerformerPair,
     type TunnelPropColorMode,
     type TunnelPropColorPair,
-  } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+  } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
   import { getTunnelCreatorContext } from "../context/tunnel-creator-context";
   import type { TunnelWorkflowMode } from "../domain/tunnel-creator-draft";
   import { MAX_INTERACTIVE_TUNNEL_PERFORMERS } from "../state/tunnel-creator-state.svelte";

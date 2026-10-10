@@ -3,11 +3,11 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import { registerCreateShortcuts } from "./register-create-shortcuts";
 import { KeyboardShortcutManager } from "../services/keyboard-shortcut-manager";
 import { ShortcutRegistry } from "../services/shortcut-registry";
-import { setCreateModuleStateRef } from "$lib/shared/create/state/create-module-state-ref.svelte";
+import { setCreateModuleStateRef } from "#lib/shared/create/state/create-module-state-ref.svelte.js";
 import type { ShortcutRegistrationOptions } from "../domain/types/keyboard-types";
 import type { createKeyboardShortcutState } from "../state/keyboard-shortcut-state.svelte";
 
-vi.mock("$lib/shared/keyboard/keyboard-shortcut-analytics", () => ({
+vi.mock("#lib/shared/keyboard/keyboard-shortcut-analytics.js", () => ({
   logKeyboardShortcutExecuted: vi.fn(),
   logKeyboardShortcutFailed: vi.fn(),
 }));

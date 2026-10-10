@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 // Mock the firebase chain before importing anything that pulls SpecialArrowPlacement.
 // computeSpecialOverrideKey → generateSpecialOverrideKey (SpecialArrowPlacement) →
 // $lib/shared/firestore → $lib/shared/auth → firebase/auth → protobufjs at load time.
-vi.mock("$lib/shared/auth/state/authState.svelte", () => ({
+vi.mock("#lib/shared/auth/state/authState.svelte", () => ({
   authState: { effectiveUserId: null },
 }));
 
@@ -12,10 +12,10 @@ vi.mock("firebase/firestore", () => ({
   doc: vi.fn(),
 }));
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { computeSpecialOverrideKey } from "$lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { computeSpecialOverrideKey } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 // Representative pictograph: letter P, Diamond display, both Pro motions, both staff.
 // Display orientation is not persisted as placement ownership.

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
-import { PHYSICAL_CARD_SCHEMA_VERSION } from "$lib/shared/qr/domain/physical-card";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
+import { PHYSICAL_CARD_SCHEMA_VERSION } from "#lib/shared/qr/domain/physical-card.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type * as PrintQrGuard from "../print-qr-guard";
 import { PrintedQrError, verifyPrintedQr } from "../print-qr-guard";
 import {
@@ -17,13 +17,13 @@ import {
 } from "../serialized-print-run";
 import type { CardPair } from "../types";
 
-vi.mock("$lib/shared/auth/services/authed-fetch", () => ({
+vi.mock("#lib/shared/auth/services/authed-fetch.js", () => ({
   authedFetch: vi.fn(),
 }));
-vi.mock("$lib/shared/qr/get-qr-code-generator", () => ({
+vi.mock("#lib/shared/qr/get-qr-code-generator.js", () => ({
   getQRCodeGenerator: vi.fn(),
 }));
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: vi.fn(),
 }));
 vi.mock("../print-qr-guard", async (importOriginal) => ({

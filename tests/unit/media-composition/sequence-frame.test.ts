@@ -3,7 +3,7 @@ import {
   arrowOpacity,
   sequenceArrowLayers,
   sequenceFrameAt,
-} from "$lib/shared/media-composition/domain/sequence-frame";
+} from "#lib/shared/media-composition/domain/sequence-frame.js";
 
 const DCK = [1, 1, 2, 1, 1, 1, 1, 1];
 

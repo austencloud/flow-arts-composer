@@ -4,21 +4,21 @@
  * Complete interfaces for motion generation, sequence generation, and related algorithms.
  * Updated to match exact legacy generation parameters and options.
  */
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { LOOPType, Period } from "./circular-models";
 import type { LOOPSpec, LOOPSpecWire } from "@tka/sequence-engine/loop";
 import type { TurnLanes } from "@tka/sequence-engine/generation";
-import type { LoopRhythm } from "$lib/shared/create/services/loop-type-utils";
-import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
+import type { LoopRhythm } from "#lib/shared/create/services/loop-type-utils.js";
+import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
 
 // Re-export LOOPType for convenience
 export type { LOOPType };
 import type {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 // DATA CONTRACTS (Domain Models)
 
@@ -202,4 +202,4 @@ export interface RotationDirections {
 }
 
 // Re-exporting TurnAllocation for backwards compatibility
-export type { TurnAllocation } from "$lib/shared/create/domain/generator-contract-types";
+export type { TurnAllocation } from "#lib/shared/create/domain/generator-contract-types.js";

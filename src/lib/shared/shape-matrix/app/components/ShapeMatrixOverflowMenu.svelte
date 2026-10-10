@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { DropdownMenu } from "bits-ui";
   import type { HTMLButtonAttributes } from "svelte/elements";
 
@@ -118,7 +118,6 @@
       var(--theme-panel-bg, #101721),
       var(--theme-panel-bg, #101721)
     );
-    box-shadow: 0 16px 42px var(--theme-shadow, rgb(0 0 0 / 0.42));
     outline: none;
     transform-origin: var(--bits-dropdown-menu-content-transform-origin);
   }

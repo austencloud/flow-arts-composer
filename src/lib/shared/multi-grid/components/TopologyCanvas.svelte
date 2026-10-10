@@ -23,12 +23,12 @@
   import type { ViewBoxData } from "../services/types";
   import type { TopologyPropRenderData } from "../services/types";
   import type { BetaOffset } from "../services/types";
-  import type { GridLocation } from "$lib/shared/render/core/types";
+  import type { GridLocation } from "#lib/shared/render/core/types.js";
   import { computeTopologyViewBox, worldToSvg, gridCenterToSvg } from "../services/topology-renderer";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { HAND_POINT_LOCATIONS, PIXELS_PER_UNIT, SVG_CENTER } from "../domain/constants/grid-mode-offsets";
-  import { STRICT_HAND_POINT_COORDS } from "$lib/shared/conjoined-grid/domain/types";
+  import { STRICT_HAND_POINT_COORDS } from "#lib/shared/conjoined-grid/domain/types.js";
 
   interface Props {
     topology: GridTopology;

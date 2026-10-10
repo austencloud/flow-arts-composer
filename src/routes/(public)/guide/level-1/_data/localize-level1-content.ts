@@ -1,4 +1,4 @@
-import { t } from "$lib/shared/i18n/i18n.svelte";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { GuideBlock } from "./guide-content-blocks";
 
 // The source content remains Austen's English proof copy. Translate at render

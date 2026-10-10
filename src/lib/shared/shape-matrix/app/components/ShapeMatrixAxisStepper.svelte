@@ -7,18 +7,18 @@
   there is no Apply-to mode and no "Mixed" placeholder. The corner layout
   scales with the grid's corner cell; the plain layout is a header control. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { localizedMatrixTurnSpokenLabel } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { localizedMatrixTurnSpokenLabel } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
   import { Popover } from "bits-ui";
-  import { matrixTurnVisibleLabel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  import { matrixTurnVisibleLabel } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import {
     keyToTurnValue,
     turnValueToKey,
     type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  } from "#lib/shared/create/services/level-turn-values.js";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
 
   interface Props {
@@ -308,7 +308,6 @@
       var(--theme-panel-bg, #101721),
       var(--theme-panel-bg, #101721)
     );
-    box-shadow: 0 16px 42px var(--theme-shadow, rgb(0 0 0 / 0.42));
     color: var(--theme-text, #fff);
     overflow: auto;
     overscroll-behavior: contain;

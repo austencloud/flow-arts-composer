@@ -2,7 +2,7 @@
   import { onDestroy } from "svelte";
   import { WinterBackgroundSystem, type QualityLevel } from "@austencloud/backgrounds";
   import { ChipToggle, ChipGroup } from '@austencloud/chip-toggle';
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import LabPreviewCanvas from "./LabPreviewCanvas.svelte";
 
   // Background system

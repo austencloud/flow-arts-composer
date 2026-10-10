@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { createShapeEnginePropSource } from "$lib/features/create/shape-engine/shape-engine-prop-source";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { createShapeEnginePropSource } from "#lib/features/create/shape-engine/shape-engine-prop-source.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 describe("createShapeEnginePropSource", () => {
   it("reads the live settings pair", () => {

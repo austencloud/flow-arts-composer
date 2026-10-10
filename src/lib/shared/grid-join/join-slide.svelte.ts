@@ -11,7 +11,7 @@
  * the slide's starting position.
  */
 import type { GridJoin } from "@tka/tka-types";
-import { motionDuration } from "$lib/shared/transitions/motion";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
 import { gridJoinsEqual } from "./grid-join-controller";
 import {
   GRID_JOIN_TWEEN_MS,

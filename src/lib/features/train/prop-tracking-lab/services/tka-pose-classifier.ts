@@ -27,12 +27,12 @@
  */
 import { Vector3 } from "three";
 import type { GridLocation } from "../domain/models";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   Orientation,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type {
   StaffHand,
   StaffPose3D,

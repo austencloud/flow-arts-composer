@@ -2,14 +2,14 @@
   import { slide } from "svelte/transition";
   import VoiceInputButton from "./VoiceInputButton.svelte";
   import VoiceWaveform from "./VoiceWaveform.svelte";
-  import ImageUpload from "$lib/shared/components/image-upload/ImageUpload.svelte";
+  import ImageUpload from "#lib/shared/components/image-upload/ImageUpload.svelte";
   import type { AudioAnalyzer } from "../../services/audio-analyzer";
   import type {
     VoiceRecordingResult,
     DraftSaveStatus,
-  } from "$lib/shared/feedback/domain/feedback-contract-types";
-  import type { StagedImageState } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/feedback/domain/feedback-contract-types.js";
+  import type { StagedImageState } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { VoiceRecorder } from "../../services/voice-recorder";
 
   let {

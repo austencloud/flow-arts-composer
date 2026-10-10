@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AnimationRenderLoop } from "$lib/shared/animation-engine/services/animation-render-loop";
-import { Canvas2DAnimationRenderer } from "$lib/shared/animation-engine/services/canvas-2d-animation-renderer";
-import { Canvas2DApplicationManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-application-manager";
-import { Canvas2DImageLoader } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-image-loader";
-import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { RenderFrameParams } from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
+import { AnimationRenderLoop } from "#lib/shared/animation-engine/services/animation-render-loop.js";
+import { Canvas2DAnimationRenderer } from "#lib/shared/animation-engine/services/canvas-2d-animation-renderer.js";
+import { Canvas2DApplicationManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-application-manager.js";
+import { Canvas2DImageLoader } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-image-loader.js";
+import { DEFAULT_TRAIL_SETTINGS } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { RenderFrameParams } from "#lib/shared/animation-engine/services/IAnimationRenderLoop.js";
 
 afterEach(() => vi.restoreAllMocks());
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { POST_TIME_EPSILON } from "$lib/shared/media-composition/domain/post-project";
-  import { formatPostClock } from "$lib/shared/share/components/post-studio/builder/post-builder-format";
+  import { POST_TIME_EPSILON } from "#lib/shared/media-composition/domain/post-project.js";
+  import { formatPostClock } from "#lib/shared/share/components/post-studio/builder/post-builder-format.js";
   import {
     beatSeconds,
     hasGrid,
@@ -12,9 +12,9 @@
     postSecondsAtBar,
     trackSecondsAt,
     type MusicPlacement,
-  } from "$lib/shared/media-composition/domain/music-grid";
-  import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
-  import { POST_MUSIC_MIN_SECONDS } from "$lib/shared/media-composition/domain/post-music-edits";
+  } from "#lib/shared/media-composition/domain/music-grid.js";
+  import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
+  import { POST_MUSIC_MIN_SECONDS } from "#lib/shared/media-composition/domain/post-music-edits.js";
   import {
     placeDraggedMusic,
     roundToFrameSeconds,

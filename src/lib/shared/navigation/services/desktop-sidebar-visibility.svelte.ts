@@ -3,8 +3,8 @@
  * Determines when the desktop navigation sidebar should be visible
  */
 
-import type { DeviceDetector } from '$lib/shared/device/services/device-detector'
-import type { ViewportManager } from '$lib/shared/device/services/viewport-manager.svelte'
+import type { DeviceDetector } from '#lib/shared/device/services/device-detector.js'
+import type { ViewportManager } from '#lib/shared/device/services/viewport-manager.svelte.js'
 import { BREAKPOINTS } from "../../device/domain/constants/device-constants";
 import {
   desktopSidebarState,

@@ -1,5 +1,5 @@
 import type { EffectPreset, EffectPresetGroup } from "./types";
-import { SILK_INTENSITY_DEFAULT, SILK_INTENSITY_MAX } from "$lib/shared/effects/domain/effects-config";
+import { SILK_INTENSITY_DEFAULT, SILK_INTENSITY_MAX } from "#lib/shared/effects/domain/effects-config.js";
 
 export const SILK_PRESETS: EffectPreset<"silk">[] = [
   {

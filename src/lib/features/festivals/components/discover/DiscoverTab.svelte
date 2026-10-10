@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getFestivalContext } from "../../context/festival-context";
-  import { auth } from "$lib/shared/auth/firebase";
+  import { auth } from "#lib/shared/auth/firebase.js";
   import FestivalFilterBar from "./FestivalFilterBar.svelte";
   import FestivalGridCard from "./FestivalGridCard.svelte";
   import FestivalSubmissionForm from "../submit/FestivalSubmissionForm.svelte";

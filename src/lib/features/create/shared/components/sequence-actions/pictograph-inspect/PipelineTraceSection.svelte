@@ -9,9 +9,9 @@
   import type {
     PipelineDiagnostics,
     PipelineTier,
-  } from "$lib/shared/pictograph/arrow/positioning/calculation/domain/pipeline-diagnostics";
+  } from "#lib/shared/pictograph/arrow/positioning/calculation/domain/pipeline-diagnostics.js";
   import { livePipelineEdit } from "./live-pipeline-edit.svelte";
-  import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   interface Props {
     diagnostics: PipelineDiagnostics | null;

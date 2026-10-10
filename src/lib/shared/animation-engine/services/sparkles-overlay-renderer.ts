@@ -11,9 +11,9 @@
  * to fade in/out unpredictably. The renderer holds particle pool state across frames.
  */
 
-import type { Sparkles2DParams } from "$lib/shared/effects/translators/canvas2d-types";
-import { Sparkles2DRenderer } from "$lib/shared/effects/renderers/sparkles-2d-renderer";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+import type { Sparkles2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
+import { Sparkles2DRenderer } from "#lib/shared/effects/renderers/sparkles-2d-renderer.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 import { EffectRenderer } from "./effects/effect-renderer";
 
 export class SparklesOverlayRenderer extends EffectRenderer {
@@ -34,8 +34,8 @@ export class SparklesOverlayRenderer extends EffectRenderer {
 }
 
 import type { EffectPlugin } from "./effects/effect-plugin";
-import type { SparklesIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { SparklesIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export const sparklesEffectPlugin: EffectPlugin<SparklesIntent> = {
   id: "sparkles",

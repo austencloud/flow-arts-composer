@@ -5,10 +5,10 @@
   Shows the user's current avatar and available photo sources.
 -->
 <script lang="ts">
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import ProfileColorPicker from "./ProfileColorPicker.svelte";
   import type { User } from "firebase/auth";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     user: User | null;

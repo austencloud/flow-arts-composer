@@ -5,23 +5,23 @@
   Handles: file selection → metadata extraction → upload → save to Firestore
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { getVideoUploader } from "$lib/shared/share/get-video-uploader";
-  import { saveVideo } from "$lib/shared/video-collaboration/services/collaborative-video-manager";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { getAuthSync } from "$lib/shared/auth/firebase";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { getVideoUploader } from "#lib/shared/share/get-video-uploader.js";
+  import { saveVideo } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { getAuthSync } from "#lib/shared/auth/firebase.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     createVideoFromUpload,
     createTunnelRealizationFromUpload,
     getVideoFileMetadata,
   } from "../helpers/create-video-from-upload";
   import type { VideoVisibility } from "../domain/collaborative-video";
-  import type { ArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
-  import { getCurrentSequenceRevisionRef } from "$lib/shared/library/services/sequence-revision-reader";
+  import type { ArtifactRevisionRef } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
+  import { getCurrentSequenceRevisionRef } from "#lib/shared/library/services/sequence-revision-reader.js";
   import {
     DEFAULT_VIDEO_VISIBILITY,
     VIDEO_VISIBILITY_OPTIONS,

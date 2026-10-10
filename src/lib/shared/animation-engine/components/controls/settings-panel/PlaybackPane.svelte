@@ -7,13 +7,13 @@
   - BPM control with tap tempo and presets
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy } from "svelte";
   import type {
     PlaybackMode,
     StepPlaybackStepSize,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
 
   let {
     bpm = $bindable(60),
@@ -167,7 +167,6 @@
     background: var(--theme-accent);
     border-color: var(--theme-accent);
     color: white;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   @media (hover: hover) and (pointer: fine) {

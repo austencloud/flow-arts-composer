@@ -6,9 +6,9 @@
    * Provides visual feedback for beat markers, clip edges, grid, and playhead.
    */
 
-  import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
-  import { timeToPixels, type TimeSeconds } from "$lib/shared/animation-engine/domain/timeline-types";
-  import { generateStepTimestamps } from "$lib/shared/audio/bpm-analyzer";
+  import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
+  import { timeToPixels, type TimeSeconds } from "#lib/shared/animation-engine/domain/timeline-types.js";
+  import { generateStepTimestamps } from "#lib/shared/audio/bpm-analyzer.js";
 
   interface Props {
     /** Active snap point (shown when dragging) */
@@ -215,6 +215,5 @@
     white-space: nowrap;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 2px 6px var(--theme-shadow);
   }
 </style>

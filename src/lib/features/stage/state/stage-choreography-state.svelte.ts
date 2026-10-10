@@ -17,7 +17,7 @@ import {
   DEFAULT_PERFORMER_COUNT,
 } from "../domain/stage-types";
 import { generatePresetPositions } from "./formation-presets";
-import type { UnifiedPlaybackContext } from "$lib/shared/timeline/unified-playback-context";
+import type { UnifiedPlaybackContext } from "#lib/shared/timeline/unified-playback-context.js";
 import type { StagePerformanceFrame } from "../domain/stage-performance-sampler";
 import { normalizeFormations } from "../domain/formation-invariants";
 import { resolveStageTravel } from "../domain/stage-travel-plan";
@@ -25,13 +25,13 @@ import {
   sampleFormationPerformance,
   sampleStageFormations,
 } from "../domain/stage-formation-sampler";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { getPerformerSequenceEndBeat } from "../domain/stage-sequence-timeline";
 import {
   DEFAULT_SCENE_ENVIRONMENT_ID,
   normalizeSceneEnvironmentId,
   type SceneEnvironmentId,
-} from "$lib/shared/3d/environments/domain/scene-environment";
+} from "#lib/shared/3d/environments/domain/scene-environment.js";
 import {
   studioProjectFromStage,
   type StudioProjectV1,

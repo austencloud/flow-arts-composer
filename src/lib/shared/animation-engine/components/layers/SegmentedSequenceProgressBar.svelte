@@ -14,8 +14,8 @@ Design variants supported:
 - labeled: Shows beat numbers/letters
 -->
 <script lang="ts">
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { safeSlide } from "$lib/shared/utils/transitions";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { safeSlide } from "#lib/shared/utils/transitions.js";
   import { cubicOut } from "svelte/easing";
 
   let {
@@ -402,11 +402,6 @@ Design variants supported:
      ======================================== */
   [data-variant="raised"] .segments-track {
     height: 8px;
-    box-shadow: inset 0 1px 2px var(--theme-shadow, rgba(0, 0, 0, 0.1));
-  }
-
-  .dark-mode[data-variant="raised"] .segments-track {
-    box-shadow: inset 0 1px 2px var(--theme-shadow, rgba(0, 0, 0, 0.3));
   }
 
   [data-variant="raised"] .segment {
@@ -415,14 +410,6 @@ Design variants supported:
 
   .dark-mode[data-variant="raised"] .segment {
     border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.2));
-  }
-
-  [data-variant="raised"] .progress-fill {
-    box-shadow: 0 1px 3px var(--theme-shadow, rgba(0, 0, 0, 0.4));
-  }
-
-  .dark-mode[data-variant="raised"] .progress-fill {
-    box-shadow: 0 1px 3px var(--theme-shadow, rgba(0, 0, 0, 0.5));
   }
 
   /* ========================================

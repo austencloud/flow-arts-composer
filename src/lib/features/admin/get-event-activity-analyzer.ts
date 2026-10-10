@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { EventActivityAnalyzer } from './services/event-activity-analyzer';
 
 let instance: EventActivityAnalyzer | null = null;

@@ -5,7 +5,7 @@
 	Play, Edit, Favorite, Duplicate, Delete actions with icon + label.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { CompositionBrowseItem } from "../state/composition-browse-state.svelte";
 
   const {

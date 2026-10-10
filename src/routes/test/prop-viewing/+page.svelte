@@ -1,16 +1,16 @@
 <script lang="ts">
-  import PropViewingControl from "$lib/shared/browse/components/PropViewingControl.svelte";
-  import SavePropDialog from "$lib/shared/library/components/SavePropDialog.svelte";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import PropViewingControl from "#lib/shared/browse/components/PropViewingControl.svelte";
+  import SavePropDialog from "#lib/shared/library/components/SavePropDialog.svelte";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     resolveViewingProps,
     withSavedProps,
-  } from "$lib/shared/foundation/services/prop-viewing";
-  import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/foundation/services/prop-viewing.js";
+  import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
   let preferences = $state<AppSettings>({
     gridMode: GridMode.DIAMOND,

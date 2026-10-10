@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeFormations } from "$lib/features/stage/domain/formation-invariants";
-import type { Formation } from "$lib/features/stage/domain/stage-types";
+import { normalizeFormations } from "#lib/features/stage/domain/formation-invariants.js";
+import type { Formation } from "#lib/features/stage/domain/stage-types.js";
 
 function formation(
   id: string,

@@ -14,27 +14,27 @@
 <script lang="ts">
   import { onDestroy, onMount, setContext, tick } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
 
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
-  import type { TipEffortMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { calculateGridLayout } from "$lib/shared/create/utils/grid-calculations";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
+  import type { TipEffortMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { calculateGridLayout } from "#lib/shared/create/utils/grid-calculations.js";
   import {
     HERO_TIP_EFFECT_MAP,
     HERO_TRAIL_PRESET,
-  } from "$lib/shared/landing/data/hero-trail-preset";
-  import WorkspaceGrid from "$lib/features/create/shared/workspace-panel/sequence-display/components/WorkspaceGrid.svelte";
-  import WordLabel from "$lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
-  import { createStepGridDisplayState } from "$lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte";
-  import { createScrollState } from "$lib/features/create/shared/workspace-panel/sequence-display/state/scroll-state.svelte";
-  import { createPanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
-  import BackButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/BackButton.svelte";
-  import ViewSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ViewSequenceButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import GhostPointer from "$lib/shared/attract/components/GhostPointer.svelte";
+  } from "#lib/shared/landing/data/hero-trail-preset.js";
+  import WorkspaceGrid from "#lib/features/create/shared/workspace-panel/sequence-display/components/WorkspaceGrid.svelte";
+  import WordLabel from "#lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
+  import { createStepGridDisplayState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
+  import { createScrollState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/scroll-state.svelte.js";
+  import { createPanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+  import BackButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/BackButton.svelte";
+  import ViewSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ViewSequenceButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import GhostPointer from "#lib/shared/attract/components/GhostPointer.svelte";
   import {
     createGenerateAttractAct,
     type GenerateAttractAct,
@@ -43,23 +43,23 @@
   import {
     DifficultyLevel,
     GenerationMode,
-  } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import {
     LOOPType,
     Period,
-  } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
-  import LengthCard from "$lib/features/create/generate/components/cards/LengthCard.svelte";
-  import LevelCard from "$lib/features/create/generate/components/cards/LevelCard.svelte";
-  import TurnIntensityCard from "$lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
-  import GridModeCard from "$lib/features/create/generate/components/cards/GridModeCard.svelte";
-  import CustomizeCard from "$lib/features/create/generate/components/cards/CustomizeCard.svelte";
-  import type { CustomizeStyleBaseline } from "$lib/features/create/generate/components/cards/customize-summary";
-  import ConsolidatedLOOPCard from "$lib/features/create/generate/components/cards/ConsolidatedLOOPCard.svelte";
-  import CustomizeDrawer from "$lib/features/create/generate/components/modals/CustomizeDrawer.svelte";
-  import LOOPDrawer from "$lib/features/create/generate/components/modals/LOOPDrawer.svelte";
+  import LengthCard from "#lib/features/create/generate/components/cards/LengthCard.svelte";
+  import LevelCard from "#lib/features/create/generate/components/cards/LevelCard.svelte";
+  import TurnIntensityCard from "#lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
+  import GridModeCard from "#lib/features/create/generate/components/cards/GridModeCard.svelte";
+  import CustomizeCard from "#lib/features/create/generate/components/cards/CustomizeCard.svelte";
+  import type { CustomizeStyleBaseline } from "#lib/features/create/generate/components/cards/customize-summary.js";
+  import ConsolidatedLOOPCard from "#lib/features/create/generate/components/cards/ConsolidatedLOOPCard.svelte";
+  import CustomizeDrawer from "#lib/features/create/generate/components/modals/CustomizeDrawer.svelte";
+  import LOOPDrawer from "#lib/features/create/generate/components/modals/LOOPDrawer.svelte";
 
   const DEMO_MIN_LENGTH = 8;
   const DEMO_MAX_LENGTH = 16;
@@ -264,10 +264,10 @@
     showSequence();
 
     try {
-      let generationOrchestrator: (typeof import("$lib/shared/create/services/generation-orchestrator"))["generationOrchestrator"];
+      let generationOrchestrator: (typeof import("#lib/shared/create/services/generation-orchestrator.js"))["generationOrchestrator"];
       try {
         ({ generationOrchestrator } =
-          await import("$lib/shared/create/services/generation-orchestrator"));
+          await import("#lib/shared/create/services/generation-orchestrator.js"));
       } catch (error) {
         if (isCurrentRun())
           generationError = "The generator did not load. Try again.";
@@ -574,7 +574,7 @@
                       {#key current.id}
                         <LazyMount
                           loader={() =>
-                            import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
+                            import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
                           active={true}
                           props={{
                             sequence: current,
@@ -606,7 +606,7 @@
                     >
                       <LazyMount
                         loader={() =>
-                          import("$lib/shared/timeline/StepStrip.svelte")}
+                          import("#lib/shared/timeline/StepStrip.svelte")}
                         active={true}
                         props={{
                           sequence: current,
@@ -863,7 +863,6 @@
       var(--theme-card-bg, rgba(12, 12, 20, 0.8)) 88%,
       transparent
     );
-    box-shadow: 0 18px 48px var(--theme-shadow, rgba(0, 0, 0, 0.24));
   }
 
   .sequence-heading {

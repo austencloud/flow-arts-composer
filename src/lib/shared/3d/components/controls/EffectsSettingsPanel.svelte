@@ -16,40 +16,40 @@
    * Motion is a scene-level modifier in every scope.
    */
 
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { getScene3DRenderContext } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
-  import { createScene3DRenderState } from "$lib/shared/3d/scene-features/state/scene-3d-render-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { getScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
+  import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
   import {
     EFFECTS,
     getRegistration,
-  } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-  import EffectPresetsSection from "$lib/shared/animation-engine/components/effects-panel/EffectPresetsSection.svelte";
-  import EffectSelector from "$lib/shared/animation-engine/components/effects-panel/EffectSelector.svelte";
-  import EffectPresetThumbnail from "$lib/shared/animation-engine/components/effects-panel/EffectPresetThumbnail.svelte";
-  import { createEffectLookPreview } from "$lib/shared/animation-engine/components/effects-panel/effect-look-preview";
-  import type { EffectPreset } from "$lib/shared/animation-engine/components/effects-panel/presets/types";
+  } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+  import EffectPresetsSection from "#lib/shared/animation-engine/components/effects-panel/EffectPresetsSection.svelte";
+  import EffectSelector from "#lib/shared/animation-engine/components/effects-panel/EffectSelector.svelte";
+  import EffectPresetThumbnail from "#lib/shared/animation-engine/components/effects-panel/EffectPresetThumbnail.svelte";
+  import { createEffectLookPreview } from "#lib/shared/animation-engine/components/effects-panel/effect-look-preview.js";
+  import type { EffectPreset } from "#lib/shared/animation-engine/components/effects-panel/presets/types.js";
   import {
     fitEffectCatalog,
     fitEffectRoster,
-  } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
+  } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
   import {
     matchPresetId,
     pickedPresetId,
-  } from "$lib/shared/animation-engine/components/effects-panel/presets/match-preset";
-  import { isEffectId } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import EffectControlStack from "$lib/shared/effects/components/EffectControlStack.svelte";
-  import { advancedControls } from "$lib/shared/effects/domain/effect-control-manifest";
-  import type { EffectId } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import type { CharacterInstanceState } from "$lib/shared/3d/state/character-instance-state.svelte";
-  import type { EffectType } from "$lib/shared/effects/domain/effects-config";
-  import { createEffectControlOverrides } from "$lib/shared/effects/effect-control-fields";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  } from "#lib/shared/animation-engine/components/effects-panel/presets/match-preset.js";
+  import { isEffectId } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import EffectControlStack from "#lib/shared/effects/components/EffectControlStack.svelte";
+  import { advancedControls } from "#lib/shared/effects/domain/effect-control-manifest.js";
+  import type { EffectId } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import type { CharacterInstanceState } from "#lib/shared/3d/state/character-instance-state.svelte.js";
+  import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
+  import { createEffectControlOverrides } from "#lib/shared/effects/effect-control-fields.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
   import { onDestroy } from "svelte";
 
   interface Props {

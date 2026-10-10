@@ -13,15 +13,15 @@
   Domain: Export Panel - Single Media - Static Image Format
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
-  import { getSequenceRenderer } from "$lib/shared/render/get-sequence-renderer";
-  import type { SequenceRenderer } from "$lib/shared/render/services/sequence-renderer";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import { getSequenceRenderer } from "#lib/shared/render/get-sequence-renderer.js";
+  import type { SequenceRenderer } from "#lib/shared/render/services/sequence-renderer.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { captureActivePropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
   import { onMount } from "svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   const hubState = getExportPanelState();
   const imageSettings = getImageCompositionManager();
@@ -273,7 +273,6 @@
     max-height: 100%;
     object-fit: contain;
     border-radius: 4px;
-    box-shadow: 0 4px 16px var(--theme-shadow);
   }
 
   .empty-state,

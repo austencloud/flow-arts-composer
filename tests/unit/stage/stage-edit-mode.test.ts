@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createStageEditMode } from "$lib/features/stage/state/stage-edit-mode.svelte";
+import { createStageEditMode } from "#lib/features/stage/state/stage-edit-mode.svelte.js";
 
 describe("Stage selection", () => {
   it("keeps exactly one explicit target kind", () => {

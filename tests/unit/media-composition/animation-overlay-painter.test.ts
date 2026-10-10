@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
-import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
-import type { PaintFrame } from "$lib/shared/media-composition/services/post-studio-layer-painter";
+import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
+import type { PaintFrame } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
 import {
   createAnimationOverlayPainter,
   registerAnimationOverlayPainterFactory,
-} from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
+} from "#lib/shared/media-composition/services/animation-overlay-painter-registry.js";
 import {
   PostAnimationOverlayPainter,
   resolveOverlayStep,
-} from "$lib/features/compose/services/post-animation-overlay-painter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/features/compose/services/post-animation-overlay-painter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 // Same beat pattern sequence-frame.test.ts uses for DCK: a 2-beat move in an
 // otherwise 1-beat-per-move, 8-move pass.

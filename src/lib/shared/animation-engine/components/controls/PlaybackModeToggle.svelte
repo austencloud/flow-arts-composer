@@ -6,8 +6,8 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     playbackMode = "continuous",

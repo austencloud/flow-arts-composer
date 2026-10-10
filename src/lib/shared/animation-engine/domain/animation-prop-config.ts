@@ -1,4 +1,4 @@
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export interface AnimationPropConfig {
   leftPropType: PropType;

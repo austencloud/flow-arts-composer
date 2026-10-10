@@ -22,22 +22,22 @@ Signed out, a library has nowhere to live, so the tab explains itself
 instead of showing an empty shell.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, type Component } from "svelte";
-  import { dev } from "$app/environment";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import { followedCollectionsState } from "$lib/features/library/state/followed-collections-state.svelte";
-  import { getBrowseNavigationContext } from "$lib/shared/browse/context/browse-navigation-context";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import { PLAYGROUND_TABS } from "$lib/shared/navigation/config/tab-definitions";
-  import { tunnelCollectionState } from "$lib/features/tunnel-collection/state/tunnel-collection-state.svelte";
-  import { scene3dCollectionState } from "$lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte";
-  import { mandalaCollectionState } from "$lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte";
-  import { filmCollectionState } from "$lib/features/film-collection/state/film-collection-state.svelte";
+  import { dev } from "$app/env";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { followedCollectionsState } from "#lib/features/library/state/followed-collections-state.svelte.js";
+  import { getBrowseNavigationContext } from "#lib/shared/browse/context/browse-navigation-context.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+  import { PLAYGROUND_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
+  import { tunnelCollectionState } from "#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js";
+  import { scene3dCollectionState } from "#lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte.js";
+  import { mandalaCollectionState } from "#lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte.js";
+  import { filmCollectionState } from "#lib/features/film-collection/state/film-collection-state.svelte.js";
   import CollectionCard from "./CollectionCard.svelte";
   import CollectionAddTile from "./CollectionAddTile.svelte";
   import CollectionDetailView from "./CollectionDetailView.svelte";
@@ -48,20 +48,20 @@ instead of showing an empty shell.
     FOUNDING_SMART_COLLECTIONS,
     toSyntheticCollection,
     isFoundingId,
-  } from "$lib/features/browse/collections/config/founding-collections";
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import { getGalleryPrefetcher } from "$lib/features/browse/shared/get-gallery-prefetcher";
-  import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  } from "#lib/features/browse/collections/config/founding-collections.js";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { getGalleryPrefetcher } from "#lib/features/browse/shared/get-gallery-prefetcher.js";
+  import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { getSharedCollectionsContext } from "../context/shared-collections-context";
-  import UserVideoLibraryView from "$lib/shared/video-collaboration/components/UserVideoLibraryView.svelte";
+  import UserVideoLibraryView from "#lib/shared/video-collaboration/components/UserVideoLibraryView.svelte";
   import WorkShelfRail, { type WorkShelfId } from "./WorkShelfRail.svelte";
   import {
     trackBrowseCollectionOpened,
     trackBrowseVisualTypeOpened,
     type BrowseCollectionEntry,
     type BrowseVisualType,
-  } from "$lib/shared/analytics/browse-events";
+  } from "#lib/shared/analytics/browse-events.js";
 
   const signedIn = $derived(authState.isFullAccount);
   const hasLibrarySession = $derived(!!authState.effectiveUserId);
@@ -379,22 +379,22 @@ instead of showing an empty shell.
     art_tunnels: {
       label: "Tunnels",
       load: () =>
-        import("$lib/features/tunnel-collection/TunnelCollectionModule.svelte"),
+        import("#lib/features/tunnel-collection/TunnelCollectionModule.svelte"),
     },
     art_scenes: {
       label: "3D Scenes",
       load: () =>
-        import("$lib/features/scene-3d-collection/Scene3DCollectionModule.svelte"),
+        import("#lib/features/scene-3d-collection/Scene3DCollectionModule.svelte"),
     },
     art_mandala: {
       label: "Mandalas",
-      load: () => import("$lib/features/mandala/MandalaModule.svelte"),
+      load: () => import("#lib/features/mandala/MandalaModule.svelte"),
     },
     art_films: {
       label: "Films",
       adminOnly: true,
       load: () =>
-        import("$lib/features/film-collection/FilmCollectionGallery.svelte"),
+        import("#lib/features/film-collection/FilmCollectionGallery.svelte"),
     },
   };
 

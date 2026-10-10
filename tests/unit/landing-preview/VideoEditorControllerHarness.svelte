@@ -3,7 +3,7 @@
     createVideoEditorController,
     type VideoEditorController,
     type VideoEditorControllerOptions,
-  } from "$lib/features/landing-preview/state/video-editor-controller.svelte";
+  } from "#lib/features/landing-preview/state/video-editor-controller.svelte.js";
 
   interface Props {
     options: VideoEditorControllerOptions;

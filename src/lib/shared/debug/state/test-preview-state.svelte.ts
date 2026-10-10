@@ -3,7 +3,7 @@
  * Read-only preview of another user's notifications (dev/debug only).
  * Uses direct Firestore queries; never marks notifications as read.
  */
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import {
   collection,
   getDocs,
@@ -12,8 +12,8 @@ import {
   limit,
   where,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { PUBLIC_PROFILE_VERSION } from "$lib/shared/community/domain/models/public-profile-contract";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
 
 type PreviewNotification = {
   id: string;

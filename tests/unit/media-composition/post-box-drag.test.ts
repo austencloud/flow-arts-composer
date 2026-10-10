@@ -11,13 +11,13 @@ import {
   turnBox,
   turnHandleSide,
   typeBox,
-} from "$lib/shared/share/components/post-studio/editor/post-box-drag";
+} from "#lib/shared/share/components/post-studio/editor/post-box-drag.js";
 import {
   POST_MIN_BOX_SIZE,
   PostBoxSchema,
   type PostBox,
-} from "$lib/shared/media-composition/domain/post-project";
-import { postSafeArea } from "$lib/shared/media-composition/domain/post-canvas";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { postSafeArea } from "#lib/shared/media-composition/domain/post-canvas.js";
 
 const box = { x: 0.2, y: 0.3, width: 0.4, height: 0.2 };
 

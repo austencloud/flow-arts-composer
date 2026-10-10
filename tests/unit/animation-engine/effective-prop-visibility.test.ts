@@ -3,9 +3,9 @@ import {
   resolveEffectivePropsVisibility,
   setEffectivePropsVisibility,
   toggleEffectivePropsVisibility,
-} from "$lib/shared/animation-engine/state/effective-prop-visibility";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { createAnimationSettingsState } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+} from "#lib/shared/animation-engine/state/effective-prop-visibility.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { createAnimationSettingsState } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
 
 function createState() {
   return {

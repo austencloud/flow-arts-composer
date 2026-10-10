@@ -24,7 +24,7 @@ const h = vi.hoisted(() => ({
   ),
 }));
 
-vi.mock("$lib/shared/desktop/is-desktop", () => ({
+vi.mock("#lib/shared/desktop/is-desktop.js", () => ({
   isDesktop: () => h.desktop,
 }));
 vi.mock("@tauri-apps/api/core", () => ({ convertFileSrc: h.convertFileSrc }));
@@ -55,7 +55,7 @@ let warn: ReturnType<typeof vi.spyOn>;
 let log: ReturnType<typeof vi.spyOn>;
 
 async function loadRuntime() {
-  return await import("$lib/shared/desktop/desktop-asset-runtime");
+  return await import("#lib/shared/desktop/desktop-asset-runtime.js");
 }
 
 const STALLED = Symbol("never settled");

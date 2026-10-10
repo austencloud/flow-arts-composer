@@ -4,10 +4,10 @@ vi.mock("$app/navigation", () => ({
   pushState: vi.fn(),
   replaceState: vi.fn(),
 }));
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     loading: false,
     isAuthenticated: false,
@@ -18,7 +18,7 @@ import {
   closeSequenceOverlay,
   getSequenceOverlayState,
   openSequenceOverlay,
-} from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
+} from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
 
 describe("sequence viewer Play intent", () => {
   const overlay = getSequenceOverlayState();

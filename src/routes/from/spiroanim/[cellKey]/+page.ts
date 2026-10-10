@@ -12,9 +12,9 @@ import type { PageLoad } from "./$types";
 import type {
   DeepLinkMap,
   ReturnLinkSources,
-} from "$lib/features/spiroanim-bridge/domain/return-links";
-import type { TranscriptionEntry } from "$lib/features/spiroanim-bridge/services/resolve-cell";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/features/spiroanim-bridge/domain/return-links.js";
+import type { TranscriptionEntry } from "#lib/features/spiroanim-bridge/services/resolve-cell.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export const prerender = false;
 
@@ -47,9 +47,9 @@ export const load: PageLoad = async ({ params }): Promise<BridgePageData> => {
     // this route, not to the app's main chunk.
     const [cellKeyModule, returnLinksModule, resolverModule, transcription, vtgQtr, eightStep] =
       await Promise.all([
-        import("$lib/features/spiroanim-bridge/domain/cell-key"),
-        import("$lib/features/spiroanim-bridge/domain/return-links"),
-        import("$lib/features/spiroanim-bridge/services/resolve-cell"),
+        import("#lib/features/spiroanim-bridge/domain/cell-key.js"),
+        import("#lib/features/spiroanim-bridge/domain/return-links.js"),
+        import("#lib/features/spiroanim-bridge/services/resolve-cell.js"),
         import("../../../../../docs/research/spiroanim/tka-transcription.json"),
         import("../../../../../docs/research/spiroanim/vtg-qtr-deep-links.json"),
         import("../../../../../docs/research/spiroanim/eightstep-deep-links.json"),

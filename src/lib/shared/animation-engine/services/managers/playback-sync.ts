@@ -36,10 +36,10 @@ import type {
   AnimationEngineProps,
   AnimationEngineCallbacks,
 } from "../animation-engine.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { TrailSettings } from "../../domain/types/trail-types";
 import { DEFAULT_CANVAS_SIZE } from "../canvas-resizer.svelte";
 import {
@@ -49,8 +49,8 @@ import {
 import {
   GRID_JOIN_TWEEN_MS,
   gridJoinHandOffsets,
-} from "$lib/shared/grid-join/grid-join-tween";
-import { motionDuration } from "$lib/shared/transitions/motion";
+} from "#lib/shared/grid-join/grid-join-tween.js";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
 
 /** Default props sentinel used when lastPropsRef is null */
 const DEFAULT_ENGINE_PROPS: AnimationEngineProps = {
@@ -69,7 +69,7 @@ export interface PlaybackSyncDeps {
   setCanvasSize: (s: number) => void;
   buildFrameDeps: () => {
     effectsConfigState:
-      | import("$lib/shared/effects/state/effects-config-state.svelte").EffectsConfigState
+      | import("#lib/shared/effects/state/effects-config-state.svelte.js").EffectsConfigState
       | null;
     effectRendererManager: import("../effect-renderer-manager").EffectRendererManager;
     getVM: () => AnimationVisibilityStateManager;
@@ -93,6 +93,9 @@ export class PlaybackSync {
   // sequence at the top of update(), before that block compares anything.
   private lastTrailSeqStartPlacement: string | null = null;
   private lastTrailSeqWasCircular = false;
+  // The player drops its sequence before every load, so whatever comes next
+  // is a new run even when it is the same sequence again.
+  private sequenceUnloaded = false;
 
   private previewDarkModeActive: boolean = false;
   private _prevTrailsActive: boolean = true;
@@ -124,6 +127,20 @@ export class PlaybackSync {
   get lastPropsRef(): AnimationEngineProps | null {
     return this._lastPropsRef;
   }
+
+  /**
+   * Frame params from the newest props. Hand this to every redraw request
+   * instead of a closure over one update's props: the render loop keeps the
+   * last callback it was given, so a request that resolves after a wait (a
+   * grid or prop texture load) would otherwise draw a frame from a pose that
+   * is already gone. On a player that loads another sequence, that frame is a
+   * jump back to the previous sequence, and the trail records the jump.
+   */
+  private readonly latestFrameParams = () =>
+    this.deps.frameSystem.buildFrameParams(
+      this._lastPropsRef ?? DEFAULT_ENGINE_PROPS,
+      this.deps.buildFrameDeps()
+    );
 
   get prevSequenceDataForDiag(): SequenceData | null {
     return this.prevSequenceData;
@@ -174,7 +191,6 @@ export class PlaybackSync {
       frameSystem,
       effectSystem,
       getCallbacks,
-      buildFrameDeps,
     } = this.deps;
 
     // Keep simple reference for initial render (no copy, just reference)
@@ -195,9 +211,7 @@ export class PlaybackSync {
     if (props.mandalaStrokeWidthOverride !== this._prevMandalaStrokeWidth) {
       this._prevMandalaStrokeWidth = props.mandalaStrokeWidthOverride;
       if (this.state.isInitialized) {
-        lifecycleManager.renderLoop?.triggerRender(() =>
-          frameSystem.buildFrameParams(props, buildFrameDeps())
-        );
+        lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
       }
     }
 
@@ -230,9 +244,7 @@ export class PlaybackSync {
     }
 
     // Handle prop type changes (delegated to PropSystem)
-    const getFrameParamsFn = () =>
-      frameSystem.buildFrameParams(props, buildFrameDeps());
-    propSystem.handlePropTypeChanges(props, getFrameParamsFn);
+    propSystem.handlePropTypeChanges(props, this.latestFrameParams);
 
     // Handle trail settings changes - enforce unilateral constraint before syncing
     if (props.externalTrailSettings !== undefined) {
@@ -277,9 +289,13 @@ export class PlaybackSync {
       props.sequenceData ?? null
     );
 
+    if (!props.sequenceData) this.sequenceUnloaded = true;
+
     // Detect sequence content changes and re-initialize orchestrator if needed
     if (props.sequenceData && lifecycleManager.orchestrator) {
       const newHash = frameSystem.getSequenceContentHash(props.sequenceData);
+      const newRun = this.sequenceUnloaded;
+      this.sequenceUnloaded = false;
       if (newHash !== frameSystem.lastSequenceContentHash) {
         // Seamless handoff: the outgoing sequence was a CIRCULAR loop (end
         // pose = start pose) and the incoming one starts at that same grid
@@ -312,6 +328,7 @@ export class PlaybackSync {
         // trail flows across the boundary.
         if (!seamlessHandoff) {
           effectSystem.trailOverlay?.clearBuffers();
+          if (newRun) lifecycleManager.renderLoop?.resetRunHistory();
         }
         effectSystem.fireTipTracker?.reset();
         effectSystem.fireRenderer?.clearSimulation();
@@ -342,6 +359,8 @@ export class PlaybackSync {
               console.error(`[TRANSFORM-DIAG] Precomputation FAILED:`, err);
             });
         }
+      } else if (newRun) {
+        this.clearRunHistory();
       }
     }
 
@@ -388,9 +407,7 @@ export class PlaybackSync {
       lifecycleManager.animationRenderer
         .loadGridTexture(currentGridMode ?? "diamond", currentShowNonRadial)
         .then(() => {
-          lifecycleManager.renderLoop?.triggerRender(() =>
-            frameSystem.buildFrameParams(props, buildFrameDeps())
-          );
+          lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
         });
     }
     this.syncGridJoin();
@@ -404,14 +421,10 @@ export class PlaybackSync {
         lifecycleManager.animationRenderer?.setDarkMode(previewDarkMode);
 
         if (this.state.isInitialized) {
-          lifecycleManager.renderLoop?.triggerRender(() =>
-            frameSystem.buildFrameParams(props, buildFrameDeps())
-          );
+          lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
 
           propSystem.reloadTexturesForDarkMode(() => {
-            lifecycleManager.renderLoop?.triggerRender(() =>
-              frameSystem.buildFrameParams(props, buildFrameDeps())
-            );
+            lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
           });
         }
       }
@@ -442,9 +455,7 @@ export class PlaybackSync {
 
     // Trigger render if initialized
     if (this.state.isInitialized) {
-      lifecycleManager.renderLoop?.triggerRender(() =>
-        frameSystem.buildFrameParams(props, buildFrameDeps())
-      );
+      lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
     }
   }
 
@@ -688,6 +699,20 @@ export class PlaybackSync {
       .then(rerender);
   }
 
+  /**
+   * The same sequence loaded again, as when Play starts it over. Its content
+   * hash is unchanged, so the block in update() keeps the effects' memory of
+   * the last run. That memory froze while the player was hidden, and the new
+   * run would open on the old run's trail, Ghost and flames.
+   */
+  private clearRunHistory(): void {
+    const { lifecycleManager, effectSystem } = this.deps;
+    this.clearGridJoinStreaks();
+    effectSystem.fireRenderer?.clearSimulation();
+    effectSystem.charcoalRenderer?.clearSimulation();
+    lifecycleManager.renderLoop?.resetRunHistory();
+  }
+
   /** Trails and the flame tip tracker, which would join old places to new. */
   private clearGridJoinStreaks(): void {
     const { lifecycleManager, effectSystem } = this.deps;
@@ -790,9 +815,7 @@ export class PlaybackSync {
     });
 
     lifecycleManager.trailSettingsSync?.initialize(trailCapturer, () =>
-      lifecycleManager.renderLoop?.triggerRender(() =>
-        frameSystem.buildFrameParams(props, this.deps.buildFrameDeps())
-      )
+      lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams)
     );
 
     // CRITICAL: Immediately sync external settings after initializing the sync service

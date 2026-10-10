@@ -9,16 +9,16 @@
  */
 
 import { describe, it, expect, afterEach } from "vitest";
-import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
-import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-import { displayedBeatNumber } from "$lib/shared/animation-engine/services/step-calculator";
-import { createPlaceholderMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
+import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+import { displayedBeatNumber } from "#lib/shared/animation-engine/services/step-calculator.js";
+import { createPlaceholderMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import {
   canonicalFreeformSequence,
   canonicalSeamlessSequence,

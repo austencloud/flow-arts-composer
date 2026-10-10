@@ -1,17 +1,20 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
-import { createDefaultPostPlan } from "$lib/shared/media-composition/domain/post-plan";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import { createDefaultPostPlan } from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   lastSelectedPostSequenceId,
   listPostProjects,
   rememberPostSequence,
   resolvePostSequence,
-} from "$lib/features/post/services/post-workspace-projects";
+} from "#lib/features/post/services/post-workspace-projects.js";
 
 const { loadByIdentifier } = vi.hoisted(() => ({ loadByIdentifier: vi.fn() }));
-vi.mock("$lib/shared/sequence-viewer/services/sequence-data-provider", () => ({
-  loadByIdentifier,
-}));
+vi.mock(
+  "#lib/shared/sequence-viewer/services/sequence-data-provider.js",
+  () => ({
+    loadByIdentifier,
+  })
+);
 
 afterEach(() => {
   vi.useRealTimers();

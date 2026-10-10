@@ -2,7 +2,7 @@
  * Co-exported types from retired interface contracts.
  */
 
-import type { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type { TransformationIntervals } from "../domain/models/label-models";
 
 export interface AxisAlternatingResult {

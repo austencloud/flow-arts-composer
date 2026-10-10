@@ -6,9 +6,9 @@ Two phases:
 2. Point Identification: Click the correct point (8 questions)
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onDestroy } from "svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { GRID_DIRECTIONS } from "../../domain/constants/grid-constants";
   import QuizProgressBar from "./grid-quiz/QuizProgressBar.svelte";
   import ModeQuizSection from "./grid-quiz/ModeQuizSection.svelte";

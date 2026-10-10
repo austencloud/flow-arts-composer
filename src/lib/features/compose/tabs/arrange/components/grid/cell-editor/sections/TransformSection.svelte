@@ -5,9 +5,9 @@
   No Apply To selector, no rotation strip, no hotkey badges.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { CellEditorPanelState } from "../state/cell-editor-panel-state.svelte";
-  import type { TransformType } from "$lib/shared/animation-engine/domain/compose-types";
+  import type { TransformType } from "#lib/shared/animation-engine/domain/compose-types.js";
 
   let {
     panelState,

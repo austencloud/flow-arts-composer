@@ -39,27 +39,27 @@ const ROUTE_FILES = [
 // Started on every first visit without a click: analytics once the landing
 // page has drawn, then the backdrop, the hero and the per-visit demo.
 const FIRST_VISIT_IMPORTS: Array<[owner: string, specifier: string]> = [
-  ["src/routes/+layout.svelte", "$lib/shared/analytics/services/posthog"],
-  ["src/routes/+layout.svelte", "$lib/shared/analytics/web-vitals"],
+  ["src/routes/+layout.svelte", "#lib/shared/analytics/services/posthog.js"],
+  ["src/routes/+layout.svelte", "#lib/shared/analytics/web-vitals.js"],
   [
     "src/lib/shared/landing/components/MarketingChrome.svelte",
-    "$lib/shared/background/shared/components/BackgroundHost.svelte",
+    "#lib/shared/background/shared/components/BackgroundHost.svelte",
   ],
   [
     "src/lib/shared/landing/components/MarketingChrome.svelte",
-    "$lib/shared/settings/utils/background-theme-calculator",
+    "#lib/shared/settings/utils/background-theme-calculator.js",
   ],
   [
     "src/lib/shared/landing/data/hero-act.svelte.ts",
-    "$lib/shared/landing/data/shape-matrix-hero-pool",
+    "#lib/shared/landing/data/shape-matrix-hero-pool.js",
   ],
   [
     "src/lib/shared/landing/data/hero-act.svelte.ts",
-    "$lib/features/choreo-card/services/deck-variation",
+    "#lib/features/choreo-card/services/deck-variation.js",
   ],
   [
     "src/lib/shared/landing/data/per-visit-demo-core.ts",
-    "$lib/shared/create/services/generation-orchestrator",
+    "#lib/shared/create/services/generation-orchestrator.js",
   ],
 ];
 

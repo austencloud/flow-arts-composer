@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { FrameBuilder } from "$lib/shared/animation-engine/services/frame-builder";
+import { FrameBuilder } from "#lib/shared/animation-engine/services/frame-builder.js";
 
 describe("FrameBuilder", () => {
   it("calculateBeatNumber returns 0 when no sequenceData", () => {

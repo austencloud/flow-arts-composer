@@ -1,22 +1,22 @@
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   HandSide,
   MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createMotionData,
   createPlaceholderMotion,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 const { NORTH: N, EAST: E, WEST: W } = GridLocation;
 
@@ -111,4 +111,4 @@ export {
   HAND_PATH_REFERENCE_CARDS as TIMING_DIRECTION_MODES,
   type HandPathReferenceCard as TimingDirectionMode,
   type HandPathReferenceCardId as TimingDirectionModeId,
-} from "$lib/features/choreo-card/domain/hand-path-reference-cards";
+} from "#lib/features/choreo-card/domain/hand-path-reference-cards.js";

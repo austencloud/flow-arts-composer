@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const mocks = vi.hoisted(() => ({
   ensureFullAccountForExport: vi.fn(),
@@ -16,19 +16,19 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("$lib/shared/auth/domain/export-gate", () => ({
+vi.mock("#lib/shared/auth/domain/export-gate.js", () => ({
   ensureFullAccountForExport: mocks.ensureFullAccountForExport,
 }));
 
 vi.mock(
-  "$lib/shared/animation-panel/state/export-options-state.svelte",
+  "#lib/shared/animation-panel/state/export-options-state.svelte.js",
   () => ({
     getExportOptionsState: () => ({ getVideoOptions: mocks.getVideoOptions }),
   })
 );
 
 vi.mock(
-  "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte",
+  "#lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.js",
   () => ({
     sequenceModalExporter: {
       get state() {
@@ -42,7 +42,7 @@ vi.mock(
   })
 );
 
-import { createSceneVideoExport } from "$lib/features/stage/scene/services/create-scene-video-export.svelte";
+import { createSceneVideoExport } from "#lib/features/stage/scene/services/create-scene-video-export.svelte.js";
 
 describe("Scene Studio video export cancellation", () => {
   beforeEach(() => {

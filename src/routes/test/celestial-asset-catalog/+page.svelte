@@ -2,7 +2,7 @@
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping, PCFSoftShadowMap, WebGLRenderer } from "three";
 
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   import CloudbreakAssetCatalogScene from "./CloudbreakAssetCatalogScene.svelte";
   import {

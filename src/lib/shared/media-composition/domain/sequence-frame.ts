@@ -1,4 +1,4 @@
-import { createBeatClock } from "$lib/shared/media-composition/domain/tap-fit";
+import { createBeatClock } from "#lib/shared/media-composition/domain/tap-fit.js";
 
 /**
  * Which move is showing, worked out once per frame so the performer, the

@@ -7,30 +7,30 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { getThumbnailRenderOrchestrator } from "$lib/shared/browse/get-thumbnail-render-orchestrator";
-  import type { ThumbnailRenderOrchestrator } from "$lib/shared/browse/services/thumbnail-render-orchestrator";
+  import { getThumbnailRenderOrchestrator } from "#lib/shared/browse/get-thumbnail-render-orchestrator.js";
+  import type { ThumbnailRenderOrchestrator } from "#lib/shared/browse/services/thumbnail-render-orchestrator.js";
   import ScanActivityTab from "./scan-activity/ScanActivityTab.svelte";
   import DeckReleaserTab from "./deck-releaser/DeckReleaserTab.svelte";
   import CodexPrintPage from "./CodexPrintPage.svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { CHOREO_CARD_SCAN_ATLAS_TAB_ID } from "$lib/shared/navigation/config/tab-definitions";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { CHOREO_CARD_SCAN_ATLAS_TAB_ID } from "#lib/shared/navigation/config/tab-definitions.js";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuState,
     ContextMenuEntry,
-  } from "$lib/shared/components/context-menu/context-menu-types";
-  import { buildCardMenuSection } from "$lib/shared/choreo-card/services/card-menu-section";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import { buildCardMenuSection } from "#lib/shared/choreo-card/services/card-menu-section.js";
   import {
     openSendSequenceSheet,
     buildSequenceSharePayload,
-  } from "$lib/shared/inbox/state/send-sequence-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { createScanActivityState } from "../state/scan-activity-state.svelte";
   import { watchScanActivityConnection } from "../state/scan-activity-connection.svelte";
   import { getScanActivityWatcher } from "../services/getScanActivityWatcher";
   import { setScanActivityContext } from "../context/scan-activity-context";
-  import { decodeSequenceFromQR } from "$lib/shared/navigation/services/sequence-encoder";
+  import { decodeSequenceFromQR } from "#lib/shared/navigation/services/sequence-encoder.js";
   import { createScanCellWarmState } from "../state/scan-cell-warm-state.svelte";
 
   const scanActivity = createScanActivityState({

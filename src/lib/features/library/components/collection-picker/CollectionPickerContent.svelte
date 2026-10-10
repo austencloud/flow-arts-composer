@@ -20,11 +20,11 @@ Two modes:
              yet, e.g. the save panel); the parent applies membership on save.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 
   let {
     mode = "live",

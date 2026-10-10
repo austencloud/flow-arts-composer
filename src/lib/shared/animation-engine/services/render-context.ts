@@ -1,11 +1,11 @@
 import type { RenderContext } from "./render-context-registry";
-import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
+import type { IAnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
 import type { EffectRendererManager } from "./effect-renderer-manager";
 import type { TrailCapturer } from "./trail-capturer";
-import type { IAnimationRenderLoop } from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
+import type { IAnimationRenderLoop } from "#lib/shared/animation-engine/services/IAnimationRenderLoop.js";
 import type { CanvasResizer } from "./canvas-resizer.svelte";
-import type { IAnimationPrecomputer } from "$lib/shared/animation-engine/services/IAnimationPrecomputer";
-import type { AnimationEngineProps } from "$lib/shared/animation-engine/services/animation-engine.svelte";
+import type { IAnimationPrecomputer } from "#lib/shared/animation-engine/services/IAnimationPrecomputer.js";
+import type { AnimationEngineProps } from "#lib/shared/animation-engine/services/animation-engine.svelte.js";
 
 export interface RenderContextDeps {
   id: string;

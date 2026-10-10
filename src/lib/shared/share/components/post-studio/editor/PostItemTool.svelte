@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     POST_BOX,
     POST_CANVAS_RATIOS,
@@ -15,8 +15,10 @@
     POST_MIN_ITEM_SECONDS,
     POST_MIN_SPEED,
     POST_MIN_ZOOM,
+    POST_QR_URL_RULE,
     POST_TIME_EPSILON,
     findItem,
+    isPostCardQrUrl,
     itemEnd,
     mainItemAt,
     textBox,
@@ -27,8 +29,8 @@
     type PostItem,
     type PostMovesMode,
     type PostTextSize,
-  } from "$lib/shared/media-composition/domain/post-project";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+  } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
   import {
     setItemFill,
     setTrackFlag,
@@ -43,12 +45,12 @@
     updateItem,
     updateItemAt,
     type PostItemPatch,
-  } from "$lib/shared/media-composition/domain/post-project-edits";
+  } from "#lib/shared/media-composition/domain/post-project-edits.js";
   import {
     applyLook,
     lookOf,
     type PostLook,
-  } from "$lib/shared/media-composition/domain/post-project-looks";
+  } from "#lib/shared/media-composition/domain/post-project-looks.js";
   import {
     boxAt,
     channelValueAt,
@@ -58,24 +60,28 @@
     isAnimated,
     opacityAt,
     type PostEasingPresetId,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
   import {
     POST_DEFAULT_EDGE_BORDER,
     POST_EDGE_COLOR_HEX,
     edgeOf,
-  } from "$lib/shared/media-composition/domain/post-clip-edge";
+  } from "#lib/shared/media-composition/domain/post-clip-edge.js";
   import type {
     PostEdit,
     PostEditorState,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
-  import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import { formatTakeClock, parseClock } from "../builder/post-builder-format";
+  } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import TypeableValue from "#lib/shared/ui/components/TypeableValue.svelte";
+  import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
+  import {
+    formatPostSpeed,
+    formatTakeClock,
+    parseClock,
+  } from "../builder/post-builder-format";
   import { easingPresetLabel, itemDisplayLabel } from "./post-editor-labels";
-  import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
+  import ChipPopoverOption from "#lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "./PostCurveEditor.svelte";
   import { boxTurn, typeBox, type BoxField } from "./post-box-drag";
   import { keepsShape, keptBox, shownBox } from "./post-item-rect";
@@ -91,25 +97,25 @@
   import {
     postOutputSize,
     ratioValue,
-  } from "$lib/shared/media-composition/domain/post-canvas";
-  import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
+  } from "#lib/shared/media-composition/domain/post-canvas.js";
+  import type { StaffTipAnalysis } from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
   import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
   import PostNativeTextTool from "./PostNativeTextTool.svelte";
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
   import { sourceCropAtRatio, sourceFillBox } from "./post-source-crop";
   import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
-  import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
+  import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
   import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
   import PostSequenceActionsTool from "./PostSequenceActionsTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
   import {
     TUNNEL_BACKDROP_MAX_ZOOM,
     type TunnelBackdropFrame,
-  } from "$lib/shared/media-composition/domain/tunnel-hook";
+  } from "#lib/shared/media-composition/domain/tunnel-hook.js";
   import {
     autoGradeVideo,
     type PostVideoColorGrade,
-  } from "$lib/shared/media-composition/domain/post-video-color-grade";
+  } from "#lib/shared/media-composition/domain/post-video-color-grade.js";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -140,6 +146,8 @@
     sequenceBusy?: boolean;
     /** The animation's opening tunnel is what is selected, with a look of its own. */
     tunnel?: boolean;
+    /** A feature video's editor: a card can carry the link its QR shows. */
+    featureMode?: boolean;
   }
 
   let {
@@ -157,7 +165,9 @@
     stepCount = 0,
     sequenceBusy = false,
     tunnel = false,
+    featureMode = false,
   }: Props = $props();
+  const uid = $props.id();
   let grading = $state(false);
   let gradeError = $state("");
 
@@ -203,6 +213,43 @@
   function patchItem(patch: PostItemPatch): void {
     if (locked) return;
     editor.edit((project, ctx) => updateItem(project, item.id, patch, ctx));
+  }
+
+  /** The Scan link field on screen; another card or tool makes a new one. */
+  let cardLinkField = $state<HTMLInputElement | null>(null);
+  /** The card the field belongs to and the saved link it shows. */
+  const cardLinkShown = $derived(
+    item.kind === "card" ? `${item.id} ${item.qrUrl ?? ""}` : ""
+  );
+  /**
+   * True while the field holds a typed link the rule refused; the field's
+   * handler sets it. A new field, or a saved link put in this one by an undo
+   * or a script's edit, makes it false again.
+   */
+  let cardLinkRefused = $derived.by(() => {
+    void cardLinkField;
+    void cardLinkShown;
+    return false;
+  });
+
+  function changeCardLink(value: string): void {
+    if (item.kind !== "card") return;
+    const link = value.trim();
+    if (!link) {
+      cardLinkRefused = false;
+      patchItem({ qrUrl: null });
+      return;
+    }
+    if (!isPostCardQrUrl(link)) {
+      cardLinkRefused = true;
+      return;
+    }
+    cardLinkRefused = false;
+    // The link shows only in the QR cell, so setting one picks that cell.
+    patchItem({
+      qrUrl: link,
+      cardAppearance: { ...item.cardAppearance, infoCellChoice: "qr" },
+    });
   }
 
   async function autoAdjustColor(): Promise<void> {
@@ -807,8 +854,7 @@
       POST_MAX_SPEED,
       Math.max(POST_MIN_SPEED, Math.round(2 ** stop * 100) / 100)
     );
-  const formatSpeed = (stop: number) =>
-    `${Number(speedFromStop(stop).toFixed(2))}×`;
+  const formatSpeed = (stop: number) => formatPostSpeed(speedFromStop(stop));
 </script>
 
 {#snippet status(text: string, icon: string, action: string, run: () => void)}
@@ -1416,6 +1462,35 @@
       {locked}
       onchange={(value) => patchItem({ cardAppearance: value })}
     />
+    {#if featureMode}
+      <!-- Keyed so text typed for one card never shows on the next. -->
+      {#key item.id}
+        <div class="card-link">
+          <span class="readout-name">Scan link</span>
+          <input
+            class="field"
+            type="url"
+            value={item.qrUrl ?? ""}
+            placeholder="https://tka.run/..."
+            aria-label="Scan link"
+            aria-invalid={cardLinkRefused}
+            aria-describedby="{uid}-link-note"
+            disabled={locked}
+            bind:this={cardLinkField}
+            onchange={(event) => changeCardLink(event.currentTarget.value)}
+          />
+          {#if cardLinkRefused}
+            <p class="link-error" id="{uid}-link-note" role="alert">
+              {POST_QR_URL_RULE}
+            </p>
+          {:else}
+            <p class="hint" id="{uid}-link-note">
+              The card's QR opens this link for anyone who scans it.
+            </p>
+          {/if}
+        </div>
+      {/key}
+    {/if}
   {:else if tool === "appearance" && item.kind === "image"}
     <div class="qr-appearance">
       <strong>QR code</strong>
@@ -1555,7 +1630,8 @@
     min-height: 0;
   }
 
-  .hook-titles {
+  .hook-titles,
+  .card-link {
     display: grid;
     gap: 0.5rem;
     min-width: 0;
@@ -1684,5 +1760,12 @@
 
   .field:disabled {
     opacity: 0.5;
+  }
+
+  .link-error {
+    margin: 0;
+    color: var(--semantic-error, #f87171);
+    font-size: 0.875rem;
+    line-height: 1.4;
   }
 </style>

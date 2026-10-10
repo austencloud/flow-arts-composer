@@ -4,7 +4,7 @@ import {
   resolvePerformerColorPair,
   buildTunnelRenderColors,
   tunnelPerformerPair,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 
 describe("performer colors", () => {
   it("preserves normalized performer settings through JSON persistence", () => {

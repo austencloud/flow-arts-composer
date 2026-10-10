@@ -6,8 +6,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { resolveLoopCopy } from "$lib/features/loop-labeler/services/loop-modal-copy";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { resolveLoopCopy } from "#lib/features/loop-labeler/services/loop-modal-copy.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 describe("resolveLoopCopy", () => {
   it("empty components → freeform copy", () => {

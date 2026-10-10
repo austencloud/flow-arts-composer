@@ -1,15 +1,15 @@
 import { flushSync } from "svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { mirrorSequence } from "$lib/shared/create/services/sequence-transformer";
-import type { PostSequenceTransforms } from "$lib/shared/media-composition/domain/post-sequence-actions";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { mirrorSequence } from "#lib/shared/create/services/sequence-transformer.js";
+import type { PostSequenceTransforms } from "#lib/shared/media-composition/domain/post-sequence-actions.js";
 import { createPostSequenceViewHarness } from "./post-sequence-view-harness.svelte";
 
 function sequence(id: string): SequenceData {

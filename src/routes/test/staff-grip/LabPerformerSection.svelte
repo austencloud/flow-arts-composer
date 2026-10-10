@@ -8,15 +8,15 @@
   arranges them and writes each choice into the URL.
 -->
 <script lang="ts">
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import ScrubbableNumber from "$lib/shared/ui/components/ScrubbableNumber.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PerformerCharacterPicker from "$lib/shared/3d/components/controls/PerformerCharacterPicker.svelte";
-  import ScenePropPicker from "$lib/shared/3d/components/controls/ScenePropPicker.svelte";
-  import { scenePropFixedLengthCm } from "$lib/shared/3d/domain/scene-prop-catalog";
-  import type { CharacterId } from "$lib/shared/3d/domain/character-model";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import ScrubbableNumber from "#lib/shared/ui/components/ScrubbableNumber.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import PerformerCharacterPicker from "#lib/shared/3d/components/controls/PerformerCharacterPicker.svelte";
+  import ScenePropPicker from "#lib/shared/3d/components/controls/ScenePropPicker.svelte";
+  import { scenePropFixedLengthCm } from "#lib/shared/3d/domain/scene-prop-catalog.js";
+  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   import LabSection from "./LabSection.svelte";
   import {

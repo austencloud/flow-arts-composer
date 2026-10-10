@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
+import { SequenceSelection } from "#lib/shared/selection/sequence-selection.svelte.js";
 
 describe("SequenceSelection", () => {
   it("starts with nothing hovered or selected", () => {

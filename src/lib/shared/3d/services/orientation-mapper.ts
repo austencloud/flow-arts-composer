@@ -2,7 +2,7 @@
  * Maps prop orientations to angles relative to center path.
  */
 
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const PI = Math.PI;
 const HALF_PI = PI / 2;

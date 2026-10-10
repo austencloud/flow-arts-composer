@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { flyFade } from "$lib/shared/transitions/motion";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
   import { SCENE_ENVIRONMENTS } from "../../environments/domain/scene-environment";
 
   import { createJellyfishChime } from "../../environments/scenes/ocean/runtime/fauna/jellyfish/jellyfish-chime";

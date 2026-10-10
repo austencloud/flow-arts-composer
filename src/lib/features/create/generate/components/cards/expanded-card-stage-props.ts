@@ -5,7 +5,7 @@
  * hand-rolled duplicates, so a forwarded prop cannot drift out of sync.
  */
 import type { ComponentProps } from "svelte";
-import type { GenerateCardPanelId } from "$lib/shared/create/state/panel-coordination-state.svelte";
+import type { GenerateCardPanelId } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 import type LOOPExpandedOverlay from "./LOOPExpandedOverlay.svelte";
 import type SetupsPanel from "../presets/SetupsPanel.svelte";
 import type TnDPanel from "./TnDPanel.svelte";

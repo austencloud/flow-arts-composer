@@ -1,28 +1,28 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { isTkaWord, simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
-  import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { isTkaWord, simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
+  import PostStudio from "#lib/shared/share/components/post-studio/PostStudio.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     listSyncedPostProjects,
     loadSyncedPostDraft,
     resolveSyncedPostSequence,
     saveSyncedPostDraft,
   } from "./services/post-account-projects";
-  import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { savePostDraft } from "#lib/shared/media-composition/services/post-draft-storage.js";
+  import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     createPostModuleState,
     featureSelectionId,
   } from "./state/post-module-state.svelte";
   import { setPostModuleContext } from "./context/post-module-context";
-  import { canAccessPostStudio } from "$lib/shared/sequence-viewer/services/post-studio-access";
-  import { providePostEditorHeader } from "$lib/shared/share/components/post-studio/editor/post-editor-header.svelte";
+  import { canAccessPostStudio } from "#lib/shared/sequence-viewer/services/post-studio-access.js";
+  import { providePostEditorHeader } from "#lib/shared/share/components/post-studio/editor/post-editor-header.svelte.js";
 
   interface Props {
     visible?: boolean;
@@ -39,12 +39,12 @@
           listFeatures: async () =>
             (
               await import(
-                "$lib/shared/media-composition/services/feature-video-client"
+                "#lib/shared/media-composition/services/feature-video-client.js"
               )
             ).listFeatureVideos(),
           loadFeature: async (slug: string) => {
             const client = await import(
-              "$lib/shared/media-composition/services/feature-video-client"
+              "#lib/shared/media-composition/services/feature-video-client.js"
             );
             return client.createFeatureVideoSync(
               await client.loadFeatureVideo(slug)
@@ -137,7 +137,7 @@
 
   function showProjects(): void {
     state.showProjects();
-    void goto("/post", { replaceState: true });
+    void goto("/post", { replace: true });
   }
 
   /**

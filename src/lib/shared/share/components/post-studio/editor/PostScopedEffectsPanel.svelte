@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import EffectsPanel from "$lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import type { AnimationSettingsState } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { primaryControls } from "$lib/shared/effects/domain/effect-control-manifest";
+  import EffectsPanel from "#lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import type { AnimationSettingsState } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { primaryControls } from "#lib/shared/effects/domain/effect-control-manifest.js";
 
   let {
     effects,

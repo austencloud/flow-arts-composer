@@ -12,14 +12,14 @@
  * Uses the effort easing system from animation canvas settings.
  */
 
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   LOCATION_ANGLES,
   PI,
   TWO_PI,
-} from "$lib/shared/foundation/domain/math-constants";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { applyEffort } from "$lib/shared/effort/domain/effort-easing-unified";
+} from "#lib/shared/foundation/domain/math-constants.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { applyEffort } from "#lib/shared/effort/domain/effort-easing-unified.js";
 
 // 950x950 SVG coordinate space
 const CENTER = 475;

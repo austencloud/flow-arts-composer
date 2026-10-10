@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { createViewerShellInteractionState } from "$lib/shared/sequence-viewer/state/viewer-shell-interaction-state.svelte";
-import { createViewerState } from "$lib/shared/sequence-viewer/state/viewer-state.svelte";
+import { createViewerShellInteractionState } from "#lib/shared/sequence-viewer/state/viewer-shell-interaction-state.svelte.js";
+import { createViewerState } from "#lib/shared/sequence-viewer/state/viewer-state.svelte.js";
 
 type PracticeOrigin = "animation" | "card";
 

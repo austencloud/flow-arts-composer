@@ -5,7 +5,7 @@
  * for prop positioning on the animation grid.
  */
 
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import { ANIMATION_CONSTANTS } from "../shared/domain/constants";
 // Grid constants from domain constants
 const { GRID_CENTER, GRID_HALFWAY_POINT_OFFSET } = ANIMATION_CONSTANTS;

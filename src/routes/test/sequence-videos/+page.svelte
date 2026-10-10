@@ -11,18 +11,18 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import SequenceVideos from "$lib/shared/sequence-viewer/components/sequence-videos/SequenceVideos.svelte";
+  import SequenceVideos from "#lib/shared/sequence-viewer/components/sequence-videos/SequenceVideos.svelte";
   import {
     getSequenceVideosStore,
     resetSequenceVideoStores,
-  } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
+  } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { hydrateSequence } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { CollaborativeVideo } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 
   /**
    * The same real published sequence the post-share harness uses: 16 steps, a

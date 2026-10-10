@@ -11,14 +11,14 @@
   cannot drift from what picking it produces.
 -->
 <script lang="ts">
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import { sequenceMandalaHandOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import { sequenceMandalaHandOffsets } from "#lib/shared/mandala/services/mandala-grid-join.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type {
     MandalaPalette,
     MandalaPathShape,
     MandalaRenderOptions,
-  } from "$lib/shared/mandala/domain/mandala-types";
+  } from "#lib/shared/mandala/domain/mandala-types.js";
 
   interface Props {
     sequence: SequenceData;

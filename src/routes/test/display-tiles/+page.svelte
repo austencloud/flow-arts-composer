@@ -1,18 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
-  import PostToolPanel from "$lib/shared/share/components/post-studio/editor/PostToolPanel.svelte";
-  import PostAnimationAppearanceTool from "$lib/shared/share/components/post-studio/editor/PostAnimationAppearanceTool.svelte";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import DisplayPanel from "#lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
+  import PostToolPanel from "#lib/shared/share/components/post-studio/editor/PostToolPanel.svelte";
+  import PostAnimationAppearanceTool from "#lib/shared/share/components/post-studio/editor/PostAnimationAppearanceTool.svelte";
+  import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { hydrateSequence } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   // The .rt-chip vocabulary the panel styles against normally arrives from the
   // rail that hosts it. Without it every tile falls back to a bare <button>.
-  import "$lib/shared/animation-panel/bento/rail-tile.css";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import "#lib/shared/animation-panel/bento/rail-tile.css";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   /**
    * Harness for the Display page's toggle tiles. It mounts the REAL
@@ -76,7 +76,7 @@
     // the same pipeline the standalone /q page runs so the tiles are judged on
     // the chrome they actually ship on, not on unstyled defaults.
     const { applyThemeForBackground } =
-      await import("$lib/shared/settings/utils/background-theme-calculator");
+      await import("#lib/shared/settings/utils/background-theme-calculator.js");
     const { BackgroundType } = await import("@austencloud/backgrounds");
     applyThemeForBackground(BackgroundType.OCEAN);
     try {

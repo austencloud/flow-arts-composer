@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { tick } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   const VIEWPORTS = [
     { id: "phone", label: "375 × 667", width: 375, height: 667, scale: 0.9 },

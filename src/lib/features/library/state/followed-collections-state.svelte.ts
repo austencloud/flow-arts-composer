@@ -1,20 +1,20 @@
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { isPreviewReadOnly } from "$lib/shared/debug/state/user-preview-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { isPreviewReadOnly } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 import {
 	followCollection,
 	subscribeToFollowedCollections,
 	unfollowCollection,
 	type FollowedCollectionRef,
-} from "$lib/shared/library/services/followed-collections";
-import type { CollectionFollowSource } from "$lib/shared/analytics/social-events";
-import { getPublicCollection } from "$lib/features/library/services/public-collection-loader";
-import { getUserDisplayNames } from "$lib/shared/community/services/user-repository";
+} from "#lib/shared/library/services/followed-collections.js";
+import type { CollectionFollowSource } from "#lib/shared/analytics/social-events.js";
+import { getPublicCollection } from "#lib/features/library/services/public-collection-loader.js";
+import { getUserDisplayNames } from "#lib/shared/community/services/user-repository.js";
 import {
 	readFollowedMirror,
 	writeFollowedMirror,
-} from "$lib/features/library/services/collection-cache-mirror";
+} from "#lib/features/library/services/collection-cache-mirror.js";
 
 export interface FollowedCollection {
 	readonly collection: LibraryCollection;

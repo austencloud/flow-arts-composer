@@ -8,7 +8,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { BrowseSortMethod } from "../domain/enums/browse-enums";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface SortOption {
     id: BrowseSortMethod;
@@ -323,9 +323,6 @@
     );
     border: 1px solid var(--theme-stroke);
     border-radius: 14px;
-    box-shadow:
-      0 8px 32px var(--theme-shadow, rgba(0, 0, 0, 0.3)),
-      0 2px 8px var(--theme-shadow, rgba(0, 0, 0, 0.2));
     z-index: 50;
 
     /* Entrance animation: scale + opacity with overshoot */

@@ -5,9 +5,9 @@
    * hand-authored page. The single-source counterpart to FlowFrame; both render
    * the same GuideBlock[]. See the reflow spec.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { GuideBlock } from "../_data/guide-content-blocks";
   import { localizeLevel1Block } from "../_data/localize-level1-content";
 

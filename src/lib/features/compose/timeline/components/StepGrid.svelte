@@ -8,8 +8,8 @@
    * - Subdivision lines: Thin, only at high zoom
    */
 
-  import type { TimeSignatureKey } from "$lib/shared/foundation/domain/models/time-signature";
-  import type { TimeSeconds } from "$lib/shared/animation-engine/domain/timeline-types";
+  import type { TimeSignatureKey } from "#lib/shared/foundation/domain/models/time-signature.js";
+  import type { TimeSeconds } from "#lib/shared/animation-engine/domain/timeline-types.js";
   import {
     calculateStepMarkers,
     calculateMeasureMarkers,
@@ -17,8 +17,8 @@
     type StepMarker,
     type MeasureMarker,
     type SubdivisionMarker,
-  } from "$lib/shared/animation-engine/timeline/services/step-grid-calculator";
-  import { timeToPixels } from "$lib/shared/animation-engine/domain/timeline-types";
+  } from "#lib/shared/animation-engine/timeline/services/step-grid-calculator.js";
+  import { timeToPixels } from "#lib/shared/animation-engine/domain/timeline-types.js";
 
   interface Props {
     bpm: number;

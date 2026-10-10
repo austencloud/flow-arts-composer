@@ -5,11 +5,11 @@
  * with AND logic. Each filter type narrows the result set.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
 import type { ActiveFilter } from "../../../shared/domain/models/multi-filter-models";
-import type { BrowseFilter } from "$lib/features/browse/sequences/display/services/browse-filter";
+import type { BrowseFilter } from "#lib/features/browse/sequences/display/services/browse-filter.js";
 export class MultiFilter {
   constructor(private readonly browseFilter: BrowseFilter) {}
 

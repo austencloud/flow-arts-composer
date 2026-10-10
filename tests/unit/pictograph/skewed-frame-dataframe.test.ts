@@ -13,7 +13,7 @@ import {
   SKEWED_FRAME_LETTERS,
   type SkewFrameLocation,
   type SkewFrameMotionType,
-} from "$lib/shared/pictograph/skew/skewed-frame-letter";
+} from "#lib/shared/pictograph/skew/skewed-frame-letter.js";
 import {
   generateSkewedFrameRows,
   type SkewedRow,

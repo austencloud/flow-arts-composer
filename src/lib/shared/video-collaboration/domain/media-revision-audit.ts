@@ -1,4 +1,4 @@
-import { isArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
+import { isArtifactRevisionRef } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
 import type { MediaAssociation } from "./collaborative-video";
 
 export type MediaRevisionAudit =

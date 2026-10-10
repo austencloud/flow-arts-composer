@@ -1,40 +1,40 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
-  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-  import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
-  import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
+  import { registerEditHistoryShortcuts } from "#lib/shared/keyboard/registration/register-edit-history-shortcuts.js";
+  import { keyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
   import { onDestroy, onMount, tick, untrack } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
-  import { reparentToInspector } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-  import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { createPostSequenceView } from "$lib/shared/media-composition/services/post-sequence-view.svelte";
-  import { mirrorPostProject } from "$lib/shared/media-composition/domain/post-project-mirror";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
+  import { reparentToInspector } from "#lib/shared/sequence-viewer/components/reparent-to-inspector.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+  import { getSequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+  import { createPostSequenceView } from "#lib/shared/media-composition/services/post-sequence-view.svelte.js";
+  import { mirrorPostProject } from "#lib/shared/media-composition/domain/post-project-mirror.js";
   import {
     DEFAULT_HAND_LABELING,
     type HandLabeling,
-  } from "$lib/shared/video-collaboration/domain/hand-labeling";
-  import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
+  } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
+  import { POST_STUDIO_ROLE } from "#lib/shared/media-composition/domain/post-studio-presets.js";
   import {
     ANIMATION_OVERLAY_ROLE,
     stripModeFromRole,
     stripRole,
     takeIdFromRole,
     takeRole,
-  } from "$lib/shared/media-composition/domain/post-plan-compiler";
-  import { takeFileKey } from "$lib/shared/media-composition/domain/post-plan";
+  } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
+  import { takeFileKey } from "#lib/shared/media-composition/domain/post-plan.js";
   import {
     itemIdFromMovesAnimationRole,
     itemIdFromStaffEffectRole,
     itemIdFromTextRole,
     staffEffectRole,
     textRole,
-  } from "$lib/shared/media-composition/domain/post-project-compiler";
+  } from "#lib/shared/media-composition/domain/post-project-compiler.js";
   import {
     POST_CANVAS_RATIOS,
     POST_DEFAULT_BACKGROUND,
@@ -50,14 +50,14 @@
     type PostKeyframeChannel,
     type PostProject,
     type PostVideoItem,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "#lib/shared/media-composition/domain/post-project.js";
   import {
     channelsOf,
     keyframeCount,
     moveKeyframe,
     removeKeyframe,
     toggleKeyframe,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
   import {
     clearProjectKeyframes,
     editItemKeyframes,
@@ -67,55 +67,55 @@
     setProjectBackground,
     setProjectCanvas,
     setTrackFlag,
-  } from "$lib/shared/media-composition/domain/post-project-edits";
-  import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
+  } from "#lib/shared/media-composition/domain/post-project-edits.js";
+  import type { StripMode } from "#lib/shared/media-composition/domain/strip-view.js";
   import {
     postCanvasOf,
     postOutputSize,
     ratioValue,
-  } from "$lib/shared/media-composition/domain/post-canvas";
-  import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
+  } from "#lib/shared/media-composition/domain/post-canvas.js";
+  import type { CompositionSourceBinding } from "#lib/shared/media-composition/state/media-composition-state.svelte.js";
   import {
     createPostEditorState,
     type CatalogTakeSource,
     type PostEdit,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
-  import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
-  import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
-  import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
-  import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
-  import { itemIdFromTitlesRole } from "$lib/shared/media-composition/domain/tunnel-titles";
-  import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
-  import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
+  } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import type { PostStudioLayerPainter } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+  import { createBeatCarouselPainter } from "#lib/shared/media-composition/services/beat-carousel-painter.js";
+  import { createSequenceStripPainter } from "#lib/shared/media-composition/services/sequence-strip-painter.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { createTextItemPainter } from "#lib/shared/media-composition/services/text-item-painter.js";
+  import { createStaffEffectPainter } from "#lib/shared/media-composition/services/staff-effect-painter.js";
+  import { createTunnelTitlesPainter } from "#lib/shared/media-composition/services/tunnel-titles-painter.js";
+  import { itemIdFromTitlesRole } from "#lib/shared/media-composition/domain/tunnel-titles.js";
+  import { createStaffTipAnalysis } from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
+  import { loadAnimationOverlayPainter } from "#lib/shared/media-composition/services/animation-overlay-painter-registry.js";
   import {
     musicAudioKey,
     planMusicAudio,
     planProjectAudio,
-  } from "$lib/shared/media-composition/domain/post-audio-plan";
+  } from "#lib/shared/media-composition/domain/post-audio-plan.js";
   import {
     AudioDownloadStalledError,
     buildMixedAudioTrack,
-  } from "$lib/shared/media-composition/services/post-audio-track";
+  } from "#lib/shared/media-composition/services/post-audio-track.js";
   import {
     exportPostStudioVideo,
     type PostStudioExportProgress,
-  } from "$lib/shared/media-composition/services/post-studio-exporter";
-  import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/media-composition/services/post-studio-exporter.js";
+  import AnimationPanel from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
   import {
     LAYOUT_MOTION_DURATION_MS,
     createLayoutMotion,
-  } from "$lib/shared/transitions/layout-flip";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  } from "#lib/shared/transitions/layout-flip.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import type { PostStudioShareExport } from "../post-studio-share-export";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
   import PostTimingTap from "../builder/PostTimingTap.svelte";
   import PostTimingAnimationPreview from "../builder/PostTimingAnimationPreview.svelte";
   import PostTimingAnimationSettings from "../builder/PostTimingAnimationSettings.svelte";
@@ -129,7 +129,7 @@
     qrImageForAppearance,
     qrPayloadForImage,
   } from "../post-qr-image-appearance";
-  import { createPostVideoPreviews } from "$lib/shared/media-composition/state/post-video-previews.svelte";
+  import { createPostVideoPreviews } from "#lib/shared/media-composition/state/post-video-previews.svelte.js";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorActions from "./PostEditorActions.svelte";
   import PostSaveButton from "./PostSaveButton.svelte";
@@ -146,19 +146,19 @@
     trimMusic,
     updateMusic,
     type MusicPatch,
-  } from "$lib/shared/media-composition/domain/post-music-edits";
+  } from "#lib/shared/media-composition/domain/post-music-edits.js";
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import OverflowMenu from "#lib/shared/ui/components/OverflowMenu.svelte";
   import {
     showToast,
     removeToast,
-  } from "$lib/shared/toast/state/toast-state.svelte";
+  } from "#lib/shared/toast/state/toast-state.svelte.js";
   import PostAddPanel from "./PostAddPanel.svelte";
   import PostMediaPanel from "./PostMediaPanel.svelte";
   import PostExportPanel from "./PostExportPanel.svelte";
   import PostRatioPicker from "./PostRatioPicker.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PostTimeline from "./timeline/PostTimeline.svelte";
   import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
   import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
@@ -166,7 +166,7 @@
   import {
     readInShotRecoveryPackage,
     loadPostProjectFonts,
-  } from "$lib/shared/media-composition/services/inshot-recovery-package";
+  } from "#lib/shared/media-composition/services/inshot-recovery-package.js";
   import {
     createCropSession,
     type CropShapeKind,
@@ -174,17 +174,18 @@
   import {
     createPostDraftAutosave,
     shouldSubmitPostDraft,
-  } from "$lib/shared/media-composition/services/post-draft-storage";
-  import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
-  import { createPostTabSync } from "$lib/shared/media-composition/services/post-tab-sync";
-  import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
+  } from "#lib/shared/media-composition/services/post-draft-storage.js";
+  import { loadPostProject } from "#lib/shared/media-composition/services/post-project-store.js";
+  import { createPostTabSync } from "#lib/shared/media-composition/services/post-tab-sync.js";
+  import type { FeatureVideoSync } from "#lib/shared/media-composition/services/feature-video-client.js";
+  import type { SavedFeatureExport } from "#lib/shared/media-composition/domain/feature-video-export.js";
   import {
     parsePostStudioBackup,
     serializePostStudioBackup,
-  } from "$lib/shared/media-composition/services/post-project-backup";
-  import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
+  } from "#lib/shared/media-composition/services/post-project-backup.js";
+  import { downloadBlobToDisk } from "#lib/shared/foundation/services/file-downloader.js";
   import PostDraftStatus from "./PostDraftStatus.svelte";
-  import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
+  import ResizeHandle from "#lib/shared/panels/ResizeHandle.svelte";
   import {
     adjacentStepSeconds,
     clipSteps,
@@ -319,7 +320,7 @@
     if (!import.meta.env.DEV) return;
     let disposed = false;
     let stop: (() => void) | undefined;
-    void import("$lib/shared/media-composition/services/post-project-dev-client")
+    void import("#lib/shared/media-composition/services/post-project-dev-client.js")
       .then(({ startPostProjectDevBridge }) => {
         if (disposed) return;
         stop = startPostProjectDevBridge(
@@ -330,6 +331,8 @@
                 // Another editor, the CLI or a hand edit saved a newer copy.
                 onFeatureRevision: (revision) =>
                   void featureVideo.checkRevision(revision),
+                // `post-project.mjs render` runs the export in this editor.
+                render: { run: bridgeRender, progress: renderProgress },
               }
             : {}
         );
@@ -1023,6 +1026,9 @@
   let exportedUrl = $state<string | null>(null);
   let exportCancelled = false;
   let exportAbort: AbortController | null = null;
+  /** A feature video's render, once it is in the project's exports/ folder. */
+  let savedExport = $state<SavedFeatureExport | null>(null);
+  let saveExportError = $state("");
 
   const exporting = $derived(exportProgress !== null);
   const exportPercent = $derived(
@@ -2337,7 +2343,8 @@
     return new Promise((resolve) => requestAnimationFrame(() => resolve()));
   }
 
-  async function renderPost(): Promise<boolean> {
+  /** Renders the post; a feature video's render also lands in exports/. */
+  async function renderPost(name?: string): Promise<boolean> {
     if (!canRender) {
       exportError =
         labeledCard.error ??
@@ -2363,6 +2370,8 @@
     exportCancelled = false;
     exportAbort = new AbortController();
     exportError = "";
+    savedExport = null;
+    saveExportError = "";
     const totalFrames = Math.ceil(
       compiled.durationSeconds * compiled.preset.output.frameRate
     );
@@ -2432,10 +2441,15 @@
         shouldCancel: () => exportCancelled,
         signal: exportAbort.signal,
       });
+      // A Cancel can land while the encoder finishes, after its last check.
+      if (exportCancelled) return false;
       if (exportedUrl) URL.revokeObjectURL(exportedUrl);
       exportedUrl = URL.createObjectURL(blob);
       onExported?.(blob);
-      return true;
+      if (featureVideo) await keepFeatureExport(blob, name);
+      // A Cancel during the upload stops it; a render saved before the
+      // Cancel stays saved.
+      return !exportCancelled || savedExport !== null;
     } catch (error) {
       if (!exportCancelled) {
         console.error("[PostStudio] Export failed:", error);
@@ -2460,8 +2474,63 @@
     exportAbort?.abort();
   }
 
+  /** Sends a feature video's render to its folder's exports/. */
+  async function keepFeatureExport(blob: Blob, name?: string): Promise<void> {
+    if (!featureVideo) return;
+    try {
+      savedExport = await featureVideo.saveExport(
+        blob,
+        name,
+        exportAbort?.signal
+      );
+    } catch (cause) {
+      // Cancel stopped the upload, which is no failure to report.
+      if (exportCancelled) return;
+      const reason =
+        cause instanceof Error
+          ? cause.message
+          : "The dev server did not answer.";
+      saveExportError = `Not saved to exports/. ${reason}`;
+    }
+  }
+
+  /**
+   * `post-project.mjs render` runs this through the dev bridge: it waits for
+   * the editor to be ready, renders, and answers where the file landed.
+   */
+  async function bridgeRender(name?: string): Promise<SavedFeatureExport> {
+    const deadline = Date.now() + 60_000;
+    while (!canRender) {
+      if (exporting) throw new Error("This editor is already rendering.");
+      if (Date.now() > deadline)
+        throw new Error(
+          labeledCard.error ??
+            overlayError ??
+            "The editor was not ready to render after 60 s."
+        );
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    if (!(await renderPost(name)))
+      throw new Error(
+        exportError ||
+          (exportCancelled ? "The render was cancelled." : "The render failed.")
+      );
+    if (!savedExport)
+      throw new Error(
+        saveExportError || "The render finished but was not saved."
+      );
+    return savedExport;
+  }
+
+  /** How far the current render is, for the bridge; null between renders. */
+  function renderProgress(): { phase: string; percent: number } | null {
+    return exportProgress
+      ? { phase: exportProgress.phase, percent: exportPercent }
+      : null;
+  }
+
   const releaseExport = registerExport({
-    render: renderPost,
+    render: () => renderPost(),
     cancel: cancelExport,
   });
 
@@ -2673,6 +2742,8 @@
       {exportedUrl}
       {exportFilename}
       {exportError}
+      savedTo={savedExport?.file ?? null}
+      saveError={saveExportError}
       onRender={() => void renderPost()}
       onCancel={cancelExport}
       onTapBeats={openTakeBeats}
@@ -2708,6 +2779,7 @@
       {cardRenderOptions}
       stepCount={displaySequence.steps?.length ?? 0}
       sequenceBusy={labeledCard.pending}
+      featureMode={!!featureVideo}
     />
   {/if}
 {/snippet}

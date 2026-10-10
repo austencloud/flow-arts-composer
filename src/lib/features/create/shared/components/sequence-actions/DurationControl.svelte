@@ -10,7 +10,7 @@
   Compact mode: Smaller buttons and tighter spacing for mobile.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { formatDurationDisplay } from "../../utils/duration-display";
   import {
     MIN_DURATION,

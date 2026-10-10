@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   runSequenceViewerEscapeFallback,
   shouldSequenceViewerDeferEscape,
-} from "$lib/shared/sequence-viewer/domain/sequence-viewer-escape-ownership";
+} from "#lib/shared/sequence-viewer/domain/sequence-viewer-escape-ownership.js";
 
 function escapeEvent(): KeyboardEvent {
   return new KeyboardEvent("keydown", {

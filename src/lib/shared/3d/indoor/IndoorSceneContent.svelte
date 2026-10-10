@@ -20,20 +20,20 @@
     initPhysicsWorld,
     disposePhysicsWorld,
     stepPhysics,
-  } from "$lib/shared/3d/physics/rapier-world";
-  import { createRigidBody } from "$lib/shared/3d/physics/rapier-world";
-  import type { PhysicsWorldState, PlayerControllerState } from "$lib/shared/3d/physics/types";
+  } from "#lib/shared/3d/physics/rapier-world.js";
+  import { createRigidBody } from "#lib/shared/3d/physics/rapier-world.js";
+  import type { PhysicsWorldState, PlayerControllerState } from "#lib/shared/3d/physics/types.js";
   import {
     createPlayerController,
     disposePlayerController,
-  } from "$lib/shared/3d/physics/player-controller";
-  import { createRapierPhysicsProvider } from "$lib/shared/3d/physics/rapier-physics-provider";
+  } from "#lib/shared/3d/physics/player-controller.js";
+  import { createRapierPhysicsProvider } from "#lib/shared/3d/physics/rapier-physics-provider.js";
 
   // Camera - use the SAME controller as Museum/Realm
   import { UnifiedCameraController, CameraMode } from "@austencloud/camera-3d";
   import type { AvatarState, PhysicsProvider } from "@austencloud/camera-3d";
-  import { cameraPreferences } from "$lib/shared/3d/camera/camera-preferences.svelte";
-  import { getInputCapabilities } from "$lib/shared/input/InputCapabilities.svelte";
+  import { cameraPreferences } from "#lib/shared/3d/camera/camera-preferences.svelte.js";
+  import { getInputCapabilities } from "#lib/shared/input/InputCapabilities.svelte.js";
 
   // Room types and materials
   import type { SolvedRoom } from "./domain/room-types";

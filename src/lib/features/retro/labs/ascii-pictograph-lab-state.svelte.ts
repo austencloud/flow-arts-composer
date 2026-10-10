@@ -15,16 +15,16 @@ import {
 	Orientation,
 	HandSide,
 	RotationDirection,
-} from "$lib/features/retro/shared/domain/pictograph-types";
+} from "#lib/features/retro/shared/domain/pictograph-types.js";
 import type {
 	RetroPictographData,
 	RetroHandData,
-} from "$lib/features/retro/shared/domain/pictograph-types";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/features/retro/shared/domain/pictograph-types.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
-import { getRandomSequenceGenerator } from "$lib/features/create/spell/get-random-sequence-generator";
-import { getVariationExplorationOrchestrator } from "$lib/features/create/spell/get-variation-exploration-orchestrator";
+import { getRandomSequenceGenerator } from "#lib/features/create/spell/get-random-sequence-generator.js";
+import { getVariationExplorationOrchestrator } from "#lib/features/create/spell/get-variation-exploration-orchestrator.js";
 
 /** Which rendering layers are active */
 export interface RenderLayers {

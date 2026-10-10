@@ -4,8 +4,8 @@ import {
   isWorkerRendererOutMessage,
   resolveWorkerRenderQuality,
   WORKER_PREPARATION_VIEWPORT,
-} from "$lib/shared/3d/worker-renderer/domain/worker-renderer-protocol";
-import { QualityTier, TIER_CONFIGS } from "$lib/shared/3d/effects/types";
+} from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
+import { QualityTier, TIER_CONFIGS } from "#lib/shared/3d/effects/types.js";
 
 describe("worker renderer protocol", () => {
   it("accepts only known worker messages with numeric request ids", () => {

@@ -9,12 +9,12 @@
   the primary actions together and gives path choices a full-width second row.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { handLabel, pathShapeLabel } from "./control-labels";
   import type { Snippet } from "svelte";
-  import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   interface Props {
     hand: "left" | "right";

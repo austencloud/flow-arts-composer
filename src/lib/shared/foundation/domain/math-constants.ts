@@ -4,7 +4,7 @@
  * Centralized mathematical constants used throughout the animator.
  */
 
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 // Core mathematical constants
 export const PI = Math.PI;

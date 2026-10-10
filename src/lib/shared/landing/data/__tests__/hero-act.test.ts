@@ -8,19 +8,19 @@
  * cycling, pass-counting, and chaining without touching the real engine.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const mocks = vi.hoisted(() => ({
   generatePerVisitDemo: vi.fn(),
   drawMatrixRealization: vi.fn(),
 }));
 
-vi.mock("$lib/shared/landing/data/per-visit-demo", () => ({
+vi.mock("#lib/shared/landing/data/per-visit-demo.js", () => ({
   generatePerVisitDemo: mocks.generatePerVisitDemo,
 }));
 
-vi.mock("$lib/shared/landing/data/shape-matrix-hero-pool", () => ({
+vi.mock("#lib/shared/landing/data/shape-matrix-hero-pool.js", () => ({
   drawMatrixRealization: mocks.drawMatrixRealization,
 }));
 

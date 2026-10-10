@@ -1,42 +1,42 @@
 import { Point } from "fabric";
 import { describe, expect, it, vi } from "vitest";
 
-import { rotateLocation } from "$lib/shared/create/services/rotation-helpers";
+import { rotateLocation } from "#lib/shared/create/services/rotation-helpers.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { calculateArrowPoint } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator";
-import { getInitialPosition } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-grid-coordinator";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { calculateArrowPoint } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator.js";
+import { getInitialPosition } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-grid-coordinator.js";
 import {
   createCanonicalPlacementContext,
   rotatePlacementVectorToDisplayed,
   rotateScreenVectorToCanonical,
-} from "$lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame";
-import { directionalTupleProcessor } from "$lib/shared/pictograph/arrow/positioning/calculation/services/directional-tuple-processor";
-import { screenSpaceAdjustmentTransformer } from "$lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer";
-import { computeSpecialOverrideKey } from "$lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key";
-import { GlobalAdjustmentKeyGenerator } from "$lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-key-generator";
-import { turnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
-import { derivePropGeometryKey } from "$lib/shared/pictograph/arrow/positioning/prop-geometry/domain/prop-geometry-key-deriver";
-import { PlacementFrame } from "$lib/shared/pictograph/arrow/positioning/placement/domain/placement-frame";
+} from "#lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame.js";
+import { directionalTupleProcessor } from "#lib/shared/pictograph/arrow/positioning/calculation/services/directional-tuple-processor.js";
+import { screenSpaceAdjustmentTransformer } from "#lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer.js";
+import { computeSpecialOverrideKey } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key.js";
+import { GlobalAdjustmentKeyGenerator } from "#lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-key-generator.js";
+import { turnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
+import { derivePropGeometryKey } from "#lib/shared/pictograph/arrow/positioning/prop-geometry/domain/prop-geometry-key-deriver.js";
+import { PlacementFrame } from "#lib/shared/pictograph/arrow/positioning/placement/domain/placement-frame.js";
 
 // Serve the real default placement tables and nothing else, so each arrow
 // here lands where its default adjustment puts it: the layer Box and Diamond
 // use when no letter-specific placement exists.
-vi.mock("$lib/shared/net/asset-fetch", async () => {
+vi.mock("#lib/shared/net/asset-fetch.js", async () => {
   const { readFile } = await import("node:fs/promises");
   const path = await import("node:path");
   return {

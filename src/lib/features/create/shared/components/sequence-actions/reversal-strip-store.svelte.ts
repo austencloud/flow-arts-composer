@@ -8,7 +8,7 @@
 // The strip array encodes both the period (its length) and the per-beat values,
 // so persisting it alone restores the full editor state.
 
-import type { StripValue } from "$lib/shared/create/components/pattern-strip/pattern-strip-types";
+import type { StripValue } from "#lib/shared/create/components/pattern-strip/pattern-strip-types.js";
 
 let strip = $state<StripValue[][] | null>(null);
 

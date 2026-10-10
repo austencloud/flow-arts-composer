@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { placeDraggedMusic } from "$lib/shared/share/components/post-studio/editor/timeline/post-timeline-geometry";
+import { placeDraggedMusic } from "#lib/shared/share/components/post-studio/editor/timeline/post-timeline-geometry.js";
 
 describe("placeDraggedMusic", () => {
   // 100 px/s with the default 8 px threshold snaps within 0.08 s.

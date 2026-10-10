@@ -4,10 +4,10 @@
   Composed from small, focused primitives for effective AI-assisted development.
 -->
 <script lang="ts">
-  import { createCheckoutSession } from "$lib/shared/subscription/services/subscription-manager";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { captureEvent } from "$lib/shared/analytics/services/posthog";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { createCheckoutSession } from "#lib/shared/subscription/services/subscription-manager.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import type { HapticFeedback } from "../../../shared/application/services/haptic-feedback";
   import PremiumHero from "./PremiumHero.svelte";
   import PremiumCTA from "./PremiumCTA.svelte";

@@ -1,13 +1,13 @@
 import { describe, expect, test } from "vitest";
-import { PoiOptionFilterDecorator } from "$lib/features/levels/poi-lab/services/poi-option-filter-decorator";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { PoiOptionFilterDecorator } from "#lib/features/levels/poi-lab/services/poi-option-filter-decorator.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // Minimal motion fixtures — only the fields the poi rules read. Default is a
 // legal poi move (PRO, 1 turn).

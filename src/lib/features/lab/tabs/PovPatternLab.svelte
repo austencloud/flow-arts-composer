@@ -6,23 +6,23 @@
 -->
 <script lang="ts">
 
-import { getPoiDeviceManager } from "$lib/features/poi/get-poi-device-manager";
-import { getStripPatternEngine } from "$lib/features/poi/get-strip-pattern-engine";
+import { getPoiDeviceManager } from "#lib/features/poi/get-poi-device-manager.js";
+import { getStripPatternEngine } from "#lib/features/poi/get-strip-pattern-engine.js";
   import { onDestroy } from "svelte";
-  import { createPoiState } from "$lib/features/poi/state/poi-state.svelte";
-  import { setPoiContext } from "$lib/features/poi/context/poi-context";
-  import PatternPicker from "$lib/features/poi/components/PatternPicker.svelte";
-  import PoiImageLibrary from "$lib/features/poi/components/PoiImageLibrary.svelte";
-  import PovPreview from "$lib/features/poi/components/PovPreview.svelte";
-  import PovSpinPreview from "$lib/features/poi/components/PovSpinPreview.svelte";
-  import PovAnimatorPreview from "$lib/features/poi/components/PovAnimatorPreview.svelte";
-  import LedStaffPreview from "$lib/features/poi/components/LedStaffPreview.svelte";
-  import PatternTimeline from "$lib/features/poi/components/PatternTimeline.svelte";
-  import StripPatternExporter from "$lib/features/poi/components/StripPatternExporter.svelte";
-  import DevicePanel from "$lib/features/poi/components/DevicePanel.svelte";
-  import ScrubValue from "$lib/shared/ui/components/ScrubbableNumber.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { createPoiState } from "#lib/features/poi/state/poi-state.svelte.js";
+  import { setPoiContext } from "#lib/features/poi/context/poi-context.js";
+  import PatternPicker from "#lib/features/poi/components/PatternPicker.svelte";
+  import PoiImageLibrary from "#lib/features/poi/components/PoiImageLibrary.svelte";
+  import PovPreview from "#lib/features/poi/components/PovPreview.svelte";
+  import PovSpinPreview from "#lib/features/poi/components/PovSpinPreview.svelte";
+  import PovAnimatorPreview from "#lib/features/poi/components/PovAnimatorPreview.svelte";
+  import LedStaffPreview from "#lib/features/poi/components/LedStaffPreview.svelte";
+  import PatternTimeline from "#lib/features/poi/components/PatternTimeline.svelte";
+  import StripPatternExporter from "#lib/features/poi/components/StripPatternExporter.svelte";
+  import DevicePanel from "#lib/features/poi/components/DevicePanel.svelte";
+  import ScrubValue from "#lib/shared/ui/components/ScrubbableNumber.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   const poi = createPoiState(
     getStripPatternEngine(),

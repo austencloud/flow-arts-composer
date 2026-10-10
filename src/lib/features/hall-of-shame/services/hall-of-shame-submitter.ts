@@ -17,7 +17,7 @@ import {
 	orderBy,
 	serverTimestamp
 } from 'firebase/firestore';
-import { getFirestoreInstance } from '$lib/shared/auth/firebase';
+import { getFirestoreInstance } from '#lib/shared/auth/firebase.js';
 import type { AgeVerifier } from "./age-verifier";
 import type {
 	HallOfShameEntry,

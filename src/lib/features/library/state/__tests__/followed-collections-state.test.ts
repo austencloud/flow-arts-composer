@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-import type { FollowedCollectionRef } from "$lib/shared/library/services/followed-collections";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+import type { FollowedCollectionRef } from "#lib/shared/library/services/followed-collections.js";
 
 // Captured snapshot callback so a test can emit follow refs like onSnapshot would.
 const mocks = vi.hoisted(() => ({
@@ -27,24 +27,24 @@ const mocks = vi.hoisted(() => ({
 	),
 }));
 
-vi.mock("$lib/shared/library/services/followed-collections", () => ({
+vi.mock("#lib/shared/library/services/followed-collections.js", () => ({
 	followCollection: mocks.followCollection,
 	unfollowCollection: mocks.unfollowCollection,
 	subscribeToFollowedCollections: mocks.subscribeToFollowedCollections,
 }));
-vi.mock("$lib/features/library/services/public-collection-loader", () => ({
+vi.mock("#lib/features/library/services/public-collection-loader.js", () => ({
 	getPublicCollection: mocks.getPublicCollection,
 }));
-vi.mock("$lib/shared/community/services/user-repository", () => ({
+vi.mock("#lib/shared/community/services/user-repository.js", () => ({
 	getUserDisplayNames: mocks.getUserDisplayNames,
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
 	authState: mocks.authState,
 }));
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
 	isPreviewReadOnly: () => mocks.previewReadOnly,
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
 	toast: {
 		error: mocks.toastError,
 		success: vi.fn(),

@@ -5,7 +5,7 @@
   import { MediaQuery } from "svelte/reactivity";
   import type { Camera, Scene, WebGLRenderer } from "three";
 
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { tryGetAdaptiveQualityContext } from "../../context/adaptive-quality-context";
   import { getSceneFeatureContext } from "../../scene-features/context/scene-feature-context";
   import type { BlossomSceneConfig } from "../domain/models/scene-configs";

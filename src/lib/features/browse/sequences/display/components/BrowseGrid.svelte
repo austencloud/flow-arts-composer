@@ -1,22 +1,22 @@
 <script lang="ts">
 
-import { prefetch as prefetchSequenceData } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { prefetch as prefetchSequenceData } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { slide } from "svelte/transition";
   import { onMount, onDestroy } from "svelte";
-  import type { BrowseThumbnailProvider } from "$lib/shared/browse/services/browse-thumbnail-provider";
-  import ChoreoCardThumbnail from "$lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
-  import SectionHeader from "$lib/shared/browse/components/SectionHeader.svelte";
+  import type { BrowseThumbnailProvider } from "#lib/shared/browse/services/browse-thumbnail-provider.js";
+  import ChoreoCardThumbnail from "#lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
+  import SectionHeader from "#lib/shared/browse/components/SectionHeader.svelte";
   import VirtualizedSequenceGrid, {
     type VirtualGridApi,
-  } from "$lib/shared/browse/components/VirtualizedSequenceGrid.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { isCatDogMode } from "$lib/shared/browse/utils/prop-mode-helpers";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  } from "#lib/shared/browse/components/VirtualizedSequenceGrid.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { isCatDogMode } from "#lib/shared/browse/utils/prop-mode-helpers.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import {
     buildVariationMap,
     variationGroupKey,
-  } from "$lib/shared/browse/services/variation-grouper";
+  } from "#lib/shared/browse/services/variation-grouper.js";
   import { gridZoomManager } from "../../../shared/state/grid-zoom-state.svelte";
 
   /**

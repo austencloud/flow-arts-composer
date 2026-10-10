@@ -1,4 +1,4 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { VtgMode } from "../services/shape-matrix-realizations";
 import type { Flower } from "./flower-signature";
 import { ratioLabel } from "./flower-signature";
@@ -6,8 +6,8 @@ import type { TheoryFlower } from "./theory-flower";
 import { isFloatRatio, isStationaryRatio } from "./theory-flower";
 import { theoryRatioLabel } from "./theory-ratio";
 import type { MatrixLabelMode } from "./matrix-turn-band";
-import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
-import type { TurnLevel } from "$lib/shared/create/services/level-turn-values";
+import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
+import type { TurnLevel } from "#lib/shared/create/services/level-turn-values.js";
 
 export function localizedLevelDescription(level: TurnLevel): {
   name: string;

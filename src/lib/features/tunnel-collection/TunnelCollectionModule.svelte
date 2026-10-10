@@ -25,34 +25,34 @@
   import { openTunnelInViewer } from "./services/open-tunnel-in-viewer";
   import TunnelDetailPreview from "./components/TunnelDetailPreview.svelte";
   import TunnelPublicationControls from "./components/TunnelPublicationControls.svelte";
-  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
-  import CollectionGalleryDetail from "$lib/shared/modules/CollectionGalleryDetail.svelte";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
+  import CollectionGalleryDetail from "#lib/shared/modules/CollectionGalleryDetail.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
     ContextMenuState,
-  } from "$lib/shared/components/context-menu/context-menu-types";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { imageCount } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { imageCount } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import {
     openLineageSource,
     hasLineageSource,
-  } from "$lib/shared/collections/open-lineage-source";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import VideoUploadSheet from "$lib/shared/video-collaboration/components/VideoUploadSheet.svelte";
-  import { getVideosForTunnel } from "$lib/shared/video-collaboration/services/collaborative-video-manager";
+  } from "#lib/shared/collections/open-lineage-source.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import VideoUploadSheet from "#lib/shared/video-collaboration/components/VideoUploadSheet.svelte";
+  import { getVideosForTunnel } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
   import {
     getCreatorDisplayName,
     type CollaborativeVideo,
-  } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { saveTunnelCreatorHandoff } from "$lib/features/create/tunnel/services/tunnel-creator-handoff";
-  import TkaLabel from "$lib/shared/components/TkaLabel.svelte";
+  } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { saveTunnelCreatorHandoff } from "#lib/features/create/tunnel/services/tunnel-creator-handoff.js";
+  import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
   import {
     trackTunnelEditStarted,
     type TunnelEditEntry,
-  } from "$lib/shared/analytics/browse-events";
+  } from "#lib/shared/analytics/browse-events.js";
   import { currentTunnelRevisionRef } from "./domain/tunnel-revision";
   import { needsTunnelPosterRefresh } from "./domain/tunnel-artifact-migration";
   import {

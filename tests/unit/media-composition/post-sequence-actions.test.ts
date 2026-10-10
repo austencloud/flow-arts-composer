@@ -1,15 +1,15 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   applySequenceActions,
   pressSequenceAction,
   resetSequenceActions,
   withSequenceAction,
   type PostSequenceTransforms,
-} from "$lib/shared/media-composition/domain/post-sequence-actions";
+} from "#lib/shared/media-composition/domain/post-sequence-actions.js";
 import {
   PostProjectSchema,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import { project as fixture } from "./post-project-fixtures";
 
 function project(extra: Partial<PostProject> = {}): PostProject {

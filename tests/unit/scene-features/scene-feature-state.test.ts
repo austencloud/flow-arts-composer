@@ -8,8 +8,8 @@ vi.stubGlobal("localStorage", {
   removeItem: (key: string) => mockStorage.delete(key),
 });
 
-import { createSceneFeatureState } from "$lib/shared/3d/scene-features/state/scene-feature-state.svelte";
-import { SCENE_FEATURES } from "$lib/shared/3d/scene-features/domain/scene-feature-registry";
+import { createSceneFeatureState } from "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js";
+import { SCENE_FEATURES } from "#lib/shared/3d/scene-features/domain/scene-feature-registry.js";
 
 describe("createSceneFeatureState", () => {
   beforeEach(() => {

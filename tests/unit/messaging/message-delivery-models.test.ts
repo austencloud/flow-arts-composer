@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   persistMessageAttachment,
   restoreMessageAttachment,
-} from "$lib/shared/inbox/domain/message-delivery-models";
+} from "#lib/shared/inbox/domain/message-delivery-models.js";
 
 describe("message delivery attachment persistence", () => {
   it("round-trips image bytes and file metadata", async () => {

@@ -10,7 +10,7 @@
   - Clicks on backdrop exit help mode, clicks on drawer content pass through
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   interface Props {
     onClose: () => void;
   }

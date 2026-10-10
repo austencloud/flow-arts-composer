@@ -6,6 +6,30 @@ const REST = { x: 1145 / 1920, y: 1020 / 1080 };
 const DEFAULT_SIZE = { width: 1920, height: 1080 };
 
 /**
+ * Runs in the page: the `index`th element matching `selector` that is on
+ * screen and not inert, as the point the pointer aims at. With `hover`, it
+ * answers instead whether the page's own hover reached that element.
+ */
+function onScreenMatch({ selector, index, hover }) {
+  const el = [...document.querySelectorAll(selector)].filter((e) => {
+    const r = e.getBoundingClientRect();
+    return (
+      !e.closest("[inert]") &&
+      r.width > 0 &&
+      r.height > 0 &&
+      r.bottom > 0 &&
+      r.right > 0 &&
+      r.top < innerHeight &&
+      r.left < innerWidth
+    );
+  })[index];
+  if (hover) return el?.matches(":hover") ?? false;
+  if (!el) throw Error(`Missing visible target ${selector} #${index}`);
+  const r = el.getBoundingClientRect();
+  return { x: r.x + r.width * 0.65, y: r.y + r.height * 0.65 };
+}
+
+/**
  * Drives a page the way a person would, with a pointer that moves before it
  * clicks, and records it with Chrome's screencast.
  *
@@ -184,6 +208,32 @@ export function createDirector(page, cdp, root, options = {}) {
     await click(labels[index]);
   }
 
+  /**
+   * Clicks the `index`th on-screen element that matches a CSS selector, for a
+   * target no label singles out: one of several buttons with the same label,
+   * such as the builder's option buttons, or a tile with role="button".
+   */
+  async function pick(selector, index = 0) {
+    const label = `${selector} #${index}`;
+    const rect = await page.evaluate(onScreenMatch, { selector, index });
+    await move(rect.x, rect.y);
+    await wait(240);
+    const hovered = await page.evaluate(onScreenMatch, {
+      selector,
+      index,
+      hover: true,
+    });
+    if (!hovered) throw Error("Native hover did not reach " + label);
+    events.push({
+      label,
+      action: "click",
+      time: (Date.now() - started) / 1000,
+      ...pointer,
+      hover: true,
+    });
+    await press();
+  }
+
   async function mountPointer() {
     await cdp.send("Runtime.evaluate", {
       expression:
@@ -278,5 +328,5 @@ export function createDirector(page, cdp, root, options = {}) {
       events: events.map(({ label, time, hover }) => ({ label, time, hover })),
     };
   }
-  return { wait, move, click, fill, cell, canvas, mountPointer, shot };
+  return { wait, move, click, fill, cell, pick, canvas, mountPointer, shot };
 }

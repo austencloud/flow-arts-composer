@@ -1,9 +1,9 @@
 import {
   createAxisStream,
   resolveFilmSeed,
-} from "$lib/features/film-director/domain/directive-random";
-import { resolveCastAxis } from "$lib/features/film-director/domain/resolve-directives";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/features/film-director/domain/directive-random.js";
+import { resolveCastAxis } from "#lib/features/film-director/domain/resolve-directives.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { TikaDirectorAction } from "./tika-director";
 
 export interface DirectorSequenceAssignment {

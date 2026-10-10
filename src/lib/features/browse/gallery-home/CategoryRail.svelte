@@ -12,7 +12,7 @@
   Split out of GalleryDrill.svelte 2026-08-04.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import CategoryTile from "./CategoryTile.svelte";
   import type {
     CategoryEntry,

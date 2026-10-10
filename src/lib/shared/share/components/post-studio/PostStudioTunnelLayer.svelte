@@ -1,7 +1,7 @@
 <script lang="ts">
-  import TunnelArtView from "$lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ViewerPlaybackState } from "$lib/shared/sequence-viewer/domain/viewer-prop-groups";
+  import TunnelArtView from "#lib/shared/sequence-viewer/tunnel/TunnelArtView.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ViewerPlaybackState } from "#lib/shared/sequence-viewer/domain/viewer-prop-groups.js";
   import { getPostStudioArtContext } from "./post-studio-art-context.svelte";
 
   interface Props {

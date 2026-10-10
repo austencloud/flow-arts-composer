@@ -6,14 +6,14 @@
 -->
 <script lang="ts">
 
-import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
+import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
   import { onMount } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     sequence: SequenceData | null;
@@ -240,7 +240,7 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    background: color-mix(in srgb, var(--theme-shadow) 30%, transparent);
+    background: rgba(0, 0, 0, 0.3);
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: 0.875rem;
   }

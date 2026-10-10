@@ -33,7 +33,7 @@
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 /** Guarantee a single motion carries the render-required placement data. */
 export function ensureMotionPlacement(

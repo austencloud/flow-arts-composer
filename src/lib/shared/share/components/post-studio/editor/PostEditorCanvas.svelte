@@ -1,57 +1,57 @@
 <script lang="ts">
   import { onMount, tick, untrack } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     motionDuration,
     reducedMotion,
-  } from "$lib/shared/transitions/motion";
-  import { LAYOUT_MOTION_EASING } from "$lib/shared/transitions/layout-flip";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { CompositionSourceBinding } from "$lib/shared/media-composition/state/media-composition-state.svelte";
+  } from "#lib/shared/transitions/motion.js";
+  import { LAYOUT_MOTION_EASING } from "#lib/shared/transitions/layout-flip.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+  import type { CompositionSourceBinding } from "#lib/shared/media-composition/state/media-composition-state.svelte.js";
   import {
     resolvePresetTimePoint,
     fadeBlackOpacityAt,
     type EvaluatedFrameLayer,
-  } from "$lib/shared/media-composition/services/frame-evaluator";
+  } from "#lib/shared/media-composition/services/frame-evaluator.js";
   import {
     previewClockLeads,
     previewClockStep,
     type PreviewVideoController,
-  } from "$lib/shared/media-composition/services/post-preview-clock";
-  import type { PresetClip } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  } from "#lib/shared/media-composition/services/post-preview-clock.js";
+  import type { PresetClip } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+  import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
   import {
     paintSurfaceGeometry,
     toPaintFrame,
-  } from "$lib/shared/media-composition/services/post-studio-layer-painter";
-  import { backdropLayer } from "$lib/shared/media-composition/services/post-backdrop-painter";
+  } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+  import { backdropLayer } from "#lib/shared/media-composition/services/post-backdrop-painter.js";
   import {
     regionEdgePixels,
     shadowDropInRegion,
-  } from "$lib/shared/media-composition/services/region-edge-painter";
-  import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+  } from "#lib/shared/media-composition/services/region-edge-painter.js";
+  import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
   import {
     itemIdFromClipId,
     itemIdFromStaffEffectRole,
-  } from "$lib/shared/media-composition/domain/post-project-compiler";
+  } from "#lib/shared/media-composition/domain/post-project-compiler.js";
   import {
     planMusicAudio,
     planProjectAudio,
     segmentGainAt,
-  } from "$lib/shared/media-composition/domain/post-audio-plan";
+  } from "#lib/shared/media-composition/domain/post-audio-plan.js";
   import {
     musicClockBoundaries,
     musicClockMedia,
-  } from "$lib/shared/media-composition/services/music-preview-sync";
+  } from "#lib/shared/media-composition/services/music-preview-sync.js";
   import {
     ANIMATION_OVERLAY_ROLE,
     STRIP_AREA,
     stripModeFromRole,
-  } from "$lib/shared/media-composition/domain/post-plan-compiler";
-  import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
+  } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
+  import { POST_STUDIO_ROLE } from "#lib/shared/media-composition/domain/post-studio-presets.js";
   import {
     POST_MAX_ZOOM,
     POST_MIN_ZOOM,
@@ -63,20 +63,20 @@
     type PostItem,
     type PostSourceGeometry,
     type PostVideoItem,
-  } from "$lib/shared/media-composition/domain/post-project";
-  import { updateItemAt } from "$lib/shared/media-composition/domain/post-project-edits";
-  import { tunnelHookChromeOpacity } from "$lib/shared/media-composition/domain/tunnel-hook";
+  } from "#lib/shared/media-composition/domain/post-project.js";
+  import { updateItemAt } from "#lib/shared/media-composition/domain/post-project-edits.js";
+  import { tunnelHookChromeOpacity } from "#lib/shared/media-composition/domain/tunnel-hook.js";
   import { posterQrAppearance } from "../post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import {
     boxAt,
     channelValueAt,
     framingAt,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
   import {
     postOutputSize,
     postSafeArea,
-  } from "$lib/shared/media-composition/domain/post-canvas";
+  } from "#lib/shared/media-composition/domain/post-canvas.js";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
   import {
@@ -2438,6 +2438,9 @@
                     !!layer.tunnelHook
                   )}
                   {qrSequence}
+                  qrUrl={sourceItem?.kind === "card"
+                    ? sourceItem.qrUrl
+                    : undefined}
                   tunnelHook={layer.tunnelHook ?? null}
                   chromeOpacity={hookChromeOpacity(region.id)}
                   mandalaIn={!layer.tunnelHook &&

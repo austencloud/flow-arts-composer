@@ -20,6 +20,7 @@
  * the Smart Collection builder — the mutation runs exactly as it does today.
  */
 import { flushSync } from "svelte";
+import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
 import { reducedMotion } from "./motion";
 import { ignoreViewTransitionSkip } from "./named-route-morph-state.svelte";
 import {
@@ -43,6 +44,16 @@ const layoutStabilizers = new Set<() => void>();
  *  skip the first, which reads as a snap — worse than not animating. A search
  *  keystroke landing mid-morph just applies plainly. */
 let inFlight = false;
+
+/**
+ * The animated backdrop repaints a viewport-sized canvas every frame; while a
+ * morph runs, those frames belong to it. The backdrop holds its last frame
+ * until the transition finishes, plus a short tail for the landing frame. The
+ * cap only matters if `finished` never settles.
+ */
+const MORPH_BACKDROP_HOLD_KEY = "view-transition-morph";
+const MORPH_BACKDROP_HOLD_CAP_MS = 2000;
+const MORPH_BACKDROP_SETTLE_TAIL_MS = 60;
 
 /**
  * Declare (or withdraw) a surface's live results grid.
@@ -114,6 +125,7 @@ export function startMorph(
     return null;
   }
   inFlight = true;
+  holdBackgroundFor(MORPH_BACKDROP_HOLD_KEY, MORPH_BACKDROP_HOLD_CAP_MS);
   // Which cards were on screen BEFORE the mutation. Read here, while the old
   // DOM is still current — after `mutate` runs there is no way to tell an
   // arriving card from a surviving one. See results-motion.ts.
@@ -134,6 +146,7 @@ export function startMorph(
     .catch(() => {})
     .finally(() => {
       inFlight = false;
+      holdBackgroundFor(MORPH_BACKDROP_HOLD_KEY, MORPH_BACKDROP_SETTLE_TAIL_MS);
     });
   return transition;
 }

@@ -7,7 +7,7 @@
   that manual verification may not be productive.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { SanityCheckReport, SanityCheckResult } from "../../domain/verification-models";
 
   let {

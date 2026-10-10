@@ -8,8 +8,8 @@
  * Stored in IndexedDB locally, synced to Firebase for export.
  */
 
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { DetectionFrame } from "$lib/shared/train/domain/detection-frame";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { DetectionFrame } from "#lib/shared/train/domain/detection-frame.js";
 import type { UserCorrection } from "./verification-models";
 
 /** Reference to the source video */

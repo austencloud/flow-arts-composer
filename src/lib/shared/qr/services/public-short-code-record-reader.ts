@@ -1,7 +1,7 @@
 import {
   fromFirestoreFields,
   type FirestoreFields,
-} from "$lib/shared/firestore/firestore-value-codec";
+} from "#lib/shared/firestore/firestore-value-codec.js";
 import type { ShortCodeData } from "./types";
 
 const FIRESTORE_HOST = "https://firestore.googleapis.com/v1";

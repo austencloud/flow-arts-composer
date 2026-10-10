@@ -11,13 +11,13 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import * as tikaSessionRepository from '../services/tika-session-repository';
 	import { formatForAIReview } from '../services/tika-session-formatter';
-	import { authState } from '$lib/shared/auth/state/auth-state.svelte';
+	import { authState } from '#lib/shared/auth/state/auth-state.svelte.js';
 	import type { TikaSession, ReviewStatus } from '../domain/models/tika-conversation-models';
-	import CopyAsImageButton from '$lib/shared/foundation/ui/CopyAsImageButton.svelte';
-	import CopyForAIButton from '$lib/shared/foundation/ui/CopyForAIButton.svelte';
+	import CopyAsImageButton from '#lib/shared/foundation/ui/CopyAsImageButton.svelte';
+	import CopyForAIButton from '#lib/shared/foundation/ui/CopyForAIButton.svelte';
 	import TikaConversationReadOnly from './TikaConversationReadOnly.svelte';
 
 	// Props

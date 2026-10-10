@@ -4,8 +4,8 @@ import {
   musicAudioKey,
   planMusicAudio,
   segmentGainAt,
-} from "$lib/shared/media-composition/domain/post-audio-plan";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+} from "#lib/shared/media-composition/domain/post-audio-plan.js";
+import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
 
 function music(fields: Partial<PostMusic> = {}): PostMusic {
   return {

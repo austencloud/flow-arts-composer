@@ -14,17 +14,17 @@
   import { T, useTask, useThrelte } from "@threlte/core";
   import { MeshStandardMaterial } from "three";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import LavaCracks from "$lib/shared/3d/environments/scenes/ember/LavaCracks.svelte";
-  import HeatDistortion from "$lib/shared/3d/environments/scenes/ember/HeatDistortion.svelte";
-  import EmberFountains from "$lib/shared/3d/environments/scenes/ember/EmberFountains.svelte";
-  import FallingParticles from "$lib/shared/3d/environments/primitives/FallingParticles.svelte";
-  import type { LavaCracksConfig } from "$lib/shared/3d/environments/domain/models/scene-configs";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import LavaCracks from "#lib/shared/3d/environments/scenes/ember/LavaCracks.svelte";
+  import HeatDistortion from "#lib/shared/3d/environments/scenes/ember/HeatDistortion.svelte";
+  import EmberFountains from "#lib/shared/3d/environments/scenes/ember/EmberFountains.svelte";
+  import FallingParticles from "#lib/shared/3d/environments/primitives/FallingParticles.svelte";
+  import type { LavaCracksConfig } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
   import { FIRST_FIRE_BASALT_COLOR } from "../first-fire-graybox/first-fire-court-identity";
-  import FirstFireCoalLamp from "$lib/shared/3d/environments/scenes/first-fire/FirstFireCoalLamp.svelte";
-  import FirstFireCoalBank from "$lib/shared/3d/environments/scenes/first-fire/FirstFireCoalBank.svelte";
-  import FirstFireCoalWall from "$lib/shared/3d/environments/scenes/first-fire/FirstFireCoalWall.svelte";
-  import FirstFireSteamVent from "$lib/shared/3d/environments/scenes/first-fire/FirstFireSteamVent.svelte";
+  import FirstFireCoalLamp from "#lib/shared/3d/environments/scenes/first-fire/FirstFireCoalLamp.svelte";
+  import FirstFireCoalBank from "#lib/shared/3d/environments/scenes/first-fire/FirstFireCoalBank.svelte";
+  import FirstFireCoalWall from "#lib/shared/3d/environments/scenes/first-fire/FirstFireCoalWall.svelte";
+  import FirstFireSteamVent from "#lib/shared/3d/environments/scenes/first-fire/FirstFireSteamVent.svelte";
   import {
     LOOKDEV_STATIONS,
     STATION_PITCH,

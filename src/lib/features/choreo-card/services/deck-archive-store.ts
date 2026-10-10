@@ -10,8 +10,8 @@
 // (quota, unavailable) with a warn — the archive must never block or break a
 // draw or render. Mirrors the raw-IndexedDB pattern in DeckCardBlobCache.ts.
 
-import { browser } from "$app/environment";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { browser } from "$app/env";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
 import type { DeckReleaseCard } from "../domain/models/DeckRelease";
 import { normalizeDeckReleaseCard } from "../domain/normalize-deck-release";

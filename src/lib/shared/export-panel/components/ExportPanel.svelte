@@ -17,7 +17,7 @@
   import AnimationSettings from "./settings/AnimationSettings.svelte";
   import StaticSettingsPanel from "./settings/StaticSettings.svelte";
   import PerformanceSettingsPanel from "./settings/PerformanceSettings.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { untrack } from "svelte";
   import type { ExportSettings } from "../domain/models/export-settings";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blockSignatures } from "$lib/shared/create/services/loop-block-signatures";
+import { blockSignatures } from "#lib/shared/create/services/loop-block-signatures.js";
 import type {
   LOOPSpecWire,
   ReflectionAxis,

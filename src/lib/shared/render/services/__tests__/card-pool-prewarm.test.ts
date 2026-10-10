@@ -28,8 +28,8 @@ import {
   resolvePrewarmPropTypes,
   seedCardPool,
 } from "../card-pool-prewarm";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const seq = (id: string) =>
   ({ id, word: id, steps: [] }) as unknown as SequenceData;

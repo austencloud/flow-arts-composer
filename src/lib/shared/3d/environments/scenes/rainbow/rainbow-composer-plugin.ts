@@ -1,12 +1,12 @@
 import type { Mesh } from "three";
-import type { ObjectDefinition } from "$lib/shared/3d/procedural-engine/objects/object-catalog";
-import { createComposerCatalog } from "$lib/shared/3d/scene-composer/composer-catalog";
-import { createMetadataSceneObjectAdapter } from "$lib/shared/3d/scene-composer/metadata-scene-object-adapter";
-import { composerRegistry } from "$lib/shared/3d/scene-composer/registry";
+import type { ObjectDefinition } from "#lib/shared/3d/procedural-engine/objects/object-catalog.js";
+import { createComposerCatalog } from "#lib/shared/3d/scene-composer/composer-catalog.js";
+import { createMetadataSceneObjectAdapter } from "#lib/shared/3d/scene-composer/metadata-scene-object-adapter.js";
+import { composerRegistry } from "#lib/shared/3d/scene-composer/registry.js";
 import type {
   SceneComposerPlugin,
   SurfaceRules,
-} from "$lib/shared/3d/scene-composer/types";
+} from "#lib/shared/3d/scene-composer/types.js";
 import { RAINBOW_PLACEMENTS } from "./placements";
 
 const accents: ObjectDefinition[] = [

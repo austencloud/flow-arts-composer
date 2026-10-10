@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { CHARACTER_DEFINITIONS } from "$lib/shared/3d/domain/character-model";
+  import { CHARACTER_DEFINITIONS } from "#lib/shared/3d/domain/character-model.js";
   import type { CharacterInstanceState } from "../../state/character-instance-state.svelte";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   interface Props {
     performer: CharacterInstanceState | null;

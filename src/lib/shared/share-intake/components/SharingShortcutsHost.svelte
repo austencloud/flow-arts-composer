@@ -11,8 +11,8 @@
 	 * authState has no callback subscription API - it is getters over a $state
 	 * rune - so a $effect is the only way to observe a sign-out.
 	 */
-	import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-	import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
+	import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+	import { inboxState } from "#lib/shared/inbox/state/inbox-state.svelte.js";
 	import { selectShareTargets } from "../domain/share-target-selection";
 	import {
 		clearShareTargets,

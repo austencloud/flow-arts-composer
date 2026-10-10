@@ -9,9 +9,9 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { updateStepMap } from "$lib/shared/video-collaboration/services/collaborative-video-manager";
+  import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { updateStepMap } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
 
   import UploadSelectView from "./views/UploadSelectView.svelte";
   import StepMappingView from "./views/StepMappingView.svelte";

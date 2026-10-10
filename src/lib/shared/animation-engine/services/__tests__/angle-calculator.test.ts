@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { mapOrientationToAngle } from "$lib/shared/animation-engine/services/angle-calculator";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { mapOrientationToAngle } from "#lib/shared/animation-engine/services/angle-calculator.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const PI = Math.PI;
 

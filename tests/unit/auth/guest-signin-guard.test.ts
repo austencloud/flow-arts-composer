@@ -62,12 +62,12 @@ vi.mock("firebase/auth", () => ({
   unlink: vi.fn(),
   updateProfile: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: {},
   configureAuthPersistence: vi.fn().mockResolvedValue(undefined),
   getAuthInstance: async () => ({ currentUser: currentUser.value }),
 }));
-vi.mock("$lib/shared/auth/services/anonymous-upgrade", () => ({
+vi.mock("#lib/shared/auth/services/anonymous-upgrade.js", () => ({
   captureAnonymousDrafts: vi.fn().mockResolvedValue([]),
   notifyUpgradeSignup: vi.fn().mockResolvedValue(undefined),
   reportGuestUpgradeLifecycle: vi.fn().mockResolvedValue(undefined),
@@ -78,27 +78,29 @@ vi.mock("$lib/shared/auth/services/anonymous-upgrade", () => ({
     upgradeAnonymousWithGoogleMock(...a),
   upgradeAnonymousWithGoogleCredential: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/state/anonymous-import-prompt.svelte", () => ({
+vi.mock("#lib/shared/auth/state/anonymous-import-prompt.svelte.js", () => ({
   promptAnonymousImport: (...a: unknown[]) => promptAnonymousImportMock(...a),
 }));
-vi.mock("$lib/shared/auth/services/pending-credential-link", () => ({
+vi.mock("#lib/shared/auth/services/pending-credential-link.js", () => ({
   clearPendingLink: vi.fn(),
   stashPendingLink: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
+vi.mock("#lib/shared/auth/services/last-auth-method.svelte.js", () => ({
   recordLastAuthMethod: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/services/instagram-auth", () => ({
+vi.mock("#lib/shared/auth/services/instagram-auth.js", () => ({
   authenticateWithInstagram: vi.fn(),
   disconnectInstagramAccount: vi.fn(),
 }));
-vi.mock("$lib/shared/desktop/is-desktop", () => ({ isDesktop: () => false }));
-vi.mock("$lib/shared/platform/services/platform-detector", () => ({
+vi.mock("#lib/shared/desktop/is-desktop.js", () => ({
+  isDesktop: () => false,
+}));
+vi.mock("#lib/shared/platform/services/platform-detector.js", () => ({
   isNative: () => false,
 }));
 
 const { signInWithEmail, signInWithGoogle } =
-  await import("$lib/shared/auth/services/authenticator");
+  await import("#lib/shared/auth/services/authenticator.js");
 
 beforeEach(() => {
   vi.clearAllMocks();

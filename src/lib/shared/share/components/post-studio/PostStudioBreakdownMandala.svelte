@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { MandalaPathPreparer } from "$lib/shared/mandala/services/mandala-path-preparer";
-  import { sequenceMandalaHandOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
-  import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { MandalaPathPreparer } from "#lib/shared/mandala/services/mandala-path-preparer.js";
+  import { sequenceMandalaHandOffsets } from "#lib/shared/mandala/services/mandala-grid-join.js";
+  import { DEFAULT_TRAIL_SETTINGS } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
   let {
     sequence,

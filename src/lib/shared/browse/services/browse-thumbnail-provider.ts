@@ -5,7 +5,7 @@
  * Manages caching and provides URLs for thumbnail access.
  */
 
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export class BrowseThumbnailProvider {
   private thumbnailCache = new Map<string, Promise<void>>();

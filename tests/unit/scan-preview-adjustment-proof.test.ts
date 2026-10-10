@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { hydrateSequence as restoreSemanticFields } from "$lib/shared/navigation/services/sequence-hydrator";
-import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-render-hydrator";
+import { hydrateSequence as restoreSemanticFields } from "#lib/shared/navigation/services/sequence-hydrator.js";
+import { hydrateSequence } from "#lib/features/choreo-card/services/sequence-render-hydrator.js";
 
 /**
  * The scan-preview defect, at the field the arrow pipeline actually gates on.

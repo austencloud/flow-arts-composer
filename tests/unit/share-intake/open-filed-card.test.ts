@@ -14,22 +14,22 @@ const { openSequenceOverlay, hydrateSequence, loopDetector, toast } =
   }));
 
 vi.mock(
-  "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte",
+  "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js",
   () => ({ openSequenceOverlay })
 );
 
-vi.mock("$lib/shared/navigation/services/sequence-hydrator", () => ({
+vi.mock("#lib/shared/navigation/services/sequence-hydrator.js", () => ({
   hydrateSequence: (...args: unknown[]) => hydrateSequence(...args),
 }));
 
-vi.mock("$lib/shared/create/get-loop-detector", () => ({
+vi.mock("#lib/shared/create/get-loop-detector.js", () => ({
   getLoopDetector: () => loopDetector,
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({ toast }));
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({ toast }));
 
-import { openFiledCard } from "$lib/shared/share-intake/services/open-filed-card";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { openFiledCard } from "#lib/shared/share-intake/services/open-filed-card.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function sequence(overrides: Partial<SequenceData> = {}): SequenceData {
   return { id: "s1", name: "Practice", word: "ABAB" } as SequenceData;

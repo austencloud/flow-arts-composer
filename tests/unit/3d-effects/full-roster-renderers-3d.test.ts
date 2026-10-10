@@ -1,30 +1,30 @@
 import { describe, expect, it } from "vitest";
 import { InstancedMesh, Mesh, Scene } from "three";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   resolveAnimal3D,
   resolveInk3D,
   resolvePulse3D,
   resolveSilk3D,
-} from "$lib/shared/effects/translators/webgl3d-translator";
-import { InkRenderer3D } from "$lib/shared/3d/effects/ink/ink-renderer-3d";
-import { SilkRenderer3D } from "$lib/shared/3d/effects/silk/silk-renderer-3d";
-import { AnimalRenderer3D } from "$lib/shared/3d/effects/animal/animal-renderer-3d";
-import { PulseRenderer3D } from "$lib/shared/3d/effects/pulse/pulse-renderer-3d";
-import { TipPositionBridge3D } from "$lib/shared/3d/effects/tip-position-bridge-3d";
-import { MUSEUM_EXHIBIT_SEQUENCES } from "$lib/features/museum/data/museum-exhibit-sequences";
+} from "#lib/shared/effects/translators/webgl3d-translator.js";
+import { InkRenderer3D } from "#lib/shared/3d/effects/ink/ink-renderer-3d.js";
+import { SilkRenderer3D } from "#lib/shared/3d/effects/silk/silk-renderer-3d.js";
+import { AnimalRenderer3D } from "#lib/shared/3d/effects/animal/animal-renderer-3d.js";
+import { PulseRenderer3D } from "#lib/shared/3d/effects/pulse/pulse-renderer-3d.js";
+import { TipPositionBridge3D } from "#lib/shared/3d/effects/tip-position-bridge-3d.js";
+import { MUSEUM_EXHIBIT_SEQUENCES } from "#lib/features/museum/data/museum-exhibit-sequences.js";
 import {
   getStartPlacementConfigs,
   sequenceToMotionConfigs,
-} from "$lib/shared/3d/services/sequence-converter";
-import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
+} from "#lib/shared/3d/services/sequence-converter.js";
+import { calculatePropState } from "#lib/shared/3d/services/prop-state-interpolator.js";
 import { Plane } from "@austencloud/scene-3d";
 import type {
   AnimalTipSource3D,
   InkTipSource3D,
   PulseTipSource3D,
   SilkTipSource3D,
-} from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
+} from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d.js";
 
 const base = {
   sourceId: 1,

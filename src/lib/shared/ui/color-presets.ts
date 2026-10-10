@@ -3,7 +3,7 @@
 // and deep rows share one perceived lightness; the vivid row sits at each
 // hue's gamut cusp (its most saturated sRGB color). 48 divides by 12, 8 and
 // 6, so the swatch grid never ends on a short row.
-import { t } from "$lib/shared/i18n/i18n.svelte";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 export type ColorPresetRow = "light" | "vivid" | "deep" | "neutral";
 

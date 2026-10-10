@@ -5,7 +5,7 @@
    * Toggle between diamond/box grid modes and show/hide individual planes.
    */
 
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Plane, PLANE_LABELS, PLANE_COLORS } from "@austencloud/scene-3d";
   import type { GridMode } from "@austencloud/scene-3d";
 

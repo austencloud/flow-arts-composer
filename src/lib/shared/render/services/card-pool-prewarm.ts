@@ -5,13 +5,13 @@
 // warm worker path. Fire-and-forget; any failure leaves canUseWorker()===false
 // and the render falls back to the main thread (no regression).
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { CompositionDispatcher } from "./composition-dispatcher";
 import { getCompositionDispatcher } from "../get-composition-dispatcher";
 import { getCardAssetBundle } from "./get-card-asset-bundle";
 import { buildOverridePlacementBundle } from "./override-placement-bundle";
-import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
+import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
 
 export interface PrewarmOptions {
   sequences: SequenceData[];

@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { CollectedTunnel } from "$lib/features/tunnel-collection/domain/tunnel-collection-types";
-import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
+import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   createIndependentTunnelPerformer,
   createTunnelComposition,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   consumeTunnelCreatorHandoff,
   createTunnelCreatorHandoff,
   saveTunnelCreatorHandoff,
-} from "$lib/features/create/tunnel/services/tunnel-creator-handoff";
+} from "#lib/features/create/tunnel/services/tunnel-creator-handoff.js";
 
 const STORAGE_KEY = "tka:tunnel-creator-handoff";
 

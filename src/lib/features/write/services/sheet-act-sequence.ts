@@ -15,9 +15,9 @@
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 import { loopStatus } from "./sheet-continuity";
 
 export function buildActSequence(

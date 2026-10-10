@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import type { GridJoin } from "@tka/tka-types";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { cellRasterKey, joinedCellStep } from "./sheet-cell-raster";
 import { buildBands, planSheet } from "./sheet-row-planner";
 import { getSheetPageLayout } from "../domain/sheet-page-layout";

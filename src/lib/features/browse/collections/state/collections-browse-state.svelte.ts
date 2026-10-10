@@ -5,12 +5,12 @@
  * Data is cached at module level to prevent reloading on tab switches.
  */
 
-import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import { getUsers } from "$lib/shared/community/services/user-repository";
-import { getUserPublicCollections } from "$lib/features/library/services/public-collection-loader";
-import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
+import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import { getUsers } from "#lib/shared/community/services/user-repository.js";
+import { getUserPublicCollections } from "#lib/features/library/services/public-collection-loader.js";
+import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
 
 /**
  * Creator library data - profile + their public content

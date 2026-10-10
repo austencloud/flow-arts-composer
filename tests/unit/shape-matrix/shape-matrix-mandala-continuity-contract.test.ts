@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import {
   SHAPE_MATRIX_ACTIVE_MANDALA_NAME,
   SHAPE_MATRIX_ACTIVE_STAGE_NAME,
-} from "$lib/shared/shape-matrix/services/shape-matrix-artwork";
+} from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
 
 const ROOT = resolve(process.cwd(), "src/lib/shared/shape-matrix");
 const read = (relative: string) =>

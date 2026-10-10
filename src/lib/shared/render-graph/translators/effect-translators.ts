@@ -6,7 +6,7 @@ import type {
   InkIntent,
   FrostIntent,
   SilkIntent,
-} from "$lib/shared/effects/domain/effects-config";
+} from "#lib/shared/effects/domain/effects-config.js";
 import type {
   GhostPassPayload,
   GhostPhantom,

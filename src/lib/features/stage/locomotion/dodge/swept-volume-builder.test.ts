@@ -4,11 +4,11 @@ import {
   MotionType,
   RotationDirection,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { buildSweptVolume } from "./swept-volume-builder";
-import { handToPropTarget } from "$lib/features/lab/tabs/collision-lab/services/pose-target-mapper";
-import type { MotionConfig3D } from "$lib/shared/3d/domain/models/motion-data-3d";
+import { handToPropTarget } from "#lib/features/lab/tabs/collision-lab/services/pose-target-mapper.js";
+import type { MotionConfig3D } from "#lib/shared/3d/domain/models/motion-data-3d.js";
 
 // LH wheel-plane spin held at south, "in", 2 turns — the impaling move.
 const blueSpin: MotionConfig3D = {

@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import { GripType } from "@austencloud/scene-3d";
 import { createAvatarServices } from "../../../node_modules/@austencloud/scene-3d/src/lib/services/implementations/AvatarServicesFactory";
 import { fingerChainEnclosesCylinder } from "../../../node_modules/@austencloud/scene-3d/src/lib/services/implementations/FingerAnimator";
-import { auditFireStaffProfile } from "$lib/shared/3d/diagnostics/contact-correct/fire-staff-mesh-audit";
+import { auditFireStaffProfile } from "#lib/shared/3d/diagnostics/contact-correct/fire-staff-mesh-audit.js";
 import { avatar, avatarAssetsPresent, loadRig } from "../3d/locomotion-harness";
-import { sampleStaffIsolation } from "$lib/shared/3d/performers/staff-isolation";
+import { sampleStaffIsolation } from "#lib/shared/3d/performers/staff-isolation.js";
 
 const ORIGIN = new Vector3(0, 1.5621, 0.3);
 const PHASE = 0.806;

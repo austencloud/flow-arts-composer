@@ -3,7 +3,7 @@ import {
   getModuleGridLayout,
   getModuleGridMaxColumns,
   MODULE_GRID_MAX_COLUMNS,
-} from "$lib/shared/navigation/domain/module-grid-layout";
+} from "#lib/shared/navigation/domain/module-grid-layout.js";
 
 // Content widths the sheet gives the grid once gutters and the reserved
 // scrollbar gutter are removed: a 375px phone, the 280px landscape side

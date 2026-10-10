@@ -23,9 +23,9 @@
   import {
     createArcadeSession,
     setArcadeSessionContext,
-  } from "$lib/features/learn/play/state/arcade-session-state.svelte";
-  import { getGame } from "$lib/features/learn/play/domain/game-registry";
-  import PictographToLetterGame from "$lib/features/learn/play/games/PictographToLetterGame.svelte";
+  } from "#lib/features/learn/play/state/arcade-session-state.svelte.js";
+  import { getGame } from "#lib/features/learn/play/domain/game-registry.js";
+  import PictographToLetterGame from "#lib/features/learn/play/games/PictographToLetterGame.svelte";
 
   const session = createArcadeSession();
   setArcadeSessionContext(session);

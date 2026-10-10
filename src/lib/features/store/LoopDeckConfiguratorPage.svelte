@@ -17,11 +17,13 @@
 -->
 <script lang="ts">
   import "./styles/config-page.css";
-  import * as singleBuyCheckoutCreator from "$lib/features/store/services/single-buy-checkout-creator";
-  import { getProductLoader } from "$lib/features/store/get-product-loader";
+  import * as singleBuyCheckoutCreator from "#lib/features/store/services/single-buy-checkout-creator.js";
+  import { getProductLoader } from "#lib/features/store/get-product-loader.js";
   import { createStoreState } from "./state/store-state.svelte";
   import { setStoreContext } from "./context/store-context";
-  import ShopProductShell from "./components/shell/ShopProductShell.svelte";
+  import ShopProductShell, {
+    type ShopAssurance,
+  } from "./components/shell/ShopProductShell.svelte";
   import ShopPurchaseCta from "./components/shell/ShopPurchaseCta.svelte";
   import { deriveCrossSell } from "./domain/catalog-listings";
   import { purchaseCtaLabel, resolvePurchaseState, SALES_LIVE } from "./domain/purchase-state";
@@ -34,18 +36,18 @@
   import CardAnatomyExplainer from "./components/CardAnatomyExplainer.svelte";
   import PreorderPriceNote from "./components/PreorderPriceNote.svelte";
   import { activePriceCents, preorderWindowOpen, formatUsd } from "./domain/preorder-pricing";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import BaseCard from "$lib/features/create/generate/components/cards/BaseCard.svelte";
-  import { LOOPType } from "$lib/features/create/generate/circular/domain/models/circular-models";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import BaseCard from "#lib/features/create/generate/components/cards/BaseCard.svelte";
+  import { LOOPType } from "#lib/features/create/generate/circular/domain/models/circular-models.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import {
     parseLoopComponents,
     generateLOOPType,
-  } from "$lib/shared/create/services/loop-type-utils";
-  import { generateExplanationText } from "$lib/features/create/generate/shared/services/loop-explanation-text-generator";
-  import { getCardColors } from "$lib/shared/create/domain/card-colors";
+  } from "#lib/shared/create/services/loop-type-utils.js";
+  import { generateExplanationText } from "#lib/features/create/generate/shared/services/loop-explanation-text-generator.js";
+  import { getCardColors } from "#lib/shared/create/domain/card-colors.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
+  import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
   import { untrack } from "svelte";
   import { scale } from "svelte/transition";
   import { quintOut } from "svelte/easing";
@@ -74,11 +76,11 @@
     type LoopFlavor,
     type LoopConfig,
   } from "./domain/loop-config";
-  import { getActivityLogger } from "$lib/shared/analytics/get-activity-logger";
+  import { getActivityLogger } from "#lib/shared/analytics/get-activity-logger.js";
   import { trackVariantSelected, trackPropSelected } from "./analytics/shop-funnel";
   import { trackViewOnceLoaded } from "./analytics/shop-funnel-view.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   interface Props {
     /** The server's catalog snapshot, so the first HTML is the real page. */
@@ -531,9 +533,10 @@
   // flavor SKU stands in while it isn't seeded yet (neither has a Stripe price
   // in that state, so the buyer gets the same honest waitlist either way).
   const buySku = $derived(customSku ?? flavorSkus[0] ?? null);
-  const purchasable = $derived(
-    buySku !== null && resolvePurchaseState(buySku, SALES_LIVE) !== "notify"
+  const purchaseState = $derived(
+    buySku === null ? "notify" : resolvePurchaseState(buySku, SALES_LIVE)
   );
+  const purchasable = $derived(purchaseState !== "notify");
 
   // The dock is the same offer as the primary CTA, so it reads from the same
   // resolver instead of hard-coding "Preorder now" — a hard-coded preorder
@@ -553,8 +556,14 @@
   // teaching aid, not a preview — it should stay put while the buyer configures.
   const anatomyCard = $derived(flavorSkus[0]?.coverCards?.[0]);
 
-  const ASSURANCES = [
-    { icon: "fas fa-calendar-check", text: "Preorder now. Decks ship October 1." },
+  // The ship-date line is the preorder promise. It reads from the same
+  // resolver as the buy button, so a page that can only take an email never
+  // claims a ship date beside its "Preorders open soon" box.
+  const PREORDER_ASSURANCE: ShopAssurance = {
+    icon: "fas fa-calendar-check",
+    text: "Preorder now. Decks ship October 1.",
+  };
+  const STANDING_ASSURANCES: readonly ShopAssurance[] = [
     {
       icon: "fas fa-box-open",
       text: "Explainer card, laminated quick-reference sheet, and deck box included",
@@ -564,6 +573,11 @@
       text: "Printed and cut by hand in Chicago, small batches",
     },
   ];
+  const assurances = $derived(
+    purchaseState === "preorder"
+      ? [PREORDER_ASSURANCE, ...STANDING_ASSURANCES]
+      : STANDING_ASSURANCES
+  );
 
   const NOTIFY_TEXT =
     "Preorders open soon. Leave an email and you'll hear the moment they do.";
@@ -584,7 +598,7 @@
   price={flavorSkus.length > 0 ? price : undefined}
   checkoutError={store.checkoutError}
   {crossSell}
-  assurances={ASSURANCES}
+  {assurances}
   loading={store.isLoading && flavorSkus.length === 0}
   loadingLabel="Loading the deck..."
   error={store.error ??

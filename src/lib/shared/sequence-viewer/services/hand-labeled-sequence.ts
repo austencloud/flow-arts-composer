@@ -11,12 +11,12 @@
  * is a new object, so identity is the right key. Same approach as the cache
  * PostStudio used for its mirror toggle before this module owned it.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   mirrorSequence,
   swapHands,
-} from "$lib/shared/create/services/sequence-transformer";
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+} from "#lib/shared/create/services/sequence-transformer.js";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 
 export interface HandLabelingTransforms {
   mirror: (sequence: SequenceData) => Promise<SequenceData>;

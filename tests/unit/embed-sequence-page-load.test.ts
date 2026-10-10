@@ -10,19 +10,18 @@ vi.mock("../../src/routes/sequence/[id]/published-meta", async () => {
 });
 
 import { load } from "../../src/routes/embed/sequence/[id]/+page.server";
+import { setWorkerEnv } from "#test-helpers/worker-env.js";
 
 type EmbedData = {
   meta: { source: string; catalogId: string | null; word: string | null };
   title: string;
 };
 
-function run(id: string, platformCredential?: string) {
+function run(id: string, credential?: string) {
+  setWorkerEnv(credential ? { FIREBASE_SERVICE_ACCOUNT_JSON: credential } : {});
   return load({
     params: { id },
     url: new URL(`https://tkaflowarts.com/embed/sequence/${id}`),
-    platform: platformCredential
-      ? { env: { FIREBASE_SERVICE_ACCOUNT_JSON: platformCredential } }
-      : undefined,
   } as never) as Promise<EmbedData>;
 }
 

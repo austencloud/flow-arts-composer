@@ -85,7 +85,7 @@ describe("Create workspace share control contract", () => {
     expect(shareControlSource).toContain('label: t("viewer_ui_send_sequence")');
     expect(shareControlSource).toContain('icon: "fa-paper-plane"');
     expect(shareButtonSource).toContain(
-      'from "$lib/shared/inbox/state/send-sequence-state.svelte"'
+      'from "#lib/shared/inbox/state/send-sequence-state.svelte.js"'
     );
     expect(shareButtonSource).toContain(
       "...buildSequenceSharePayload(currentSequence)"

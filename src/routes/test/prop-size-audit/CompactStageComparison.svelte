@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { VIEWBOX_SIZE } from "$lib/shared/render/core/constants/viewbox";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { VIEWBOX_SIZE } from "#lib/shared/render/core/constants/viewbox.js";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     AUTHORED_BIG_FAN_HEIGHT,
     AUTHORED_BIG_FAN_SPAN,

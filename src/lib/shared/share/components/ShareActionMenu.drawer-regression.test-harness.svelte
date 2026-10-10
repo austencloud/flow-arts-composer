@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import type { ShareActionMenuItem } from "$lib/shared/share/domain/models/share-action-menu";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import type { ShareActionMenuItem } from "#lib/shared/share/domain/models/share-action-menu.js";
   import ShareActionMenu from "./ShareActionMenu.svelte";
 
   let viewerOpen = $state(true);

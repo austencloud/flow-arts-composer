@@ -4,14 +4,14 @@ import {
   pickPetalTint,
   resolvePetalOpacity,
   rollEmberFlag,
-} from "$lib/shared/effects/domain/petal-palettes";
+} from "#lib/shared/effects/domain/petal-palettes.js";
 import {
   addPetalWake3D,
   resolvePetalAirflowPhrase,
   samplePetalAirflow3D,
   type PetalAirflow3D,
   type PetalWakeSource3D,
-} from "$lib/shared/effects/domain/petal-airflow";
+} from "#lib/shared/effects/domain/petal-airflow.js";
 import {
   NEUTRAL_PETAL_ENVIRONMENT_PROFILE,
   resolveEmberWorldSpan,

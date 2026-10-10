@@ -13,8 +13,8 @@
  * 2. Each save/delete/favorite operation (push to cloud)
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import type { Composition } from "$lib/shared/animation-engine/domain/compose-types";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
 import {
   saveComposition as dexieSaveComposition,
   deleteComposition as dexieDeleteComposition,
@@ -28,12 +28,12 @@ import {
   getCompositions as firebaseGetCompositions,
   updateFavorite as firebaseUpdateFavorite,
 } from "./firebase-composition-repository";
-import type { ErrorHandler } from '$lib/shared/application/services/error-handler'
+import type { ErrorHandler } from '#lib/shared/application/services/error-handler.js'
 import {
   trackCompositionDeleted,
   trackCompositionFavoriteChanged,
   trackCompositionSaved,
-} from "$lib/features/compose/analytics/compose-events";
+} from "#lib/features/compose/analytics/compose-events.js";
 
 export class CompositionSyncer {
   private hasSynced = false;

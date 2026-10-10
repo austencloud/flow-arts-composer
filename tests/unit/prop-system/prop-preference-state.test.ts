@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const persister = vi.hoisted(() => ({
   loadPropPreferences: vi.fn(),
@@ -7,11 +7,11 @@ const persister = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "$lib/shared/community/services/prop-preference-persister",
+  "#lib/shared/community/services/prop-preference-persister.js",
   () => persister
 );
 
-import { createPropPreferenceState } from "$lib/shared/community/state/prop-preference-state.svelte";
+import { createPropPreferenceState } from "#lib/shared/community/state/prop-preference-state.svelte.js";
 
 function deferred() {
   let resolve!: () => void;

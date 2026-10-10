@@ -5,11 +5,11 @@
  * Extracted from OptionPickerService for better separation of concerns.
  */
 
-import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { IMotionQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { PlacementAnalyzer } from "./placement-analyzer";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 
 export class OptionLoader {
   constructor(
@@ -71,7 +71,7 @@ export class OptionLoader {
   }
 }
 
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 import { placementAnalyzer } from "./placement-analyzer";
 
 export const optionLoader = new OptionLoader(

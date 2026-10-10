@@ -20,7 +20,7 @@ import museumSnapshots from "./fixtures/museum-snapshots.json";
 import {
   planeAngleToWorldPosition,
   calculatePropQuaternion,
-} from "$lib/shared/3d/domain/constants/plane-transforms";
+} from "#lib/shared/3d/domain/constants/plane-transforms.js";
 import { Plane } from "@austencloud/scene-3d";
 import type { PropState3D } from "@austencloud/scene-3d";
 

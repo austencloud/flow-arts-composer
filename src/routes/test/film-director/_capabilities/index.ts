@@ -1,4 +1,4 @@
-import { hashString } from "$lib/shared/3d/procedural-engine/generation/seed-generator";
+import { hashString } from "#lib/shared/3d/procedural-engine/generation/seed-generator.js";
 
 import type {
   DirectorSceneCategory,

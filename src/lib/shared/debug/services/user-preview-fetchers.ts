@@ -10,9 +10,9 @@
  * the vendor-firebase chunk when it checks what a merge would load.
  */
 import type { Timestamp } from "firebase/firestore";
-import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
-import type { NotificationPreferences } from "$lib/shared/notifications/domain/models/notification-models";
-import { DEFAULT_NOTIFICATION_PREFERENCES } from "$lib/shared/notifications/domain/models/notification-models";
+import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
+import type { NotificationPreferences } from "#lib/shared/notifications/domain/models/notification-models.js";
+import { DEFAULT_NOTIFICATION_PREFERENCES } from "#lib/shared/notifications/domain/models/notification-models.js";
 import type {
   PreviewAuthData,
   PreviewCollection,
@@ -34,7 +34,7 @@ function formatTimestamp(
 }
 
 async function loadFirestoreInstance() {
-  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
   return getFirestoreInstance();
 }
 
@@ -233,7 +233,7 @@ export async function fetchAuthData(
   try {
     // Get the current user's ID token for auth
     // Use getAuthInstance() to ensure Firebase is properly initialized
-    const { getAuthInstance } = await import("$lib/shared/auth/firebase");
+    const { getAuthInstance } = await import("#lib/shared/auth/firebase.js");
     const auth = await getAuthInstance();
     const currentUser = auth.currentUser;
     if (!currentUser) {

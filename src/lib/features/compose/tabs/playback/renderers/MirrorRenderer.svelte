@@ -5,7 +5,7 @@
   Currently displays placeholder split view - will be enhanced with actual mirroring logic.
 -->
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import CanvasControls from "../components/CanvasControls.svelte";
 
   type MirrorAxis = "vertical" | "horizontal";

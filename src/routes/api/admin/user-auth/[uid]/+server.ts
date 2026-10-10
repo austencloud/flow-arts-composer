@@ -1,28 +1,29 @@
 /** Authoritative admin boundary for Firebase Auth and privileged profile mutations. */
 import type { RequestHandler } from "@sveltejs/kit";
-import { error, json } from "@sveltejs/kit";
-import { requireAdmin } from "$lib/server/auth/requireAdmin";
+import { error } from "@sveltejs/kit";
+import { requireAdmin } from "#lib/server/auth/requireAdmin.js";
 import {
   getFirebaseAuthRest,
   type FirebaseAuthUser,
-} from "$lib/server/auth/firebase-auth-rest";
-import { getAdminAuth, getAdminDb } from "$lib/server/firebaseAdmin";
+} from "#lib/server/auth/firebase-auth-rest.js";
+import { getAdminAuth, getAdminDb } from "#lib/server/firebaseAdmin.js";
 import {
   fromFirestoreFields,
   getFirestoreRest,
   toFirestoreFields,
-} from "$lib/server/firestore/firestore-rest";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { logAdminAction } from "$lib/server/security/audit-logger";
-import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
+} from "#lib/server/firestore/firestore-rest.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { logAdminAction } from "#lib/server/security/audit-logger.js";
+import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
 import type { UserRecord } from "firebase-admin/auth";
 import { Timestamp } from "firebase-admin/firestore";
 import { createHash, randomUUID } from "node:crypto";
 import {
   PUBLIC_PROFILE_FIELDS,
   PUBLIC_PROFILE_VERSION,
-} from "$lib/shared/community/domain/models/public-profile-contract";
+} from "#lib/shared/community/domain/models/public-profile-contract.js";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 const VALID_ROLES = new Set<UserRole>(["user", "premium", "tester", "admin"]);
 const RESERVED_FIRESTORE_DOCUMENT_ID = /^__.*__$/;
@@ -513,8 +514,7 @@ export const GET: RequestHandler = async (event) => {
     const { caller, blocked } = await authorize(event);
     if (blocked) return blocked;
     const uid = targetUid(event);
-    const platformCredential =
-      event.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON;
+    const platformCredential = workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON;
     const [record, contributor, adminMetadata, privateProfile] =
       await Promise.all([
         getFirebaseAuthRest(platformCredential).getUser(uid),
@@ -531,7 +531,9 @@ export const GET: RequestHandler = async (event) => {
       },
       platformCredential
     );
-    return json(authData(record, contributor, adminMetadata, privateProfile));
+    return Response.json(
+      authData(record, contributor, adminMetadata, privateProfile)
+    );
   } catch (cause) {
     return handleFailure(cause, "fetch user auth data");
   }
@@ -542,8 +544,7 @@ export const PATCH: RequestHandler = async (event) => {
     const { caller, blocked } = await authorize(event);
     if (blocked) return blocked;
     const uid = targetUid(event);
-    const platformCredential =
-      event.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON;
+    const platformCredential = workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON;
     const mutation = mutationBody(await event.request.json());
     const auth = getAdminAuth();
     const db = getAdminDb();
@@ -727,7 +728,7 @@ export const PATCH: RequestHandler = async (event) => {
         readAdminMetadata(uid, platformCredential),
         readPrivateProfile(uid, platformCredential),
       ]);
-    return json({
+    return Response.json({
       success: true,
       auth: authData(record, contributor, adminMetadata, privateProfile),
     });
@@ -741,8 +742,7 @@ export const DELETE: RequestHandler = async (event) => {
     const { caller, blocked } = await authorize(event);
     if (blocked) return blocked;
     const uid = targetUid(event);
-    const platformCredential =
-      event.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON;
+    const platformCredential = workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON;
     if (caller.uid === uid)
       throw error(409, "Administrators cannot delete their own account here");
     const mutationLease = await acquireUserMutationLocks(uid, true);
@@ -762,7 +762,7 @@ export const DELETE: RequestHandler = async (event) => {
       },
       platformCredential
     );
-    return json({ success: true });
+    return Response.json({ success: true });
   } catch (cause) {
     return handleFailure(cause, "delete user");
   }

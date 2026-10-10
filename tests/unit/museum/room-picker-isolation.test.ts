@@ -2,25 +2,25 @@ import { describe, expect, it } from "vitest";
 import {
   MUSEUM_WALK_ROOMS,
   MUSEUM_WALK_EDGES,
-} from "$lib/features/museum/data/museum-walk";
-import { ROOM_PICKER_ROOMS } from "$lib/features/museum/components/room-picker-rooms";
+} from "#lib/features/museum/data/museum-walk.js";
+import { ROOM_PICKER_ROOMS } from "#lib/features/museum/components/room-picker-rooms.js";
 import {
   ROOM_ISOLATION_GROUPS,
   resolveRoomIsolation,
-} from "$lib/features/museum/services/room-isolation";
-import { buildMuseumGrid } from "$lib/features/museum/services/museum-grid-builder";
+} from "#lib/features/museum/services/room-isolation.js";
+import { buildMuseumGrid } from "#lib/features/museum/services/museum-grid-builder.js";
 // The real config the module builds with. An invented one compiles a grid
 // whose rooms sit at different coordinates, so its doors never line up and
 // the wing layouts fail for reasons the running app would never hit.
-import { GRID_CONFIG } from "$lib/features/museum/data/museum-room-graph";
-import { attachMuseumWalkTerrain } from "$lib/features/museum/data/museum-walk";
-import type { MuseumGrid } from "$lib/features/museum/domain/museum-grid-types";
-import { buildEarthRootTerraceLayout } from "$lib/features/museum/data/earth-root-terrace-terrain";
-import { buildAirChimneyLayout } from "$lib/features/museum/data/air-chimney-layout";
-import { buildDrownedGalleryLayout } from "$lib/features/museum/data/drowned-gallery-terrain";
-import { buildMoonLayout } from "$lib/features/museum/data/moon-layout";
-import { buildSundialLayout } from "$lib/features/museum/data/sundial-layout";
-import { buildFirstFireProcessionPlanForGrid } from "$lib/features/museum/data/first-fire-procession-plan";
+import { GRID_CONFIG } from "#lib/features/museum/data/museum-room-graph.js";
+import { attachMuseumWalkTerrain } from "#lib/features/museum/data/museum-walk.js";
+import type { MuseumGrid } from "#lib/features/museum/domain/museum-grid-types.js";
+import { buildEarthRootTerraceLayout } from "#lib/features/museum/data/earth-root-terrace-terrain.js";
+import { buildAirChimneyLayout } from "#lib/features/museum/data/air-chimney-layout.js";
+import { buildDrownedGalleryLayout } from "#lib/features/museum/data/drowned-gallery-terrain.js";
+import { buildMoonLayout } from "#lib/features/museum/data/moon-layout.js";
+import { buildSundialLayout } from "#lib/features/museum/data/sundial-layout.js";
+import { buildFirstFireProcessionPlanForGrid } from "#lib/features/museum/data/first-fire-procession-plan.js";
 
 
 describe("room isolation", () => {

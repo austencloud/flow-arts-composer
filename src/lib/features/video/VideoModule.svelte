@@ -11,21 +11,21 @@
   Navigation between tabs is handled by the sidebar - no internal tab bar needed.
 -->
 <script lang="ts">
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { VIDEO_TABS } from "$lib/shared/navigation/config/tab-definitions";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { VIDEO_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
   import type { Component } from "svelte";
 
   // Dynamic tab imports - lazy-load each tab component
   const tabComponents: Record<string, () => Promise<{ default: Component }>> = {
     "video-trails": () => import("./video-trails/VideoTrailsLab.svelte"),
     "video-lab": () => import("./video-lab/VideoLab.svelte"),
-    skel2tka: () => import("$lib/features/skel2tka/Skel2TKALab.svelte"),
+    skel2tka: () => import("#lib/features/skel2tka/Skel2TKALab.svelte"),
     "led-notation": () =>
-      import("$lib/features/train/prop-tracking-lab/components/PropTrackingLab.svelte"),
+      import("#lib/features/train/prop-tracking-lab/components/PropTrackingLab.svelte"),
     // The curator already owns the catalog, filtering, and sequence-linking
     // workflow. Video is its user-facing home; importing it here keeps that
     // workflow in one place instead of creating a second catalog.
-    curator: () => import("$lib/features/landing-preview/components/VideoCurator.svelte"),
+    curator: () => import("#lib/features/landing-preview/components/VideoCurator.svelte"),
   };
 
   // Get current tab, default to first tab

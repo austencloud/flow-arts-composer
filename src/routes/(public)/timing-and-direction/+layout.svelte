@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount, onDestroy, untrack, type Snippet } from "svelte";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { page } from "$app/state";
-  import HandMotionPlayer from "$lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
-  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { reparentToInspector as reparentToSlot } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
+  import HandMotionPlayer from "#lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { reparentToInspector as reparentToSlot } from "#lib/shared/sequence-viewer/components/reparent-to-inspector.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import {
     createRenderActivityGate,
     renderGateTarget,
-  } from "$lib/shared/render-gating/render-activity-gate";
+  } from "#lib/shared/render-gating/render-activity-gate.js";
   import {
     createTimingDirectionState,
     setTimingDirectionState,
@@ -19,11 +19,9 @@
   const playback = createTimingDirectionState(page.params.mode);
   setTimingDirectionState(playback);
   const gate = createRenderActivityGate({ name: "timing-direction-journey" });
-  // Together–Opposite owns the canonical inline showcase player. The other
-  // articles keep this retained canvas, even while route state is changing.
-  const togetherOppositeRoute = $derived(
-    page.params.mode === "together-time-opposite-direction"
-  );
+  // Each mode guide owns an inline showcase player. Only the hub explorer
+  // borrows this retained canvas.
+  const hubRoute = $derived(page.params.mode === undefined);
   onDestroy(() => gate.dispose());
   onMount(() => {
     if (reducedMotion()) playback.playing = false;
@@ -31,7 +29,7 @@
 
   $effect(() => {
     const slug = page.params.mode;
-    if (slug) untrack(() => playback.select(slug));
+    untrack(() => playback.followRoute(slug));
   });
 
   $effect(() => {
@@ -52,7 +50,7 @@
     >
       <!-- The animation engine is stubbed out of the production SSR build
            (see SSR_STUBBED_SHARED_RENDER_PATHS), so the canvas mounts client-only. -->
-      {#if browser && !togetherOppositeRoute}
+      {#if browser && hubRoute}
         <HandMotionPlayer
           primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
           sequence={playback.sequence}
@@ -98,7 +96,6 @@
       var(--mode-accent) 7%,
       var(--theme-panel-bg)
     );
-    view-transition-name: timing-direction-canvas;
   }
   .shared-canvas :global(.progress-bar-container) {
     background: transparent;

@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { OptionSorter } from './services/option-sorter';
 import { getPlacementAnalyzer } from './get-placement-analyzer';
 

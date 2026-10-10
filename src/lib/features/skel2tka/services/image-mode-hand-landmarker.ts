@@ -14,7 +14,7 @@
  *    wrong one throws at runtime.
  */
 
-import type { HandLandmarkerResult } from "$lib/features/train/services/hand-landmarker";
+import type { HandLandmarkerResult } from "#lib/features/train/services/hand-landmarker.js";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MediaPipeHandLandmarker = any;
 

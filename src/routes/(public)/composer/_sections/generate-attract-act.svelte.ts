@@ -15,7 +15,7 @@
 import {
   createAttractGhost,
   type AttractActHandle,
-} from "$lib/shared/attract/services/attract-ghost.svelte";
+} from "#lib/shared/attract/services/attract-ghost.svelte.js";
 
 // Stepper touch zones across the Length / Level / Turn-intensity cards. The
 // :not(:disabled) filter keeps the ghost off dead ends (length at its cap,

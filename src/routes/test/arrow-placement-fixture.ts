@@ -1,23 +1,23 @@
-import { rotateMotion } from "$lib/shared/create/services/motion-transforms";
+import { rotateMotion } from "#lib/shared/create/services/motion-transforms.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { generatePlacementKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { generatePlacementKey } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 
 export type PlacementMotionName = "pro" | "anti" | "float" | "dash" | "static";
 export type PlacementMap = Record<string, Record<string, [number, number]>>;

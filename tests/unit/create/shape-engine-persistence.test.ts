@@ -5,7 +5,7 @@ import {
   SHAPE_ENGINE_STORAGE_KEY,
   SHAPE_ENGINE_LEGACY_STORAGE_KEY,
   createShapeEnginePersistence,
-} from "$lib/features/create/shape-engine/shape-engine-persistence";
+} from "#lib/features/create/shape-engine/shape-engine-persistence.js";
 
 const snapshot = (level: number) =>
   ({ level }) as unknown as Parameters<

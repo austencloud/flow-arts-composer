@@ -22,30 +22,30 @@ Last audit: 2025-12-27
 ================================================================================
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
   import type { TrailSettings } from "../domain/types/trail-types";
   import { activeWordHeaderStep } from "../domain/word-header-highlight";
-  import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
-  import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+  import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+  import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
   import CanvasSurface from "./CanvasSurface.svelte";
   import WordHeader from "./layers/WordHeader.svelte";
-  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
-  import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
+  import UnifiedTimeline from "#lib/shared/timeline/UnifiedTimeline.svelte";
+  import { getViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
   import {
     reparentToInspector,
     type ReparentOptions,
-  } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
-  import SequenceProgressBar from "$lib/shared/animation-engine/components/layers/SequenceProgressBar.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { createAnimatorPlaybackAdapter } from "$lib/shared/timeline/adapters/animator-playback-adapter.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  } from "#lib/shared/sequence-viewer/components/reparent-to-inspector.js";
+  import SequenceProgressBar from "#lib/shared/animation-engine/components/layers/SequenceProgressBar.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { createAnimatorPlaybackAdapter } from "#lib/shared/timeline/adapters/animator-playback-adapter.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     AnimationEngine,
     type AdditionalLayerTextureStatus,
@@ -54,12 +54,12 @@ Last audit: 2025-12-27
     getAnimationVisibilityManager,
     type AnimationVisibilityStateManager,
   } from "../state/animation-visibility-state.svelte";
-  import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
+  import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
   import {
     tryGetLoopDisplayResolver,
     type LoopDisplay,
-  } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import type { FireOverlayConfig } from "../domain/types/fire-types";
   import type { LedOverlayConfig } from "../domain/types/led-types";
   import type {
@@ -68,19 +68,19 @@ Last audit: 2025-12-27
     EffectType,
   } from "../domain/types/tip-effect-types";
   import CanvasContextMenuHost from "./canvas-context-menu/CanvasContextMenuHost.svelte";
-  import { isEmbeddedInAnotherSite } from "$lib/shared/foundation/utils/embedded-in-another-site";
-  import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
+  import { isEmbeddedInAnotherSite } from "#lib/shared/foundation/utils/embedded-in-another-site.js";
+  import type { ContextMenuEntry } from "#lib/shared/components/context-menu/context-menu-types.js";
   import {
     resolveDisassemblyArrangement,
     type DisassemblyArrangement,
   } from "../services/disassembly-arrangement";
   import SplitCanvasView from "./SplitCanvasView.svelte";
   import { resolveAnimationGridJoin } from "../services/animation-grid-join";
-  import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import type { QualityTier } from "../domain/types/quality-types";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { GlyphOverlayFrameMode } from "../domain/glyph-overlay-frame";
 
   // Props
@@ -170,6 +170,8 @@ Last audit: 2025-12-27
     onPlaybackModeChange = undefined,
     onSaveToLibrary = undefined,
     initialQualityTier = undefined,
+    trailOverlay = true,
+    ghostAnnotations = true,
   }: {
     leftProp: PropState | null;
     rightProp: PropState | null;
@@ -349,6 +351,15 @@ Last audit: 2025-12-27
     onSaveToLibrary?: () => void | Promise<void>;
     /** Optional adaptive-quality ceiling for performance-sensitive embeds. */
     initialQualityTier?: QualityTier;
+    /** False never creates the main canvas's GPU trail layer, which costs a
+     *  few hundred milliseconds of main-thread time at mount. Only for canvases
+     *  whose trails stay off for their whole life, such as decorative previews.
+     *  The split view draws its own canvases and does not take this option. */
+    trailOverlay?: boolean;
+    /** False omits the data-ghost* annotations, so the admin ghost presenter
+     *  neither parks beside this canvas nor reads its playing state. For
+     *  decorative previews that sit inside another control. */
+    ghostAnnotations?: boolean;
   } = $props();
 
   const resolvedContextId =
@@ -444,14 +455,15 @@ Last audit: 2025-12-27
     (hideProgressBar ? 3.5 : focused ? 8.5 : 7) * 16
   );
 
+  // The observer's first notification arrives before the host paints, so no
+  // mount-time read is needed. Its entry carries the size: reading the box
+  // back from the node forced a fresh layout (~10 ms) when Play mounted it.
   function observeDisassemblyHost(node: HTMLElement) {
-    const update = () => {
-      const { width, height } = node.getBoundingClientRect();
-      if (width <= 0 || height <= 0) return;
-      disassemblyHostBox = { width, height };
-    };
-    update();
-    const observer = new ResizeObserver(update);
+    const observer = new ResizeObserver(([entry]) => {
+      const size = entry?.borderBoxSize?.[0];
+      if (!size || size.inlineSize <= 0 || size.blockSize <= 0) return;
+      disassemblyHostBox = { width: size.inlineSize, height: size.blockSize };
+    });
     observer.observe(node);
     return {
       destroy() {
@@ -771,10 +783,10 @@ Last audit: 2025-12-27
   const emptyLoopDisplay: LoopDisplay = {
     components: new Set<LOOPComponent>(),
     rotationPeriod: undefined as
-      | import("$lib/shared/foundation/domain/models/generation/circular-models").Period
+      | import("#lib/shared/foundation/domain/models/generation/circular-models.js").Period
       | undefined,
     inversionPeriod: undefined as
-      | import("$lib/shared/foundation/domain/models/generation/circular-models").Period
+      | import("#lib/shared/foundation/domain/models/generation/circular-models.js").Period
       | undefined,
     overlayComponents: undefined as Set<LOOPComponent> | undefined,
     period: 1,
@@ -814,8 +826,8 @@ Last audit: 2025-12-27
     type="button"
     class="corner-toggle"
     aria-label={isPlaying ? t("viewer_ui_pause") : t("viewer_ui_play")}
-    data-ghost="safe"
-    data-ghost-kind="play"
+    data-ghost={ghostAnnotations ? "safe" : undefined}
+    data-ghost-kind={ghostAnnotations ? "play" : undefined}
     onclick={handleCornerToggle}
   >
     <span class="corner-disc">
@@ -842,11 +854,11 @@ Last audit: 2025-12-27
   data-corner-toggle-at-rest={(cornerToggle && cornerToggleAtRest) || undefined}
   data-playing={isPlaying || undefined}
   data-view={viewState}
-  data-ghost="safe"
-  data-ghost-kind="stage"
-  data-ghost-state={isPlaying ? "playing" : undefined}
-  data-ghost-linger={isPlaying ? "" : undefined}
-  data-ghost-word={word || undefined}
+  data-ghost={ghostAnnotations ? "safe" : undefined}
+  data-ghost-kind={ghostAnnotations ? "stage" : undefined}
+  data-ghost-state={ghostAnnotations && isPlaying ? "playing" : undefined}
+  data-ghost-linger={ghostAnnotations && isPlaying ? "" : undefined}
+  data-ghost-word={ghostAnnotations ? word || undefined : undefined}
   oncontextmenu={handleContextMenu}
   onpointerdown={handlePointerDown}
   onpointermove={handlePointerMove}
@@ -932,6 +944,7 @@ Last audit: 2025-12-27
       {effectsConfigState}
       {prewarmEffects}
       {initialQualityTier}
+      {trailOverlay}
       {beatIndicators}
       contextId={resolvedContextId}
       onCanvasReady={handleCanvasReady}

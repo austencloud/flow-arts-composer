@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { withLoopCertificateCleared } from "$lib/shared/create/services/loop-certificate";
+import { withLoopCertificateCleared } from "#lib/shared/create/services/loop-certificate.js";
 
 describe("withLoopCertificateCleared", () => {
   it("strips loopSpec on a mutated sequence", () => {

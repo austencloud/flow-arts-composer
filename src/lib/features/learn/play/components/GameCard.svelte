@@ -19,8 +19,8 @@
     GameProgress,
     Grade,
   } from "../domain/arcade-types";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getGamePreview } from "./previews/preview-map";
   import { gameTitle, gameTagline } from "../domain/play-labels";
 

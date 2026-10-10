@@ -3,7 +3,7 @@ import {
   computeBackgroundMedian,
   createDetectionScratch,
   detectBlobsInFrame,
-} from "$lib/shared/media-composition/services/staff-tip-detection";
+} from "#lib/shared/media-composition/services/staff-tip-detection.js";
 
 const WIDTH = 48;
 const HEIGHT = 48;

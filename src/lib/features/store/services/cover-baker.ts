@@ -24,8 +24,8 @@
 
 import { doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getFirestoreInstance, getStorageInstance } from "$lib/shared/auth/firebase";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { getFirestoreInstance, getStorageInstance } from "#lib/shared/auth/firebase.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { Product, CoverCard } from "../domain/models/product";
 import { SHOP_PROP_OPTIONS, bakedCoverUrl } from "../domain/shop-prop-options";
 import { renderCoverFront, prewarmCovers } from "./cover-front-renderer";

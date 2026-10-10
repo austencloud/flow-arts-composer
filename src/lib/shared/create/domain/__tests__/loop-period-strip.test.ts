@@ -13,11 +13,11 @@
  * (divisors of whatever it is given) are already exactly the safe ones.
  */
 import { describe, expect, it } from "vitest";
-import { divisorsUpTo } from "$lib/shared/create/domain/rhythm/rhythm-mask";
+import { divisorsUpTo } from "#lib/shared/create/domain/rhythm/rhythm-mask.js";
 import {
   Period,
   periodToNumber,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 /** The arithmetic CardBasedSettingsContainer does to size the strip. */
 function seedBlock(length: number, period: Period): number {

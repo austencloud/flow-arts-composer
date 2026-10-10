@@ -1,5 +1,5 @@
-import type { FeedbackItem } from "$lib/shared/feedback/domain/models/feedback-models";
-import type { EffectiveStatus, ClaimHealth } from "$lib/shared/feedback/domain/feedback-contract-types";
+import type { FeedbackItem } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import type { EffectiveStatus, ClaimHealth } from "#lib/shared/feedback/domain/feedback-contract-types.js";
 import {
   STALE_THRESHOLDS,
   checkClaimStaleness as sharedCheckClaimStaleness,

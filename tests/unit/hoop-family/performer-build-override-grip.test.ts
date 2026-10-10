@@ -2,13 +2,13 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { flushSync } from "svelte";
 import { propFinishState } from "@austencloud/scene-3d";
 
-import { updateSettings } from "$lib/shared/application/state/app-state.svelte";
-import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
-import { __resetWebGL2CapabilityForTests } from "$lib/shared/3d/capabilities/webgl-capabilities";
+import { updateSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import { initializeAppServices } from "#lib/shared/application/state/services.svelte.js";
+import { __resetWebGL2CapabilityForTests } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
 import {
   writeFanAppearance,
   writeFinish,
-} from "$lib/shared/3d/components/controls/scene-prop-build-writes";
+} from "#lib/shared/3d/components/controls/scene-prop-build-writes.js";
 import { createViewer3DStateForTest } from "../3d-viewer/viewer3d-test-helpers.svelte";
 import { mountGripSync } from "./scene-prop-picker-grip-sync-harness.svelte";
 

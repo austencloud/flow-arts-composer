@@ -4,11 +4,11 @@
  * indexability decision from the same data. Lives beside `+page.server.ts`
  * because SvelteKit only allows its reserved exports from that file.
  *
- * Not the admin SDK (`$lib/server/firebaseAdmin`): with the service-account
+ * Not the admin SDK (`#lib/server/firebaseAdmin.js`): with the service-account
  * secret configured in production, its version of these reads returned
- * nothing on Cloudflare Pages (2026-09-23). Callers pass the request's
- * `event.platform.env` credential to `getFirestoreRest`, which falls back to
- * `$env/dynamic/private` (and, in local dev only, `serviceAccountKey.json`)
+ * nothing on Cloudflare Pages (2026-09-23). Callers pass the Worker's own
+ * credential binding to `getFirestoreRest`, which falls back to
+ * `$app/env/private` (and, in local dev only, `serviceAccountKey.json`)
  * the way the physical card scan endpoint already does.
  *
  * The page loader sits in front of the viewer, so its lookup is bounded:
@@ -24,7 +24,7 @@ import {
   getFirestoreRest,
   type FirestoreDocument,
   type FirestoreRest,
-} from "$lib/server/firestore/firestore-rest";
+} from "#lib/server/firestore/firestore-rest.js";
 import {
   cleanSequenceText,
   toPositiveInteger,

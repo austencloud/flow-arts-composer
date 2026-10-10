@@ -2,9 +2,9 @@
   MediaSequenceCard.svelte - Individual sequence card in media browser grid
 -->
 <script lang="ts">
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   interface Props {
     sequence: SequenceData;
@@ -88,9 +88,6 @@
 
   .sequence-item:hover:not(:disabled) .item-thumb {
     border-color: var(--theme-accent);
-    box-shadow:
-      0 6px 20px var(--theme-shadow),
-      0 0 16px color-mix(in srgb, var(--theme-accent) 30%, transparent);
   }
 
   .sequence-item:disabled {
@@ -146,7 +143,6 @@
     justify-content: center;
     font-size: var(--font-size-compact);
     color: white;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .loading-overlay {

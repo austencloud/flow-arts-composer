@@ -5,7 +5,7 @@ import {
   computeSeek3D,
   createCharacterPlaybackAdapter,
   type CharacterPlaybackHandle,
-} from "$lib/shared/timeline/adapters/character-playback-adapter.svelte";
+} from "#lib/shared/timeline/adapters/character-playback-adapter.svelte.js";
 
 describe("character-playback-adapter", () => {
   it("routes loop changes to the clock owner, including before character hydration", () => {

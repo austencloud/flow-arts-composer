@@ -23,7 +23,7 @@ even when Svelte recreates the component instance.
 </script>
 
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "../../../../application/services/haptic-feedback";
   import type { MotionData } from "../../../shared/domain/models/motion-data";
   import type { PictographData } from "../../../shared/domain/models/pictograph-data";
@@ -36,14 +36,14 @@ even when Svelte recreates the component instance.
     ArrowAssets,
     ArrowPosition,
   } from "../../orchestration/domain/arrow-models";
-  import { selectedArrowState } from "$lib/shared/create/state/selected-arrow-state.svelte";
+  import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
   import { getAnimationVisibilityManager } from "../../../../animation-engine/state/animation-visibility-state.svelte";
   import { buildArrowHaloFilter } from "../arrow-halo";
   import {
     getArrowOrientationTransitionDirection,
     type ArrowRotationAnimationDirection,
   } from "../services/arrow-orientation-transition";
-  import { applyColorToSvg as applyDisplayColor } from "$lib/shared/utils/svg-color-utils";
+  import { applyColorToSvg as applyDisplayColor } from "#lib/shared/utils/svg-color-utils.js";
 
   let {
     motionData,

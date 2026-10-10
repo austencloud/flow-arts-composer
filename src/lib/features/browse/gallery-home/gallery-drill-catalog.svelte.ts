@@ -13,23 +13,23 @@
 import {
   BrowseFilterType,
   GridJoinFilterValue,
-} from "$lib/shared/persistence/domain/enums/filtering-enums";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import { ACTIVE_DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
-import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { LOOP_COMPONENT_MAP } from "$lib/shared/browse/domain/constants/loop-constants";
-import { resolveStepCount } from "$lib/shared/browse/services/browse-sorter";
+} from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { ACTIVE_DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
+import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { LOOP_COMPONENT_MAP } from "#lib/shared/browse/domain/constants/loop-constants.js";
+import { resolveStepCount } from "#lib/shared/browse/services/browse-sorter.js";
 import {
   applyFilter,
   getSequenceMaxTurn,
-} from "$lib/shared/browse/services/browse-filter";
-import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { browser } from "$app/environment";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/browse/services/browse-filter.js";
+import { startPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { browser } from "$app/env";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   deriveCreators,
   deriveAvailableStartingLetterOptions,

@@ -1,4 +1,4 @@
-import type { ImportedTerrainDataV2 } from "$lib/shared/3d/procedural-engine/generation/real-terrain-zone";
+import type { ImportedTerrainDataV2 } from "#lib/shared/3d/procedural-engine/generation/real-terrain-zone.js";
 import { sampleFlowFestTerrainWorldY } from "../flow-fest-graybox/flow-fest-terrain-host";
 import { FLOW_FEST_ENTRANCE_REFERENCE } from "./flow-fest-entrance-reference";
 

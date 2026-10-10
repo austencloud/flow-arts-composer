@@ -1,7 +1,7 @@
-import { canonicalJSON } from "$lib/shared/foundation/utils/canonical-json";
-import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import type { TunnelComposition } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import type { TunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+import { canonicalJSON } from "#lib/shared/foundation/utils/canonical-json.js";
+import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import type { TunnelComposition } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import type { TunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import type { TunnelCreatorDraft } from "./tunnel-creator-draft";
 import type { TunnelCreatorHandoff } from "../services/tunnel-creator-handoff";
 

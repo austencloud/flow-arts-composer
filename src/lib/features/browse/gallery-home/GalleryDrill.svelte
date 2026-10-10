@@ -15,22 +15,22 @@
   that leak column layout into unprefixed names.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, type Snippet } from "svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     setResultsMorphActive,
     startMorph,
-  } from "$lib/shared/transitions/results-morph";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/transitions/results-morph.js";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     getDrillSection,
     setDrillSection,
-  } from "$lib/features/browse/shared/services/gallery-view-persister";
-  import { tryGetBrowseNavigationContext } from "$lib/shared/browse/context/browse-navigation-context";
-  import type { FilterConnective } from "$lib/shared/browse/services/multi-filter";
+  } from "#lib/features/browse/shared/services/gallery-view-persister.js";
+  import { tryGetBrowseNavigationContext } from "#lib/shared/browse/context/browse-navigation-context.js";
+  import type { FilterConnective } from "#lib/shared/browse/services/multi-filter.js";
   import GalleryLanding from "./GalleryLanding.svelte";
   import GalleryWorkspace from "./GalleryWorkspace.svelte";
   import CategoryRail from "./CategoryRail.svelte";

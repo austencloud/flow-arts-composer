@@ -7,7 +7,7 @@
  * Path: userProfiles/{userId}/workshopPortfolio/data (single document)
  */
 
-import { firestoreGet, firestoreSet } from "$lib/shared/firestore";
+import { firestoreGet, firestoreSet } from "#lib/shared/firestore/index.js";
 import { TeachingPortfolioSchema } from "../domain/models/workshop-portfolio-schemas";
 import type { TeachingPortfolio } from "../domain/models/teaching-portfolio";
 

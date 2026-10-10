@@ -3,7 +3,7 @@
  * writer; UI reads these values. Follows the "export $state + action
  * functions" rune-state pattern.
  */
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   defaultCollection,
   isUnlocked as isUnlockedPure,

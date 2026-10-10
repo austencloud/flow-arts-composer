@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
+import { PostStudioExportVideoFrames } from "#lib/shared/media-composition/services/post-studio-export-video-frames.js";
 
 const fake = vi.hoisted(() => ({
   drawn: [] as number[],

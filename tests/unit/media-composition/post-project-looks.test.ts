@@ -7,19 +7,19 @@ import {
   mainItems,
   overlaysAnchoredTo,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   TUTORIAL_FADE_SECONDS,
   applyLook,
   applyTutorialPreset,
   applyTutorialTemplate,
   lookOf,
-} from "$lib/shared/media-composition/domain/post-project-looks";
+} from "#lib/shared/media-composition/domain/post-project-looks.js";
 import {
   setTrackFlag,
   updateItem,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { isAnimated } from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { isAnimated } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   NOW,
   card,

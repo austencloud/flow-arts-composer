@@ -23,6 +23,8 @@ import {
   choosePushedCommit,
   createNativeBuildEnv,
   createSnapshotCheckoutPlan,
+  describeNativeOutcome,
+  formatLockHolder,
   inspectZipFilenameFlags,
   parseAdbDevices,
   parseJavaMajor,
@@ -36,6 +38,15 @@ const MIN_FREE_MEMORY_BYTES = 4 * 1024 ** 3;
 const LOCK_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const APP_ID = "com.tkaflowarts.composer";
 const MAIN_ACTIVITY = `${APP_ID}/.MainActivity`;
+
+// Where the run is when it fails, so the final outcome line can say whether
+// nothing was built, which build step broke, or which phone the install failed on.
+const progress = { phase: "setup", stage: null, device: null };
+
+function step(label) {
+  progress.stage = label;
+  console.log(`[native] ${label}`);
+}
 
 class CommandFailure extends Error {
   constructor(command, args, result) {
@@ -154,8 +165,10 @@ function acquireLock(lockPath) {
     if (error?.code !== "EEXIST") throw error;
 
     let stale = false;
+    let holder = "details unreadable";
     try {
       const lock = JSON.parse(readFileSync(lockPath, "utf8"));
+      holder = formatLockHolder(lock);
       const age = Date.now() - Date.parse(lock.createdAt);
       stale = age > LOCK_MAX_AGE_MS || !processIsRunning(Number(lock.pid));
     } catch {
@@ -163,7 +176,9 @@ function acquireLock(lockPath) {
     }
 
     if (!stale) {
-      throw new Error("Another Android push build is already running.");
+      throw new Error(
+        `Another Android push build is already running (${holder}).`
+      );
     }
 
     rmSync(lockPath, { force: true });
@@ -417,9 +432,7 @@ export async function main() {
   }
 
   if (freemem() < MIN_FREE_MEMORY_BYTES) {
-    throw new Error(
-      "Less than 4 GB of memory is available. Android build skipped."
-    );
+    throw new Error("Less than 4 GB of memory is available.");
   }
 
   const gitCommonDirRaw = capture("git", ["rev-parse", "--git-common-dir"], {
@@ -453,33 +466,35 @@ export async function main() {
 
   let snapshotCreated = false;
   try {
+    progress.phase = "build";
+    progress.stage = "snapshot checkout";
     console.log(`[native] Building Android app from ${shortCommit}.`);
     removeSnapshot(buildRoot, snapshotRoot, snapshotIndex);
     createSnapshot(repoRoot, snapshotRoot, snapshotIndex, commit);
     snapshotCreated = true;
 
-    console.log("[native] 1/4 Build web bundle");
+    step("1/4 Build web bundle");
     run(pnpm, ["run", "build"], { cwd: snapshotRoot, env: buildEnv });
 
-    console.log("[native] Verify release surface");
+    step("Verify release surface");
     run(process.execPath, ["scripts/verify-native-release-surface.mjs"], {
       cwd: snapshotRoot,
       env: buildEnv,
     });
 
-    console.log("[native] 2/4 Generate native environment");
+    step("2/4 Generate native environment");
     run(process.execPath, ["scripts/generate-native-env.mjs"], {
       cwd: snapshotRoot,
       env: buildEnv,
     });
 
-    console.log("[native] 3/4 Sync Capacitor Android");
+    step("3/4 Sync Capacitor Android");
     run(pnpm, ["exec", "cap", "sync", "android"], {
       cwd: snapshotRoot,
       env: buildEnv,
     });
 
-    console.log("[native] 4/4 Assemble debug APK");
+    step("4/4 Assemble debug APK");
     const androidDir = join(snapshotRoot, "android");
     const gradle =
       process.platform === "win32" ? ".\\gradlew.bat" : "./gradlew";
@@ -488,6 +503,7 @@ export async function main() {
       env: buildEnv,
     });
 
+    progress.stage = "APK verification";
     const builtApk = join(
       androidDir,
       "app",
@@ -562,7 +578,9 @@ export async function main() {
       return;
     }
 
-    console.log(`[native] Installing on ${describeDevice(selection.device)}.`);
+    progress.phase = "install";
+    progress.device = describeDevice(selection.device);
+    console.log(`[native] Installing on ${progress.device}.`);
     run(adb, ["-s", selection.device.serial, "install", "-r", outputApk], {
       cwd: repoRoot,
     });
@@ -604,7 +622,10 @@ export async function main() {
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : null;
 if (invokedPath === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
-    console.error(`[native] ${error.message}`);
-    process.exitCode = 1;
+    // On stdout, next to the hook's own summary line, so a log that captures
+    // the push shows the reason and the summary together.
+    const outcome = describeNativeOutcome(progress, error);
+    console.log(outcome.line);
+    process.exitCode = outcome.exitCode;
   });
 }

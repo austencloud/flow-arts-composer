@@ -10,7 +10,7 @@ import {
   SkinnedMesh,
   Uint16BufferAttribute,
 } from "three";
-import { refreshSkinnedSkeletons } from "$lib/features/flow-fest-sim/services/flow-fest-avatar-skeleton-refresh";
+import { refreshSkinnedSkeletons } from "#lib/features/flow-fest-sim/services/flow-fest-avatar-skeleton-refresh.js";
 
 function skinnedMeshWithOneBone(): { mesh: SkinnedMesh; bone: Bone } {
   const geometry = new BufferGeometry();

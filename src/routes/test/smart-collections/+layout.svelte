@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import type { Snippet } from "svelte";
   import "../../../app.css";
 
@@ -12,7 +12,7 @@
   // which coalesces the first request instead of making each drill wait for a
   // fresh gallery fetch.
   if (browser) {
-    void import("$lib/features/browse/shared/get-gallery-prefetcher")
+    void import("#lib/features/browse/shared/get-gallery-prefetcher.js")
       .then(({ getGalleryPrefetcher }) => getGalleryPrefetcher().prefetch())
       .catch((error: unknown) =>
         console.warn("[SmartCollectionReview] Gallery prewarm failed:", error)

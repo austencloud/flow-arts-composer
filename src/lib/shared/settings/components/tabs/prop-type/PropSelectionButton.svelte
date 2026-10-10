@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import type { HTMLButtonAttributes } from "svelte/elements";
 
@@ -39,7 +39,7 @@
   const customStyle = $derived(
     isSentinel
       ? ""
-      : `background: ${color}; box-shadow: 0 3px 10px color-mix(in srgb, ${color} 50%, transparent), 0 1px 3px var(--theme-shadow);`
+      : `background: ${color};`
   );
 </script>
 
@@ -209,7 +209,6 @@
     max-height: 80%;
     aspect-ratio: 1;
     opacity: 0.82;
-    filter: drop-shadow(0 2px 6px var(--theme-shadow, rgba(0, 0, 0, 0.4)));
     transition:
       opacity var(--transition-normal),
       transform var(--transition-normal);

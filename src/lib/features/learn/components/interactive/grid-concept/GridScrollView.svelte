@@ -4,9 +4,9 @@
   Used when viewMode === "scroll"
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import MessageMarkup from "$lib/shared/i18n/MessageMarkup.svelte";
-  import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import MessageMarkup from "#lib/shared/i18n/MessageMarkup.svelte";
+  import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
   import GridMergeAnimation from "../grid-merge/GridMergeAnimation.svelte";
   import PageDivider from "../PageDivider.svelte";
 </script>

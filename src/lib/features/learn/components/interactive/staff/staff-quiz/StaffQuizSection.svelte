@@ -2,7 +2,7 @@
 StaffQuizSection - Main quiz UI with visualizer and answers
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import StaffPlacementVisualizer from "../StaffPlacementVisualizer.svelte";
   import {
     type StaffQuizQuestion,

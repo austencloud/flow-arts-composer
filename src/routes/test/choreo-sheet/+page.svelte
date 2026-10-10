@@ -11,20 +11,20 @@
   metadata, then loadFullSequenceData per word for populated steps).
 -->
 <script lang="ts">
-  import { planSheet, planBands, buildBands } from "$lib/features/write/services/sheet-row-planner";
-  import SheetReadingView from "$lib/features/write/components/sheet/SheetReadingView.svelte";
-  import { getSheetPageLayout } from "$lib/features/write/domain/sheet-page-layout";
+  import { planSheet, planBands, buildBands } from "#lib/features/write/services/sheet-row-planner.js";
+  import SheetReadingView from "#lib/features/write/components/sheet/SheetReadingView.svelte";
+  import { getSheetPageLayout } from "#lib/features/write/domain/sheet-page-layout.js";
   import {
     DEFAULT_SHEET_LAYOUT,
     createEmptyChoreoSheet,
     createEmptyAnnotations,
     type CueMark,
     type NoteMark,
-  } from "$lib/features/write/domain/types/choreo-sheet";
-  import { downloadChoreoSheetPDF } from "$lib/features/write/services/sheet-pdf-exporter";
-  import SheetPreviewPages from "$lib/features/write/components/sheet/SheetPreviewPages.svelte";
-  import { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/features/write/domain/types/choreo-sheet.js";
+  import { downloadChoreoSheetPDF } from "#lib/features/write/services/sheet-pdf-exporter.js";
+  import SheetPreviewPages from "#lib/features/write/components/sheet/SheetPreviewPages.svelte";
+  import { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   let sequences = $state<SequenceData[]>([]);
   let status = $state("Idle — click Load Sequences.");

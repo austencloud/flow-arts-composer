@@ -1,5 +1,5 @@
 import type { CharacterInstanceState } from "./character-instance-state.svelte";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 /**
  * Resolves the prop type for a performer.

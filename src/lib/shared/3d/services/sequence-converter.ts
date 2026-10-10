@@ -3,13 +3,13 @@
  * Bridges the gap between 2D sequence data model and 3D animation system.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import {
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 import { Plane } from "@austencloud/scene-3d";
 import {
@@ -17,8 +17,8 @@ import {
   MotionType,
   RotationDirection,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { PlaneModeConfig } from "@austencloud/scene-3d";
 import type { GridJoinSpec } from "@tka/render-core";
 import { resolveGridJoin3D } from "./grid-join-3d";

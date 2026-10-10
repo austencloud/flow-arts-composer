@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getAvailableProviderIds } from "$lib/shared/navigation/components/profile-settings/connected-accounts.providers";
+import { getAvailableProviderIds } from "#lib/shared/navigation/components/profile-settings/connected-accounts.providers.js";
 
 const allEnabled = {
   facebookEnabled: true,

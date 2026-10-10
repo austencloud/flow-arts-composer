@@ -6,8 +6,8 @@
     TnDTurnPatternOption,
   } from "../../services/deck-composer";
   import TnDTurnMatrix from "../TnDTurnMatrix.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import TnDFamilyCards from "./TnDFamilyCards.svelte";
   import TransformPanel from "./TransformPanel.svelte";
   import LoopBentoBoard from "./LoopBentoBoard.svelte";
@@ -540,8 +540,6 @@
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.96));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--composer-radius);
-    box-shadow: 0 18px 44px
-      color-mix(in srgb, var(--theme-shadow, #000) 40%, transparent);
   }
 
   :global(html.deck-motion-source) .command-panel {

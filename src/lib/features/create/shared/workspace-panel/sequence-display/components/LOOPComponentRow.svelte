@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import { LOOP_COMPONENTS } from "$lib/features/create/generate/shared/domain/constants/loop-constants";
+  import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import { LOOP_COMPONENTS } from "#lib/features/create/generate/shared/domain/constants/loop-constants.js";
 
   let { activeComponents }: { activeComponents: Set<LOOPComponent> } = $props();
 </script>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeFireStepDt } from "$lib/shared/animation-engine/services/fire/web-gl-fire-renderer";
+import { computeFireStepDt } from "#lib/shared/animation-engine/services/fire/web-gl-fire-renderer.js";
 
 describe("computeFireStepDt", () => {
   it("uses the provided dt, clamped to 0.066s", () => {

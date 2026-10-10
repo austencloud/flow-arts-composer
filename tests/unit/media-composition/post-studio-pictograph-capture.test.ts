@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
-import { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "#lib/shared/media-composition/services/post-studio-dom-capture.js";
+import { PostStudioPictographCapture } from "#lib/shared/media-composition/services/post-studio-pictograph-capture.js";
 
 const { createContext, destroyContext, domToCanvas } = vi.hoisted(() => ({
   createContext: vi.fn(),

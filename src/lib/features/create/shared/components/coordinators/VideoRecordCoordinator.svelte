@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { withSavedProps } from "$lib/shared/foundation/services/prop-viewing";
-  import { getVideoUploader } from "$lib/shared/share/get-video-uploader";
+  import { withSavedProps } from "#lib/shared/foundation/services/prop-viewing.js";
+  import { getVideoUploader } from "#lib/shared/share/get-video-uploader.js";
   /**
    * Video Record Coordinator Component
    *
@@ -10,25 +10,25 @@
    * Domain: Create module - Video Record Panel Coordination
    */
 
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
-  import VideoRecordDrawer from "$lib/shared/video-record/components/VideoRecordDrawer.svelte";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
+  import VideoRecordDrawer from "#lib/shared/video-record/components/VideoRecordDrawer.svelte";
   import SavePromptDialog from "../dialogs/SavePromptDialog.svelte";
   import SaveToLibraryDialog, {
     type SaveMetadata,
   } from "../SaveToLibraryDialog.svelte";
   import { getCreateModuleContext } from "../../context/create-module-context";
-  import { getLibrarySaveService } from "$lib/features/library/get-library-save-service";
-  import type { SaveToLibraryOptions } from "$lib/shared/library/domain/library-contract-types";
-  import type { RecordingResult } from "$lib/shared/video-record/services/types";
-  import type { R2VideoUploader } from "$lib/shared/share/services/r2-video-uploader";
-  import { saveRecording } from "$lib/shared/video-record/services/recording-persister";
+  import { getLibrarySaveService } from "#lib/features/library/get-library-save-service.js";
+  import type { SaveToLibraryOptions } from "#lib/shared/library/domain/library-contract-types.js";
+  import type { RecordingResult } from "#lib/shared/video-record/services/types.js";
+  import type { R2VideoUploader } from "#lib/shared/share/services/r2-video-uploader.js";
+  import { saveRecording } from "#lib/shared/video-record/services/recording-persister.js";
   import {
     createRecordingMetadata,
     detectDeviceType,
-  } from "$lib/shared/video-record/domain/recording-metadata";
-  import { postSaveActivation } from "$lib/shared/onboarding/state/post-save-activation-state.svelte";
+  } from "#lib/shared/video-record/domain/recording-metadata.js";
+  import { postSaveActivation } from "#lib/shared/onboarding/state/post-save-activation-state.svelte.js";
 
   const logger = createComponentLogger("VideoRecordCoordinator");
 
@@ -131,7 +131,7 @@
       if (metadata.collectionIds?.length) {
         try {
           const { addSequenceToCollection } =
-            await import("$lib/shared/library/services/collection-manager");
+            await import("#lib/shared/library/services/collection-manager.js");
           for (const collectionId of metadata.collectionIds) {
             await addSequenceToCollection(collectionId, sequenceId);
           }
@@ -158,7 +158,7 @@
       // Refresh library state if available
       try {
         const { libraryState } =
-          await import("$lib/features/library/state/library-state.svelte");
+          await import("#lib/features/library/state/library-state.svelte.js");
         if (libraryState) {
           logger.info("Refreshing library sequences...");
           await libraryState.loadSequences();

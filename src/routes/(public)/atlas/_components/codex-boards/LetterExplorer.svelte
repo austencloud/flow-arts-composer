@@ -1,28 +1,28 @@
 <script lang="ts">
   import GuidePictograph from "../../../guide/level-1/_components/GuidePictograph.svelte";
-  import PictographTypeFrame from "$lib/shared/pictograph/shared/components/PictographTypeFrame.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PropControlPair from "$lib/features/create/shared/components/sequence-actions/PropControlPair.svelte";
-  import PropTurnsControl from "$lib/features/create/shared/components/sequence-actions/PropTurnsControl.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import PictographTypeFrame from "#lib/shared/pictograph/shared/components/PictographTypeFrame.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import PropControlPair from "#lib/features/create/shared/components/sequence-actions/PropControlPair.svelte";
+  import PropTurnsControl from "#lib/features/create/shared/components/sequence-actions/PropTurnsControl.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     HandSide,
     MotionType,
     type RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     GridMode,
     type GridMode as GridModeValue,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { TurnValue } from "$lib/shared/create/domain/turn-pattern-data";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { TurnValue } from "#lib/shared/create/domain/turn-pattern-data.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
     generateSequenceRoutePath,
     UnencodableMotionError,
-  } from "$lib/shared/navigation/services/sequence-encoder";
-  import { buildGalleryLetterHref } from "$lib/shared/browse/navigation/gallery-letter-link";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  } from "#lib/shared/navigation/services/sequence-encoder.js";
+  import { buildGalleryLetterHref } from "#lib/shared/browse/navigation/gallery-letter-link.js";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import type { CodexLetterInfo } from "./codex-letters";
 
   const GRID_OPTIONS = [

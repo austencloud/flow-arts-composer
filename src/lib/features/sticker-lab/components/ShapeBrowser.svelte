@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { QueryDocumentSnapshot } from "firebase/firestore";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
   import {
     getCachedCatalogs,
     loadCatalogs,
     loadCatalogSequencesPage,
-  } from "$lib/features/choreo-card/services/catalog-loader";
-  import type { Catalog } from "$lib/features/choreo-card/domain/models/Catalog";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  } from "#lib/features/choreo-card/services/catalog-loader.js";
+  import type { Catalog } from "#lib/features/choreo-card/domain/models/Catalog.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { getStickerLabContext } from "../context/sticker-lab-context";
   import { cachePrimitivePaths } from "../state/mandala-paths-cache.svelte";
   import {

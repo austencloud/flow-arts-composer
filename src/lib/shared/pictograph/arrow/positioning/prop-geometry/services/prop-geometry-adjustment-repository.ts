@@ -18,8 +18,8 @@ import {
   createPropGeometryAdjustmentState,
   type PropGeometryAdjustmentState,
 } from "../state/prop-geometry-adjustment-state.svelte";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import type { Timestamp } from "firebase/firestore";
 import { normalizePlacementFrame } from "../../placement/domain/placement-frame";
 import { normalizeLegacyHandSide } from "@tka/tka-types";

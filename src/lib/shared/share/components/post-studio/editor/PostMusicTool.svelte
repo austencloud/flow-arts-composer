@@ -1,25 +1,25 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
-  import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import TypeableValue from "#lib/shared/ui/components/TypeableValue.svelte";
+  import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
   import {
     downbeatFromTaps,
     musicSpan,
     trackSecondsAt,
-  } from "$lib/shared/media-composition/domain/music-grid";
+  } from "#lib/shared/media-composition/domain/music-grid.js";
   import {
     POST_MUSIC_MAX_BEATS_PER_BAR,
     POST_MUSIC_MAX_GAIN,
     POST_MUSIC_MAX_LICENSE,
     POST_MUSIC_MAX_TEXT,
     type PostMusic,
-  } from "$lib/shared/media-composition/domain/post-music";
+  } from "#lib/shared/media-composition/domain/post-music.js";
   import {
     POST_MUSIC_MIN_SECONDS,
     type MusicPatch,
-  } from "$lib/shared/media-composition/domain/post-music-edits";
-  import { POST_TIME_EPSILON } from "$lib/shared/media-composition/domain/post-project";
+  } from "#lib/shared/media-composition/domain/post-music-edits.js";
+  import { POST_TIME_EPSILON } from "#lib/shared/media-composition/domain/post-project.js";
   import { formatTakeClock, parseClock } from "../builder/post-builder-format";
 
   /**
@@ -133,7 +133,7 @@
     suggestNote = "";
     try {
       const { analyzeAudioBpm } =
-        await import("$lib/shared/audio/bpm-analyzer");
+        await import("#lib/shared/audio/bpm-analyzer.js");
       const result = await analyzeAudioBpm(url);
       if (url !== music.url) return;
       if (result.confidence <= 0)

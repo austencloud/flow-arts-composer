@@ -14,22 +14,22 @@
   Uses sessionStorage for persistence (survives HMR and page refresh).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { ControlsLevel, MediaType } from "../domain/types";
-  import { getSequenceRenderer } from "$lib/shared/render/get-sequence-renderer";
+  import { getSequenceRenderer } from "#lib/shared/render/get-sequence-renderer.js";
   import { onMount, onDestroy } from "svelte";
   import AnimationPlayer from "./AnimationPlayer.svelte";
-  import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
+  import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
   import ChoreoCard from "./ChoreoCard.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-  import { tryGetAnimationExportContext } from "$lib/shared/export-panel/context/animation-export-context.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { browser } from "$app/environment";
-  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { captureActivePropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+  import { tryGetAnimationExportContext } from "#lib/shared/export-panel/context/animation-export-context.svelte.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { browser } from "$app/env";
+  import VisualSequenceSaveContextMenuHost from "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
 
   const MEDIA_TYPE_STORAGE_KEY = "sequence-viewer-media-type";
 
@@ -782,7 +782,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--theme-shadow, black);
+    background: black;
   }
 
   .video-player {
@@ -804,7 +804,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--theme-shadow) 60%, transparent);
+    background: rgba(0, 0, 0, 0.6);
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
     border-radius: 50%;
     color: var(--theme-text, white);
@@ -818,7 +818,7 @@
   }
 
   .back-btn:hover {
-    background: color-mix(in srgb, var(--theme-shadow) 80%, transparent);
+    background: rgba(0, 0, 0, 0.8);
   }
 
   /* Placeholder */

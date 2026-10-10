@@ -4,8 +4,8 @@ import {
   THEME_OPTIONS,
   getThemeOption,
   type ThemeId,
-} from "$lib/features/themes-lab/domain/theme-types";
-import { PRIDE_BACKGROUND_TYPE } from "$lib/shared/settings/domain/background-type-migration";
+} from "#lib/features/themes-lab/domain/theme-types.js";
+import { PRIDE_BACKGROUND_TYPE } from "#lib/shared/settings/domain/background-type-migration.js";
 
 describe("THEME_OPTIONS", () => {
   it("has exactly 10 themes", () => {

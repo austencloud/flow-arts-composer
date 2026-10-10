@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { MessageAttachment } from "$lib/shared/messaging/domain/models/message-models";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { MessageAttachment } from "#lib/shared/messaging/domain/models/message-models.js";
 
 const mocks = vi.hoisted(() => ({
   closeInbox: vi.fn(),
@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   showUserError: vi.fn(),
 }));
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: mocks.haptic }),
 }));
 
@@ -24,28 +24,31 @@ vi.mock("../../state/inbox-state.svelte", () => ({
   inboxState: { close: mocks.closeInbox },
 }));
 
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: () => ({
     resolveShortCode: mocks.resolveShortCode,
   }),
 }));
 
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: mocks.showUserError }),
 }));
 
-vi.mock("$lib/shared/sequence-viewer/services/sequence-data-provider", () => ({
-  hydrateSequence: mocks.hydrateSequence,
-}));
+vi.mock(
+  "#lib/shared/sequence-viewer/services/sequence-data-provider.js",
+  () => ({
+    hydrateSequence: mocks.hydrateSequence,
+  })
+);
 
 vi.mock(
-  "$lib/shared/sequence-viewer/services/sequence-viewer-navigator",
+  "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js",
   () => ({ openSequenceViewer: mocks.openSequenceViewer })
 );
 
 vi.mock("./SequenceMessagePreview.svelte", async () => ({
   default: (
-    await import("$lib/shared/sequence-viewer/components/__test-stubs__/SequenceViewerDrawerHostChildStub.svelte")
+    await import("#lib/shared/sequence-viewer/components/__test-stubs__/SequenceViewerDrawerHostChildStub.svelte")
   ).default,
 }));
 

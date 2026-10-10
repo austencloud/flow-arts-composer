@@ -22,8 +22,8 @@ import { EffectRendererManager } from "../effect-renderer-manager";
 import { EffectController } from "../effect-controller";
 import type { AnimatorState } from "../../state/animator-state.svelte";
 import type { CanvasLifecycleManager } from "../canvas-lifecycle-manager";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-import type { FireRenderingStyle } from "$lib/shared/effects/domain/effects-config";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import type { FireRenderingStyle } from "#lib/shared/effects/domain/effects-config.js";
 import type {
   FireOverlayConfig,
   FireColorCurve,
@@ -42,7 +42,7 @@ import {
   semanticToCharcoalParams,
   type CharcoalSparkParams,
 } from "../../domain/types/charcoal-spark-types";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import type { AnimationVisibilityState } from "../animation-visibility-synchronizer";
 import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
 import type { ITrailOverlayCanvas } from "../ITrailOverlayCanvas";

@@ -5,7 +5,7 @@ import type { UIGenerationConfig } from "../../../state/generate-config.svelte";
 import type {
   CardDescriptor,
   CardHandlers,
-} from "$lib/shared/create/domain/generator-contract-types";
+} from "#lib/shared/create/domain/generator-contract-types.js";
 
 function makeConfig(level: number): UIGenerationConfig {
   return {

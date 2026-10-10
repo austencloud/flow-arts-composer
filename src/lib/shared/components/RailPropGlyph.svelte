@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     DEFAULT_FAN_APPEARANCE,
     fanAppearanceArtwork,
@@ -8,9 +8,9 @@
     isFanPropType,
     normalizeFanAppearance,
     type FanAppearance,
-  } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { getRailPropGlyphPresentation } from "./rail-prop-optical-fit";
 
   let {

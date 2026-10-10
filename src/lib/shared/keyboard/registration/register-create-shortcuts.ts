@@ -8,19 +8,19 @@
  * Domain: Keyboard Shortcuts - CREATE Module
  */
 
-import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-import type { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
+import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+import type { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
 import type { createKeyboardShortcutState } from "../state/keyboard-shortcut-state.svelte";
-import { getCreateModuleRef } from "$lib/shared/create/state/create-module-state-ref.svelte";
-import { getAnimationPlaybackRef } from "$lib/shared/coordinators/animation-playback-ref.svelte";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { getCreateModuleRef } from "#lib/shared/create/state/create-module-state-ref.svelte.js";
+import { getAnimationPlaybackRef } from "#lib/shared/coordinators/animation-playback-ref.svelte.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import {
   getSettings,
   updateSettings,
-} from "$lib/shared/application/state/app-state.svelte";
-import type { SequenceTransformCommandId } from "$lib/shared/create/domain/sequence-action-types";
-import { getAllPropTypes } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/application/state/app-state.svelte.js";
+import type { SequenceTransformCommandId } from "#lib/shared/create/domain/sequence-action-types.js";
+import { getAllPropTypes } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   isLayerOwnedKeyboardTarget,
   isWidgetOwnedKeyboardTarget,

@@ -11,7 +11,7 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import GhostPointer from "./GhostPointer.svelte";
   import GhostMindOverlay from "./GhostMindOverlay.svelte";
   import ThoughtCaption from "./ThoughtCaption.svelte";

@@ -1,14 +1,14 @@
-import { auth } from "$lib/shared/auth/firebase";
+import { auth } from "#lib/shared/auth/firebase.js";
 import {
   MediaCompositionPresetSchema,
   type MediaCompositionPreset,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import { db } from "$lib/shared/persistence/database/tka-database";
+} from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
 import {
   firestoreDelete,
   firestoreList,
   firestoreSet,
-} from "$lib/shared/firestore";
+} from "#lib/shared/firestore/index.js";
 import { z } from "zod";
 
 const CloudMediaCompositionPresetSchema = z.preprocess((input) => {

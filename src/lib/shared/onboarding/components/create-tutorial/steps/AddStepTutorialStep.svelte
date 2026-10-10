@@ -6,17 +6,17 @@
   Auto-advances to the next wizard step after the 4th step.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     createTutorialState,
     REQUIRED_STEPS,
   } from "../../../state/create-tutorial-state.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     getLetterType,
     type Letter,
-  } from "$lib/shared/foundation/domain/models/letter";
-  import { LetterType } from "$lib/shared/foundation/domain/models/letter-type";
+  } from "#lib/shared/foundation/domain/models/letter.js";
+  import { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
 
   interface Props {
     onAdvance: () => void;
@@ -58,7 +58,7 @@
 
   <div class="picker-container">
     {#if currentSequence.length > 0}
-      {#await import("$lib/features/create/construct/option-picker/components/OptionPicker.svelte") then mod}
+      {#await import("#lib/features/create/construct/option-picker/components/OptionPicker.svelte") then mod}
         <mod.default
           {currentSequence}
           {currentGridMode}

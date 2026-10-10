@@ -19,7 +19,7 @@ import type { FirebaseApp } from "firebase/app";
 import type { Auth, User } from "firebase/auth";
 import type { Firestore, Unsubscribe } from "firebase/firestore";
 import type { Database } from "firebase/database";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const debug = createComponentLogger("FirebaseHMR");
 

@@ -7,15 +7,15 @@ const {
   postNormalizeSceneFeatureDefaults,
 } = await import("./t3-slice");
 const { createSceneFeatureState } = await import(
-  "$lib/shared/3d/scene-features/state/scene-feature-state.svelte"
+  "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js"
 );
 const { SCENE_FEATURES } = await import(
-  "$lib/shared/3d/scene-features/domain/scene-feature-registry"
+  "#lib/shared/3d/scene-features/domain/scene-feature-registry.js"
 );
 const { createRootedViewer3DState } = await import("./t3-slice-test-harness.svelte");
 type Viewer3DOptions = Parameters<typeof createRootedViewer3DState>[0];
 const { SceneEnvironmentId, DEFAULT_SCENE_ENVIRONMENT_ID } = await import(
-  "$lib/shared/3d/environments/domain/scene-environment"
+  "#lib/shared/3d/environments/domain/scene-environment.js"
 );
 
 const ENVIRONMENT_KEY = "tka-viewer3d-environment";

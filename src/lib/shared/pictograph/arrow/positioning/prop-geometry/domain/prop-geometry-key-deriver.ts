@@ -5,9 +5,9 @@
  * inspect-panel editor and the rendering pipeline build identical keys.
  * Returns null when the scenario can't form a full key (missing motion or endPlacement).
  */
-import { deriveGridMode as _deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { deriveGridMode as _deriveGridMode } from "#lib/shared/pictograph/grid/services/grid-mode-deriver.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import type { PropGeometryKey } from "./prop-geometry-adjustment";
 import { createCanonicalPlacementContext } from "../../calculation/services/canonical-placement-frame";
 import { placementFrameForGridMode } from "../../placement/domain/placement-frame";

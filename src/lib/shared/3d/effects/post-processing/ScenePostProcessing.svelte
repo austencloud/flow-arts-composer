@@ -6,7 +6,7 @@
   import { BackgroundType } from "@austencloud/backgrounds";
   import { tryGetViewer3DContext } from "../../context/viewer-3d-context";
   import { getSceneEnvironmentRendererKey } from "../../environments/domain/scene-environment";
-  import { oceanDebugToggles } from "$lib/shared/3d/environments/scenes/ocean/quality/ocean-debug-toggles.svelte";
+  import { oceanDebugToggles } from "#lib/shared/3d/environments/scenes/ocean/quality/ocean-debug-toggles.svelte.js";
   import { getQualityTierDetector } from "../quality/get-quality-tier-detector";
   import { tryGetAdaptiveQualityContext } from "../../context/adaptive-quality-context";
   import { QualityTier } from "../types";

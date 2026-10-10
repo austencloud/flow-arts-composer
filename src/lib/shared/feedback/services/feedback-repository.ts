@@ -20,20 +20,20 @@ import type {
   FeedbackProgressCallback,
   FeedbackStatus,
   TesterConfirmationStatus,
-} from "$lib/shared/feedback/domain/models/feedback-models";
+} from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 // Import focused services
-import * as feedbackSubmissionModule from "$lib/shared/feedback/services/feedback-submission-service";
-import * as feedbackQuerierModule from "$lib/shared/feedback/services/feedback-querier";
+import * as feedbackSubmissionModule from "#lib/shared/feedback/services/feedback-submission-service.js";
+import * as feedbackQuerierModule from "#lib/shared/feedback/services/feedback-querier.js";
 import {
   feedbackStatusService,
   type FeedbackStatusManager,
-} from "$lib/shared/feedback/services/feedback-status-manager";
+} from "#lib/shared/feedback/services/feedback-status-manager.js";
 import {
   getFeedbackTesterWorkflow,
   type IFeedbackTesterWorkflow,
-} from "$lib/shared/feedback/services/IFeedbackTesterWorkflow";
-import * as feedbackSubscriberModule from "$lib/shared/feedback/services/feedback-subscriber";
+} from "#lib/shared/feedback/services/IFeedbackTesterWorkflow.js";
+import * as feedbackSubscriberModule from "#lib/shared/feedback/services/feedback-subscriber.js";
 
 export class FeedbackRepository {
   constructor(

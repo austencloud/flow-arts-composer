@@ -16,26 +16,26 @@
  * REPLACES: The 890-line god object sequence-state.svelte.ts
  */
 
-import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
-import type { ArrowPosition } from "$lib/shared/pictograph/arrow/orchestration/domain/arrow-models";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ValidationResult } from "$lib/shared/validation/validation-result";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
+import type { ArrowPosition } from "#lib/shared/pictograph/arrow/orchestration/domain/arrow-models.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ValidationResult } from "#lib/shared/validation/validation-result.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { GridJoin } from "@tka/tka-types";
-import { withSequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-import { deepLinker } from "$lib/shared/navigation/services/deep-linker";
+import { withSequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+import { deepLinker } from "#lib/shared/navigation/services/deep-linker.js";
 import type { TargetHand } from "./panel-coordination-state.svelte";
-import { logSequenceAction } from "$lib/shared/analytics/services/posthog-activity-logger";
-import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
-import type { SequenceStatsCalculator } from "$lib/features/create/shared/services/sequence-stats-calculator";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { SequenceValidator } from "$lib/features/create/shared/services/sequence-validator";
+import { logSequenceAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
+import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import type { ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import type { SequenceStatsCalculator } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { SequenceValidator } from "#lib/features/create/shared/services/sequence-validator.js";
 import { createSequenceAnimationState } from "./animation/sequence-animation-state.svelte";
 import { createSequenceArrowState } from "./arrow/sequence-arrow-state.svelte";
 import { createSequenceCoreState } from "./core/sequence-core-state.svelte";
@@ -46,8 +46,8 @@ import {
   createSequenceSelectionState,
   type SequenceSelectionSnapshot,
 } from "./selection/sequence-selection-state.svelte";
-import { isStep } from "$lib/features/create/shared/domain/type-guards/pictograph-type-guards";
-import { createSequence as createSequenceData } from "$lib/shared/create/services/sequence-domain-manager";
+import { isStep } from "#lib/features/create/shared/domain/type-guards/pictograph-type-guards.js";
+import { createSequence as createSequenceData } from "#lib/shared/create/services/sequence-domain-manager.js";
 
 /**
  * Clean service configuration - no more type gymnastics!

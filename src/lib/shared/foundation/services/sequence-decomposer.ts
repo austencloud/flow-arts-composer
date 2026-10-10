@@ -3,18 +3,18 @@ import type { SequenceData } from "../domain/models/sequence-data";
 import {
   HandSide,
   type HandSide as HandSideValue,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { SoloPropData } from "../domain/models/solo-prop-data";
 import type { SoloPropStepData } from "../domain/models/solo-prop-step-data";
 import type { StepPairingData } from "../domain/models/step-pairing-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   Orientation,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 // Strips the rendering-only fields from a MotionData to produce a SoloPropStepData.
 //

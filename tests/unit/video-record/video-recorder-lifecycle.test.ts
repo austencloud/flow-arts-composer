@@ -10,7 +10,7 @@
 
 import "fake-indexeddb/auto";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import { VideoRecorder } from "$lib/shared/video-record/services/video-recorder";
+import { VideoRecorder } from "#lib/shared/video-record/services/video-recorder.js";
 import { FakeMediaRecorder, fakeStream } from "./fake-media-recorder";
 
 const originalMediaRecorder = globalThis.MediaRecorder;

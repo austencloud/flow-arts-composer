@@ -6,13 +6,13 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import {
   firestoreDelete,
   firestoreList,
   firestoreSet,
-} from "$lib/shared/firestore";
-import { getVisibleOwnerProfiles } from "$lib/shared/community/services/user-repository";
+} from "#lib/shared/firestore/index.js";
+import { getVisibleOwnerProfiles } from "#lib/shared/community/services/user-repository.js";
 import { SavedGeneratorSetupSchema } from "../domain/models/favorite-config-schemas";
 import type { SavedGeneratorSetupDoc } from "../domain/models/favorite-config-schemas";
 import type {
@@ -21,7 +21,7 @@ import type {
   SavedSetupDraft,
 } from "../domain/models/favorite-config";
 import type { UIGenerationConfig } from "../state/generate-config.svelte";
-import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
+import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 import {
   normalizePersistedGenerationConfig,
   normalizePersistedStartEndOptions,

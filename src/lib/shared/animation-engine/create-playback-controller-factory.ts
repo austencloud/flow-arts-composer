@@ -4,10 +4,10 @@
  * Each call returns a fresh controller with its own orchestrator and loop.
  */
 import { AnimationStateManager } from "./services/animation-state-manager";
-import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
+import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
 import { AnimationLoop } from "./services/animation-loop";
-import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
+import { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
 import type { AnimationVisibilityStateManager } from "./state/animation-visibility-state.svelte";
 
 /**

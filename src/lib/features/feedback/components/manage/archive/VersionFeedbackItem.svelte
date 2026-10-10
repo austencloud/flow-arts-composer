@@ -1,10 +1,10 @@
 <!-- VersionFeedbackItem - Compact feedback item row within a version group -->
 <script lang="ts">
-  import type { VersionFeedbackItem as VersionFeedbackItemType } from "$lib/shared/feedback/domain/models/version-models";
+  import type { VersionFeedbackItem as VersionFeedbackItemType } from "#lib/shared/feedback/domain/models/version-models.js";
   import {
     TYPE_CONFIG,
     type FeedbackType,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
   const DEFAULT_TYPE_CONFIG = {
     label: "Unknown",

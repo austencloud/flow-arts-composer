@@ -13,13 +13,13 @@
   Clearing remains available wherever the playhead is.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     POST_TIME_EPSILON,
     itemEnd,
     type PostItem,
     type PostKeyframeChannel,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "#lib/shared/media-composition/domain/post-project.js";
   import {
     EASING_PRESETS,
     adjacentKeyframeSeconds,
@@ -31,12 +31,12 @@
     keyframeCount,
     clearChannel,
     type PostEasingPresetId,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import { editItemKeyframes } from "$lib/shared/media-composition/domain/post-project-edits";
-  import type { PostEdit } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
+  } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+  import { editItemKeyframes } from "#lib/shared/media-composition/domain/post-project-edits.js";
+  import type { PostEdit } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import ChipPopoverOption from "#lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "./PostCurveEditor.svelte";
   import { formatPostClock } from "../builder/post-builder-format";
   import { easingPresetLabel } from "./post-editor-labels";

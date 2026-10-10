@@ -1,7 +1,7 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { describe, expect, it, vi } from "vitest";
-import { reviewStageDirection } from "$lib/features/stage/services/server/tika-director-reviewer";
-import type { TikaDirectorResponse } from "$lib/features/stage/domain/tika-director";
+import { reviewStageDirection } from "#lib/features/stage/services/server/tika-director-reviewer.js";
+import type { TikaDirectorResponse } from "#lib/features/stage/domain/tika-director.js";
 
 const request = {
   prompt: "Okay, make every prop different.",

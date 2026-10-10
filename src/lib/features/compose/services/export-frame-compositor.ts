@@ -8,26 +8,26 @@ import {
 import type {
   ElementalGlyphAsset,
   GlyphAsset,
-} from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
-import type { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
-import type { CompositeVideoRenderer } from "$lib/shared/animation-engine/services/composite-video-renderer";
-import type { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/animation-engine/services/export-glyph-prerenderer.js";
+import type { ExportGlyphPrerenderer } from "#lib/shared/animation-engine/services/export-glyph-prerenderer.js";
+import type { CompositeVideoRenderer } from "#lib/shared/animation-engine/services/composite-video-renderer.js";
+import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type { LoopReflectionAxis } from "@tka/render-composition";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   MotionType,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getPathPoints } from "$lib/features/hand-paths/hand-path-builder/services/hand-path-animator";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { activeWordHeaderStep } from "$lib/shared/animation-engine/domain/word-header-highlight";
-import type { WordHeaderHighlight } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getPathPoints } from "#lib/features/hand-paths/hand-path-builder/services/hand-path-animator.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { activeWordHeaderStep } from "#lib/shared/animation-engine/domain/word-header-highlight.js";
+import type { WordHeaderHighlight } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   containElementalGlyph,
   getElementalGlyphBox,
-} from "$lib/shared/pictograph/shared/domain/constants/elemental-glyph-layout";
+} from "#lib/shared/pictograph/shared/domain/constants/elemental-glyph-layout.js";
 
 export interface FrameCompositorConfig {
   outputWidth: number;

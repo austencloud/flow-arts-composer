@@ -1,4 +1,4 @@
-import type { FeatureFlagConfig } from "$lib/shared/auth/domain/models/feature-flag";
+import type { FeatureFlagConfig } from "#lib/shared/auth/domain/models/feature-flag.js";
 
 /**
  * Early-access capability flags — surfaces that are built but not finished,

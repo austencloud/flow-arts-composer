@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { FilterPersister, type IFilterPersister } from './services/filter-persister';
 
 let instance: IFilterPersister | null = null;

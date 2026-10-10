@@ -9,15 +9,15 @@
 -->
 <script lang="ts">
 	import '@austencloud/backgrounds/css/backgrounds.css';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { onMount, onDestroy } from 'svelte';
 	import { BackgroundType, getBackgroundController } from '@austencloud/backgrounds';
-	import { markLanding } from '$lib/shared/performance/landing-marks';
+	import { markLanding } from '#lib/shared/performance/landing-marks.js';
 	import {
 		createJellyfishChime,
 		buildPentatonicNotes,
 		midiToFreq
-	} from '$lib/shared/3d/environments/scenes/ocean/runtime/fauna/jellyfish/jellyfish-chime';
+	} from '#lib/shared/3d/environments/scenes/ocean/runtime/fauna/jellyfish/jellyfish-chime.js';
 	import {
 		isBackgroundInteractionBlocked,
 		toBackgroundCoordinates
@@ -29,8 +29,8 @@
 		registerBackgroundFreezeTarget,
 		releaseBackground
 	} from '../state/background-hold.svelte';
-	import { createRenderActivityGate } from '$lib/shared/render-gating/render-activity-gate';
-	import { sharedAnimationState } from '$lib/shared/animation-engine/state/shared-animation-state.svelte';
+	import { createRenderActivityGate } from '#lib/shared/render-gating/render-activity-gate.js';
+	import { sharedAnimationState } from '#lib/shared/animation-engine/state/shared-animation-state.svelte.js';
 	import { mountBackgroundAtDisplayResolution } from '../background-canvas-resolution';
 	import { installBackgroundQualityRecovery } from '../background-quality-recovery';
 
@@ -179,7 +179,9 @@
 			if (!controller || !containerRef) return;
 			// Every visible foreground surface owns its full area, not just the buttons
 			// inside it. Empty drawer and viewer space must never ring the ocean behind.
-			if (foregroundOwnsPointer(e)) return;
+			// A pointerdown starts before any capture, so its target already is the
+			// element on top; a second hit test cost 4-12 ms per tap.
+			if (isBackgroundInteractionBlocked(e.target)) return;
 			const rect = containerRef.getBoundingClientRect();
 			const { x, y } = backgroundCoordinates(e, rect);
 			const r = controller.pokeAt?.(x, y);

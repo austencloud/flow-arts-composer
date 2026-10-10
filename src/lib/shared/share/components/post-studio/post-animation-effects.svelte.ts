@@ -1,11 +1,11 @@
-import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
-import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
+import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
+import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { PostAnimationItem } from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { PostAnimationItem } from "#lib/shared/media-composition/domain/post-project.js";
 
 /** Detach saved appearance effects before handing them to scoped effect state. */
 export function copyPostAnimationEffects(

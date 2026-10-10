@@ -16,8 +16,8 @@
  * - stepNumber 2 = steps[1] (second beat in array)
  */
 
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { createPersistenceHelper } from "$lib/shared/state/utils/persistent-state";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
 
 export type SelectionMode = "single" | "multi";
 

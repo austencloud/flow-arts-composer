@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { encodeWav24 } from "$lib/features/lab/pronunciation-recorder/domain/wav-encoder";
+import { encodeWav24 } from "#lib/features/lab/pronunciation-recorder/domain/wav-encoder.js";
 
 async function bytesOf(blob: Blob): Promise<DataView> {
   return new DataView(await blob.arrayBuffer());

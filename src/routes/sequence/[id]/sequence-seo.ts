@@ -1,4 +1,4 @@
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 const SITE_URL = "https://tkaflowarts.com";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/branding/og-image.png`;

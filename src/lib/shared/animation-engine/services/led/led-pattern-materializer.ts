@@ -7,9 +7,9 @@
  * until its load lands.
  */
 
-import type { PatternParams, StripPattern } from "$lib/shared/poi/domain/strip-pattern";
-import { BUILT_IN_PRESETS } from "$lib/shared/poi/domain/pattern-presets";
-import { imageDataToStripPattern } from "$lib/shared/poi/domain/strip-pattern-image";
+import type { PatternParams, StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
+import { BUILT_IN_PRESETS } from "#lib/shared/poi/domain/pattern-presets.js";
+import { imageDataToStripPattern } from "#lib/shared/poi/domain/strip-pattern-image.js";
 import type { LedPatternSource } from "../../domain/types/led-types";
 import {
   DEFAULT_LED_INTENT,
@@ -122,7 +122,7 @@ export class LedPatternMaterializer {
  */
 async function defaultImageLoader(libraryEntryId: string): Promise<ImageData | null> {
   try {
-    const library = await import("$lib/shared/poi/services/poi-image-library");
+    const library = await import("#lib/shared/poi/services/poi-image-library.js");
     const entry = await library.getEntry(libraryEntryId);
     if (!entry) return null;
     return await library.loadAsImageData(entry);

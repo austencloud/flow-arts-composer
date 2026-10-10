@@ -1,12 +1,12 @@
 import { doc, getDoc, setDoc, arrayUnion } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import {
   firestoreGet,
   firestoreList,
   firestoreDelete,
   requireAuth,
   type WhereClause,
-} from "$lib/shared/firestore";
+} from "#lib/shared/firestore/index.js";
 import { SoloPropDataSchema } from "../domain/models/solo-prop-schemas";
 import type { SoloPropData } from "../domain/models/solo-prop-data";
 import type { SoloPropFilters } from "./types";

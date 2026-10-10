@@ -4,7 +4,7 @@
    * The viewer state owns the choice; this component only gives it a heading
    * and panel treatment.
    */
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import SceneSelectorPopover from "../SceneSelectorPopover.svelte";
 </script>
 

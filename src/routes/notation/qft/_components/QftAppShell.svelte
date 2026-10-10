@@ -1,10 +1,10 @@
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ControlDock, {
     type ControlDockTab,
-  } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
+  } from "#lib/shared/sequence-viewer/components/ControlDock.svelte";
   import { getQftAppContext } from "../_context/qft-app-context";
-  import type { QftHandCount } from "$lib/shared/notation/qft/qft-session";
+  import type { QftHandCount } from "#lib/shared/notation/qft/qft-session.js";
   import QftHandControls from "./QftHandControls.svelte";
   import QftLayerControls from "./QftLayerControls.svelte";
   import QftNotationPanel from "./QftNotationPanel.svelte";

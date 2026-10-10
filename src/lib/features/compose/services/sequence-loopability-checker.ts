@@ -5,4 +5,4 @@
  * also treats invisible placeholder hands like absent hands under the
  * both-required Step shape) is the single source of truth.
  */
-export { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
+export { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";

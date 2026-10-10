@@ -19,7 +19,7 @@ import { makeSpinRatio, spinRatioPetals, type SpinRatio } from "@vtg/domain";
 import {
   traceScaledPath,
   type QftKnobs,
-} from "$lib/shared/notation/qft/qft-model";
+} from "#lib/shared/notation/qft/qft-model.js";
 
 export const HAND_RADIUS = 80;
 export const STAFF_TIP_REACH = 67.4;

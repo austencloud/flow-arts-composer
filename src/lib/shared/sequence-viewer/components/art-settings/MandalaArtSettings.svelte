@@ -1,6 +1,6 @@
 <!-- Mandala settings compose the canonical category control in two layouts. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { fade } from "svelte/transition";
   import ControlDock, {
     type ControlDockAction,

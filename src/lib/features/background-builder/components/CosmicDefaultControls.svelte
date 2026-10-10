@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { QualityLevel } from "@austencloud/backgrounds";
-  import type { CosmicDensityPreset } from "$lib/shared/background-builder/domain/lab-settings-types";
+  import type { CosmicDensityPreset } from "#lib/shared/background-builder/domain/lab-settings-types.js";
   import { ChipToggle, ChipGroup } from '@austencloud/chip-toggle';
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
 
   interface LayerState {
     stars: boolean;

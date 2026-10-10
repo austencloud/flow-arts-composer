@@ -3,19 +3,24 @@ import {
   FeatureVideoFileSchema,
   type FeatureVideoFile,
   type FeatureVideoSummary,
-} from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/feature-video.js";
+import {
+  featureVideoExportUrl,
+  isSavedFeatureExport,
+  type SavedFeatureExport,
+} from "#lib/shared/media-composition/domain/feature-video-export.js";
 import {
   PostProjectSchema,
   createEmptyPostProject,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   createTakeTiming,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import { createPostEditorHistoryStorage } from "$lib/shared/media-composition/services/post-editor-history-store";
-import type { PostEditorStore } from "$lib/shared/media-composition/services/post-editor-store";
-import { deepEqual } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import { createPostEditorHistoryStorage } from "#lib/shared/media-composition/services/post-editor-history-store.js";
+import type { PostEditorStore } from "#lib/shared/media-composition/services/post-editor-store.js";
+import { deepEqual } from "#lib/shared/sequence-viewer/services/viewer-url-state-codec.js";
 
 /**
  * The Post page's side of a feature video: list and load them from the dev
@@ -86,6 +91,41 @@ export async function loadFeatureVideo(
   if (!parsed.success)
     throw new Error(`The dev server sent an unreadable copy of ${slug}.`);
   return parsed.data;
+}
+
+/**
+ * Sends a finished render to the project's exports/ folder. `name` picks its
+ * file name; the dev server numbers it when an earlier render has that name.
+ * Aborting `signal` stops the upload.
+ */
+export async function saveFeatureVideoExport(
+  slug: string,
+  video: Blob,
+  options: { name?: string; fetcher?: Fetcher; signal?: AbortSignal } = {}
+): Promise<SavedFeatureExport> {
+  const fetcher = options.fetcher ?? fetch;
+  const url = featureVideoExportUrl(slug, options.name);
+  let response: Response;
+  try {
+    response = await fetcher(url, {
+      method: "POST",
+      headers: { "Content-Type": "video/mp4" },
+      body: video,
+      ...(options.signal ? { signal: options.signal } : {}),
+    });
+  } catch {
+    throw new Error(
+      options.signal?.aborted
+        ? "The save was cancelled."
+        : "The dev server could not be reached."
+    );
+  }
+  const body = await readJson(response);
+  if (!isSavedFeatureExport(body))
+    throw new Error(
+      "The dev server sent an unreadable answer about the export."
+    );
+  return { file: body.file, path: body.path, bytes: body.bytes };
 }
 
 interface Buffered {
@@ -350,6 +390,16 @@ export function createFeatureVideoSync(
     store,
     save,
     checkRevision,
+    /**
+     * Sends a finished render to this project's exports/ folder; aborting
+     * `signal` stops the upload.
+     */
+    saveExport: (video: Blob, name?: string, signal?: AbortSignal) =>
+      saveFeatureVideoExport(slug, video, {
+        ...(name ? { name } : {}),
+        fetcher,
+        ...(signal ? { signal } : {}),
+      }),
     /**
      * Binds the open editor and what to do when disk's copy replaces its
      * post. Returns the unbind.

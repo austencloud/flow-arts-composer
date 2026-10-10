@@ -7,7 +7,7 @@
   version (unfiltered last-15 by timestamp, revert re-saves the entry's value).
 -->
 <script lang="ts">
-  import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+  import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
   import {
     collection,
     query,
@@ -15,9 +15,9 @@
     limit,
     getDocs,
   } from "firebase/firestore";
-  import { getGlobalAdjustmentRepository } from "$lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton";
-  import { globalAdjustmentVersion } from "$lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
+  import { getGlobalAdjustmentRepository } from "#lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton.js";
+  import { globalAdjustmentVersion } from "#lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
   import AdjustmentHistoryPanel, {
     type HistoryEntry,
   } from "./AdjustmentHistoryPanel.svelte";

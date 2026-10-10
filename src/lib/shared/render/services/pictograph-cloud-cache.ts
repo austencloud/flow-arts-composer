@@ -179,7 +179,7 @@ export async function upload(hash: string, blob: Blob): Promise<string | null> {
       const { ref, uploadBytes, getDownloadURL } =
         await import("firebase/storage");
       const { getAuthInstance, getStorageInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       // The reactive app state can know about the restored user a moment before
       // Firebase Storage has installed that user's token. Use the SDK's own
       // readiness boundary so a valid signed-in QR warm is not sent as an

@@ -1,4 +1,4 @@
-import type { SVGPathData } from "$lib/shared/mandala/domain/mandala-types";
+import type { SVGPathData } from "#lib/shared/mandala/domain/mandala-types.js";
 import SVGPathCommander from "svg-path-commander";
 
 interface Pt {

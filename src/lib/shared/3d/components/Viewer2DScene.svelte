@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   /**
    * Viewer2DScene
    *
@@ -15,10 +15,10 @@
   import { T } from "@threlte/core";
   import Grid2DOverlay from "./Grid2DOverlay.svelte";
   import PropPlane2D from "./PropPlane2D.svelte";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import { getPropDimensions } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   interface Props {
     leftPropState: PropState | null;

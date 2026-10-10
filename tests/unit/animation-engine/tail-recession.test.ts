@@ -5,7 +5,7 @@ import {
   createTailState,
   type Point2D,
   type TailState,
-} from "$lib/shared/animation-engine/domain/tail-recession";
+} from "#lib/shared/animation-engine/domain/tail-recession.js";
 
 const LEADING_EDGE = 20;
 const FRAME_MS = 16.67;

@@ -10,13 +10,13 @@
 import type {
   CreateModuleState,
   ConstructTabState,
-} from "$lib/shared/create/state/create-module-state-types";
-import type { createPanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
+} from "#lib/shared/create/state/create-module-state-types.js";
+import type { createPanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 import type {
   SequenceTransformCommandId,
   SequenceTransformCommandOptions,
   SequenceTransformCommandResult,
-} from "$lib/shared/create/domain/sequence-action-types";
+} from "#lib/shared/create/domain/sequence-action-types.js";
 
 type PanelCoordinationState = ReturnType<typeof createPanelCoordinationState>;
 

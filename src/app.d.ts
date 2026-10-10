@@ -35,31 +35,35 @@ declare global {
       catalogNavId?: string | null;
       catalogNavTnDFamily?: string | null;
     }
-    interface Platform {
-      env: {
-        FIREBASE_SERVICE_ACCOUNT_JSON?: string;
-        QR_VIDEOS: R2Bucket;
-        TKA_ASSETS: R2Bucket;
-        R2_PUBLIC_URL: string;
-        // Native Cloudflare ratelimit bindings (see wrangler.toml [[ratelimits]]).
-        // Optional: absent under `vite dev`, where withRateLimit falls back to
-        // the in-memory window. Shape matches CfRateLimiter in rate-limiter.ts.
-        RL_GENERAL?: {
-          limit(o: { key: string }): Promise<{ success: boolean }>;
-        };
-        RL_AI_CHAT?: {
-          limit(o: { key: string }): Promise<{ success: boolean }>;
-        };
-        RL_AI_RENDER?: {
-          limit(o: { key: string }): Promise<{ success: boolean }>;
-        };
-        RL_ADMIN?: { limit(o: { key: string }): Promise<{ success: boolean }> };
-        RL_CARD_ISSUE?: {
-          limit(o: { key: string }): Promise<{ success: boolean }>;
-        };
-        RL_CARD_SCAN?: {
-          limit(o: { key: string }): Promise<{ success: boolean }>;
-        };
+  }
+
+  // The Worker's bindings and variables, read through `workerEnv()` in
+  // src/lib/server/cloudflare/worker-env.ts. Named `Cloudflare.Env`, the
+  // interface `cloudflare:workers` and `wrangler types` use.
+  namespace Cloudflare {
+    interface Env {
+      FIREBASE_SERVICE_ACCOUNT_JSON?: string;
+      QR_VIDEOS: R2Bucket;
+      TKA_ASSETS: R2Bucket;
+      R2_PUBLIC_URL: string;
+      // Native Cloudflare ratelimit bindings (see wrangler.toml [[ratelimits]]).
+      // Optional: absent under `vite dev`, where withRateLimit falls back to
+      // the in-memory window. Shape matches CfRateLimiter in rate-limiter.ts.
+      RL_GENERAL?: {
+        limit(o: { key: string }): Promise<{ success: boolean }>;
+      };
+      RL_AI_CHAT?: {
+        limit(o: { key: string }): Promise<{ success: boolean }>;
+      };
+      RL_AI_RENDER?: {
+        limit(o: { key: string }): Promise<{ success: boolean }>;
+      };
+      RL_ADMIN?: { limit(o: { key: string }): Promise<{ success: boolean }> };
+      RL_CARD_ISSUE?: {
+        limit(o: { key: string }): Promise<{ success: boolean }>;
+      };
+      RL_CARD_SCAN?: {
+        limit(o: { key: string }): Promise<{ success: boolean }>;
       };
     }
   }

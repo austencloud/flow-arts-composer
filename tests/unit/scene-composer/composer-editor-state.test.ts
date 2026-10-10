@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type CameraControls from "camera-controls";
-import { createComposerEditorState } from "$lib/shared/3d/scene-composer/composer-editor-state.svelte";
+import { createComposerEditorState } from "#lib/shared/3d/scene-composer/composer-editor-state.svelte.js";
 
 describe("composer editor camera arbitration", () => {
   it("stops and disables orbit controls for the entire gizmo drag", () => {

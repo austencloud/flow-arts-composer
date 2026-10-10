@@ -10,13 +10,13 @@
  * since they hold no per-animation state.
  */
 
-import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
-import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
-import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import type { AnimationPlaybackControllerOptions } from "$lib/shared/animation-engine/services/animation-playback-controller";
+import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
+import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
+import { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import type { AnimationPlaybackControllerOptions } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
 
 /**
  * @param visibilityManager Optional per-instance visibility manager. When

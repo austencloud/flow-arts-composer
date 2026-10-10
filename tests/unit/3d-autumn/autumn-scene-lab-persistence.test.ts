@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createDefaultAutumnConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/autumn-scene-config";
-import { loadSceneLabState } from "$lib/features/lab/tabs/scene-lab/services/scene-lab-persistence";
+import { createDefaultAutumnConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/autumn-scene-config.js";
+import { loadSceneLabState } from "#lib/features/lab/tabs/scene-lab/services/scene-lab-persistence.js";
 
 const CONFIG_KEYS = [
   "winter",

@@ -8,8 +8,8 @@
  * read the clock, and freezing it would make them lie).
  */
 
-import type { AttractGhost } from "$lib/shared/attract/services/attract-ghost.svelte";
-import { transitionGhostHover } from "$lib/shared/attract/services/ghost-hover";
+import type { AttractGhost } from "#lib/shared/attract/services/attract-ghost.svelte.js";
+import { transitionGhostHover } from "#lib/shared/attract/services/ghost-hover.js";
 import type { SimApp } from "./app-model";
 
 export interface FakeGhost {

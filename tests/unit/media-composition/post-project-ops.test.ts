@@ -8,13 +8,13 @@ import {
   postProjectEditStatus,
   queuePostProjectOps,
   readPostProjectSession,
-} from "$lib/server/post-project-dev-bridge";
+} from "#lib/server/post-project-dev-bridge.js";
 import {
   POST_BOX,
   type PostAnimationItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import { findTunnelHook } from "$lib/shared/media-composition/domain/post-project-edits";
-import { applyPostProjectOps } from "$lib/shared/media-composition/domain/post-project-ops";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { findTunnelHook } from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };

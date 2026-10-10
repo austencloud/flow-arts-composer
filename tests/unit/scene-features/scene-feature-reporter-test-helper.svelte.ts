@@ -1,4 +1,4 @@
-import { createSceneFeatureState } from "$lib/shared/3d/scene-features/state/scene-feature-state.svelte";
+import { createSceneFeatureState } from "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js";
 
 type SceneFeatureState = ReturnType<typeof createSceneFeatureState>;
 

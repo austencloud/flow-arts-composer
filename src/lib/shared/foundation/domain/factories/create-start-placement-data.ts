@@ -4,7 +4,7 @@
  * Creates a start placement with proper type discriminator.
  * Start placements represent initial prop configurations before sequence begins.
  */
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 
 export function createStartPlacementData(
   data: Partial<StartPlacementData> = {}

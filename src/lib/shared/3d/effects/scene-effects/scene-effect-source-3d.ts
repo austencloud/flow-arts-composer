@@ -11,7 +11,7 @@ import type {
   Bloom3DParams,
   Fire3DParams,
   Charcoal3DParams,
-} from "$lib/shared/effects/translators/webgl3d-types";
+} from "#lib/shared/effects/translators/webgl3d-types.js";
 import type { QualityTier } from "../types";
 
 export interface SceneEffectVector3 {

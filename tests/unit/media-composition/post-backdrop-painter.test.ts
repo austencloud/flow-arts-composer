@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi, type MockInstance } from "vitest";
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+import type { MediaCompositionPreset } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import type { EvaluatedFrameLayer } from "#lib/shared/media-composition/services/frame-evaluator.js";
 import {
   backdropLayer,
   paintBlurredBackdrop,
-} from "$lib/shared/media-composition/services/post-backdrop-painter";
+} from "#lib/shared/media-composition/services/post-backdrop-painter.js";
 
 function layer(clipId: string): EvaluatedFrameLayer {
   return {

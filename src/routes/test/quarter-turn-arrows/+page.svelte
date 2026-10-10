@@ -1,23 +1,23 @@
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
-  import { getArrowSvgPath } from "$lib/shared/pictograph/arrow/rendering/services/arrow-path-resolver";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
+  import { getArrowSvgPath } from "#lib/shared/pictograph/arrow/rendering/services/arrow-path-resolver.js";
   import {
     HandSide,
     RotationDirection,
     type MotionType,
     type Orientation,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     createMotionData,
     type MotionData,
-  } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import fixture from "../../../../docs/research/spiroanim/editor-v9-quarter-turn-club-loop.json";
 
   interface RawMotion {

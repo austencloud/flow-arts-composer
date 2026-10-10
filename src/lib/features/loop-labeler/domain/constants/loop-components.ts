@@ -2,7 +2,7 @@
  * LOOP component definitions and mapping utilities
  */
 
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 // Base LOOP components that can be combined
 // Icons and colors match the Generate tab's LOOP component buttons

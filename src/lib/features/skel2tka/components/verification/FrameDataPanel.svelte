@@ -5,8 +5,8 @@
   and which beat the current frame belongs to.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { DetectionFrame } from "$lib/shared/train/domain/detection-frame";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { DetectionFrame } from "#lib/shared/train/domain/detection-frame.js";
   import type { DetectedBeat } from "../../domain/models";
 
   let {

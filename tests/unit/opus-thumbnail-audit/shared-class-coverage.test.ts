@@ -14,15 +14,15 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   deriveKey,
   inputUsesDefaults,
   type ThumbnailRenderInput,
-} from "$lib/shared/browse/services/thumbnail-key-deriver";
+} from "#lib/shared/browse/services/thumbnail-key-deriver.js";
 
-vi.mock("$lib/shared/analytics/thumbnail-analytics", () => ({
+vi.mock("#lib/shared/analytics/thumbnail-analytics.js", () => ({
   captureThumbnailRenderFailure: vi.fn(),
 }));
 
@@ -35,7 +35,10 @@ const cloudMocks = vi.hoisted(() => ({
   markMissing: vi.fn(),
 }));
 
-vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => cloudMocks);
+vi.mock(
+  "#lib/shared/browse/services/cloud-thumbnail-cache.js",
+  () => cloudMocks
+);
 
 const GALLERY_SIZE = 40;
 
@@ -66,9 +69,9 @@ async function createHarness() {
     { ThumbnailRenderQueue },
     { ThumbnailMetricsCollector },
   ] = await Promise.all([
-    import("$lib/shared/browse/services/thumbnail-render-orchestrator"),
-    import("$lib/shared/browse/services/thumbnail-render-queue"),
-    import("$lib/shared/browse/services/thumbnail-metrics-collector"),
+    import("#lib/shared/browse/services/thumbnail-render-orchestrator.js"),
+    import("#lib/shared/browse/services/thumbnail-render-queue.js"),
+    import("#lib/shared/browse/services/thumbnail-metrics-collector.js"),
   ]);
 
   const render = vi.fn(async () => ({

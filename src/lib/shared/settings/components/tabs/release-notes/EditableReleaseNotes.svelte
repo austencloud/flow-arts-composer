@@ -1,6 +1,6 @@
 <!-- EditableReleaseNotes - Release notes with inline editing for admins -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { fly, scale } from "svelte/transition";
 
   let {

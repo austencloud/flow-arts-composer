@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 </script>
 
 <section

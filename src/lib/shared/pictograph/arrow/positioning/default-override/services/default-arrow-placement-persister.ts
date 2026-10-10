@@ -9,8 +9,8 @@ import {
   FieldPath,
   type Unsubscribe,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { firestoreList, firestoreSet } from "$lib/shared/firestore";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { firestoreList, firestoreSet } from "#lib/shared/firestore/index.js";
 import {
   DefaultArrowPlacementDocSchema,
   generateDefaultDocId,
@@ -18,7 +18,7 @@ import {
   type DefaultArrowPlacementDoc,
   type PlacementValue,
 } from "../domain/default-arrow-placement";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { normalizePlacementFrame } from "../../placement/domain/placement-frame";
 
 const logger = createComponentLogger("DefaultArrowPlacementPersister");

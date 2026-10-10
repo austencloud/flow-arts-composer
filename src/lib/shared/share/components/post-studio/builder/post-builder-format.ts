@@ -1,4 +1,4 @@
-import { normalizeTyped } from "$lib/shared/ui/typed-number";
+import { normalizeTyped } from "#lib/shared/ui/typed-number.js";
 
 /** m:ss.s, the clock the transport and the act fields read in. */
 export function formatPostClock(seconds: number): string {
@@ -16,6 +16,11 @@ export function formatTakeClock(seconds: number): string {
   const minutes = Math.floor(hundredths / 6000);
   const rest = (hundredths % 6000) / 100;
   return `${minutes}:${rest.toFixed(2).padStart(5, "0")}`;
+}
+
+/** 0.98×, 1.5×, 2×: a clip's speed in its tool and on the timeline badge. */
+export function formatPostSpeed(speed: number): string {
+  return `${Number(speed.toFixed(2))}×`;
 }
 
 /**

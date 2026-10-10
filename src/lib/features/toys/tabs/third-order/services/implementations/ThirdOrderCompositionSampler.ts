@@ -1,7 +1,7 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
 import {
   mapThirdOrderChildStep,
   resolveThirdOrderGridPose,

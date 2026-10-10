@@ -1,17 +1,20 @@
 import {
   authState,
   getEffectiveUserId,
-} from "$lib/shared/auth/state/auth-state.svelte";
-import { isPreviewReadOnly } from "$lib/shared/debug/state/user-preview-state.svelte";
-import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-import { isFullAccountUser } from "$lib/shared/auth/domain/access-tier";
-import { toast, showToast } from "$lib/shared/toast/state/toast-state.svelte";
-import { LIBRARY_LIMITS } from "$lib/shared/library/data/firestore-paths";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
-import { isSmartCollection } from "$lib/shared/library/domain/models/collection";
-import { deriveSpecMembers } from "$lib/shared/browse/services/smart-filter-spec";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/auth/state/auth-state.svelte.js";
+import { isPreviewReadOnly } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+import { isFullAccountUser } from "#lib/shared/auth/domain/access-tier.js";
+import {
+  toast,
+  showToast,
+} from "#lib/shared/toast/state/toast-state.svelte.js";
+import { LIBRARY_LIMITS } from "#lib/shared/library/data/firestore-paths.js";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
+import { isSmartCollection } from "#lib/shared/library/domain/models/collection.js";
+import { deriveSpecMembers } from "#lib/shared/browse/services/smart-filter-spec.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   subscribeToCollections,
   addSequenceToCollection,
@@ -26,14 +29,14 @@ import {
   ensureSystemCollections,
   updateCollection,
   deleteCollection,
-} from "$lib/shared/library/services/collection-manager";
-import { setCollectionMembershipResolver } from "$lib/shared/browse/services/browse-filter";
-import { followedCollectionsState } from "$lib/features/library/state/followed-collections-state.svelte";
-import { communityCollectionsState } from "$lib/features/browse/collections/state/community-collections-state.svelte";
+} from "#lib/shared/library/services/collection-manager.js";
+import { setCollectionMembershipResolver } from "#lib/shared/browse/services/browse-filter.js";
+import { followedCollectionsState } from "#lib/features/library/state/followed-collections-state.svelte.js";
+import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
 import {
   readOwnMirror,
   writeOwnMirror,
-} from "$lib/features/library/services/collection-cache-mirror";
+} from "#lib/features/library/services/collection-cache-mirror.js";
 
 /**
  * collections-state - live view of the signed-in user's own collections.

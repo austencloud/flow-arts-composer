@@ -5,7 +5,7 @@ import {
   SELECTIVE_COLOR_PROP_TYPES,
   applyMotionColorToSvg,
   getMotionColor,
-} from "$lib/shared/utils/svg-color-utils";
+} from "#lib/shared/utils/svg-color-utils.js";
 
 // The "buttons" family deliberately diverges from every other renderer: it
 // crops the viewBox down to the painted artwork so the family-tile picker

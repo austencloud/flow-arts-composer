@@ -5,8 +5,8 @@
  * When one sequence ends, finds another that starts where the previous ended.
  */
 
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 /**
  * Represents the end state of a sequence that must be matched

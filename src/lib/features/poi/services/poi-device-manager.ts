@@ -1,7 +1,7 @@
 import type { OpenPixelPoiAdapter } from "./open-pixel-poi-adapter";
 import type { IPoiConnection } from "./types";
 import type { PoiDeviceInfo } from "../domain/device-types";
-import type { StripPattern } from "$lib/shared/poi/domain/strip-pattern";
+import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
 
 /**
  * Aggregates multiple device adapters (BLE, USB Serial) and manages

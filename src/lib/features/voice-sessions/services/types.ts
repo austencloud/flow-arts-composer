@@ -4,8 +4,8 @@
 
 import type {
   ResolutionTier,
-} from "$lib/shared/voice-control/domain/voice-session-types";
-import type { VoiceCommandCategory } from "$lib/shared/voice-control/domain/voice-command-types";
+} from "#lib/shared/voice-control/domain/voice-session-types.js";
+import type { VoiceCommandCategory } from "#lib/shared/voice-control/domain/voice-command-types.js";
 
 
 export interface FailingTranscript {

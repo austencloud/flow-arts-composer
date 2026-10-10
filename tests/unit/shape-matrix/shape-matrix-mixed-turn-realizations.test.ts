@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { loadShapeMatrix } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-import { flowerKey } from "$lib/shared/shape-matrix/domain/flower-signature";
-import { buildModeRealizationCandidates } from "$lib/shared/shape-matrix/services/build-mode-realizations";
-import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { loadShapeMatrix } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+import { flowerKey } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { buildModeRealizationCandidates } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
+import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // Real data: the checked-in base-word snapshot and the diamond dataframe,
 // served from static/ exactly as the app fetches them.

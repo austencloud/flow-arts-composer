@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getLanSyncCoordinator } from "$lib/shared/lan-sync/get-lan-sync-coordinator";
-  import { getSyncRoomDiscovery } from "$lib/shared/lan-sync/get-sync-room-discovery";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getLanSyncCoordinator } from "#lib/shared/lan-sync/get-lan-sync-coordinator.js";
+  import { getSyncRoomDiscovery } from "#lib/shared/lan-sync/get-sync-room-discovery.js";
   /**
    * MainInterface
    * Domain: Application Layout Shell
@@ -52,7 +52,7 @@
 
   import { deepLinker } from "./navigation/services/deep-linker";
   import { useDesktopSidebarVisibility } from "./navigation/services/desktop-sidebar-visibility.svelte";
-  import { browseScrollState } from "$lib/shared/browse/state/browse-scroll-state.svelte";
+  import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
   import type {
     ModuleId,
     SectionHomeDestination,
@@ -266,7 +266,7 @@
 <NearbySyncBanner />
 
 <!-- Connect Module Invite Overlay -->
-{#await import("$lib/features/connect/components/InviteOverlay.svelte") then mod}
+{#await import("#lib/features/connect/components/InviteOverlay.svelte") then mod}
   <mod.default />
 {/await}
 

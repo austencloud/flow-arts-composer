@@ -8,7 +8,7 @@
 
 import { CameraMode } from "../camera/types";
 import type { Destination, DestinationCategory } from "./types";
-import { resilientLazyImport } from "$lib/shared/hmr-helper";
+import { resilientLazyImport } from "#lib/shared/hmr-helper.js";
 
 /**
  * All available 3D destinations

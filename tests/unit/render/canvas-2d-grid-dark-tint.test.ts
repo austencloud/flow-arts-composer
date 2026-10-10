@@ -1,19 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 const mocks = vi.hoisted(() => ({
   gridImage: { id: "grid" } as unknown as CanvasImageSource,
   nonRadialImage: { id: "non-radial" } as unknown as CanvasImageSource,
 }));
 
-vi.mock("$lib/shared/render/services/svg-asset-loader", () => ({
+vi.mock("#lib/shared/render/services/svg-asset-loader.js", () => ({
   getSvgAssetLoader: () => ({
     getGridImage: () => mocks.gridImage,
     getNonRadialPointsImage: () => mocks.nonRadialImage,
   }),
 }));
 
-import { Canvas2DDirectRenderer } from "$lib/shared/render/services/canvas-2d-direct-renderer";
+import { Canvas2DDirectRenderer } from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
 
 // White at 85% alpha, the color the old `invert(1) opacity(0.85)` filter
 // turned the black-on-transparent grid SVGs into.

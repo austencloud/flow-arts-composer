@@ -1,7 +1,7 @@
-import { isWellFormedGridJoin } from "$lib/shared/foundation/domain/models/grid-join-token";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
-import { encodeSequenceForQR } from "$lib/shared/navigation/services/sequence-encoder";
+import { isWellFormedGridJoin } from "#lib/shared/foundation/domain/models/grid-join-token.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { isHandPathSequence } from "#lib/shared/foundation/domain/models/sequence-kind.js";
+import { encodeSequenceForQR } from "#lib/shared/navigation/services/sequence-encoder.js";
 import {
   choreographyDigest,
   verifyEncodedChoreography,

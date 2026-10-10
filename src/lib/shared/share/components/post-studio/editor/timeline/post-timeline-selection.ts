@@ -2,8 +2,8 @@ import {
   POST_TIME_EPSILON,
   itemEnd,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { pipHandoffOf } from "$lib/shared/media-composition/domain/pip-handoff";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { pipHandoffOf } from "#lib/shared/media-composition/domain/pip-handoff.js";
 
 export interface TimelineSelection {
   ids: string[];

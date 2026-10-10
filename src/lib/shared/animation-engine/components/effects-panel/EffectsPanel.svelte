@@ -1,12 +1,12 @@
 <script lang="ts">
   import { flushSync, setContext, type Snippet, type Component } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { effectUiLabel } from "./effect-ui-label";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import {
     isEffectId,
     type EffectId,
-  } from "$lib/shared/effects/state/effects-config-state.svelte";
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import EffectSelector from "./EffectSelector.svelte";
   import EffectsInspector from "./EffectsInspector.svelte";
   import LedCustomize from "./customize/LedCustomize.svelte";
@@ -22,25 +22,25 @@
   import {
     fitEffectCatalog,
     fitEffectRoster,
-  } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
+  } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
   import {
     matchPresetId,
     pickedPresetId,
     valuesEqual,
   } from "./presets/match-preset";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { startMorph } from "$lib/shared/transitions/results-morph";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
-  import EffectTuneStrip from "$lib/shared/effects/components/EffectTuneStrip.svelte";
-  import { primaryControls } from "$lib/shared/effects/domain/effect-control-manifest";
-  import { createEffectControlOverrides } from "$lib/shared/effects/effect-control-fields";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { startMorph } from "#lib/shared/transitions/results-morph.js";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import EffectTuneStrip from "#lib/shared/effects/components/EffectTuneStrip.svelte";
+  import { primaryControls } from "#lib/shared/effects/domain/effect-control-manifest.js";
+  import { createEffectControlOverrides } from "#lib/shared/effects/effect-control-fields.js";
   import {
     animationSettings,
     type AnimationSettingsState,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import EffectsPlaybackBar from "./EffectsPlaybackBar.svelte";
   import {
     LED_CUSTOMIZE_PAGE_CONTEXT,

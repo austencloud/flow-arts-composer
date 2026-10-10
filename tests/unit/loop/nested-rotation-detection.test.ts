@@ -17,11 +17,11 @@ import { describe, expect, it } from "vitest";
 import {
   resolveLoopDisplay,
   clearLoopDisplayCache,
-} from "$lib/features/loop-labeler/services/loop-display-resolver";
-import { loopDetector as labelerLoopDetector } from "$lib/features/loop-labeler/services/loop-detector";
-import { convert as convertSequenceToEntry } from "$lib/features/choreo-card/services/sequence-to-entry-converter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+import { loopDetector as labelerLoopDetector } from "#lib/features/loop-labeler/services/loop-detector.js";
+import { convert as convertSequenceToEntry } from "#lib/features/choreo-card/services/sequence-to-entry-converter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 // [letter, startPos, endPos, blue(type,rot,s>e,ori s>e), red(...)] per beat,
 // transcribed 1:1 from the reported sequence.

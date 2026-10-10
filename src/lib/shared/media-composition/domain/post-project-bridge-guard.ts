@@ -1,5 +1,5 @@
-import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
+import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
 
 /**
  * Parts of a post the manifest bridge may not change: the media and timing

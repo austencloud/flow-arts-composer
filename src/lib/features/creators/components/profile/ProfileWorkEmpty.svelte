@@ -17,10 +17,10 @@
   uses for its error state a few lines up in UserProfilePanel.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
 
   let {
     isOwnProfile,

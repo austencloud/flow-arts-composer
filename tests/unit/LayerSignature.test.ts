@@ -14,7 +14,7 @@ import corpusFixture from "../fixtures/layer-signature-corpus.json";
 // that now lives in the engine. Two independent copies agreeing is the point:
 // if the app's renderer and the engine's generator ever drift on what a turn
 // does to an orientation, this test is where it surfaces.
-import { calculateEndOrientation } from "$lib/shared/render/core/calculations/orientation";
+import { calculateEndOrientation } from "#lib/shared/render/core/calculations/orientation.js";
 import { RADIAL_CW_CYCLE } from "@tka/sequence-engine/core";
 import { normalizeLegacySteps } from "@tka/tka-types";
 import {
@@ -36,7 +36,7 @@ import {
   signatureFromPattern,
   type LayerId,
   type LayerStepInput,
-} from "$lib/shared/foundation/domain/layer-signature";
+} from "#lib/shared/foundation/domain/layer-signature.js";
 
 const MOTION_TYPES = ["pro", "anti", "static", "dash", "float"];
 const TURN_VALUES = [

@@ -15,8 +15,8 @@
    * Mandala sizes scale to the container width, so the same component fills the
    * 540px cover-lab preview and a full 8.5×11 print page identically.
    */
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import type { MandalaPalette } from "$lib/shared/mandala/domain/mandala-types";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import type { MandalaPalette } from "#lib/shared/mandala/domain/mandala-types.js";
   import { guideEdit, ptDrag, pt, editText, registerEditSource } from "../_data/guide-edit.svelte";
 
   let { theme = "navy", level = "1" }: { theme?: "navy" | "light"; level?: "1" | "2" } = $props();
