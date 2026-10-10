@@ -1,6 +1,10 @@
 <script lang="ts">
   import { flushSync, onDestroy, tick, untrack, type Snippet } from "svelte";
-  import type { VideoEditorPlugin } from "@austencloud/video-editor";
+  import type {
+    ItemKindUi,
+    ItemPart,
+    VideoEditorPlugin,
+  } from "@austencloud/video-editor";
   import type {
     PostItem,
     PostKeyframeChannel,
@@ -29,7 +33,7 @@
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { growFade } from "$lib/shared/transitions/motion";
   import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
-  import { channelValueText } from "../post-editor-labels";
+  import { channelValueText, translateKey } from "../post-editor-labels";
   import PostTimelineItem from "./PostTimelineItem.svelte";
   import PostTimelineKeyLane from "./PostTimelineKeyLane.svelte";
   import PostTimelineKeyLaneHeader from "./PostTimelineKeyLaneHeader.svelte";
@@ -78,13 +82,13 @@
     playheadSeconds: number;
     isPlaying: boolean;
     selectedItemId: string | null;
-    /** `"tunnel"` while the selected animation's opening tunnel is what is selected. */
-    selectedPart?: "tunnel" | null;
+    /** The id of the selected item's part while that part is what is selected (tka: `"tunnel"`). */
+    selectedPart?: string | null;
     labelFor: (item: PostItem) => string;
     onSeek: (seconds: number) => void;
     onSelect: (itemId: string | null) => void;
-    /** An animation's opening tunnel was pressed: it has its own look. */
-    onSelectTunnel?: (itemId: string) => void;
+    /** A part's block was pressed (tka: an animation's opening tunnel, which has its own look). */
+    onSelectPart?: (itemId: string, part: string) => void;
     onGestureStart: () => void;
     onGestureEnd: () => void;
     /** Puts back what the gesture changed, leaving no undo step. */
@@ -165,7 +169,7 @@
     labelFor,
     onSeek,
     onSelect,
-    onSelectTunnel,
+    onSelectPart,
     onGestureStart,
     onGestureEnd,
     onGestureCancel,
@@ -263,26 +267,20 @@
     end: number;
     joinStart: boolean;
     joinEnd: boolean;
-    /** The animation's opening tunnel, drawn as its own block ahead of the rest. */
-    tunnel: boolean;
+    /** A part of the item (tka: an animation's opening tunnel), drawn as its own block ahead of the rest. */
+    part: ItemPart | null;
   }
 
-  /** Where an animation's opening tunnel hands over to the rest of it, if inside it. */
-  function tunnelEndOf(item: PostItem, end: number): number | null {
-    if (item.kind !== "animation" || item.tunnelHook?.seconds === undefined)
-      return null;
-    const introEnd = item.start + item.tunnelHook.seconds;
-    return introEnd > item.start + POST_TIME_EPSILON &&
-      introEnd < end - POST_TIME_EPSILON
-      ? introEnd
-      : null;
+  /** The editor UI of an item's kind, from the plugin. */
+  function kindUi(item: PostItem): ItemKindUi | undefined {
+    return plugin?.itemKinds.find((d) => d.kind === item.kind)?.ui;
   }
 
   /**
    * What a row draws. A joined pair meets halfway through the stretch where
-   * the animation becomes the square; each half stays its own clip. An
-   * animation's opening tunnel is drawn as its own block joined to the rest,
-   * so it selects, and takes a look of its own, apart from the animation.
+   * the animation becomes the square; each half stays its own clip. Each part
+   * of an item is drawn as its own block joined to the rest, so it selects,
+   * and takes a look of its own, apart from the item.
    */
   function rowBlocks(row: TimelineRow): RowBlock[] {
     const pair = handoffPair;
@@ -291,25 +289,31 @@
       if (pair && item.id === pair.toId) continue;
       const joined = pair !== null && item.id === pair.fromId;
       const end = joined ? (pair.start + pair.end) / 2 : itemEnd(item);
-      const tunnelEnd = tunnelEndOf(item, end);
-      if (tunnelEnd !== null)
+      // A part is drawn only when it ends inside the block, which a joined
+      // pair shortens.
+      let partEnd: number | null = null;
+      for (const part of kindUi(item)?.parts ?? []) {
+        const span = part.span(item);
+        if (span === null || !(span.end < end - POST_TIME_EPSILON)) continue;
         blocks.push({
           item,
           trackIndex: row.trackIndex,
-          start: item.start,
-          end: tunnelEnd,
+          start: span.start,
+          end: span.end,
           joinStart: false,
           joinEnd: true,
-          tunnel: true,
+          part,
         });
+        partEnd = span.end;
+      }
       blocks.push({
         item,
         trackIndex: row.trackIndex,
-        start: tunnelEnd ?? item.start,
+        start: partEnd ?? item.start,
         end,
-        joinStart: tunnelEnd !== null,
+        joinStart: partEnd !== null,
         joinEnd: joined,
-        tunnel: false,
+        part: null,
       });
     }
     if (pair && row.trackIndex === pair.fromTrackIndex) {
@@ -324,7 +328,7 @@
           end: itemEnd(moves),
           joinStart: true,
           joinEnd: false,
-          tunnel: false,
+          part: null,
         });
     }
     return blocks;
@@ -417,14 +421,17 @@
 
   const overlayTrackCount = $derived(Math.max(0, project.tracks.length - 1));
   const mainItemsList = $derived(mainItems(project));
-  const crossfadeKinds = new Set<PostItem["kind"]>([
-    "video",
-    "image",
-    "card",
-    "animation",
-    "moves",
-    "carousel",
-  ]);
+  /** The core visual kinds and every plugin kind a transition can join. */
+  const crossfadeKinds = $derived(
+    new Set<string>([
+      "video",
+      "image",
+      "card",
+      ...(plugin?.itemKinds
+        .filter((d) => d.transitionVisual)
+        .map((d) => d.kind) ?? []),
+    ])
+  );
 
   function cutsFor(track: PostTrack): {
     outgoing: PostItem;
@@ -800,11 +807,15 @@
   }
 
   /**
-   * The tunnel block selects its animation with the tunnel as the part in
-   * hand. Shift and Ctrl clicks pick the whole clip, as on any other block.
+   * A part's block selects its item with the part in hand. Shift and Ctrl
+   * clicks pick the whole clip, as on any other block.
    */
-  function handleTunnelActivate(itemId: string, event: MouseEvent): void {
-    if (event.shiftKey || event.ctrlKey || event.metaKey || !onSelectTunnel) {
+  function handlePartActivate(
+    itemId: string,
+    part: string,
+    event: MouseEvent
+  ): void {
+    if (event.shiftKey || event.ctrlKey || event.metaKey || !onSelectPart) {
       handleItemActivate(itemId, event);
       return;
     }
@@ -813,7 +824,7 @@
       return;
     }
     selection = { ids: [itemId], anchorId: itemId, focusId: itemId };
-    onSelectTunnel(itemId);
+    onSelectPart(itemId, part);
   }
 
   function handleLaneBackgroundPointerDown(): void {
@@ -1583,9 +1594,10 @@
                   {/if}
                 </div>
               {/if}
-              {#each rowBlocks(row) as block (`${block.item.id}${block.tunnel ? ":tunnel" : ""}`)}
+              {#each rowBlocks(row) as block (block.part ? `${block.item.id}:${block.part.id}` : block.item.id)}
                 {@const item = block.item}
                 {@const track = project.tracks[block.trackIndex]!}
+                {@const part = block.part}
                 <PostTimelineItem
                   {item}
                   leftPx={secondsToPixels(block.start, pixelsPerSecond)}
@@ -1593,20 +1605,26 @@
                     block.end - block.start,
                     pixelsPerSecond
                   )}
-                  labelText={block.tunnel
-                    ? t("post_timeline_tunnel")
-                    : labelFor(item)}
+                  labelText={part ? part.label(translateKey) : labelFor(item)}
                   selected={selection.ids.includes(item.id) &&
-                    block.tunnel ===
-                      (selectedPart === "tunnel" && item.id === selectedItemId)}
+                    (part
+                      ? selectedPart === part.id && item.id === selectedItemId
+                      : !(selectedPart !== null && item.id === selectedItemId))}
                   locked={track.locked}
                   dimmed={track.hidden}
                   joinStart={block.joinStart}
                   joinEnd={block.joinEnd}
-                  tunnel={block.tunnel}
+                  part={part
+                    ? {
+                        id: part.id,
+                        label: part.label(translateKey),
+                        icon: part.icon,
+                      }
+                    : null}
                   span={block}
-                  onActivate={block.tunnel
-                    ? handleTunnelActivate
+                  onActivate={part
+                    ? (itemId, event) =>
+                        handlePartActivate(itemId, part.id, event)
                     : handleItemActivate}
                   onBodyPointerDown={(event) =>
                     beginBodyDrag(event, item, block.trackIndex)}

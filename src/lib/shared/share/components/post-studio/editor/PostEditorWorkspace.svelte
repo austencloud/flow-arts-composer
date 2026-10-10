@@ -3197,7 +3197,7 @@
             musicSelected = false;
             editor.selectedItemId = itemId;
           }}
-          onSelectTunnel={(itemId) => editor.selectTunnel(itemId)}
+          onSelectPart={(id, part) => editor.selectPart(id, part)}
           onGestureStart={() => {
             editor.pause();
             editor.beginGesture();

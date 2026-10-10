@@ -6,12 +6,14 @@ import {
   faSun,
   faTableCells,
 } from "@austencloud/video-editor/icons";
+import { TUNNEL_PART } from "./tka-parts";
 import TkaKindTools from "./TkaKindTools.svelte";
 
 /**
  * The icons and names the editor shows for tka's kinds, as post-editor-labels.ts
  * gave them (`ITEM_KIND_ICON`, `MANDALA_ICON`, `itemKindLabel`), and the item
- * tool's panels for the animation, moves and titles kinds.
+ * tool's panels for the animation, moves and titles kinds. An animation's
+ * opening tunnel is its part.
  */
 export const TKA_KIND_UI: Record<
   "animation" | "moves" | "carousel" | "titles",
@@ -21,6 +23,7 @@ export const TKA_KIND_UI: Record<
     icon: faPersonRunning,
     label: (t) => t("post_editor_kind_animation"),
     toolPanel: TkaKindTools,
+    parts: [TUNNEL_PART],
   },
   moves: {
     icon: faShapes,

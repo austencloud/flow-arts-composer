@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PostItem, PostItemKind } from "@austencloud/video-editor/core";
+  import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
   import { formatPostClock, formatPostSpeed } from "../post-format";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
 
@@ -28,8 +29,8 @@
      */
     joinStart?: boolean;
     joinEnd?: boolean;
-    /** The block is an animation's opening tunnel, which selects on its own. */
-    tunnel?: boolean;
+    /** The block is a part of the item, which selects on its own (tka: an animation's opening tunnel). */
+    part?: { id: string; label: string; icon: IconDefinition } | null;
     /** The stretch this block covers when it shows only part of the item. */
     span?: { start: number; end: number };
   }
@@ -48,7 +49,7 @@
     animated,
     joinStart = false,
     joinEnd = false,
-    tunnel = false,
+    part = null,
     span,
   }: Props = $props();
 
@@ -109,23 +110,24 @@
 <button
   type="button"
   class="post-timeline-item kind-{item.kind}"
-  class:tunnel
+  class:part={part !== null}
   class:selected
   class:dimmed
   class:join-start={joinStart}
   class:join-end={joinEnd}
   style="left: {leftPx}px; width: {Math.max(widthPx, 2)}px"
   data-item-id={item.id}
-  data-part={tunnel ? "tunnel" : undefined}
+  data-part={part?.id}
   aria-pressed={selected}
   aria-label={accessibleName}
   onpointerdown={handleBodyPointerDown}
   onclick={(event) => onActivate(item.id, event)}
 >
-  <i
-    class={tunnel ? "fa-solid fa-fan" : KIND_ICON[item.kind]}
-    aria-hidden="true"
-  ></i>
+  {#if part}
+    <Icon icon={part.icon} />
+  {:else}
+    <i class={KIND_ICON[item.kind]} aria-hidden="true"></i>
+  {/if}
   <span class="item-label">{labelText}</span>
   {#if speedLabel}
     <span class="item-badge">{speedLabel}</span>
@@ -203,7 +205,7 @@
   .post-timeline-item.kind-animation {
     --kind-tint: var(--semantic-warning, #f6c85f);
   }
-  .post-timeline-item.kind-animation.tunnel {
+  .post-timeline-item.kind-animation.part {
     --kind-tint: #7cc4fa;
   }
   .post-timeline-item.kind-moves {
@@ -216,7 +218,8 @@
     --kind-tint: #f28b82;
   }
 
-  .post-timeline-item i:not(.item-glyph) {
+  .post-timeline-item i:not(.item-glyph),
+  .post-timeline-item :global(.ve-icon) {
     flex-shrink: 0;
     font-size: 0.85em;
     opacity: 0.85;
