@@ -1,12 +1,15 @@
 /**
  * The Create front door's Shape preview: the corner of the Shape Matrix it
- * shows and the scene's beats around the Matrix's own reveal. Pure, so tests
- * check them without drawing.
+ * shows, the Surprise each turn rolls, and the scene's beats around the
+ * Matrix's own reveal. Pure, so tests check them without drawing.
  */
+import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
 import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
 import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import {
   matrixFiltersForTurns,
+  matrixTurnsForLevel,
+  SHAPE_MATRIX_DEFAULT_LEVEL,
   SHAPE_MATRIX_DEFAULT_TURN,
 } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
 import type { ShapeLayout } from "./method-preview-compositions";
@@ -38,21 +41,97 @@ export interface ShapeCorner {
   columns: Flower[];
 }
 
+/** A page of the Matrix: the turn band on each hand's axis. */
+export interface ShapePage {
+  left: TurnValue;
+  right: TurnValue;
+}
+
+/** A crossing of the corner. */
+export interface ShapeSpot {
+  row: number;
+  column: number;
+}
+
+/** The page the Matrix opens on, and the one the preview rests on first. */
+export const SHAPE_PREVIEW_FIRST_PAGE: ShapePage = Object.freeze({
+  left: SHAPE_MATRIX_DEFAULT_TURN,
+  right: SHAPE_MATRIX_DEFAULT_TURN,
+});
+
 /**
- * The top-left corner of the page the Matrix opens on: the default turn band
- * on both axes, filtered the way the Matrix filters it, as many flowers as
- * the layout holds.
+ * The top-left corner of a page of the Matrix (by default the page it opens
+ * on), filtered the way the Matrix filters it, as many flowers as the layout
+ * holds.
  */
 export function shapeCorner(
   axis: Flower[],
-  layout: Pick<ShapeLayout, "rows" | "columns">
+  layout: Pick<ShapeLayout, "rows" | "columns">,
+  page: ShapePage = SHAPE_PREVIEW_FIRST_PAGE
 ): ShapeCorner {
-  const filters = matrixFiltersForTurns(
-    SHAPE_MATRIX_DEFAULT_TURN,
-    SHAPE_MATRIX_DEFAULT_TURN
-  );
+  const filters = matrixFiltersForTurns(page.left, page.right);
   return {
     rows: applyFilter(axis, filters.left, false).slice(0, layout.rows),
     columns: applyFilter(axis, filters.right, false).slice(0, layout.columns),
   };
+}
+
+function pick<T>(items: readonly T[], random: () => number): T | undefined {
+  return items[Math.min(items.length - 1, Math.floor(random() * items.length))];
+}
+
+/**
+ * The turn bands a Surprise rolls between: the opening level's, less the
+ * zero band. That band's first flower (prospin, in, no turns) traces a single
+ * point, so its row or column reads as empty tiles at preview size.
+ */
+const SHAPE_PREVIEW_TURNS = matrixTurnsForLevel(
+  SHAPE_MATRIX_DEFAULT_LEVEL
+).filter((turn) => turn !== 0);
+
+/**
+ * The page a Surprise rolls next, as the Matrix rolls it
+ * (shape-matrix-app-state surpriseMe): any pair of the turn bands except the
+ * page showing. Only pages that fill the corner qualify.
+ */
+export function nextShapePage(
+  previous: ShapePage,
+  axis: Flower[],
+  layout: Pick<ShapeLayout, "rows" | "columns">,
+  random: () => number = Math.random
+): ShapePage {
+  const turns = SHAPE_PREVIEW_TURNS;
+  const pages = turns
+    .flatMap((left) => turns.map((right) => ({ left, right })))
+    .filter(
+      (page) => page.left !== previous.left || page.right !== previous.right
+    )
+    .filter((page) => {
+      const corner = shapeCorner(axis, layout, page);
+      return (
+        corner.rows.length === layout.rows &&
+        corner.columns.length === layout.columns
+      );
+    });
+  return pick(pages, random) ?? previous;
+}
+
+/**
+ * The crossing a Surprise lights next: any tile of the corner except the
+ * one lit last, so the light moves even where two pages look alike.
+ */
+export function nextShapeSpot(
+  previous: ShapeSpot,
+  layout: Pick<ShapeLayout, "rows" | "columns">,
+  random: () => number = Math.random
+): ShapeSpot {
+  const spots: ShapeSpot[] = [];
+  for (let row = 0; row < layout.rows; row++) {
+    for (let column = 0; column < layout.columns; column++) {
+      if (row !== previous.row || column !== previous.column) {
+        spots.push({ row, column });
+      }
+    }
+  }
+  return pick(spots, random) ?? previous;
 }
