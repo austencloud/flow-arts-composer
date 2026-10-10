@@ -2,7 +2,7 @@ import {
   getAuthInstance,
   getFunctionsInstance,
   getStorageInstance,
-} from "$lib/shared/auth/firebase";
+} from "#lib/shared/auth/firebase.js";
 import { httpsCallable } from "firebase/functions";
 import {
   deleteObject,

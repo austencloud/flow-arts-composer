@@ -7,9 +7,9 @@
   import {
     renderFestivalSampler,
     type FestivalSamplerPair,
-  } from "$lib/features/choreo-card/services/festival-sampler-renderer";
-  import type { CardPair } from "$lib/features/choreo-card/services/types";
-  import { getAuthInstance } from "$lib/shared/auth/firebase";
+  } from "#lib/features/choreo-card/services/festival-sampler-renderer.js";
+  import type { CardPair } from "#lib/features/choreo-card/services/types.js";
+  import { getAuthInstance } from "#lib/shared/auth/firebase.js";
 
   interface RenderedCard {
     slot: string;
@@ -81,7 +81,7 @@
     error = "";
     try {
       const { exportDeckZIP } =
-        await import("$lib/features/choreo-card/services/print-zip-exporter");
+        await import("#lib/features/choreo-card/services/print-zip-exporter.js");
       const archive = await exportDeckZIP(cardPairs, "Festival_Sampler_2026");
       triggerDownload(archive, "Festival_Sampler_2026_cards.zip");
     } catch (cause) {

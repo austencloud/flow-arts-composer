@@ -3,15 +3,18 @@ import {
   createChoreoCardRenderEngine,
   type ChoreoCardRenderModel,
   type ChoreoCardRenderDeps,
-} from "$lib/shared/choreo-card/services/choreo-card-render-engine";
-import { renderCell } from "$lib/shared/sequence-viewer/services/preview-cell-renderer";
+} from "#lib/shared/choreo-card/services/choreo-card-render-engine.js";
+import { renderCell } from "#lib/shared/sequence-viewer/services/preview-cell-renderer.js";
 import { TRANSITION_REVIEW_SEQUENCE } from "../../src/routes/test/sequence-viewer-transitions/transition-review-fixture";
 
-vi.mock("$lib/shared/sequence-viewer/services/preview-cell-renderer", () => ({
-  renderCell: vi.fn(),
-  deleteCellCache: vi.fn(),
-}));
-vi.mock("$lib/shared/render/services/pictograph-blob-cache", () => ({
+vi.mock(
+  "#lib/shared/sequence-viewer/services/preview-cell-renderer.js",
+  () => ({
+    renderCell: vi.fn(),
+    deleteCellCache: vi.fn(),
+  })
+);
+vi.mock("#lib/shared/render/services/pictograph-blob-cache.js", () => ({
   pictographBlobCache: {
     get: vi.fn(() => {
       throw new Error("Live cards must not read bitmap caches");
@@ -19,7 +22,7 @@ vi.mock("$lib/shared/render/services/pictograph-blob-cache", () => ({
   },
 }));
 vi.mock(
-  "$lib/shared/choreo-card/services/choreo-card-cell-pipeline",
+  "#lib/shared/choreo-card/services/choreo-card-cell-pipeline.js",
   async (original) => ({
     ...(await original<object>()),
     getPreviewCacheKey: vi.fn(() => {

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import * as appRenderCore from "$lib/shared/render/core/constants/prop-classification";
-import * as pictograph from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+import * as appRenderCore from "#lib/shared/render/core/constants/prop-classification.js";
+import * as pictograph from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
 import * as packageRenderCore from "../../../../../../packages/render-core/src/constants/prop-classification";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 /**
  * The prop classification lists live in three places: the pictograph domain

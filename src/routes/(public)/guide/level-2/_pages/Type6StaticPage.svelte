@@ -1,6 +1,6 @@
 <script lang="ts">
   import { localizePrintLabel } from "../_components/localize-print-label";
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Type 6 - Static - Level 2 body page 12 (manifest `t6-static`), faithful to old
    * p13. Type 6 letters keep both hands static; matching type means the single turn
@@ -15,16 +15,16 @@
    * α section uses wide columns; Γ section uses compressed columns + a continuation
    * column. Halfway poses (a static prop spun 90°) come from the engine interpolator.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { halfwayPose, type HalfwayMotion } from "../_data/halfway-pose";
 
   const S = 816 / 612;

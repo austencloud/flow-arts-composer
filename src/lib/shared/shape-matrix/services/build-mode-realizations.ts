@@ -1,9 +1,9 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 import {
   TND_BY_FAMILY,
   type TnDElement,
-} from "$lib/features/choreo-card/domain/tnd-element";
+} from "#lib/features/choreo-card/domain/tnd-element.js";
 import { loadBaseIndex, resolveBase } from "./build-realization-sequence";
 import {
   MODE_FAMILY_ID,

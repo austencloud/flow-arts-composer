@@ -54,8 +54,8 @@
  * already settled on.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 import {
   ambientBaseForLetter,

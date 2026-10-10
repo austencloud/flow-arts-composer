@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { SOURCES, TIMELINE } from "$lib/shared/notation/qft/qft-guide";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { SOURCES, TIMELINE } from "#lib/shared/notation/qft/qft-guide.js";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { getQftAppContext } from "../_context/qft-app-context";
 
   const app = getQftAppContext();

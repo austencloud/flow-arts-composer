@@ -1,7 +1,7 @@
 <script lang="ts">
-  import FaqInterview from "$lib/shared/landing/components/FaqInterview.svelte";
-  import { siteCopy } from "$lib/shared/landing/site-copy";
-  import "$lib/shared/landing/styles/public-editorial.css";
+  import FaqInterview from "#lib/shared/landing/components/FaqInterview.svelte";
+  import { siteCopy } from "#lib/shared/landing/site-copy.js";
+  import "#lib/shared/landing/styles/public-editorial.css";
 </script>
 
 <svelte:head>

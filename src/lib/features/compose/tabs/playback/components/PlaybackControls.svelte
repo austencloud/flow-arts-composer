@@ -4,11 +4,11 @@
   Bottom control bar with play/pause, stop, speed, and loop controls.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     PlaybackMode,
     StepPlaybackStepSize,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 
   let {
     isPlaying,

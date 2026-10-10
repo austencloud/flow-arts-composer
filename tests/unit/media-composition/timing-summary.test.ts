@@ -6,11 +6,11 @@ import {
   splitTimingSection,
   type TakeTiming,
   type TimingSection,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   landingName,
   summarizeTiming,
-} from "$lib/shared/media-composition/domain/timing-summary";
+} from "#lib/shared/media-composition/domain/timing-summary.js";
 
 const EIGHT = Array.from({ length: 8 }, () => 1);
 const SIXTEEN = Array.from({ length: 16 }, () => 1);

@@ -5,12 +5,12 @@ import {
   TunnelSourceProvenanceSchema,
   type TunnelComposition,
   type TunnelSourceProvenance,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   TunnelSnapshotSchema,
   type TunnelSnapshot,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import type { TunnelRelationshipRule } from "./tunnel-relationship-rule";
 
 export const TUNNEL_CREATOR_DRAFT_VERSION = 6;

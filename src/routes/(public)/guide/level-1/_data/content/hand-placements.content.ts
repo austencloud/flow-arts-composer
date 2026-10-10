@@ -8,9 +8,9 @@
  * the reflow spec + no-ghostwriting rule.
  */
 import type { GuideBlock, SheetGrid } from "../guide-content-blocks";
-import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { startPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // The 16 diamond-mode placements (α/β/γ, 4/4/8), prop forced to HAND - identical
 // to the original page's derivation (HandPositionsPage.svelte lines 31–39).

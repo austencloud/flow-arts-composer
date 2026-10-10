@@ -1,26 +1,26 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { ViewerPlaybackState } from "../domain/viewer-prop-groups";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import type { TunnelViewController } from "./tunnel-view-controller.svelte";
-  import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import type { ContextMenuEntry } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import {
     animationSettings,
     type AnimationSettingsState,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import {
     getAnimationVisibilityManager,
     type AnimationVisibilityStateManager,
     type GridMode as GridVisibilityMode,
-  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
   import {
     toggleTunnelPlayback,
     type TunnelPlaybackSource,
@@ -47,6 +47,8 @@
     rightBuugengFlipped,
     onCanvasReady,
     onActivePerformerStepsChange,
+    decorative = false,
+    trailOverlay = true,
   }: {
     sequence: SequenceData;
     playback?: ViewerPlaybackState;
@@ -84,6 +86,18 @@
     onActivePerformerStepsChange?: (
       stepIndices: Readonly<Record<string, number>>
     ) => void;
+    /**
+     * Decorative previews: no tap, hover badge, corner toggle, or tunnel menu
+     * items. The canvas menu still offers Save to library, so the host must
+     * make the preview inert.
+     */
+    decorative?: boolean;
+    /**
+     * False never creates the canvas's GPU trail layer, which costs a few
+     * hundred milliseconds of main-thread time at mount. Only for hosts whose
+     * trails stay off for the tunnel's whole life (a decorative preview).
+     */
+    trailOverlay?: boolean;
   } = $props();
 
   let readyFrame = 0;
@@ -183,23 +197,25 @@
     reducedMotion ? speed * REDUCED_MOTION_DAMP : speed
   );
 
-  onMount(() => {
+  // The self-clock runs only while playing, so a paused tunnel (a gallery
+  // preview, or a Create method preview between turns) keeps no frame loop.
+  // Each tick reads the speed and loop length without tracking them, so only
+  // playing and the step count restart the loop.
+  $effect(() => {
+    if (!playing || stepCount === 0) return;
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
-      const dt = (now - last) / 1000;
+      const dt = Math.max(0, now - last) / 1000;
       last = now;
-      if (stepCount > 0 && playing) {
-        currentStep = ((currentStep - 1 + dt * effSpeed) % loopSteps) + 1;
-      }
+      currentStep = ((currentStep - 1 + dt * effSpeed) % loopSteps) + 1;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(raf);
-      cancelAnimationFrame(readyFrame);
-    };
+    return () => cancelAnimationFrame(raf);
   });
+
+  onMount(() => () => cancelAnimationFrame(readyFrame));
 
   // Unbounded-within-loop playhead (1-indexed) for the kaleidoscope sampling —
   // the controller wraps it per-arm so drift works.
@@ -270,9 +286,12 @@
         sequenceData={seq}
         currentStep={displayStep}
         isPlaying={playing}
-        tapToToggle={true}
-        hoverHint="badge"
-        cornerToggle={true}
+        tapToToggle={!decorative}
+        hoverHint={decorative ? "none" : "badge"}
+        cornerToggle={!decorative}
+        ghostAnnotations={!decorative}
+        {trailOverlay}
+        disableContextMenu={decorative}
         onPlaybackToggle={handlePlaybackToggle}
         gridMode={effectiveGridMode}
         {trailSettings}
@@ -288,7 +307,7 @@
         hidePathLines={true}
         fillContainer={true}
         fireConfig={{ disableFrameCache: true }}
-        extraContextMenuItems={saveMenuItems}
+        extraContextMenuItems={decorative ? [] : saveMenuItems}
       />
     {/if}
   </div>

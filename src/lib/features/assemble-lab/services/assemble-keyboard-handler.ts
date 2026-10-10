@@ -1,7 +1,7 @@
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export interface KeyboardContext {
   gridMode: GridMode;

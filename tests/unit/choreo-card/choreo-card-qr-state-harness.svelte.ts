@@ -1,11 +1,11 @@
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
 import {
   createChoreoCardQrState,
   type ChoreoCardQrDeps,
-} from "$lib/shared/choreo-card/state/choreo-card-qr-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
+} from "#lib/shared/choreo-card/state/choreo-card-qr-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { getQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
 
 interface HarnessOptions {
   sequence: SequenceData;

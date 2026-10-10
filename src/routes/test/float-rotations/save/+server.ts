@@ -9,10 +9,10 @@
  *
  * Guarded to dev — never reachable in a production build.
  */
-import { json, error, type RequestHandler } from "@sveltejs/kit";
+import { error, type RequestHandler } from "@sveltejs/kit";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { dev } from "$app/environment";
+import { dev } from "$app/env";
 
 const MAPS_PATH = resolve(
   process.cwd(),
@@ -86,5 +86,5 @@ export const POST: RequestHandler = async ({ request }) => {
   const changed = next !== src;
   if (changed) writeFileSync(MAPS_PATH, next, "utf8");
 
-  return json({ ok: true, handpath, location, angle: normalized, changed });
+  return Response.json({ ok: true, handpath, location, angle: normalized, changed });
 };

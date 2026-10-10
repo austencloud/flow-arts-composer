@@ -10,7 +10,7 @@
  * workers is proven unreliable).
  */
 
-import { getSvgImageCache } from "$lib/shared/render/services/svg-image-cache";
+import { getSvgImageCache } from "#lib/shared/render/services/svg-image-cache.js";
 
 // Step 1 — buildDecorationsSVG
 

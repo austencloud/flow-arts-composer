@@ -4,19 +4,19 @@
   Modern chip-based form with solid gradients and vibrant colors.
 -->
 <script lang="ts">
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     createAnnouncement,
     updateAnnouncement,
-  } from "$lib/features/admin/services/announcement-manager";
+  } from "#lib/features/admin/services/announcement-manager.js";
   import type {
     Announcement,
     AnnouncementSeverity,
     AnnouncementAudience,
   } from "../../domain/models/announcement-models";
-  import UserSearchInput from "$lib/shared/user-search/UserSearchInput.svelte";
-  import type { UserSearchResult } from "$lib/shared/user-search/services/types";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import UserSearchInput from "#lib/shared/user-search/UserSearchInput.svelte";
+  import type { UserSearchResult } from "#lib/shared/user-search/services/types.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     announcement?: Announcement | null;
@@ -547,7 +547,6 @@
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .selection-chip i:not(.chip-check),
@@ -642,7 +641,6 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border: 2px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
     color: var(--theme-text);
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .cancel-button:hover {

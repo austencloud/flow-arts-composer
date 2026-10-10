@@ -5,13 +5,13 @@
   surface. Click grows it into TnDPanel through the card morph.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount, getContext } from "svelte";
-  import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
-  import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
-  import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+  import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+  import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
+  import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
   import CardHeader from "./shared/CardHeader.svelte";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import { buildTnDCardDisplay } from "./tnd-card-display";
@@ -62,7 +62,12 @@
 
   // Icon size tracks the card, like the LOOP card's strip: a fixed 16px is
   // punctuation on a 4K card and crowds the words on a phone.
-  let cardHeight = $state(0);
+  // Read from the resize observer rather than `bind:clientHeight`, which also
+  // reads the height synchronously as the card mounts and forces a layout of
+  // the whole half-built Generate panel. The observer reports before the first
+  // paint, and the button has no border, so its border box is its client box.
+  let cardBox = $state<readonly ResizeObserverSize[]>();
+  const cardHeight = $derived(Math.round(cardBox?.[0]?.blockSize ?? 0));
   const iconSize = $derived(
     Math.min(28, Math.max(14, Math.round(cardHeight * 0.2)))
   );
@@ -90,7 +95,7 @@
   <button
     class="tnd-card"
     class:active={display.active}
-    bind:clientHeight={cardHeight}
+    bind:borderBoxSize={cardBox}
     onclick={handleClick}
     onkeydown={handleKeydown}
     aria-label={ariaLabel}
@@ -158,10 +163,7 @@
     );
     background-size: 200% 200%;
     animation: tndShimmer 6s ease-in-out infinite;
-    box-shadow:
-      0 2px 4px var(--theme-shadow),
-      0 4px 12px color-mix(in srgb, var(--tnd-accent) 20%, transparent),
-      inset 0 1px 0 var(--theme-stroke-strong);
+    box-shadow: none;
     border: 1px solid color-mix(in srgb, var(--tnd-accent) 40%, transparent);
   }
 
@@ -216,14 +218,6 @@
     border-radius: 16px 16px 0 0;
     pointer-events: none;
     z-index: 1;
-  }
-
-  .tnd-card-wrapper :global(.card-header),
-  .line-value,
-  .line-label {
-    text-shadow:
-      0 1px 2px var(--theme-shadow),
-      0 2px 4px color-mix(in srgb, var(--theme-shadow) 20%, transparent);
   }
 
   @media (hover: hover) {
@@ -285,7 +279,6 @@
 
   .line-icon {
     flex: none;
-    filter: drop-shadow(0 1px 1px var(--theme-shadow));
   }
 
   .tnd-line.blocked .line-value {

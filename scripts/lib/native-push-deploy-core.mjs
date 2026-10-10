@@ -317,3 +317,54 @@ export function createNativeBuildEnv(exampleContents, localContents) {
 
   return [...localPublicLines.values(), ...exampleLines].join("\n");
 }
+
+const APK_OUTPUT_PATH = "android/app/build/outputs/apk/debug/app-debug.apk";
+
+function asSentence(text) {
+  const trimmed = String(text ?? "").trim() || "unknown error";
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+export function formatLockHolder(lock, now = Date.now()) {
+  const parts = [];
+  const pid = Number(lock?.pid);
+  if (Number.isInteger(pid) && pid > 0) parts.push(`pid ${pid}`);
+
+  const createdAt = Date.parse(lock?.createdAt);
+  if (Number.isFinite(createdAt)) {
+    const started = new Date(createdAt).toISOString().replace(/\.\d{3}Z$/, "Z");
+    const minutes = Math.max(0, Math.round((now - createdAt) / 60000));
+    parts.push(`started ${started}`, `${minutes} min ago`);
+  }
+
+  return parts.length > 0 ? parts.join(", ") : "details unreadable";
+}
+
+// One line that says which of three different things happened: the run stopped
+// before building anything (lock held, low memory, no JDK, bad commit), a build
+// step broke, or the APK built fine but the install to the phone broke. The hook
+// only sees an exit code, so the code carries the first distinction too.
+export function describeNativeOutcome(progress, error) {
+  const reason = asSentence(error?.message ?? error);
+
+  if (progress?.phase === "install") {
+    const device = progress.device ?? "the selected device";
+    return {
+      exitCode: 1,
+      line: `[native] Install failed on ${device}: ${reason} The APK was built and is at ${APK_OUTPUT_PATH}.`,
+    };
+  }
+
+  if (progress?.phase === "build") {
+    const stage = progress.stage ?? "the build";
+    return {
+      exitCode: 1,
+      line: `[native] Build failed at ${stage}: ${reason}`,
+    };
+  }
+
+  return {
+    exitCode: 2,
+    line: `[native] Skipped before building: ${reason} Nothing was built or installed.`,
+  };
+}

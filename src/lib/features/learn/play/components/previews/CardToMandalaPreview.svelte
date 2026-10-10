@@ -7,9 +7,9 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import ChoreoCard from "$lib/features/choreo-card/components/ChoreoCard.svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import ChoreoCard from "#lib/features/choreo-card/components/ChoreoCard.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
   import { loadPreviewSequence } from "./preview-sequences";
 
   let { accent }: { accent: string } = $props();

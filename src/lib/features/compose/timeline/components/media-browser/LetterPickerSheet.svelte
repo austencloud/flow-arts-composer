@@ -16,9 +16,10 @@
   let dialogElement: HTMLDivElement;
 
   onMount(() => {
-    const previousFocus = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     dialogElement.focus();
     return () => previousFocus?.focus();
   });
@@ -29,11 +30,19 @@
       e.stopPropagation();
       onClose();
     } else if (e.key === "Tab") {
-      const buttons = Array.from(dialogElement.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
+      const buttons = Array.from(
+        dialogElement.querySelectorAll<HTMLButtonElement>(
+          "button:not(:disabled)"
+        )
+      );
       const first = buttons[0];
       const last = buttons[buttons.length - 1];
       if (!first || !last) return;
-      if (e.shiftKey && (document.activeElement === first || document.activeElement === dialogElement)) {
+      if (
+        e.shiftKey &&
+        (document.activeElement === first ||
+          document.activeElement === dialogElement)
+      ) {
         e.preventDefault();
         last.focus();
       } else if (!e.shiftKey && document.activeElement === last) {

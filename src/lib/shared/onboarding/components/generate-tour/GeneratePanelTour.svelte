@@ -6,28 +6,28 @@
   no services, no responsive complexity. Works at any size.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { untrack } from "svelte";
   import { fly, fade } from "svelte/transition";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalFooter from "$lib/shared/foundation/ui/modal/ModalFooter.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalFooter from "#lib/shared/foundation/ui/modal/ModalFooter.svelte";
   import {
     generateTourState,
     type GenerateTourStop,
   } from "../../state/generate-tour-state.svelte";
-  import type { GeneratorHelpItem } from "$lib/shared/create/domain/generator-help-content";
+  import type { GeneratorHelpItem } from "#lib/shared/create/domain/generator-help-content.js";
   import {
     getGeneratorCardHelp,
     getGeneratorCardSpan,
     getGeneratorCardTourLabel,
     getGeneratorPanelCards,
     type GeneratorCardId,
-  } from "$lib/shared/create/domain/card-registry";
-  import { getCardColor } from "$lib/shared/create/domain/card-colors";
+  } from "#lib/shared/create/domain/card-registry.js";
+  import { getCardColor } from "#lib/shared/create/domain/card-colors.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { getLocale } from "$lib/shared/i18n/i18n.svelte.js";
-  import { generatorTourText } from "$lib/shared/create/domain/generator-tour-display";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { getLocale } from "#lib/shared/i18n/i18n.svelte.js";
+  import { generatorTourText } from "#lib/shared/create/domain/generator-tour-display.js";
 
   let { level = 2 } = $props<{ level?: number }>();
 
@@ -369,7 +369,6 @@
     font-weight: 700;
     color: white;
     line-height: 1.2;
-    text-shadow: 0 1px 4px var(--theme-shadow, rgba(0, 0, 0, 0.3));
   }
 
   .generate-value {

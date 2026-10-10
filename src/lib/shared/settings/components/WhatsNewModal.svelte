@@ -6,21 +6,21 @@
 -->
 <script lang="ts">
   import { whatsNewState } from "../state/whats-new-state.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { getContributorLoader } from "$lib/shared/feedback/get-contributor-loader";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { getContributorLoader } from "#lib/shared/feedback/get-contributor-loader.js";
   import {
     CATEGORY_ICONS,
-  } from "$lib/shared/versioning/domain/constants/changelog-constants";
-  import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
+  } from "#lib/shared/versioning/domain/constants/changelog-constants.js";
+  import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
   import type {
     ChangelogCategory,
     ChangelogEntry,
-  } from "$lib/shared/versioning/domain/models/version-models";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  } from "#lib/shared/versioning/domain/models/version-models.js";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import ContributorBadge from "./tabs/release-notes/ContributorBadge.svelte";
   import ChangelogRichText from "./tabs/release-notes/ChangelogRichText.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // Category display order and colors
   const CATEGORY_CONFIG: Record<

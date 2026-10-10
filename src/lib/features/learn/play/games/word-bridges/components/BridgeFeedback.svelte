@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type {
     BridgeLetterInfo,
     RepairChoice,

@@ -1,4 +1,4 @@
-import type { TurnLevel } from "$lib/shared/create/services/level-turn-values";
+import type { TurnLevel } from "#lib/shared/create/services/level-turn-values.js";
 
 /** The four Kinetic Alphabet levels the matrix can show, in order. */
 export const SHAPE_MATRIX_LEVELS: readonly TurnLevel[] = [1, 2, 3, 4];

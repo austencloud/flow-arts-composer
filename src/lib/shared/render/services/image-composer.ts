@@ -1,20 +1,20 @@
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import type { PictographData } from "../../pictograph/shared/domain/models/pictograph-data";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import type { PictographVisibilityOptions } from "../utils/pictograph-to-svg";
-import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+import { createStartPlacementFromBeatStart } from "#lib/shared/create/services/sequence-transforms.js";
 import { gridJoinCellResolver, isGridJoin } from "@tka/render-core";
 // These 5 imports are loaded dynamically at usage sites to avoid pulling
-// Svelte stores and $app/environment into the composition worker bundle.
+// Svelte stores and $app/env into the composition worker bundle.
 // See: getVisibilitySettings(), renderPictographDirect(), storePictographBlob()
 import type { PreviewCellRenderOptions } from "../../sequence-viewer/services/preview-cell-renderer";
 import type { SequenceExportOptions } from "../domain/models/sequence-export-options";
 import type { CompositionProgressCallback } from "./types";
 import type { TextRenderer } from "./text-renderer";
 import type { PictographBlobCache } from "./pictograph-blob-cache";
-import type { PictographKeyHasher } from "$lib/shared/render/services/pictograph-key-hasher";
+import type { PictographKeyHasher } from "#lib/shared/render/services/pictograph-key-hasher.js";
 import type { PictographMemoryCache } from "./pictograph-memory-cache";
 import type { Canvas2DDirectRenderer } from "./canvas-2d-direct-renderer";
 import type { LayerCompositor } from "./layer-compositor";
@@ -211,7 +211,7 @@ export class ImageComposer {
       if (!leftPropType || !rightPropType) {
         try {
           const { getSettings } =
-            await import("$lib/shared/application/state/app-state.svelte");
+            await import("#lib/shared/application/state/app-state.svelte.js");
           const appSettings = getSettings();
           leftPropType ??= appSettings.leftPropType;
           rightPropType ??= appSettings.rightPropType;
@@ -260,7 +260,7 @@ export class ImageComposer {
     const animVisibilityManager = getAnimationVisibilityManager();
 
     const { getSettings } =
-      await import("$lib/shared/application/state/app-state.svelte");
+      await import("#lib/shared/application/state/app-state.svelte.js");
     const appSettings = getSettings();
 
     const globalSettings: PictographVisibilityOptions = {
@@ -1147,6 +1147,6 @@ export class ImageComposer {
   }
 }
 
-// Default singleton removed — it pulled PictographBlobCache ($app/environment) into
+// Default singleton removed — it pulled PictographBlobCache ($app/env) into
 // the worker bundle. Use getImageComposer() from $lib/shared/render/getImageComposer
 // for main-thread usage. The worker creates its own instances via composition.worker.ts.

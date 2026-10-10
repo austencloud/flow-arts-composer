@@ -17,24 +17,24 @@
   import { goto } from "$app/navigation";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
-  import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
-  import ShapeMatrixMandalaArt from "$lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
-  import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
+  import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
+  import ShapeMatrixMandalaArt from "#lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
+  import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import RatioSwapMotion, {
     type RatioSwapPanel,
   } from "./_components/RatioSwapMotion.svelte";
-  import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
+  import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
   import {
     CLUB_ARTWORK_PAINTER,
     cellArtworkSrc,
     headerArtworkSrc,
-  } from "$lib/shared/shape-matrix/services/shape-matrix-artwork";
+  } from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
   import {
     loadShapeMatrix,
     type ShapeMatrixData,
-  } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-  import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
-  import { matrixFiltersForSize } from "$lib/shared/shape-matrix/domain/matrix-size-preset";
+  } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+  import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
+  import { matrixFiltersForSize } from "#lib/shared/shape-matrix/domain/matrix-size-preset.js";
   import {
     buildFloatAxis,
     buildShapeMatrixAxis,
@@ -46,27 +46,27 @@
     type RotatingFlower,
     type RotatingFlowerOri,
     type ShapePathStyle,
-  } from "$lib/shared/shape-matrix/domain/flower-signature";
-  import { matrixTurnsForLevel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+  import { matrixTurnsForLevel } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import {
     SHAPE_MATRIX_LEVELS,
-  } from "$lib/shared/shape-matrix/app/shape-matrix-levels";
+  } from "#lib/shared/shape-matrix/app/shape-matrix-levels.js";
   import {
     levelForTurnValue,
     levelForTurns,
     turnValueToKey,
     type TurnLevel,
     type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
+  } from "#lib/shared/create/services/level-turn-values.js";
   import {
     KINETIC_SHAPE_ENGINE_AUTHOR,
     ORIGINAL_SHAPE_MATRIX_NAME,
     ORIGINAL_SHAPE_MATRIX_URL,
     SHAPE_ENGINE_SHORT_NAME,
     SPIN_SCIENCE_URL,
-  } from "$lib/shared/shape-matrix/app/shape-engine-identity";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  } from "#lib/shared/shape-matrix/app/shape-engine-identity.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   /** The engine's own 144 band: three ratios, both styles, both starts, diamond. */
   const ORIGINAL_AXIS_FILTER = matrixFiltersForSize("large").left;

@@ -1,6 +1,6 @@
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
 
 export function locationToPropState(location: GridLocation): PropState {
   return {

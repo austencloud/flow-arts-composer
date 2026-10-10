@@ -21,15 +21,15 @@
    */
   import { T } from "@threlte/core";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import LavaCracks from "$lib/shared/3d/environments/scenes/ember/LavaCracks.svelte";
-  import HeatDistortion from "$lib/shared/3d/environments/scenes/ember/HeatDistortion.svelte";
-  import LavaPool from "$lib/shared/3d/environments/scenes/ember/LavaPool.svelte";
-  import LavaRivers from "$lib/shared/3d/environments/scenes/ember/LavaRivers.svelte";
-  import ObsidianPillars from "$lib/shared/3d/environments/scenes/ember/ObsidianPillars.svelte";
-  import EmberFountains from "$lib/shared/3d/environments/scenes/ember/EmberFountains.svelte";
-  import { createDefaultEmberConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/ember-scene-config";
+  import LavaCracks from "#lib/shared/3d/environments/scenes/ember/LavaCracks.svelte";
+  import HeatDistortion from "#lib/shared/3d/environments/scenes/ember/HeatDistortion.svelte";
+  import LavaPool from "#lib/shared/3d/environments/scenes/ember/LavaPool.svelte";
+  import LavaRivers from "#lib/shared/3d/environments/scenes/ember/LavaRivers.svelte";
+  import ObsidianPillars from "#lib/shared/3d/environments/scenes/ember/ObsidianPillars.svelte";
+  import EmberFountains from "#lib/shared/3d/environments/scenes/ember/EmberFountains.svelte";
+  import { createDefaultEmberConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/ember-scene-config.js";
   import { firstFireCourtIdentity } from "./first-fire-court-identity";
-  import type { FirstFireBlenderContract } from "$lib/features/museum/data/first-fire-blender-contract";
+  import type { FirstFireBlenderContract } from "#lib/features/museum/data/first-fire-blender-contract.js";
 
   interface Props {
     contract: FirstFireBlenderContract;

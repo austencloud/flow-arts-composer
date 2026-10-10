@@ -3,8 +3,8 @@ import {
   EFFECTS_CONFIG_VERSION,
   SILK_INTENSITY_DEFAULT,
 } from "./effects-config";
-import { DEFAULT_LED_INTENT } from "$lib/shared/animation-engine/domain/types/led-types";
-import { DEFAULT_TRAIL_LINE_WIDTH } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { DEFAULT_LED_INTENT } from "#lib/shared/animation-engine/domain/types/led-types.js";
+import { DEFAULT_TRAIL_LINE_WIDTH } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
   version: EFFECTS_CONFIG_VERSION,

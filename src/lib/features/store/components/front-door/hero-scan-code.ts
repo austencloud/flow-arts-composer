@@ -27,13 +27,13 @@
  * first. Codes are memoized per sequence CONTENT (never per id — see `keyFor`)
  * for the page session: dealing back to a card already seen costs nothing.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { encodeSequence } from "$lib/shared/navigation/services/sequence-encoder";
-import type { ShortCodeSequenceLoader } from "$lib/shared/qr/services/short-code-manager";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { encodeSequence } from "#lib/shared/navigation/services/sequence-encoder.js";
+import type { ShortCodeSequenceLoader } from "#lib/shared/qr/services/short-code-manager.js";
 import {
   configureShortCodeManager,
   getShortCodeManager,
-} from "$lib/shared/qr/get-short-code-manager";
+} from "#lib/shared/qr/get-short-code-manager.js";
 
 /** Code generation never reads the public gallery; resolution only needs the
  * one sequence-body read ShortCodeManager declares. */
@@ -87,7 +87,7 @@ function printedCodeOn(coverUrl: string): Promise<string | null> {
   const work = (async () => {
     try {
       const { createTkaQrDetector } = await import(
-        "$lib/shared/qr/services/tka-qr-detector"
+        "#lib/shared/qr/services/tka-qr-detector.js"
       );
       // The image is already in the browser cache — the hero is displaying it.
       const blob = await (await fetch(coverUrl)).blob();

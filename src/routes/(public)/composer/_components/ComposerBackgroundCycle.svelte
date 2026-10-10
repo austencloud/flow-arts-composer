@@ -4,8 +4,8 @@
   import type { HTMLButtonAttributes } from "svelte/elements";
   import type { BackgroundType } from "@austencloud/backgrounds";
   import { getCardMetadata } from "@austencloud/backgrounds/card";
-  import { ANIMATED_BACKGROUNDS } from "$lib/shared/settings/utils/public-page-backgrounds";
-  import { marketingBackground } from "$lib/shared/landing/state/marketing-background-state.svelte";
+  import { ANIMATED_BACKGROUNDS } from "#lib/shared/settings/utils/public-page-backgrounds.js";
+  import { marketingBackground } from "#lib/shared/landing/state/marketing-background-state.svelte.js";
 
   let open = $state(false);
   const active = $derived(marketingBackground.type);
@@ -163,7 +163,6 @@
     border-radius: var(--settings-radius-lg, 0.85rem);
     overflow-y: auto;
     background: var(--theme-panel-bg, #12121a);
-    box-shadow: 0 16px 42px var(--theme-shadow, rgb(0 0 0 / 0.42));
     outline: none;
   }
 

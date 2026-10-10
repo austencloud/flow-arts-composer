@@ -6,5 +6,5 @@ export {
   getCardColors,
   getCardColor,
   isBrightBackground,
-} from "$lib/shared/create/domain/card-colors";
-export type { CardColorSet, CardColors } from "$lib/shared/create/domain/card-colors";
+} from "#lib/shared/create/domain/card-colors.js";
+export type { CardColorSet, CardColors } from "#lib/shared/create/domain/card-colors.js";

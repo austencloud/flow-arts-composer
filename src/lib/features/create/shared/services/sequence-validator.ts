@@ -5,8 +5,8 @@
  * All functions are pure - return validation results without side effects.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { ValidationResult } from "../../../../shared/validation/validation-result";
 
 /**

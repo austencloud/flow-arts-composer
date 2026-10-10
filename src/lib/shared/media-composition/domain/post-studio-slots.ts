@@ -16,13 +16,13 @@
 import {
   MediaCompositionPresetSchema,
   type MediaCompositionPreset,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
 import {
   POST_STUDIO_ROLE,
   POST_STUDIO_SOURCES,
   type PostStudioRoleKey,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "#lib/shared/media-composition/domain/post-studio-presets.js";
 
 export const POST_STUDIO_SLOTS = ["top", "bottom"] as const;
 export type PostStudioSlotId = (typeof POST_STUDIO_SLOTS)[number];

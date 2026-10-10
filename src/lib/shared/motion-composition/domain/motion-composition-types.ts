@@ -1,4 +1,4 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export const MOTION_COMPOSITION_VERSION = 3 as const;
 

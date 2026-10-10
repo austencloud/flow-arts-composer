@@ -12,7 +12,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "composite": true,
-    "baseUrl": ".",
     "paths": {
       "@flow-arts/core": ["../flow-arts-core/dist/index.d.ts"]
     }

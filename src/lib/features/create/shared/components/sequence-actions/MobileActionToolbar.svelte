@@ -6,9 +6,9 @@
   action buttons are visible. Long-press any button for help.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import MobileActionButton from "./MobileActionButton.svelte";
-  import SwapIcon from "$lib/shared/icons/SwapIcon.svelte";
+  import SwapIcon from "#lib/shared/icons/SwapIcon.svelte";
   import type { ActionHelpId } from "../../domain/transforms/transform-help-content";
 
   type Category = "transform" | "patterns" | "grid" | "edit";

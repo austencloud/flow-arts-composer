@@ -11,17 +11,17 @@ Shared by the Smart Collection builder today and, per the unified filter
 workspace spec, the main gallery next — one component, never a copy.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { TranslationKey } from "$lib/shared/i18n/i18n-types.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import { localizeFilterChip } from "./localize-filter-chip";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import {
     groupRuleFilters,
     type RuleStripFilter,
-  } from "$lib/shared/browse/services/filter-rule-groups";
-  import type { FilterConnectives } from "$lib/shared/browse/services/multi-filter";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/browse/services/filter-rule-groups.js";
+  import type { FilterConnectives } from "#lib/shared/browse/services/multi-filter.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   let {
     filters,

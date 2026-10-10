@@ -38,15 +38,15 @@
   owns the hands-to-props explanation, so the animation area does not repeat it.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, untrack } from "svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import MandalaHeroLayer from "./MandalaHeroLayer.svelte";
-  import WordHeader from "$lib/shared/animation-engine/components/layers/WordHeader.svelte";
-  import { levelForTurns } from "$lib/shared/create/services/level-turn-values";
-  import { tryGetLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-  import { MANDALA_GUIDE_FLOOR_OPACITY } from "$lib/shared/mandala/domain/mandala-overlay-types";
+  import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
+  import { levelForTurns } from "#lib/shared/create/services/level-turn-values.js";
+  import { tryGetLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import { MANDALA_GUIDE_FLOOR_OPACITY } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
   import ElementChipRow from "./ElementChipRow.svelte";
   import PropRelationshipChipRow from "./PropRelationshipChipRow.svelte";
   import {
@@ -59,12 +59,12 @@
     MODE_ORDER,
     type VtgMode,
   } from "../services/shape-matrix-realizations";
-  import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
-  import { HERO_TRAIL_PRESET } from "$lib/shared/landing/data/hero-trail-preset";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
+  import { HERO_TRAIL_PRESET } from "#lib/shared/landing/data/hero-trail-preset.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import {
     SHAPE_MATRIX_ACTIVE_STAGE_NAME,
     SHAPE_MATRIX_CONTROLS_NAME,
@@ -72,21 +72,21 @@
     SHAPE_MATRIX_STRIP_NAME,
   } from "../services/shape-matrix-artwork";
   import { getShapeMatrixTransitionRecorder } from "../debug/shape-matrix-transition-recorder";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import { QualityTier } from "$lib/shared/animation-engine/domain/types/quality-types";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import { QualityTier } from "#lib/shared/animation-engine/domain/types/quality-types.js";
   import { resolveRealizationEntryStep } from "../services/realization-phase-handoff";
-  import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import type { HandPropToolbarProps } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import AnimationPanel from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import type { HandPropToolbarProps } from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
   import { getShapeMatrixAnimationContext } from "../app/context/shape-matrix-animation-context";
   import { getOptionalShapeMatrixAppContext } from "../app/context/shape-matrix-app-context";
   import ShapeMatrixStageActions from "./ShapeMatrixStageActions.svelte";
   import { registerShapeMatrixPlaybackShortcut } from "../app/services/shape-matrix-playback-shortcut";
-  import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
-  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
-  import { createAnimatorPlaybackAdapter } from "$lib/shared/timeline/adapters/animator-playback-adapter.svelte";
+  import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
+  import UnifiedTimeline from "#lib/shared/timeline/UnifiedTimeline.svelte";
+  import { createAnimatorPlaybackAdapter } from "#lib/shared/timeline/adapters/animator-playback-adapter.svelte.js";
 
   interface Props {
     /** Nullable: the drill renders its own "Pick a cell" state before any click. */
@@ -162,7 +162,7 @@
     null;
 
   function importAnimationPlayer() {
-    return import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte");
+    return import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte");
   }
 
   function loadAnimationPlayer() {
@@ -1379,7 +1379,7 @@
       >
         {#if railRealization && pictographRailReady}
           <LazyMount
-            loader={() => import("$lib/shared/timeline/StepStrip.svelte")}
+            loader={() => import("#lib/shared/timeline/StepStrip.svelte")}
             active={true}
             keepAlive={false}
             debugName="shape matrix pictograph carousel"
@@ -1742,7 +1742,6 @@
     border-radius: 999px;
     background: var(--theme-panel-bg, #101721);
     color: var(--semantic-error, #fb8a8a);
-    box-shadow: 0 0.5rem 1.5rem var(--theme-shadow, rgb(0 0 0 / 0.4));
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.4;
   }

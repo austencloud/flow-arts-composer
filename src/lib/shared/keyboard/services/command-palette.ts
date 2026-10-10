@@ -11,8 +11,8 @@ import type { CommandPaletteItem } from "../domain/types/keyboard-types";
 import {
   selectOftenUsedDestinationIds,
   selectRecentDestinationIds,
-} from "$lib/shared/navigation/domain/navigation-visit-ranking";
-import type { INavigationVisitPersister } from "$lib/shared/navigation/services/contracts/INavigationVisitPersister";
+} from "#lib/shared/navigation/domain/navigation-visit-ranking.js";
+import type { INavigationVisitPersister } from "#lib/shared/navigation/services/contracts/INavigationVisitPersister.js";
 
 export class CommandPalette {
   private commands: Map<string, CommandPaletteItem> = new Map();

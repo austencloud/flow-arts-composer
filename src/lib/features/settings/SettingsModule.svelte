@@ -10,42 +10,42 @@
   Mobile: Swipe left from left edge to exit (matches portal animation direction)
 -->
 <script lang="ts">
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
   import {
     getSettings,
     updateSetting,
-  } from "$lib/shared/application/state/app-state.svelte";
-  import { areServicesInitialized } from "$lib/shared/application/state/services.svelte";
-  import IOSSkeletonLoader from "$lib/shared/settings/components/IOSSkeletonLoader.svelte";
-  import Toast from "$lib/shared/settings/components/Toast.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
+  import { areServicesInitialized } from "#lib/shared/application/state/services.svelte.js";
+  import IOSSkeletonLoader from "#lib/shared/settings/components/IOSSkeletonLoader.svelte";
+  import Toast from "#lib/shared/settings/components/Toast.svelte";
   import {
     handleModuleChange,
     handleSectionChange,
-  } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import type { ModuleId } from "$lib/shared/navigation/domain/types";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
-  import type { ResponsiveSettings } from "$lib/shared/device/domain/models/device-models";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { applyThemeForBackground } from "$lib/shared/settings/utils/background-theme-calculator";
-  import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
+  } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import type { ModuleId } from "#lib/shared/navigation/domain/types.js";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
+  import type { ResponsiveSettings } from "#lib/shared/device/domain/models/device-models.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { applyThemeForBackground } from "#lib/shared/settings/utils/background-theme-calculator.js";
+  import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
 
   // Navigation state - use global activeTab
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { isTabAccessible } from "$lib/shared/auth/domain/guest-access-config";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { isTabAccessible } from "#lib/shared/auth/domain/guest-access-config.js";
 
   // Import all tab components directly
-  import ProfileTab from "$lib/shared/settings/components/tabs/ProfileTab.svelte";
-  import ReleaseNotesTab from "$lib/shared/settings/components/tabs/ReleaseNotesTab.svelte";
-  import PropTypeTab from "$lib/shared/settings/components/tabs/PropTypeTab.svelte";
-  import BackgroundTab from "$lib/shared/settings/components/tabs/background/BackgroundTab.svelte";
-  import PreferencesTab from "$lib/shared/settings/components/tabs/PreferencesTab.svelte";
-  import LanguagePreference from "$lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte";
-  import ShortcutCenter from "$lib/shared/keyboard/components/ShortcutCenter.svelte";
-  import NotificationPreferencesPanel from "$lib/features/feedback/components/NotificationPreferencesPanel.svelte";
+  import ProfileTab from "#lib/shared/settings/components/tabs/ProfileTab.svelte";
+  import ReleaseNotesTab from "#lib/shared/settings/components/tabs/ReleaseNotesTab.svelte";
+  import PropTypeTab from "#lib/shared/settings/components/tabs/PropTypeTab.svelte";
+  import BackgroundTab from "#lib/shared/settings/components/tabs/background/BackgroundTab.svelte";
+  import PreferencesTab from "#lib/shared/settings/components/tabs/PreferencesTab.svelte";
+  import LanguagePreference from "#lib/shared/settings/components/tabs/preferences/LanguagePreference.svelte";
+  import ShortcutCenter from "#lib/shared/keyboard/components/ShortcutCenter.svelte";
+  import NotificationPreferencesPanel from "#lib/features/feedback/components/NotificationPreferencesPanel.svelte";
 
   // Reactive settings - derives from getSettings() to maintain reactivity
   let settings = $derived(getSettings());

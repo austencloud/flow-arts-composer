@@ -7,7 +7,7 @@ import type {
   SceneObjectAdapter,
   SceneObjectHandle,
 } from "./types";
-import { CommandStack } from "$lib/shared/history/command-stack.svelte";
+import { CommandStack } from "#lib/shared/history/command-stack.svelte.js";
 
 export type ComposerMode = "browse" | "select" | "place";
 

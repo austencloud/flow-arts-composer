@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import StepMapEditor from "../step-mapping/StepMapEditor.svelte";
   import VideoUploadFlow from "./VideoUploadFlow.svelte";
   import { getPerformanceWorkspaceContext } from "./context/performance-workspace-context";

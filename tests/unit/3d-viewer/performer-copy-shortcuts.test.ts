@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { handlePerformerCopyShortcut } from "$lib/shared/3d/domain/performer-copy-shortcuts";
+import { handlePerformerCopyShortcut } from "#lib/shared/3d/domain/performer-copy-shortcuts.js";
 
 describe("performer copy shortcuts", () => {
   it("handles Ctrl/Cmd+C and V only when the action succeeds", () => {

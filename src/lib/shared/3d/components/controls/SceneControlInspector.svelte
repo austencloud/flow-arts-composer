@@ -1,12 +1,12 @@
 <script lang="ts">
   import CameraPopover from "../CameraPopover.svelte";
   import SceneSelectorPopover from "../SceneSelectorPopover.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import FormationPopover from "./FormationPopover.svelte";
   import PerformerHubDetail from "./PerformerHubDetail.svelte";
   import PresetsPanel from "./PresetsPanel.svelte";
   import type { SceneControlTool } from "../../domain/scene-control-layout";
-  import type { ViewerControlSink } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
+  import type { ViewerControlSink } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
   import type { PerformerEditSink } from "./performer-hub-types";
 
   interface Props {
@@ -114,6 +114,12 @@
     background: var(--theme-panel-bg, #0c0e16);
     box-shadow: var(--theme-panel-shadow, 0 1.25rem 4rem rgba(0, 0, 0, 0.62));
     color: var(--theme-text, rgba(255, 255, 255, 0.94));
+  }
+
+  /* Keep the performer tabs in one place as panels with different amounts of
+     content open. The hub scrolls its content inside this bounded height. */
+  .scene-control-inspector.fills {
+    height: 100%;
   }
 
   .inspector-header {

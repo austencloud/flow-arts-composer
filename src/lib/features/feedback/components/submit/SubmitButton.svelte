@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { FeedbackUploadProgress } from "$lib/shared/feedback/domain/models/feedback-models";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { FeedbackUploadProgress } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
   const { isSubmitting, disabled, uploadProgress = null } = $props<{
     isSubmitting: boolean;
@@ -83,8 +83,6 @@
     letter-spacing: 0.01em;
     cursor: pointer;
     transition: all var(--duration-normal) ease;
-    box-shadow: 0 3px 12px
-      color-mix(in srgb, var(--active-type-color) 30%, var(--theme-shadow));
     overflow: hidden;
   }
 

@@ -1,4 +1,4 @@
-import { cssCubicBezier } from "$lib/shared/transitions/ws-ease";
+import { cssCubicBezier } from "#lib/shared/transitions/ws-ease.js";
 import {
   POST_KEYFRAME_MERGE_SECONDS,
   POST_MAX_ZOOM,
@@ -18,7 +18,7 @@ import {
   type PostKeyframe,
   type PostKeyframeChannel,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 
 /**
  * Pure, item-level keyframe reading and editing. `s` is always post seconds;

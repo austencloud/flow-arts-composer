@@ -6,20 +6,20 @@
  * viewer without repeating shortcode resolution or sequence hydration.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { loopDetector } from "$lib/shared/create/services/loop-detector";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { loopDetector } from "#lib/shared/create/services/loop-detector.js";
 import {
   decodeSequenceFromQR,
   isInlineEncoded,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
-import { hydrateSelfContainedShortCodePayload } from "$lib/shared/qr/services/short-code-payload-hydrator";
-import type { ShortCodeData } from "$lib/shared/qr/services/types";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
+import { hydrateSelfContainedShortCodePayload } from "#lib/shared/qr/services/short-code-payload-hydrator.js";
+import type { ShortCodeData } from "#lib/shared/qr/services/types.js";
 import {
   resolveScanPropConfig,
   type ScanPropCandidate,
   type ScanPropConfig,
-} from "$lib/shared/qr/services/scan-prop-resolver";
+} from "#lib/shared/qr/services/scan-prop-resolver.js";
 
 export interface PreparedScanViewerPayload {
   sequence: SequenceData;

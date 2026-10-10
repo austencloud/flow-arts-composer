@@ -7,7 +7,7 @@ import {
   solveAlphaScale,
   prepareCoveragePreservingAlphaMipmaps,
   type RgbaLevel,
-} from "$lib/shared/3d/rendering/alpha-coverage-mipmaps";
+} from "#lib/shared/3d/rendering/alpha-coverage-mipmaps.js";
 
 /**
  * A leaf-card stand-in: opaque green discs scattered on a transparent black

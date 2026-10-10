@@ -4,8 +4,8 @@ Shows diamond or box grid respecting user's theme settings.
 Uses the actual GridSvg component for consistency with the rest of the app.
 -->
 <script lang="ts">
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
 
   type GridType = "diamond" | "box" | "merged";
   type SizeType = "small" | "medium" | "large";
@@ -116,7 +116,6 @@ Uses the actual GridSvg component for consistency with the rest of the app.
     aspect-ratio: 1;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px var(--theme-shadow, rgba(0, 0, 0, 0.1));
   }
 
   /* Background respects light/dark mode - matches PictographRenderer */
@@ -127,11 +126,6 @@ Uses the actual GridSvg component for consistency with the rest of the app.
 
   :global(:root.dark) .grid-background {
     fill: var(--dm-pictograph-bg, #0a0a0f);
-  }
-
-  /* Border to make grid stand out against dark backgrounds */
-  :global(:root.dark) .grid-svg {
-    box-shadow: 0 0 0 1px var(--theme-stroke, rgba(255, 255, 255, 0.15)), 0 2px 8px color-mix(in srgb, var(--theme-shadow, #000) 30%, transparent);
   }
 
   /* ============================================
@@ -234,7 +228,6 @@ Uses the actual GridSvg component for consistency with the rest of the app.
     0%,
     100% {
       transform: scale(1);
-      box-shadow: 0 2px 8px var(--theme-shadow, rgba(0, 0, 0, 0.1));
     }
     50% {
       transform: scale(1.02);

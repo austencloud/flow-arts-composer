@@ -6,14 +6,14 @@
   bar above the grid; only where the edit navigates differs, and the host
   decides that through `onturn`. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { matrixTurnVisibleLabel } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { matrixTurnVisibleLabel } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import {
     keyToTurnValue,
     turnValueToKey,
     type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
-  import { localizedMatrixTurnSpokenLabel } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
+  } from "#lib/shared/create/services/level-turn-values.js";
+  import { localizedMatrixTurnSpokenLabel } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
   import ShapeMatrixRibbonCell from "./ShapeMatrixRibbonCell.svelte";
   import ShapeMatrixValueScroller from "./ShapeMatrixValueScroller.svelte";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";

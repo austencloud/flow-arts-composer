@@ -5,21 +5,21 @@
   Uses actual X pictographs with static CW arrows at different locations.
 -->
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     GridLocation,
     GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     MotionType,
     RotationDirection,
     Orientation,
     HandSide,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   // Helper to convert lowercase location string to GridLocation enum
   function toGridLocation(loc: string): GridLocation {

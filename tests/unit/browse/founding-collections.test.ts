@@ -4,10 +4,10 @@ import {
   toSyntheticCollection,
   isFoundingId,
   getFoundingCollection,
-} from "$lib/features/browse/collections/config/founding-collections";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveSpecMembers } from "$lib/shared/browse/services/smart-filter-spec";
-import { CANONICAL_TND_AUTHOR } from "$lib/features/browse/gallery-home/canonical-tnd-pool";
+} from "#lib/features/browse/collections/config/founding-collections.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveSpecMembers } from "#lib/shared/browse/services/smart-filter-spec.js";
+import { CANONICAL_TND_AUTHOR } from "#lib/features/browse/gallery-home/canonical-tnd-pool.js";
 
 describe("founding collections config", () => {
   it("declares exactly four founding collections with underscore ids", () => {

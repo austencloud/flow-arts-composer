@@ -1,5 +1,5 @@
-import type { IPreviewVideoCache } from "$lib/shared/media-composition/services/contracts/IPreviewVideoCache";
-import { createPostVideoPreviews } from "$lib/shared/media-composition/state/post-video-previews.svelte";
+import type { IPreviewVideoCache } from "#lib/shared/media-composition/services/contracts/IPreviewVideoCache.js";
+import { createPostVideoPreviews } from "#lib/shared/media-composition/state/post-video-previews.svelte.js";
 
 export interface HarnessVideoSource {
   id: string;

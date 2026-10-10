@@ -20,8 +20,8 @@ import {
   HEADER_HEIGHT_DIVISOR,
   FOOTER_HEIGHT_DIVISOR,
 } from "@tka/render-composition";
-import { calculateTimelineRowsByBeatCount } from "$lib/shared/create/utils/grid-calculations";
-import { getCanonicalCardStepColumnCounts } from "$lib/shared/render/services/card-step-column-options";
+import { calculateTimelineRowsByBeatCount } from "#lib/shared/create/utils/grid-calculations.js";
+import { getCanonicalCardStepColumnCounts } from "#lib/shared/render/services/card-step-column-options.js";
 
 export type StartPlacement = "row" | "column" | "none";
 

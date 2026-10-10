@@ -1,8 +1,8 @@
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import demo from "$lib/shared/landing/data/demo-sequence.json";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import demo from "#lib/shared/landing/data/demo-sequence.json";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import ShareButton from "./ShareButton.svelte";
 import WorkspaceShareSheet from "./WorkspaceShareSheet.svelte";
 
@@ -39,7 +39,7 @@ const workspaceVideoMocks = vi.hoisted(() => ({
   downloadArtifact: vi.fn(),
 }));
 
-vi.mock("$lib/shared/mobile/share-action.svelte", () => ({
+vi.mock("#lib/shared/mobile/share-action.svelte.js", () => ({
   shareTarget: {
     get isMobile() {
       return false;
@@ -47,27 +47,30 @@ vi.mock("$lib/shared/mobile/share-action.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => null,
 }));
 
-vi.mock("$lib/shared/animation-engine/get-video-export-orchestrator", () => ({
-  tryGetVideoExportOrchestrator: () => null,
-  ensureVideoExportOrchestrator: () =>
-    Promise.resolve({
-      executeExport: workspaceVideoMocks.executeExport,
-    }),
-}));
+vi.mock(
+  "#lib/shared/animation-engine/get-video-export-orchestrator.js",
+  () => ({
+    tryGetVideoExportOrchestrator: () => null,
+    ensureVideoExportOrchestrator: () =>
+      Promise.resolve({
+        executeExport: workspaceVideoMocks.executeExport,
+      }),
+  })
+);
 
 vi.mock(
-  "$lib/features/compose/services/animation-playback-controller-factory",
+  "#lib/features/compose/services/animation-playback-controller-factory.js",
   () => ({
     createAnimationPlaybackController: workspaceVideoMocks.createController,
   })
 );
 
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-panel-state.svelte",
+  "#lib/shared/animation-engine/state/animation-panel-state.svelte.js",
   () => ({
     createAnimationPanelState: () => workspaceVideoMocks.panelState,
   })
@@ -76,25 +79,25 @@ vi.mock(
 // The player is exercised in the browser route. This control test keeps the
 // exporter fixture isolated from an unrelated WebGL playback stack.
 vi.mock(
-  "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte",
+  "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte",
   () => import("./ShareButtonInlinePlayerStub.svelte")
 );
 
-vi.mock("$lib/shared/share/get-sharer", () => ({
+vi.mock("#lib/shared/share/get-sharer.js", () => ({
   getSharer: () => ({
     getCardImageBlob: shareButtonMocks.getCardImageBlob,
     generateFilename: vi.fn(() => "sequence.png"),
   }),
 }));
 
-vi.mock("$lib/shared/share/services/post-handoff", async (original) => ({
+vi.mock("#lib/shared/share/services/post-handoff.js", async (original) => ({
   ...(await original<
-    typeof import("$lib/shared/share/services/post-handoff")
+    typeof import("#lib/shared/share/services/post-handoff.js")
   >()),
   downloadArtifact: workspaceVideoMocks.downloadArtifact,
 }));
 
-vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
+vi.mock("#lib/shared/share/state/image-composition-state.svelte.js", () => ({
   getImageCompositionManager: () => ({
     darkMode: true,
     showNotes: false,
@@ -114,7 +117,7 @@ vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/render/get-glyph-cache", () => ({
+vi.mock("#lib/shared/render/get-glyph-cache.js", () => ({
   getGlyphCache: () => ({
     getGlyphDataUrl: () => null,
     loadGlyphsByLetter: vi.fn().mockResolvedValue(undefined),
@@ -123,25 +126,28 @@ vi.mock("$lib/shared/render/get-glyph-cache", () => ({
 
 // Card pixels belong to the render-parity suite. This workspace control test
 // exercises the chooser and file type boundary without starting its renderer.
-vi.mock("$lib/shared/share/components/LiveExportCard.svelte", async () => ({
+vi.mock("#lib/shared/share/components/LiveExportCard.svelte", async () => ({
   default: (
-    await import("$lib/shared/auth/components/__test-stubs__/EmailAuthMethodStub.svelte")
+    await import("#lib/shared/auth/components/__test-stubs__/EmailAuthMethodStub.svelte")
   ).default,
 }));
 
-vi.mock("$lib/shared/pictograph/shared/state/visibility-state.svelte", () => ({
-  getVisibilityStateManager: () => ({
-    getGridVisibility: () => true,
-    getRawGlyphVisibility: () => false,
-    getNonRadialVisibility: () => false,
-    getHandPointVisibility: () => false,
-    getState: () => ({}),
-    registerObserver: vi.fn(),
-    unregisterObserver: vi.fn(),
-  }),
-}));
+vi.mock(
+  "#lib/shared/pictograph/shared/state/visibility-state.svelte.js",
+  () => ({
+    getVisibilityStateManager: () => ({
+      getGridVisibility: () => true,
+      getRawGlyphVisibility: () => false,
+      getNonRadialVisibility: () => false,
+      getHandPointVisibility: () => false,
+      getState: () => ({}),
+      registerObserver: vi.fn(),
+      unregisterObserver: vi.fn(),
+    }),
+  })
+);
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     get isFullAccount() {
       return shareButtonMocks.fullAccount;
@@ -151,19 +157,19 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   getUser: () => null,
 }));
 
-vi.mock("$lib/shared/auth/state/auth-drawer-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-drawer-state.svelte.js", () => ({
   authDrawerState: {
     show: shareButtonMocks.authDrawerShow,
   },
 }));
 
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: () => ({
     createShortCode: shareButtonMocks.createShortCode,
   }),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   showToast: shareButtonMocks.showToast,
   toast: {
     info: vi.fn(),
@@ -175,23 +181,23 @@ vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
 }));
 
 vi.mock(
-  "$lib/shared/analytics/services/posthog-activity-logger",
+  "#lib/shared/analytics/services/posthog-activity-logger.js",
   async (original) => ({
     ...(await original<
-      typeof import("$lib/shared/analytics/services/posthog-activity-logger")
+      typeof import("#lib/shared/analytics/services/posthog-activity-logger.js")
     >()),
     logShareAction: vi.fn(),
   })
 );
 
-vi.mock("$lib/shared/analytics/services/posthog", async (original) => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", async (original) => ({
   ...(await original<
-    typeof import("$lib/shared/analytics/services/posthog")
+    typeof import("#lib/shared/analytics/services/posthog.js")
   >()),
   captureEvent: vi.fn(),
 }));
 
-vi.mock("$lib/shared/inbox/state/send-sequence-state.svelte", () => ({
+vi.mock("#lib/shared/inbox/state/send-sequence-state.svelte.js", () => ({
   buildSequenceSharePayload: shareButtonMocks.buildSequenceSharePayload,
   openSendSequenceSheet: shareButtonMocks.openSendSequenceSheet,
 }));

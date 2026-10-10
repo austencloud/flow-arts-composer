@@ -2,7 +2,7 @@ import { z } from "zod";
 // Pure-zod leaf module (no firebase/auth): keeps this domain worker-safe. The
 // barrel AND firestore-helpers both transitively import authState → $app/navigation
 // → SvelteKit client, which crashes the composition worker.
-import { firestoreDate } from "$lib/shared/firestore/firestore-date";
+import { firestoreDate } from "#lib/shared/firestore/firestore-date.js";
 import type { Timestamp } from "firebase/firestore";
 import {
   normalizePlacementFrame,

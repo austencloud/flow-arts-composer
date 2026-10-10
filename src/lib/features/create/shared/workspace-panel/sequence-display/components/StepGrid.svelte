@@ -1,25 +1,25 @@
 <!-- StepGrid.svelte - Responsive step grid with display animations -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { TimeSignatureKey } from "$lib/shared/foundation/domain/models/time-signature";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ConstructOptionAudition } from "$lib/shared/create/domain/construct-option-audition";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { TimeSignatureKey } from "#lib/shared/foundation/domain/models/time-signature.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ConstructOptionAudition } from "#lib/shared/create/domain/construct-option-audition.js";
   import type {
     MandalaPathShape,
     MandalaRenderOptions,
-  } from "$lib/shared/mandala/domain/mandala-types";
-  import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-  import { createRootFontRamp } from "$lib/shared/ui/root-font-ramp.svelte";
+  } from "#lib/shared/mandala/domain/mandala-types.js";
+  import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+  import { createRootFontRamp } from "#lib/shared/ui/root-font-ramp.svelte.js";
   import { onMount, untrack } from "svelte";
   import {
     createStepGridDisplayState,
@@ -28,8 +28,8 @@
     type PictographAuditionRequest,
     type PictographArrivalRequest,
     type PictographStageRequest,
-  } from "$lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte";
-  import { createScrollState } from "$lib/features/create/shared/workspace-panel/sequence-display/state/scroll-state.svelte";
+  } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
+  import { createScrollState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/scroll-state.svelte.js";
   import {
     calculateGridVerticalCenterOffset,
     calculateGridLayout,
@@ -38,7 +38,7 @@
     calculateTimelineUnitSize,
     calculateTimelinePadding,
     clampTimelineUnitSizeToHeight,
-  } from "$lib/shared/create/utils/grid-calculations";
+  } from "#lib/shared/create/utils/grid-calculations.js";
   import { formatDurationCompact } from "../../../domain/models/duration-pattern-data";
   import type { ArrivalRect } from "../domain/pictograph-arrival-geometry";
   import { getArrivalPresentedStepCount } from "../domain/pictograph-arrival-layout";
@@ -49,7 +49,7 @@
   import {
     createStableStepIdentities,
     type HistoryTransitionPlan,
-  } from "$lib/features/create/shared/services/history-transition-planner";
+  } from "#lib/features/create/shared/services/history-transition-planner.js";
 
   // Services
   const hapticService = getHapticFeedback();

@@ -67,15 +67,15 @@ describe("timing and direction SSR guards", () => {
     ) => Promise<string | null>;
     const context = {
       resolve: async (source: string) => ({
-        id: `E:/tka-platform/src/lib/${source.replace("$lib/", "")}`,
+        id: `E:/tka-platform/src/lib/${source.replace("#lib/", "")}`,
       }),
     };
     const importer = `${ROUTE_DIR}/_components/TimingDirectionAtlas.svelte`;
 
     for (const source of [
-      "$lib/shared/animation-engine/components/controls/TransportControls.svelte",
-      "$lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte",
-      "$lib/features/learn/components/interactive/motions/TimingDirectionIntro.svelte",
+      "#lib/shared/animation-engine/components/controls/TransportControls.svelte",
+      "#lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte",
+      "#lib/features/learn/components/interactive/motions/TimingDirectionIntro.svelte",
     ]) {
       await expect(
         resolveId.call(context, source, importer, { ssr: true })

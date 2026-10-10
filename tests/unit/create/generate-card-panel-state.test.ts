@@ -3,8 +3,8 @@ import { effect_root } from "svelte/internal/client";
 import {
   createPanelCoordinationState,
   type PanelCoordinationState,
-} from "$lib/shared/create/state/panel-coordination-state.svelte";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 let cleanup: (() => void) | undefined;
 

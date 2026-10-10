@@ -14,7 +14,7 @@
   Domain: Export Panel - Single Media Format Selection
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { MediaFormat } from "../../domain/models/media-format";
 
   let {
@@ -154,9 +154,6 @@
     background: var(--theme-accent);
     border-color: var(--theme-accent);
     color: white;
-    box-shadow:
-      0 2px 8px var(--theme-shadow),
-      0 0 0 1px var(--theme-accent-glow);
   }
 
   .format-chip.active:hover {

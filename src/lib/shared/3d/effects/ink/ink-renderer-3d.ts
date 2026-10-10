@@ -15,7 +15,7 @@ import {
   isTrackedTip,
   type InkTipSource3D,
 } from "../scene-effects/scene-effect-source-3d";
-import type { Ink3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Ink3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 
 const SEGMENT_CAPACITY = 4096;
 const DROPLET_CAPACITY = 1024;

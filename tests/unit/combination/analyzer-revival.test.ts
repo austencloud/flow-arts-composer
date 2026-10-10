@@ -15,8 +15,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { getSequenceAligner } from "$lib/shared/comparison/get-sequence-aligner";
-import { getSimilarityCalculator } from "$lib/shared/comparison/get-similarity-calculator";
+import { getSequenceAligner } from "#lib/shared/comparison/get-sequence-aligner.js";
+import { getSimilarityCalculator } from "#lib/shared/comparison/get-similarity-calculator.js";
 
 import { FALG, GGGG_CW, HHHH_CCW } from "./fixtures";
 

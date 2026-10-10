@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FocusTrap } from "$lib/shared/foundation/ui/drawer/focus-trap";
+import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
 
 // Shared test setup mocks createElement for canvas; this test needs real focus.
 function createReal<K extends keyof HTMLElementTagNameMap>(

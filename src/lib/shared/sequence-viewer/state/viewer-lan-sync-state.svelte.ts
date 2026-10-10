@@ -1,6 +1,6 @@
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { createModalAccessibilityHelper } from "../services/modal-accessibility-helper.svelte";
 import type { PlaybackControllerState } from "../components/playback-controller.svelte";
 

@@ -5,7 +5,7 @@ import {
   createCountedGaitTimingPlan,
   createGaitTimingPlan,
   sampleGaitTimingPlan,
-} from "$lib/shared/3d/locomotion/gait-timing-plan";
+} from "#lib/shared/3d/locomotion/gait-timing-plan.js";
 
 describe("gait timing plan", () => {
   it("places every even footfall on its declared musical count", () => {

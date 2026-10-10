@@ -1,6 +1,6 @@
 import type { PhraseInterpolationResult } from "./types";
-import type { EffortPhrase } from "$lib/shared/effort/domain/effort-timeline-types";
-import { applyEffort } from "$lib/shared/effort/domain/effort-easing-unified";
+import type { EffortPhrase } from "#lib/shared/effort/domain/effort-timeline-types.js";
+import { applyEffort } from "#lib/shared/effort/domain/effort-easing-unified.js";
 
 export function interpolatePhrase(
   phrase: EffortPhrase,

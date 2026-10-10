@@ -6,8 +6,8 @@
  * and processed when Create module mounts.
  */
 
-import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-import { getSequenceOverlayState } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+import { getSequenceOverlayState } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
 import type { DeepLinkSequenceHandler } from "../../services/deep-link-sequence-handler";
 import type { CreateModuleState } from "../create-module-state.svelte";
 import type { ConstructTabState } from "../construct-tab-state.svelte";

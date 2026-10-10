@@ -12,9 +12,9 @@
    * their coordinate, length, statistics, and checksum checks.
    */
 
-  import WorldScene from "$lib/shared/3d/procedural-engine/components/WorldScene.svelte";
-  import { FLOW_FEST_SIM_CONFIG } from "$lib/shared/3d/procedural-engine/core/world-definitions";
-  import { loadGeospatialTerrain } from "$lib/shared/3d/procedural-engine/generation/geospatial-terrain";
+  import WorldScene from "#lib/shared/3d/procedural-engine/components/WorldScene.svelte";
+  import { FLOW_FEST_SIM_CONFIG } from "#lib/shared/3d/procedural-engine/core/world-definitions.js";
+  import { loadGeospatialTerrain } from "#lib/shared/3d/procedural-engine/generation/geospatial-terrain.js";
 
   const terrain = loadGeospatialTerrain(FLOW_FEST_SIM_CONFIG.terrain.dataPath!);
 </script>

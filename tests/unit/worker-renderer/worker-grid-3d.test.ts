@@ -16,11 +16,11 @@ import {
   PLANE_COLORS,
   PLANE_MODE_CONFIGS,
 } from "@austencloud/scene-3d";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { planeAngleToWorldPosition } from "$lib/shared/3d/domain/constants/plane-transforms";
-import { createWorkerGrid3D } from "$lib/shared/3d/worker-renderer/worlds/grid/worker-grid-3d";
-import type { WorkerGridOptions } from "$lib/shared/3d/worker-renderer/worlds/grid/worker-grid-types";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { planeAngleToWorldPosition } from "#lib/shared/3d/domain/constants/plane-transforms.js";
+import { createWorkerGrid3D } from "#lib/shared/3d/worker-renderer/worlds/grid/worker-grid-3d.js";
+import type { WorkerGridOptions } from "#lib/shared/3d/worker-renderer/worlds/grid/worker-grid-types.js";
 import { describe, expect, it } from "vitest";
 
 const BASE_OPTIONS: WorkerGridOptions = {

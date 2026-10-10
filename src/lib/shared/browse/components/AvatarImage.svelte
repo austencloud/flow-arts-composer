@@ -5,7 +5,7 @@
    * Provides robust avatar rendering with automatic retry and fallback.
    */
 
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
 
   let {
     src,

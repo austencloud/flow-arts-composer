@@ -1,23 +1,23 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   PostProjectSchema,
   POST_BOX,
   type PostAnimationItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   addTunnelHook,
   findTunnelHook,
   removeTunnelHook,
   setTunnelAppearance,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import {
   animationAppearanceForItem,
   tunnelHidesMandala,
-} from "$lib/shared/share/components/post-studio/post-item-render-options";
-import { toolRow } from "$lib/shared/share/components/post-studio/editor/post-editor-tools";
+} from "#lib/shared/share/components/post-studio/post-item-render-options.js";
+import { toolRow } from "#lib/shared/share/components/post-studio/editor/post-editor-tools.js";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };

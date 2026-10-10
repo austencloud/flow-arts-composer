@@ -20,8 +20,8 @@
    */
 
   import { onDestroy, onMount, untrack } from "svelte";
-  import { browser } from "$app/environment";
-  import { afterNavigate, replaceState } from "$app/navigation";
+  import { browser } from "$app/env";
+  import { afterNavigate, goto } from "$app/navigation";
   import * as THREE from "three";
   import { Canvas, T } from "@threlte/core";
   import type CameraControls from "camera-controls";
@@ -36,33 +36,33 @@
     type ScheduledGaitTimingSample,
     type TerminalStepPlan,
   } from "@austencloud/scene-3d";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     createCharacterInstanceState,
     makeStandaloneDeps,
-  } from "$lib/shared/3d/state/character-instance-state.svelte";
-  import GaitProbe from "$lib/shared/3d/diagnostics/gait/GaitProbe.svelte";
-  import GaitOverlay from "$lib/shared/3d/diagnostics/gait/GaitOverlay.svelte";
-  import type { GaitManeuverProfile } from "$lib/shared/3d/diagnostics/gait/gait-verdicts";
-  import { gaitProbeState } from "$lib/shared/3d/diagnostics/gait/gait-probe-state.svelte";
+  } from "#lib/shared/3d/state/character-instance-state.svelte.js";
+  import GaitProbe from "#lib/shared/3d/diagnostics/gait/GaitProbe.svelte";
+  import GaitOverlay from "#lib/shared/3d/diagnostics/gait/GaitOverlay.svelte";
+  import type { GaitManeuverProfile } from "#lib/shared/3d/diagnostics/gait/gait-verdicts.js";
+  import { gaitProbeState } from "#lib/shared/3d/diagnostics/gait/gait-probe-state.svelte.js";
   import {
     WALK_PATTERNS,
     walkPattern,
-  } from "$lib/shared/3d/diagnostics/gait/walk-patterns";
+  } from "#lib/shared/3d/diagnostics/gait/walk-patterns.js";
   import {
     createDestinationWalkPlan,
     createTerminalStepPlan,
-  } from "$lib/shared/3d/locomotion/destination-walk-plan";
+  } from "#lib/shared/3d/locomotion/destination-walk-plan.js";
   import {
     MAX_EXACT_STEPS,
     MIN_EXACT_STEPS,
     exactStepRange as supportedExactStepRange,
-  } from "$lib/shared/3d/locomotion/straight-travel-constraints";
+  } from "#lib/shared/3d/locomotion/straight-travel-constraints.js";
   import {
     createCountedGaitTimingPlan,
     type CountedGaitSchedule,
-  } from "$lib/shared/3d/locomotion/gait-timing-plan";
+  } from "#lib/shared/3d/locomotion/gait-timing-plan.js";
   import WalkDriver from "./WalkDriver.svelte";
   import type { ManualInput, WalkState } from "./walk-command";
 
@@ -461,7 +461,7 @@
       schedule: timingSchedule,
       departure: String(departureBeat),
     });
-    if (routed) replaceState(`?${next}`, {});
+    if (routed) goto(`?${next}`, { shallow: true, replace: true });
   });
 
   /**

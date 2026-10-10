@@ -5,7 +5,7 @@ import {
   normalizeBackgroundType,
   resolvePrideBackgroundType,
   PRIDE_BACKGROUND_TYPE,
-} from "$lib/shared/settings/domain/background-type-migration";
+} from "#lib/shared/settings/domain/background-type-migration.js";
 
 describe("background type migration", () => {
   // Asserted against the resolved identifier rather than BackgroundType.PRIDE,

@@ -5,10 +5,10 @@
   Uses SimpleTrailControls for the core presets.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import SimpleTrailControls from "$lib/shared/animation-engine/components/trail/SimpleTrailControls.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import SimpleTrailControls from "#lib/shared/animation-engine/components/trail/SimpleTrailControls.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   let {
     isOpen = $bindable(false),

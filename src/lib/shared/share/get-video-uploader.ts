@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { R2VideoUploader } from './services/r2-video-uploader';
 
 let instance: R2VideoUploader | null = null;

@@ -1,16 +1,16 @@
-import { calculateMotionEndpoints } from "$lib/shared/animation-engine/services/endpoint-calculator";
-import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
-import { calculatePropCenter } from "$lib/shared/animation-engine/services/prop-position-calculator";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import { calculateMotionEndpoints } from "#lib/shared/animation-engine/services/endpoint-calculator.js";
+import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+import { calculatePropCenter } from "#lib/shared/animation-engine/services/prop-position-calculator.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import {
   GridLocation,
   type GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { pictographRequiresStrictHandpoints } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-import type { PropPosition } from "$lib/shared/pictograph/prop/domain/models/prop-position";
-import { DefaultPropPositioner } from "$lib/shared/pictograph/prop/services/default-prop-positioner";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { pictographRequiresStrictHandpoints } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+import type { PropPosition } from "#lib/shared/pictograph/prop/domain/models/prop-position.js";
+import { DefaultPropPositioner } from "#lib/shared/pictograph/prop/services/default-prop-positioner.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import { HAND_SIDES, type HandSide } from "@tka/tka-types";
 
 type PropPositions = Partial<Record<HandSide, PropPosition>>;

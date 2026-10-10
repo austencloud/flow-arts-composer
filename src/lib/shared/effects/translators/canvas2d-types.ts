@@ -29,7 +29,7 @@ import type { WaterPalette } from "../domain/water-palettes";
 import type { BubblePalette } from "../domain/bubble-palettes";
 import type { PetalPalette } from "../domain/petal-palettes";
 import type { SmokePalette } from "../domain/smoke-palettes";
-import type { InkPalette } from "$lib/shared/3d/effects/ink/ink-palettes";
+import type { InkPalette } from "#lib/shared/3d/effects/ink/ink-palettes.js";
 import type { FrostPalette } from "../domain/frost-palettes";
 import type { SilkPalette } from "../domain/silk-palettes";
 import type { AnimalPalette } from "../domain/animal-palettes";

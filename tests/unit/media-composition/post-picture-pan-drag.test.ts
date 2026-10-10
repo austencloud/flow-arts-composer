@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateMediaFit } from "$lib/shared/media-composition/services/media-fit";
+import { calculateMediaFit } from "#lib/shared/media-composition/services/media-fit.js";
 import {
   PICTURE_NUDGE,
   dragPicturePan,
@@ -7,7 +7,7 @@ import {
   overscanPixels,
   stepPicturePinch,
   zoomFromWheelDelta,
-} from "$lib/shared/share/components/post-studio/editor/post-picture-pan-drag";
+} from "#lib/shared/share/components/post-studio/editor/post-picture-pan-drag.js";
 
 function close(actual: number, expected: number) {
   expect(actual).toBeCloseTo(expected, 9);

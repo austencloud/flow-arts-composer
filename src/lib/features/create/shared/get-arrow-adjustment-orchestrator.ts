@@ -1,11 +1,11 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { ArrowAdjustmentOrchestrator } from './services/arrow-adjustment-orchestrator';
-import { screenSpaceAdjustmentTransformer } from '$lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer';
-import { arrowAdjustmentCalculator } from '$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator';
-import { arrowLocationCalculator } from '$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator';
-import { pictographPreparer } from '$lib/shared/pictograph/shared/services/pictograph-preparer';
-import { turnsTupleGenerator } from '$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator';
+import { screenSpaceAdjustmentTransformer } from '#lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer.js';
+import { arrowAdjustmentCalculator } from '#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator.js';
+import { arrowLocationCalculator } from '#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js';
+import { pictographPreparer } from '#lib/shared/pictograph/shared/services/pictograph-preparer.js';
+import { turnsTupleGenerator } from '#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js';
 
 let instance: ArrowAdjustmentOrchestrator | null = null;
 

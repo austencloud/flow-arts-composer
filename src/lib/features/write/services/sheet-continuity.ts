@@ -7,11 +7,11 @@
  * `create/spell/services/orientation-continuity-validator.ts` and
  * `3d/state/character-instance-state.svelte.ts`.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion, type MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { shiftStartPlacement } from "$lib/shared/create/services/sequence-transformer";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion, type MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { shiftStartPlacement } from "#lib/shared/create/services/sequence-transformer.js";
 
 /** A hand's orientation, or undefined when the hand is not really there
  *  (invisible placeholder under the both-required Step shape) — preserving the

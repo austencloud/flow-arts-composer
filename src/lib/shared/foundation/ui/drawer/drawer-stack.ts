@@ -8,9 +8,9 @@
  * itself when opening/closing.
  */
 
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import { Z } from '$lib/shared/ui/z-index';
-import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+import { Z } from '#lib/shared/ui/z-index.js';
+import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
 
 const debug = createComponentLogger("DrawerStack");
 

@@ -11,23 +11,23 @@ Container-aware responsive design (2-tier):
 - Desktop (>=700px tall): Vertical flex column with all options visible
 -->
 <script lang="ts">
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     GENERATION_DASH_OPTIONS,
     GENERATION_STYLE_OPTIONS,
-  } from "$lib/shared/create/domain/generation-style-display";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  } from "#lib/shared/create/domain/generation-style-display.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { SpellPreferences } from "../domain/models/spell-models";
-  import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+  import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
   import {
     parseLoopComponents,
     generateLOOPType,
-  } from "$lib/shared/create/services/loop-type-utils";
-  import { LOOP_COMPONENTS } from "$lib/features/create/generate/shared/domain/constants/loop-constants";
-  import MorphChipGroup from "$lib/shared/foundation/ui/morph-chip/MorphChipGroup.svelte";
-  import MorphChip from "$lib/shared/foundation/ui/morph-chip/MorphChip.svelte";
+  } from "#lib/shared/create/services/loop-type-utils.js";
+  import { LOOP_COMPONENTS } from "#lib/features/create/generate/shared/domain/constants/loop-constants.js";
+  import MorphChipGroup from "#lib/shared/foundation/ui/morph-chip/MorphChipGroup.svelte";
+  import MorphChip from "#lib/shared/foundation/ui/morph-chip/MorphChip.svelte";
 
   let {
     gridMode,

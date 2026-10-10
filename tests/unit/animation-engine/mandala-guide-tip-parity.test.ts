@@ -16,59 +16,59 @@ import { resolve } from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("firebase/firestore", () => ({}));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
 
-import type { CsvEdge } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { parseCsvEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-render-hydrator";
-import { buildFlowerSequence } from "$lib/features/lab/vtg-lab/services/build-flower-sequence";
+import type { CsvEdge } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { parseCsvEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
+import { hydrateSequence } from "#lib/features/choreo-card/services/sequence-render-hydrator.js";
+import { buildFlowerSequence } from "#lib/features/lab/vtg-lab/services/build-flower-sequence.js";
 import {
   frameOffset,
   measureFrame,
   squareFrame,
   type CanvasFrame,
-} from "$lib/shared/animation-engine/domain/types/canvas-frame";
-import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+} from "#lib/shared/animation-engine/domain/types/canvas-frame.js";
+import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import {
   getDefaultTrailPointConfig,
   resolveTrailPointConfig,
-} from "$lib/shared/animation-engine/domain/types/trail-point-types";
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
-import { calculateTrailSourceEndpoint } from "$lib/shared/animation-engine/services/prop-position-calculator";
-import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
-import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
-import { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
-import { MandalaPathPreparer } from "$lib/shared/mandala/services/mandala-path-preparer";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { getPropDimensions } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+import { calculateTrailSourceEndpoint } from "#lib/shared/animation-engine/services/prop-position-calculator.js";
+import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
+import { MandalaOverlayCanvas } from "#lib/shared/mandala/services/mandala-overlay-canvas.js";
+import { MandalaPathPreparer } from "#lib/shared/mandala/services/mandala-path-preparer.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   flowerPetals,
   type FlowerStyle,
   type RotatingFlower,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
-import type { RotationStyle } from "$lib/shared/shape-matrix/domain/rotation-style";
-import { resolveFlowerArchetype } from "$lib/shared/shape-matrix/services/flower-archetype";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import type { RotationStyle } from "#lib/shared/shape-matrix/domain/rotation-style.js";
+import { resolveFlowerArchetype } from "#lib/shared/shape-matrix/services/flower-archetype.js";
 import {
   buildBaseIndex,
   resolveBase,
-} from "$lib/shared/shape-matrix/services/build-realization-sequence";
+} from "#lib/shared/shape-matrix/services/build-realization-sequence.js";
 import {
   classifyRotationStyleMembers,
   representativeRotationStyleMember,
   type RotationStyleArchetype,
-} from "$lib/shared/shape-matrix/services/rotation-style-archetypes";
+} from "#lib/shared/shape-matrix/services/rotation-style-archetypes.js";
 import {
   solvePropRelationshipPhase,
   type FlowerParityTarget,
-} from "$lib/shared/shape-matrix/services/solve-prop-relationship-phase";
-import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/solve-prop-relationship-phase.js";
+import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import baseWords from "../../../static/data/hero/tnd-base-words.json";
 
 interface Pt {

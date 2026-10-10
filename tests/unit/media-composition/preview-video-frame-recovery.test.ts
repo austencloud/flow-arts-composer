@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PreviewVideoFrameRecovery } from "$lib/shared/media-composition/services/preview-video-frame-recovery";
+import { PreviewVideoFrameRecovery } from "#lib/shared/media-composition/services/preview-video-frame-recovery.js";
 
 function harness(frameCallbacks = true) {
   const state = { playing: false, targetTime: 2.59, source: "blob:first" };

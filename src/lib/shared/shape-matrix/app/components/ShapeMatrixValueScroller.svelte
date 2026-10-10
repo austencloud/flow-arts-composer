@@ -7,8 +7,8 @@
   than as the thing that changes it, and conclude the app is one 4x4 matrix.
   The readout, steppers, and segment chrome are the signals that correct it. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ShapeMatrixRibbonCell from "./ShapeMatrixRibbonCell.svelte";
 
   interface ScrollerOption {

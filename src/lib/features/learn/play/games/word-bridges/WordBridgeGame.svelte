@@ -1,16 +1,16 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     getTransitionGraph,
     getWordGenerator,
-  } from "$lib/features/create/spell/services/spell-service-loader";
+  } from "#lib/features/create/spell/services/spell-service-loader.js";
   import {
     QuizAnswerFormat,
     QuizQuestionFormat,

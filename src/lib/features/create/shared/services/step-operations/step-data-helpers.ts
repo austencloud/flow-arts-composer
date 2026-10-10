@@ -3,10 +3,10 @@
  * Shared utilities for beat operations - retrieval, constants, and common operations.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { ICreateModuleState } from "../../types/create-module-types";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 
 /** Beat 0 = start placement, steps 1+ are in the sequence */
 export const START_PLACEMENT_BEAT_NUMBER = 0;

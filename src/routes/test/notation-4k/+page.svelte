@@ -1,8 +1,8 @@
 <script lang="ts">
-  import MarketingChrome from "$lib/shared/landing/components/MarketingChrome.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import demoJson from "$lib/shared/landing/data/demo-sequence.json";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import MarketingChrome from "#lib/shared/landing/components/MarketingChrome.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import demoJson from "#lib/shared/landing/data/demo-sequence.json";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import NotationLayoutStudy from "./_components/NotationLayoutStudy.svelte";
 
   type LayoutMode = "atlas" | "cinematic";

@@ -1,5 +1,5 @@
 import { Vector3, Quaternion, Euler } from "three";
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import type { PropTipPositions3D, TipPositionData3D } from "./types";
 import {
 	propTipAnchorSignature3D,

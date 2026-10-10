@@ -5,22 +5,22 @@
   size, while phase-specific controls update in reserved slots.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { untrack } from "svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import type { AssembleTabState } from "../../shared/state/assemble-tab-state.svelte";
-  import BuilderControls from "$lib/features/assemble-lab/components/BuilderControls.svelte";
-  import BuilderStageActions from "$lib/features/assemble-lab/components/BuilderStageActions.svelte";
-  import InteractiveGrid from "$lib/features/assemble-lab/components/InteractiveGrid.svelte";
-  import { attachAssembleKeyboard } from "$lib/features/assemble-lab/services/assemble-keyboard-dispatcher";
-  import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import { resolveAccessTier } from "$lib/shared/auth/domain/access-tier";
-  import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+  import BuilderControls from "#lib/features/assemble-lab/components/BuilderControls.svelte";
+  import BuilderStageActions from "#lib/features/assemble-lab/components/BuilderStageActions.svelte";
+  import InteractiveGrid from "#lib/features/assemble-lab/components/InteractiveGrid.svelte";
+  import { attachAssembleKeyboard } from "#lib/features/assemble-lab/services/assemble-keyboard-dispatcher.js";
+  import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import { resolveAccessTier } from "#lib/shared/auth/domain/access-tier.js";
+  import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 
   const props: { tabState: AssembleTabState } = $props();
 

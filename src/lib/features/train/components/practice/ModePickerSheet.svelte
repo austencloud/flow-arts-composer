@@ -5,9 +5,9 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { PracticeMode } from "../../domain/enums/train-enums";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     isOpen: boolean;
@@ -127,11 +127,7 @@
 
 <style>
   :global(.mode-picker-backdrop) {
-    background: color-mix(
-      in srgb,
-      var(--theme-shadow) 70%,
-      transparent
-    ) !important;
+    background: rgba(0, 0, 0, 0.7) !important;
   }
 
   :global(.mode-picker-sheet) {

@@ -1,4 +1,4 @@
-import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type { SectionDesignation } from "../domain/models/section-models";
 import type { TransformationIntervals } from "../domain/models/label-models";
 import { BASE_COMPONENTS, type ComponentId } from "../domain/constants/loop-components";

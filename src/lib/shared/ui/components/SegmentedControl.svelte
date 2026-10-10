@@ -14,7 +14,7 @@
    * while the visible label remains the cue for anyone who cannot read color.
    */
   import { flip } from "svelte/animate";
-  import { flipDuration, popIn } from "$lib/shared/transitions/motion";
+  import { flipDuration, popIn } from "#lib/shared/transitions/motion.js";
   import type { Snippet } from "svelte";
 
   interface Option {

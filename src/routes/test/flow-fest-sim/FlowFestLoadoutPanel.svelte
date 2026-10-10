@@ -1,12 +1,12 @@
 <script lang="ts">
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { DEPLOYED_CHARACTER_DEFINITIONS } from "$lib/shared/3d/config/deployed-characters";
-  import type { CharacterId } from "$lib/shared/3d/domain/character-model";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { DEPLOYED_CHARACTER_DEFINITIONS } from "#lib/shared/3d/config/deployed-characters.js";
+  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
   import {
     FLOW_FEST_CAR_CATALOG,
     type FlowFestCarSpec,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-car";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-car.js";
   import {
     FLOW_FEST_DEPARTURES,
     createFlowFestDefaultLoadout,
@@ -17,7 +17,7 @@
     isFlowFestLoadoutDrivable,
     type FlowFestDeparture,
     type FlowFestLoadout,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-loadout";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-loadout.js";
   import { flowFestParkedCarModel } from "./flow-fest-parked-car-catalog";
 
   /**

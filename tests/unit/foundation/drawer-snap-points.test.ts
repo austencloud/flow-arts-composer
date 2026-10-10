@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { SnapPoints } from "$lib/shared/foundation/ui/drawer/snap-points";
-import { SwipeToDismiss } from "$lib/shared/foundation/ui/drawer/swipe-to-dismiss";
+import { SnapPoints } from "#lib/shared/foundation/ui/drawer/snap-points.js";
+import { SwipeToDismiss } from "#lib/shared/foundation/ui/drawer/swipe-to-dismiss.js";
 
 describe("bottom drawer height stops", () => {
   it("expands on an upward pull and returns through the compact and closed stops", () => {

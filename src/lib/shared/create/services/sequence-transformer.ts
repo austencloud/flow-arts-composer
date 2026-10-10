@@ -9,8 +9,8 @@
  * services to derive new placements and look up correct letters.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { TargetHand } from "$lib/shared/create/state/panel-coordination-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { TargetHand } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 
 import {
   clearSequence as clearSequenceTransform,
@@ -23,10 +23,10 @@ import {
   rewindSequence as rewindSequenceTransform,
   shiftStartPlacement as shiftStartPlacementTransform,
   deriveSequenceLetters as deriveSequenceLettersTransform,
-} from "$lib/shared/create/services/sequence-transforms";
+} from "#lib/shared/create/services/sequence-transforms.js";
 
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 
 export function clearSequence(sequence: SequenceData): SequenceData {
   return clearSequenceTransform(sequence);

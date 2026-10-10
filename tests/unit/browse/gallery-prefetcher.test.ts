@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import type { GalleryOfflineCache } from "$lib/shared/offline/services/gallery-offline-cache";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import type { GalleryOfflineCache } from "#lib/shared/offline/services/gallery-offline-cache.js";
 
 const eventListeners = vi.hoisted(() => ({
   mutated: vi.fn(() => vi.fn()),
@@ -9,13 +9,13 @@ const eventListeners = vi.hoisted(() => ({
   updated: vi.fn(() => vi.fn()),
 }));
 
-vi.mock("$lib/shared/library/library-events", () => ({
+vi.mock("#lib/shared/library/library-events.js", () => ({
   onLibraryMutated: eventListeners.mutated,
   onLibrarySequenceAdded: eventListeners.added,
   onLibrarySequenceUpdated: eventListeners.updated,
 }));
 
-vi.mock("$lib/shared/persistence/database/tka-database", () => ({
+vi.mock("#lib/shared/persistence/database/tka-database.js", () => ({
   db: {
     galleryCache: {
       delete: vi.fn(async () => undefined),
@@ -25,7 +25,7 @@ vi.mock("$lib/shared/persistence/database/tka-database", () => ({
   },
 }));
 
-import { GalleryPrefetcher } from "$lib/features/browse/shared/services/gallery-prefetcher";
+import { GalleryPrefetcher } from "#lib/features/browse/shared/services/gallery-prefetcher.js";
 
 function makeLoader(overrides: Partial<PublicSequencesLoader> = {}) {
   return {

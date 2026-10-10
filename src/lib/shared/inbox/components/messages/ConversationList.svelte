@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * ConversationList
    *
@@ -7,15 +7,15 @@
    * Action buttons (new message, new group) are now in the parent header.
    */
 
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import type { ConversationPreview } from "$lib/shared/messaging/domain/models/conversation-models";
-  import { conversationService } from "$lib/shared/messaging/services/conversation-manager";
+  import type { ConversationPreview } from "#lib/shared/messaging/domain/models/conversation-models.js";
+  import { conversationService } from "#lib/shared/messaging/services/conversation-manager.js";
   import { toast } from "../../../toast/state/toast-state.svelte";
   import ConversationItem from "./ConversationItem.svelte";
   import ConversationSkeleton from "../skeletons/ConversationSkeleton.svelte";
   import EmptyConversations from "../empty-states/EmptyConversations.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 
   interface Props {
     conversations: ConversationPreview[];

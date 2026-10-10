@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import { isCardLayoutAutomatic } from "$lib/shared/share/services/card-render-options";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+  import { isCardLayoutAutomatic } from "#lib/shared/share/services/card-render-options.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { getViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
   import { postCardHighlightedStepIndex } from "./post-card-highlight";
 
   let {
@@ -13,12 +13,15 @@
     displayedBeatNumber,
     cardRenderOptions = null,
     qrSequence = sequence,
+    qrUrl,
   }: {
     sequence: SequenceData;
     displayedBeatNumber?: number;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     /** The source behind a labeled `sequence`; what a scan of the card opens. */
     qrSequence?: SequenceData;
+    /** A saved scan link the card's QR shows instead of the account's own code. */
+    qrUrl?: string;
   } = $props();
 
   const highlightedStepIndex = $derived(
@@ -60,6 +63,7 @@
         // not replace its Off, Credit, or Custom selection.
         handLabeling: null,
         qrSequence,
+        qrUrl,
         highlightedStepIndex,
         options: cardRenderOptions,
         automatic,
@@ -73,6 +77,7 @@
     <ChoreoCard
       {sequence}
       {qrSequence}
+      {qrUrl}
       {highlightedStepIndex}
       showHighlight={highlightedStepIndex !== null}
       visibilityOverrides={cardRenderOptions?.visibilityOverrides}

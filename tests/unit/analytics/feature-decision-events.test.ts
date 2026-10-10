@@ -1,35 +1,35 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logActivity: vi.fn(),
 }));
 
-import { logActivity } from "$lib/shared/analytics/services/posthog-activity-logger";
+import { logActivity } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import {
   trackArenaMatchupSkipped,
   trackArenaVoteCompleted,
-} from "$lib/features/arena/analytics/arena-events";
+} from "#lib/features/arena/analytics/arena-events.js";
 import {
   trackCompositionDeleted,
   trackCompositionFavoriteChanged,
   trackCompositionSaved,
-} from "$lib/features/compose/analytics/compose-events";
-import { trackTikaQuestionSubmitted } from "$lib/features/tika/analytics/tika-events";
+} from "#lib/features/compose/analytics/compose-events.js";
+import { trackTikaQuestionSubmitted } from "#lib/features/tika/analytics/tika-events.js";
 import {
   trackTrainSessionCompleted,
   trackTrainSessionStarted,
-} from "$lib/features/train/analytics/train-events";
-import { trackFeedbackSubmitted } from "$lib/shared/analytics/feedback-events";
+} from "#lib/features/train/analytics/train-events.js";
+import { trackFeedbackSubmitted } from "#lib/shared/analytics/feedback-events.js";
 import {
   trackFestivalSubmitted,
   trackFestivalTrackerChanged,
   trackFestivalTrackerRemoved,
-} from "$lib/features/festivals/analytics/festival-events";
+} from "#lib/features/festivals/analytics/festival-events.js";
 import {
   trackChoreoSheetDeleted,
   trackChoreoSheetExported,
   trackChoreoSheetSaved,
-} from "$lib/features/write/analytics/choreo-events";
+} from "#lib/features/write/analytics/choreo-events.js";
 
 describe("production module decision events", () => {
   beforeEach(() => vi.mocked(logActivity).mockClear());

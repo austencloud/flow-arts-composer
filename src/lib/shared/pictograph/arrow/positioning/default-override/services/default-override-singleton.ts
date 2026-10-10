@@ -9,8 +9,8 @@
 
 import type { DefaultArrowPlacementRepository } from "./default-arrow-placement-repository";
 import { setDefaultOverrideResolver } from "../../placement/services/arrow-placer";
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const logger = createComponentLogger("DefaultOverrideSingleton");
 

@@ -27,8 +27,8 @@ import {
   notifyLibrarySequenceUpdated,
   onLibrarySequenceUpdated,
   LIBRARY_SEQUENCE_UPDATED_EVENT,
-} from "$lib/shared/library/library-events";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/library/library-events.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 afterEach(() => {
   // Clean up any lingering listeners between tests

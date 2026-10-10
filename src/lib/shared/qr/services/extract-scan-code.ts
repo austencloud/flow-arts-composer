@@ -9,7 +9,7 @@
 import {
 	decodeOnce,
 	resolveInlineQrPayload,
-} from "$lib/shared/navigation/services/inline-qr-envelope";
+} from "#lib/shared/navigation/services/inline-qr-envelope.js";
 
 const TKA_HOSTS = new Set(["tka.run", "www.tka.run"]);
 

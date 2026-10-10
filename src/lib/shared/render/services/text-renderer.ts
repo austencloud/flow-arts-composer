@@ -1,4 +1,4 @@
-import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import { getTextScalingFactors } from "./dimension-calculator";
 import type { TextRenderOptions } from "../domain/models/sequence-export-options";
 import {
@@ -12,9 +12,9 @@ import {
   type LoopReflectionAxis,
   type GlyphImageData,
 } from "@tka/render-composition";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-// getGlyphCache loaded dynamically to avoid pulling $app/environment into worker bundle
-import { tokenizeWord } from "$lib/shared/pictograph/tka-glyph/utils/word-tokenizer";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+// getGlyphCache loaded dynamically to avoid pulling $app/env into worker bundle
+import { tokenizeWord } from "#lib/shared/pictograph/tka-glyph/utils/word-tokenizer.js";
 import { compressWord } from "@tka/render-composition";
 import { createRenderCanvas } from "./create-render-canvas";
 import type { RenderCanvas } from "./types";
@@ -79,7 +79,7 @@ export class TextRenderer {
     if (missing.length === 0) return;
 
     const { getGlyphCache } =
-      await import("$lib/shared/render/get-glyph-cache");
+      await import("#lib/shared/render/get-glyph-cache.js");
     const cache = getGlyphCache();
     await cache.initialize();
 
@@ -102,7 +102,7 @@ export class TextRenderer {
     if (missing.length === 0) return;
 
     const { getGlyphCache } =
-      await import("$lib/shared/render/get-glyph-cache");
+      await import("#lib/shared/render/get-glyph-cache.js");
     const cache = getGlyphCache();
 
     const notAlreadyLoading = missing.filter(

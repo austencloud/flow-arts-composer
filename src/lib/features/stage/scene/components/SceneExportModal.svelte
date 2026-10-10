@@ -1,11 +1,11 @@
 <script lang="ts">
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import ExportPopover from "$lib/shared/sequence-viewer/components/ExportPopover.svelte";
-  import VideoPreviewPanel from "$lib/shared/sequence-viewer/components/VideoPreviewPanel.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import ExportPopover from "#lib/shared/sequence-viewer/components/ExportPopover.svelte";
+  import VideoPreviewPanel from "#lib/shared/sequence-viewer/components/VideoPreviewPanel.svelte";
   import type { SceneVideoExportState } from "../services/create-scene-video-export.svelte";
-  import RenderFilmCard from "$lib/shared/sequence-viewer/components/record-scene/RenderFilmCard.svelte";
-  import type { Scene3DFilm } from "$lib/features/scene-3d-collection/domain/scene-3d-collection-types";
+  import RenderFilmCard from "#lib/shared/sequence-viewer/components/record-scene/RenderFilmCard.svelte";
+  import type { Scene3DFilm } from "#lib/features/scene-3d-collection/domain/scene-3d-collection-types.js";
 
   interface Props {
     open: boolean;

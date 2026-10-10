@@ -1,20 +1,20 @@
-import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import {
   calculatePropCenter,
   calculateTrailSourceEndpoint,
-} from "$lib/shared/animation-engine/services/prop-position-calculator";
+} from "#lib/shared/animation-engine/services/prop-position-calculator.js";
 import {
   BLUE_STROKE,
   RED_STROKE,
-} from "$lib/shared/mandala/domain/mandala-constants";
+} from "#lib/shared/mandala/domain/mandala-constants.js";
 import { bakeWorldTrajectories } from "../../../../../shared/mandala/services/motion-trajectory-baker";
 import { projectWorldTrajectories } from "../../../../../shared/mandala/services/trajectory-projector";
-import type { ProjectedTrajectorySet } from "$lib/shared/mandala/domain/trajectory-types";
+import type { ProjectedTrajectorySet } from "#lib/shared/mandala/domain/trajectory-types.js";
 import type {
   MotionCompositionFrame,
   SampledPropStream,
-} from "$lib/shared/motion-composition/domain/motion-composition-types";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/motion-composition/domain/motion-composition-types.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import type {
   ThirdOrderCompositionDraft,
   ThirdOrderCompositionFrame,

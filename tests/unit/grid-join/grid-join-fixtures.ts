@@ -9,20 +9,20 @@ import type { GridJoin } from "@tka/tka-types";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export const JOIN_EAST_ONE: GridJoin = { toward: "e", steps: 1 };
 export const JOIN_NORTHEAST_TWO: GridJoin = { toward: "ne", steps: 2 };

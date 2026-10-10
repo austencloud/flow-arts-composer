@@ -1,6 +1,6 @@
-import type { ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
-import { validateArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
-import { calculateArrangementTotalBeats } from "$lib/shared/media-composition/domain/arrangement-timing";
+import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { calculateArrangementTotalBeats } from "#lib/shared/media-composition/domain/arrangement-timing.js";
 import {
   POST_BOX,
   POST_MIN_ITEM_SECONDS,
@@ -8,7 +8,7 @@ import {
   type PostArrangementItem,
   type PostCanvasRatio,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 
 /** One complete Arrange cycle, measured from the grid's own tempo. */
 export function arrangementDurationSeconds(

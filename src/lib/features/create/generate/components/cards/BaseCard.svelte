@@ -3,10 +3,10 @@ BaseCard.svelte - Base component for all setting cards
 Provides consistent styling and interaction patterns for all generation setting cards
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { attachRipple } from "$lib/shared/application/services/ripple-effect";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { attachRipple } from "#lib/shared/application/services/ripple-effect.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
   import CardHeader from "./shared/CardHeader.svelte";
 

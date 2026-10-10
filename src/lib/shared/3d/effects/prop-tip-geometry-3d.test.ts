@@ -9,7 +9,7 @@ import {
   TRIGENG_ARTWORK_GEOMETRY,
   TRIGENG_TIP_POINTS,
   type PropTipConfig,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 import {
   FAN_DAY_RIM_POINTS_M,
   FAN_FIRE_WICK_CENTERS_M,

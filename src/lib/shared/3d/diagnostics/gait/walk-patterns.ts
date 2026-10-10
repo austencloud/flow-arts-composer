@@ -22,7 +22,7 @@
  */
 
 import type { TurnRequest } from "@austencloud/scene-3d";
-import type { PatternTerminalIntent } from "$lib/shared/3d/locomotion/pattern-terminal-step-plan";
+import type { PatternTerminalIntent } from "#lib/shared/3d/locomotion/pattern-terminal-step-plan.js";
 
 /** What the character is being asked to do this frame. */
 export interface WalkTick {

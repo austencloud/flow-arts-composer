@@ -5,12 +5,12 @@
   Expands to reveal quick-apply preset grid + scope selector + channel matrix.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { TipEffortMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-  import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
-  import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-  import { getTipLabel } from "$lib/shared/animation-engine/domain/tip-label";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { TipEffortMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+  import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
+  import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+  import { getTipLabel } from "#lib/shared/animation-engine/domain/tip-label.js";
 
   type Scope = "cell" | "hand" | "tip";
 

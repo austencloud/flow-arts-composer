@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   resolveActiveFormationIndex,
   resolveArrangeTargetIndex,
-} from "$lib/features/stage/domain/active-formation";
-import type { Formation } from "$lib/features/stage/domain/stage-types";
+} from "#lib/features/stage/domain/active-formation.js";
+import type { Formation } from "#lib/features/stage/domain/stage-types.js";
 
 const sets = [
   { id: "a", atBeat: 0, transitionBeats: 0, spots: {} },

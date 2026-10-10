@@ -6,22 +6,22 @@ import {
   type Firestore,
   type DocumentData,
 } from "firebase/firestore";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
-import { firestoreList } from "$lib/shared/firestore";
-import { LibrarySequenceDocSchema } from "$lib/shared/library/domain/library-schemas";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
+import { firestoreList } from "#lib/shared/firestore/index.js";
+import { LibrarySequenceDocSchema } from "#lib/shared/library/domain/library-schemas.js";
 import {
   getUserSequencesPath,
   getUserSequencePath,
-} from "$lib/shared/library/data/firestore-paths";
-import { notifyLibraryMutated } from "$lib/shared/library/library-events";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import type { IPublicIndexSyncer as PublicIndexSyncer } from "$lib/shared/library/services/IPublicIndexSyncer";
+} from "#lib/shared/library/data/firestore-paths.js";
+import { notifyLibraryMutated } from "#lib/shared/library/library-events.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { IPublicIndexSyncer as PublicIndexSyncer } from "#lib/shared/library/services/IPublicIndexSyncer.js";
 import {
   deleteSequenceCompletely,
   softDeleteSequenceEverywhere,
   PublicDuplicateError,
-} from "$lib/shared/library/services/public-sequence-persister";
-import { LibraryError } from "$lib/shared/library/domain/library-error";
+} from "#lib/shared/library/services/public-sequence-persister.js";
+import { LibraryError } from "#lib/shared/library/domain/library-error.js";
 
 /**
  * Typed restore outcome (parity-repair spec section 7). A restore of a

@@ -3,28 +3,28 @@ LOOPExpandedOverlay.svelte - Expanded LOOP selection that covers the card grid
 Animates forward in z-axis and expands to fill the container space
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { scale } from "svelte/transition";
   import { quintOut } from "svelte/easing";
   import { onMount, tick } from "svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     generateLOOPType,
     buildLoopSpec,
     effectiveInversionInterval,
-  } from "$lib/shared/create/services/loop-type-utils";
-  import { gateRhythm } from "$lib/shared/create/services/loop-rhythm-gating";
+  } from "#lib/shared/create/services/loop-type-utils.js";
+  import { gateRhythm } from "#lib/shared/create/services/loop-rhythm-gating.js";
   import {
     guestLoopGate,
     type GuestLoopLockKind,
-  } from "$lib/shared/create/services/loop-guest-gate";
-  import { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+  } from "#lib/shared/create/services/loop-guest-gate.js";
+  import { LOOPComponent } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
   import { LOOPType } from "../../circular/domain/models/circular-models";
   import LOOPComponentGrid from "../modals/LOOPComponentGrid.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import LoopOverlayHeader from "./LoopOverlayHeader.svelte";
   import LoopRhythmConfigurator from "./LoopRhythmConfigurator.svelte";
   import LoopSelectionSummary from "./LoopSelectionSummary.svelte";
@@ -38,7 +38,7 @@ Animates forward in z-axis and expands to fill the container space
     normalizeReflectionSelection,
     type LoopRhythmValue,
   } from "./loop-expanded-overlay-model";
-  import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
+  import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
 
   let {
     currentType,

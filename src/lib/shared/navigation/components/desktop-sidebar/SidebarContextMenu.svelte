@@ -16,8 +16,8 @@
   } from "../../get-sidebar-tab-toggler";
   import type { TabVisibilityInfo } from "../../services/types";
   import type { ModuleId } from "../../domain/types";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getReactiveLocale } from "$lib/shared/i18n/locale-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getReactiveLocale } from "#lib/shared/i18n/locale-state.svelte.js";
   import {
     featureFlagService,
     featureFlagState,
@@ -27,11 +27,11 @@
   import { isModuleEnabledInEnvironment } from "../../../environment/environment-features";
   import { getModuleDefinitions } from "../../../navigation-coordinator/navigation-coordinator.svelte";
   import { toast } from "../../../toast/state/toast-state.svelte";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
     ContextMenuState as SharedMenuState,
-  } from "$lib/shared/components/context-menu/context-menu-types";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
 
   export type ContextMenuState =
     | { mode: "closed" }

@@ -17,22 +17,22 @@ escape to a full-page grid. A host that has no such grid omits `onEject` and
 the below-seam actions mutate the engine in place.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
-  import GalleryDrill from "$lib/features/browse/gallery-home/GalleryDrill.svelte";
+  import GalleryDrill from "#lib/features/browse/gallery-home/GalleryDrill.svelte";
   import type {
     CollectionOption,
     Section,
-  } from "$lib/features/browse/gallery-home/gallery-drill-catalog.svelte";
-  import FilterRuleStrip from "$lib/shared/browse/components/FilterRuleStrip.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { startMorph } from "$lib/shared/transitions/results-morph";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import type { BrowseEngine } from "$lib/shared/browse/engine/types";
+  } from "#lib/features/browse/gallery-home/gallery-drill-catalog.svelte.js";
+  import FilterRuleStrip from "#lib/shared/browse/components/FilterRuleStrip.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { startMorph } from "#lib/shared/transitions/results-morph.js";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
   import {
     SECTION_FOR_FILTER_TYPE,
     type WorkspaceSection,
-  } from "$lib/shared/browse/domain/workspace-sections";
+  } from "#lib/shared/browse/domain/workspace-sections.js";
 
   let {
     engine,

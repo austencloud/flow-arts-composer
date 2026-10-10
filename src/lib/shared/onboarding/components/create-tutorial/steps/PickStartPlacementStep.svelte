@@ -5,9 +5,9 @@
   Auto-advances when a placement is selected (no Continue button needed).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
-  import { createSimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
+  import { createSimplifiedStartPlacementState } from "#lib/shared/create/state/start-placement-state.svelte.js";
   import { createTutorialState } from "../../../state/create-tutorial-state.svelte";
 
   interface Props {
@@ -47,7 +47,7 @@
   </div>
 
   <div class="picker-container">
-    {#await import("$lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte") then mod}
+    {#await import("#lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte") then mod}
       <mod.default {startPlacementState} embedded />
     {/await}
   </div>

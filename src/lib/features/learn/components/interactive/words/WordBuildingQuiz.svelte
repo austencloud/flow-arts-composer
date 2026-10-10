@@ -3,7 +3,7 @@ WordBuildingQuiz - Coordinator for word formation quiz
 Questions about letter sequences, motion types, placement transitions, and LOOPs
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onDestroy } from "svelte";
   import {
     type WordQuizQuestion,

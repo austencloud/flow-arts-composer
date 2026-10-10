@@ -14,7 +14,7 @@
  * The outer points (at 2x radius) are used only for conjoined junction rendering.
  */
 
-import type { GridLocation, GridMode } from "$lib/shared/render/core/types";
+import type { GridLocation, GridMode } from "#lib/shared/render/core/types.js";
 import type { Vec2 } from "../models/grid-topology";
 
 // LOCATION OFFSETS (normalized: radius = 1.0)

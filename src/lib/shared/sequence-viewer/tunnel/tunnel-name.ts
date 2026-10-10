@@ -32,13 +32,13 @@
  * other one, so they are omitted rather than padded in.
  */
 
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { EFFECT_LABELS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { EFFECT_LABELS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
 import {
   findPropTypeByValue,
   getPropTypeDisplayInfo,
-} from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   getPreset,
   imageCount,

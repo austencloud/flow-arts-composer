@@ -6,8 +6,8 @@
   Owned by tests/opus-accessibility-audit. No production behavior lives here.
 -->
 <script lang="ts">
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
 
   let { surface = "drawer" }: { surface?: "drawer" | "modal" } = $props();
 

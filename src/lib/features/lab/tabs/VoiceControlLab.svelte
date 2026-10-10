@@ -6,29 +6,29 @@
 -->
 <script lang="ts">
 
-import { getVoiceSessionAnalyzer } from "$lib/features/voice-sessions/get-voice-session-analyzer";
-import { getVoiceSessionFormatter } from "$lib/features/voice-sessions/get-voice-session-formatter";
-import { getVoiceSessionReplayer } from "$lib/features/voice-sessions/get-voice-session-replayer";
-import { getVoiceSessionRepository } from "$lib/shared/voice-sessions/get-voice-session-repository";
-import { getCommandDispatcher } from "$lib/shared/voice-control/get-command-dispatcher";
-import { getCommandInterpreter } from "$lib/shared/voice-control/get-command-interpreter";
-import { getVoiceSessionRecorder } from "$lib/shared/voice-control/get-voice-session-recorder";
-import { getWakeWordDetector } from "$lib/shared/voice-control/get-wake-word-detector";
+import { getVoiceSessionAnalyzer } from "#lib/features/voice-sessions/get-voice-session-analyzer.js";
+import { getVoiceSessionFormatter } from "#lib/features/voice-sessions/get-voice-session-formatter.js";
+import { getVoiceSessionReplayer } from "#lib/features/voice-sessions/get-voice-session-replayer.js";
+import { getVoiceSessionRepository } from "#lib/shared/voice-sessions/get-voice-session-repository.js";
+import { getCommandDispatcher } from "#lib/shared/voice-control/get-command-dispatcher.js";
+import { getCommandInterpreter } from "#lib/shared/voice-control/get-command-interpreter.js";
+import { getVoiceSessionRecorder } from "#lib/shared/voice-control/get-voice-session-recorder.js";
+import { getWakeWordDetector } from "#lib/shared/voice-control/get-wake-word-detector.js";
   import { onMount } from "svelte";
-  import type { WakeWordDetector } from "$lib/shared/voice-control/services/wake-word-detector";
-  import type { CommandInterpreter } from "$lib/shared/voice-control/services/command-interpreter";
-  import type { CommandDispatcher } from "$lib/shared/voice-control/services/command-dispatcher";
-  import type { VoiceSessionRecorder } from "$lib/shared/voice-control/services/voice-session-recorder";
-  import type * as VoiceSessionFormatterModule from "$lib/features/voice-sessions/services/voice-session-formatter";
-  import type * as VoiceSessionRepositoryModule from "$lib/shared/voice-sessions/services/voice-session-repository";
-  import type * as VoiceSessionAnalyzerModule from "$lib/features/voice-sessions/services/voice-session-analyzer";
-  import type { VoiceSessionReplayer } from "$lib/features/voice-sessions/services/voice-session-replayer";
-  import type { WakeWordState } from "$lib/shared/voice-control/domain/voice-command-types";
-  import type { VoiceSession } from "$lib/shared/voice-control/domain/voice-session-types";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { voiceControlState } from "$lib/shared/voice-control/state/voice-control-state.svelte";
-  import SavedSessionList from "$lib/features/voice-sessions/components/SavedSessionList.svelte";
-  import SessionAnalysisPanel from "$lib/features/voice-sessions/components/SessionAnalysisPanel.svelte";
+  import type { WakeWordDetector } from "#lib/shared/voice-control/services/wake-word-detector.js";
+  import type { CommandInterpreter } from "#lib/shared/voice-control/services/command-interpreter.js";
+  import type { CommandDispatcher } from "#lib/shared/voice-control/services/command-dispatcher.js";
+  import type { VoiceSessionRecorder } from "#lib/shared/voice-control/services/voice-session-recorder.js";
+  import type * as VoiceSessionFormatterModule from "#lib/features/voice-sessions/services/voice-session-formatter.js";
+  import type * as VoiceSessionRepositoryModule from "#lib/shared/voice-sessions/services/voice-session-repository.js";
+  import type * as VoiceSessionAnalyzerModule from "#lib/features/voice-sessions/services/voice-session-analyzer.js";
+  import type { VoiceSessionReplayer } from "#lib/features/voice-sessions/services/voice-session-replayer.js";
+  import type { WakeWordState } from "#lib/shared/voice-control/domain/voice-command-types.js";
+  import type { VoiceSession } from "#lib/shared/voice-control/domain/voice-session-types.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { voiceControlState } from "#lib/shared/voice-control/state/voice-control-state.svelte.js";
+  import SavedSessionList from "#lib/features/voice-sessions/components/SavedSessionList.svelte";
+  import SessionAnalysisPanel from "#lib/features/voice-sessions/components/SessionAnalysisPanel.svelte";
 
   let detector: WakeWordDetector | null = null;
   let interpreter: CommandInterpreter | null = null;

@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { SequenceCanonicalizer } from "./sequence-canonicalizer";
 import type { StepSignatureGenerator } from "./step-signature-generator";
-import type { WordCyclicEquivalenceDetector } from "$lib/shared/foundation/utils/word-cyclic-equivalence-detector";
+import type { WordCyclicEquivalenceDetector } from "#lib/shared/foundation/utils/word-cyclic-equivalence-detector.js";
 import {
   areCyclicEquivalent,
   getAllRotations,
   getCanonicalForm,
   findRotationOffset,
-} from "$lib/shared/foundation/utils/word-cyclic-equivalence-detector";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/foundation/utils/word-cyclic-equivalence-detector.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 // Beat signatures are irrelevant to the word/offset behavior under test, so
 // the generator stub just needs to return something combineHashes can join.

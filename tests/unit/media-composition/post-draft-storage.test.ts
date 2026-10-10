@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   createPostDraftAutosave,
   loadPostDraft,
   readPostDraftRecords,
   savePostDraft,
   shouldSubmitPostDraft,
-} from "$lib/shared/media-composition/services/post-draft-storage";
+} from "#lib/shared/media-composition/services/post-draft-storage.js";
 
 afterEach(() => {
   localStorage.clear();

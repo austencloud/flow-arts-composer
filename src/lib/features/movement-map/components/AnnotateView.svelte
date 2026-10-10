@@ -7,11 +7,11 @@
   what the arms and torso had to do to deliver it.
 -->
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";
   import {
     describeSignature,
     isDraftEmpty,
@@ -19,7 +19,7 @@
     readingCount,
   } from "../domain/movement-annotation";
   import { describeValue } from "../domain/anatomy-vocabulary";
-  import { withSequenceJoinApplied } from "$lib/shared/grid-join/sequence-grid-join";
+  import { withSequenceJoinApplied } from "#lib/shared/grid-join/sequence-grid-join.js";
   import { getMovementMapContext } from "../context/movement-map-context";
   import AnatomyEditor from "./AnatomyEditor.svelte";
   import FrameTransport from "./FrameTransport.svelte";

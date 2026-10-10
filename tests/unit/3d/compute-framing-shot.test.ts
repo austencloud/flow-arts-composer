@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { computeFramingShot } from "$lib/shared/3d/camera/compute-framing-shot";
+import { computeFramingShot } from "#lib/shared/3d/camera/compute-framing-shot.js";
 
 const PERFORMERS = [
   { x: -5, z: -4 },

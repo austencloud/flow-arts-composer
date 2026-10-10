@@ -2,8 +2,8 @@
   // Interactive picker for the composer mandala showcase. Renders the baked pool
   // (Austen's 36 saved mandalas), lets you select the coolest, and Choose POSTs
   // them to /test/mandala-pick/save, which bakes them into chosen-mandalas.ts.
-  import { browser } from "$app/environment";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import { browser } from "$app/env";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import { SHOWCASE_MANDALAS } from "../../(public)/composer/_sections/showcase-mandalas";
 
   let sizes = $state<number[]>([]);
@@ -75,7 +75,7 @@
         bind:clientWidth={sizes[i]}
       >
         <LazyMount
-          loader={() => import("$lib/shared/mandala/components/SequenceMandala.svelte")}
+          loader={() => import("#lib/shared/mandala/components/SequenceMandala.svelte")}
           active={browser && sizes[i] > 0}
           props={{
             sequence: { steps: m.steps },

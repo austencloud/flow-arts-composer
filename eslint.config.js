@@ -144,7 +144,7 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["$lib/features/*", "$lib/features/**"],
+              group: ["#lib/features/*", "#lib/features/**"],
               message:
                 "shared/ must not import from features/ (one-way dependency). Use the registration pattern in composition-root/ or extract an interface to shared/.",
             },

@@ -1,8 +1,8 @@
-import { browser } from "$app/environment";
-import type { EffortId, EffortParams } from "$lib/shared/effort/domain/effort-types";
-import * as effortHapticMapper from "$lib/shared/effort/services/effort-haptic-mapper";
+import { browser } from "$app/env";
+import type { EffortId, EffortParams } from "#lib/shared/effort/domain/effort-types.js";
+import * as effortHapticMapper from "#lib/shared/effort/services/effort-haptic-mapper.js";
 import type { HapticFeedbackConfig, HapticFeedbackType, HapticImpactStyle, HapticNotificationType } from "./types";
-import { isNative as isNativePlatform } from "$lib/shared/platform/services/platform-detector";
+import { isNative as isNativePlatform } from "#lib/shared/platform/services/platform-detector.js";
 
 // Single short pulses for web Vibration API fallback (mobile browsers).
 // Kept minimal to avoid the "buzzy" feel of complex patterns.

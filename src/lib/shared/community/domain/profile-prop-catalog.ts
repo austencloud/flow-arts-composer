@@ -1,5 +1,5 @@
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 
 /** A skill a creator can meaningfully claim, independent of its render asset. */
 export interface ProfilePropSkillChoice {

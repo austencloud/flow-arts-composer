@@ -13,12 +13,12 @@
    * presses E facing a wall slot — DimensionFlipProof reports the focused slot's
    * refId via onExhibitFocus, which drives focusedSlot below.
    */
-  import { getEffectiveUserId } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getFavorites } from "$lib/shared/library/services/collection-manager";
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+  import { getEffectiveUserId } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getFavorites } from "#lib/shared/library/services/collection-manager.js";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 
   import { createPersonalMuseumState } from "./state/personal-museum-state.svelte";
   import {

@@ -5,7 +5,7 @@
  * rotation patterns, compounds, and terminology comparisons.
  */
 
-import type { VTGMode } from "$lib/features/learn/domain/constants/vtg-experience-data";
+import type { VTGMode } from "#lib/features/learn/domain/constants/vtg-experience-data.js";
 
 /** Which internal tab is active in VTG Lab */
 export type VtgLabTab = "explorer" | "rosetta";

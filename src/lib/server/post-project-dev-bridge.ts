@@ -1,5 +1,11 @@
-import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
-import { isFeatureVideoSlug } from "$lib/shared/media-composition/domain/feature-video";
+import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
+import { isFeatureVideoSlug } from "#lib/shared/media-composition/domain/feature-video.js";
+import {
+  FEATURE_EXPORT_NAME_RULE,
+  isFeatureExportName,
+  isSavedFeatureExport,
+  type SavedFeatureExport,
+} from "#lib/shared/media-composition/domain/feature-video-export.js";
 import { createHash, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import os from "node:os";
@@ -7,11 +13,11 @@ import path from "node:path";
 import {
   applyPostProjectOps,
   type PostProjectOp,
-} from "$lib/shared/media-composition/domain/post-project-ops";
+} from "#lib/shared/media-composition/domain/post-project-ops.js";
 import {
   PostProjectSchema,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 
 type Command = {
   id: string;
@@ -37,11 +43,59 @@ type Session = {
   featureSlug?: string;
   command?: Command;
   result?: Result;
+  /** The last render the CLI asked this editor for. */
+  render?: RenderJob;
 };
 
-const sessions = new Map<string, Session>();
+/** A render the CLI asked an editor for, as the bridge last heard of it. */
+export interface RenderJob {
+  id: string;
+  /** The file name the CLI asked for; without one the editor picks it. */
+  name?: string;
+  state: "queued" | "rendering" | "completed" | "failed";
+  /** The exporter's phase while it runs, like "encoding". */
+  phase: string | null;
+  percent: number;
+  message: string;
+  /** Where the render landed, once it completed. */
+  file?: string;
+  path?: string;
+  bytes?: number;
+  queuedAt: number;
+  updatedAt: number;
+}
+
+/** What an editor's heartbeat says about the render it was handed. */
+export interface PostProjectRenderReport {
+  id: string;
+  state: "rendering" | "completed" | "failed";
+  phase?: string;
+  percent?: number;
+  message?: string;
+  file?: string;
+  path?: string;
+  bytes?: number;
+}
+
+/**
+ * The open editors and their renders. Vite runs this module again when it or
+ * a file it imports changes, as a merge into main does under a running dev
+ * server. Keeping the map on globalThis keeps a render going across that.
+ */
+const bridgeGlobal = globalThis as typeof globalThis & {
+  __tkaPostProjectSessions?: Map<string, Session>;
+};
+const sessions = (bridgeGlobal.__tkaPostProjectSessions ??= new Map<
+  string,
+  Session
+>());
 const ACTIVE_MS = 10_000;
 const MAX_SESSIONS = 12;
+/** An editor starts a render on the heartbeat after it is queued. */
+const RENDER_START_MS = 30_000;
+/** A render whose editor has sent nothing for this long has stopped. */
+const RENDER_QUIET_MS = 60_000;
+const RENDER_MESSAGE_LIMIT = 300;
 const backupDir = path.join(os.homedir(), ".tka", "post-studio-manifest-edits");
 
 export function fingerprint(project: PostProject): string {
@@ -99,6 +153,7 @@ export function heartbeatPostProject(input: {
     status: "completed" | "failed";
     message: string;
   };
+  render?: PostProjectRenderReport;
 }) {
   if (
     !/^[0-9a-f-]{36}$/i.test(input.sessionId) ||
@@ -143,6 +198,7 @@ export function heartbeatPostProject(input: {
     throw new Error("The first heartbeat needs a snapshot.");
   }
   session.seenAt = Date.now();
+  applyRenderReport(session, input.render);
   const pending = session.command;
   if (pending && input.result?.commandId === pending.id) {
     session.result = {
@@ -174,9 +230,15 @@ export function heartbeatPostProject(input: {
     };
     session.command = undefined;
   }
+  settleRender(session);
+  const job = session.render;
   return {
     command: session.command?.ready ? session.command : null,
     fingerprint: session.fingerprint,
+    // Handed out until the editor reports that the render started.
+    ...(job?.state === "queued"
+      ? { render: { id: job.id, ...(job.name ? { name: job.name } : {}) } }
+      : {}),
   };
 }
 
@@ -207,6 +269,8 @@ export async function queuePostProjectEdit(
   if (!session || Date.now() - session.seenAt >= ACTIVE_MS)
     throw new Error("Editor session is not active.");
   if (session.command) throw new Error("An edit is already pending.");
+  if (renderBusy(session))
+    throw new Error("The editor is rendering. Try again when it finishes.");
   if (
     session.revision !== input.baseRevision ||
     session.fingerprint !== input.baseFingerprint
@@ -301,4 +365,133 @@ export function postProjectEditStatus(sessionId: string, commandId: string) {
   if (session.command?.id === commandId) return { status: "pending" as const };
   if (session.result?.commandId === commandId) return { ...session.result };
   return null;
+}
+
+/**
+ * Asks a feature video's editor to render into its exports/ folder. The
+ * editor's next heartbeat starts the render and later ones report on it;
+ * postProjectRenderStatus answers with what they said.
+ */
+export function queuePostProjectRender(input: {
+  sessionId: string;
+  name?: string;
+}) {
+  const session = sessions.get(input.sessionId);
+  if (!session || Date.now() - session.seenAt >= ACTIVE_MS)
+    throw new Error("Editor session is not active.");
+  if (!session.featureSlug)
+    throw new Error("Only a feature video's editor renders to its folder.");
+  if (input.name !== undefined && !isFeatureExportName(input.name))
+    throw new Error(FEATURE_EXPORT_NAME_RULE);
+  if (renderBusy(session))
+    throw new Error("A render is already running in this editor.");
+  if (session.command)
+    throw new Error("An edit is pending. Try again when it finishes.");
+  const now = Date.now();
+  const job: RenderJob = {
+    id: randomUUID(),
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    state: "queued",
+    phase: null,
+    percent: 0,
+    message: "Waiting for the editor to start the render.",
+    queuedAt: now,
+    updatedAt: now,
+  };
+  session.render = job;
+  return { renderId: job.id, state: "queued" as const };
+}
+
+/** What the editor last said about a render, or null for an unknown one. */
+export function postProjectRenderStatus(sessionId: string, renderId: string) {
+  const session = sessions.get(sessionId);
+  if (!session?.render || session.render.id !== renderId) return null;
+  settleRender(session);
+  return { ...session.render };
+}
+
+/**
+ * A heartbeat's render report, checked. Undefined when the heartbeat has none
+ * or one the bridge cannot read; a completed report must name the export.
+ */
+export function readRenderReport(
+  value: unknown
+): PostProjectRenderReport | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const { id, state, phase, percent, message } = value as Record<
+    string,
+    unknown
+  >;
+  if (
+    typeof id !== "string" ||
+    (state !== "rendering" && state !== "completed" && state !== "failed")
+  )
+    return undefined;
+  let saved: SavedFeatureExport | undefined;
+  if (state === "completed") {
+    if (!isSavedFeatureExport(value)) return undefined;
+    saved = { file: value.file, path: value.path, bytes: value.bytes };
+  }
+  return {
+    id,
+    state,
+    ...(typeof phase === "string" ? { phase: phase.slice(0, 40) } : {}),
+    ...(typeof percent === "number" && Number.isFinite(percent)
+      ? { percent: Math.min(100, Math.max(0, percent)) }
+      : {}),
+    ...(typeof message === "string"
+      ? { message: message.slice(0, RENDER_MESSAGE_LIMIT) }
+      : {}),
+    ...saved,
+  };
+}
+
+/** Takes the editor's report on the render it was handed, while it runs. */
+function applyRenderReport(
+  session: Session,
+  report: PostProjectRenderReport | undefined
+): void {
+  const job = session.render;
+  if (!report || !job || report.id !== job.id) return;
+  if (job.state !== "queued" && job.state !== "rendering") return;
+  job.state = report.state;
+  job.phase = report.phase ?? null;
+  job.percent =
+    report.state === "completed" ? 100 : (report.percent ?? job.percent);
+  if (report.state === "rendering") job.message = "";
+  else
+    job.message =
+      report.message ?? (report.state === "failed" ? "The render failed." : "");
+  if (report.state === "completed") {
+    job.file = report.file;
+    job.path = report.path;
+    job.bytes = report.bytes;
+  }
+  job.updatedAt = session.seenAt;
+}
+
+function failRender(job: RenderJob, message: string, now: number): void {
+  job.state = "failed";
+  job.message = message;
+  job.updatedAt = now;
+}
+
+/** Fails a render its editor dropped: never started, or gone silent. */
+function settleRender(session: Session, now = Date.now()): void {
+  const job = session.render;
+  if (job?.state === "queued" && now - job.queuedAt > RENDER_START_MS)
+    failRender(
+      job,
+      "The editor did not start the render. Reload its tab and try again.",
+      now
+    );
+  else if (job?.state === "rendering" && now - session.seenAt > RENDER_QUIET_MS)
+    failRender(job, "The editor closed before the render finished.", now);
+}
+
+/** True while this editor has a render queued or running. */
+function renderBusy(session: Session): boolean {
+  settleRender(session);
+  const state = session.render?.state;
+  return state === "queued" || state === "rendering";
 }

@@ -15,10 +15,10 @@
 
 // ── Critical: needed before first Browse/Create render ──
 import { configureShortCodeManager } from "../qr/get-short-code-manager";
-import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
+import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
 
 import { registerLoopDetector } from "../create/get-loop-detector";
-import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
+import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
 
 import {
   registerLoopDisplayResolver,
@@ -27,7 +27,7 @@ import {
 import {
   resolveLoopDisplay,
   clearLoopDisplayCache,
-} from "$lib/features/loop-labeler/services/loop-display-resolver";
+} from "#lib/features/loop-labeler/services/loop-display-resolver.js";
 
 import { registerLibraryRepository } from "./register-library-repository";
 

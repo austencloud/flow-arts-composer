@@ -5,7 +5,7 @@ import {
   scoreAnswer,
   speedBonus,
   streakMultiplier,
-} from "$lib/features/learn/play/domain/scoring";
+} from "#lib/features/learn/play/domain/scoring.js";
 
 describe("speedBonus", () => {
   it("full bonus under 1.5s", () => expect(speedBonus(1000)).toBe(50));

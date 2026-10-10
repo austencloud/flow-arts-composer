@@ -3,7 +3,7 @@
  */
 import type { GridJoin } from "@tka/tka-types";
 import { gridJoinCellResolver, isGridJoin } from "@tka/render-core";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { gridJoinsEqual } from "./grid-join-controller";
 
 /** The sequence's join, or null for one grid (or a malformed stored value). */

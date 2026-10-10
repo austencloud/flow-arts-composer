@@ -10,7 +10,7 @@
   in each chip's accessible name, and under the scrub.
 -->
 <script lang="ts">
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   import LabSection from "./LabSection.svelte";
   import {

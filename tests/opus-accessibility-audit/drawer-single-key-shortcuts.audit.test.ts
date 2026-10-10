@@ -33,7 +33,7 @@ import { userEvent } from "vitest/browser";
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
 
 import DrawerWithOptionsHarness from "./harnesses/DrawerWithOptionsHarness.svelte";
-import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
+import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
 
 function settle(ms = 150) {
   return new Promise((resolve) => setTimeout(resolve, ms));

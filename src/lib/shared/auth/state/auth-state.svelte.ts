@@ -19,12 +19,12 @@
  * - getEffectiveUserId/Role/Admin check userPreviewState for admin preview mode
  */
 
-import { getUserDocumentManager } from "$lib/shared/auth/get-user-document-manager";
+import { getUserDocumentManager } from "#lib/shared/auth/get-user-document-manager.js";
 import {
   updateFacebookProfilePictureIfNeeded,
   updateGoogleProfilePictureIfNeeded,
-} from "$lib/shared/auth/services/profile-picture-manager";
-import { consumePendingLinkForUser } from "$lib/shared/auth/services/pending-credential-link";
+} from "#lib/shared/auth/services/profile-picture-manager.js";
+import { consumePendingLinkForUser } from "#lib/shared/auth/services/pending-credential-link.js";
 import {
   onAuthStateChanged,
   signOut as firebaseSignOut,
@@ -42,8 +42,8 @@ import { isFullAccountUser } from "../domain/access-tier";
 import { resetUser, captureWhenReady } from "../../analytics/services/posthog";
 import { getScanSourceCode } from "../../analytics/scan-attribution";
 
-import { linkDeviceToUser } from "$lib/shared/auth/services/device-id-service";
-import { getFCMTokenManager } from "$lib/shared/push/get-fcm-token-manager";
+import { linkDeviceToUser } from "#lib/shared/auth/services/device-id-service.js";
+import { getFCMTokenManager } from "#lib/shared/push/get-fcm-token-manager.js";
 
 import {
   changeEmail as doChangeEmail,
@@ -53,10 +53,10 @@ import {
   updatePronouns as doUpdatePronouns,
 } from "../services/profile-field-updater";
 import { initializeChildServices } from "../services/auth-boot-orchestrator";
-import { clearBootSnapshot } from "$lib/shared/application/services/boot-snapshot";
-import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
-import { identifyFirebaseUserToPostHog } from "$lib/shared/auth/services/posthog-user-identity";
-import { getAuthSubmissionContext } from "$lib/shared/auth/services/auth-analytics-bridge";
+import { clearBootSnapshot } from "#lib/shared/application/services/boot-snapshot.js";
+import { isPermissionDeniedError } from "#lib/shared/auth/utils/is-permission-denied-error.js";
+import { identifyFirebaseUserToPostHog } from "#lib/shared/auth/services/posthog-user-identity.js";
+import { getAuthSubmissionContext } from "#lib/shared/auth/services/auth-analytics-bridge.js";
 
 interface AuthState {
   user: User | null;
@@ -308,7 +308,8 @@ async function initializeSubscriptionListener(
   }
 
   try {
-    const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+    const { getFirestoreInstance } =
+      await import("#lib/shared/auth/firebase.js");
     const firestore = await getFirestoreInstance();
     const { collection, onSnapshot } = await import("firebase/firestore");
 
@@ -436,7 +437,7 @@ async function doInitializeAuthListener(): Promise<void> {
   // signing in". That call flips Firebase's auth state, which this listener
   // (wired below) picks up like any other sign-in.
 
-  const { isDesktop } = await import("$lib/shared/desktop/is-desktop");
+  const { isDesktop } = await import("#lib/shared/desktop/is-desktop.js");
   const isDesktopEnv = isDesktop();
 
   if (isDesktopEnv) {
@@ -542,7 +543,7 @@ async function doInitializeAuthListener(): Promise<void> {
         // tab appearing a moment after sign-in instead of not at all.
         void reconcileRoleFromServerClaims(user);
 
-        import("$lib/shared/auth/firebase")
+        import("#lib/shared/auth/firebase.js")
           .then(({ getFirestoreInstance }) => getFirestoreInstance())
           .catch((error) => {
             console.error(
@@ -566,7 +567,7 @@ async function doInitializeAuthListener(): Promise<void> {
               // The server-side onAuthUserCreated trigger now backstops the
               // write; this reports the client-side loss so the backstop's
               // hit rate is observable instead of assumed.
-              void import("$lib/shared/analytics/services/posthog").then(
+              void import("#lib/shared/analytics/services/posthog.js").then(
                 ({ captureException }) =>
                   captureException(error, {
                     context: "createOrUpdateUserDocument",
@@ -583,7 +584,7 @@ async function doInitializeAuthListener(): Promise<void> {
         consumePendingLinkForUser(user)
           .then((linkedProviderId) => {
             if (linkedProviderId === "facebook.com") {
-              void import("$lib/shared/toast/state/toast-state.svelte").then(
+              void import("#lib/shared/toast/state/toast-state.svelte.js").then(
                 ({ toast }) =>
                   toast.success("Facebook connected to your account.")
               );
@@ -833,7 +834,7 @@ export async function signOut(): Promise<void> {
 
     try {
       const { mandalaCollectionState } =
-        await import("$lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte");
+        await import("#lib/features/mandala/tabs/collection/state/mandala-collection-state.svelte.js");
       mandalaCollectionState.teardown();
     } catch {
       // Mandala collection may not be loaded - that's ok
@@ -841,7 +842,7 @@ export async function signOut(): Promise<void> {
 
     try {
       const { tunnelCollectionState } =
-        await import("$lib/features/tunnel-collection/state/tunnel-collection-state.svelte");
+        await import("#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js");
       tunnelCollectionState.teardown();
     } catch {
       // Tunnel collection may not be loaded - that's ok
@@ -850,8 +851,8 @@ export async function signOut(): Promise<void> {
     try {
       const [{ scene3dCollectionState }, { filmCollectionState }] =
         await Promise.all([
-          import("$lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte"),
-          import("$lib/features/film-collection/state/film-collection-state.svelte"),
+          import("#lib/features/scene-3d-collection/state/scene-3d-collection-state.svelte.js"),
+          import("#lib/features/film-collection/state/film-collection-state.svelte.js"),
         ]);
       scene3dCollectionState.teardown();
       filmCollectionState.teardown();
@@ -862,8 +863,8 @@ export async function signOut(): Promise<void> {
     try {
       const [{ collectionsState }, { followedCollectionsState }] =
         await Promise.all([
-          import("$lib/features/library/state/collections-state.svelte"),
-          import("$lib/features/library/state/followed-collections-state.svelte"),
+          import("#lib/features/library/state/collections-state.svelte.js"),
+          import("#lib/features/library/state/followed-collections-state.svelte.js"),
         ]);
       // Otherwise the previous user's Firestore listeners stay live after
       // logout and throw permission errors once the auth token is revoked.
@@ -874,7 +875,7 @@ export async function signOut(): Promise<void> {
       const outgoingUid = _state.user?.uid;
       if (outgoingUid) {
         const { clearMirror } =
-          await import("$lib/features/library/services/collection-cache-mirror");
+          await import("#lib/features/library/services/collection-cache-mirror.js");
         clearMirror(outgoingUid);
       }
     } catch {
@@ -887,7 +888,7 @@ export async function signOut(): Promise<void> {
       const outgoingUid = _state.user?.uid;
       if (outgoingUid) {
         const { getMessageDeliveryRepository } =
-          await import("$lib/shared/inbox/get-message-delivery-repository");
+          await import("#lib/shared/inbox/get-message-delivery-repository.js");
         await getMessageDeliveryRepository().purgeUser(outgoingUid);
       }
     } catch (error) {

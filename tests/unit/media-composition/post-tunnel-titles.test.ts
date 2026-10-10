@@ -9,28 +9,28 @@ import {
   type PostProject,
   type PostTitlesItem,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
 import {
   addTitlesItem,
   findTunnelHook,
   updateItem,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
+import { sampleEasing } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
 import {
   DEFAULT_TUNNEL_HOOK,
   MOVE_END_SHARE,
   MOVE_START_SHARE,
   type TunnelHook,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "#lib/shared/media-composition/domain/tunnel-hook.js";
 import {
   OPENING_TITLES_SHARE,
   titlesPlanOf,
   titlesRole,
   tunnelTitlesLook,
-} from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import {
   NOW,
   card,

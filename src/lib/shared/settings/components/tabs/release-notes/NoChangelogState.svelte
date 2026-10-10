@@ -1,6 +1,6 @@
 <!-- NoChangelogState - Empty state when no changelog exists -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <section class="no-changelog-section">

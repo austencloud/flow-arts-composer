@@ -1,6 +1,6 @@
 <script lang="ts">
-  import QftFlowerPicker from "$lib/shared/notation/qft/components/QftFlowerPicker.svelte";
-  import { QFT_FLOWERS } from "$lib/shared/notation/qft/qft-app-selection";
+  import QftFlowerPicker from "#lib/shared/notation/qft/components/QftFlowerPicker.svelte";
+  import { QFT_FLOWERS } from "#lib/shared/notation/qft/qft-app-selection.js";
   import { getQftAppContext } from "../_context/qft-app-context";
   import QftPresetControls from "./QftPresetControls.svelte";
 

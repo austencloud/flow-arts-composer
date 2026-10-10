@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
-  import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
+  import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
 
   let { conceptId } = $props<{ conceptId: string }>();
 

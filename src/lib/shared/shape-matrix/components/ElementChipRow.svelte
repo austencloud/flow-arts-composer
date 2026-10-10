@@ -6,13 +6,13 @@
   re-click (SegmentedControl cannot represent none-selected). Mode → element
   mapping is diamond-grid-specific (see build-mode-realizations.ts). -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     MODE_ORDER,
     type VtgMode,
   } from "../services/shape-matrix-realizations";
   import { FAMILY_BY_MODE } from "../services/build-mode-realizations";
-  import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
+  import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
   import {
     localizedModeWords,
     localizedElementName,

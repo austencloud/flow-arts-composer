@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 
-import { AUTUMN_MOON_TEXTURE_URL } from "$lib/shared/3d/environments/scenes/autumn/runtime/lighting/autumn-moon";
+import { AUTUMN_MOON_TEXTURE_URL } from "#lib/shared/3d/environments/scenes/autumn/runtime/lighting/autumn-moon.js";
 
 describe("Autumn runtime textures", () => {
   it("keeps four-times sampling headroom for the largest approved 4K moon", async () => {

@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { applyMotionColorToSvg } from "$lib/shared/utils/svg-color-utils";
+import { applyMotionColorToSvg } from "#lib/shared/utils/svg-color-utils.js";
 import { SELECTIVE_COLOR_PROP_TYPES } from "@tka/render-core";
 import {
   listSvgFiles,

@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
-import { SequenceDetailLoader } from '$lib/shared/browse/services/sequence-detail-loader';
-import { getBrowseLoader } from '$lib/shared/browse/get-browse-loader';
+import { browser } from '$app/env';
+import { SequenceDetailLoader } from '#lib/shared/browse/services/sequence-detail-loader.js';
+import { getBrowseLoader } from '#lib/shared/browse/get-browse-loader.js';
 
 let instance: SequenceDetailLoader | null = null;
 

@@ -1,24 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { POST_STUDIO_PRESETS } from "$lib/shared/media-composition/domain/post-studio-presets";
+import { POST_STUDIO_PRESETS } from "#lib/shared/media-composition/domain/post-studio-presets.js";
 import {
   evaluatePresetFrame,
   evaluatePresetLayers,
-} from "$lib/shared/media-composition/services/frame-evaluator";
-import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/media-composition/services/frame-evaluator.js";
+import type { SequenceTimeMap } from "#lib/shared/media-composition/domain/sequence-time-map.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type {
   PresetEasing,
   PresetVisualClipMotion,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+} from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
 import {
   POST_MAX_ZOOM,
   POST_MIN_BOX_SIZE,
   POST_MIN_ZOOM,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   EASING_PRESETS,
   sampleEasing,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 
 const performancePreset = POST_STUDIO_PRESETS.find(
   (preset) => preset.id === "performance-breakdown"

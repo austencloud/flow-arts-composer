@@ -5,12 +5,12 @@
  * Data is stored locally for fast access and offline support.
  */
 
-import { db } from "$lib/shared/persistence/database/tka-database";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
 import {
   normalizeStoredBeatResultsJson,
   type StoredPerformance,
-} from "$lib/shared/train/domain/train-database-models";
-import type { PerformanceScore } from "$lib/shared/train/domain/performance-data";
+} from "#lib/shared/train/domain/train-database-models.js";
+import type { PerformanceScore } from "#lib/shared/train/domain/performance-data.js";
 
 export interface PersonalBest {
   sequenceId: string;

@@ -6,16 +6,16 @@
   OptionPickerHeader inside their shared utility tray instead.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import type { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import type { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     formatTurnValue,
     type TurnLevel,
     type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
+  } from "#lib/shared/create/services/level-turn-values.js";
   import OptionPickerHeader from "./OptionPickerHeader.svelte";
   import OptionPickerIconButton from "./OptionPickerIconButton.svelte";
 
@@ -176,10 +176,6 @@
     background: var(--theme-panel-bg, rgba(10, 18, 30, 0.98));
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-radius: var(--radius-xl, 16px);
-    box-shadow:
-      0 18px 48px var(--theme-shadow, rgba(0, 0, 0, 0.58)),
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-accent, #22b8db) 24%, transparent);
     transform-origin: var(
       --bits-popover-content-transform-origin,
       bottom center

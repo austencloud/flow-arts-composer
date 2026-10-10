@@ -5,7 +5,7 @@
  * either exists or it does not. These helpers pick the film to hand over and
  * describe it in the line under Download, e.g. "0:24 • 1080×1080 • 30 fps".
  */
-import { computeExportSummary } from "$lib/shared/animation-panel/pill-nav/pill-summaries";
+import { computeExportSummary } from "#lib/shared/animation-panel/pill-nav/pill-summaries.js";
 import type { RenderedFilmSummary } from "../services/rendered-film-store";
 
 /** The newest retained film of one sequence, or null when none is kept. */

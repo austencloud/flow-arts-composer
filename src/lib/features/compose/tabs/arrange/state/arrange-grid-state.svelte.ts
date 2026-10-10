@@ -14,26 +14,29 @@
  * with optional per-cell beat offsets.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   type TunnelLayerConfig,
   type TransformType,
   type AppliedTransform,
   type CellEffect,
   getTunnelLayerColors,
-} from "$lib/shared/animation-engine/domain/compose-types";
+} from "#lib/shared/animation-engine/domain/compose-types.js";
 
 import type {
   CellMediaType,
   PropColors,
-} from "$lib/shared/animation-engine/domain/compose-types";
-import type { Composition } from "$lib/shared/animation-engine/domain/compose-types";
-import { validateArrangementSnapshot, type ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
-import type { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/compose-types.js";
+import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
+import {
+  validateArrangementSnapshot,
+  type ArrangementSnapshot,
+} from "#lib/shared/media-composition/domain/arrangement.js";
+import type { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import type {
   TipEffectMap,
   TipEffortMap,
-} from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+} from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 // compose-arrange-container dissolved - services accessed via module singleton getters
 import type {
   ArrangeUndoOperationType,
@@ -144,9 +147,13 @@ export function createArrangeGridState(options: { persist?: boolean } = {}) {
   // Services from module functions (stateless class ceremony retired)
   const playbackEngine = new ArrangePlaybackEngine();
 
-  const initialConfig = persist ? loadGrid() : {
-    cells: createInitialGrid(), gridRows: DEFAULT_GRID_ROWS, gridCols: DEFAULT_GRID_COLS,
-  };
+  const initialConfig = persist
+    ? loadGrid()
+    : {
+        cells: createInitialGrid(),
+        gridRows: DEFAULT_GRID_ROWS,
+        gridCols: DEFAULT_GRID_COLS,
+      };
 
   // Core reactive state
   let cells = $state<GridCell[]>(initialConfig.cells);
@@ -201,8 +208,13 @@ export function createArrangeGridState(options: { persist?: boolean } = {}) {
   // =========================================================================
 
   const undoManager = new ArrangeUndoManager();
-  undoManager.init(() => ({ cells: deepCloneCells(cells), gridRows, gridCols,
-    bpm: playbackBpm, skipStartPlacement }));
+  undoManager.init(() => ({
+    cells: deepCloneCells(cells),
+    gridRows,
+    gridCols,
+    bpm: playbackBpm,
+    skipStartPlacement,
+  }));
 
   let canUndo = $state(false);
   let canRedo = $state(false);
@@ -253,7 +265,12 @@ export function createArrangeGridState(options: { persist?: boolean } = {}) {
     playbackEngine.stop();
     const restored = createInitialGrid();
     for (const cell of deepCloneCells(snapshot.cells)) {
-      if (cell.row >= 0 && cell.row < MAX_GRID_SIZE && cell.col >= 0 && cell.col < MAX_GRID_SIZE)
+      if (
+        cell.row >= 0 &&
+        cell.row < MAX_GRID_SIZE &&
+        cell.col >= 0 &&
+        cell.col < MAX_GRID_SIZE
+      )
         restored[cell.row * MAX_GRID_SIZE + cell.col] = cell;
     }
     cells = restored;
@@ -413,12 +430,20 @@ export function createArrangeGridState(options: { persist?: boolean } = {}) {
       undoManager.clear();
     },
     captureSnapshot(): ArrangementSnapshot {
-      return validateArrangementSnapshot({ schemaVersion: 1, cells: deepCloneCells(cells),
-        gridRows, gridCols, bpm: playbackBpm, skipStartPlacement });
+      return validateArrangementSnapshot({
+        schemaVersion: 1,
+        cells: deepCloneCells(cells),
+        gridRows,
+        gridCols,
+        bpm: playbackBpm,
+        skipStartPlacement,
+      });
     },
     restoreSnapshot(snapshot: ArrangementSnapshot): void {
       const validated = validateArrangementSnapshot(snapshot);
-      withUndo("LOAD_COMPOSITION", "Restore arrangement", () => restoreSnapshot(validated));
+      withUndo("LOAD_COMPOSITION", "Restore arrangement", () =>
+        restoreSnapshot(validated)
+      );
     },
     get cells() {
       return cells;
@@ -1437,7 +1462,9 @@ export const arrangeGridState = new Proxy(
   {} as ReturnType<typeof createArrangeGridState>,
   {
     get(_target, prop) {
-      return (getLegacyArrangeGridState() as Record<string | symbol, unknown>)[prop];
+      return (getLegacyArrangeGridState() as Record<string | symbol, unknown>)[
+        prop
+      ];
     },
   }
 );

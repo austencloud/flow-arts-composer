@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import { DuetPersister } from "$lib/shared/3d/services/duet-persister";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import { DuetPersister } from "#lib/shared/3d/services/duet-persister.js";
 
 const STORAGE_KEY = "tka-3d-duets";
 

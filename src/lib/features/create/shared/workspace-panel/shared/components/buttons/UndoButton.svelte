@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { UndoOperationType } from "../../../../services/undo-manager";
-  import type { createCreateModuleState } from "$lib/features/create/shared/state/create-module-state.svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+  import type { createCreateModuleState } from "#lib/features/create/shared/state/create-module-state.svelte.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
   import UndoGlyph from "./UndoGlyph.svelte";
 

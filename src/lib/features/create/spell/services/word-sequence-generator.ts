@@ -4,18 +4,18 @@
  * Converts typed words into valid TKA sequences with bridge letters.
  */
 
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import type { stepConverter as StepConverterSingleton } from "$lib/features/create/generate/shared/services/step-converter";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { ILetterQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
+import type { stepConverter as StepConverterSingleton } from "#lib/features/create/generate/shared/services/step-converter.js";
 type StepConverter = typeof StepConverterSingleton;
 import type { SequenceExtender } from "../../shared/services/sequence-extender";
-import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
+import type { ReversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 
 import type { LetterTransitionGraph } from "./letter-transition-graph";
 import type { StartPlacementValidator } from "./start-placement-validator";
@@ -29,10 +29,10 @@ import type {
 import {
   GREEK_LETTER_ALIASES,
   MAX_WORD_LENGTH,
-} from "$lib/shared/create/domain/spell-constants";
-import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
+} from "#lib/shared/create/domain/spell-constants.js";
+import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { recalculateAllOrientations } from "#lib/shared/create/services/orientation-propagation.js";
 
 export class WordSequenceGenerator {
   constructor(
@@ -776,12 +776,12 @@ export class WordSequenceGenerator {
 // DIRECT SINGLETON EXPORT
 // ============================================================================
 import { letterTransitionGraph } from "./letter-transition-graph";
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import { stepConverter } from "$lib/features/create/generate/shared/services/step-converter";
-import { sequenceExtender } from "$lib/features/create/shared/services/sequence-extender";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
+import { stepConverter } from "#lib/features/create/generate/shared/services/step-converter.js";
+import { sequenceExtender } from "#lib/features/create/shared/services/sequence-extender.js";
 import { startPlacementValidator } from "./start-placement-validator";
 import * as orientationContinuityValidator from "./orientation-continuity-validator";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
 
 export const wordSequenceGenerator = new WordSequenceGenerator(
   letterTransitionGraph,

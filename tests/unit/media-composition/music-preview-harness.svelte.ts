@@ -1,7 +1,7 @@
 import { flushSync, mount } from "svelte";
-import type { PreviewVideoController } from "$lib/shared/media-composition/services/post-preview-clock";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
-import PostMusicPreview from "$lib/shared/share/components/post-studio/editor/PostMusicPreview.svelte";
+import type { PreviewVideoController } from "#lib/shared/media-composition/services/post-preview-clock.js";
+import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
+import PostMusicPreview from "#lib/shared/share/components/post-studio/editor/PostMusicPreview.svelte";
 
 /**
  * Mounts the preview's music paused at 0 s in a 60 s post, recording every

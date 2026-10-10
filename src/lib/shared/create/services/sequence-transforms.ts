@@ -10,26 +10,26 @@
  * - "both": Transform both motions (default, original behavior)
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   updateSequenceData,
   createSequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { deriveGridMode } from "#lib/shared/pictograph/grid/services/grid-mode-deriver.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { IMotionQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
 
 import {
   mirrorBeat,
@@ -38,26 +38,26 @@ import {
   handSwapBeat,
   invertBeat,
   rewindBeat,
-} from "$lib/shared/create/services/step-transforms";
-import { rewindMotion } from "$lib/shared/create/services/motion-transforms";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+} from "#lib/shared/create/services/step-transforms.js";
+import { rewindMotion } from "#lib/shared/create/services/motion-transforms.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 import {
   mirrorStartPlacement,
   flipStartPlacement,
   rotateStartPlacement,
   handSwapStartPlacement,
   invertStartPlacement,
-} from "$lib/shared/create/services/start-placement-transforms";
-import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
-import { getToggledGridMode } from "$lib/shared/create/services/rotation-helpers";
-import type { TargetHand } from "$lib/shared/create/state/panel-coordination-state.svelte";
+} from "#lib/shared/create/services/start-placement-transforms.js";
+import { recalculateAllOrientations } from "#lib/shared/create/services/orientation-propagation.js";
+import { getToggledGridMode } from "#lib/shared/create/services/rotation-helpers.js";
+import type { TargetHand } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 import {
   mirrorGridJoin,
   flipGridJoin,
   rotateGridJoin,
   swapGridJoin,
   turnedJoinUpdate,
-} from "$lib/shared/create/services/grid-join-transforms";
+} from "#lib/shared/create/services/grid-join-transforms.js";
 
 /**
  * Clear all steps in a sequence (make them blank).

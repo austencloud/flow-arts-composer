@@ -7,7 +7,7 @@ import {
   Texture,
 } from "three";
 
-import { disposeSceneGraph } from "$lib/shared/3d/environments/utils/dispose-scene";
+import { disposeSceneGraph } from "#lib/shared/3d/environments/utils/dispose-scene.js";
 
 describe("Autumn environment disposal", () => {
   it("releases instancing buffers as well as GLTF geometry, materials, and textures", () => {

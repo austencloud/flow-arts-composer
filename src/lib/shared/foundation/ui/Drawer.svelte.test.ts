@@ -8,8 +8,9 @@
  */
 import { render } from "vitest-browser-svelte";
 import { userEvent } from "vitest/browser";
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 
+import { registerBackgroundFreezeTarget } from "#lib/shared/background/shared/state/background-hold.svelte.js";
 import DrawerKeyboardTestHarness from "./DrawerKeyboardTestHarness.svelte";
 
 function settle(ms = 200) {
@@ -148,5 +149,37 @@ describe("Drawer held opening", () => {
     await settle(1500);
 
     expect(drawer()?.dataset.state, "cap opens a stuck hold").toBe("open");
+  });
+});
+
+describe("Drawer backdrop hold", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("holds the animated backdrop through each slide, then lets it run", async () => {
+    const backdrop = { freeze: vi.fn(), unfreeze: vi.fn() };
+    registerBackgroundFreezeTarget(backdrop);
+    const screen = render(DrawerKeyboardTestHarness, {
+      isOpen: true,
+      title: "Filters",
+    });
+
+    await settle(150);
+    expect(backdrop.freeze, "opening slide holds it").toHaveBeenCalledTimes(1);
+    expect(backdrop.unfreeze).not.toHaveBeenCalled();
+    await settle(600);
+    // A hold that never released would leave the backdrop frozen for good.
+    expect(backdrop.unfreeze, "released after opening").toHaveBeenCalledTimes(
+      1
+    );
+
+    await screen.rerender({ isOpen: false });
+    await settle(50);
+    expect(backdrop.freeze, "closing slide holds it").toHaveBeenCalledTimes(2);
+    await settle(600);
+    expect(backdrop.unfreeze, "released after closing").toHaveBeenCalledTimes(
+      2
+    );
   });
 });

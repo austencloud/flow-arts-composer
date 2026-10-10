@@ -3,7 +3,7 @@ import {
   sampleInterruptibleHermite,
   sampleInterruptibleVector3,
   type TimedTransition,
-} from "$lib/shared/3d/camera/transitions";
+} from "#lib/shared/3d/camera/transitions.js";
 
 const timing: TimedTransition = {
   id: 1,

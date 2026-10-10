@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
-  import SmartCollectionRuleSummary from "$lib/features/library/components/SmartCollectionRuleSummary.svelte";
-  import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
+  import SmartCollectionRuleSummary from "#lib/features/library/components/SmartCollectionRuleSummary.svelte";
+  import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
 
   interface Props {
     name?: string;

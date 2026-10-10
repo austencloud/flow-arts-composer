@@ -1,10 +1,10 @@
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
 import type { PendingActionType } from "../services/pending-action-queue";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { ViewerPropHand } from "./viewer-prop-visibility-state.svelte";
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import type { TempoPracticeConfig } from "../services/tempo-practice-orchestrator";
 import type {
   ExportType,
@@ -17,12 +17,12 @@ import type { ImageCompositionSyncState } from "../components/image-composition-
 import type { ViewerInteractiveServicesState } from "./viewer-interactive-services-state.svelte";
 import type { ViewerPlaybackPresentationState } from "./viewer-playback-presentation-state.svelte";
 import type { ViewerLanSyncState } from "./viewer-lan-sync-state.svelte";
-import type { createFullscreenController } from "$lib/shared/fullscreen/state/fullscreen-controller.svelte";
+import type { createFullscreenController } from "#lib/shared/fullscreen/state/fullscreen-controller.svelte.js";
 import type { createLibraryActionHandler } from "./library-action-handler.svelte";
 import type { createPracticeViewPrefs } from "./practice-view-prefs.svelte";
 import type { createViewerState } from "./viewer-state.svelte";
 import type { SequenceViewerVisibilityState } from "./viewer-visibility-state.svelte";
-import type { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
+import type { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 import { capturePosterFrame } from "../tunnel/tunnel-poster";
 
 type FullscreenState = ReturnType<typeof createFullscreenController>;
@@ -109,7 +109,11 @@ export function createViewerOrchestratorContextState(
       hasSequence: inputs.getEffectiveSequence() !== null,
 
       isPlayingLocal: inputs.playback.isPlayingLocal,
-      currentStepLocal: inputs.playback.currentStepLocal,
+      // The playhead moves every frame. Read it on demand so this object, and
+      // everything that reads any field of it, is not rebuilt once per frame.
+      get currentStepLocal() {
+        return inputs.playback.currentStepLocal;
+      },
       bpmLocal: inputs.playback.bpmLocal,
       currentLetter: inputs.getIsHandPath()
         ? null
@@ -310,7 +314,9 @@ export function createViewerOrchestratorContextState(
       splitPanePlayback: {
         animationState: inputs.modalAnimationState,
         animationLoading: inputs.interactive.animationLoading,
-        currentStep: inputs.playback.currentStepLocal,
+        get currentStep() {
+          return inputs.playback.currentStepLocal;
+        },
         isPlaying: inputs.playback.isPlayingLocal,
         currentLetter: inputs.getIsHandPath()
           ? null

@@ -26,21 +26,21 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { fuseSequences } from "../sequence-fuser";
-import { deriveLettersForSequence } from "$lib/shared/navigation/services/letter-deriver";
-import { deriveSteps } from "$lib/shared/foundation/services/step-deriver";
-import { createSoloProp } from "$lib/shared/foundation/services/solo-prop-factory";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { SoloPropStepData } from "$lib/shared/foundation/domain/models/solo-prop-step-data";
-import type { StepPairingData } from "$lib/shared/foundation/domain/models/step-pairing-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
+import { deriveSteps } from "#lib/shared/foundation/services/step-deriver.js";
+import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factory.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
+import type { StepPairingData } from "#lib/shared/foundation/domain/models/step-pairing-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   HandPath,
   MotionType,
   Orientation,
   RotationDirection,
   SkewDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { Plane } from "@tka/tka-types";
 
 // Real pictograph dataframes — the letter lookup must run against the actual

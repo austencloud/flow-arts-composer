@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { calculateMuseumLayout } from "$lib/features/museum/scenes/procedural/domain/layout-calculator";
-import type { ExhibitSlot, PavilionLayout } from "$lib/features/museum/scenes/procedural/domain/museum-types";
+import { calculateMuseumLayout } from "#lib/features/museum/scenes/procedural/domain/layout-calculator.js";
+import type { ExhibitSlot, PavilionLayout } from "#lib/features/museum/scenes/procedural/domain/museum-types.js";
 
 function wallSlotsIn(pavilion: PavilionLayout): ExhibitSlot[] {
   return pavilion.slots.filter((s) => s.type === "wall");

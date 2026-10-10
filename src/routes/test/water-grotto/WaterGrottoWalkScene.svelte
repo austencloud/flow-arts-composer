@@ -37,27 +37,27 @@
   import {
     MUSEUM_GRAVITY,
     MUSEUM_JUMP_VELOCITY,
-  } from "$lib/features/museum/domain/museum-design-rules";
+  } from "#lib/features/museum/domain/museum-design-rules.js";
   import {
     createPhysicsWorldState,
     createRigidBody,
     disposePhysicsWorld,
     initPhysicsWorld,
     stepPhysics,
-  } from "$lib/shared/3d/physics/rapier-world";
+  } from "#lib/shared/3d/physics/rapier-world.js";
   import {
     createPlayerController,
     disposePlayerController,
-  } from "$lib/shared/3d/physics/player-controller";
-  import { createRapierPhysicsProvider } from "$lib/shared/3d/physics/rapier-physics-provider";
+  } from "#lib/shared/3d/physics/player-controller.js";
+  import { createRapierPhysicsProvider } from "#lib/shared/3d/physics/rapier-physics-provider.js";
   import type {
     PhysicsWorldState,
     PlayerControllerState,
-  } from "$lib/shared/3d/physics/types";
+  } from "#lib/shared/3d/physics/types.js";
   import {
     EYE_ABOVE_FLOOR,
     grottoFloorAt,
-  } from "$lib/features/water-traverse/data/water-grotto-terrain";
+  } from "#lib/features/water-traverse/data/water-grotto-terrain.js";
   import {
     buildWaterGrottoSetup,
     type RectCollider,

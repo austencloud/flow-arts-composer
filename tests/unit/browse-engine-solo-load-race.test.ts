@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
 
-vi.mock("$lib/shared/browse/get-browse-loader", () => ({
+vi.mock("#lib/shared/browse/get-browse-loader.js", () => ({
   getBrowseLoader: () => ({
     loadSequenceMetadata: vi.fn(async () => []),
     refreshFromFirestore: vi.fn(async () => []),
@@ -10,11 +10,11 @@ vi.mock("$lib/shared/browse/get-browse-loader", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: () => null,
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     effectiveUserId: "owner",
     isAuthenticated: true,
@@ -22,23 +22,23 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: {
     settings: { gridZoomByBucket: {} },
     updateSetting: vi.fn(),
   },
 }));
 
-vi.mock("$lib/shared/library/library-events", () => ({
+vi.mock("#lib/shared/library/library-events.js", () => ({
   onLibraryMutated: () => () => {},
   onLibrarySequenceAdded: () => () => {},
 }));
 
-vi.mock("$lib/shared/library/services/collection-manager", () => ({
+vi.mock("#lib/shared/library/services/collection-manager.js", () => ({
   toggleFavorite: vi.fn(),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 

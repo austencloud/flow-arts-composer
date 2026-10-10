@@ -9,7 +9,7 @@
     CollaborativeVideo,
     VideoCollaborator,
   } from "../domain/collaborative-video";
-  import { getAuthSync } from "$lib/shared/auth/firebase";
+  import { getAuthSync } from "#lib/shared/auth/firebase.js";
 
   const {
     video,

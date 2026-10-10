@@ -7,7 +7,7 @@
  * opened them without threading analytics props through the component tree.
  */
 
-import { captureWhenReady } from "$lib/shared/analytics/services/posthog";
+import { captureWhenReady } from "#lib/shared/analytics/services/posthog.js";
 
 export type AuthCta = "header_desktop_signin" | "header_mobile_signin";
 export type AuthSurface =

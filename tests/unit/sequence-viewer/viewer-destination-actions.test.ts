@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { createViewerDestinationActions } from "$lib/shared/sequence-viewer/services/viewer-destination-actions";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createViewerDestinationActions } from "#lib/shared/sequence-viewer/services/viewer-destination-actions.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function createActions(
   options: {

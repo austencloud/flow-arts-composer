@@ -1,4 +1,4 @@
-import { basePropTypeOfRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
+import { basePropTypeOfRenderKey } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
 /**
  * Whether the sprite the image loader holds for a hand is the one the current

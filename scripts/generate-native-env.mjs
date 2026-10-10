@@ -1,16 +1,19 @@
 // Materializes `_app/env.js` for the native (Capacitor) bundle.
 //
-// adapter-cloudflare serves `$env/dynamic/public` from the Worker at runtime
-// (GET /_app/env.js). The native shell has no Worker — Capacitor serves the
-// built files statically — so that request 404s, the client's dynamic import of
-// `/_app/env.js` rejects, and ALL client hydration dies (no interactivity, no
-// native init, no redirect). The page still paints because prerendered HTML is
-// static, which is why this was latent until on-device hydration was checked.
+// adapter-cloudflare serves the dynamic `$app/env/public` values (src/env.ts)
+// from the Worker at runtime (GET /_app/env.js). The native shell has no
+// Worker — Capacitor serves the built files statically — so that request
+// 404s, the client's dynamic import of `/_app/env.js` rejects, and ALL client
+// hydration dies (no interactivity, no native init, no redirect). The page
+// still paints because prerendered HTML is static, which is why this was
+// latent until on-device hydration was checked.
 //
 // This writes the same file SvelteKit's own builder emits for prerendered deps
-// (`@sveltejs/kit/src/core/adapt/builder.js`: `export const env=${JSON(public)}`)
-// from the PUBLIC_* vars in the environment / .env. Run AFTER `vite build`
-// (so the output dir exists) and BEFORE `cap sync`.
+// (`@sveltejs/kit/src/core/adapt/builder.js`: `export const env=${uneval(values)}`;
+// JSON is a valid spelling of those string values) from the PUBLIC_* vars in
+// the environment / .env. The client reads only the names src/env.ts declares,
+// so extra keys are ignored. Run AFTER `vite build` (so the output dir exists)
+// and BEFORE `cap sync`.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 

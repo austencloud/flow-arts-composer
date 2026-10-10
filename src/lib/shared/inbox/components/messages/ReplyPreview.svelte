@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getReplyPreviewText } from "../../utils/message-preview";
   import type {
     MessageAttachmentType,
     ReplyPreview as ReplyPreviewType,
-  } from "$lib/shared/messaging/domain/models/message-models";
+  } from "#lib/shared/messaging/domain/models/message-models.js";
 
   let {
     reply,

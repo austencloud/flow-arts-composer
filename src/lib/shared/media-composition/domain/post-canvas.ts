@@ -8,7 +8,7 @@ import {
   type PostClipShapeKind,
   type PostProject,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 
 /**
  * The post's shape and each clip's shape inside it. A project's canvas sets

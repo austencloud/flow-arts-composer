@@ -5,9 +5,9 @@
   Triggered by tapping "(edited)" indicator.
 -->
 <script lang="ts">
-  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte";
+  import { getLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Dialog as DialogPrimitive } from "bits-ui";
-  import type { MessageEdit } from "$lib/shared/messaging/domain/models/message-models";
+  import type { MessageEdit } from "#lib/shared/messaging/domain/models/message-models.js";
 
   let {
     isOpen = $bindable(false),

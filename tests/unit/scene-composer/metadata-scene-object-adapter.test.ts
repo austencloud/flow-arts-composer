@@ -9,7 +9,7 @@ import {
 import {
   createMetadataSceneObjectAdapter,
   stableComposerMatrixKey,
-} from "$lib/shared/3d/scene-composer/metadata-scene-object-adapter";
+} from "#lib/shared/3d/scene-composer/metadata-scene-object-adapter.js";
 
 function createBatch(translations: number[]) {
   const geometry = new BoxGeometry();

@@ -1,4 +1,4 @@
-import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
+import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
 import { motionPathExamples } from "./motion-path-examples";
 
 export type IntroPath = "arc" | "linear" | "concave";

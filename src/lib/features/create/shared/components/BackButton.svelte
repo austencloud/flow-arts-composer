@@ -6,9 +6,9 @@
   Hides completely when no history is available.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { fade } from "svelte/transition";
 
   const {
@@ -74,10 +74,6 @@
     cursor: pointer;
     transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 100;
-    box-shadow:
-      0 0 0 2px var(--theme-stroke, var(--theme-stroke)),
-      0 4px 12px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke);
   }
 
   .back-button:hover {
@@ -88,16 +84,6 @@
     );
     border-color: var(--theme-text-dim);
     transform: translateX(-2px) scale(1.05);
-    box-shadow:
-      0 0 0 2px var(--theme-stroke-strong),
-      0 6px 16px
-        color-mix(
-          in srgb,
-          var(--theme-accent, var(--semantic-info)) 30%,
-          transparent
-        ),
-      0 4px 12px var(--theme-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 
   .back-button svg {

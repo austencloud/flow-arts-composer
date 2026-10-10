@@ -1,5 +1,5 @@
-import { browser } from '$app/environment';
-import { StartPlacementManager } from '$lib/shared/create/services/start-placement-manager';
+import { browser } from '$app/env';
+import { StartPlacementManager } from '#lib/shared/create/services/start-placement-manager.js';
 
 let instance: StartPlacementManager | null = null;
 

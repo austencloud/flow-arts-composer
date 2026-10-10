@@ -1,4 +1,4 @@
-import type { UserProject } from "$lib/features/account/domain/models/library-models";
+import type { UserProject } from "#lib/features/account/domain/models/library-models";
 import { injectable } from "inversify";
 
 @injectable()

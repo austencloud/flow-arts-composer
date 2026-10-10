@@ -105,7 +105,6 @@
     aspect-ratio: 8.5 / 11;
     overflow: hidden;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.05));
-    box-shadow: 0 18px 52px var(--theme-shadow, rgba(0, 0, 0, 0.36));
     contain: layout paint;
   }
 
@@ -204,9 +203,7 @@
     place-items: center;
     border: 1px solid color-mix(in srgb, #fff 52%, transparent);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--theme-shadow, #000) 68%, transparent);
-    box-shadow: 0 2px 8px
-      color-mix(in srgb, var(--theme-shadow, #000) 45%, transparent);
+    background: rgba(0, 0, 0, 0.68);
     font-size: 10px;
     opacity: 0;
     transform: scale(0.88);

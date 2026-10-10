@@ -29,21 +29,21 @@
 import {
   RenderContextFactory,
   type OffscreenContextHandle,
-} from "$lib/shared/animation-engine/services/render-context-factory";
+} from "#lib/shared/animation-engine/services/render-context-factory.js";
 import {
   assembleExportEngineProps,
   type ExportFrameContext,
 } from "./export-engine-props";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
-import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { resolveAnimationGridJoin } from "$lib/shared/animation-engine/services/animation-grid-join";
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
+import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { resolveAnimationGridJoin } from "#lib/shared/animation-engine/services/animation-grid-join.js";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 
 export interface OffscreenExportInit {
   /** Square canvas size (px) for the offscreen engine. */

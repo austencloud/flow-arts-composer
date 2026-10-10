@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { setLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
+import { setLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
 import { guideTurnDisplayWord } from "../../src/routes/(public)/guide/level-1/_data/guide-turn-display-word";
 
 const companionSource = readFileSync(

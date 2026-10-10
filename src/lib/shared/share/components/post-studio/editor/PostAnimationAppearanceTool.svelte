@@ -1,59 +1,59 @@
 <script lang="ts">
   import { onDestroy, untrack } from "svelte";
   import { Popover } from "bits-ui";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
-  import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
-  import EffortPanel from "$lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import DisplayPanel from "#lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
+  import PathShapePanel from "#lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
+  import EffortPanel from "#lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
   import PostScopedEffectsPanel from "./PostScopedEffectsPanel.svelte";
   import PostAppearanceChooser from "./PostAppearanceChooser.svelte";
-  import { localizedPropName } from "$lib/shared/settings/components/tabs/prop-type/localized-prop-name";
+  import { localizedPropName } from "#lib/shared/settings/components/tabs/prop-type/localized-prop-name.js";
   import {
     PROP_PICKER_SECTIONS,
     getBasePropType,
     isPropActive,
-  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import BentoPropGrid from "$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
-  import IconRailNav from "$lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
-  import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import LightsToggleButton from "$lib/shared/ui/components/LightsToggleButton.svelte";
-  import { RAIL_CATEGORY_ACCENTS } from "$lib/shared/animation-panel/pill-nav/rail-category-accents";
-  import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
-  import type { TimingSection } from "$lib/shared/media-composition/domain/take-timing";
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import BentoPropGrid from "#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+  import IconRailNav from "#lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
+  import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
+  import LightsToggleButton from "#lib/shared/ui/components/LightsToggleButton.svelte";
+  import { RAIL_CATEGORY_ACCENTS } from "#lib/shared/animation-panel/pill-nav/rail-category-accents.js";
+  import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
+  import type { TimingSection } from "#lib/shared/media-composition/domain/take-timing.js";
   import {
     EFFECT_COLORS,
     EFFECTS,
     EFFECT_LABELS,
     effectNavIcon,
-  } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     normalizePropLook,
     versionAfterPick,
     type PropLook,
-  } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
-  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
   import {
     animationSettings,
     createAnimationSettingsState,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
   import type {
     PostAnimationItem,
     PostMovesItem,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "#lib/shared/media-composition/domain/post-project.js";
   import { layerTimingParts } from "../builder/post-timing-animation";
   import { itemDisplayLabel } from "./post-editor-labels";
-  import { updateItem } from "$lib/shared/media-composition/domain/post-project-edits";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
+  import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
   import {
     copyPostAnimationEffects,
     postAnimationTrailSettings,
@@ -727,7 +727,6 @@
       var(--theme-panel-bg, #101014),
       var(--theme-panel-bg, #101014)
     );
-    box-shadow: 0 8px 24px var(--theme-shadow, rgb(0 0 0 / 0.35));
     color: var(--theme-text, #fff);
     font-size: var(--font-size-min, 14px);
     line-height: 1.45;

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { Bubbles2DRenderer } from "$lib/shared/effects/renderers/bubbles-2d-renderer";
-import type { Bubbles2DParams } from "$lib/shared/effects/translators/canvas2d-types";
+import { Bubbles2DRenderer } from "#lib/shared/effects/renderers/bubbles-2d-renderer.js";
+import type { Bubbles2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
 import {
   BUBBLE_PALETTES,
   oilIridescentRim,
-} from "$lib/shared/effects/domain/bubble-palettes";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+} from "#lib/shared/effects/domain/bubble-palettes.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 
 type PosBag = {
   leftPosA?: { x: number; y: number } | null;

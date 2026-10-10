@@ -8,7 +8,7 @@ Styling: Uses CSS cascade from parent OptionPickerContent via custom properties:
   --option-header-bg, --option-header-border, --option-header-shadow, --option-header-text
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { formatSectionTitle } from "../../services/section-title-formatter";
 
   const { letterType = "mixed" } = $props<{

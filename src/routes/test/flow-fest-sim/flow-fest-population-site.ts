@@ -14,14 +14,14 @@ import {
   type FlowFestCorridorClearing,
   type FlowFestCorridorLeg,
   type FlowFestCorridorPoint,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-corridor-graph";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-corridor-graph.js";
 import type {
   FlowFestAnchorKind,
   FlowFestPopulationAnchor,
   FlowFestPopulationSite,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-population";
-import { FLOW_FEST_MASTER_SEED } from "$lib/features/flow-fest-sim/domain/flow-fest-simulation-contract";
-import type { ImportedTerrainDataV2 } from "$lib/shared/3d/procedural-engine/generation/real-terrain-zone";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-population.js";
+import { FLOW_FEST_MASTER_SEED } from "#lib/features/flow-fest-sim/domain/flow-fest-simulation-contract.js";
+import type { ImportedTerrainDataV2 } from "#lib/shared/3d/procedural-engine/generation/real-terrain-zone.js";
 import type {
   FlowFestBranchId,
   FlowFestRuntimeContract,

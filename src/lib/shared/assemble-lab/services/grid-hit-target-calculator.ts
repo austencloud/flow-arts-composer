@@ -11,8 +11,8 @@
 import {
 	GridLocation,
 	GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { GridHitTarget } from "$lib/shared/assemble-lab/domain/types";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { GridHitTarget } from "#lib/shared/assemble-lab/domain/types.js";
 
 /** Parse "(x, y)" string format from gridCoordinates into numbers */
 function parseCoord(coordString: string): { x: number; y: number } {

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { DropdownMenu, Portal } from "bits-ui";
   import type { HTMLButtonAttributes } from "svelte/elements";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import type { ShareActionMenuItem } from "$lib/shared/share/domain/models/share-action-menu";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import type { ShareActionMenuItem } from "#lib/shared/share/domain/models/share-action-menu.js";
 
   interface Props {
     open?: boolean;
@@ -371,9 +371,6 @@
     border: 1px solid var(--theme-stroke-strong);
     border-radius: var(--radius-md, 12px);
     background: var(--theme-panel-bg);
-    box-shadow:
-      0 8px 24px var(--theme-shadow),
-      0 2px 8px var(--theme-shadow);
     outline: none;
     transform-origin: var(--bits-dropdown-menu-content-transform-origin);
   }
@@ -466,7 +463,6 @@
       ),
       #0a0a14;
     --sheet-border: 1px solid var(--theme-stroke-strong);
-    --sheet-shadow: 0 -12px 36px var(--theme-shadow);
     --sheet-max-height: min(70dvh, 34rem);
     box-sizing: border-box;
     width: min(30rem, 100%);

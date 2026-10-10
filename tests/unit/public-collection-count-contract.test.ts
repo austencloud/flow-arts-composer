@@ -77,6 +77,13 @@ describe("public-collection count normalization contract", () => {
     );
   });
 
+  // The census itself is cheap: 1.4 s for the ~8,000-file walk and pooled read
+  // in a three-file run on 2026-10-10. The full suite is what slows it: with 31
+  // forks all reading source trees at once, the same test took 30,107 ms on
+  // 2026-10-09 and timed out against the 30 s default by a tenth of a second.
+  // The reads are already overlapped (filesContaining above), so no serial I/O
+  // is left to remove; the test gets the 120 s budget tests/unit/3d-animation
+  // gives a loaded machine instead.
   it("no file outside the loader references countPublicMembers", async () => {
     const srcRoot = path.join(repoRoot, "src");
     const loaderAbs = path.join(repoRoot, LOADER);
@@ -88,7 +95,7 @@ describe("public-collection count normalization contract", () => {
     // A consumer counting for itself means normalization moved back out of
     // the loader — the exact opt-in drift this contract forbids.
     expect(offenders).toEqual([]);
-  }, 30_000);
+  }, 120_000);
 
   it("every public-facing getter routes through toPublicView", () => {
     const loader = read(LOADER);

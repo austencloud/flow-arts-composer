@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { calculateArrowRotation } from "$lib/shared/render/core/calculations/arrow-rotation";
+import { calculateArrowRotation } from "#lib/shared/render/core/calculations/arrow-rotation.js";
 import { calculateArrowRotation as calculatePackagedArrowRotation } from "@tka/render-core";
-import type { GridLocation } from "$lib/shared/render/core/types";
+import type { GridLocation } from "#lib/shared/render/core/types.js";
 
 /**
  * Arrow rotation orients the arrow glyph. The rotation maps encode several

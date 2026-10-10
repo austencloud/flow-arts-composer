@@ -1,22 +1,22 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$lib/shared/maps/google-maps-api-key";
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "#lib/shared/maps/google-maps-api-key.js";
   import {
     scanNotificationTargetState,
     takeScanNotificationTarget,
-  } from "$lib/features/choreo-card/state/scan-notification-target.svelte";
-  import { getScanActivityContext } from "$lib/features/choreo-card/context/scan-activity-context";
-  import GlobalUserMap from "$lib/features/community/components/GlobalUserMap.svelte";
-  import AdminActionButton from "$lib/shared/admin/components/AdminActionButton.svelte";
-  import ExpandableSearchBar from "$lib/shared/browse/components/ExpandableSearchBar.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  } from "#lib/features/choreo-card/state/scan-notification-target.svelte.js";
+  import { getScanActivityContext } from "#lib/features/choreo-card/context/scan-activity-context.js";
+  import GlobalUserMap from "#lib/features/community/components/GlobalUserMap.svelte";
+  import AdminActionButton from "#lib/shared/admin/components/AdminActionButton.svelte";
+  import ExpandableSearchBar from "#lib/shared/browse/components/ExpandableSearchBar.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import RecentScansList from "./RecentScansList.svelte";
   import ScanCardPeek from "./ScanCardPeek.svelte";
   import ScanCellWarmControls from "./ScanCellWarmControls.svelte";
-  import type { ScanCellWarmState } from "$lib/features/choreo-card/state/scan-cell-warm-state.svelte";
+  import type { ScanCellWarmState } from "#lib/features/choreo-card/state/scan-cell-warm-state.svelte.js";
 
   interface Props {
     cellWarmState: ScanCellWarmState;

@@ -14,8 +14,8 @@ import {
 import {
   measureFlowPath,
   sampleFlowPath,
-} from "$lib/shared/3d/environments/worlds/ember/ember-flow-motion";
-import { createMidflankLava } from "$lib/shared/3d/environments/worlds/ember/ember-midflank-finish";
+} from "#lib/shared/3d/environments/worlds/ember/ember-flow-motion.js";
+import { createMidflankLava } from "#lib/shared/3d/environments/worlds/ember/ember-midflank-finish.js";
 
 describe("Ember drifting crust", () => {
   it("travels by distance through uneven samples and wraps without reversing", () => {

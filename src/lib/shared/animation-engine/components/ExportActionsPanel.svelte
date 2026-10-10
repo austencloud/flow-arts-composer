@@ -6,7 +6,7 @@
   Repetitions control (for circular sequences) is inline, not in a sheet.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     onExportVideo = () => {},
@@ -171,9 +171,6 @@
     overflow: hidden;
     background: var(--theme-accent);
     border: 1.5px solid var(--theme-accent);
-    box-shadow:
-      0 2px 8px var(--theme-shadow),
-      0 0 20px color-mix(in srgb, var(--theme-accent) 25%, transparent);
   }
 
   .save-btn .main-icon {
@@ -199,9 +196,6 @@
     .save-btn:hover:not(:disabled) {
       filter: brightness(1.1);
       transform: translateY(-2px);
-      box-shadow:
-        0 4px 20px var(--theme-shadow),
-        0 0 30px color-mix(in srgb, var(--theme-accent) 35%, transparent);
     }
 
     .save-btn:hover .main-icon {
@@ -221,9 +215,6 @@
   .save-btn.cancelling {
     background: var(--theme-card-bg);
     border-color: var(--semantic-error, rgba(239, 68, 68, 0.35));
-    box-shadow:
-      0 2px 10px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke);
   }
 
   .save-btn.cancelling .main-icon {
@@ -235,18 +226,12 @@
       background: var(--theme-card-hover-bg);
       border-color: var(--semantic-error, rgba(239, 68, 68, 0.5));
       transform: translateY(-2px);
-      box-shadow:
-        0 4px 16px var(--theme-shadow),
-        inset 0 1px 0 var(--theme-card-hover-bg);
     }
   }
 
   .save-btn.complete {
     background: var(--theme-card-bg);
     border-color: var(--semantic-success, rgba(34, 197, 94, 0.5));
-    box-shadow:
-      0 2px 14px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-card-hover-bg);
   }
 
   .save-btn.complete .main-icon {

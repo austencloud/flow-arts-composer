@@ -8,8 +8,8 @@
 // artboards (`1.1 - Base Letters - Double Staff`).
 
 import lettersData from "../../level-1/_data/letters.json";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 const pictographs = (
   lettersData as unknown as { pictographs: Record<string, PictographData> }

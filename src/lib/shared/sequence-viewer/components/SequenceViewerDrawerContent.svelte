@@ -9,9 +9,9 @@
 <script lang="ts">
   import SequenceViewerOrchestrator from "./SequenceViewerOrchestrator.svelte";
   import SequenceViewerShell from "./SequenceViewerShell.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import type { ViewMode } from "../domain/viewer-orchestrator-context";
   import type { ViewerMode } from "../state/viewer-state.svelte";
   import type {

@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+import { MediaCompositionPresetSchema } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
 import {
   BREAKDOWN_MARKER,
   BREAKDOWN_POST_LAYOUT,
   BREAKDOWN_REGION,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "#lib/shared/media-composition/domain/post-studio-presets.js";
 import {
   withBreakdownFraming,
   withBreakdownMarker,
-} from "$lib/shared/media-composition/domain/post-studio-breakdown";
-import { normalizePresetToSlots } from "$lib/shared/media-composition/domain/post-studio-slots";
-import { createSectionTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
+} from "#lib/shared/media-composition/domain/post-studio-breakdown.js";
+import { normalizePresetToSlots } from "#lib/shared/media-composition/domain/post-studio-slots.js";
+import { createSectionTimeMap } from "#lib/shared/media-composition/domain/sequence-time-map.js";
 import {
   evaluatePresetFrame,
   evaluateRegionRects,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+} from "#lib/shared/media-composition/services/frame-evaluator.js";
 
 const DURATION = 100;
 

@@ -5,8 +5,8 @@
    * Uses SegmentedControl for exactly-one-active semantics and 44px touch floor.
    */
 
-  import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   type FilterValue = UserRole | "all";
 

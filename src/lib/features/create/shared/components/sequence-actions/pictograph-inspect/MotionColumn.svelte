@@ -5,20 +5,20 @@
    * Displays motion data for one performer-relative hand.
    * Reusable component for the pictograph inspector modal.
    */
-  import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import type { PipelineDiagnostics } from "$lib/shared/pictograph/arrow/positioning/calculation/domain/pipeline-diagnostics";
+  import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import type { PipelineDiagnostics } from "#lib/shared/pictograph/arrow/positioning/calculation/domain/pipeline-diagnostics.js";
   import {
     formatMotionText,
     formatMotionTypeLabel,
     formatRotationLabel,
   } from "./formatters";
   import PipelineTraceSection from "./PipelineTraceSection.svelte";
-  import CollapsibleSection from "$lib/features/admin/components/feature-flags/shared/CollapsibleSection.svelte";
-  import { selectedArrowState } from "$lib/shared/create/state/selected-arrow-state.svelte";
+  import CollapsibleSection from "#lib/features/admin/components/feature-flags/shared/CollapsibleSection.svelte";
+  import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
   import {
     HandSide,
     type HandSide as HandSideValue,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   interface Props {
     hand: HandSideValue;

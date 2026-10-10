@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { sequenceMetadataManager } from './services/sequence-metadata-manager';
 
 export function getSequenceMetadataManager(): typeof sequenceMetadataManager {

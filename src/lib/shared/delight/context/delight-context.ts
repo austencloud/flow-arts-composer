@@ -6,7 +6,7 @@
  */
 
 import { getContext, setContext } from 'svelte';
-import type { DelightOrchestrator } from '$lib/shared/delight/services/delight-orchestrator'
+import type { DelightOrchestrator } from '#lib/shared/delight/services/delight-orchestrator.js'
 
 const DELIGHT_CONTEXT_KEY = Symbol('delight-orchestrator');
 

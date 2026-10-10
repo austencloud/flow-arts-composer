@@ -47,22 +47,25 @@ vi.mock("firebase/firestore", () => ({
   where: vi.fn(),
   limit: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: vi.fn(() => ({ showUserError: mocks.showUserError })),
 }));
-vi.mock("$lib/shared/sequence-viewer/get-public-sequence-hash-matcher", () => ({
-  getPublicSequenceHashMatcher: vi.fn(() => ({
-    computeEncoderHash: vi.fn(async () => "encoder-hash-test"),
-  })),
-}));
+vi.mock(
+  "#lib/shared/sequence-viewer/get-public-sequence-hash-matcher.js",
+  () => ({
+    getPublicSequenceHashMatcher: vi.fn(() => ({
+      computeEncoderHash: vi.fn(async () => "encoder-hash-test"),
+    })),
+  })
+);
 
-import { PublicIndexSyncer } from "$lib/features/library/services/public-index-syncer";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { PublicIndexSyncer } from "#lib/features/library/services/public-index-syncer.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   buildJoinFixture,
   joinOf,

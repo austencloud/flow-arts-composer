@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { loadTndBaseWords } from "$lib/features/choreo-card/services/tnd-base-word-snapshot";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { loadTndBaseWords } from "#lib/features/choreo-card/services/tnd-base-word-snapshot.js";
 import { buildBaseIndex } from "./tnd-base-index";
 
 /**

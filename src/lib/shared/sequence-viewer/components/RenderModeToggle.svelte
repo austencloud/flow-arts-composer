@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * RenderModeToggle
    *
@@ -11,7 +11,7 @@
    * WebGL2 capability is read from the shared `webgl-capabilities` module
    * rather than threaded through as a prop.
    */
-  import { isWebGL2Available } from "$lib/shared/3d/capabilities/webgl-capabilities";
+  import { isWebGL2Available } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
 
   interface Props {
     renderMode: "2d" | "3d";

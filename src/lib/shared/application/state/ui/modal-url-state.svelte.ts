@@ -15,10 +15,9 @@
  */
 
 import { goto } from "$app/navigation";
-import { page } from "$app/state";
+import { page, type ReadonlyURLSearchParams } from "$app/state";
 import type { SequenceData } from "../../../foundation/domain/models/sequence-data";
 import { writeUrl } from "../../../navigation/services/url-state";
-
 
 export type ModalType = "sequence" | "spotlight" | null;
 export type SequenceViewMode = "split" | "animation" | "image";
@@ -39,7 +38,6 @@ export interface ModalUrlState {
   /** BPM setting */
   bpm: number;
 }
-
 
 const DEFAULT_STATE: ModalUrlState = {
   modal: null,
@@ -86,8 +84,7 @@ function saveSequenceCacheToStorage(cache: Map<string, SequenceData>): void {
 // In-memory cache backed by sessionStorage
 const sequenceCache = getSequenceCacheFromStorage();
 
-
-function parseUrlParams(searchParams: URLSearchParams): ModalUrlState {
+function parseUrlParams(searchParams: ReadonlyURLSearchParams): ModalUrlState {
   const modal = searchParams.get("modal") as ModalType;
   const sequenceId = searchParams.get("id");
   const view = (searchParams.get("view") || "split") as SequenceViewMode;
@@ -136,7 +133,6 @@ function buildUrlParams(state: Partial<ModalUrlState>): URLSearchParams {
 
   return params;
 }
-
 
 /**
  * Get current modal URL state (reactive)
@@ -281,13 +277,12 @@ export function cacheSequence(sequence: SequenceData): void {
   saveSequenceCacheToStorage(sequenceCache);
 }
 
-
 /**
  * Build a new URL with modal params applied.
  * Shared between updateUrl and updateUrlFast.
  */
 function buildNewUrl(params: URLSearchParams): URL {
-  const newUrl = new URL(page.url);
+  const newUrl = new URL(page.url.href);
 
   // Clear existing modal params
   newUrl.searchParams.delete("modal");
@@ -316,9 +311,8 @@ async function updateUrl(params: URLSearchParams): Promise<void> {
 
   // Navigate without reload
   await goto(newUrl.toString(), {
-    replaceState: true,
-    keepFocus: true,
-    noScroll: true,
+    replace: true,
+    reset: false,
   });
 }
 
@@ -335,7 +329,6 @@ function updateUrlFast(params: URLSearchParams): void {
   // Update browser URL without navigation
   writeUrl(newUrl);
 }
-
 
 let initialized = false;
 let cleanup: (() => void) | null = null;

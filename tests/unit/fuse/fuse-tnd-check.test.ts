@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { checkFuseTnD } from "$lib/features/fuse/domain/fuse-tnd-check";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { checkFuseTnD } from "#lib/features/fuse/domain/fuse-tnd-check.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 type Loc = GridLocation;
 

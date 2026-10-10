@@ -5,7 +5,7 @@ import { FEATURES } from "../../src/config/feature-flags";
 import {
   MODULE_DEFINITIONS,
   normalizeModuleId,
-} from "$lib/shared/navigation/config/module-definitions";
+} from "#lib/shared/navigation/config/module-definitions.js";
 import { load as redirectWatch } from "../../src/routes/watch/[...path]/+page";
 
 describe("Watch retirement", () => {

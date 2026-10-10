@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { VideoHandAnalyzer } from './services/video-hand-analyzer';
 import { getImageModeHandLandmarker } from './get-image-mode-hand-landmarker';
 

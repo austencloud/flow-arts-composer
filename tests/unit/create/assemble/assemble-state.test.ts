@@ -1,23 +1,23 @@
 import { describe, expect, it, vi } from "vitest";
-import { createAssembleState } from "$lib/features/assemble-lab/state/assemble-state.svelte";
-import { dispatchAssembleKeyboardAction } from "$lib/features/assemble-lab/services/assemble-keyboard-dispatcher";
-import { resolveMotionType } from "$lib/features/assemble-lab/services/builder-step-converter";
-import { calculateBuilderEndOrientation } from "$lib/features/assemble-lab/services/builder-motion-geometry";
+import { createAssembleState } from "#lib/features/assemble-lab/state/assemble-state.svelte.js";
+import { dispatchAssembleKeyboardAction } from "#lib/features/assemble-lab/services/assemble-keyboard-dispatcher.js";
+import { resolveMotionType } from "#lib/features/assemble-lab/services/builder-step-converter.js";
+import { calculateBuilderEndOrientation } from "#lib/features/assemble-lab/services/builder-motion-geometry.js";
 import {
   calculateMotionType,
   calculateRotationDirection,
-} from "$lib/features/create/assemble/services/hand-path-motion-calculator";
+} from "#lib/features/create/assemble/services/hand-path-motion-calculator.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   HandMotionType,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 describe("Assemble state invariants", () => {
   async function addMotion(

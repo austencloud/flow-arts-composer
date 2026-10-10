@@ -1,5 +1,5 @@
-import { env } from "$env/dynamic/public";
-import { dev } from "$app/environment";
+import * as env from "$app/env/public";
+import { dev } from "$app/env";
 
 /** Only localhost / dev hosts may honor the ?appLaunched override. SSR-safe. */
 function nonProdHost(): boolean {

@@ -1,15 +1,15 @@
 <script lang="ts">
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import { getLetterImagePath } from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import { getLetterImagePath } from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
   import {
     ElementalType,
     getElementImagePath,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { MandalaPathShape } from "#lib/shared/mandala/domain/mandala-types.js";
 
   /**
    * The picture inside a Display toggle: the layer the toggle governs, drawn

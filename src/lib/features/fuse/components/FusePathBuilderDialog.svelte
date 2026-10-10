@@ -1,14 +1,14 @@
 <script lang="ts">
-  import GenerationSettingsOverlay from "$lib/features/create/generate/components/cards/GenerationSettingsOverlay.svelte";
-  import GenerationSettingsDrawer from "$lib/features/create/generate/components/modals/GenerationSettingsDrawer.svelte";
-  import BuilderMotionSettings from "$lib/features/assemble-lab/components/BuilderMotionSettings.svelte";
-  import BuilderOrientationPicker from "$lib/features/assemble-lab/components/BuilderOrientationPicker.svelte";
-  import InteractiveGrid from "$lib/features/assemble-lab/components/InteractiveGrid.svelte";
-  import { createAssembleState } from "$lib/features/assemble-lab/state/assemble-state.svelte";
-  import { startOrientationsForLevel } from "$lib/features/create/generate/domain/level-orientation-policy";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import GenerationSettingsOverlay from "#lib/features/create/generate/components/cards/GenerationSettingsOverlay.svelte";
+  import GenerationSettingsDrawer from "#lib/features/create/generate/components/modals/GenerationSettingsDrawer.svelte";
+  import BuilderMotionSettings from "#lib/features/assemble-lab/components/BuilderMotionSettings.svelte";
+  import BuilderOrientationPicker from "#lib/features/assemble-lab/components/BuilderOrientationPicker.svelte";
+  import InteractiveGrid from "#lib/features/assemble-lab/components/InteractiveGrid.svelte";
+  import { createAssembleState } from "#lib/features/assemble-lab/state/assemble-state.svelte.js";
+  import { startOrientationsForLevel } from "#lib/features/create/generate/domain/level-orientation-policy.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { getFuseContext } from "../context/fuse-context";
   import {
     buildFusePathSource,

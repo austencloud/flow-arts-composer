@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   paintCardFrontChrome,
   type CardFrontLayout,
-} from "$lib/shared/render/services/card-front-assembler";
+} from "#lib/shared/render/services/card-front-assembler.js";
 
 function createContext(): CanvasRenderingContext2D {
   return {

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import MotionPathExplorer from "./_components/MotionPathExplorer.svelte";
   import MotionPathExplanation from "./_components/MotionPathExplanation.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 </script>
 
 <GuideSeo

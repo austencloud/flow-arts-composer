@@ -13,7 +13,7 @@
 
 import type { CardBackData } from "../../components/card-back/card-back-data";
 import type { Placement } from "./back-job";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 export interface CardBackLayout {
   /**

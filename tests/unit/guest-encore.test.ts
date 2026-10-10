@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createGuestEncoreState,
   GUEST_ENCORE_STORAGE_KEY,
-} from "$lib/shared/auth/state/guest-encore-state.svelte";
+} from "#lib/shared/auth/state/guest-encore-state.svelte.js";
 
 function memoryStorage() {
   const data = new Map<string, string>();

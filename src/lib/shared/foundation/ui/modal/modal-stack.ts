@@ -11,8 +11,8 @@
  * Similar pattern to DrawerStack.
  */
 
-import { Z } from '$lib/shared/ui/z-index';
-import { getEscapeLayerManager } from '$lib/shared/keyboard/get-escape-layer-manager';
+import { Z } from '#lib/shared/ui/z-index.js';
+import { getEscapeLayerManager } from '#lib/shared/keyboard/get-escape-layer-manager.js';
 
 type DismissCallback = () => void;
 

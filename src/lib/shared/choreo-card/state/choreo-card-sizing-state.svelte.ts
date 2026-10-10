@@ -1,3 +1,5 @@
+import { untrack } from "svelte";
+
 /** A measured box, in CSS pixels. */
 interface Size {
   width: number;
@@ -546,8 +548,12 @@ export function createChoreoCardSizingState(
     }, durationMs);
   }
 
+  // Reading getDeps() reads every dependency, so settle on the element alone:
+  // the observer below should be rebuilt only when the container changes.
+  const containerElement = $derived(getDeps().containerElement);
+
   $effect(() => {
-    const container = getDeps().containerElement;
+    const container = containerElement;
     if (!container) return;
 
     const observer = new ResizeObserver((entries) => {
@@ -570,8 +576,14 @@ export function createChoreoCardSizingState(
       updateContainedDimensions(size);
     });
     observer.observe(container);
-    captureContainerDimensions();
-    updateContainedDimensions();
+    // Untracked: these read and write the contained size. Tracking it re-ran
+    // this effect on every write, and each rebuilt observer delivers a fresh
+    // fractional size that disagrees with the rounded clientHeight read here,
+    // so the Card flipped a pixel and forced layout on every frame.
+    untrack(() => {
+      captureContainerDimensions();
+      updateContainedDimensions();
+    });
     return () => {
       observer.disconnect();
       if (exportContainFrame !== null) {
@@ -590,7 +602,9 @@ export function createChoreoCardSizingState(
     void deps.exactExportGeometry;
     void deps.containSizeMotion;
     void deps.containMotionBox;
-    updateContainedDimensions();
+    // The inputs above are the dependencies; the contained size this writes
+    // must not re-run it (see the observer effect above).
+    untrack(() => updateContainedDimensions());
   });
 
   // Layout derives its model from these getters. Cache the optional host box
@@ -633,7 +647,7 @@ export function createChoreoCardSizingState(
       updateCellWidth(size);
     });
     observer.observe(stack);
-    updateCellWidth();
+    untrack(() => updateCellWidth());
     return () => {
       observer.disconnect();
       if (exportCellFrame !== null) {

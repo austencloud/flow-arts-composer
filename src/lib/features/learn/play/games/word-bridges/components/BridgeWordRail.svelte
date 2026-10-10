@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import type { WordBridgeAnalysis } from "../domain/word-bridge-questions";
 
   let {

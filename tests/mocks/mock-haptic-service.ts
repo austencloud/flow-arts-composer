@@ -4,8 +4,8 @@ import type {
   HapticImpactStyle,
   HapticNotificationType,
   IHapticFeedback,
-} from "$lib/shared/application/services/contracts/IHapticFeedback";
-import type { EffortId, EffortParams } from "$lib/shared/effort/domain/effort-types";
+} from "#lib/shared/application/services/contracts/IHapticFeedback";
+import type { EffortId, EffortParams } from "#lib/shared/effort/domain/effort-types.js";
 
 interface HapticCall {
   method: string;

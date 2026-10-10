@@ -18,25 +18,25 @@ Membership writes go through collections-state (cap guard + latency
 compensation), so the detail view behind this sheet updates on its own.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import GalleryDrill from "$lib/features/browse/gallery-home/GalleryDrill.svelte";
-  import GalleryFilterSheet from "$lib/features/browse/gallery-home/GalleryFilterSheet.svelte";
-  import FilterRuleStrip from "$lib/shared/browse/components/FilterRuleStrip.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-  import CollectionChipsRow from "$lib/features/library/components/collection-picker/CollectionChipsRow.svelte";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import { browseScrollState } from "$lib/shared/browse/state/browse-scroll-state.svelte";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { getCollectionCollaborationManager } from "$lib/shared/library/get-collection-collaboration-manager";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import GalleryDrill from "#lib/features/browse/gallery-home/GalleryDrill.svelte";
+  import GalleryFilterSheet from "#lib/features/browse/gallery-home/GalleryFilterSheet.svelte";
+  import FilterRuleStrip from "#lib/shared/browse/components/FilterRuleStrip.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+  import CollectionChipsRow from "#lib/features/library/components/collection-picker/CollectionChipsRow.svelte";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { getCollectionCollaborationManager } from "#lib/shared/library/get-collection-collaboration-manager.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   let {
     collectionId,

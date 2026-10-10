@@ -1,4 +1,4 @@
-import { OCEAN_WATER_DEPTH_METERS } from "$lib/shared/3d/environments/domain/models/ocean-water-depth";
+import { OCEAN_WATER_DEPTH_METERS } from "#lib/shared/3d/environments/domain/models/ocean-water-depth.js";
 
 /**
  * Ocean camera bounds.

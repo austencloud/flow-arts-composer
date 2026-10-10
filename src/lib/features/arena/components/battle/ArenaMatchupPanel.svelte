@@ -7,10 +7,10 @@
 -->
 <script lang="ts">
   import type { ArenaEntry, ArenaRating } from "../../domain/models/arena-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     entry,

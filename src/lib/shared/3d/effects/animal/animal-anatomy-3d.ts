@@ -1,5 +1,5 @@
 import type { Object3D } from "three";
-import type { Animal3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Animal3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 import {
   ANIMAL_BLACK,
   ANIMAL_EYE_WHITE,

@@ -11,23 +11,23 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { LOCATION_MAP_EIGHTH_CW } from "@tka/sequence-engine/loop";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {
   GridMode,
   type GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { CandidateUnit } from "$lib/shared/combination/domain/closure-types";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { CandidateUnit } from "#lib/shared/combination/domain/closure-types.js";
 import {
   createUnitCanonicalizer,
   dedupeUnits,
   motionTupleKey,
   type UnitCanonicalizer,
-} from "$lib/shared/combination/services/unit-canonicalizer";
+} from "#lib/shared/combination/services/unit-canonicalizer.js";
 import {
   loadCombinationSteps,
   searchCandidateUnits,
-} from "$lib/shared/combination/services/unit-search";
+} from "#lib/shared/combination/services/unit-search.js";
 
 import { loadPictographDatasetForTests } from "./pictograph-dataset";
 

@@ -35,29 +35,29 @@ import {
   mirrorSequence,
   rotateSequence,
   swapHands,
-} from "$lib/shared/create/services/sequence-transformer";
-import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+} from "#lib/shared/create/services/sequence-transformer.js";
+import { createStartPlacementFromBeatStart } from "#lib/shared/create/services/sequence-transforms.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {
   updateSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
-import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-import type { HandPath } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
+import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+import type { HandPath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   HandSide,
   type MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   deriveMotionType,
   getHandpathDirection,
-} from "$lib/shared/render/core/calculations/orientation";
+} from "#lib/shared/render/core/calculations/orientation.js";
 
 import type { VariantDescriptor, WalkSource } from "../domain/types";
 

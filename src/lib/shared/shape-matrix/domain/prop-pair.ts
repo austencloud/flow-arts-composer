@@ -1,9 +1,9 @@
 import {
   getTipPoints,
   type TipPoint,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { getDefaultTrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { getDefaultTrailPointConfig } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 /** The prop in each hand. Equal hands are the ordinary single-prop matrix. */
 export interface ShapeMatrixPropPair {

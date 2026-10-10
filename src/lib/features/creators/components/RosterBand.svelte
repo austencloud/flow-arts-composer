@@ -21,7 +21,7 @@
 <script lang="ts">
   import CreatorCell from "./CreatorCell.svelte";
   import { bandOf, type BandKey } from "../domain/creator-recency";
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
 
   interface Props {
     band: BandKey;

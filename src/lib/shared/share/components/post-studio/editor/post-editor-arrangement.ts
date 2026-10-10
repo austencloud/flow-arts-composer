@@ -1,4 +1,4 @@
-import type { ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
+import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 
 /** Keep the Arrange grid's 8×8 backing cells so every visible position can be edited. */
 export function createBlankArrangementSnapshot(): ArrangementSnapshot {

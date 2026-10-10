@@ -4,10 +4,10 @@ import {
   type PostImageItem,
   type PostItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { mirrorPostProject } from "$lib/shared/media-composition/domain/post-project-mirror";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { mirrorPostProject } from "#lib/shared/media-composition/domain/post-project-mirror.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
 import {
   NOW,
   card,

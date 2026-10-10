@@ -18,8 +18,8 @@ import {
   vi,
 } from "vitest";
 import { mountMusicLane } from "./music-lane-harness.svelte";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
-import { POST_MUSIC_MIN_SECONDS } from "$lib/shared/media-composition/domain/post-music-edits";
+import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
+import { POST_MUSIC_MIN_SECONDS } from "#lib/shared/media-composition/domain/post-music-edits.js";
 
 const wave = vi.hoisted(() => ({
   created: [] as Array<{

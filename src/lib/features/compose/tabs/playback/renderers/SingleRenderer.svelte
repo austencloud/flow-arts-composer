@@ -6,21 +6,21 @@
 -->
 <script lang="ts">
 
-import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import {
     ANIMATION_LOAD_DELAY_MS,
     ANIMATION_AUTO_START_DELAY_MS,
-  } from "$lib/shared/animation-engine/domain/constants/timing";
+  } from "#lib/shared/animation-engine/domain/constants/timing.js";
   import CanvasControls from "../components/CanvasControls.svelte";
 
   let {
@@ -40,9 +40,9 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
     isPlaying?: boolean;
     speed?: number;
     shouldLoop?: boolean;
-    playbackMode?: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").PlaybackMode;
+    playbackMode?: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").PlaybackMode;
     stepPlaybackPauseMs?: number;
-    stepPlaybackStepSize?: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").StepPlaybackStepSize;
+    stepPlaybackStepSize?: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").StepPlaybackStepSize;
     visible?: boolean;
     leftVisible?: boolean;
     rightVisible?: boolean;

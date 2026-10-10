@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   propTipEnds,
   pairTipEnds,
-} from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+} from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 
 describe("propTipEnds", () => {
   it("staff traces both ends (2)", () => {

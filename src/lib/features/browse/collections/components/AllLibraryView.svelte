@@ -13,34 +13,34 @@ the gallery's, and the source is pinned to my-library with no toggle.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
-  import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
+  import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
   import LibraryEmptyState from "./LibraryEmptyState.svelte";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import SmartCollectionSaveDialog from "$lib/features/library/components/SmartCollectionSaveDialog.svelte";
-  import FilterWorkspace from "$lib/features/browse/gallery-home/FilterWorkspace.svelte";
-  import { getCollectionOptions } from "$lib/features/browse/gallery-home/collection-options.svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import SmartCollectionSaveDialog from "#lib/features/library/components/SmartCollectionSaveDialog.svelte";
+  import FilterWorkspace from "#lib/features/browse/gallery-home/FilterWorkspace.svelte";
+  import { getCollectionOptions } from "#lib/features/browse/gallery-home/collection-options.svelte.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
   import SortJumpSheet from "../../sequences/navigation/components/SortJumpSheet.svelte";
-  import { sequencePanelManager } from "$lib/shared/browse/state/sequence-panel-state.svelte";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
-  import { browseScrollState } from "$lib/shared/browse/state/browse-scroll-state.svelte";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import { loadSoloLibrarySequences } from "$lib/features/browse/shared/services/solo-library-sequence-loader";
-  import { createMultiSelectionState } from "$lib/shared/selection/state/create-multi-selection-state.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { openCollectionPickerForSequences } from "$lib/features/library/state/collection-picker-state.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
+  import { sequencePanelManager } from "#lib/shared/browse/state/sequence-panel-state.svelte.js";
+  import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
+  import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import { loadSoloLibrarySequences } from "#lib/features/browse/shared/services/solo-library-sequence-loader.js";
+  import { createMultiSelectionState } from "#lib/shared/selection/state/create-multi-selection-state.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { openCollectionPickerForSequences } from "#lib/features/library/state/collection-picker-state.svelte.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
 
   // The desktop split view keeps the collection rail visible, so it passes no
   // onBack — BrowsePanel then omits the back pill entirely.

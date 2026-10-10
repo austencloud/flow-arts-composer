@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { PropType } from "@austencloud/scene-3d";
-import { resolvePropTipAnchors3D } from "$lib/shared/3d/effects/prop-tip-geometry-3d";
-import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
-import { PropType as AppPropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { resolvePropTipAnchors3D } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
+import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
+import { PropType as AppPropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { resolvePropModel } from "../../../node_modules/@austencloud/scene-3d/src/lib/components/props/prop-model-registry";
 
 /** The staff length the 3D rig hands the tip bridge, in metres. */

@@ -18,7 +18,7 @@
  * behavior rather than guess wrong.
  */
 
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 /** A snapshot of what the browser tells us about the current connection. */
 export interface NetworkConditions {

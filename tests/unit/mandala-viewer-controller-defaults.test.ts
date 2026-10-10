@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { flushSync } from "svelte";
 import { effect_root } from "svelte/internal/client";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   MandalaViewerController,
   type MandalaViewState,
-} from "$lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
 const VIEW_STORAGE_KEY = "tka_mandala_view_state";
 

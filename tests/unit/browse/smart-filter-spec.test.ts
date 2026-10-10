@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   deriveSpecMembers,
   resolveSpecConnectives,
-} from "$lib/shared/browse/services/smart-filter-spec";
-import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/browse/services/smart-filter-spec.js";
+import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function seq(id: string, level: number): SequenceData {
   // Minimal shape the difficulty filter reads (level field + fallback).

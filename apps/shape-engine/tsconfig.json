@@ -11,8 +11,8 @@
     "skipLibCheck": true,
     "types": ["vite/client"],
     "paths": {
-      "$lib/*": ["../../src/lib/*"],
-      "$app/environment": ["./src/environment.ts"]
+      "#lib/*": ["../../src/lib/*"],
+      "$app/env": ["./src/environment.ts"]
     }
   },
   "include": ["src/**/*", "vite.config.ts", "capacitor.config.ts"]

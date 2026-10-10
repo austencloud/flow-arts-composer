@@ -5,7 +5,7 @@
  * - Dynamic module loaders (ModuleRenderer, BackgroundFactory, etc.)
  * - SvelteKit routes as entry points
  * - DI container registrations
- * - $lib path aliases
+ * - #lib import paths
  *
  * Run with: npx tsx scripts/find-dead-code.ts
  */
@@ -23,9 +23,8 @@ const SRC_DIR = path.join(PROJECT_ROOT, "src");
 
 // Files/patterns to skip (external packages, SvelteKit internals, etc.)
 const SKIP_PATTERNS = [
-  /^[^./$]/, // bare imports (npm packages) - but NOT $lib
+  /^[^./$#]/, // bare imports (npm packages) - but NOT #lib
   /^\$app\//, // SvelteKit internals
-  /^\$env\//, // SvelteKit env
   /^virtual:/, // Vite virtual modules
   /^node:/, // Node.js built-ins
   /\.css$/, // CSS files
@@ -48,7 +47,7 @@ const STATIC_ENTRY_PATTERNS = [
   "src/app.d.ts",
   "src/lib/shared/di/**/*.ts",
   "vite.config.ts",
-  "svelte.config.js",
+  "src/config/svelte-options.js",
 ];
 
 
@@ -167,17 +166,18 @@ function resolveImportPath(
     return null;
   }
 
-  // Handle $lib alias manually (more reliable than ts.resolveModuleName for this)
-  if (specifier.startsWith("$lib/")) {
+  // Handle #lib manually (more reliable than ts.resolveModuleName for this).
+  // These imports name the emitted `.js` file; the source beside it is `.ts`.
+  if (specifier.startsWith("#lib/")) {
     const resolved = path.join(
       SRC_DIR,
       "lib",
-      specifier.slice(5) // Remove "$lib/"
+      specifier.slice(5).replace(/\.js$/, "") // Remove "#lib/" and ".js"
     );
     return resolveWithExtensions(resolved);
   }
 
-  if (specifier.startsWith("$lib")) {
+  if (specifier.startsWith("#lib")) {
     const resolved = path.join(SRC_DIR, "lib");
     return resolveWithExtensions(resolved);
   }

@@ -5,7 +5,7 @@
  * outside the dodge lab can consume them without depending on dodge internals.
  * Re-exported here so existing dodge-lab importers keep resolving unchanged.
  */
-export type { SweepSample, SweptVolume } from "$lib/shared/3d/services/swept-volume/types";
+export type { SweepSample, SweptVolume } from "#lib/shared/3d/services/swept-volume/types.js";
 
 /** Which way the body bails. `auto` derives the side from the sweep direction. */
 export type DodgeSide = "auto" | "left" | "right";

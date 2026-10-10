@@ -1,11 +1,11 @@
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     MODE_LABEL,
     MODE_ORDER,
     type VtgMode,
-  } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-  import { norm } from "$lib/shared/notation/qft/qft-model";
+  } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+  import { norm } from "#lib/shared/notation/qft/qft-model.js";
   import { getQftAppContext } from "../_context/qft-app-context";
 
   const state = getQftAppContext();

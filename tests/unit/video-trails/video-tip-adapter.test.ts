@@ -1,7 +1,7 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { VideoTipAdapter } from "$lib/features/video/video-trails/services/video-tip-adapter";
-import type { DetectedEndpoint } from "$lib/features/video/video-trails/domain/types";
+import { VideoTipAdapter } from "#lib/features/video/video-trails/services/video-tip-adapter.js";
+import type { DetectedEndpoint } from "#lib/features/video/video-trails/domain/types.js";
 
 function makeEndpoint(overrides: Partial<DetectedEndpoint> = {}): DetectedEndpoint {
   return {

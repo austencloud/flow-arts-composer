@@ -1,14 +1,14 @@
 <script lang="ts">
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
   import MandalaControlDock from "./MandalaControlDock.svelte";
   import MandalaExportTakeover from "./MandalaExportTakeover.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { MandalaViewerController } from "../state/mandala-viewer-controller.svelte";
-  import { getAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import type { MandalaRenderOptions } from "$lib/shared/mandala/domain/mandala-types";
+  import { getAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import type { MandalaRenderOptions } from "#lib/shared/mandala/domain/mandala-types.js";
   import type { ControlDockAction } from "./ControlDock.svelte";
-  import { sequenceMandalaHandOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
+  import { sequenceMandalaHandOffsets } from "#lib/shared/mandala/services/mandala-grid-join.js";
 
   interface Props {
     sequence: SequenceData;

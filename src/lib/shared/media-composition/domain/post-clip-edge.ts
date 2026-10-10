@@ -5,8 +5,8 @@ import {
   POST_PLAIN_EDGE,
   type PostClipEdge,
   type PostEdgeColor,
-} from "$lib/shared/media-composition/domain/post-project";
-import type { RegionEdge } from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import type { RegionEdge } from "#lib/shared/media-composition/domain/media-layout-schema.js";
 
 /**
  * A clip's edges: rounded corners, a border and a drop shadow. A clip with

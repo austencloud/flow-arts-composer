@@ -17,18 +17,19 @@
 <script lang="ts">
   import "./drawer/Drawer.css";
   import { onMount, onDestroy, untrack, type Snippet } from "svelte";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import { SwipeToDismiss } from "./drawer/swipe-to-dismiss";
   import { FocusTrap } from "./drawer/focus-trap";
   import { SnapPoints, type SnapPointValue } from "./drawer/snap-points";
   import { DrawerEffects } from "./drawer/drawer-effects";
-  import { shouldDeferEscapeShortcut } from "$lib/shared/keyboard/domain/escape-shortcut-target";
+  import { shouldDeferEscapeShortcut } from "#lib/shared/keyboard/domain/escape-shortcut-target.js";
   import {
     generateDrawerId,
     registerDrawer,
     unregisterDrawer,
     isTopDrawer,
   } from "./drawer/drawer-stack";
+  import { holdBackgroundFor } from "#lib/shared/background/shared/state/background-hold.svelte.js";
 
   type CloseReason = "backdrop" | "escape" | "programmatic";
 
@@ -223,6 +224,14 @@
   // Drawer stack management for nested drawers
   const drawerId = generateDrawerId();
   let stackZIndex = $state(50); // Default z-index
+
+  // The animated backdrop repaints a viewport-sized canvas every frame; while
+  // the drawer slides, those frames belong to the slide. It holds its last
+  // frame for the 350ms slide, the 50ms buffer the drawer already waits, and
+  // a short tail for the landing frame.
+  const BACKDROP_HOLD_MS = 460;
+  const holdBackdropForSlide = () =>
+    holdBackgroundFor(`drawer-slide:${drawerId}`, BACKDROP_HOLD_MS);
 
   // Reactive state for drag visuals
   let isDragging = $state(false);
@@ -505,15 +514,19 @@
           requestAnimationFrame(completeOpen);
         } else {
           isAnimatedOpen = false; // Start closed for animation
+          const slideOpen = () => {
+            holdBackdropForSlide();
+            completeOpen();
+          };
           if (untrack(() => holdOpen)) {
             // Mount and lay out off-screen; the slide starts on release.
-            heldOpen = completeOpen;
+            heldOpen = slideOpen;
             isHoldingOpen = true;
             holdCapId = setTimeout(releaseHeldOpen, HOLD_OPEN_CAP_MS);
           } else {
             // Force browser to render the closed state first using double-RAF
             requestAnimationFrame(() => {
-              requestAnimationFrame(completeOpen);
+              requestAnimationFrame(slideOpen);
             });
           }
         }
@@ -541,6 +554,7 @@
         if (prefersReducedMotion()) {
           completeClose();
         } else {
+          holdBackdropForSlide();
           // Keep in DOM during closing animation (350ms), then remove
           // Store the timeout ID so it can be cancelled if drawer reopens quickly
           closeTimeoutId = setTimeout(completeClose, 400); // var(--duration-dramatic) transition + 50ms buffer

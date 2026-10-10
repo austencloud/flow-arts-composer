@@ -1,7 +1,7 @@
 /* AUTO-GENERATED from Austen's saved mandala collection (36 entries).
    Baked so the /composer mandala showcase renders with no auth and no sign-in.
    Review the grid, keep the coolest, and trim this array to the curated picks. */
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 export interface ShowcaseMandala {
   id: string;

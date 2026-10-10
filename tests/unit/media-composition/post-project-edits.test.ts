@@ -8,7 +8,7 @@ import {
   type PostItem,
   type PostProject,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   addOverlayItem,
   addTake,
@@ -37,25 +37,25 @@ import {
   trimItemToSource,
   updateItem,
   updateItemAt,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
 import {
   createTakeTiming,
   resolveTakeTiming,
   takePositionAt,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   projectDraftRecord,
   resolvePostStudioDraft,
-} from "$lib/shared/media-composition/services/post-project-backup";
+} from "#lib/shared/media-composition/services/post-project-backup.js";
 import {
   framingAt,
   isAnimated,
   opacityAt,
   setKeyframe,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   NOW,
   card,

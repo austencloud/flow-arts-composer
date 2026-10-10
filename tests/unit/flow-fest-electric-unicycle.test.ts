@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PhysicsProvider, Vector3 } from "@austencloud/camera-3d";
-import { FlowFestElectricUnicycleDrive } from "$lib/features/flow-fest-sim/services/flow-fest-electric-unicycle-drive";
+import { FlowFestElectricUnicycleDrive } from "#lib/features/flow-fest-sim/services/flow-fest-electric-unicycle-drive.js";
 import {
   FLOW_FEST_EUC_CONFIG,
   FLOW_FEST_EUC_TRAVERSAL_ENVELOPES,
@@ -14,12 +14,12 @@ import {
   stepFlowFestElectricUnicycle,
   type FlowFestElectricUnicycleDynamics,
   type FlowFestElectricUnicycleInput,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
 import {
   createFlowFestMobilityState,
   createFreshFlowFestMobilitySnapshot,
   restoreFlowFestMobilitySnapshot,
-} from "$lib/features/flow-fest-sim/state/flow-fest-mobility-state.svelte";
+} from "#lib/features/flow-fest-sim/state/flow-fest-mobility-state.svelte.js";
 
 class ControllerSkinPhysicsProvider implements PhysicsProvider {
   private position: Vector3 = { x: 0, y: 1, z: 0 };

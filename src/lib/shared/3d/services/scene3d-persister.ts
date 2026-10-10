@@ -3,7 +3,7 @@
  */
 
 import { Plane } from "@austencloud/scene-3d";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 import type { GridMode } from "@austencloud/scene-3d";
 import { normalizeLegacySequence } from "@tka/tka-types";

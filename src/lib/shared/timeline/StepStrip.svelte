@@ -14,10 +14,10 @@
 -->
 <script lang="ts">
   import { untrack, type Snippet } from "svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { buildNotationCells, type NotationCell } from "./notation-cell";
   import {
     buildStripWindow,
@@ -348,13 +348,18 @@
     class:vertical
     class:continuous-strip={presentation === "strip"}
     bind:this={stepStripEl}
-    style="--slide-dur: {slideDurMs}ms; --cell: {effCell}px; --frame: {FRAME}px; {fillHeight
+    style="--slide-dur: {slideDurMs}ms; {fillHeight
       ? 'height: 100%'
       : `height: ${viewportHeight}px`}"
   >
+    <!-- Cell and frame sizes go on the boxes that use them. An inherited
+         variable on the viewport made every resize restyle each pictograph's
+         whole subtree: ~400 elements a frame while Play grew the stage. -->
     <div
       class="step-focus"
       style="{vertical ? 'top' : 'left'}: {frameOffset}px"
+      style:width="{FRAME}px"
+      style:height="{FRAME}px"
     >
       {#if stepPulse}
         <div class="step-progress" style="transform: scaleX({stepPhase})"></div>
@@ -378,6 +383,8 @@
           data-cell-instance={item.primary ? "primary" : "repeat"}
           style="{vertical ? 'top' : 'left'}: {item.vi *
             STRIDE}px; opacity: {cellOpacity(presentation, item.dist)}"
+          style:width="{effCell}px"
+          style:height="{effCell}px"
           role={onCellClick ? "button" : undefined}
           tabindex={onCellClick ? 0 : undefined}
           onclick={onCellClick
@@ -512,8 +519,6 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: var(--frame, 98px);
-    height: var(--frame, 98px);
     border: 2px solid #d4813a;
     border-radius: 8px;
     box-shadow: 0 0 12px rgba(212, 129, 58, 0.32); /* calm steady glow — no pulse */
@@ -545,8 +550,6 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: var(--cell, 72px);
-    height: var(--cell, 72px);
     border: 1.5px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     overflow: hidden;

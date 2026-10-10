@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from "vitest";
 import { PUT } from "../../src/routes/api/qr-video/[hash]/+server";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
 import {
   fakeEvent,
   hashForIndex,
@@ -39,7 +39,7 @@ function putEvent(
     body: minimalMp4Bytes(),
     params: { hash },
     clientAddress: "198.51.100.99",
-    platformEnv: { QR_VIDEOS: bucket },
+    workerEnv: { QR_VIDEOS: bucket },
   });
 }
 
@@ -94,7 +94,7 @@ describe("qr-video PUT: payload bounds that DO hold", () => {
         method: "PUT",
         body: new Uint8Array(64),
         params: { hash: hashForIndex(9) },
-        platformEnv: { QR_VIDEOS: bucket },
+        workerEnv: { QR_VIDEOS: bucket },
       }) as never
     );
 
@@ -118,7 +118,7 @@ describe("qr-video PUT: payload bounds that DO hold", () => {
       method: "PUT",
       body: minimalMp4Bytes(),
       params: { hash },
-      platformEnv: { QR_VIDEOS: bucket },
+      workerEnv: { QR_VIDEOS: bucket },
     });
     // Request headers are immutable once constructed; override the single
     // accessor the handler consults.

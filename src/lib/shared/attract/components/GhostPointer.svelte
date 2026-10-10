@@ -54,6 +54,7 @@
     dimmed = false,
     considering = false,
     stage = false,
+    compact = false,
     onResume,
   }: {
     x: number;
@@ -73,6 +74,13 @@
     considering?: boolean;
     /** Projection/TV sizing. */
     stage?: boolean;
+    /**
+     * A small finger for preview boxes: the dot sizes off the nearest
+     * `container-type: size` ancestor (14 to 28px) and is 28px without one.
+     * Callers pass no `speed`, as the Composer demos don't: the trail is
+     * sized for page-length glides.
+     */
+    compact?: boolean;
     onResume?: () => void;
   } = $props();
 
@@ -111,6 +119,7 @@
   class:stage
   class:dimmed
   class:considering
+  class:compact
   style={`transform: translate(${x}px, ${y}px); --mood-hue: ${tone.hue}deg; --mood-sat: ${tone.sat}; --breath: ${tone.breath}s`}
   aria-hidden={!parked}
 >
@@ -230,6 +239,25 @@
     box-shadow:
       0 0 26px color-mix(in srgb, var(--accent, #8b8cff) 80%, transparent),
       0 0 62px color-mix(in srgb, var(--accent, #8b8cff) 40%, transparent);
+  }
+
+  /* Create method previews press inside boxes as small as 40px. The size
+     follows the preview box (its nearest size container), and the glow
+     tightens so it lights the target without covering it. */
+  .ghost.compact {
+    --size: clamp(14px, 18cqmin, 28px);
+  }
+
+  .ghost.compact .core {
+    box-shadow:
+      0 0 8px color-mix(in srgb, var(--accent, #8b8cff) 65%, transparent),
+      0 0 16px color-mix(in srgb, var(--accent, #8b8cff) 30%, transparent);
+  }
+
+  .ghost.compact.considering .core {
+    box-shadow:
+      0 0 12px color-mix(in srgb, var(--accent, #8b8cff) 80%, transparent),
+      0 0 24px color-mix(in srgb, var(--accent, #8b8cff) 40%, transparent);
   }
 
   /* The wisp. Its left end is pinned to the dot's centre and the script turns

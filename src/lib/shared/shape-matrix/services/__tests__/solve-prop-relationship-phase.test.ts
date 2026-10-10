@@ -3,21 +3,21 @@ import { resolve } from "node:path";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("firebase/firestore", () => ({}));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
 
-import type { CsvEdge } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { parseCsvEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-render-hydrator";
-import { buildFlowerSequence } from "$lib/features/lab/vtg-lab/services/build-flower-sequence";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { getDefaultTrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { CsvEdge } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { parseCsvEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
+import { hydrateSequence } from "#lib/features/choreo-card/services/sequence-render-hydrator.js";
+import { buildFlowerSequence } from "#lib/features/lab/vtg-lab/services/build-flower-sequence.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { getDefaultTrailPointConfig } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import baseWords from "../../../../../../static/data/hero/tnd-base-words.json";
 import { derivePropRelationship } from "../../domain/prop-relationship";
 import {

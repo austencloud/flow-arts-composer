@@ -7,8 +7,8 @@
   Uses RobustAvatar for reliable image loading with fallbacks.
 -->
 <script lang="ts">
-  import type { ParticipantInfo } from "$lib/shared/messaging/domain/models/conversation-models";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import type { ParticipantInfo } from "#lib/shared/messaging/domain/models/conversation-models.js";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
 
   interface Props {
     participants: ParticipantInfo[];

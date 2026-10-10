@@ -3,7 +3,7 @@ import {
   STRIP_SAMPLE_CAP,
   stripColumns,
   sampleCount,
-} from "$lib/features/creators/components/profile/stage/doorway-policy";
+} from "#lib/features/creators/components/profile/stage/doorway-policy.js";
 
 describe("stripColumns", () => {
   it("caps a strip at six however wide the band gets", () => {

@@ -3,7 +3,7 @@ import {
   fitStaffLengthForHug,
   measurePerformerReach,
   planHugReachGeometry,
-} from "$lib/shared/3d/domain/performer-reach-measurements";
+} from "#lib/shared/3d/domain/performer-reach-measurements.js";
 
 /** A synthetic skeleton sample: two arms of known segment lengths. */
 function sample(overrides: Partial<Parameters<typeof measurePerformerReach>[0]> = {}) {

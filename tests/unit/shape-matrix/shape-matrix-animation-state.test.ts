@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createShapeMatrixAnimationState } from "$lib/shared/shape-matrix/app/state/shape-matrix-animation-state.svelte";
+import { createShapeMatrixAnimationState } from "#lib/shared/shape-matrix/app/state/shape-matrix-animation-state.svelte.js";
 
 describe("Shape Matrix animation state", () => {
   it("starts as an ephemeral, playing 60 BPM trail presentation", () => {

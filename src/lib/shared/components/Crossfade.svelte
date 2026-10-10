@@ -56,13 +56,13 @@
 -->
 <script lang="ts">
   import { fade, type TransitionConfig } from "svelte/transition";
-  import { focusFirstOrContainer } from "$lib/shared/foundation/ui/modal/helpers/focus-restore";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { focusFirstOrContainer } from "#lib/shared/foundation/ui/modal/helpers/focus-restore.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     flyFade,
     reducedMotion as prefersReducedMotion,
     STEP_DRIFT_PX,
-  } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/transitions/motion.js";
   import type { Snippet } from "svelte";
 
   type Mode = "crossfade" | "swap";

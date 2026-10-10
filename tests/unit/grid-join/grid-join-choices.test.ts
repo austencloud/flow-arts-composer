@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import {
   gridJoinSelection,
   offeredGridJoinDirections,
-} from "$lib/shared/grid-join/grid-join-choices";
+} from "#lib/shared/grid-join/grid-join-choices.js";
 
 const towards = (gridMode: string | null | undefined) =>
   offeredGridJoinDirections(gridMode).map((choice) => choice.toward);

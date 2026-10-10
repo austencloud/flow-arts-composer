@@ -7,19 +7,19 @@
   Wide two-column layout on desktop, single column on mobile.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   import { onDestroy } from "svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { getCurrentError, dismissError } from "../state/error-state.svelte";
-  import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
+  import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
   import {
     buildErrorCopyText,
     formatParamLabel,
     formatParamValue,
   } from "../domain/error-report-text";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { FocusTrap } from "$lib/shared/foundation/ui/drawer/focus-trap";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
 
   let userComment = $state("");
   let isReporting = $state(false);

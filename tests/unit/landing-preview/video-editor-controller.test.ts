@@ -1,19 +1,19 @@
 import { mount, unmount } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { VideoCache } from "$lib/shared/video/services/video-cache";
-import type { SequenceMatcher } from "$lib/features/landing-preview/services/sequence-matcher";
+import type { VideoCache } from "#lib/shared/video/services/video-cache.js";
+import type { SequenceMatcher } from "#lib/features/landing-preview/services/sequence-matcher.js";
 import type {
   VideoEditorController,
   VideoEditorControllerOptions,
-} from "$lib/features/landing-preview/state/video-editor-controller.svelte";
+} from "#lib/features/landing-preview/state/video-editor-controller.svelte.js";
 import type {
   MatchedSequence,
   ShowcaseVideo,
   VideoCropData,
-} from "$lib/features/landing-preview/types";
+} from "#lib/features/landing-preview/types.js";
 import VideoEditorControllerHarness from "./VideoEditorControllerHarness.svelte";
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn() },
 }));
 

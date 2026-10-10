@@ -1,7 +1,7 @@
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
-  import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
+  import { getSequenceSelection } from "#lib/shared/selection/sequence-selection.svelte.js";
   import type { SheetCell } from "../../services/sheet-row-planner";
   import type { ChoreoSheetLayout } from "../../domain/types/choreo-sheet";
   import { SHEET_CELL_VISIBILITY } from "../../services/sheet-cell-config";

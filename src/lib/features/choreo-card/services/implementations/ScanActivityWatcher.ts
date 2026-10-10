@@ -11,8 +11,8 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { parsePropTypeFromURLValue } from "$lib/shared/navigation/services/sequence-encoder";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { parsePropTypeFromURLValue } from "#lib/shared/navigation/services/sequence-encoder.js";
 import type {
   IScanActivityWatcher,
   ScanActivityAuthor,

@@ -1,13 +1,13 @@
 import {
   buildCustomizeSummary,
   ORIENTATION_SHORT,
-} from "$lib/features/create/generate/components/cards/customize-summary";
-import type { TurnLevel } from "$lib/shared/create/services/level-turn-values";
+} from "#lib/features/create/generate/components/cards/customize-summary.js";
+import type { TurnLevel } from "#lib/shared/create/services/level-turn-values.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type {
   SoloLoopGenerationRecipe,
   SoloLoopTraversalDirection,
@@ -17,7 +17,7 @@ import type { FuseRule } from "./fuse-rule";
 import { fuseRuleMode, fuseTnDModeLabel } from "./fuse-tnd-rule";
 import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
 import type { FuseRecipeDestination } from "./fuse-recipe-destination";
-import { DEFAULT_GENERATION_STYLE } from "$lib/shared/create/domain/generation-style";
+import { DEFAULT_GENERATION_STYLE } from "#lib/shared/create/domain/generation-style.js";
 
 const LOCATION_LABELS: Partial<Record<GridLocation, string>> = {
   [GridLocation.NORTH]: "North",

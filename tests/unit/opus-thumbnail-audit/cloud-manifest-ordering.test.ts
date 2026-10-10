@@ -20,14 +20,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   deriveKey,
   type ThumbnailRenderInput,
-} from "$lib/shared/browse/services/thumbnail-key-deriver";
+} from "#lib/shared/browse/services/thumbnail-key-deriver.js";
 
-vi.mock("$lib/shared/analytics/thumbnail-analytics", () => ({
+vi.mock("#lib/shared/analytics/thumbnail-analytics.js", () => ({
   captureThumbnailRenderFailure: vi.fn(),
 }));
 
@@ -38,11 +38,11 @@ const firebaseMocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: vi.fn(async () => firebaseMocks.auth),
   getStorageInstance: vi.fn(async () => ({ bucket: "test" })),
 }));
-vi.mock("$lib/shared/auth/services/guest-identity", () => ({
+vi.mock("#lib/shared/auth/services/guest-identity.js", () => ({
   ensureGuestIdentity: vi.fn(async () => undefined),
 }));
 
@@ -73,16 +73,16 @@ interface Harness {
     buildCloudKey(key: ReturnType<typeof deriveKey>): never;
   };
   render: ReturnType<typeof vi.fn>;
-  cloud: typeof import("$lib/shared/browse/services/cloud-thumbnail-cache");
+  cloud: typeof import("#lib/shared/browse/services/cloud-thumbnail-cache.js");
   fetchMock: ReturnType<typeof vi.fn>;
 }
 
 async function createHarness(): Promise<Harness> {
   const [{ ThumbnailRenderOrchestrator }, { ThumbnailRenderQueue }, cloud] =
     await Promise.all([
-      import("$lib/shared/browse/services/thumbnail-render-orchestrator"),
-      import("$lib/shared/browse/services/thumbnail-render-queue"),
-      import("$lib/shared/browse/services/cloud-thumbnail-cache"),
+      import("#lib/shared/browse/services/thumbnail-render-orchestrator.js"),
+      import("#lib/shared/browse/services/thumbnail-render-queue.js"),
+      import("#lib/shared/browse/services/cloud-thumbnail-cache.js"),
     ]);
 
   const render = vi.fn(async () => ({

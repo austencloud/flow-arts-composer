@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildAdminSessionReplayUrl,
   parseAdminSessionReplayTarget,
-} from "$lib/features/admin/domain/session-replay-target";
+} from "#lib/features/admin/domain/session-replay-target.js";
 
 describe("admin session replay target", () => {
   it("round-trips exact user and session IDs through the URL", () => {

@@ -12,7 +12,7 @@ import type {
   GridPlacement,
 } from "../../pictograph/grid/domain/enums/grid-enums";
 import type { BackgroundType } from "@austencloud/backgrounds";
-import type { BackgroundLabSettings } from "$lib/shared/background-builder/domain/lab-settings-types";
+import type { BackgroundLabSettings } from "#lib/shared/background-builder/domain/lab-settings-types.js";
 import type { TimeSignatureKey } from "../../foundation/domain/models/time-signature";
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
 import type { FanAppearance } from "../../pictograph/prop/domain/fan-appearance";

@@ -7,9 +7,10 @@
  * Uses Svelte 5 runes for reactive state management.
  */
 
-import { browser } from "$app/environment";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ActiveCreateModule } from "$lib/shared/foundation/ui/ui-types";
+import { browser } from "$app/env";
+import { runAtBackgroundPriority } from "#lib/shared/foundation/utils/background-scheduling.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ActiveCreateModule } from "#lib/shared/foundation/ui/ui-types.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
 
 /**
@@ -160,10 +161,39 @@ export class UndoManager {
   private _redoHistory: UndoHistoryEntry[] = [];
   private _maxHistorySize: number = DEFAULT_MAX_HISTORY_SIZE;
   private _changeCallbacks: Set<() => void> = new Set();
+  private _saveQueued = false;
 
   constructor() {
     // Load persisted history
     void this.loadHistory();
+    if (browser) {
+      // A queued write must land before the page goes away, so a reload (or a
+      // phone app killed in the background) still restores the latest history.
+      const flush = () => this.flushQueuedSave();
+      window.addEventListener("pagehide", flush);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") flush();
+      });
+    }
+  }
+
+  /**
+   * Persist once the thread has room. Serialising every snapshot and writing
+   * localStorage inside the tap cost ~5 ms of each Undo; a burst of changes
+   * now shares one write.
+   */
+  private queueSave(): void {
+    if (this._saveQueued) return;
+    this._saveQueued = true;
+    runAtBackgroundPriority(() => this.flushQueuedSave(), { timeout: 1000 });
+  }
+
+  private flushQueuedSave(): void {
+    if (!this._saveQueued) return;
+    this._saveQueued = false;
+    this.saveHistory().catch((error) => {
+      console.error("❌ UndoManager: Failed to save history:", error);
+    });
   }
 
   /**
@@ -238,12 +268,7 @@ export class UndoManager {
       : [];
 
     // Persist to storage
-    this.saveHistory().catch((error) => {
-      console.error(
-        "❌ UndoManager: Failed to save history after push:",
-        error
-      );
-    });
+    this.queueSave();
 
     // Notify subscribers of change
     this.notifyChange();
@@ -282,12 +307,7 @@ export class UndoManager {
       }
       this._redoHistory.push(entry);
 
-      this.saveHistory().catch((error) => {
-        console.error(
-          "❌ UndoManager: Failed to save history after undo:",
-          error
-        );
-      });
+      this.queueSave();
       this.notifyChange();
       return entry;
     }
@@ -306,12 +326,7 @@ export class UndoManager {
     this._redoHistory.push(entry);
 
     // Persist to storage
-    this.saveHistory().catch((error) => {
-      console.error(
-        "❌ UndoManager: Failed to save history after undo:",
-        error
-      );
-    });
+    this.queueSave();
 
     // Notify subscribers of change
     this.notifyChange();
@@ -365,12 +380,7 @@ export class UndoManager {
     this._undoHistory.push(entry);
 
     // Persist to storage
-    this.saveHistory().catch((error) => {
-      console.error(
-        "❌ UndoManager: Failed to save history after redo:",
-        error
-      );
-    });
+    this.queueSave();
 
     // Notify subscribers of change
     this.notifyChange();
@@ -386,12 +396,7 @@ export class UndoManager {
     this._redoHistory = [];
 
     // Persist to storage
-    this.saveHistory().catch((error) => {
-      console.error(
-        "❌ UndoManager: Failed to save history after clear:",
-        error
-      );
-    });
+    this.queueSave();
 
     // Notify subscribers of change
     this.notifyChange();
@@ -404,12 +409,7 @@ export class UndoManager {
     this._redoHistory = [];
 
     // Persist to storage
-    this.saveHistory().catch((error) => {
-      console.error(
-        "❌ UndoManager: Failed to save history after clearing redo:",
-        error
-      );
-    });
+    this.queueSave();
 
     // Notify subscribers of change
     this.notifyChange();
@@ -600,12 +600,7 @@ export class UndoManager {
       // Reverse so most recent is at end of redo stack
       this._redoHistory.push(...entriesToMove.reverse());
 
-      this.saveHistory().catch((error) => {
-        console.error(
-          "❌ UndoManager: Failed to save history after jump:",
-          error
-        );
-      });
+      this.queueSave();
       this.notifyChange();
 
       return this._undoHistory[undoIndex] ?? null;
@@ -620,12 +615,7 @@ export class UndoManager {
       // Reverse so they go back in correct order
       this._undoHistory.push(...entriesToMove.reverse());
 
-      this.saveHistory().catch((error) => {
-        console.error(
-          "❌ UndoManager: Failed to save history after jump:",
-          error
-        );
-      });
+      this.queueSave();
       this.notifyChange();
 
       return this._undoHistory[this._undoHistory.length - 1] ?? null;

@@ -1,14 +1,14 @@
-import { POST_FRAME_RATE } from "$lib/shared/media-composition/domain/post-project";
+import { POST_FRAME_RATE } from "#lib/shared/media-composition/domain/post-project.js";
 import type {
   PreviewClockMedia,
   PreviewVideoState,
-} from "$lib/shared/media-composition/services/post-preview-clock";
+} from "#lib/shared/media-composition/services/post-preview-clock.js";
 import {
   musicSpan,
   trackSecondsAt,
   type MusicPlacement,
-} from "$lib/shared/media-composition/domain/music-grid";
-import type { PostAudioSegment } from "$lib/shared/media-composition/domain/post-audio-plan";
+} from "#lib/shared/media-composition/domain/music-grid.js";
+import type { PostAudioSegment } from "#lib/shared/media-composition/domain/post-audio-plan.js";
 
 /**
  * Where the preview's music element should be. While the music sounds it sets

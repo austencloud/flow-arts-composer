@@ -1,5 +1,5 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import { getVideoFileMetadata } from "$lib/shared/video-collaboration/helpers/create-video-from-upload";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import { getVideoFileMetadata } from "#lib/shared/video-collaboration/helpers/create-video-from-upload.js";
 
 /** The largest video the editor opens: phones record big files. */
 export const MAX_VIDEO_BYTES = 500 * 1024 * 1024;

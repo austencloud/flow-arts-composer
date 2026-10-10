@@ -12,13 +12,13 @@
  * `assemble-keyboard-handler.ts`; this module owns the side-effecting half.
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import {
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
 import type { AssembleState } from "../state/assemble-state.svelte";
 import {
   handleAssembleKeyDown,

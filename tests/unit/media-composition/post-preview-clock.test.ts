@@ -3,12 +3,12 @@ import {
   previewClockLeads,
   previewClockStep,
   type PreviewClockMedia,
-} from "$lib/shared/media-composition/services/post-preview-clock";
+} from "#lib/shared/media-composition/services/post-preview-clock.js";
 import {
   previewPlaybackRate,
   rememberFollowLead,
   type FollowLead,
-} from "$lib/shared/media-composition/services/video-preview-seek";
+} from "#lib/shared/media-composition/services/video-preview-seek.js";
 
 const footage: PreviewClockMedia = {
   currentTime: 8.04,

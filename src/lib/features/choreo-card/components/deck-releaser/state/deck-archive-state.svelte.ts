@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { DeckReleaseCard } from "../../../domain/models/DeckRelease";
 import type {
   ArchivedDeckMeta,

@@ -133,7 +133,7 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: () => ({ __serverTimestamp: true }),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: async () => {
     if (h.state.holdFirestore) {
       await new Promise<void>((resolve) => h.pendingFirestore.push(resolve));
@@ -143,12 +143,12 @@ vi.mock("$lib/shared/auth/firebase", () => ({
   app: { name: "app" },
 }));
 
-vi.mock("$lib/shared/auth/services/device-id-service", () => ({
+vi.mock("#lib/shared/auth/services/device-id-service.js", () => ({
   getDeviceId: () => "device-1",
 }));
 
 const { FCMTokenManager } =
-  await import("$lib/shared/push/services/fcm-token-manager");
+  await import("#lib/shared/push/services/fcm-token-manager.js");
 
 function writtenTokenPaths(): string[] {
   return h.setDoc.mock.calls.map((call) => call[0] as unknown as string);

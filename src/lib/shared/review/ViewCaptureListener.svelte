@@ -13,12 +13,12 @@
    * and whatever sits under the cursor.
    */
   import { onMount } from "svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import {
     captureCurrentView,
     isViewCaptureKeypress,
     trackPointer,
-  } from "$lib/shared/review/view-capture";
+  } from "#lib/shared/review/view-capture.js";
 
   let busy = false;
 

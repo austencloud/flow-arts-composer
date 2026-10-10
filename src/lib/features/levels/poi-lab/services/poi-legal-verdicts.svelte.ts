@@ -10,7 +10,7 @@
  * Keys are `${flowerKey(blue)}|${flowerKey(red)}`. Missing key = unjudged.
  */
 
-import { flowerKey, type Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+import { flowerKey, type Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import seed from "../data/poi-legal-matrix.json";
 
 export type PoiVerdict = "legal" | "illegal" | "unsure";

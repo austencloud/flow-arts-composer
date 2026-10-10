@@ -1,24 +1,24 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { CardVariation } from "$lib/features/choreo-card/domain/models/DeckRelease";
-import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import { shiftStartPlacement } from "$lib/shared/create/services/sequence-transforms";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { CardVariation } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
+import { applyVariationDescriptor } from "#lib/features/choreo-card/services/deck-variation.js";
+import { shiftStartPlacement } from "#lib/shared/create/services/sequence-transforms.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   type Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   buildFlowerAxis,
   type Flower,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import {
   applyFilter,
   defaultAxisFilter,
-} from "$lib/shared/shape-matrix/domain/filter-flower-axis";
-import { resolveFlowerArchetype } from "$lib/shared/shape-matrix/services/flower-archetype";
-import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { buildFlowerSequence } from "$lib/features/lab/vtg-lab/services/build-flower-sequence";
-import { resolveRotationStyleMatrices } from "$lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices";
+} from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
+import { resolveFlowerArchetype } from "#lib/shared/shape-matrix/services/flower-archetype.js";
+import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { buildFlowerSequence } from "#lib/features/lab/vtg-lab/services/build-flower-sequence.js";
+import { resolveRotationStyleMatrices } from "#lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices.js";
 import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
 
 /**

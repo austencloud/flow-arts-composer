@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 import {
   PostProjectSchema,
   type PostEasing,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   card,
   overlay,

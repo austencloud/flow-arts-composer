@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ShowroomTheme } from "./theme-showroom-data";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import ThemeSceneCanvas from "./ThemeSceneCanvas.svelte";
 
   interface Props {

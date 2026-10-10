@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Canvas2DFadeManager } from "../canvas-2d-fade-manager";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 import { normalizeAngleSigned } from "../../angle-calculator";
 import { interpolatePropCrossfadeTransform } from "../../canvas-2d-animation-renderer";
 

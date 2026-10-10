@@ -4,10 +4,10 @@ import {
   projectDraftRecord,
   resolvePostStudioDraft,
   serializePostStudioBackup,
-} from "$lib/shared/media-composition/services/post-project-backup";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
-import { createTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/services/post-project-backup.js";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import { createTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
 
 const SEQUENCE = "post-recovery";
 const PREFIX = `tka:post-studio:take-timing:v1:${SEQUENCE}:`;

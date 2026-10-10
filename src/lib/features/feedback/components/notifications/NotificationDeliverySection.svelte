@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { NotificationPreferences } from "$lib/shared/feedback/domain/models/notification-models";
-  import type { PushDeviceRegistrationState } from "$lib/shared/push/services/fcm-token-manager";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { NotificationPreferences } from "#lib/shared/feedback/domain/models/notification-models.js";
+  import type { PushDeviceRegistrationState } from "#lib/shared/push/services/fcm-token-manager.js";
   import NotificationChannelCard from "./NotificationChannelCard.svelte";
   import PreferenceGroup from "./PreferenceGroup.svelte";
   import type { PreferenceItem } from "./preference-item";

@@ -13,11 +13,11 @@
   - Export progress overlay on canvas during export
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import AnimationControlsPanel from "$lib/shared/animation-engine/components/canvas/AnimationControlsPanel.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import AnimationControlsPanel from "#lib/shared/animation-engine/components/canvas/AnimationControlsPanel.svelte";
   import { getAnimationExportContext } from "../../context/animation-export-context.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   // Get context object (don't destructure to maintain reactivity)
   const context = getAnimationExportContext();

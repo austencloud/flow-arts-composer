@@ -1,11 +1,11 @@
 import type {
   TurnLevel,
   TurnValue,
-} from "$lib/shared/create/services/level-turn-values";
+} from "#lib/shared/create/services/level-turn-values.js";
 import {
   clampTurnToLevel,
   turnValuesForLevel,
-} from "$lib/shared/create/services/level-turn-values";
+} from "#lib/shared/create/services/level-turn-values.js";
 import type { AxisFilter, MatrixFilters } from "./filter-flower-axis";
 import { ratioLabel } from "./flower-signature";
 
@@ -68,3 +68,11 @@ export function matrixFiltersForTurns(
 export function matrixFiltersForTurn(turn: TurnValue): MatrixFilters {
   return matrixFiltersForTurns(turn, turn);
 }
+
+/**
+ * The level and turn band a fresh Shape Matrix opens on (nothing restored),
+ * for both hands. The Create front door's Shape preview shows the same corner
+ * of the matrix.
+ */
+export const SHAPE_MATRIX_DEFAULT_LEVEL: TurnLevel = 2;
+export const SHAPE_MATRIX_DEFAULT_TURN: TurnValue = 2;

@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import {
   CLUB_TIP_REACH,
   TRIAD_TIP_POINTS,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { getDefaultTrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
-import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { getDefaultTrailPointConfig } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import { getPropDimensions } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
 
 const ORIGINAL_TRIAD_WIDTH = 248.76;
 const TRIAD_ARTWORK_SCALE = 1.0398375944685643;

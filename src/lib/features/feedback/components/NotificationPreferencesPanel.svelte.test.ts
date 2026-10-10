@@ -1,7 +1,7 @@
 import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_NOTIFICATION_PREFERENCES } from "$lib/shared/feedback/domain/models/notification-models";
+import { DEFAULT_NOTIFICATION_PREFERENCES } from "#lib/shared/feedback/domain/models/notification-models.js";
 import NotificationPreferencesPanel from "./NotificationPreferencesPanel.svelte";
 
 const mocks = vi.hoisted(() => ({
@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "$lib/features/feedback/services/notification-preferences-manager",
+  "#lib/features/feedback/services/notification-preferences-manager.js",
   () => ({
     getPreferences: mocks.getPreferences,
     savePreferences: mocks.savePreferences,
@@ -30,7 +30,7 @@ vi.mock(
   })
 );
 
-vi.mock("$lib/shared/push/get-fcm-token-manager", () => ({
+vi.mock("#lib/shared/push/get-fcm-token-manager.js", () => ({
   getFCMTokenManager: () => ({
     getRegistrationState: mocks.getRegistrationState,
     getSetupState: mocks.getSetupState,
@@ -39,11 +39,11 @@ vi.mock("$lib/shared/push/get-fcm-token-manager", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: mocks.showUserError }),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     isAuthenticated: true,
     isAdmin: false,
@@ -55,7 +55,7 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/debug/state/user-preview-state.svelte", () => ({
+vi.mock("#lib/shared/debug/state/user-preview-state.svelte.js", () => ({
   userPreviewState: { isActive: false, data: null },
   getPreviewNotificationPreferences: () => null,
 }));
@@ -121,7 +121,7 @@ const translations: Record<string, string> = {
   common_retry: "Retry",
 };
 
-vi.mock("$lib/shared/i18n/i18n.svelte.js", () => ({
+vi.mock("#lib/shared/i18n/i18n.svelte.js", () => ({
   t: (key: string) => translations[key] ?? key,
 }));
 

@@ -6,7 +6,7 @@ import {
   getShortcutContextLabel,
 } from "./shortcut-center-catalog";
 import { localizeShortcut } from "./shortcut-presentation";
-import { setLocale } from "$lib/shared/i18n/i18n.svelte.js";
+import { setLocale } from "#lib/shared/i18n/i18n.svelte.js";
 
 function item(
   id: string,

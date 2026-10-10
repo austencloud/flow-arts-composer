@@ -14,8 +14,8 @@
     getDefaultTrailPointConfig,
     type TrailPointConfig,
     type TrailPointSource,
-  } from "$lib/shared/animation-engine/domain/types/trail-point-types";
-  import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+  } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+  import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 
   interface Props {
     editorState: EffectPointEditorState;

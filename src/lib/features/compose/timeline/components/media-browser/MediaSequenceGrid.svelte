@@ -2,9 +2,9 @@
   MediaSequenceGrid.svelte - Grid display of sequences with infinite scroll
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import MediaSequenceCard from "./MediaSequenceCard.svelte";
 
   interface Props {

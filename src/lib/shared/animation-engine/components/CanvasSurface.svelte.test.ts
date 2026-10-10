@@ -5,8 +5,9 @@ import {
   AnimationVisibilityStateManager,
   getAnimationVisibilityManager,
 } from "../state/animation-visibility-state.svelte";
-import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import { FIRE_PRESETS } from "./effects-panel/presets/fire-presets";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const mocks = vi.hoisted(() => {
   const initializations: Array<() => Promise<void>> = [];
@@ -40,6 +41,7 @@ const mocks = vi.hoisted(() => {
     setMotionVisibility: vi.fn(),
     setVisibilityManager: vi.fn(),
     setInitialQualityTier: vi.fn(),
+    setTrailOverlayEnabled: vi.fn(),
     invalidateFireFrameCacheOnly: vi.fn(),
     clearFireThermalFields: vi.fn(),
     invalidateFireCache: vi.fn(),
@@ -69,7 +71,7 @@ vi.mock("../services/animation-engine.svelte", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/render-gating/render-activity-gate", () => ({
+vi.mock("#lib/shared/render-gating/render-activity-gate.js", () => ({
   createRenderActivityGate: () => {
     const gate = { attach: vi.fn(), dispose: vi.fn() };
     mocks.activityGates.push(gate);
@@ -142,6 +144,33 @@ describe("CanvasSurface initialization", () => {
   });
 });
 
+describe("CanvasSurface trail overlay option", () => {
+  // The engine reads this once, before it initializes, so the hop from the
+  // surface's prop to the engine is the whole feature. Without it the WebGL2
+  // trail overlay (about 250 ms of main-thread time at mount) is built anyway.
+  it("tells its engine to skip the GPU trail layer when trailOverlay is false", async () => {
+    const screen = render(CanvasSurface, {
+      props: { leftProp: null, rightProp: null, trailOverlay: false },
+    });
+    await vi.waitFor(() => expect(mocks.engines).toHaveLength(1));
+
+    expect(
+      mocks.engines[0]!.setTrailOverlayEnabled
+    ).toHaveBeenCalledExactlyOnceWith(false);
+    screen.unmount();
+  });
+
+  it("leaves the GPU trail layer on by default", async () => {
+    const screen = render(CanvasSurface, {
+      props: { leftProp: null, rightProp: null },
+    });
+    await vi.waitFor(() => expect(mocks.engines).toHaveLength(1));
+
+    expect(mocks.engines[0]!.setTrailOverlayEnabled).not.toHaveBeenCalled();
+    screen.unmount();
+  });
+});
+
 describe("CanvasSurface effects config bridge", () => {
   it("wakes the scoped visibility manager its engine observes when a look is applied", async () => {
     // Fire, charcoal, and LED only re-sync when the engine's own visibility
@@ -182,5 +211,38 @@ describe("CanvasSurface effects config bridge", () => {
     screen.unmount();
     scoped.unregisterObserver(scopedObserver);
     getAnimationVisibilityManager().unregisterObserver(globalObserver);
+  });
+});
+
+describe("CanvasSurface step label on a new load", () => {
+  // Create keeps one player for every sequence. A player resets its data to
+  // null before loading the next one, and the label must then show the new
+  // Start at once, as a newly built player does. Fading the old label out
+  // first left the player on screen for about 150 ms with no label.
+  it("shows the new Start with nothing fading after a reset and load", async () => {
+    const screen = render(CanvasSurface, {
+      props: {
+        leftProp: null,
+        rightProp: null,
+        effectiveBeatNumbersVisible: true,
+        isSeamlesslyLoopable: false,
+        sequenceData: createSequenceData({ word: "A" }),
+        currentStep: 2.5,
+      },
+    });
+    await expect.element(screen.getByText("End")).toBeInTheDocument();
+
+    await screen.rerender({ sequenceData: null, currentStep: 0 });
+    await screen.rerender({
+      sequenceData: createSequenceData({ word: "B" }),
+      currentStep: 0,
+    });
+
+    const groups = [
+      ...screen.container.querySelectorAll<SVGGElement>(".beat-number-group"),
+    ];
+    expect(groups.map((group) => group.textContent?.trim())).toEqual(["Start"]);
+    expect(groups[0]!.getAnimations()).toHaveLength(0);
+    screen.unmount();
   });
 });

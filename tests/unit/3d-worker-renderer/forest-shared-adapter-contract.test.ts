@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { FOREST_ENVIRONMENT_ASSET_URLS } from "$lib/shared/3d/environments/worlds/forest/forest-environment-world";
+import { FOREST_ENVIRONMENT_ASSET_URLS } from "#lib/shared/3d/environments/worlds/forest/forest-environment-world.js";
 import {
   createForestPrototypeWorld,
   FOREST_PROTOTYPE_CAMERA,
-} from "$lib/shared/3d/worker-renderer/worlds/forest-prototype-world";
+} from "#lib/shared/3d/worker-renderer/worlds/forest-prototype-world.js";
 
 const sceneSource = readFileSync(
   resolve("src/lib/shared/3d/environments/scenes/ForestScene.svelte"),

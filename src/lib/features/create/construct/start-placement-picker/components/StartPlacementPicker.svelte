@@ -4,23 +4,23 @@ Shows 3 start placements (Alpha, Beta, Gamma) with toggle to view all 16 variati
 Controls moved below the grid for better UX
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { GridJoin } from "@tka/tka-types";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onDestroy, onMount, type Snippet } from "svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     createSimplifiedStartPlacementState,
     type SimplifiedStartPlacementState,
-  } from "$lib/shared/create/state/start-placement-state.svelte";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  } from "#lib/shared/create/state/start-placement-state.svelte.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import AdvancedStartPlacementPicker from "./AdvancedStartPlacementPicker.svelte";
   import BuildStartPlacement from "./BuildStartPlacement.svelte";
   import GridModeToggle from "../../shared/components/GridModeToggle.svelte";
@@ -45,12 +45,11 @@ Controls moved below the grid for better UX
     { value: "build" as const, label: t("create_ui_build") },
   ]);
 
-  // Props - receive navigation callbacks and layout detection
+  // Props - receive navigation callbacks
   const {
     startPlacementState,
     onNavigateToAdvanced,
     onNavigateToDefault,
-    isSideBySideLayout = () => false,
     embedded = false,
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
@@ -67,7 +66,6 @@ Controls moved below the grid for better UX
     startPlacementState?: SimplifiedStartPlacementState | null;
     onNavigateToAdvanced?: () => void;
     onNavigateToDefault?: () => void;
-    isSideBySideLayout?: () => boolean;
     // When rendered inside another surface (e.g. the create tutorial), that
     // surface owns the heading and the "show me how" entry point. Suppress the
     // picker's own hint + guide link so they don't duplicate — and so the guide
@@ -440,7 +438,6 @@ Controls moved below the grid for better UX
             selectedPictograph={pickerState.selectedPlacement}
             currentGridMode={pickerState.currentGridMode}
             onPictographSelect={handlePlacementSelect}
-            {isSideBySideLayout}
             {gridJoin}
           />
         {:else}
@@ -654,6 +651,13 @@ Controls moved below the grid for better UX
     flex: 1;
   }
 
+  /* Both rows share one control height */
+  .orientation-controls :global(.orientation-cycler),
+  .mode-controls :global(.grid-mode-toggle),
+  .control-button {
+    min-height: 48px;
+  }
+
   .mode-controls :global(.grid-mode-toggle) {
     flex: 1;
     min-width: 0;
@@ -667,8 +671,7 @@ Controls moved below the grid for better UX
     flex: 1;
     gap: 8px;
 
-    /* Touch target */
-    min-height: var(--min-touch-target, 48px);
+    /* Height comes from the shared footer rule above */
     padding: 10px 16px;
 
     /* Theme-aware styling */
@@ -688,12 +691,10 @@ Controls moved below the grid for better UX
     user-select: none;
     -webkit-tap-highlight-color: transparent;
 
-    /* Smooth transitions */
     transition:
-      background 0.2s ease,
-      border-color 0.2s ease,
-      transform 0.15s ease,
-      box-shadow 0.2s ease;
+      background var(--transition-fast),
+      border-color var(--transition-fast),
+      transform var(--transition-fast);
   }
 
   .control-icon {
@@ -713,7 +714,6 @@ Controls moved below the grid for better UX
       background: var(--theme-card-hover-bg);
       border-color: var(--theme-stroke-strong);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px var(--theme-shadow, var(--theme-shadow));
     }
 
     .control-button:hover .control-icon {
@@ -724,7 +724,7 @@ Controls moved below the grid for better UX
   /* Active/pressed state */
   .control-button:active {
     transform: translateY(0) scale(0.98);
-    transition: transform var(--duration-instant) ease;
+    transition: transform var(--transition-micro);
   }
 
   /* Focus state */
@@ -741,65 +741,6 @@ Controls moved below the grid for better UX
 
     .control-button:hover {
       transform: none;
-    }
-  }
-
-  /* Big-screen tiers at the documented 1680 seam (.claude/rules/4k-native-layout.md).
-     Without these the picker is a phone column marooned in a 4K field: a 2rem
-     heading and a 360px method toggle read as postage stamps across the room,
-     which is the exact "scaled-up phone layout" this codebase keeps fixing. */
-  @media (min-width: 1680px) {
-    .workspace-heading {
-      padding-top: clamp(20px, 5vh, 52px);
-    }
-
-    .workspace-hint {
-      font-size: clamp(2rem, 2.2vw, 3rem);
-    }
-
-    .path-selector {
-      width: min(calc(100% - 24px), 32rem);
-      margin-top: 1rem;
-    }
-
-    .controls-footer {
-      max-width: 64rem;
-      gap: 1rem;
-    }
-
-    .control-button {
-      min-height: 3.5rem;
-      font-size: 1.05rem;
-    }
-
-    .control-icon {
-      width: 22px;
-      height: 22px;
-    }
-  }
-
-  @media (min-width: 2600px) {
-    .workspace-hint {
-      font-size: clamp(3rem, 2vw, 4.25rem);
-    }
-
-    .path-selector {
-      width: min(calc(100% - 24px), 44rem);
-    }
-
-    .controls-footer {
-      max-width: 84rem;
-    }
-
-    .control-button {
-      min-height: 4.5rem;
-      font-size: 1.4rem;
-      border-radius: 16px;
-    }
-
-    .control-icon {
-      width: 28px;
-      height: 28px;
     }
   }
 

@@ -9,24 +9,24 @@
 -->
 <script lang="ts">
   import { onDestroy, untrack } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { hashString } from "$lib/shared/foundation/services/content-hasher";
-  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
+  import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
   import {
     buildSequenceSharePayload,
     openSendSequenceSheet,
-  } from "$lib/shared/inbox/state/send-sequence-state.svelte";
-  import PostShareSheet from "$lib/shared/share/components/PostShareSheet.svelte";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { PLAYBACK_BASELINE_BPM } from "$lib/shared/animation-engine/domain/constants/timing";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import type { SequenceModalExporter } from "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte";
+  } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
+  import PostShareSheet from "#lib/shared/share/components/PostShareSheet.svelte";
+  import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { PLAYBACK_BASELINE_BPM } from "#lib/shared/animation-engine/domain/constants/timing.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import type { SequenceModalExporter } from "#lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.js";
 
   interface Props {
     sequence: SequenceData | null;
@@ -132,9 +132,9 @@
   }> {
     const [exporterModule, panelStateModule, controllerModule] =
       await Promise.all([
-        import("$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte"),
-        import("$lib/shared/animation-engine/state/animation-panel-state.svelte"),
-        import("$lib/features/compose/services/animation-playback-controller-factory"),
+        import("#lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.js"),
+        import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js"),
+        import("#lib/features/compose/services/animation-playback-controller-factory.js"),
       ]);
     workspaceVideoExporter ??= new exporterModule.SequenceModalExporter();
     workspaceVideoState ??= panelStateModule.createAnimationPanelState({

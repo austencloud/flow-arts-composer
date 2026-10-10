@@ -5,11 +5,11 @@
   Layout: [View Toggle] ... [Play Button] ... [Close Button]
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { MobileToolView } from "../state/playback-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import MobileToolViewToggle from "../../../components/inputs/MobileToolViewToggle.svelte";
-  import ShareButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ShareButton.svelte";
+  import ShareButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ShareButton.svelte";
 
   let {
     isPlaying = false,

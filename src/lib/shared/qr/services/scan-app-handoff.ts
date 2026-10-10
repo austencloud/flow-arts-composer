@@ -1,7 +1,7 @@
 import {
   buildAppBridgePath,
   resolveEscapeTarget,
-} from "$lib/shared/auth/services/escape-target";
+} from "#lib/shared/auth/services/escape-target.js";
 
 /**
  * The scan page is the first stop for a printed card. Its Open TKA action

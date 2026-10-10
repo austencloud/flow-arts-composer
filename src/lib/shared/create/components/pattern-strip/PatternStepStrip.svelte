@@ -5,7 +5,7 @@
   is owned by the parent; this emits edits.
 -->
 <script lang="ts" generics="T extends number | string | boolean">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   interface Lane {
     label: string;
     color: "blue" | "red" | "hold";

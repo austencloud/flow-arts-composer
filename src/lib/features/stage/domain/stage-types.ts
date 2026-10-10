@@ -1,4 +1,4 @@
-import type { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
+import type { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
 
 export interface StageChoreography {
   id: string;

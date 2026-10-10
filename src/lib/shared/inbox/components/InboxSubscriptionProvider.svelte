@@ -12,17 +12,17 @@
   without requiring the user to visit the Inbox module first.
 -->
 <script lang="ts">
-  import { getFCMTokenManager } from "$lib/shared/push/get-fcm-token-manager";
+  import { getFCMTokenManager } from "#lib/shared/push/get-fcm-token-manager.js";
   import { onMount } from "svelte";
   import { inboxState } from "../state/inbox-state.svelte";
-  import { conversationService } from "$lib/shared/messaging/services/conversation-manager";
-  import { notificationService } from "$lib/shared/feedback/services/notifier";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
+  import { conversationService } from "#lib/shared/messaging/services/conversation-manager.js";
+  import { notificationService } from "#lib/shared/feedback/services/notifier.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
   import {
     startForegroundMessageListener,
     stopForegroundMessageListener,
-  } from "$lib/shared/push/services/foreground-message-handler";
+  } from "#lib/shared/push/services/foreground-message-handler.js";
   // Note: Module loading is handled by container
 
   let unsubscribeMessages: (() => void) | null = null;

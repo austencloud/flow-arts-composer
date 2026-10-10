@@ -7,16 +7,16 @@
  * picker sorts by the grid's default kinetic-alphabet order and takes the
  * front of the list.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   resolveDifficultyLevel,
   resolveStepCount,
-} from "$lib/shared/browse/services/browse-sorter";
+} from "#lib/shared/browse/services/browse-sorter.js";
 import {
   compareKineticLetters,
   extractBaseLetter,
   sortSequencesByKineticAlphabet,
-} from "$lib/shared/browse/utils/kinetic-alphabet-sort";
+} from "#lib/shared/browse/utils/kinetic-alphabet-sort.js";
 
 function firstByAlphabet(pool: SequenceData[]): SequenceData | undefined {
   return sortSequencesByKineticAlphabet([...pool])[0];

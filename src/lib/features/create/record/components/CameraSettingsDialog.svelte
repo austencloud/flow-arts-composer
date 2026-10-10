@@ -6,8 +6,8 @@ Built on Bits UI Dialog (same primitive as ConfirmDialog.svelte) for role=dialog
 aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { Dialog as DialogPrimitive } from "bits-ui";
 
   // Services
@@ -160,7 +160,6 @@ aria-modal, focus trapping, Escape-to-close, and backdrop dismissal.
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border-color, var(--theme-stroke));
     border-radius: var(--border-radius-lg, 12px);
-    box-shadow: 0 20px 40px var(--theme-shadow);
     width: calc(100% - 2 * var(--spacing-lg, 24px));
     max-width: 400px;
     max-height: 80vh;

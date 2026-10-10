@@ -5,10 +5,10 @@
   Icon-only mode on small screens, labels shown on larger screens.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { TrainMode, PracticeMode } from "../../domain/enums/train-enums";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     mode: TrainMode;
@@ -164,7 +164,7 @@
     background: var(--theme-panel-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: var(--radius-2026-md, 14px);
-    box-shadow: var(--shadow-2026-sm, 0 1px 3px var(--theme-shadow));
+    box-shadow: var(--shadow-2026-sm, none);
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: 1rem;
     cursor: pointer;

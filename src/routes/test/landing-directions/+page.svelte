@@ -1,9 +1,9 @@
 <script lang="ts">
-  import MarketingChrome from "$lib/shared/landing/components/MarketingChrome.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import MarketingChrome from "#lib/shared/landing/components/MarketingChrome.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import EditorialFrontPage from "./_components/EditorialFrontPage.svelte";
   import ReadingIndex from "./_components/ReadingIndex.svelte";
-  import "$lib/shared/landing/styles/public-editorial.css";
+  import "#lib/shared/landing/styles/public-editorial.css";
 
   type Direction = "front-page" | "reading-index";
 

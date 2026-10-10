@@ -5,17 +5,17 @@
   Steps auto-advance when the user completes each action (no Continue button).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onDestroy, onMount } from "svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { FocusTrap } from "$lib/shared/foundation/ui/drawer/focus-trap";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { FocusTrap } from "#lib/shared/foundation/ui/drawer/focus-trap.js";
   import {
     logOnboardingTutorialSkipped,
     logOnboardingTutorialStepCompleted,
     logOnboardingTutorialStepViewed,
     type OnboardingEventSource,
-  } from "$lib/shared/analytics/services/onboarding-events";
+  } from "#lib/shared/analytics/services/onboarding-events.js";
   import {
     createTutorialState,
     type CreateTutorialStep,

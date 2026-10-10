@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Popover } from "bits-ui";
-  import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
-  import { getSequenceDisplayName } from "$lib/shared/foundation/services/word-deriver";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
+  import { getSequenceDisplayName } from "#lib/shared/foundation/services/word-deriver.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
   import FuseAnimationPreview from "./FuseAnimationPreview.svelte";
@@ -277,7 +277,6 @@
         var(--theme-panel-bg, rgba(12, 14, 22, 0.96))
       ),
       color-mix(in srgb, var(--theme-text, white) 8%, black);
-    box-shadow: 0 12px 40px var(--theme-shadow);
   }
 
   .preview-stage {

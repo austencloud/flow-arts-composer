@@ -1,16 +1,16 @@
 import { z } from "zod";
 import type { GridJoin } from "@tka/tka-types";
 import { isGridJoin } from "@tka/render-core";
-import { StepDataSchema } from "$lib/shared/foundation/domain/schemas";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { StepDataSchema } from "#lib/shared/foundation/domain/schemas.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   TunnelSnapshotSchema,
   type TunnelSnapshot,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import {
   TunnelCompositionSchema,
   type TunnelComposition,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
 
 export interface CollectedTunnel {
   id: string;

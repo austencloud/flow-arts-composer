@@ -1,15 +1,15 @@
 /** Paint the beat number and notation glyphs omitted by canvas capture.
  * Progress belongs to the shared animation layer and frame compositor. */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { SequenceFrame } from "$lib/shared/media-composition/domain/sequence-frame";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { SequenceFrame } from "#lib/shared/media-composition/domain/sequence-frame.js";
 import type {
   PaintFrame,
   PaintRect,
   PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
-import { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
-import { getSvgImageConverter } from "$lib/shared/foundation/get-svg-image-converter";
+} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+import { ExportGlyphPrerenderer } from "#lib/shared/animation-engine/services/export-glyph-prerenderer.js";
+import { getSvgImageConverter } from "#lib/shared/foundation/get-svg-image-converter.js";
 import { renderStepNumberToCanvas } from "./canvas-renderer";
 import {
   drawElementalGlyphToCanvas,

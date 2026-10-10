@@ -2,8 +2,8 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { describe, it, expect, vi } from "vitest";
 import PropOrientationControl from "./PropOrientationControl.svelte";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
-import { getLocale, setLocale } from "$lib/shared/i18n/i18n.svelte.js";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
+import { getLocale, setLocale } from "#lib/shared/i18n/i18n.svelte.js";
 
 describe("PropOrientationControl", () => {
   it("switches accessible names to German while preserving orientation values", async () => {

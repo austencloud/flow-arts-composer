@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveNativeDeepLinkTarget } from "$lib/shared/platform/services/native-deep-link-target";
+import { resolveNativeDeepLinkTarget } from "#lib/shared/platform/services/native-deep-link-target.js";
 
 describe("native deep-link targets", () => {
   it("keeps printed-card prop and identity parameters on QR handoff", () => {

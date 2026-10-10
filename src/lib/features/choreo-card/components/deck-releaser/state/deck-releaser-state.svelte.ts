@@ -5,15 +5,15 @@ import type {
   GalleryFilters,
   StepCountWeight,
 } from "../../../domain/models/DeckRelease";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
 import type {
   CatalogSourceSummary,
   TnDFamilyOption,
   TnDSeedClass,
   TnDTurnPatternOption,
 } from "../../../services/deck-composer";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   DEFAULT_VARIATION_CONFIG,
   type StartOriMode,

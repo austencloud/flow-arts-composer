@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from "vitest";
 vi.mock("../card-back-job-builder", () => ({ buildBackJob: vi.fn() }));
 
 import { warmCardBackCachesAsync } from "../warm-card-back-caches";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const seq = { id: "x", steps: [] } as unknown as SequenceData;
 const bmp = () => ({ close: vi.fn() }) as unknown as ImageBitmap;

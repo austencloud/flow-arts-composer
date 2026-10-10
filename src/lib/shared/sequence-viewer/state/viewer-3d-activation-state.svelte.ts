@@ -1,8 +1,8 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 import type { createViewerState } from "./viewer-state.svelte";
 import { untrack } from "svelte";
-import { sequence3DContentSignature } from "$lib/shared/3d/state/refresh-opened-sequence";
+import { sequence3DContentSignature } from "#lib/shared/3d/state/refresh-opened-sequence.js";
 
 type Viewer3DState = ReturnType<typeof createViewer3DState>;
 type ViewerState = ReturnType<typeof createViewerState>;

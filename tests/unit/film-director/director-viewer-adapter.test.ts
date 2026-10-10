@@ -24,12 +24,12 @@ import {
   idlePerformerIndices,
   type DirectorAppliedStepChange,
 } from "../../../src/routes/test/film-director/_lib/director-viewer-adapter";
-import type { Viewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
+import type { Viewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 import type { ResolvedDirectorScene } from "../../../src/routes/test/film-director/_lib/film-director-schema";
 import { createViewer3DStateForTest } from "../3d-viewer/viewer3d-test-helpers.svelte";
-import { __resetWebGL2CapabilityForTests } from "$lib/shared/3d/capabilities/webgl-capabilities";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import demoSequenceJson from "$lib/shared/landing/data/demo-sequence.json";
+import { __resetWebGL2CapabilityForTests } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import demoSequenceJson from "#lib/shared/landing/data/demo-sequence.json";
 
 const demoSequence = demoSequenceJson as unknown as SequenceData;
 

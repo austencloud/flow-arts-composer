@@ -1,4 +1,4 @@
-import type { NotificationType } from "$lib/shared/feedback/domain/models/notification-models";
+import type { NotificationType } from "#lib/shared/feedback/domain/models/notification-models.js";
 
 export type NotificationPreferenceGroupId =
   | "messages"

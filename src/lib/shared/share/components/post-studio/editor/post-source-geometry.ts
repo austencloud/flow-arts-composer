@@ -1,4 +1,4 @@
-import type { PostSourceGeometry } from "$lib/shared/media-composition/domain/post-project";
+import type { PostSourceGeometry } from "#lib/shared/media-composition/domain/post-project.js";
 import type { BoxHandle } from "./post-box-drag";
 
 /** Move or resize the visible source rectangle in frame coordinates. It may extend past the frame. */

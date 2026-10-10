@@ -11,7 +11,7 @@ import type { MuseumGrid, WingRegion, Direction } from "../domain/museum-grid-ty
 import { tileKey, parseTileKey } from "../domain/museum-grid-types";
 import type {
   RoomDefinition, RoomObjectDefinition, RoomLightDefinition, EntranceDefinition, WallMaterialId,
-} from "$lib/shared/3d/indoor/domain/room-types";
+} from "#lib/shared/3d/indoor/domain/room-types.js";
 import type { AnalyzedMuseum, ExhibitPlacement, PerformerPlacement, LightPlacement, ConnectionDef } from "./types";
 
 // ── Coordinate helpers ──

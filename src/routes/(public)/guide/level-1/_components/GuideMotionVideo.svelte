@@ -6,7 +6,7 @@
   // by /test/guide-motion-bake; pictograph data comes from guide-motion-configs.
   import GuidePictograph from "./GuidePictograph.svelte";
   import { getMotionPictographData } from "./guide-motion-configs";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   let { id, label }: { id: string; label: string } = $props();
 

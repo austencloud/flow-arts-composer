@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 // Landing mode: the app services never start, so getSettings() serves the
 // read-once copy of what this browser saved.
-vi.mock("$lib/shared/application/state/services.svelte", () => ({
+vi.mock("#lib/shared/application/state/services.svelte.js", () => ({
   areServicesInitialized: () => false,
   getSettingsServiceSync: () => {
     throw new Error("the settings service does not start in landing mode");

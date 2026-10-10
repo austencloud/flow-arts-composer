@@ -1,8 +1,8 @@
 import type { TrailPoint, TrailSettings } from "../domain/types/trail-types";
 import type { AdditionalLayerRenderData } from "../domain/types/animation-render-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type { TipEffectMap } from "../domain/types/tip-effect-types";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 import type { MotionSubSample } from "./motion-sub-sampler";
 
 export interface TrailOverlayRenderParams {

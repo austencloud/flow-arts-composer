@@ -5,16 +5,16 @@
   Uses the shared Drawer component (vaul-svelte based) for consistent UX.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount, tick } from "svelte";
   import { desktopSidebarState } from "../../layout/desktop-sidebar-state.svelte";
   import type { ModuleDefinition, ModuleId } from "../domain/types";
   import ModuleList from "./ModuleList.svelte";
   import ModuleDestinationList from "./ModuleDestinationList.svelte";
   import type { HapticFeedback } from "../../application/services/haptic-feedback";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
   import type { ResponsiveSettings } from "../../device/domain/models/device-models";
   import Drawer from "../../foundation/ui/Drawer.svelte";
   import AccountRow from "./account/AccountRow.svelte";
@@ -22,23 +22,23 @@
   import {
     trackAuthModalAbandoned,
     trackAuthSurfaceOpened,
-  } from "$lib/shared/analytics/auth-events";
-  import { clearAuthSubmissionBridge } from "$lib/shared/auth/services/auth-analytics-bridge";
+  } from "#lib/shared/analytics/auth-events.js";
+  import { clearAuthSubmissionBridge } from "#lib/shared/auth/services/auth-analytics-bridge.js";
   import { authState } from "../../auth/state/auth-state.svelte";
   import { inboxState } from "../../inbox/state/inbox-state.svelte";
   import { userPreviewState } from "../../debug/state/user-preview-state.svelte";
   import { supportModalState } from "../../support/state/support-modal-state.svelte";
   import { whatsNewState } from "../../settings/state/whats-new-state.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     growFade,
     popIn,
     motionDuration,
-  } from "$lib/shared/transitions/motion";
-  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
+  } from "#lib/shared/transitions/motion.js";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
   import { navigationState } from "../state/navigation-state.svelte";
-  import { getAccessibleSectionsForModule } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+  import { getAccessibleSectionsForModule } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
 
   let {
     // Current state

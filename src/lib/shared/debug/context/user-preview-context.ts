@@ -191,8 +191,8 @@ export function initUserPreviewContext(): UserPreviewContext {
  * @example
  * ```svelte
  * <script>
- *   import { useUserPreview } from "$lib/shared/debug/context/user-preview-context";
- *   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+ *   import { useUserPreview } from "#lib/shared/debug/context/user-preview-context.js";
+ *   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
  *
  *   const preview = useUserPreview();
  *

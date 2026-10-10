@@ -5,11 +5,11 @@
  * Survives page refreshes and avoids regenerating unchanged previews.
  */
 
-import { browser } from "$app/environment";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { browser } from "$app/env";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ShareOptions } from "../domain/models/share-options";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const debug = createComponentLogger("PreviewCache");
 

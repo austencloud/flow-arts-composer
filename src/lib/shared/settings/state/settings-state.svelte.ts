@@ -1,7 +1,7 @@
-import { getSettingsPersister } from "$lib/shared/settings/get-settings-persister";
-import { browser } from "$app/environment";
+import { getSettingsPersister } from "#lib/shared/settings/get-settings-persister.js";
+import { browser } from "$app/env";
 import { BackgroundType } from "@austencloud/backgrounds";
-import { getSceneUndoManager } from "$lib/shared/3d/undo/get-scene-undo-manager";
+import { getSceneUndoManager } from "#lib/shared/3d/undo/get-scene-undo-manager.js";
 import { updateBodyBackground } from "../utils/background-preloader";
 import { updateTheme as updateThemeService } from "../../theme/services/theme-service";
 import { applyThemeForBackground } from "../../settings/utils/background-theme-calculator";
@@ -21,7 +21,7 @@ import { withPickVersion } from "../domain/prop-version-rule";
 import { DEFAULT_FAN_APPEARANCE } from "../../pictograph/prop/domain/fan-appearance";
 import { DEFAULT_PROP_LOOK } from "../../pictograph/prop/domain/prop-look";
 import { DEFAULT_TRIANGLE_GRIP } from "../../pictograph/prop/domain/triangle-appearance";
-// Dynamic import: posthog-activity-logger → posthog → $env/dynamic/public.
+// Dynamic import: posthog-activity-logger → posthog → $app/env/public.
 // Static import crashes the composition worker (no globalThis.__sveltekit_dev).
 async function logSettingChange(
   key: string,
@@ -29,19 +29,19 @@ async function logSettingChange(
   newValue: string | number | boolean
 ): Promise<void> {
   const mod =
-    await import("$lib/shared/analytics/services/posthog-activity-logger");
+    await import("#lib/shared/analytics/services/posthog-activity-logger.js");
   return mod.logSettingChange(key, oldValue, newValue);
 }
 import type { FirebaseSettingsPersister } from "../services/firebase-settings-persister";
 import { normalizeBackgroundType } from "../domain/background-type-migration";
 import { defaultPropPresets } from "../domain/prop-presets";
 import { loadedAuth } from "../../auth/loaded-auth";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { getAnimationVisibilityManager } from "../../animation-engine/state/animation-visibility-state.svelte";
 import {
   getColumnCountPreferenceOwner,
   sanitizeColumnCountPreference,
-} from "$lib/shared/share/domain/column-count-preference";
+} from "#lib/shared/share/domain/column-count-preference.js";
 
 const debug = createComponentLogger("SettingsState");
 

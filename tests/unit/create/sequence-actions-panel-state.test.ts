@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createSequenceActionsPanelState,
   type SequenceActionsRestoreEffect,
-} from "$lib/features/create/shared/state/sequence-actions-panel-state.svelte";
+} from "#lib/features/create/shared/state/sequence-actions-panel-state.svelte.js";
 
 describe("sequence actions panel state", () => {
   it("restores Duration through the real view and requests preview setup", () => {

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   /**
    * Saves the post now. Edits already save themselves; this is the button

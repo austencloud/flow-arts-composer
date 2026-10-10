@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import PropBuildPicker from "$lib/shared/3d/components/controls/PropBuildPicker.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PropBuildPicker from "#lib/shared/3d/components/controls/PropBuildPicker.svelte";
   import {
     hasModelSprite,
     normalizePropLook,
     propLookOptions,
     type PropLook,
-  } from "$lib/shared/pictograph/prop/domain/prop-look";
+  } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
   let {
     propType,

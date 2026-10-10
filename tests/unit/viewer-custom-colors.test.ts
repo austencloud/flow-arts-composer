@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { effect_root } from "svelte/internal/client";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import {
   DEFAULT_VIEWER_CUSTOM_COLORS,
   resolveViewerCustomColorPair,
-} from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+} from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 import {
   STAGED_VIEWER_CUSTOM_COLORS_STORAGE_KEY,
   VIEWER_CUSTOM_COLORS_STORAGE_KEY,
@@ -13,10 +13,10 @@ import {
   loadViewerCustomColorPreference,
   saveViewerCustomColorPreference,
   stageViewerCustomColors,
-} from "$lib/shared/sequence-viewer/services/viewer-custom-color-preferences";
-import { createViewerCustomColorState } from "$lib/shared/sequence-viewer/state/viewer-custom-colors-state.svelte";
-import { MandalaViewerController } from "$lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte";
-import { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
+} from "#lib/shared/sequence-viewer/services/viewer-custom-color-preferences.js";
+import { createViewerCustomColorState } from "#lib/shared/sequence-viewer/state/viewer-custom-colors-state.svelte.js";
+import { MandalaViewerController } from "#lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte.js";
+import { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
 
 class MemoryStorage implements Storage {
   #values = new Map<string, string>();

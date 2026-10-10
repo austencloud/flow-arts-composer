@@ -5,8 +5,8 @@ import {
   resolveTunnelLayerProgress,
   tunnelLayerPoseDifference,
   TUNNEL_REVEAL_DURATION,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-layer-reveal";
-import { DURATION } from "$lib/shared/transitions/transitions";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-reveal.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 describe("Tunnel layer reveal", () => {
   it("uses one canonical structural phrase for the formation change", () => {

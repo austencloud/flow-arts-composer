@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   PRODUCTION_MODULES,
   resolveProductionEnvironment,
-} from "$lib/shared/environment/environment-features";
-import { MODULE_DEFINITIONS } from "$lib/shared/navigation/config/module-definitions";
+} from "#lib/shared/environment/environment-features.js";
+import { MODULE_DEFINITIONS } from "#lib/shared/navigation/config/module-definitions.js";
 
 describe("production environment detection", () => {
   it("recognizes a production build without an optional deployment label", () => {

@@ -1,5 +1,5 @@
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { app } from "$lib/shared/auth/firebase";
+import { app } from "#lib/shared/auth/firebase.js";
 import type { LoopConfig } from "../domain/loop-config";
 
 export async function createCheckoutSession(

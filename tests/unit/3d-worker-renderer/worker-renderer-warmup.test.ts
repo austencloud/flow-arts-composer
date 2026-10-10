@@ -9,12 +9,12 @@ import {
   WebGLRenderTarget,
 } from "three";
 import { describe, expect, it, vi } from "vitest";
-import { warmWorkerRenderer } from "$lib/shared/3d/worker-renderer/services/worker-renderer-warmup";
+import { warmWorkerRenderer } from "#lib/shared/3d/worker-renderer/services/worker-renderer-warmup.js";
 import {
   prepareLateWorkerObject,
   primeWorkerRenderer,
   WORKER_PRIME_BATCH_SIZE,
-} from "$lib/shared/3d/worker-renderer/services/worker-renderer-warmup";
+} from "#lib/shared/3d/worker-renderer/services/worker-renderer-warmup.js";
 
 describe("worker renderer warm-up", () => {
   it("dispatches every distinct program before awaiting driver completion", async () => {

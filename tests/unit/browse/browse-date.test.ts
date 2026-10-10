@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import { applyFilter } from "$lib/shared/browse/services/browse-filter";
-import { sortSequences } from "$lib/shared/browse/services/browse-sorter";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import { applyFilter } from "#lib/shared/browse/services/browse-filter.js";
+import { sortSequences } from "#lib/shared/browse/services/browse-sorter.js";
 import {
   resolveBrowseDate,
   withLibraryBrowseDate,
-} from "$lib/shared/browse/services/browse-date";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/browse/services/browse-date.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function sequence(
   id: string,

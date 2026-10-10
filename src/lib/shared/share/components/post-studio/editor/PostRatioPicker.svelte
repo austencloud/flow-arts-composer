@@ -10,7 +10,7 @@
 </script>
 
 <script lang="ts" generics="T extends string">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   /**
    * One shape picked from a few, each drawn as a small outline of itself

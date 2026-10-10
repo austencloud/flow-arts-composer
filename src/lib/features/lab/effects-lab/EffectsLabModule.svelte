@@ -13,7 +13,7 @@
     getEffectDescriptor,
     type EffectMode,
   } from "./domain/effect-descriptor";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   const MODE_KEY = "effects-lab-active-mode";
   const TAB_KEY = "effects-lab-active-tab";

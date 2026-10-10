@@ -5,8 +5,8 @@ import {
   applyFestivalSamplerTurnAssignment,
   findCompatibleFestivalSamplerTurnAssignment,
   loadFestivalSamplerBaseSequence,
-} from "$lib/features/choreo-card/services/festival-sampler-turns";
-import type { FestivalSamplerCardManifest } from "$lib/features/choreo-card/services/festival-sampler-manifest";
+} from "#lib/features/choreo-card/services/festival-sampler-turns.js";
+import type { FestivalSamplerCardManifest } from "#lib/features/choreo-card/services/festival-sampler-manifest.js";
 
 interface PackManifest {
   rank?: number;

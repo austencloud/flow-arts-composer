@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   TrailRenderer3D,
   TrailRingBuffer,
-} from "$lib/shared/3d/effects/trails/trail-renderer-3d";
+} from "#lib/shared/3d/effects/trails/trail-renderer-3d.js";
 import { Vector3, type ShaderMaterial } from "three";
 
 describe("TrailRingBuffer", () => {

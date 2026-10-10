@@ -1,14 +1,14 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { PostProjectSchema } from "$lib/shared/media-composition/domain/post-project";
-import { PostPlanSchema } from "$lib/shared/media-composition/domain/post-plan";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
+import { PostPlanSchema } from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   readPostDraftRecords,
   type PostDraftRecord,
-} from "$lib/shared/media-composition/services/post-draft-storage";
-import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-import { auth } from "$lib/shared/auth/firebase";
-import { legacyPostOwner } from "$lib/shared/media-composition/services/post-project-store";
+} from "#lib/shared/media-composition/services/post-draft-storage.js";
+import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+import { auth } from "#lib/shared/auth/firebase.js";
+import { legacyPostOwner } from "#lib/shared/media-composition/services/post-project-store.js";
 
 const SNAPSHOT_PREFIX = "tka:post:sequence:v1:";
 const RECENT_KEY = "tka:post:recent:v1";
@@ -18,12 +18,18 @@ const PLAN_PREFIX = "tka:post-studio:plan:v1:";
 const memorySnapshots = new Map<string, SequenceData>();
 
 function accountId(): string | null {
-  return auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
+  return auth.currentUser && !auth.currentUser.isAnonymous
+    ? auth.currentUser.uid
+    : null;
 }
 
 function scopedKey(key: string): string {
   const uid = accountId();
-  return uid ? `${key}:account:${uid}` : legacyPostOwner() ? `${key}:guest` : key;
+  return uid
+    ? `${key}:account:${uid}`
+    : legacyPostOwner()
+      ? `${key}:guest`
+      : key;
 }
 
 function snapshotKey(sequenceId: string): string {
@@ -151,8 +157,9 @@ function cachedPostSequence(sequenceId: string): SequenceData | null {
   const memory = memorySnapshots.get(snapshotKey(sequenceId));
   if (memory?.id === sequenceId && memory.steps?.length) return memory;
   try {
-    const raw = safeStorage()?.getItem(snapshotKey(sequenceId)) ??
-      ((!legacyPostOwner() || legacyPostOwner() === accountId())
+    const raw =
+      safeStorage()?.getItem(snapshotKey(sequenceId)) ??
+      (!legacyPostOwner() || legacyPostOwner() === accountId()
         ? safeStorage()?.getItem(`${SNAPSHOT_PREFIX}${sequenceId}`)
         : null);
     if (raw) {
@@ -225,18 +232,23 @@ function choicesFromRecords(
       const project = parsed.data;
       const studioId = project.sequenceId.startsWith("studio-arrangement:");
       const uid = accountId();
-      const studioKey = studioId && uid
-        ? `${PROJECT_PREFIX}account:${uid}:${project.sequenceId}`
-        : studioId && legacyPostOwner()
-          ? `${PROJECT_PREFIX}guest:${project.sequenceId}`
-          : studioId
-            ? `${PROJECT_PREFIX}${project.sequenceId}`
-            : null;
+      const studioKey =
+        studioId && uid
+          ? `${PROJECT_PREFIX}account:${uid}:${project.sequenceId}`
+          : studioId && legacyPostOwner()
+            ? `${PROJECT_PREFIX}guest:${project.sequenceId}`
+            : studioId
+              ? `${PROJECT_PREFIX}${project.sequenceId}`
+              : null;
+      const unclaimedStudio =
+        studioId &&
+        !legacyPostOwner() &&
+        record.key === `${PROJECT_PREFIX}${project.sequenceId}`;
       if (
-        (studioId
-          ? record.key !== studioKey
+        studioId
+          ? record.key !== studioKey && !unclaimedStudio
           : record.key !== `${PROJECT_PREFIX}${project.sequenceId}` &&
-            record.key !== `${PROJECT_PREFIX}guest:${project.sequenceId}`)
+            record.key !== `${PROJECT_PREFIX}guest:${project.sequenceId}`
       )
         continue;
       const current = choices.get(project.sequenceId);
@@ -259,7 +271,10 @@ export async function listPostProjects(): Promise<{
   projects: PostProjectChoice[];
   error: string | null;
 }> {
-  const guestAfterClaim = !!legacyPostOwner() && legacyPostOwner() !== (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid);
+  const guestAfterClaim =
+    !!legacyPostOwner() &&
+    legacyPostOwner() !==
+      (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid);
   let browserRecords: PostDraftRecord[] = [];
   let error: string | null = null;
   try {
@@ -271,7 +286,8 @@ export async function listPostProjects(): Promise<{
   const controller = new AbortController();
   let deadline: ReturnType<typeof setTimeout> | undefined;
   try {
-    if (guestAfterClaim && !accountId()) throw new Error("Account backups are private.");
+    if (guestAfterClaim && !accountId())
+      throw new Error("Account backups are private.");
     const archive = (async () => {
       const response = await fetch("/_local/post-studio-drafts", {
         cache: "no-store",
@@ -304,15 +320,20 @@ export async function listPostProjects(): Promise<{
         typeof record.key === "string" &&
         "value" in record &&
         typeof record.value === "string" &&
-        (!guestAfterClaim || record.key.startsWith(`${PROJECT_PREFIX}account:${accountId()}:studio-arrangement:`))
+        (!guestAfterClaim ||
+          record.key.startsWith(
+            `${PROJECT_PREFIX}account:${accountId()}:studio-arrangement:`
+          ))
     );
   } catch {
-    error = guestAfterClaim ? error : [
-      error,
-      "Computer backups could not be read. Browser projects are shown.",
-    ]
-      .filter(Boolean)
-      .join(" ");
+    error = guestAfterClaim
+      ? error
+      : [
+          error,
+          "Computer backups could not be read. Browser projects are shown.",
+        ]
+          .filter(Boolean)
+          .join(" ");
   } finally {
     clearTimeout(deadline);
   }

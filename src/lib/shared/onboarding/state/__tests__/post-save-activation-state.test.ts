@@ -12,28 +12,28 @@ const mocks = vi.hoisted(() => ({
 	markSeen: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
 	authState: mocks.authState,
 }));
 
-vi.mock("$lib/shared/auth/state/auth-drawer-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-drawer-state.svelte.js", () => ({
 	authDrawerState: {
 		show: mocks.authDrawerShow,
 		hide: vi.fn(),
 	},
 }));
 
-vi.mock("$lib/shared/auth/services/post-hog-feature-flag-service.svelte", () => ({
+vi.mock("#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js", () => ({
 	postHogFeatureFlagService: {
 		canAccess: mocks.canAccess,
 	},
 }));
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
 	captureEvent: mocks.captureEvent,
 }));
 
-vi.mock("$lib/shared/onboarding/state/guest-first-save-guard", () => ({
+vi.mock("#lib/shared/onboarding/state/guest-first-save-guard.js", () => ({
 	hasSeen: mocks.hasSeen,
 	markSeen: mocks.markSeen,
 }));

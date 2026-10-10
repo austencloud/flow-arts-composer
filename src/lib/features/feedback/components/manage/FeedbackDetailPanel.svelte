@@ -4,10 +4,10 @@
   import type {
     FeedbackItem,
     FeedbackPriority,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
-  import type { FeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import type { FeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
   import { createFeedbackDetailState } from "../../state/feedback-detail-state.svelte";
-  import { PRIORITY_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+  import { PRIORITY_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import FeedbackHeader from "./detail/FeedbackHeader.svelte";
   import FeedbackMetadataCard from "./detail/FeedbackMetadataCard.svelte";
   import FeedbackSubtaskPanel from "./detail/FeedbackSubtaskPanel.svelte";
@@ -15,8 +15,8 @@
   import FeedbackActionBar from "./detail/FeedbackActionBar.svelte";
   import FeedbackStatusHistory from "./detail/FeedbackStatusHistory.svelte";
   import FeedbackAssigneeSelector from "./detail/FeedbackAssigneeSelector.svelte";
-  import MediaSpotlight from "$lib/components/media/spotlight/MediaSpotlight.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import MediaSpotlight from "#lib/components/media/spotlight/MediaSpotlight.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     item: FeedbackItem;

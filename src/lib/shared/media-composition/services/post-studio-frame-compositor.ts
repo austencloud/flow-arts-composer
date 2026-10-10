@@ -1,41 +1,41 @@
 import type {
   MediaCompositionPreset,
   PresetSourceGeometry,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
 import {
   fadeBlackOpacityAt,
   regionRectIsOnFrame,
   type EvaluatedFrameLayer,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+} from "#lib/shared/media-composition/services/frame-evaluator.js";
 import {
   paintSurfaceGeometry,
   toPaintFrame,
   type PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
+} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
 import {
   backdropLayer,
   paintBlurredBackdrop,
-} from "$lib/shared/media-composition/services/post-backdrop-painter";
+} from "#lib/shared/media-composition/services/post-backdrop-painter.js";
 import {
   calculateMediaFit,
   calculateSourceCropFit,
   resolvePanOffset,
   type PixelRect,
-} from "$lib/shared/media-composition/services/media-fit";
+} from "#lib/shared/media-composition/services/media-fit.js";
 import {
   paintEdgeBorder,
   paintEdgeShadow,
   regionEdgePixels,
   turnAboutCentre,
-} from "$lib/shared/media-composition/services/region-edge-painter";
-import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
-import { videoColorFilter } from "$lib/shared/media-composition/domain/post-video-color-grade";
-import type { PostStudioExportVideoFrames } from "$lib/shared/media-composition/services/post-studio-export-video-frames";
-import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
-import { tunnelHookPanelOpacity } from "$lib/shared/media-composition/domain/tunnel-hook";
-import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
-import type { PostStudioPictographCapture } from "$lib/shared/media-composition/services/post-studio-pictograph-capture";
+} from "#lib/shared/media-composition/services/region-edge-painter.js";
+import { traceRoundedRect } from "#lib/shared/render/utils/trace-rounded-rect.js";
+import { videoColorFilter } from "#lib/shared/media-composition/domain/post-video-color-grade.js";
+import type { PostStudioExportVideoFrames } from "#lib/shared/media-composition/services/post-studio-export-video-frames.js";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "#lib/shared/media-composition/services/post-studio-dom-capture.js";
+import { tunnelHookPanelOpacity } from "#lib/shared/media-composition/domain/tunnel-hook.js";
+import { sampleEasing } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import type { PostStudioPictographCapture } from "#lib/shared/media-composition/services/post-studio-pictograph-capture.js";
 
 export interface FrameLayerGeometry {
   region: PixelRect;
@@ -665,6 +665,58 @@ interface DrawnLayer {
   regionPixels: PixelRect;
 }
 
+/** The grid mounts canvas engines asynchronously, including on its first export frame. */
+function waitForArrangementSurface(
+  layerElement: HTMLElement
+): Promise<HTMLElement> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const observer = new MutationObserver(check);
+    const timeout = setTimeout(
+      () =>
+        finish(
+          new Error(
+            "Arrangement preview did not finish rendering before export"
+          )
+        ),
+      15_000
+    );
+
+    function finish(error?: Error, surface?: HTMLElement) {
+      if (settled) return;
+      settled = true;
+      observer.disconnect();
+      clearTimeout(timeout);
+      if (error) reject(error);
+      else resolve(surface!);
+    }
+
+    function check() {
+      const surface = layerElement.querySelector<HTMLElement>(
+        "[data-arrangement-surface]"
+      );
+      if (!surface) return;
+      if (surface.querySelector("[data-arrangement-cell-error]")) {
+        finish(new Error("An arrangement cell failed to render for export"));
+        return;
+      }
+      const expected = Number(surface.dataset.arrangementCellCount);
+      const cells = surface.querySelectorAll("[data-arrangement-cell-ready]");
+      if (Number.isFinite(expected) && cells.length < expected) return;
+      if (surface.querySelector('[data-arrangement-cell-ready="false"]'))
+        return;
+      finish(undefined, surface);
+    }
+
+    observer.observe(layerElement, {
+      childList: true,
+      attributes: true,
+      subtree: true,
+    });
+    check();
+  });
+}
+
 /** One layer, turned with its region and clipped to its rounded rect. */
 async function drawRegionLayer(
   context: CanvasRenderingContext2D,
@@ -738,10 +790,7 @@ async function drawRegionLayer(
 
   const renderMode = layerElement.dataset.renderMode;
   if (renderMode === "arrangement") {
-    const surface = layerElement.querySelector<HTMLElement>(
-      "[data-arrangement-surface]"
-    );
-    if (!surface) throw new Error("Arrangement export surface is missing");
+    const surface = await waitForArrangementSurface(layerElement);
     const bounds = surface.getBoundingClientRect();
     if (bounds.width <= 0 || bounds.height <= 0)
       throw new Error("Arrangement export surface has no size");

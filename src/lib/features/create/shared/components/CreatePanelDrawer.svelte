@@ -12,12 +12,12 @@
   Use CreatePanelDrawer with bind:isOpen, provide panel content via children slot
 -->
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { onMount } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { tryGetCreateModuleContext } from "../context/create-module-context";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import type { ResponsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+  import type { ResponsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import type { Snippet } from "svelte";
 
   let {
@@ -291,10 +291,7 @@
     /* Ensure panel appears above navigation (z-index: 100) */
     --sheet-z-index: 150;
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    box-shadow:
-      0 -8px 32px rgba(0, 0, 0, 0.5),
-      0 -2px 8px var(--theme-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    box-shadow: none;
   }
 
   /* The step editor keeps a dense, animated SVG tree open for the lifetime of

@@ -19,10 +19,10 @@
   import { T } from "@threlte/core";
   import { MeshStandardMaterial } from "three";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import EmberFountains from "$lib/shared/3d/environments/scenes/ember/EmberFountains.svelte";
-  import HeatDistortion from "$lib/shared/3d/environments/scenes/ember/HeatDistortion.svelte";
-  import LavaCracks from "$lib/shared/3d/environments/scenes/ember/LavaCracks.svelte";
-  import type { LavaCracksConfig } from "$lib/shared/3d/environments/domain/models/scene-configs";
+  import EmberFountains from "#lib/shared/3d/environments/scenes/ember/EmberFountains.svelte";
+  import HeatDistortion from "#lib/shared/3d/environments/scenes/ember/HeatDistortion.svelte";
+  import LavaCracks from "#lib/shared/3d/environments/scenes/ember/LavaCracks.svelte";
+  import type { LavaCracksConfig } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
   import FirstFireCoalBank from "./FirstFireCoalBank.svelte";
 
   interface Props {

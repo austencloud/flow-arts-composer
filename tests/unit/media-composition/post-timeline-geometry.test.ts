@@ -17,7 +17,7 @@ import {
   scrollLeftForStableAnchor,
   secondsToPixels,
   snapToTargets,
-} from "$lib/shared/share/components/post-studio/editor/timeline/post-timeline-geometry";
+} from "#lib/shared/share/components/post-studio/editor/timeline/post-timeline-geometry.js";
 
 describe("clampPixelsPerSecond", () => {
   it("passes through values already in range", () => {

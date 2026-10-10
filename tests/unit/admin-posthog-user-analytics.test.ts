@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: { currentUser: { getIdToken: vi.fn().mockResolvedValue("token") } },
 }));
 
 import {
   AnalyticsResponseError,
   PostHogUserAnalytics,
-} from "$lib/features/admin/services/post-hog-user-analytics";
+} from "#lib/features/admin/services/post-hog-user-analytics.js";
 
 function response(data: unknown, status = 200) {
   return new Response(

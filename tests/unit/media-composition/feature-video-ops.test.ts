@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   applyPostProjectOps,
   type PostProjectOp,
-} from "$lib/shared/media-composition/domain/post-project-ops";
+} from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { NOW, project } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };

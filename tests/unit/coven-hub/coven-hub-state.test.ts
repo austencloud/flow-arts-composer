@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { createCovenHubState } from "$lib/features/coven-hub/state/coven-hub-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createCovenHubState } from "#lib/features/coven-hub/state/coven-hub-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const seq = { id: "s1", word: "CAKE", steps: [], isCircular: true } as unknown as SequenceData;
 

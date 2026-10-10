@@ -2,7 +2,7 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import TKAWordGlyphHarness from "./__tests__/TKAWordGlyphHarness.svelte";
-import { measureHtmlBraceInk } from "$lib/shared/pictograph/tka-glyph/utils/__tests__/html-brace-ink";
+import { measureHtmlBraceInk } from "#lib/shared/pictograph/tka-glyph/utils/__tests__/html-brace-ink.js";
 
 const glyphCacheState = vi.hoisted(() => ({
   loaded: new Set<string>(),
@@ -11,7 +11,7 @@ const glyphCacheState = vi.hoisted(() => ({
   resolvePending: null as (() => void) | null,
 }));
 
-vi.mock("$lib/shared/render/get-glyph-cache", () => ({
+vi.mock("#lib/shared/render/get-glyph-cache.js", () => ({
   getGlyphCache: () => ({
     getGlyphDataUrl: (letter: string) =>
       glyphCacheState.loaded.has(letter) ? "/test-glyph.svg" : null,

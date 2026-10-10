@@ -3,19 +3,19 @@
 import { BackgroundType } from "@austencloud/backgrounds";
 import { Plane } from "@austencloud/scene-3d";
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import demo from "$lib/shared/landing/data/demo-sequence.json";
-import { computeChoreographerShot } from "$lib/shared/sequence-viewer/camera-choreography/presets/shots";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import demo from "#lib/shared/landing/data/demo-sequence.json";
+import { computeChoreographerShot } from "#lib/shared/sequence-viewer/camera-choreography/presets/shots.js";
 import {
   gridJoinOffset3D,
   resolveGridJoin3D,
-} from "$lib/shared/3d/services/grid-join-3d";
-import { DEFAULT_PERFORMER_HAND_DISTANCE } from "$lib/shared/3d/domain/performer-hand-distance";
-import { CANONICAL_PERFORMER_ANCHOR_Y } from "$lib/shared/3d/environments/domain/stage-coordinate-frame";
+} from "#lib/shared/3d/services/grid-join-3d.js";
+import { DEFAULT_PERFORMER_HAND_DISTANCE } from "#lib/shared/3d/domain/performer-hand-distance.js";
+import { CANONICAL_PERFORMER_ANCHOR_Y } from "#lib/shared/3d/environments/domain/stage-coordinate-frame.js";
 import {
   getViewerFrontStageFacingAngle,
   getViewerFrontStageCameraZ,
-} from "$lib/shared/3d/domain/viewer-formation-facing";
+} from "#lib/shared/3d/domain/viewer-formation-facing.js";
 
 import {
   computeViewerAlignedCamera,
@@ -23,7 +23,7 @@ import {
   levelJoinedViewerOpeningShot,
   isValidViewerCameraPose,
   isValidViewerCameraSnapshot,
-} from "$lib/shared/3d/camera/viewer-camera-framing";
+} from "#lib/shared/3d/camera/viewer-camera-framing.js";
 
 function rect(
   left: number,

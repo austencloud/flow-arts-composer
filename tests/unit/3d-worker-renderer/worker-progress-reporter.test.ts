@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   WORKER_PROGRESS_MIN_INTERVAL_MS,
   createWorkerProgressReporter,
-} from "$lib/shared/3d/worker-renderer/services/worker-progress-reporter";
+} from "#lib/shared/3d/worker-renderer/services/worker-progress-reporter.js";
 
 describe("worker progress reporter", () => {
   it("always emits phase boundaries and clamps their fractions", () => {

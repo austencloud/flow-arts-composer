@@ -4,11 +4,11 @@
  * The LOOP detector needs raw string-based data in a specific format.
  * This converter extracts the necessary data from the typed SequenceData model.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceEntry, RawStepData, RawMotionAttributes } from "$lib/shared/loop-labeler/domain/sequence-models";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceEntry, RawStepData, RawMotionAttributes } from "#lib/shared/loop-labeler/domain/sequence-models.js";
 import type { Step, Motion } from "@tka/tka-types";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export function convert(sequence: SequenceData): SequenceEntry {
   const rawSequence = convertStepsToRaw(sequence);

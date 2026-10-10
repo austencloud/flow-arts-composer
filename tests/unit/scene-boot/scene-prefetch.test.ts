@@ -8,18 +8,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BackgroundType } from "@austencloud/backgrounds";
 
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 
 import {
   DECODER_RUNTIME_URLS,
   sceneAssetUrls,
-} from "$lib/shared/3d/scene-boot/scene-asset-manifest";
+} from "#lib/shared/3d/scene-boot/scene-asset-manifest.js";
 import {
   _resetForTests,
   warmDecoderRuntimes,
   warmSceneAssets,
   warmSceneUrls,
-} from "$lib/shared/3d/scene-boot/scene-prefetch";
+} from "#lib/shared/3d/scene-boot/scene-prefetch.js";
 
 const OCEAN_URLS = sceneAssetUrls(BackgroundType.OCEAN);
 

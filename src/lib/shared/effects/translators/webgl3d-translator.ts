@@ -46,12 +46,12 @@ import { resolveWaterPalette } from "../domain/water-palettes";
 import { resolveBubblePalette } from "../domain/bubble-palettes";
 import { resolvePetalPalette } from "../domain/petal-palettes";
 import { resolveSmokePalette } from "../domain/smoke-palettes";
-import { resolveInkPalette } from "$lib/shared/3d/effects/ink/ink-palettes";
+import { resolveInkPalette } from "#lib/shared/3d/effects/ink/ink-palettes.js";
 import { resolveFrostPalette } from "../domain/frost-palettes";
 import { resolveSilkPalette } from "../domain/silk-palettes";
 import { resolveAnimalPalette } from "../domain/animal-palettes";
 import { resolvePulsePalette } from "../domain/pulse-palettes";
-import { resolveSmokeVolumeProfile3D } from "$lib/shared/3d/effects/smoke/smoke-volume-profile-3d";
+import { resolveSmokeVolumeProfile3D } from "#lib/shared/3d/effects/smoke/smoke-volume-profile-3d.js";
 import { resolveCharcoal3DMotionProfile } from "./charcoal-3d-motion-profiles";
 
 /**

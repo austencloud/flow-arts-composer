@@ -31,12 +31,12 @@
     type PropBuild,
     type PropType as ScenePropType,
   } from "@austencloud/scene-3d";
-  import { getRoomEnvironmentTexture } from "$lib/shared/3d/rendering/room-environment";
-  import { TRIANGLE_STATIONS_M } from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
+  import { getRoomEnvironmentTexture } from "#lib/shared/3d/rendering/room-environment.js";
+  import { TRIANGLE_STATIONS_M } from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
   import {
     paintedBounds,
     type PaintedBounds,
-  } from "$lib/shared/pictograph/prop/domain/painted-bounds";
+  } from "#lib/shared/pictograph/prop/domain/painted-bounds.js";
 
   export interface SpriteCaptureResult {
     dataUrl: string;

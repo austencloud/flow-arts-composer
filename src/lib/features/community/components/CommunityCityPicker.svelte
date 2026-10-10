@@ -12,7 +12,7 @@
   closed slot.
 -->
 <script lang="ts">
-  import AsyncSuggestionCombobox from "$lib/shared/ui/components/AsyncSuggestionCombobox.svelte";
+  import AsyncSuggestionCombobox from "#lib/shared/ui/components/AsyncSuggestionCombobox.svelte";
   import type { CitySuggestion } from "../domain/canonical-city";
   import { createPlacesCitySearch } from "../services/places-city-search";
 

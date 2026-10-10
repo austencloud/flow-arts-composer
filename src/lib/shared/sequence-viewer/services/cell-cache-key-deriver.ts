@@ -61,10 +61,10 @@
  *   other prop's keys stay byte-identical.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PictographVisibilityOptions } from "$lib/shared/render/utils/pictograph-to-svg";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PictographVisibilityOptions } from "#lib/shared/render/utils/pictograph-to-svg.js";
 import type { PreviewCellRenderOptions } from "./preview-cell-renderer";
-import { pictographKeyHasher } from "$lib/shared/render/services/pictograph-key-hasher";
+import { pictographKeyHasher } from "#lib/shared/render/services/pictograph-key-hasher.js";
 
 // Stateless — plain module functions. The only ctor dependency was the shared
 // pictographKeyHasher singleton, now imported directly instead of injected.

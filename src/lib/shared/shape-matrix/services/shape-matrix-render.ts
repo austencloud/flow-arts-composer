@@ -7,16 +7,19 @@
 import type {
   MandalaHandVisibility,
   MandalaPaths,
-} from "$lib/shared/mandala/domain/mandala-types";
-import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
+import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
 import {
+  createMandalaGuideRevealFrame,
   mandalaGuideScale,
   renderMandalaGuideImage,
   type MandalaGuideFit,
   type MandalaGuideImageDependencies,
-} from "$lib/shared/mandala/services/mandala-guide-image";
-import { computeEngineAlignedMandalaScale } from "$lib/shared/mandala/services/mandala-path-preparer";
-import { HERO_TRAIL_PRESET } from "$lib/shared/landing/data/hero-trail-preset";
+  type MandalaGuideImageOptions,
+  type MandalaGuideRevealFrame,
+} from "#lib/shared/mandala/services/mandala-guide-image.js";
+import { computeEngineAlignedMandalaScale } from "#lib/shared/mandala/services/mandala-path-preparer.js";
+import { HERO_TRAIL_PRESET } from "#lib/shared/landing/data/hero-trail-preset.js";
 
 /**
  * The hand colors every Shape Matrix still uses — the same preset the detail
@@ -48,6 +51,31 @@ export interface ShapeMatrixPaintOptions {
   colors?: ShapeMatrixGuideColors;
 }
 
+/**
+ * The guide-image options every Shape Matrix still is painted with. The
+ * Create front door's Shape preview reveals a tile with these same options,
+ * so its finished drawing is the tile's picture.
+ */
+export function shapeMatrixGuideOptions(
+  show: MandalaHandVisibility,
+  sizePx: number,
+  tipDx: number,
+  fit: MandalaGuideFit,
+  options: Pick<ShapeMatrixPaintOptions, "colors" | "dpr"> = {}
+): MandalaGuideImageOptions {
+  const colors = options.colors ?? SHAPE_MATRIX_GUIDE_COLORS;
+  return {
+    size: sizePx,
+    dpr: options.dpr,
+    show,
+    leftColor: colors.left,
+    rightColor: colors.right,
+    strokeWidth: SHAPE_MATRIX_GUIDE_STROKE_WIDTH,
+    fit,
+    tipDx,
+  };
+}
+
 function paint(
   paths: MandalaPaths,
   show: MandalaHandVisibility,
@@ -56,21 +84,19 @@ function paint(
   fit: MandalaGuideFit,
   options: ShapeMatrixPaintOptions = {}
 ): string {
-  const colors = options.colors ?? SHAPE_MATRIX_GUIDE_COLORS;
   return renderMandalaGuideImage(
     paths,
-    {
-      size: sizePx,
-      dpr: options.dpr,
-      show,
-      leftColor: colors.left,
-      rightColor: colors.right,
-      strokeWidth: SHAPE_MATRIX_GUIDE_STROKE_WIDTH,
-      fit,
-      tipDx,
-    },
+    shapeMatrixGuideOptions(show, sizePx, tipDx, fit, options),
     options.deps
   );
+}
+
+/** One cell's drawing: the row flower's blue hand over the column flower's red hand. */
+export function mergeCellPaths(
+  left: MandalaPaths,
+  right: MandalaPaths
+): MandalaPaths {
+  return { left: left.left, right: right.right, purple: [] };
 }
 
 /**
@@ -87,12 +113,30 @@ export function renderCell(
   tipDx: number,
   options?: ShapeMatrixPaintOptions
 ): string {
-  const merged: MandalaPaths = {
-    left: left.left,
-    right: right.right,
-    purple: [],
-  };
+  const merged = mergeCellPaths(left, right);
   return renderExtentFit(merged, sizePx, tipDx, options);
+}
+
+/**
+ * A cell's mandala drawing itself into `canvas`: renderCell's progressive
+ * twin, with the same paths, fit and options, so a finished reveal is the
+ * tile's picture. The Create front door's Shape preview draws its chosen
+ * tile with it.
+ */
+export function createCellRevealFrame(
+  canvas: HTMLCanvasElement,
+  left: MandalaPaths,
+  right: MandalaPaths,
+  sizePx: number,
+  tipDx: number,
+  options: ShapeMatrixPaintOptions = {}
+): MandalaGuideRevealFrame | null {
+  return createMandalaGuideRevealFrame(
+    canvas,
+    mergeCellPaths(left, right),
+    shapeMatrixGuideOptions("both", sizePx, tipDx, "extent", options),
+    options.deps
+  );
 }
 
 /** A single axis-header flower, filling its box like the cells. */

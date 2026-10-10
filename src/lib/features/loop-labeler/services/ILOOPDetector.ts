@@ -1,4 +1,4 @@
-import type { SequenceEntry } from "$lib/shared/loop-labeler/domain/sequence-models";
+import type { SequenceEntry } from "#lib/shared/loop-labeler/domain/sequence-models.js";
 import type {
   CandidateDesignation,
   StepPairGroups,
@@ -6,7 +6,7 @@ import type {
 } from "../domain/models/label-models";
 import type { ComponentId } from "../domain/constants/loop-components";
 import type { PolyrhythmicLOOPResult } from "./polyrhythmic-detector";
-import type { DetectedComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import type { DetectedComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import type { StepPairRelationship } from "./types";
 import type { LayeredPathResult } from "./types";
 

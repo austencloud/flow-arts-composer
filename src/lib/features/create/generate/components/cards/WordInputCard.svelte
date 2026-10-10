@@ -4,14 +4,14 @@ Empty = random generation. Typed word = spell that word.
 Replaces the old GenerationModeCard (Freeform/Spell toggle).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getGreekSymbol } from "$lib/shared/keyboard/services/greek-key-mapper";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getGreekSymbol } from "#lib/shared/keyboard/services/greek-key-mapper.js";
   import { onMount } from "svelte";
   import CardHeader from "./shared/CardHeader.svelte";
   import {
     uppercasePreservingGreek,
     insertAtCursor,
-  } from "$lib/shared/keyboard/domain/greek-input-helpers";
+  } from "#lib/shared/keyboard/domain/greek-input-helpers.js";
 
   let {
     wordValue = "",
@@ -143,11 +143,6 @@ Replaces the old GenerationModeCard (Freeform/Spell toggle).
     gap: 2px;
     position: relative;
     overflow: hidden;
-    box-shadow:
-      0 4px 12px hsl(var(--card-shadow-color) / 0.35),
-      0 2px 6px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke-strong),
-      inset 0 -1px 0 var(--theme-shadow);
     transition: box-shadow var(--duration-emphasis) ease;
   }
 
@@ -158,14 +153,6 @@ Replaces the old GenerationModeCard (Freeform/Spell toggle).
   .word-input-card.mobile .word-field {
     cursor: pointer;
     pointer-events: none;
-  }
-
-  .word-input-card.has-word {
-    box-shadow:
-      0 4px 16px hsl(var(--card-shadow-color) / 0.5),
-      0 2px 8px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke-strong),
-      inset 0 -1px 0 var(--theme-shadow);
   }
 
   .input-row {

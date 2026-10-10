@@ -1,4 +1,4 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import {
   POST_MAX_ZOOM,
   POST_MIN_ZOOM,
@@ -11,26 +11,26 @@ import {
   type PostFraming,
   type PostKeyframe,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   clipBox,
   clipShapeFor,
   shapedBox,
   type PostOutputSize,
-} from "$lib/shared/media-composition/domain/post-canvas";
+} from "#lib/shared/media-composition/domain/post-canvas.js";
 import {
   editItemKeyframes,
   resetFraming,
   updateItem,
   updateItemAt,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   boxAt,
   framingAt,
   isAnimated,
   postSecondsOfKeyframe,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
-import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 import {
   STRAIGHTEN_LIMIT,
   clampToCoverage,

@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { AudioAnalyzer } from './services/audio-analyzer';
 
 let instance: AudioAnalyzer | null = null;

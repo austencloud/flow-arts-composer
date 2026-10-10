@@ -1,30 +1,30 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-  import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-  import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+  import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
+  import type { SequenceTimeMap } from "#lib/shared/media-composition/domain/sequence-time-map.js";
+  import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { FeatureVideoSync } from "#lib/shared/media-composition/services/feature-video-client.js";
   import {
     getEffectsConfigContext,
     setEffectsConfigContext,
-  } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import {
     getAnimationVisibilityContext,
     setAnimationVisibilityContext,
-  } from "$lib/shared/animation-engine/state/animation-visibility-context";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { tryGetViewerUrlSessionContext } from "$lib/shared/sequence-viewer/services/viewer-url-session";
+  } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { tryGetViewerUrlSessionContext } from "#lib/shared/sequence-viewer/services/viewer-url-session.js";
   import {
     capturePsSlice,
     persistedPsSlice,
     seedFromPsSlice,
     type PsSlicePayload,
-  } from "$lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice";
+  } from "#lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice.js";
   import type { PostStudioShareExport } from "./post-studio-share-export";
   import { withPostStudioPropType } from "./post-studio-prop-render-options";
   import PostEditorWorkspace from "./editor/PostEditorWorkspace.svelte";

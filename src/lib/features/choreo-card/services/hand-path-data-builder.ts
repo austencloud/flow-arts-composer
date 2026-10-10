@@ -17,20 +17,20 @@
  * is derived from these core fields at creation time via createMotionData defaults.
  */
 
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   HandSide,
   HandPath,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { HandPathTrace, HandSkew } from "./types";
 
 // The 8 compass points in clockwise order. Any step from point[i] to point[i+1]

@@ -16,23 +16,23 @@
  * - Coordinates with AnimationCacheService for backfill during stutters
  */
 
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type {
   TrailPoint,
   TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   TrackingMode,
   TrailMode,
   TrailEffect,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import type {
   TrailCapturePropStates,
   PropDimensions,
   TrailCaptureConfig,
   IAnimationCacheService,
   IPerformanceMonitorService,
-} from "$lib/shared/animation-engine/domain/types/trail-capture-types";
+} from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
 
 export type {
   AdditionalLayerProps,
@@ -41,16 +41,16 @@ export type {
   TrailCaptureConfig,
   IAnimationCacheService,
   IPerformanceMonitorService,
-} from "$lib/shared/animation-engine/domain/types/trail-capture-types";
+} from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
 import {
   calculateTrailSourceEndpoint,
   type PropEndpointConfig,
-} from "$lib/shared/animation-engine/services/prop-position-calculator";
+} from "#lib/shared/animation-engine/services/prop-position-calculator.js";
 import {
   resolveTrailPointConfig,
   type TrailPointSource,
-} from "$lib/shared/animation-engine/domain/types/trail-point-types";
-import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+} from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 
 interface TrackedTrailSource {
   source: TrailPointSource;

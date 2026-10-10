@@ -1,27 +1,27 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { flip } from "svelte/animate";
-  import PanelHeader from "$lib/shared/create/components/PanelHeader.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { flipDuration } from "$lib/shared/transitions/motion";
-  import type { PublicArtifactEnvelope } from "$lib/shared/artifact-revisions/domain/public-artifact";
-  import type { CollectedTunnel } from "$lib/features/tunnel-collection/domain/tunnel-collection-types";
-  import { needsTunnelPosterRefresh } from "$lib/features/tunnel-collection/domain/tunnel-artifact-migration";
+  import PanelHeader from "#lib/shared/create/components/PanelHeader.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { flipDuration } from "#lib/shared/transitions/motion.js";
+  import type { PublicArtifactEnvelope } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
+  import type { CollectedTunnel } from "#lib/features/tunnel-collection/domain/tunnel-collection-types.js";
+  import { needsTunnelPosterRefresh } from "#lib/features/tunnel-collection/domain/tunnel-artifact-migration.js";
   import {
     describeTunnelForDiscovery,
     matchesTunnelDiscoveryQuery,
     sortTunnelDiscovery,
     tunnelDiscoverySavedAt,
     type TunnelDiscoverySort,
-  } from "$lib/features/tunnel-collection/domain/tunnel-discovery";
-  import { refreshTunnelPoster } from "$lib/features/tunnel-collection/services/tunnel-poster-refresh";
+  } from "#lib/features/tunnel-collection/domain/tunnel-discovery.js";
+  import { refreshTunnelPoster } from "#lib/features/tunnel-collection/services/tunnel-poster-refresh.js";
   import {
     hydratePublicTunnelDiscovery,
     listPublicTunnelDiscovery,
     type PublicTunnelDiscoveryEntry,
-  } from "$lib/features/tunnel-collection/services/tunnel-public-discovery";
+  } from "#lib/features/tunnel-collection/services/tunnel-public-discovery.js";
   import TunnelDiscoveryCard from "./TunnelDiscoveryCard.svelte";
 
   type TunnelSource = "mine" | "explore";

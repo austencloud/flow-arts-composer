@@ -17,27 +17,27 @@
 -->
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-  import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
-  import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import { SequenceModalExporter } from "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte";
-  import PostShareSheet from "$lib/shared/share/components/PostShareSheet.svelte";
-  import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
-  import type { MetaPublishStatus } from "$lib/shared/share/services/meta-publish";
-  import type { InstagramCapabilitySnapshot } from "$lib/shared/share/domain/instagram/instagram-capability-schema";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { getSharer } from "$lib/shared/share/get-sharer";
-  import { getVideosForSequence } from "$lib/shared/video-collaboration/services/collaborative-video-manager";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import demoSequence from "$lib/shared/landing/data/demo-sequence.json";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+  import { AnimationLoop } from "#lib/shared/animation-engine/services/animation-loop.js";
+  import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
+  import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import { SequenceModalExporter } from "#lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.js";
+  import PostShareSheet from "#lib/shared/share/components/PostShareSheet.svelte";
+  import PostStudio from "#lib/shared/share/components/post-studio/PostStudio.svelte";
+  import type { MetaPublishStatus } from "#lib/shared/share/services/meta-publish.js";
+  import type { InstagramCapabilitySnapshot } from "#lib/shared/share/domain/instagram/instagram-capability-schema.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { hydrateSequence } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { getSharer } from "#lib/shared/share/get-sharer.js";
+  import { getVideosForSequence } from "#lib/shared/video-collaboration/services/collaborative-video-manager.js";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import demoSequence from "#lib/shared/landing/data/demo-sequence.json";
 
   /**
    * A real published sequence: 16 steps, a rotated LOOP of period 4, owned by

@@ -7,16 +7,16 @@
  */
 import { mount, unmount } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import demo from "$lib/shared/landing/data/demo-sequence.json";
-import { PLAYBACK_MAX_BPM } from "$lib/shared/animation-engine/domain/constants/timing";
-import type { PreparedSequenceHandoff } from "$lib/shared/animation-engine/domain/chaining-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import demo from "#lib/shared/landing/data/demo-sequence.json";
+import { PLAYBACK_MAX_BPM } from "#lib/shared/animation-engine/domain/constants/timing.js";
+import type { PreparedSequenceHandoff } from "#lib/shared/animation-engine/domain/chaining-types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // Load the player chunk that SequenceHeroDemo's LazyMount imports before the
 // test starts, so the test's time budget covers playback, not a cold import.
-await import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte");
+await import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte");
 const { default: SequenceHeroDemo } =
-  await import("$lib/shared/landing/components/SequenceHeroDemo.svelte");
+  await import("#lib/shared/landing/components/SequenceHeroDemo.svelte");
 
 const realCreateElement = Object.getPrototypeOf(document)
   .createElement as typeof document.createElement;
@@ -62,6 +62,19 @@ function headerWord(host: HTMLElement): string {
       letter.querySelector("img")?.alt ?? letter.textContent?.trim() ?? ""
   ).join("");
 }
+
+// Alone in a ten-file run this test takes 3.7 s (measured 2026-10-09), most
+// of it the player's lazy startup under jsdom. In the full 2,566-file run on
+// 31 forks a file runs five to eight times slower, and on 2026-10-08 this one
+// blew its 45 s budget, which its three waits (20, 15 and 5 s) nearly filled
+// by themselves. Each wait now gets about three times its small-run allowance
+// inside the 120 s budget tests/unit/3d-animation gives a loaded machine, so
+// a stalled run still fails on the wait that stalled, with that wait's
+// message, rather than on the test clock.
+const STARTUP_WAIT_MS = 60_000;
+const HANDOFF_WAIT_MS = 40_000;
+const HEADER_WAIT_MS = 15_000;
+const TEST_TIMEOUT_MS = 120_000;
 
 describe("homepage hero word header", () => {
   it("names the sequence the engine is playing, even before the host adopts it", async () => {
@@ -117,17 +130,17 @@ describe("homepage hero word header", () => {
     try {
       // The first wait covers the player's lazy startup, slow under jsdom.
       await vi.waitFor(() => expect(headerWord(host)).toBe("MYΩN"), {
-        timeout: 20_000,
+        timeout: STARTUP_WAIT_MS,
       });
       await vi.waitFor(() => expect(accept).toHaveBeenCalledOnce(), {
-        timeout: 15_000,
+        timeout: HANDOFF_WAIT_MS,
       });
       await vi.waitFor(() => expect(headerWord(host)).toBe("MY"), {
-        timeout: 5_000,
+        timeout: HEADER_WAIT_MS,
       });
     } finally {
       unmount(component);
       host.remove();
     }
-  }, 45_000);
+  }, TEST_TIMEOUT_MS);
 });

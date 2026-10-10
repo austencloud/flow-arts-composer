@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { LinkedSequence } from "../types";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
 
   interface Props {
     sequence: LinkedSequence;

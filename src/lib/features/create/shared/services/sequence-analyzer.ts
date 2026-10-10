@@ -1,10 +1,10 @@
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { BetaDetector } from "$lib/shared/pictograph/prop/services/beta-detector";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { BetaDetector } from "#lib/shared/pictograph/prop/services/beta-detector.js";
 
 /**
  * Circular Sequence Type
@@ -599,6 +599,6 @@ export class SequenceAnalyzer {
 // ============================================================================
 // DIRECT SINGLETON EXPORT
 // ============================================================================
-import { betaDetector } from "$lib/shared/pictograph/prop/services/beta-detector";
+import { betaDetector } from "#lib/shared/pictograph/prop/services/beta-detector.js";
 
 export const sequenceAnalyzer = new SequenceAnalyzer(betaDetector);

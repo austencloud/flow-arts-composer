@@ -3,7 +3,7 @@
   import Pavilion from "./Pavilion.svelte";
   import ExhibitSlot from "./ExhibitSlot.svelte";
   import PerformerPlatform from "./PerformerPlatform.svelte";
-  import type { MuseumState } from "$lib/shared/museum/state/museum-state.svelte";
+  import type { MuseumState } from "#lib/shared/museum/state/museum-state.svelte.js";
 
   interface Props {
     museumState: MuseumState;

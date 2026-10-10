@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   getAllPropTypes,
   getPropTypeDisplayInfo,
-} from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 /**
  * Persisted settings outlive the enum. A profile saved while Fractalgeng existed

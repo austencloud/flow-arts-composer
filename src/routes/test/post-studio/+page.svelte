@@ -6,30 +6,30 @@
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { setLocale, toLocale } from "$lib/shared/i18n/i18n.svelte.js";
-  import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
-  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { getSharer } from "$lib/shared/share/get-sharer";
+  import { setLocale, toLocale } from "#lib/shared/i18n/i18n.svelte.js";
+  import PostStudio from "#lib/shared/share/components/post-studio/PostStudio.svelte";
+  import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { hydrateSequence } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { getSharer } from "#lib/shared/share/get-sharer.js";
   import {
     getSequenceVideosStore,
     resetSequenceVideoStores,
-  } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
-  import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-  import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
-  import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
-  import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+  import type { CollaborativeVideo } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import { buildCardRenderOptions } from "#lib/shared/share/services/card-render-options.js";
+  import { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+  import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
+  import { registerEditHistoryShortcuts } from "#lib/shared/keyboard/registration/register-edit-history-shortcuts.js";
+  import { keyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
+  import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
   import {
     loadPostDraft,
     savePostDraft,
-  } from "$lib/shared/media-composition/services/post-draft-storage";
+  } from "#lib/shared/media-composition/services/post-draft-storage.js";
   import { mappingFixture } from "./mapping-fixture";
   import { keyframeClearFixture } from "./keyframe-clear-fixture";
   import { textAlignmentFixture } from "./text-alignment-fixture";

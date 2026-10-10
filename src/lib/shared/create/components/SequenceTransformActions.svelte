@@ -5,9 +5,9 @@
   Supports help mode where clicking buttons shows educational content instead of applying transforms.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceActionId } from "$lib/shared/create/domain/sequence-action-types";
-  import SwapIcon from "$lib/shared/icons/SwapIcon.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceActionId } from "#lib/shared/create/domain/sequence-action-types.js";
+  import SwapIcon from "#lib/shared/icons/SwapIcon.svelte";
 
   interface Props {
     hasSequence: boolean;

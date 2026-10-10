@@ -60,12 +60,12 @@
   import type { WorldRect } from "../../data/drowned-gallery-terrain";
   // The lunar sky, borrowed rather than rebuilt. See the sky block in the
   // markup for why, and for what is deliberately NOT taken from it.
-  import Starfield from "$lib/shared/3d/environments/primitives/Starfield.svelte";
-  import EarthSphere from "$lib/shared/3d/environments/scenes/cosmic/EarthSphere.svelte";
-  import EarthGodRays from "$lib/shared/3d/environments/scenes/cosmic/EarthGodRays.svelte";
-  import NebulaLayer from "$lib/shared/3d/environments/scenes/cosmic/NebulaLayer.svelte";
-  import MeteorStreaks from "$lib/shared/3d/environments/scenes/cosmic/MeteorStreaks.svelte";
-  import { createDefaultCosmicNightConfig } from "$lib/shared/3d/environments/domain/models/scene-configs";
+  import Starfield from "#lib/shared/3d/environments/primitives/Starfield.svelte";
+  import EarthSphere from "#lib/shared/3d/environments/scenes/cosmic/EarthSphere.svelte";
+  import EarthGodRays from "#lib/shared/3d/environments/scenes/cosmic/EarthGodRays.svelte";
+  import NebulaLayer from "#lib/shared/3d/environments/scenes/cosmic/NebulaLayer.svelte";
+  import MeteorStreaks from "#lib/shared/3d/environments/scenes/cosmic/MeteorStreaks.svelte";
+  import { createDefaultCosmicNightConfig } from "#lib/shared/3d/environments/domain/models/scene-configs.js";
 
   interface Props {
     grid: MuseumGrid;

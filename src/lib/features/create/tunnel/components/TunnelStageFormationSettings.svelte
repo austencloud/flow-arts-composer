@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { flip } from "svelte/animate";
-  import { growFade, flipDuration } from "$lib/shared/transitions/motion";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import TunnelPresetBrowser from "$lib/shared/sequence-viewer/components/art-settings/TunnelPresetBrowser.svelte";
+  import { growFade, flipDuration } from "#lib/shared/transitions/motion.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import TunnelPresetBrowser from "#lib/shared/sequence-viewer/components/art-settings/TunnelPresetBrowser.svelte";
   import {
     FOLD_OPTIONS,
     imageCount,
-  } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-  import { describeTunnelStageArm } from "$lib/shared/sequence-viewer/tunnel/tunnel-stage";
-  import type { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
+  } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+  import { describeTunnelStageArm } from "#lib/shared/sequence-viewer/tunnel/tunnel-stage.js";
+  import type { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
   import type { TunnelCreatorState } from "../state/tunnel-creator-state.svelte";
 
   let {

@@ -1,7 +1,7 @@
-import * as staticPublicEnv from "$env/static/public";
+import * as staticPublicEnv from "$app/env/public";
 
-// The maps key is optional in preview builds. A namespace import still embeds
-// the key in Capacitor builds when it is configured.
+// The maps key is optional in preview builds. src/env.ts declares it static,
+// so Capacitor builds embed it when it is configured.
 const publicEnv = staticPublicEnv as Record<string, string | undefined>;
 
 export const PUBLIC_GOOGLE_MAPS_API_KEY =

@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getPathPoints } from "$lib/features/hand-paths/hand-path-builder/services/hand-path-animator";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { getPathPoints } from "#lib/features/hand-paths/hand-path-builder/services/hand-path-animator.js";
 
 interface Point {
   x: number;

@@ -7,43 +7,43 @@
   arrow; idle until an arrow is selected.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type {
     PipelineDiagnostics,
     PipelineTier,
-  } from "$lib/shared/pictograph/arrow/positioning/calculation/domain/pipeline-diagnostics";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  } from "#lib/shared/pictograph/arrow/positioning/calculation/domain/pipeline-diagnostics.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import type { SelectedArrowContext } from "../../../services/arrow-adjustment-orchestrator";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { globalAdjustmentVersion } from "$lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-  import { getSpecialOverrideRepository } from "$lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { globalAdjustmentVersion } from "#lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+  import { getSpecialOverrideRepository } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton.js";
   import {
     parseSpecialOverrideKey,
     type SpecialArrowPlacementInput,
-  } from "$lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement";
-  import { getDefaultOverrideRepository } from "$lib/shared/pictograph/arrow/positioning/default-override/services/default-override-singleton";
+  } from "#lib/shared/pictograph/arrow/positioning/special-override/domain/special-arrow-placement.js";
+  import { getDefaultOverrideRepository } from "#lib/shared/pictograph/arrow/positioning/default-override/services/default-override-singleton.js";
   import { livePipelineEdit } from "./live-pipeline-edit.svelte";
   import DefaultArrowAdjustmentHistory from "./DefaultArrowAdjustmentHistory.svelte";
-  import { selectedArrowState } from "$lib/shared/create/state/selected-arrow-state.svelte";
+  import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
   import { Point } from "fabric";
-  import { screenSpaceAdjustmentTransformer } from "$lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer";
-  import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-  import { computeSpecialOverrideKey } from "$lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key";
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { screenSpaceAdjustmentTransformer } from "#lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer.js";
+  import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+  import { computeSpecialOverrideKey } from "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key.js";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     createCanonicalPlacementContext,
     rotateScreenVectorToCanonical,
-  } from "$lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame";
+  } from "#lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame.js";
   import {
     HandSide,
     type HandSide as HandSideValue,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   const logger = createComponentLogger("PipelineEditorDock");
 

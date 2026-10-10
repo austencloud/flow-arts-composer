@@ -1,24 +1,24 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, untrack } from "svelte";
   import type { Snippet } from "svelte";
-  import { activateWhenNear } from "$lib/actions/activate-when-near";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { activateWhenNear } from "#lib/actions/activate-when-near.js";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     captureActivePropConfig,
     resolveRecordedPropConfig,
-  } from "$lib/shared/foundation/services/recorded-prop-intent";
-  import { resolveShowcasePropPair } from "$lib/shared/sequence-preview/services/showcase-prop-pair";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { resolveViewingPresentation } from "$lib/shared/sequence-preview/services/viewing-presentation";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
+  } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+  import { resolveShowcasePropPair } from "#lib/shared/sequence-preview/services/showcase-prop-pair.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { resolveViewingPresentation } from "#lib/shared/sequence-preview/services/viewing-presentation.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { createAnimationScope } from "#lib/shared/animation-engine/state/animation-scope.svelte.js";
 
   interface Props {
     word: string;
@@ -338,7 +338,7 @@
       <div class="live-player">
         <LazyMount
           loader={() =>
-            import("$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
+            import("#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte")}
           active={playerMounted}
           keepAlive={false}
           prefetch={nearViewport && sequence !== null}
@@ -393,8 +393,10 @@
         >
           {#snippet error(_caught, retry)}
             <div class="preview-error" role="alert">
-              <span>{t('preview_player_failed')}</span>
-              <button type="button" onclick={retry}>{t('browse_ui_try_again')}</button>
+              <span>{t("preview_player_failed")}</span>
+              <button type="button" onclick={retry}
+                >{t("browse_ui_try_again")}</button
+              >
             </div>
           {/snippet}
         </LazyMount>
@@ -409,7 +411,7 @@
 
     <div class="strip-zone">
       <LazyMount
-        loader={() => import("$lib/shared/timeline/StepStrip.svelte")}
+        loader={() => import("#lib/shared/timeline/StepStrip.svelte")}
         active={playerMounted}
         keepAlive={false}
         prefetch={nearViewport && sequence !== null}
@@ -481,8 +483,10 @@
 
       {#if showCardLayer && resolutionState === "unavailable" && activation === "manual"}
         <div class="preview-error" role="alert">
-          <span>{t('preview_unavailable')}</span>
-          <button type="button" onclick={retrySequence}>{t('browse_ui_try_again')}</button>
+          <span>{t("preview_unavailable")}</span>
+          <button type="button" onclick={retrySequence}
+            >{t("browse_ui_try_again")}</button
+          >
         </div>
       {:else if showCardLayer && activation === "manual"}
         <button
@@ -568,9 +572,13 @@
     inset: auto;
   }
 
+  /* A host that fits the whole frame to the viewport sets the rail width and
+     strip height, so it knows the player's height before anything loads. */
   .with-controls .player-zone {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(6rem, 9rem);
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(6rem, var(--sequence-showcase-rail-width, 9rem));
     align-items: stretch;
   }
 
@@ -600,17 +608,24 @@
 
   .with-controls .strip-zone {
     flex: none;
-    height: clamp(3.75rem, 18cqw, 6.5rem);
+    height: var(
+      --sequence-showcase-strip-height,
+      clamp(3.75rem, 18cqw, 6.5rem)
+    );
   }
 
-  @container (max-width: 28rem) {
-    .with-controls .player-zone {
-      grid-template-columns: minmax(0, 1fr);
-    }
+  /* A narrow portrait frame moves the rail under the player. In landscape the
+     rail stays beside it, because height is the scarce dimension there. */
+  @media (orientation: portrait) {
+    @container (max-width: 28rem) {
+      .with-controls .player-zone {
+        grid-template-columns: minmax(0, 1fr);
+      }
 
-    .control-rail {
-      border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
-      border-left: 0;
+      .control-rail {
+        border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+        border-left: 0;
+      }
     }
   }
 

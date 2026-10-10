@@ -4,9 +4,9 @@ import {
   mapOrientationToAngle,
   mapPositionToAngle,
   normalizeAnglePositive,
-} from "$lib/shared/animation-engine/services/angle-calculator";
-import { RADIAL_CYCLE } from "$lib/shared/render/core/calculations/orientation-angle";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/animation-engine/services/angle-calculator.js";
+import { RADIAL_CYCLE } from "#lib/shared/render/core/calculations/orientation-angle.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 const LOCATIONS = [
   GridLocation.EAST,

@@ -8,7 +8,7 @@ import {
 import {
   buildTheoryAxis,
   theoryFlowerKey,
-} from "$lib/shared/shape-matrix/domain/theory-flower";
+} from "#lib/shared/shape-matrix/domain/theory-flower.js";
 
 describe("theory axis keeps the matrix contract", () => {
   it("builds four axis entries for every positive ratio in the 0–15 atlas", () => {

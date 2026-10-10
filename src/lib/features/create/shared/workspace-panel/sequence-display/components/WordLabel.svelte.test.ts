@@ -2,7 +2,7 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 import WordLabel from "./WordLabel.svelte";
 
 const stubs = vi.hoisted(() => ({
@@ -11,14 +11,14 @@ const stubs = vi.hoisted(() => ({
   clipboardWrite: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("$lib/shared/render/get-glyph-cache", () => ({
+vi.mock("#lib/shared/render/get-glyph-cache.js", () => ({
   getGlyphCache: () => ({
     getGlyphDataUrl: () => null,
     loadGlyphsByLetter: () => Promise.resolve(),
   }),
 }));
 
-vi.mock("$lib/shared/pronunciation/get-pronunciation-player", () => ({
+vi.mock("#lib/shared/pronunciation/get-pronunciation-player.js", () => ({
   getPronunciationPlayer: () => ({
     isSupported: () => true,
     speak: stubs.speak,

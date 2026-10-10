@@ -2,7 +2,7 @@
  * Angle normalization and interpolation operations.
  */
 
-import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const TWO_PI = Math.PI * 2;
 const PI = Math.PI;

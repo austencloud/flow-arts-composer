@@ -2,7 +2,7 @@
   /**
    * ClipActionsSection - Lock, mute, duplicate, and delete actions
    */
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     locked: boolean;

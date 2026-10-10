@@ -1,18 +1,18 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   CollaborativeVideo,
   StepMap,
-} from "$lib/shared/video-collaboration/domain/collaborative-video";
-import type { SequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
+} from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import type { SequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
 import {
   getStepIndexFromVideo,
   passCountFromStepMap,
   passNumberFromVideo,
-} from "$lib/shared/video-collaboration/utils/step-map-utils";
+} from "#lib/shared/video-collaboration/utils/step-map-utils.js";
 import {
   resolveHandLabeling,
   type HandLabeling,
-} from "$lib/shared/video-collaboration/domain/hand-labeling";
+} from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 import type { VideoPlayheadBridge } from "../../../context/video-playhead-context";
 
 export type PerformanceWorkspaceView = "browse" | "upload" | "map";

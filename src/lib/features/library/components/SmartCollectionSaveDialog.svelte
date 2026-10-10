@@ -8,16 +8,16 @@ buildFilterSpecFromEngine on save. Reused by every browse host that offers a
 my-library pool).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/shared/foundation/ui/modal/ModalHeader.svelte";
-  import type { BrowseEngine } from "$lib/shared/browse/engine/types";
-  import { buildFilterSpecFromEngine } from "$lib/shared/browse/services/smart-filter-spec";
-  import { suggestSmartCollectionName } from "$lib/shared/browse/services/smart-collection-name";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/shared/foundation/ui/modal/ModalHeader.svelte";
+  import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
+  import { buildFilterSpecFromEngine } from "#lib/shared/browse/services/smart-filter-spec.js";
+  import { suggestSmartCollectionName } from "#lib/shared/browse/services/smart-collection-name.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
   import SmartCollectionSaveForm from "./SmartCollectionSaveForm.svelte";
 
   let {

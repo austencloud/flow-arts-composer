@@ -2,10 +2,10 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logModuleView: vi.fn(async () => {}),
 }));
-vi.mock("$lib/shared/hmr-helper", () => ({
+vi.mock("#lib/shared/hmr-helper.js", () => ({
   hasMimeErrorOccurred: () => false,
   verifyTabSwitch: vi.fn(),
 }));
@@ -14,7 +14,7 @@ async function createStateAt(pathname: string) {
   history.replaceState({}, "", pathname);
   vi.resetModules();
   const { createNavigationState } =
-    await import("$lib/shared/navigation/state/navigation-state.svelte");
+    await import("#lib/shared/navigation/state/navigation-state.svelte.js");
   return createNavigationState();
 }
 

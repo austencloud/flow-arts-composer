@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
-import { openSendAttachmentSheet } from "$lib/shared/inbox/state/send-sequence-state.svelte";
-import type { SequenceSharePayload } from "$lib/shared/inbox/domain/models/sequence-share-payload";
+import { inboxState } from "#lib/shared/inbox/state/inbox-state.svelte.js";
+import { openSendAttachmentSheet } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
+import type { SequenceSharePayload } from "#lib/shared/inbox/domain/models/sequence-share-payload.js";
 
 function imageAttachment() {
   return {

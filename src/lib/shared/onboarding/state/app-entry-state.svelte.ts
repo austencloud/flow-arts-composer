@@ -28,11 +28,11 @@ import {
   logOnboardingTutorialAccepted,
   logOnboardingTutorialDeclined,
   logOnboardingTutorialCompleted,
-} from "$lib/shared/analytics/services/onboarding-events";
+} from "#lib/shared/analytics/services/onboarding-events.js";
 import {
   safeLocalStorageSetItem,
   removeLocalStorageItem,
-} from "$lib/shared/foundation/services/storage-manager";
+} from "#lib/shared/foundation/services/storage-manager.js";
 
 export type AppEntryPhase =
   | "wizard-active"
@@ -206,7 +206,7 @@ function createAppEntryState() {
       if (isBrowser) {
         try {
           const { authState } =
-            await import("$lib/shared/auth/state/auth-state.svelte");
+            await import("#lib/shared/auth/state/auth-state.svelte.js");
           if (authState.user && !state.cloudSynced) {
             pendingOffer = true;
             return;
@@ -325,10 +325,10 @@ function createAppEntryState() {
 
       try {
         const { getFirestoreInstance } =
-          await import("$lib/shared/auth/firebase");
+          await import("#lib/shared/auth/firebase.js");
         const { doc, getDoc } = await import("firebase/firestore");
         const { authState } =
-          await import("$lib/shared/auth/state/auth-state.svelte");
+          await import("#lib/shared/auth/state/auth-state.svelte.js");
 
         const userId = authState.effectiveUserId;
         if (!userId) {
@@ -371,11 +371,11 @@ function createAppEntryState() {
 
       try {
         const { getFirestoreInstance } =
-          await import("$lib/shared/auth/firebase");
+          await import("#lib/shared/auth/firebase.js");
         const { doc, writeBatch, serverTimestamp } =
           await import("firebase/firestore");
         const { authState } =
-          await import("$lib/shared/auth/state/auth-state.svelte");
+          await import("#lib/shared/auth/state/auth-state.svelte.js");
 
         // Onboarding belongs to the authenticated account, never an admin
         // preview target. Both terminal documents must use the same owner.
@@ -399,7 +399,7 @@ function createAppEntryState() {
         // cross-device preferences sync, so keep both existing persistence
         // surfaces in agreement at the terminal transition.
         const { getOnboardingPersister } =
-          await import("$lib/shared/onboarding/get-onboarding-persister");
+          await import("#lib/shared/onboarding/get-onboarding-persister.js");
         const onboardingPersister = getOnboardingPersister();
         await onboardingPersister.stageAppTerminalState(batch, userId, reason);
         await batch.commit();

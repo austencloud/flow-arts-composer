@@ -10,17 +10,20 @@ const mocks = vi.hoisted(() => ({
   capture: vi.fn(),
 }));
 
-vi.mock("$env/dynamic/public", () => ({ env: mocks.env }));
-vi.mock("$lib/server/auth/requireFirebaseUser", () => ({
+vi.mock("$app/env/public", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule(mocks.env);
+});
+vi.mock("#lib/server/auth/requireFirebaseUser.js", () => ({
   requireFirebaseUser: mocks.requireFirebaseUser,
 }));
-vi.mock("$lib/server/security/withRateLimit", () => ({
+vi.mock("#lib/server/security/withRateLimit.js", () => ({
   withRateLimit: mocks.withRateLimit,
 }));
-vi.mock("$lib/server/security/rate-limiter", () => ({
+vi.mock("#lib/server/security/rate-limiter.js", () => ({
   RATE_LIMITS: { GENERAL: {} },
 }));
-vi.mock("$lib/server/analytics/posthog-lifecycle-capture", () => ({
+vi.mock("#lib/server/analytics/posthog-lifecycle-capture.js", () => ({
   capturePostHogLifecycleEvent: mocks.capture,
 }));
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Vector3, Quaternion } from "three";
-import { computeSpineTwist } from "$lib/shared/3d/services/spine-twister";
+import { computeSpineTwist } from "#lib/shared/3d/services/spine-twister.js";
 
 function quatToYawDeg(q: Quaternion): number {
   const sinY = 2 * (q.w * q.y + q.x * q.z);

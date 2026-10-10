@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import type { AuthoredPointLightPlan } from "$lib/features/museum/services/museum-room-light-pool";
+import type { AuthoredPointLightPlan } from "#lib/features/museum/services/museum-room-light-pool.js";
 import {
   blendAuthoredPointLightPool,
   createEmptyAuthoredPointLightPool,
   MAX_AUTHORED_POINT_LIGHTS,
   selectAuthoredPointLights,
-} from "$lib/features/museum/services/museum-room-light-pool";
+} from "#lib/features/museum/services/museum-room-light-pool.js";
 
 const waterPlan: AuthoredPointLightPlan = {
   roomIds: ["cave-water"],

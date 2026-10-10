@@ -2,7 +2,7 @@
 // Set by the sequence viewer's "See it in the Guide" action before navigating
 // to /learn/guide/<slug>; consumed once by GuideReader.onMount. One-shot so a
 // refresh doesn't re-fire the animation. Mirrors pending-scan-intent.
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export interface GuideScanIntent {
   /** Guide page slug to land on (from guide-content-index). */

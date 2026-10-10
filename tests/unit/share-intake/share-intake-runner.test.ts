@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import "fake-indexeddb/auto";
 
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 
 // vi.mock() factories are hoisted above every top-level statement, including
 // plain `const` declarations in this file. A factory that DEREFERENCES a later
@@ -22,7 +22,7 @@ const { auth, showAuthDrawer, toast, inboxState, classifyIntake, routeIntake } =
     routeIntake: vi.fn(),
   }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     get effectiveUserId() {
       return auth.effectiveUserId;
@@ -36,19 +36,19 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/auth/state/auth-drawer-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-drawer-state.svelte.js", () => ({
   authDrawerState: { show: showAuthDrawer },
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({ toast }));
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({ toast }));
 
-vi.mock("$lib/shared/inbox/state/inbox-state.svelte", () => ({ inboxState }));
+vi.mock("#lib/shared/inbox/state/inbox-state.svelte.js", () => ({ inboxState }));
 
-vi.mock("$lib/shared/share-intake/services/intake-classifier", () => ({
+vi.mock("#lib/shared/share-intake/services/intake-classifier.js", () => ({
   classifyIntake: (...args: unknown[]) => classifyIntake(...args),
 }));
 
-vi.mock("$lib/shared/share-intake/services/intake-router", () => ({
+vi.mock("#lib/shared/share-intake/services/intake-router.js", () => ({
   routeIntake: (...args: unknown[]) => routeIntake(...args),
 }));
 
@@ -56,14 +56,14 @@ import {
   runPendingIntakes,
   scheduleIntakeRun,
   completeShareIntake,
-} from "$lib/shared/share-intake/services/share-intake-runner";
+} from "#lib/shared/share-intake/services/share-intake-runner.js";
 import {
   putIntake,
   getIntake,
   listIntakes,
   deleteIntake,
-} from "$lib/shared/share-intake/services/intake-store";
-import type { SharedIntake } from "$lib/shared/share-intake/domain/share-intake-models";
+} from "#lib/shared/share-intake/services/intake-store.js";
+import type { SharedIntake } from "#lib/shared/share-intake/domain/share-intake-models.js";
 
 // jsdom (as pinned in this repo, v27.4.0) does not implement Blob/File's
 // spec-required arrayBuffer() method (jsdom/jsdom#2555), and putIntake calls it.

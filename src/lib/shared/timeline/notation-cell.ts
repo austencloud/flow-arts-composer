@@ -1,8 +1,8 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { createStartPlacementFromBeatStart } from "#lib/shared/create/services/sequence-transforms.js";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 import { gridJoinCellResolver } from "@tka/render-core";
 import type { GridJoin } from "@tka/tka-types";
 

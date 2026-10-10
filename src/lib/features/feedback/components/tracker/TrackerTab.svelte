@@ -2,7 +2,7 @@
 <script lang="ts">
   import { createFeedbackTrackerState } from "../../state/feedback-tracker-state.svelte";
   import TrackerList from "./TrackerList.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   const state = createFeedbackTrackerState();
 

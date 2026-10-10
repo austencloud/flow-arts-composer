@@ -7,8 +7,8 @@
  * Set by GeneratePanel when it mounts, cleared when it unmounts.
  */
 
-import type { GeneratorHelpId } from "$lib/shared/create/domain/generator-help-content";
-import type { UIGenerationConfig } from "$lib/shared/create/utils/config-mapper";
+import type { GeneratorHelpId } from "#lib/shared/create/domain/generator-help-content.js";
+import type { UIGenerationConfig } from "#lib/shared/create/utils/config-mapper.js";
 
 export interface GeneratorVoiceRef {
   /** Read the current UI generation config */

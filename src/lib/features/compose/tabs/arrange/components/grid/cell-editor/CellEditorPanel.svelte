@@ -1,24 +1,24 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { GridCell } from "../../../state/arrange-grid-state.svelte";
   import type {
     TransformType,
     CellMediaType,
     CellEffect,
     PropColors,
-  } from "$lib/shared/animation-engine/domain/compose-types";
+  } from "#lib/shared/animation-engine/domain/compose-types.js";
   import type {
     TipEffectMap,
     TipEffortMap,
-  } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
-  import { buildPillSpecs } from "$lib/shared/animation-panel/pill-nav/pill-types";
-  import IconRailNav from "$lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
+  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import type { PillId } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
+  import { buildPillSpecs } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
+  import IconRailNav from "#lib/shared/animation-panel/pill-nav/IconRailNav.svelte";
   import {
     EFFECT_COLORS,
     effectNavIcon,
-  } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
+  } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
   import ScopeBreadcrumb, {
     type BreadcrumbSegment,
   } from "./ScopeBreadcrumb.svelte";
@@ -191,7 +191,6 @@
         summary: playbackSummary,
       },
       display: { icon: "fa-eye", label: "DISPLAY", summary: displaySummary },
-
     })
   );
 

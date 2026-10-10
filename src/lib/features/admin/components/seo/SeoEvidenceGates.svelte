@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { SeoDashboardSnapshot } from "$lib/features/admin/domain/models/seo-dashboard-model";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import type { SeoDashboardSnapshot } from "#lib/features/admin/domain/models/seo-dashboard-model.js";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import {
     formatCriterion,
     formatDate,

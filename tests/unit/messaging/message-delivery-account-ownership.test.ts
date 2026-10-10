@@ -13,12 +13,12 @@
  * is a message sent from the wrong account.
  */
 import { describe, expect, it, vi } from "vitest";
-import type { IMessageDeliveryCoordinator } from "$lib/shared/inbox/services/contracts/IMessageDeliveryCoordinator";
-import type { MessageOutboxRecord } from "$lib/shared/inbox/domain/message-delivery-models";
-// Relative, not `$test-helpers`: that alias exists only in the browser
+import type { IMessageDeliveryCoordinator } from "#lib/shared/inbox/services/contracts/IMessageDeliveryCoordinator.js";
+import type { MessageOutboxRecord } from "#lib/shared/inbox/domain/message-delivery-models.js";
+// Relative, not `#test-helpers`: that alias exists only in the browser
 // component config, not in the jsdom unit config.
 import { MemoryDeliveryRepository } from "../../helpers/inbox/memory-delivery-repository";
-import { createMessageDeliveryState } from "$lib/shared/inbox/state/message-delivery-state.svelte";
+import { createMessageDeliveryState } from "#lib/shared/inbox/state/message-delivery-state.svelte.js";
 
 function setup(options: { online?: boolean } = {}) {
   const repository = new MemoryDeliveryRepository();

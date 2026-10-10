@@ -1,32 +1,35 @@
 <script lang="ts">
   import type { Snippet, Component } from "svelte";
   import { onMount } from "svelte";
-  import { afterNavigate, onNavigate, replaceState } from "$app/navigation";
+  import { afterNavigate, onNavigate, goto } from "$app/navigation";
+  import { isShallowGoto } from "#lib/shared/navigation/services/url-state.js";
   import { page } from "$app/state";
-  import { dev } from "$app/environment";
-  import MarketingChrome from "$lib/shared/landing/components/MarketingChrome.svelte";
-  import ViewCaptureListener from "$lib/shared/review/ViewCaptureListener.svelte";
+  import { dev } from "$app/env";
+  import MarketingChrome from "#lib/shared/landing/components/MarketingChrome.svelte";
+  import { siteCopyLocale } from "#lib/shared/landing/site-copy.js";
+  import { pinDocumentLanguage } from "#lib/shared/i18n/i18n.svelte.js";
+  import ViewCaptureListener from "#lib/shared/review/ViewCaptureListener.svelte";
   import { detectSiteMode, type SiteMode } from "../config/domains";
-  import { consumeSkipNextViewTransition } from "$lib/shared/transitions/sequence-drawer-state.svelte";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
-  import { navigationMorphs } from "$lib/shared/transitions/navigation-morphs";
-  import { runNamedRouteMorph } from "$lib/shared/transitions/named-route-morph-state.svelte";
-  import { isConstrainedConnection } from "$lib/shared/platform/network-conditions";
-  import { pruneRouteScopedParams } from "$lib/shared/navigation/services/url-parameter-policy";
+  import { consumeSkipNextViewTransition } from "#lib/shared/transitions/sequence-drawer-state.svelte.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
+  import { navigationMorphs } from "#lib/shared/transitions/navigation-morphs.js";
+  import { runNamedRouteMorph } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
+  import { isConstrainedConnection } from "#lib/shared/platform/network-conditions.js";
+  import { pruneRouteScopedParams } from "#lib/shared/navigation/services/url-parameter-policy.js";
   import {
     markLanding,
     installLandingMarkReader,
-  } from "$lib/shared/performance/landing-marks";
-  import { getIabBannerHeight } from "$lib/shared/auth/state/iab-banner-state.svelte";
+  } from "#lib/shared/performance/landing-marks.js";
+  import { getIabBannerHeight } from "#lib/shared/auth/state/iab-banner-state.svelte.js";
   import type { LayoutData } from "./$types";
   import "../app.css";
   // Chip toggle tokens - maps --chip-* to TKA design values
   import "@austencloud/chip-toggle/css/tka-tokens.css";
   // Import modern view transitions CSS
-  import "$lib/shared/transitions/view-transitions.css";
+  import "#lib/shared/transitions/view-transitions.css";
   // Gallery results-grid filter motion (exit / move / staggered enter). Scoped
   // to `.pane-results-body`; inert on every other surface.
-  import "$lib/shared/transitions/results-motion.css";
+  import "#lib/shared/transitions/results-motion.css";
 
   // View Transitions driver (2026 canonical SvelteKit pattern), scoped to route
   // pairs that provide matching named participants: browse <-> sequence, the
@@ -102,6 +105,7 @@
   }
 
   onNavigate((navigation) => {
+    if (isShallowGoto(navigation)) return;
     if (!document.startViewTransition) return;
     if (reducedMotion()) return;
     if (consumeSkipNextViewTransition()) return;
@@ -134,6 +138,9 @@
 
   afterNavigate((navigation) => {
     if (typeof window === "undefined") return;
+    // Its own cleanup below is a shallow write, as are the params other code
+    // writes on purpose; only a real arrival is pruned.
+    if (isShallowGoto(navigation)) return;
     const pathname = navigation.to?.url.pathname ?? "";
 
     const url = new URL(window.location.href);
@@ -149,7 +156,9 @@
       const cleaned = url.pathname + (url.search ? url.search : "") + url.hash;
       // Initial afterNavigate callbacks run immediately before SvelteKit marks
       // its router ready. Cross that boundary before using its history API.
-      queueMicrotask(() => replaceState(cleaned, {}));
+      queueMicrotask(
+        () => void goto(cleaned, { shallow: true, replace: true })
+      );
     }
   });
 
@@ -216,6 +225,17 @@
     );
   });
 
+  // Public pages are written in English until their site copy is translated.
+  // Following an Arabic locale there turned English sentences right-to-left:
+  // the home tiles mirrored into their artwork and every full stop and
+  // question mark moved to the front of its line.
+  const isPublicPage = $derived(
+    isMarketing || (page.route.id?.startsWith("/(public)/") ?? false)
+  );
+  $effect(() => {
+    pinDocumentLanguage(isPublicPage ? siteCopyLocale() : null);
+  });
+
   $effect(() => {
     const geo = data?.geo;
     // Presence belongs to the authenticated application. Public pages and
@@ -225,7 +245,7 @@
       return;
 
     let cancelled = false;
-    void import("$lib/shared/presence/get-presence-tracker")
+    void import("#lib/shared/presence/get-presence-tracker.js")
       .then(({ getPresenceTracker }) => {
         if (!cancelled) getPresenceTracker().setLocation(geo);
       })
@@ -257,22 +277,22 @@
    */
   const URL_TO_MODULE: Record<string, () => Promise<unknown>> = {
     create: () =>
-      import("$lib/features/create/shared/components/CreateModule.svelte"),
+      import("#lib/features/create/shared/components/CreateModule.svelte"),
     generate: () =>
-      import("$lib/features/create/shared/components/CreateModule.svelte"),
+      import("#lib/features/create/shared/components/CreateModule.svelte"),
     browse: () =>
-      import("$lib/features/browse/shared/components/BrowseModule.svelte"),
-    compose: () => import("$lib/features/compose/ComposeModule.svelte"),
-    animate: () => import("$lib/features/compose/ComposeModule.svelte"),
-    museum: () => import("$lib/features/museum/MuseumModule.svelte"),
-    learn: () => import("$lib/features/learn/LearnTab.svelte"),
-    train: () => import("$lib/features/train/components/TrainModule.svelte"),
-    arena: () => import("$lib/features/arena/ArenaModule.svelte"),
-    settings: () => import("$lib/features/settings/SettingsModule.svelte"),
-    tika: () => import("$lib/features/tika/TikaModule.svelte"),
-    festivals: () => import("$lib/features/festivals/FestivalModule.svelte"),
-    admin: () => import("$lib/features/admin/components/AdminDashboard.svelte"),
-    stage: () => import("$lib/features/stage/StageModule.svelte"),
+      import("#lib/features/browse/shared/components/BrowseModule.svelte"),
+    compose: () => import("#lib/features/compose/ComposeModule.svelte"),
+    animate: () => import("#lib/features/compose/ComposeModule.svelte"),
+    museum: () => import("#lib/features/museum/MuseumModule.svelte"),
+    learn: () => import("#lib/features/learn/LearnTab.svelte"),
+    train: () => import("#lib/features/train/components/TrainModule.svelte"),
+    arena: () => import("#lib/features/arena/ArenaModule.svelte"),
+    settings: () => import("#lib/features/settings/SettingsModule.svelte"),
+    tika: () => import("#lib/features/tika/TikaModule.svelte"),
+    festivals: () => import("#lib/features/festivals/FestivalModule.svelte"),
+    admin: () => import("#lib/features/admin/components/AdminDashboard.svelte"),
+    stage: () => import("#lib/features/stage/StageModule.svelte"),
   };
 
   function startActiveModulePreload(): void {
@@ -326,24 +346,25 @@
     // later dynamic import resolves from cache.
     startActiveModulePreload();
     const common = {
-      bootProfiler: import("$lib/shared/analytics/boot-profiler"),
+      bootProfiler: import("#lib/shared/analytics/boot-profiler.js"),
       di: trackBootImport(
         "composition-root",
-        () => import("$lib/shared/composition-root")
+        () => import("#lib/shared/composition-root/index.js")
       ),
       firebase: trackBootImport(
         "firebase",
-        () => import("$lib/shared/auth/firebase")
+        () => import("#lib/shared/auth/firebase.js")
       ),
       authState: trackBootImport(
         "auth-state",
-        () => import("$lib/shared/auth/state/auth-state.svelte")
+        () => import("#lib/shared/auth/state/auth-state.svelte.js")
       ),
-      i18n: import("$lib/shared/i18n/i18n.svelte.js"),
+      i18n: import("#lib/shared/i18n/i18n.svelte.js"),
       modalUrlState:
-        import("$lib/shared/application/state/ui/modal-url-state.svelte"),
-      cacheBuster: import("$lib/shared/utils/cache-buster"),
-      nativeInitializer: import("$lib/shared/platform/get-native-initializer"),
+        import("#lib/shared/application/state/ui/modal-url-state.svelte.js"),
+      cacheBuster: import("#lib/shared/utils/cache-buster.js"),
+      nativeInitializer:
+        import("#lib/shared/platform/get-native-initializer.js"),
     };
     // Prod-only: preload MainApp too. In dev, AppShellLoader's own import() is
     // fast enough - adding it here pulls too many deps into initial parallel
@@ -352,7 +373,7 @@
       (common as Record<string, Promise<unknown>>).mainApp = trackBootImport(
         "main-application",
         () =>
-          import("$lib/shared/application/components/MainApplication.svelte")
+          import("#lib/shared/application/components/MainApplication.svelte")
       );
     }
     return common;
@@ -424,10 +445,10 @@
     const analyticsFrame = isDevelopmentHarness
       ? null
       : requestAnimationFrame(() => {
-          void import("$lib/shared/analytics/services/posthog")
+          void import("#lib/shared/analytics/services/posthog.js")
             .then(({ initPostHog }) => initPostHog())
             .then(() =>
-              import("$lib/shared/analytics/web-vitals").then(
+              import("#lib/shared/analytics/web-vitals.js").then(
                 ({ initWebVitals }) => initWebVitals()
               )
             )
@@ -435,7 +456,7 @@
         });
 
     // i18n is lightweight - safe for landing
-    const { initI18n } = await import("$lib/shared/i18n/i18n.svelte.js");
+    const { initI18n } = await import("#lib/shared/i18n/i18n.svelte.js");
     await initI18n();
 
     // Landing doesn't need DI container or auth - mark ready immediately
@@ -465,7 +486,7 @@
    * viewer does.
    */
   function startSettingsService(): void {
-    void import("$lib/shared/application/state/services.svelte")
+    void import("#lib/shared/application/state/services.svelte.js")
       .then(({ initializeAppServices }) => initializeAppServices())
       .catch((error: unknown) =>
         console.warn("[Layout] Settings service failed to start:", error)
@@ -535,7 +556,7 @@
     // first paint and the active module's load. On a slow connection that
     // contention is exactly what makes the page feel janky on arrival.
     const preloadGlyphs = () => {
-      import("$lib/shared/render/services/text-renderer")
+      import("#lib/shared/render/services/text-renderer.js")
         .then(({ textRenderer }) => textRenderer.preloadGlyphImages())
         .catch(() => {});
     };
@@ -548,7 +569,7 @@
     // Desktop only: route 3D asset URLs onto the offline bundle before any
     // scene can mount. A local manifest read; no-op on web/mobile.
     const { installDesktopAssetRuntime } =
-      await import("$lib/shared/desktop/desktop-asset-runtime");
+      await import("#lib/shared/desktop/desktop-asset-runtime.js");
     await installDesktopAssetRuntime().catch((err: unknown) =>
       console.warn("[Layout] Desktop asset bundle unavailable:", err)
     );
@@ -556,7 +577,7 @@
     // Initialize desktop Tauri features (window state, updater).
     // No-op on web/mobile - the isDesktop check inside returns immediately.
     const { getDesktopInitializer } =
-      await import("$lib/shared/desktop/get-desktop-initializer");
+      await import("#lib/shared/desktop/get-desktop-initializer.js");
     const desktopInitializer = getDesktopInitializer();
     desktopInitializer
       .initialize()
@@ -594,7 +615,7 @@
       await desktopInitializer.dataSeeded.catch(() => undefined);
       try {
         const { getGalleryPrefetcher } =
-          await import("$lib/features/browse/shared/get-gallery-prefetcher");
+          await import("#lib/features/browse/shared/get-gallery-prefetcher.js");
         const prefetcher = getGalleryPrefetcher();
         if (prefetcher && typeof prefetcher.prefetch === "function") {
           prefetcher
@@ -610,7 +631,7 @@
       // Creators: purely speculative warming for the Creators tab. Skip it
       // on other workspaces or constrained connections; the tab loads on demand.
       if (prefetchBrowseNetwork) {
-        import("$lib/features/creators/state/creators-data-state.svelte")
+        import("#lib/features/creators/state/creators-data-state.svelte.js")
           .then(({ creatorsDataState }) => {
             if (!creatorsDataState.isInitialized) {
               Promise.all([
@@ -641,10 +662,10 @@
     void (async () => {
       try {
         const { initPostHog } =
-          await import("$lib/shared/analytics/services/posthog");
+          await import("#lib/shared/analytics/services/posthog.js");
         await initPostHog();
         const { initializePostHogLifecycleReporter } =
-          await import("$lib/shared/analytics/services/posthog-lifecycle-reporter");
+          await import("#lib/shared/analytics/services/posthog-lifecycle-reporter.js");
         initializePostHogLifecycleReporter();
       } catch (error) {
         console.warn(
@@ -686,7 +707,7 @@
 
     // Arrow placement is presentation data. Load it for every visitor so guest
     // and signed-in pictographs use the same canonical authored values.
-    import("$lib/shared/pictograph/arrow/positioning/placement/services/initialize-arrow-placement-data")
+    import("#lib/shared/pictograph/arrow/positioning/placement/services/initialize-arrow-placement-data.js")
       .then(({ initializeArrowPlacementData }) =>
         initializeArrowPlacementData()
       )
@@ -708,14 +729,14 @@
     const runDeferred = () => {
       // Web Vitals - analytics, never user-visible
       bootProfiler.mark("web-vitals");
-      import("$lib/shared/analytics/web-vitals")
+      import("#lib/shared/analytics/web-vitals.js")
         .then(({ initWebVitals }) => initWebVitals())
         .catch((error) => console.warn("Web Vitals failed:", error))
         .finally(() => bootProfiler.end("web-vitals"));
 
       // Cloud thumbnail manifest - only needed when user visits browse
       bootProfiler.mark("thumbnail-manifest");
-      import("$lib/shared/browse/services/cloud-thumbnail-cache")
+      import("#lib/shared/browse/services/cloud-thumbnail-cache.js")
         .then(({ loadManifest }) => loadManifest())
         .catch((error) =>
           console.warn("Cloud thumbnail manifest failed:", error)
@@ -727,7 +748,7 @@
       // landed (offline, transient error). See docs/superpowers/specs/
       // active/2026-07-18-onboarding-silent-work-loss.md.
       bootProfiler.mark("library-sync-retry");
-      import("$lib/features/library/services/library-sync-retry")
+      import("#lib/features/library/services/library-sync-retry.js")
         .then(({ initLibrarySyncRetry }) => {
           unsubscribeLibrarySyncRetry = initLibrarySyncRetry();
         })
@@ -739,11 +760,11 @@
       // Secondary UI components (banners, prompts) - slot in when ready
       bootProfiler.mark("ui-components");
       Promise.all([
-        import("$lib/features/moderation/components/WarningBanner.svelte"),
-        import("$lib/shared/auth/components/EmailVerificationBanner.svelte"),
-        import("$lib/shared/components/FullscreenPrompt.svelte"),
-        import("$lib/features/moderation/components/ReportUserModal.svelte"),
-        import("$lib/shared/application/components/ModalUrlRestorer.svelte"),
+        import("#lib/features/moderation/components/WarningBanner.svelte"),
+        import("#lib/shared/auth/components/EmailVerificationBanner.svelte"),
+        import("#lib/shared/components/FullscreenPrompt.svelte"),
+        import("#lib/features/moderation/components/ReportUserModal.svelte"),
+        import("#lib/shared/application/components/ModalUrlRestorer.svelte"),
       ])
         .then(([warning, email, full, report, modal]) => {
           WarningBannerComp = warning.default;
@@ -820,7 +841,7 @@
       const loadingScreen = document.getElementById("app-loading");
       if (loadingScreen) loadingScreen.remove();
 
-      import("$lib/features/retro/shared/services/retro-init")
+      import("#lib/features/retro/shared/services/retro-init.js")
         .then(({ initRetroMode }) => initRetroMode())
         .then(() => {
           containerReady = true;
@@ -858,7 +879,8 @@
   // Without this, auth/DI/Firestore are never initialized and the app
   // shows "Warming up..." forever.
   let appModeUpgradeStarted = false;
-  afterNavigate(() => {
+  afterNavigate((navigation) => {
+    if (isShallowGoto(navigation)) return;
     if (siteMode !== "landing" || appModeUpgradeStarted) return;
     const newMode = detectSiteMode();
     if (newMode === "app") {

@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { PropUnlockManager } from "./services/prop-unlock-manager";
 
 let instance: PropUnlockManager | null = null;

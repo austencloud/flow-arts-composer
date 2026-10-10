@@ -8,8 +8,8 @@
  * localStorage access is guarded by try/catch for SSR safety (typeof check)
  * and storage-quota errors.
  */
-import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
-import type { AccessTier } from "$lib/shared/auth/domain/access-tier";
+import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
+import type { AccessTier } from "#lib/shared/auth/domain/access-tier.js";
 
 export const BOOT_SNAPSHOT_KEY = "tka-boot-snapshot";
 export const BOOT_SNAPSHOT_VERSION = 1;

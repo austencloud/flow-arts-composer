@@ -1,21 +1,21 @@
 <script lang="ts">
   import type { PageData } from "./$types";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { goto } from "$app/navigation";
   import { onMount, onDestroy } from "svelte";
-  import SequenceViewerOrchestrator from "$lib/shared/sequence-viewer/components/SequenceViewerOrchestrator.svelte";
-  import SequenceViewerShell from "$lib/shared/sequence-viewer/components/SequenceViewerShell.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import { registerLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-  import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
-  import { registerLibraryRepository } from "$lib/shared/composition-root/register-library-repository";
+  import SequenceViewerOrchestrator from "#lib/shared/sequence-viewer/components/SequenceViewerOrchestrator.svelte";
+  import SequenceViewerShell from "#lib/shared/sequence-viewer/components/SequenceViewerShell.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import { registerLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+  import { registerLibraryRepository } from "#lib/shared/composition-root/register-library-repository.js";
   import {
     configureShortCodeManager,
     getShortCodeManager,
-  } from "$lib/shared/qr/get-short-code-manager";
-  import type { ShortCodeSequenceLoader } from "$lib/shared/qr/services/short-code-manager";
+  } from "#lib/shared/qr/get-short-code-manager.js";
+  import type { ShortCodeSequenceLoader } from "#lib/shared/qr/services/short-code-manager.js";
 
   // Same reason as the /sequence host: this route never mounts
   // MainApplication's composition root, so nothing else registers these owners.

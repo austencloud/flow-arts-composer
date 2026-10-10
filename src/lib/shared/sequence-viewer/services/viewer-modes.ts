@@ -1,6 +1,6 @@
 import type { ViewerMode } from "../state/viewer-state.svelte";
 import type { ContentType, SplitConfig } from "./viewer-state-persistence";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 /** One switchable view in the sequence viewer (rail + mobile bottom bar). */
 export interface ViewerModeOption {

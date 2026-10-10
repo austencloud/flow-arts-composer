@@ -1,5 +1,5 @@
 <script lang="ts">
-	import MandalaLoader from "$lib/shared/mandala/components/MandalaLoader.svelte";
+	import MandalaLoader from "#lib/shared/mandala/components/MandalaLoader.svelte";
 </script>
 
 <div class="frame">

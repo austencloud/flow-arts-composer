@@ -33,17 +33,17 @@ captureEffectDiagnostics to the context menu.
 ================================================================================
 -->
 <script lang="ts">
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import type { GridJoin } from "@tka/tka-types";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
   import type { TrailSettings } from "../domain/types/trail-types";
-  import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
-  import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+  import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+  import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
   import GlyphRenderer from "./GlyphRenderer.svelte";
   import GlyphOverlay from "./layers/GlyphOverlay.svelte";
   import PathLinesOverlay from "./layers/PathLinesOverlay.svelte";
@@ -52,12 +52,12 @@ captureEffectDiagnostics to the context menu.
     AnimationEngine,
     type AdditionalLayerTextureStatus,
   } from "../services/animation-engine.svelte";
-  import { createRenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
+  import { createRenderActivityGate } from "#lib/shared/render-gating/render-activity-gate.js";
   import {
     getAnimationVisibilityManager,
     type AnimationVisibilityStateManager,
   } from "../state/animation-visibility-state.svelte";
-  import { isSeamlesslyLoopable as sequenceLoopabilityCheck } from "$lib/shared/foundation/services/sequence-loopability-checker";
+  import { isSeamlesslyLoopable as sequenceLoopabilityCheck } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
   import type { FireOverlayConfig } from "../domain/types/fire-types";
   import type { LedOverlayConfig } from "../domain/types/led-types";
   import type {
@@ -68,17 +68,17 @@ captureEffectDiagnostics to the context menu.
   import { untrack, type Snippet } from "svelte";
   import { fireCacheInvalidation } from "../state/fire-invalidation-signal.svelte";
   import { effectErrorSignal } from "../state/effect-error-signal.svelte";
-  import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { tryGetViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
+  import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { tryGetViewerVisibilityContext } from "#lib/shared/sequence-viewer/context/viewer-visibility-context.js";
   import { getRenderContextRegistry } from "../get-render-context-registry";
   import { installAnimatorDiagnostics } from "../debug/animator-diagnostics";
   import type { QualityTier } from "../domain/types/quality-types";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import type { ElementalType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { GlyphOverlayFrameMode } from "../domain/glyph-overlay-frame";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
 
   let {
     // Engine-driving props
@@ -141,6 +141,7 @@ captureEffectDiagnostics to the context menu.
     prewarmEffects = undefined,
     contextId = undefined,
     initialQualityTier = undefined,
+    trailOverlay = true,
     // Callbacks
     onCanvasReady = () => {},
     onInitialized = undefined,
@@ -219,6 +220,9 @@ captureEffectDiagnostics to the context menu.
     contextId?: string;
     /** Optional adaptive-quality ceiling applied before engine startup. */
     initialQualityTier?: QualityTier;
+    /** False never creates the GPU trail layer. Read once, when the engine is
+     *  created, so only for canvases whose trails stay off for their whole life. */
+    trailOverlay?: boolean;
     onCanvasReady?: (canvas: HTMLCanvasElement | null) => void;
     onInitialized?: () => void;
     onEffectError?: (effectName: string, error: Error) => void;
@@ -242,6 +246,7 @@ captureEffectDiagnostics to the context menu.
     if (initialQualityTier) {
       nextEngine.setInitialQualityTier(initialQualityTier);
     }
+    if (!trailOverlay) nextEngine.setTrailOverlayEnabled(false);
     return nextEngine;
   }
 
@@ -553,17 +558,14 @@ captureEffectDiagnostics to the context menu.
   $effect(() => {
     if (isInitialized) {
       engineInstance.processPendingGlyph();
-      // Wait for the render loop to paint at least one frame before
-      // signaling readiness. The initializer sets isInitialized BEFORE
-      // starting the render loop (step 8 vs step 10), so without this
-      // delay the callback fires while the canvas is still blank.
+      // Wait for the render loop to paint its first frame before signaling
+      // readiness. The initializer sets isInitialized BEFORE starting the
+      // render loop (step 8 vs step 10), but the loop has already queued its
+      // frame by the time this effect runs, so one frame callback here runs
+      // after that paint.
       untrack(() => {
         if (onInitialized) {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              onInitialized?.();
-            });
-          });
+          requestAnimationFrame(() => onInitialized?.());
         }
       });
     }
@@ -601,31 +603,38 @@ captureEffectDiagnostics to the context menu.
   data-dark-mode={darkModeEnabled ? "true" : "false"}
 >
   {#if !suppress2DOverlays}
-    <GlyphOverlay
-      {letter}
-      {displayedLetter}
-      {displayedStepNumber}
-      {displayedMusicalPosition}
-      {stepData}
-      tkaGlyphVisible={effectiveTkaGlyphVisible}
-      elementalGlyphVisible={elementalGlyphVisible && bothMotionsVisible}
-      propElementalGlyphVisible={propElementalGlyphVisible && bothMotionsVisible}
-      {propElementalType}
-      {glyphFrame}
-      stepNumbersVisible={effectiveBeatNumbersVisible}
-      {placementGlyphVisible}
-      opacity={chromeOpacity}
-      darkMode={darkModeEnabled}
-      isAtStartPlacement={beatIndicators &&
-        !hideStepNumbers &&
-        currentStep < 1 &&
-        sequenceData !== null}
-      isAtEndPlacement={beatIndicators &&
-        !hideStepNumbers &&
-        sequenceData !== null &&
-        !effectiveIsSeamlesslyLoopable &&
-        currentStep >= (sequenceData.steps?.length ?? 0) + 0.99}
-    />
+    <!-- A player resets its sequence data to null before loading another, so
+         the overlay remounts for each load and shows the new start at once, as
+         a newly built player does, instead of fading labels out of the
+         sequence it replaced. Edits to a loaded sequence keep their fades. -->
+    {#key sequenceData === null}
+      <GlyphOverlay
+        {letter}
+        {displayedLetter}
+        {displayedStepNumber}
+        {displayedMusicalPosition}
+        {stepData}
+        tkaGlyphVisible={effectiveTkaGlyphVisible}
+        elementalGlyphVisible={elementalGlyphVisible && bothMotionsVisible}
+        propElementalGlyphVisible={propElementalGlyphVisible &&
+          bothMotionsVisible}
+        {propElementalType}
+        {glyphFrame}
+        stepNumbersVisible={effectiveBeatNumbersVisible}
+        {placementGlyphVisible}
+        opacity={chromeOpacity}
+        darkMode={darkModeEnabled}
+        isAtStartPlacement={beatIndicators &&
+          !hideStepNumbers &&
+          currentStep < 1 &&
+          sequenceData !== null}
+        isAtEndPlacement={beatIndicators &&
+          !hideStepNumbers &&
+          sequenceData !== null &&
+          !effectiveIsSeamlesslyLoopable &&
+          currentStep >= (sequenceData.steps?.length ?? 0) + 0.99}
+      />
+    {/key}
 
     <!-- Always mounted: PathLinesOverlay self-gates on showLeft/showRight and owns
          its own fade in/out, so the overlay must stay in the tree for its

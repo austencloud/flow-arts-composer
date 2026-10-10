@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PreparedPictographData } from "$lib/shared/pictograph/option/prepared-pictograph-data";
+  import type { PreparedPictographData } from "#lib/shared/pictograph/option/prepared-pictograph-data.js";
 
   const { pictograph, size, onSelect } = $props<{
     pictograph: PreparedPictographData;

@@ -18,21 +18,21 @@ import {
   Letter,
   getLetterType,
   normalizeLetter,
-} from "$lib/shared/foundation/domain/models/letter";
-import { LetterType } from "$lib/shared/foundation/domain/models/letter-type";
-import { getLetterImagePath } from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
-import { deriveLettersForSequence } from "$lib/shared/navigation/services/letter-deriver";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/foundation/domain/models/letter.js";
+import { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
+import { getLetterImagePath } from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
+import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const LEGACY_GAMMA = "Γ"; // "Γ" — what the legacy scripts wrote
 const CANONICAL_GAMMA = "γ"; // "γ" — Letter.GAMMA

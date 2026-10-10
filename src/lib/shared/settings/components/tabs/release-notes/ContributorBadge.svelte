@@ -1,6 +1,6 @@
 <!-- ContributorBadge - Inline avatar + name for a contributor -->
 <script lang="ts">
-  import type { Contributor } from "$lib/shared/versioning/domain/models/contributor-models";
+  import type { Contributor } from "#lib/shared/versioning/domain/models/contributor-models.js";
 
   let {
     contributor,

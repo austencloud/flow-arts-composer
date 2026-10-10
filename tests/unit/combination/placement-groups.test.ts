@@ -3,12 +3,12 @@ import {
   placementGroup,
   seamOf,
   seamEndOf,
-} from "$lib/shared/combination/services/placement-groups";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/combination/services/placement-groups.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   GridPlacement,
   GridPlacementGroup,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 describe("placementGroup", () => {
   it("extracts the family from a GridPlacement", () => {

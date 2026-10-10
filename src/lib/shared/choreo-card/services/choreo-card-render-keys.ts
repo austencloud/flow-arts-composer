@@ -1,15 +1,15 @@
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
 import {
   normalizePropLook,
   type PropLook,
-} from "$lib/shared/pictograph/prop/domain/prop-look";
+} from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import {
   normalizeTriangleGrip,
   type TriangleGrip,
-} from "$lib/shared/pictograph/prop/domain/triangle-appearance";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { hashSequenceContent } from "$lib/shared/foundation/services/content-hasher";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { hashSequenceContent } from "#lib/shared/foundation/services/content-hasher.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export interface ChoreoCardRenderKeyInputs {
   fanAppearance?: FanAppearance;
@@ -18,7 +18,7 @@ export interface ChoreoCardRenderKeyInputs {
   primaryPropColors?: { left: string; right: string } | null;
   sequence: SequenceData | null | undefined;
   handPathMode?: boolean;
-  browseViewMode?: import("$lib/shared/browse/domain/browse-view-mode").BrowseViewMode;
+  browseViewMode?: import("#lib/shared/browse/domain/browse-view-mode.js").BrowseViewMode;
   leftPropType: PropType | undefined;
   rightPropType: PropType | undefined;
   catDogModeEnabled: boolean;

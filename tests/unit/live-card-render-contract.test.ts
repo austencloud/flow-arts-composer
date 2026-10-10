@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolvePreviewCellRender } from "$lib/shared/sequence-viewer/services/preview-cell-render-contract";
-import { deriveCacheKey } from "$lib/shared/sequence-viewer/services/cell-cache-key-deriver";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { resolvePropRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
+import { resolvePreviewCellRender } from "#lib/shared/sequence-viewer/services/preview-cell-render-contract.js";
+import { deriveCacheKey } from "#lib/shared/sequence-viewer/services/cell-cache-key-deriver.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { resolvePropRenderKey } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { TRANSITION_REVIEW_SEQUENCE } from "../../src/routes/test/sequence-viewer-transitions/transition-review-fixture";
 
 const data = TRANSITION_REVIEW_SEQUENCE.steps[0]!;

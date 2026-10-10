@@ -5,7 +5,7 @@
   Handles input validation and submission.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     email: string;
@@ -167,7 +167,7 @@
   .form-group input {
     width: 100%;
     padding: 14px 14px 14px 44px;
-    background: color-mix(in srgb, var(--theme-shadow) 30%, transparent);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--theme-stroke, var(--theme-stroke-strong));
     border-radius: 12px;
     color: color-mix(in srgb, var(--theme-text, white) 95%, transparent);

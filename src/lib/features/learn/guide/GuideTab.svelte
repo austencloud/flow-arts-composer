@@ -13,8 +13,8 @@
   import GuideReader from "../../../../routes/(public)/guide/level-1/_components/GuideReader.svelte";
   import { LEVEL1_READER_CONFIG } from "../../../../routes/(public)/guide/level-1/_data/guide-reader-config";
   import { LEVEL2_READER_CONFIG } from "../../../../routes/(public)/guide/level-2/_data/guide-reader-config";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   type Level = "1" | "2";
   const STORE_KEY = "guide-active-level";

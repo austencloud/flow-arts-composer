@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Seo from "$lib/shared/components/Seo.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import TimingDirectionAtlas from "./_components/TimingDirectionAtlas.svelte";
   import TimingDirectionModeCard from "./_components/TimingDirectionModeCard.svelte";
   import { TIMING_DIRECTION_ARTICLES } from "./_data/timing-direction-articles";

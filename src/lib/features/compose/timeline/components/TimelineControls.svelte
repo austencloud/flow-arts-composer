@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * TimelineControls - Transport and zoom controls
    *
@@ -10,11 +10,11 @@
    * Add media button
    */
 
-  import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+  import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
   import { getTimelinePlayer } from "../services/timeline-playback-service";
   import SnapControls from "./SnapControls.svelte";
   import TimeSignatureChip from "./TimeSignatureChip.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
   interface Props {
     onOpenMediaBrowser?: () => void;
@@ -343,9 +343,6 @@
     font-size: var(--font-size-compact);
     font-weight: 600;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    box-shadow:
-      0 0 12px color-mix(in srgb, var(--theme-accent) 40%, transparent),
-      0 2px 4px var(--theme-shadow);
     animation: pulse 1s ease-in-out infinite;
   }
 
@@ -396,9 +393,7 @@
     background: var(--theme-accent);
     border-color: var(--theme-accent-strong);
     color: white;
-    box-shadow:
-      0 4px 12px var(--theme-shadow),
-      0 0 16px color-mix(in srgb, var(--theme-accent) 35%, transparent);
+    box-shadow: none;
     transform: translateY(-1px);
   }
 

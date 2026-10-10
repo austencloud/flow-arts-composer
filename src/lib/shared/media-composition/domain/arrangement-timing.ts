@@ -1,4 +1,4 @@
-import type { ArrangementCell } from "$lib/shared/media-composition/domain/arrangement";
+import type { ArrangementCell } from "#lib/shared/media-composition/domain/arrangement.js";
 
 function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);

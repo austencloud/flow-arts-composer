@@ -7,13 +7,13 @@
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { buildPictographContextMenuItems } from "$lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder";
-import { VisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
+import { buildPictographContextMenuItems } from "#lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder.js";
+import { VisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
 import {
   isMenuItem,
   type ContextMenuEntry,
   type ContextMenuItem,
-} from "$lib/shared/components/context-menu/context-menu-types";
+} from "#lib/shared/components/context-menu/context-menu-types.js";
 
 function submenu(
   items: ContextMenuEntry[],

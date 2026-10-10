@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { StepDataSchema } from "$lib/shared/foundation/domain/schemas";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { StepDataSchema } from "#lib/shared/foundation/domain/schemas.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type {
   MandalaHandVisibility,
   MandalaPathShape,
-} from "$lib/shared/mandala/domain/mandala-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
 
 export interface CollectedMandala {

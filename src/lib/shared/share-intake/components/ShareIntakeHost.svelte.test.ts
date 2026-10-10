@@ -6,11 +6,11 @@ const mocks = vi.hoisted(() => ({
   auth: { isFullAccount: false, loading: true },
 }));
 
-vi.mock("$lib/shared/share-intake/services/share-intake-runner", () => ({
+vi.mock("#lib/shared/share-intake/services/share-intake-runner.js", () => ({
   scheduleIntakeRun: mocks.scheduleIntakeRun,
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     get isFullAccount() {
       return mocks.auth.isFullAccount;

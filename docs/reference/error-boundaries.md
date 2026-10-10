@@ -32,8 +32,8 @@ Same principle as "earned tests" -- error boundaries are earned, not sprinkled e
 ## How to Use the Pattern
 
 ```typescript
-import { container } from "$lib/shared/di";
-import type { IErrorHandler } from "$lib/shared/application/services/contracts/IErrorHandler";
+import { container } from "#lib/shared/di";
+import type { IErrorHandler } from "#lib/shared/application/services/contracts/IErrorHandler";
 
 try {
   await riskyOperation();

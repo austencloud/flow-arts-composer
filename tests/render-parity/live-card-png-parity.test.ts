@@ -1,8 +1,8 @@
 import { render } from "vitest-browser-svelte";
 import { describe, expect, it } from "vitest";
 import { commands, page } from "vitest/browser";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
 import { cardParityCases, type CardParityCase } from "./card-parity-cases";
 import {
   assertCardParity,

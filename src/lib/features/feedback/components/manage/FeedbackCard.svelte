@@ -3,14 +3,14 @@
   import type {
     FeedbackItem,
     FeedbackStatus,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import {
     TYPE_CONFIG,
     STATUS_CONFIG,
     PRIORITY_CONFIG,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { generateAvatarUrl } from "$lib/shared/foundation/utils/avatar-generator";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { generateAvatarUrl } from "#lib/shared/foundation/utils/avatar-generator.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   const { item, isSelected, onClick, onStatusChange, onDelete } = $props<{
     item: FeedbackItem;
@@ -435,7 +435,6 @@
   @media (hover: hover) and (pointer: fine) {
     .feedback-card:hover:not(.swiping) {
       transform: translateY(-2px);
-      box-shadow: 0 4px 16px var(--theme-shadow);
     }
 
     .feedback-card:active:not(.swiping) {

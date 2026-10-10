@@ -1,12 +1,12 @@
 <!-- PlacementGroupGrid.svelte - Renders a group of pictographs (Alpha, Beta, or Gamma) -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { GridJoin } from "@tka/tka-types";
   import { gridJoinCellResolver } from "@tka/render-core";
-  import { getLetterBorderColorSafe } from "$lib/shared/pictograph/shared/utils/letter-border-utils";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { getLetterBorderColorSafe } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
 
   const {
     pictographs,
@@ -69,7 +69,9 @@
   >
     <div class="pictograph-wrapper">
       <PictographContainer
-        pictographData={gridJoin ? withGridJoin(pictographData) : pictographData}
+        pictographData={gridJoin
+          ? withGridJoin(pictographData)
+          : pictographData}
       />
     </div>
   </div>
@@ -94,18 +96,20 @@
   }
 
   .pictograph-container:focus-visible {
-    outline: 2px solid rgba(100, 200, 255, 0.6);
+    outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
   }
 
   .pictograph-container.animate {
-    animation: slideInFade 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: slideInFade var(--duration-dramatic) var(--ease-spring) forwards;
     animation-delay: var(--animation-delay, 0ms);
     opacity: 0;
   }
 
   .pictograph-container.transitioning .pictograph-wrapper {
-    transition: all var(--duration-emphasis) ease;
+    transition:
+      opacity var(--transition-emphasis),
+      transform var(--transition-emphasis);
   }
 
   .pictograph-wrapper {
@@ -120,7 +124,12 @@
     min-height: 0;
     display: block; /* Use block instead of flex to avoid sizing conflicts */
     box-sizing: border-box;
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background var(--transition-emphasis),
+      border-color var(--transition-emphasis),
+      box-shadow var(--transition-emphasis),
+      transform var(--transition-emphasis),
+      filter var(--transition-emphasis);
     background: var(--row-tint, var(--theme-card-bg));
     border: 2px solid transparent;
     border-radius: 0px;
@@ -158,7 +167,7 @@
   /* Mobile/universal active state */
   .pictograph-container:active .pictograph-wrapper {
     transform: scale(0.97);
-    transition: transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-instant) var(--ease-in-out);
   }
 
   .pictograph-container.selected .pictograph-wrapper {
@@ -205,8 +214,9 @@
 
   /* Accessibility: Respect user's motion preferences (WCAG AAA) */
   @media (prefers-reduced-motion: reduce) {
-    .animate {
+    .pictograph-container.animate {
       animation: none;
+      opacity: 1;
     }
   }
 </style>

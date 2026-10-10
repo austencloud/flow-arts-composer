@@ -4,8 +4,8 @@ import {
   planPostAudio,
   type PostAudioSegment,
   type PostAudioSource,
-} from "$lib/shared/media-composition/domain/post-audio-plan";
-import type { CompiledPost } from "$lib/shared/media-composition/domain/post-plan-compiler";
+} from "#lib/shared/media-composition/domain/post-audio-plan.js";
+import type { CompiledPost } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
 
 export interface BuildPostAudioTrackInput {
   post: CompiledPost;

@@ -17,7 +17,7 @@
   import {
     Character3D,
     type CharacterId,
-  } from "$lib/shared/3d/domain/character-model";
+  } from "#lib/shared/3d/domain/character-model.js";
 
   interface Props {
     /** Physics body centre, which sits `bodyCentreAboveGroundMeters` up. */

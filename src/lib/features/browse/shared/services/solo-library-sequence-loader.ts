@@ -1,9 +1,9 @@
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   handPathToSequence,
   soloPropToSequence,
-} from "$lib/shared/foundation/services/solo-prop-sequence-adapter";
+} from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
 import { getBrowseDataSource } from "../get-browse-data-source";
 
 export async function loadSoloLibrarySequences(

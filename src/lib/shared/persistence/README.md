@@ -142,7 +142,7 @@ Add this to your main app initialization:
 
 ```typescript
 // In your main app component or initialization
-import { getPersistenceInitializer } from "$lib/shared/persistence/get-persistence-initializer";
+import { getPersistenceInitializer } from "#lib/shared/persistence/get-persistence-initializer.js";
 
 const initializer = getPersistenceInitializer();
 

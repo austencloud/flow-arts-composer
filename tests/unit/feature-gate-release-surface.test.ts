@@ -139,7 +139,7 @@ describe("production release feature gate", () => {
     configure({ command: "build", build: { ssr: true } });
 
     const resolve = vi.fn(async (source: string) => ({
-      id: `E:/tka-platform/src/lib/${source.replace("$lib/", "")}`,
+      id: `E:/tka-platform/src/lib/${source.replace("#lib/", "")}`,
     }));
     const resolveId = plugin.resolveId as (
       this: { resolve: typeof resolve },
@@ -151,7 +151,7 @@ describe("production release feature gate", () => {
     await expect(
       resolveId.call(
         { resolve },
-        "$lib/features/learn/components/PublicConceptCourse.svelte",
+        "#lib/features/learn/components/PublicConceptCourse.svelte",
         "E:/tka-platform/src/routes/(public)/learn/concepts/+page.svelte",
         { ssr: true }
       )
@@ -159,7 +159,7 @@ describe("production release feature gate", () => {
     await expect(
       resolveId.call(
         { resolve },
-        "$lib/features/learn/LearnTab.svelte",
+        "#lib/features/learn/LearnTab.svelte",
         "E:/tka-platform/src/lib/features/learn/components/PublicConceptCourse.svelte",
         { ssr: true }
       )

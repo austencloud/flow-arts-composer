@@ -9,7 +9,7 @@
  * RESPONSIBILITY: Pure arrow positioning state, no calculation logic
  */
 
-import type { ArrowPosition } from "$lib/shared/pictograph/arrow/orchestration/domain/arrow-models";
+import type { ArrowPosition } from "#lib/shared/pictograph/arrow/orchestration/domain/arrow-models.js";
 
 export interface SequenceArrowStateData {
   arrowPositions: Map<string, ArrowPosition>;

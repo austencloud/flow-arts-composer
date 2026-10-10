@@ -8,7 +8,7 @@ const { generatePropSvg } = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock("$lib/shared/animation-engine/services/svg-generator", () => ({
+vi.mock("#lib/shared/animation-engine/services/svg-generator.js", () => ({
   generatePropSvg,
   generateLeftPropSvg: generatePropSvg,
   generateRightPropSvg: generatePropSvg,

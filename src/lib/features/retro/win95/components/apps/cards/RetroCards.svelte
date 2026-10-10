@@ -20,7 +20,7 @@
   import { loadCards } from "../../../adapters/cards-adapter";
   import type { RetroCard } from "../../../adapters/cards-adapter";
   import { RETRO_ICONS } from "../../rendering/retro-icons";
-  import { parseWordNotation } from "$lib/shared/foundation/utils/word-notation";
+  import { parseWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
   /* Props                                                               */
 

@@ -2,15 +2,15 @@ import {
   POST_MIN_ITEM_SECONDS,
   type PostProject,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   finish,
   type EditContext,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   POST_MUSIC_MAX_BEATS_PER_BAR,
   POST_MUSIC_MAX_GAIN,
@@ -19,7 +19,7 @@ import {
   POST_MUSIC_MAX_TEXT,
   type PostMusic,
   type PostMusicGrid,
-} from "$lib/shared/media-composition/domain/post-music";
+} from "#lib/shared/media-composition/domain/post-music.js";
 
 /**
  * Edits to the post's music. Like the timeline's edits, each is pure, runs

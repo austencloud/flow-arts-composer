@@ -9,19 +9,19 @@ vi.mock("qr-code-styling", () => ({
   },
 }));
 
-vi.mock("$lib/shared/render/services/warm-sequence-cells", () => ({
+vi.mock("#lib/shared/render/services/warm-sequence-cells.js", () => ({
   warmSequenceCells: vi.fn(),
 }));
 
-import { QRCodeGenerator } from "$lib/shared/qr/services/qr-code-generator";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { QRCodeGenerator } from "#lib/shared/qr/services/qr-code-generator.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   SIGNUP_CARD_ART_REVISION,
   SIGNUP_CARD_RELAY_CLOSING,
   SIGNUP_CARD_RELAY_STEPS,
   SIGNUP_CARD_URL,
-} from "$lib/features/choreo-card/services/signup-card-canvas-renderer";
+} from "#lib/features/choreo-card/services/signup-card-canvas-renderer.js";
 
 const sequence = {
   id: "sequence-1",

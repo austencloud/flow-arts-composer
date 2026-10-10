@@ -5,13 +5,13 @@
   Auto-focuses name input, Enter to save.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ModalHeader from "$lib/features/create/generate/components/modals/ModalHeader.svelte";
-  import ModalActions from "$lib/features/create/generate/components/modals/ModalActions.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ModalHeader from "#lib/features/create/generate/components/modals/ModalHeader.svelte";
+  import ModalActions from "#lib/features/create/generate/components/modals/ModalActions.svelte";
 
   let {
     open = $bindable(false),
@@ -143,18 +143,13 @@
   .name-input {
     width: 100%;
     padding: 12px 16px;
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--theme-shadow) 40%, transparent),
-      color-mix(in srgb, var(--theme-shadow) 30%, transparent)
-    );
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.3));
     border: 2px solid var(--theme-stroke-strong);
     border-radius: 10px;
     color: var(--theme-text, white);
     font-size: var(--font-size-sm);
     font-family: inherit;
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px var(--theme-shadow) inset;
   }
 
   .name-input:focus {
@@ -164,19 +159,7 @@
       var(--theme-accent, var(--semantic-info)) 60%,
       transparent
     );
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--theme-shadow) 50%, transparent),
-      color-mix(in srgb, var(--theme-shadow) 40%, transparent)
-    );
-    box-shadow:
-      0 0 0 3px
-        color-mix(
-          in srgb,
-          var(--theme-accent, var(--semantic-info)) 20%,
-          transparent
-        ),
-      0 2px 8px var(--theme-shadow) inset;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.4));
   }
 
   .name-input::placeholder {

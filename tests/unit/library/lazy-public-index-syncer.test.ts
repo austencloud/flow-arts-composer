@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { createLazyPublicIndexSyncer } from "$lib/shared/library/services/create-lazy-public-index-syncer";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import type { IPublicIndexSyncer } from "$lib/shared/library/services/IPublicIndexSyncer";
+import { createLazyPublicIndexSyncer } from "#lib/shared/library/services/create-lazy-public-index-syncer.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { IPublicIndexSyncer } from "#lib/shared/library/services/IPublicIndexSyncer.js";
 
 const sequence = { id: "sequence-1", word: "TEST" } as LibrarySequence;
 

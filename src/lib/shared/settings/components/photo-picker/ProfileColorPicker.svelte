@@ -7,7 +7,7 @@
   opens the native OS color picker.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   interface Props {
     selectedColor: string;
     onColorChange: (color: string) => void;
@@ -16,7 +16,7 @@
 
   let { selectedColor, onColorChange, saving = false }: Props = $props();
 
-  import { COLOR_PRESETS } from "$lib/shared/ui/color-presets";
+  import { COLOR_PRESETS } from "#lib/shared/ui/color-presets.js";
 
   let expanded = $state(false);
   let nativePickerRef: HTMLInputElement | undefined = $state();

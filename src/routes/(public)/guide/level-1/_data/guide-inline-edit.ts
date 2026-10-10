@@ -4,10 +4,10 @@
  * locally ($state in GuideCompanion), only calling saveOverride() on commit.
  * Kept pure/testable: no Firestore, no Svelte runes here.
  */
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 import { isStartBox } from "./guide-sequence-adapter";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 /** Non-start steps of a strip, in order. */
 export function stepsOf(strip: StepData[]): StepData[] {

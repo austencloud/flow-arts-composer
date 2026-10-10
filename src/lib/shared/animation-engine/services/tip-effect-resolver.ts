@@ -3,7 +3,7 @@
  * Delegates to the pure functions in TipEffectTypes.
  */
 
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import {
   type EffectType,
   type TipEffectMap,

@@ -13,17 +13,17 @@
   } from "firebase/auth";
   import { onDestroy } from "svelte";
   import { auth, configureAuthPersistence } from "../firebase";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     captureAnonymousDrafts,
     upgradeAnonymousWithEmail,
-  } from "$lib/shared/auth/services/anonymous-upgrade";
-  import { promptAnonymousImport } from "$lib/shared/auth/state/anonymous-import-prompt.svelte";
-  import { recordAuthSubmission } from "$lib/shared/auth/services/auth-analytics-bridge";
-  import { recordLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
-  import { trackAuthProviderResult } from "$lib/shared/analytics/auth-events";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/auth/services/anonymous-upgrade.js";
+  import { promptAnonymousImport } from "#lib/shared/auth/state/anonymous-import-prompt.svelte.js";
+  import { recordAuthSubmission } from "#lib/shared/auth/services/auth-analytics-bridge.js";
+  import { recordLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
+  import { trackAuthProviderResult } from "#lib/shared/analytics/auth-events.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   let {
     mode = $bindable("signin" as "signin" | "signup"),

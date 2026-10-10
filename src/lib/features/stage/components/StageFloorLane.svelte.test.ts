@@ -2,7 +2,7 @@ import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { describe, expect, it, vi } from "vitest";
 
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 
 import StageFloorLane from "./StageFloorLane.svelte";
 

@@ -2,28 +2,31 @@
   import StudioArrangements from "./components/StudioArrangements.svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { isTkaWord, simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
-  import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import {
+    isTkaWord,
+    simplifyRepeatedWord,
+  } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
+  import PostStudio from "#lib/shared/share/components/post-studio/PostStudio.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     listSyncedPostProjects,
     loadSyncedPostDraft,
     resolveSyncedPostSequence,
     saveSyncedPostDraft,
   } from "./services/post-account-projects";
-  import { savePostDraft } from "$lib/shared/media-composition/services/post-draft-storage";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { savePostDraft } from "#lib/shared/media-composition/services/post-draft-storage.js";
+  import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     createPostModuleState,
     featureSelectionId,
   } from "./state/post-module-state.svelte";
   import { setPostModuleContext } from "./context/post-module-context";
-  import { canAccessPostStudio } from "$lib/shared/sequence-viewer/services/post-studio-access";
-  import { providePostEditorHeader } from "$lib/shared/share/components/post-studio/editor/post-editor-header.svelte";
+  import { canAccessPostStudio } from "#lib/shared/sequence-viewer/services/post-studio-access.js";
+  import { providePostEditorHeader } from "#lib/shared/share/components/post-studio/editor/post-editor-header.svelte.js";
 
   interface Props {
     visible?: boolean;
@@ -39,14 +42,11 @@
       ? {
           listFeatures: async () =>
             (
-              await import(
-                "$lib/shared/media-composition/services/feature-video-client"
-              )
+              await import("#lib/shared/media-composition/services/feature-video-client.js")
             ).listFeatureVideos(),
           loadFeature: async (slug: string) => {
-            const client = await import(
-              "$lib/shared/media-composition/services/feature-video-client"
-            );
+            const client =
+              await import("#lib/shared/media-composition/services/feature-video-client.js");
             return client.createFeatureVideoSync(
               await client.loadFeatureVideo(slug)
             );
@@ -93,7 +93,8 @@
   let previousAccount: string | null | undefined = undefined;
   $effect(() => {
     if (!authState.initialized) return;
-    const uid = authState.user && !authState.user.isAnonymous ? authState.user.uid : null;
+    const uid =
+      authState.user && !authState.user.isAnonymous ? authState.user.uid : null;
     if (previousAccount === uid) return;
     previousAccount = uid;
     initialVisit = true;
@@ -121,7 +122,8 @@
       return;
     }
     if (library) state.showProjects();
-    else if (feature && feature !== previousFeature) void state.openFeature(feature);
+    else if (feature && feature !== previousFeature)
+      void state.openFeature(feature);
     else if (project && project !== previousParam) void state.open(project);
     previousParam = project;
     previousFeature = feature;
@@ -140,7 +142,7 @@
 
   function showProjects(): void {
     state.showProjects();
-    void goto("/post", { replaceState: true });
+    void goto("/post", { replace: true });
   }
 
   /**
@@ -162,7 +164,10 @@
         <p>Arrange sequences and edit videos in one project.</p>
       </header>
       <StudioArrangements onopen={openProject} />
-      {#if authState.user && !authState.user.isAnonymous}<p class="notice">Saved edits sync with your account. You need to select this device’s videos again on another device.</p>{/if}
+      {#if authState.user && !authState.user.isAnonymous}<p class="notice">
+          Saved edits sync with your account. You need to select this device’s
+          videos again on another device.
+        </p>{/if}
       {#if state.catalogError}<p class="notice" role="status">
           {state.catalogError}
         </p>{/if}
@@ -170,7 +175,8 @@
           Loading projects…
         </p>
       {:else if state.projects.length === 0}<p class="list-status">
-          Your Studio projects will appear here. Start an arrangement or open Studio from a sequence.
+          Your Studio projects will appear here. Start an arrangement or open
+          Studio from a sequence.
         </p>
       {:else}
         <ul>
@@ -196,7 +202,11 @@
                     <div class="project-details">
                       {#if showProjectWord}
                         {#if isTkaWord(projectWord)}
-                          <TKAWordGlyph word={projectWord} height={14} darkMode />
+                          <TKAWordGlyph
+                            word={projectWord}
+                            height={14}
+                            darkMode
+                          />
                         {:else}
                           <span>{projectWord}</span>
                         {/if}
@@ -223,8 +233,9 @@
               {state.featureError}
             </p>{/if}
           {#if state.unreadableFeatures.length}<p class="notice" role="status">
-              Could not read the project.json in {state.unreadableFeatures.join(", ")}.
-              Each folder's history keeps earlier copies.
+              Could not read the project.json in {state.unreadableFeatures.join(
+                ", "
+              )}. Each folder's history keeps earlier copies.
             </p>{/if}
           {#if state.features.length}
             <ul>
@@ -289,12 +300,22 @@
       {:else}
         {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${state.feature ? featureSelectionId(state.feature.slug) : state.sequence.id}`}
           <PostStudio
-            editArrangementOnOpen={!!state.selectedId?.startsWith("studio-arrangement:")}
+            editArrangementOnOpen={!!state.selectedId?.startsWith(
+              "studio-arrangement:"
+            )}
             active={visible && !state.showingProjects}
             sequence={state.sequence}
             feature={state.feature ?? undefined}
-            initialProject={state.feature ? state.feature.initialProject : (state.draft ?? undefined)}
-            onSaveDraft={state.feature ? state.feature.save : authState.user && !authState.user.isAnonymous ? saveSyncedFor(state.sequence) : state.diskAvailable ? savePostDraft : undefined}
+            initialProject={state.feature
+              ? state.feature.initialProject
+              : (state.draft ?? undefined)}
+            onSaveDraft={state.feature
+              ? state.feature.save
+              : authState.user && !authState.user.isAnonymous
+                ? saveSyncedFor(state.sequence)
+                : state.diskAvailable
+                  ? savePostDraft
+                  : undefined}
             draftLoadError={state.projectError}
             cardPreviewUrl={cardPreview.url}
             cardRenderOptions={cardPreview.renderOptions}

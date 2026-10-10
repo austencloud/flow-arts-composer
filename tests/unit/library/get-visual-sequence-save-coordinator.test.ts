@@ -22,11 +22,11 @@ const { registerLibraryRepository, initializeAuthListener, awaitAuthSettled } =
     awaitAuthSettled: vi.fn(),
   }));
 
-vi.mock("$lib/shared/composition-root/register-library-repository", () => ({
+vi.mock("#lib/shared/composition-root/register-library-repository.js", () => ({
   registerLibraryRepository,
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   initializeAuthListener,
   awaitAuthSettled,
 }));
@@ -41,7 +41,7 @@ beforeEach(() => {
 describe("getVisualSequenceSaveCoordinator lazy registration", () => {
   it("registers itself on first use when nothing has booted the app", async () => {
     const mod = await import(
-      "$lib/shared/library/get-visual-sequence-save-coordinator"
+      "#lib/shared/library/get-visual-sequence-save-coordinator.js"
     );
     const fakeCoordinator = { save: vi.fn() };
     registerLibraryRepository.mockImplementation(() => {
@@ -56,7 +56,7 @@ describe("getVisualSequenceSaveCoordinator lazy registration", () => {
 
   it("skips registration once a factory is already registered", async () => {
     const mod = await import(
-      "$lib/shared/library/get-visual-sequence-save-coordinator"
+      "#lib/shared/library/get-visual-sequence-save-coordinator.js"
     );
     const fakeCoordinator = { save: vi.fn() };
     mod.registerVisualSequenceSaveCoordinatorFactory(async () => fakeCoordinator as never);
@@ -70,7 +70,7 @@ describe("getVisualSequenceSaveCoordinator lazy registration", () => {
 
   it("waits until it knows who is signed in before handing back the coordinator", async () => {
     const mod = await import(
-      "$lib/shared/library/get-visual-sequence-save-coordinator"
+      "#lib/shared/library/get-visual-sequence-save-coordinator.js"
     );
     const fakeCoordinator = { save: vi.fn() };
     registerLibraryRepository.mockImplementation(() => {
@@ -98,7 +98,7 @@ describe("getVisualSequenceSaveCoordinator lazy registration", () => {
 
   it("still saves as a guest when sign-in cannot start", async () => {
     const mod = await import(
-      "$lib/shared/library/get-visual-sequence-save-coordinator"
+      "#lib/shared/library/get-visual-sequence-save-coordinator.js"
     );
     const fakeCoordinator = { save: vi.fn() };
     registerLibraryRepository.mockImplementation(() => {
@@ -116,7 +116,7 @@ describe("getVisualSequenceSaveCoordinator lazy registration", () => {
 
   it("shares one registration import across concurrent callers", async () => {
     const mod = await import(
-      "$lib/shared/library/get-visual-sequence-save-coordinator"
+      "#lib/shared/library/get-visual-sequence-save-coordinator.js"
     );
     const fakeCoordinator = { save: vi.fn() };
     let resolveImport!: () => void;
@@ -140,7 +140,7 @@ describe("getVisualSequenceSaveCoordinator lazy registration", () => {
 
   it("still reports the original error if registration leaves no factory behind", async () => {
     const mod = await import(
-      "$lib/shared/library/get-visual-sequence-save-coordinator"
+      "#lib/shared/library/get-visual-sequence-save-coordinator.js"
     );
     // A real-world stand-in for a registration module that loaded but, for
     // whatever reason, did not wire up this particular factory.

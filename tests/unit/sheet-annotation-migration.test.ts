@@ -5,7 +5,7 @@ import {
   migrateNote,
   migrateCues,
   migrateNotes,
-} from "$lib/features/write/domain/annotation-migration";
+} from "#lib/features/write/domain/annotation-migration.js";
 
 describe("parseLegacyBandKey", () => {
   it("splits a plain key", () => {

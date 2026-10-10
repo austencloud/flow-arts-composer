@@ -4,23 +4,23 @@
   and ratio notation.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedMatrixTurnSpokenLabel } from "../../domain/shape-matrix-display";
   import { Popover } from "bits-ui";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     turnValueToKey,
     type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
+  } from "#lib/shared/create/services/level-turn-values.js";
   import {
     matrixTurnVisibleLabel,
     matrixTurnsForLevel,
     type MatrixLabelMode,
-  } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ShapeMatrixValueScroller from "./ShapeMatrixValueScroller.svelte";
 
   type Hand = "left" | "right";

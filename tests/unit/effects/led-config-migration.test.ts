@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { migrateLedConfig } from "$lib/shared/animation-engine/domain/types/led-config-migration";
+import { migrateLedConfig } from "#lib/shared/animation-engine/domain/types/led-config-migration.js";
 import {
   CAPSULE_LED_COUNT,
   DEFAULT_LED_INTENT,
@@ -7,13 +7,13 @@ import {
   PROP_BLUE,
   PROP_RED,
   hexToRgb255,
-} from "$lib/shared/animation-engine/domain/types/led-types";
+} from "#lib/shared/animation-engine/domain/types/led-types.js";
 import {
   CAMERA_EXPOSURE_MAX_S,
   CAMERA_EXPOSURE_MIN_S,
   GLARE_WEIGHT_MAX,
   GLARE_WEIGHT_MIN,
-} from "$lib/shared/animation-engine/domain/led-photometry";
+} from "#lib/shared/animation-engine/domain/led-photometry.js";
 
 describe("migrateLedConfig", () => {
   it("returns the default config for missing / malformed input", () => {

@@ -1,10 +1,10 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   captureActivePropConfig,
   resolveRecordedPropConfig,
   type ActivePropSettings,
   type ResolvedPropConfig,
-} from "$lib/shared/foundation/services/recorded-prop-intent";
+} from "#lib/shared/foundation/services/recorded-prop-intent.js";
 
 /**
  * The pair a museum performer holds: the sequence's recorded pair when it has

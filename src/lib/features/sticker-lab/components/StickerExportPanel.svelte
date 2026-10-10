@@ -6,8 +6,8 @@
     getPrimitivePaths,
     loadPrimitivePaths,
   } from "../state/mandala-paths-cache.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
 
   const stickerState = getStickerLabContext();
   const exporter = new StickerSheetPdfExporter();

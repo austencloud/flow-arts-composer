@@ -4,8 +4,8 @@
 // seeded into each worker so it NEVER calls createImageBitmap(svgBlob) (which
 // fails on the app's SVGs in worker scope).
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { seedFooterIcon } from "@tka/render-composition";
 import { getSvgImageCache, type DrawableImage } from "./svg-image-cache";
 import { getSvgAssetLoader } from "./svg-asset-loader";

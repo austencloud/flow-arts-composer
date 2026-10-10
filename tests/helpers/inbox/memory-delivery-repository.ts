@@ -1,8 +1,8 @@
-import type { IMessageDeliveryRepository } from "$lib/shared/inbox/services/contracts/IMessageDeliveryRepository";
+import type { IMessageDeliveryRepository } from "#lib/shared/inbox/services/contracts/IMessageDeliveryRepository.js";
 import type {
   MessageDraftRecord,
   MessageOutboxRecord,
-} from "$lib/shared/inbox/domain/message-delivery-models";
+} from "#lib/shared/inbox/domain/message-delivery-models.js";
 
 /**
  * In-memory draft/outbox ledger for inbox tests that need the REAL

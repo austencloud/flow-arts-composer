@@ -4,7 +4,7 @@ import {
   RGBAFormat,
   UnsignedByteType,
 } from "three";
-import type { Smoke3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Smoke3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 import type {
   SceneEffectVector3,
   SmokeTipSource3D,

@@ -7,13 +7,13 @@ import ExpandedCardStage from "./ExpandedCardStage.svelte";
 import {
   createPanelCoordinationState,
   type PanelCoordinationState,
-} from "$lib/shared/create/state/panel-coordination-state.svelte";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   countViewTransitionNameClaims,
   resetViewTransitionNameRegistry,
-} from "$lib/shared/transitions/view-transition-name-registry";
-import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+} from "#lib/shared/transitions/view-transition-name-registry.js";
+import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
 import type { FavoriteState } from "../../state/favorite-state.svelte";
 import {
   lastGenerateCardMorphRan,
@@ -133,6 +133,32 @@ describe("ExpandedCardStage", () => {
     const root = container.querySelector<HTMLElement>(".expanded-card-stage");
     expect(root).not.toBeNull();
     expect(root!.getAnimations().length).toBe(0);
+  });
+
+  it("does not read the stage's style for a motionless entrance", async () => {
+    // Svelte's scale reads computed style before it starts, even at zero
+    // duration. After a morph that read forced a layout of the freshly
+    // mounted panel inside the view transition callback.
+    vi.spyOn(window, "matchMedia").mockReturnValue({
+      matches: true,
+      media: "(prefers-reduced-motion: reduce)",
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as MediaQueryList);
+    const styleReads = vi.spyOn(window, "getComputedStyle");
+
+    const state = createPanelCoordinationState();
+    const { container } = render(ExpandedCardStage, props(state, true));
+
+    state.openPresetDrawer();
+    flushSync();
+    await tick();
+
+    const root = container.querySelector<HTMLElement>(".expanded-card-stage");
+    expect(root).not.toBeNull();
+    expect(styleReads.mock.calls.some(([element]) => element === root)).toBe(
+      false
+    );
   });
 
   it("renders the Setups panel in the stage on side-by-side layouts", async () => {

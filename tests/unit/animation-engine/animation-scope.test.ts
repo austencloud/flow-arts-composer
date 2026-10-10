@@ -3,15 +3,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   ephemeralAdapter,
   createMemoryAdapter,
-} from "$lib/shared/animation-engine/state/persistence-adapter";
+} from "#lib/shared/animation-engine/state/persistence-adapter.js";
 import {
   ANIMATION_SETTINGS_VERSION,
   DEFAULT_ANIMATION_SETTINGS,
   createAnimationSettingsState,
   migrateAnimationSettings,
-} from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+import { createAnimationScope } from "#lib/shared/animation-engine/state/animation-scope.svelte.js";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
 describe("persistence adapters", () => {
   it("ephemeral adapter never loads or persists", () => {

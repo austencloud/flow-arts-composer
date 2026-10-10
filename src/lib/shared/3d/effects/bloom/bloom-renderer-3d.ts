@@ -16,7 +16,7 @@ import {
   shouldResetBloomHistory3D,
 } from "./bloom-optics-3d";
 import { BoundedSourcePath3D } from "../scene-effects/bounded-source-path-3d";
-import type { Bloom3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Bloom3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 import type { BloomTipSource3D } from "../scene-effects/scene-effect-source-3d";
 import {
   DynamicLightManager,

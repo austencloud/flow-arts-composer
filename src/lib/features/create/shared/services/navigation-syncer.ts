@@ -9,8 +9,8 @@
  * Extracted from CreateModule.svelte monolith.
  */
 
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
 
 export type CreateTab = "construct" | "generate";
 

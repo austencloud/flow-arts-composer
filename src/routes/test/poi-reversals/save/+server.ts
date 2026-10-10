@@ -1,8 +1,8 @@
-import { dev } from "$app/environment";
-import { error, json } from "@sveltejs/kit";
+import { dev } from "$app/env";
+import { error } from "@sveltejs/kit";
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { parsePoiReversalObservationFile } from "$lib/features/levels/poi-lab/domain/poi-reversal-observations";
+import { parsePoiReversalObservationFile } from "#lib/features/levels/poi-lab/domain/poi-reversal-observations.js";
 import type { RequestHandler } from "./$types";
 
 const DATA_FILE = fileURLToPath(
@@ -35,5 +35,5 @@ export const POST: RequestHandler = async ({ request }) => {
     error(500, cause instanceof Error ? cause.message : String(cause));
   }
 
-  return json({ ok: true, count: file.observations.length });
+  return Response.json({ ok: true, count: file.observations.length });
 };

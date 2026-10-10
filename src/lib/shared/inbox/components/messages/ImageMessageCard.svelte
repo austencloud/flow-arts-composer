@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getBlob, ref } from "firebase/storage";
-  import { getStorageInstance } from "$lib/shared/auth/firebase";
-  import MediaSpotlight from "$lib/components/media/spotlight/MediaSpotlight.svelte";
-  import type { MessageAttachment } from "$lib/shared/messaging/domain/models/message-models";
+  import { getStorageInstance } from "#lib/shared/auth/firebase.js";
+  import MediaSpotlight from "#lib/components/media/spotlight/MediaSpotlight.svelte";
+  import type { MessageAttachment } from "#lib/shared/messaging/domain/models/message-models.js";
 
   interface Props {
     attachment: MessageAttachment;

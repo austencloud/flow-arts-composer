@@ -15,8 +15,8 @@
  * The colour VALUES stay owned by loop-option-color.ts.
  */
 
-import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { loopComponentColors } from "$lib/shared/components/loop-picker/loop-option-color";
+import type { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { loopComponentColors } from "#lib/shared/components/loop-picker/loop-option-color.js";
 
 const FALLBACK_ACCENT = "var(--theme-accent, #8b5cf6)";
 

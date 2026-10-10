@@ -1,27 +1,27 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { onDestroy, onMount } from "svelte";
   import { cubicInOut } from "svelte/easing";
   import { fade } from "svelte/transition";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import LessonStageControls from "$lib/features/learn/components/interactive/LessonStageControls.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import LessonStageControls from "#lib/features/learn/components/interactive/LessonStageControls.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     createRenderActivityGate,
     renderGateTarget,
-  } from "$lib/shared/render-gating/render-activity-gate";
+  } from "#lib/shared/render-gating/render-activity-gate.js";
   import {
     motionDuration,
     reducedMotion,
-  } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { PATH_SHAPE_COLORS } from "$lib/shared/animation-engine/domain/path-shape-colors";
-  import { DARK_MOTION_BLUE_STROKE } from "$lib/shared/mandala/domain/mandala-constants";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { PATH_SHAPE_COLORS } from "#lib/shared/animation-engine/domain/path-shape-colors.js";
+  import { DARK_MOTION_BLUE_STROKE } from "#lib/shared/mandala/domain/mandala-constants.js";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     INTRO_CENTER,
     INTRO_PATHS,

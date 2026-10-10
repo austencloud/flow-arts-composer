@@ -12,8 +12,8 @@
   took a fifth of a second or two seconds.
 -->
 <script lang="ts">
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { PHASE_ANCHORS } from "../domain/movement-annotation";
   import { timeForPhase } from "../domain/step-phase";
   import { FRAME_RATES } from "../state/movement-map-state.svelte";

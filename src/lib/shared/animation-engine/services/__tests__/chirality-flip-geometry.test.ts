@@ -8,7 +8,7 @@ import { DEFAULT_LED_CONFIG } from "../../domain/types/led-types";
 import { getTipPoints } from "../../domain/types/prop-tip-points";
 import { TrailCapturer } from "../trail-capturer";
 import { DEFAULT_TRAIL_SETTINGS, TrailMode } from "../../domain/types/trail-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
 const CANVAS = 950;
 const CENTRE = CANVAS / 2;
@@ -130,7 +130,7 @@ describe("chirality flip geometry", () => {
 describe("mandala guide chirality", () => {
   it("mirrors the guide's tip offsets for a flipped prop", async () => {
     const { mirrorTipOffsets, resolveMandalaTipOffsets } = await import(
-      "$lib/shared/mandala/services/mandala-path-preparer"
+      "#lib/shared/mandala/services/mandala-path-preparer.js"
     );
     const { TrackingMode } = await import("../../domain/types/trail-types");
     const plain = resolveMandalaTipOffsets("trigeng", TrackingMode.BOTH_ENDS);

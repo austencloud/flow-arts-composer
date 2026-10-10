@@ -4,16 +4,16 @@ import { flushSync } from "svelte";
 const { captureTnSlice, seedFromTnSlice, persistedTnSliceFromStorage } =
   await import("./tn-slice");
 const { loadTunnelViewState, DEFAULT_TUNNEL_VIEW_STATE } = await import(
-  "$lib/shared/sequence-viewer/tunnel/tunnel-view-state"
+  "#lib/shared/sequence-viewer/tunnel/tunnel-view-state.js"
 );
 const { DEFAULT_CONFIG } = await import(
-  "$lib/shared/sequence-viewer/tunnel/tunnel-config"
+  "#lib/shared/sequence-viewer/tunnel/tunnel-config.js"
 );
 const { savedTunnelPresetRecipe } = await import(
-  "$lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe"
+  "#lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe.js"
 );
 const { resolveTunnelPropColorState } = await import(
-  "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors"
+  "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js"
 );
 const { createRootedTunnelViewController } = await import(
   "./tn-slice-test-harness.svelte"

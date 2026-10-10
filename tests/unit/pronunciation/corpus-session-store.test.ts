@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildWordFiles, nextWordId } from "$lib/features/lab/pronunciation-recorder/services/implementations/CorpusSessionStore";
+import { buildWordFiles, nextWordId } from "#lib/features/lab/pronunciation-recorder/services/implementations/CorpusSessionStore.js";
 
 describe("buildWordFiles", () => {
   it("writes the TKA letters to words.json and the short names to the .lab", () => {

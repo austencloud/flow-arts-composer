@@ -5,8 +5,8 @@ import {
   getStoredRotationOverride,
   loadRotationOverrides,
   ROTATION_OVERRIDE_STORAGE_KEY,
-} from "$lib/shared/pictograph/arrow/positioning/placement/services/rotation-override-store";
-import { PlacementFrame } from "$lib/shared/pictograph/arrow/positioning/placement/domain/placement-frame";
+} from "#lib/shared/pictograph/arrow/positioning/placement/services/rotation-override-store.js";
+import { PlacementFrame } from "#lib/shared/pictograph/arrow/positioning/placement/domain/placement-frame.js";
 
 const LEGACY_STORAGE_KEY = "tka_rotation_overrides";
 

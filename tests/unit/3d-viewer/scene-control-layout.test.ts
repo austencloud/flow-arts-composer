@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   resolveSceneControlLayout,
   sceneInspectorPanelWidth,
-} from "$lib/shared/3d/domain/scene-control-layout";
+} from "#lib/shared/3d/domain/scene-control-layout.js";
 
 describe("scene control workspace layout", () => {
   it("uses compact controls on phones and genuinely narrow landscapes", () => {

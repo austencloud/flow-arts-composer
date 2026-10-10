@@ -1,12 +1,12 @@
 <script lang="ts">
 
-import * as museumPersister from "$lib/features/museum/scenes/procedural/services/museum-persister";
-  import WorldScene from "$lib/shared/3d/procedural-engine/components/WorldScene.svelte";
-  import { MUSEUM_GROUNDS_CONFIG } from "$lib/shared/3d/procedural-engine/core/world-definitions";
-  import { getActiveMuseumState } from "$lib/shared/museum/state/museum-state-bridge.svelte";
+import * as museumPersister from "#lib/features/museum/scenes/procedural/services/museum-persister.js";
+  import WorldScene from "#lib/shared/3d/procedural-engine/components/WorldScene.svelte";
+  import { MUSEUM_GROUNDS_CONFIG } from "#lib/shared/3d/procedural-engine/core/world-definitions.js";
+  import { getActiveMuseumState } from "#lib/shared/museum/state/museum-state-bridge.svelte.js";
   import InteractionPrompt from "./components/InteractionPrompt.svelte";
   import SequenceBrowserOverlay from "./overlay/SequenceBrowserOverlay.svelte";
-  import { destinationManager } from "$lib/shared/3d/destinations/destination-manager.svelte";
+  import { destinationManager } from "#lib/shared/3d/destinations/destination-manager.svelte.js";
   // The userId to view - if set and different from current user, this is visitor mode
   const CURRENT_USER_ID = "local-user"; // Placeholder until auth integration
   const visitingUserId = $derived(destinationManager.navigationParams.userId || CURRENT_USER_ID);

@@ -1,5 +1,5 @@
-import type { CsvEdge } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+import type { CsvEdge } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
 import type { FlowerStyle } from "../domain/flower-signature";
 
 /** The six VTG modes: timing (Split/Together/Quarter) × direction (Same/Opp). */

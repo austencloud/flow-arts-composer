@@ -4,7 +4,7 @@
   flush synchronously between steps and catch the box mid-transition.
 -->
 <script lang="ts">
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
 
   let key = $state<"tall" | "short">("tall");
 

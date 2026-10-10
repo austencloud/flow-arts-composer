@@ -9,16 +9,16 @@
   detail pane names it. Compact hosts get a bare legend and edit from the
   header, so this only becomes a control surface on wide layouts. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { spinRatioEquals } from "@vtg/domain";
-  import { flyFade } from "$lib/shared/transitions/motion";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
   import {
     localizedFlowerLabel,
     localizedTheoryFlowerLabel,
     localizedMatrixTurnSpokenLabel,
     localizedTheoryRatioSpokenLabel,
-  } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
-  import { localizedModeName } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
+  } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
+  import { localizedModeName } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { SHAPE_MATRIX_REVEAL } from "../services/shape-matrix-reveal";
   import ShapeMatrixAxisStepper from "./ShapeMatrixAxisStepper.svelte";

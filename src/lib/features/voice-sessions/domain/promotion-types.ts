@@ -1,4 +1,4 @@
-import type { VoiceCommandCategory } from "$lib/shared/voice-control/domain/voice-command-types";
+import type { VoiceCommandCategory } from "#lib/shared/voice-control/domain/voice-command-types.js";
 
 /**
  * Lifecycle of a promotion candidate:

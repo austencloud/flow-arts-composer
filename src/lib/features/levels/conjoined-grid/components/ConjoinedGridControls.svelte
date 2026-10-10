@@ -9,7 +9,7 @@
   5. Junction overlaps summary (always visible)
 -->
 <script lang="ts">
-  import { TOPOLOGY_PRESETS } from "$lib/shared/multi-grid/domain/constants/topology-presets";
+  import { TOPOLOGY_PRESETS } from "#lib/shared/multi-grid/domain/constants/topology-presets.js";
   import type { ConjoinedGridState } from "../state/conjoined-grid-state.svelte";
 
   interface Props {

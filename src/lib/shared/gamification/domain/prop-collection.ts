@@ -2,7 +2,7 @@
  * Pure helpers over the user's prop collection. No I/O — the manager owns
  * persistence; these functions are deterministic and unit-tested.
  */
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   CORE_PROPS,
   PROP_LOCKING_ENABLED,

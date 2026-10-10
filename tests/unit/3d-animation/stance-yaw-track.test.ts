@@ -9,12 +9,12 @@ import {
   sampleStanceYawTrackDetail,
   stanceYawAngularVelocity,
   type StanceYawTrack,
-} from "$lib/shared/3d/collision/stance-yaw-track";
+} from "#lib/shared/3d/collision/stance-yaw-track.js";
 import {
   MAX_STANCE_YAW_RAD,
   planUpperBodyStanceYawTarget,
   type UpperBodyStanceTargets,
-} from "$lib/shared/3d/collision/upper-body-stance-planner";
+} from "#lib/shared/3d/collision/upper-body-stance-planner.js";
 
 /**
  * The planner's yaw is a memoryless function of this frame's grips: it cannot

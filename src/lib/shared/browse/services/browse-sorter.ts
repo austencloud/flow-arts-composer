@@ -5,12 +5,12 @@
  * Provides consistent sorting behavior across the gallery.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import { sortSequencesByKineticAlphabet } from "$lib/shared/browse/utils/kinetic-alphabet-sort";
-import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
-import { resolveBrowseDate } from "$lib/shared/browse/services/browse-date";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import { sortSequencesByKineticAlphabet } from "#lib/shared/browse/utils/kinetic-alphabet-sort.js";
+import { calculateDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
+import { resolveBrowseDate } from "#lib/shared/browse/services/browse-date.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
 /** Numeric difficulty (1–3). Prefers stored `level`, else computes from steps. */
 export function resolveDifficultyLevel(sequence: SequenceData): number {

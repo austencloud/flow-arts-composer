@@ -1,7 +1,7 @@
 <!-- TimelineBody - Main timeline tracks area with minimap, ruler, and tracks -->
 <script lang="ts">
   import { untrack } from "svelte";
-  import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
+  import TimeRuler from "#lib/shared/timeline/TimeRuler.svelte";
   import TrackLane from "./TrackLane.svelte";
   import TrackHeader from "./TrackHeader.svelte";
   import Playhead from "./Playhead.svelte";
@@ -9,7 +9,7 @@
   import TimelineEmptyState from "./TimelineEmptyState.svelte";
   import TimelineMinimap from "./TimelineMinimap.svelte";
   import TimelineAudioTrack from "./TimelineAudioTrack.svelte";
-  import type { TimelineTrack, TimelineClip } from "$lib/shared/animation-engine/domain/timeline-types";
+  import type { TimelineTrack, TimelineClip } from "#lib/shared/animation-engine/domain/timeline-types.js";
 
   interface Props {
     totalDuration: number;

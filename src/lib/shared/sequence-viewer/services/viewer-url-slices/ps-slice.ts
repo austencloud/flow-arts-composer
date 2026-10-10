@@ -132,7 +132,7 @@
 import {
   PropType,
   type PropType as PropTypeValue,
-} from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export type PsAudioMode = "original" | "instagram";
 

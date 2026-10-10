@@ -21,8 +21,8 @@ import {
   increment,
   serverTimestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { recordAttempt } from "$lib/features/learn/services/quiz-history-recorder";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { recordAttempt } from "#lib/features/learn/services/quiz-history-recorder.js";
 
 export interface TikaTopicInteraction {
   /** Normalized topic identifier (e.g., "letter-A", "position-alpha", "type-1") */

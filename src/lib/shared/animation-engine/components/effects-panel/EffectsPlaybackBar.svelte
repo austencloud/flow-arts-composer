@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
 
   interface Props {
     bpm: number;

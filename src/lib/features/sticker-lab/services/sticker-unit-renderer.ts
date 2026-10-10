@@ -1,5 +1,5 @@
-import type { MandalaPaths, MandalaPalette } from "$lib/shared/mandala/domain/mandala-types";
-import { renderMandalaSVG } from "$lib/shared/mandala/services/mandala-renderer";
+import type { MandalaPaths, MandalaPalette } from "#lib/shared/mandala/domain/mandala-types.js";
+import { renderMandalaSVG } from "#lib/shared/mandala/services/mandala-renderer.js";
 import type { StickerBackground, StickerUnit, StickerVariant } from "../domain/sticker-types";
 import {
   STICKER_ART_DIAMETER_PX,

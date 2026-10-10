@@ -1,6 +1,6 @@
-import type { CsvDataSet } from "$lib/shared/foundation/domain/models/csv-models";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
+import type { CsvDataSet } from "#lib/shared/foundation/domain/models/csv-models.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
 // Module-level cache shared across all instances (defense against non-singleton usage)
 let sharedCsvCache: CsvDataSet | null = null;
 let sharedIsLoaded = false;

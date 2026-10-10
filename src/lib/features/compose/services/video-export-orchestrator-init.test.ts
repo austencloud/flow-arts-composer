@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import type { VideoExporter } from "$lib/shared/animation-engine/services/video-exporter";
-import type { CompositeVideoRenderer } from "$lib/shared/animation-engine/services/composite-video-renderer";
-import type { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
-import type { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import type { VideoExporter } from "#lib/shared/animation-engine/services/video-exporter.js";
+import type { CompositeVideoRenderer } from "#lib/shared/animation-engine/services/composite-video-renderer.js";
+import type { ExportGlyphPrerenderer } from "#lib/shared/animation-engine/services/export-glyph-prerenderer.js";
+import type { BackgroundVideoEncoder } from "#lib/shared/animation-engine/services/background-video-encoder.js";
 
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: () => ({ getVisibility: () => false }),
   })

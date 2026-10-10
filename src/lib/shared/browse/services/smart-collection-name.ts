@@ -1,4 +1,4 @@
-import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
+import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
 
 export const SMART_COLLECTION_NAME_MAX_LENGTH = 60;
 

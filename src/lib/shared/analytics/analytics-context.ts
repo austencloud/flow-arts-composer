@@ -16,7 +16,7 @@
  * Spec: docs/architecture/landing-analytics-taxonomy.md §2
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { page } from "$app/state";
 
 /** Route id we fall back to when there is no request context to read. */

@@ -1,12 +1,12 @@
 import type {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type {
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { BuilderPose } from "../services/builder-path-editor";
 import type {
   AssembleHistoryDirection,

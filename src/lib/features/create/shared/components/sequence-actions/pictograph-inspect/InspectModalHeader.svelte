@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Inspect Modal Header
    *
    * Header with title, badges, and copy buttons for the pictograph inspector.
    */
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
 
   interface Props {
     displayData: StepData | null;

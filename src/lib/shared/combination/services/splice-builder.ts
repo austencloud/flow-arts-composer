@@ -60,23 +60,23 @@ import { deriveReversals } from "@tka/sequence-engine";
 import {
   propagateOrientationsForHand,
   recalculateAllOrientations,
-} from "$lib/shared/create/services/orientation-propagation";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { deriveSequenceLetters } from "$lib/shared/create/services/sequence-transformer";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+} from "#lib/shared/create/services/orientation-propagation.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import { deriveSequenceLetters } from "#lib/shared/create/services/sequence-transformer.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {
   createSequenceData,
   updateSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { deriveWordStatus } from "$lib/shared/foundation/services/word-deriver";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+import { deriveWordStatus } from "#lib/shared/foundation/services/word-deriver.js";
 import {
   HandSide,
   type Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
 
 import type { WalkBlock } from "../domain/types";
 

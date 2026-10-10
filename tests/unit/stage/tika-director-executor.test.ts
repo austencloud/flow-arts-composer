@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { createStageChoreographyState } from "$lib/features/stage/state/stage-choreography-state.svelte";
-import { generatePresetPositions } from "$lib/features/stage/state/formation-presets";
+import { createStageChoreographyState } from "#lib/features/stage/state/stage-choreography-state.svelte.js";
+import { generatePresetPositions } from "#lib/features/stage/state/formation-presets.js";
 import {
   executeTikaDirectorPlan,
   type TikaDirectorExecutionContext,
-} from "$lib/features/stage/services/tika-director-executor";
-import type { TikaDirectorResponse } from "$lib/features/stage/domain/tika-director";
+} from "#lib/features/stage/services/tika-director-executor.js";
+import type { TikaDirectorResponse } from "#lib/features/stage/domain/tika-director.js";
 
 type ApplyPlan = Extract<TikaDirectorResponse, { kind: "apply" }>;
 

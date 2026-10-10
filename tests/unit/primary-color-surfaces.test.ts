@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   applyMandalaHandColors,
   mixColors,
-} from "$lib/shared/mandala/domain/mandala-palette";
-import { resolveTrailColors } from "$lib/shared/animation-engine/domain/resolve-trail-colors";
-import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { FrameParameterBuilder } from "$lib/shared/animation-engine/services/frame-parameter-builder";
-import type { AnimatorState } from "$lib/shared/animation-engine/state/animator-state.svelte";
+} from "#lib/shared/mandala/domain/mandala-palette.js";
+import { resolveTrailColors } from "#lib/shared/animation-engine/domain/resolve-trail-colors.js";
+import { DEFAULT_TRAIL_SETTINGS } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { FrameParameterBuilder } from "#lib/shared/animation-engine/services/frame-parameter-builder.js";
+import type { AnimatorState } from "#lib/shared/animation-engine/state/animator-state.svelte.js";
 
 const colors = { left: "#00ff88", right: "#ff8800" };
 const base = {

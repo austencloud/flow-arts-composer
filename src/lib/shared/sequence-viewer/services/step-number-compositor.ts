@@ -14,7 +14,7 @@
  * identically.
  */
 
-import { drawStepNumber } from "$lib/shared/render/services/step-number-renderer";
+import { drawStepNumber } from "#lib/shared/render/services/step-number-renderer.js";
 
 /**
  * Draw `stepNumber` onto a copy of `baseBlob` and return the composited blob.

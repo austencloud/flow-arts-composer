@@ -1,18 +1,20 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page } from "$app/state";
-  import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
-  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
-  import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-  import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
-  import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
-  import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
-  import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
+  import PostStudio from "#lib/shared/share/components/post-studio/PostStudio.svelte";
+  import ToastContainer from "#lib/shared/toast/components/ToastContainer.svelte";
+  import { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+  import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
+  import { registerEditHistoryShortcuts } from "#lib/shared/keyboard/registration/register-edit-history-shortcuts.js";
+  import { keyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
+  import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
   import { createStudioArrangementFixture } from "./fixture";
 
   const fixture = createStudioArrangementFixture();
   let exportUrl = $state<string | null>(null);
-  const editArrangementOnOpen = $derived(page.url.searchParams.get("edit") === "1");
+  const editArrangementOnOpen = $derived(
+    page.url.searchParams.get("edit") === "1"
+  );
 
   type FixtureProbe = {
     initialProject: PostProject;
@@ -28,15 +30,21 @@
   };
 
   onMount(() => {
-    (window as unknown as { __tkaLoadProgress?: (p: number) => void }).__tkaLoadProgress?.(100);
-    (window as unknown as { __studioArrangementFixture?: FixtureProbe }).__studioArrangementFixture = probe;
+    (
+      window as unknown as { __tkaLoadProgress?: (p: number) => void }
+    ).__tkaLoadProgress?.(100);
+    (
+      window as unknown as { __studioArrangementFixture?: FixtureProbe }
+    ).__studioArrangementFixture = probe;
     const manager = new KeyboardShortcutManager(new ShortcutRegistry());
     registerEditHistoryShortcuts(manager, keyboardShortcutState.isMac);
     manager.initialize();
     return () => {
       manager.dispose();
       if (probe.exportUrl) URL.revokeObjectURL(probe.exportUrl);
-      delete (window as unknown as { __studioArrangementFixture?: FixtureProbe }).__studioArrangementFixture;
+      delete (
+        window as unknown as { __studioArrangementFixture?: FixtureProbe }
+      ).__studioArrangementFixture;
     };
   });
 
@@ -67,13 +75,20 @@
     onExported={exported}
   />
   {#if exportUrl}
-    <a class="export-download" href={exportUrl} download="studio-arrangement-test.webm">Download test export</a>
+    <a
+      class="export-download"
+      href={exportUrl}
+      download="studio-arrangement-test.mp4">Download test export</a
+    >
   {/if}
 </main>
 <ToastContainer />
 
 <style>
-  :global(body) { margin: 0; background: #09090d; }
+  :global(body) {
+    margin: 0;
+    background: #09090d;
+  }
   .harness {
     position: relative;
     display: grid;
@@ -82,7 +97,13 @@
     height: 100dvh;
     padding: clamp(0.5rem, 1.5vw, 2rem);
     overflow: hidden;
-    background: radial-gradient(circle at 12% 0%, rgba(87, 64, 180, 0.18), transparent 34rem), #09090d;
+    background:
+      radial-gradient(
+        circle at 12% 0%,
+        rgba(87, 64, 180, 0.18),
+        transparent 34rem
+      ),
+      #09090d;
   }
   .export-download {
     position: absolute;

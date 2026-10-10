@@ -1,7 +1,7 @@
-import type { EffectType } from "$lib/shared/effects/domain/effects-config";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
 import type { FramePropState } from "../domain/qr-video-types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { computeEffectScale } from "$lib/shared/effects/renderers/scale";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { computeEffectScale } from "#lib/shared/effects/renderers/scale.js";
 
 import {
   resolveZap2D,
@@ -17,58 +17,58 @@ import {
   resolveSilk2D,
   resolveAnimal2D,
   resolvePulse2D,
-} from "$lib/shared/effects/translators/canvas2d-translator";
+} from "#lib/shared/effects/translators/canvas2d-translator.js";
 
 import {
   Bloom2DRenderer,
   type BloomTipInput,
-} from "$lib/shared/effects/renderers/bloom-2d-renderer";
-import { Bubbles2DRenderer } from "$lib/shared/effects/renderers/bubbles-2d-renderer";
+} from "#lib/shared/effects/renderers/bloom-2d-renderer.js";
+import { Bubbles2DRenderer } from "#lib/shared/effects/renderers/bubbles-2d-renderer.js";
 import {
   Ghost2DRenderer,
   type GhostInput,
-} from "$lib/shared/effects/renderers/ghost-2d-renderer";
-import { Frost2DRenderer } from "$lib/shared/effects/renderers/frost-2d-renderer";
-import { Ink2DRenderer } from "$lib/shared/effects/renderers/ink-2d-renderer";
-import { Petals2DRenderer } from "$lib/shared/effects/renderers/petals-2d-renderer";
+} from "#lib/shared/effects/renderers/ghost-2d-renderer.js";
+import { Frost2DRenderer } from "#lib/shared/effects/renderers/frost-2d-renderer.js";
+import { Ink2DRenderer } from "#lib/shared/effects/renderers/ink-2d-renderer.js";
+import { Petals2DRenderer } from "#lib/shared/effects/renderers/petals-2d-renderer.js";
 import {
   Pulse2DRenderer,
   type PulseTipInput,
-} from "$lib/shared/effects/renderers/pulse-2d-renderer";
-import { Silk2DRenderer } from "$lib/shared/effects/renderers/silk-2d-renderer";
-import { Animal2DRenderer } from "$lib/shared/effects/renderers/animal-2d-renderer";
-import { Smoke2DRenderer } from "$lib/shared/effects/renderers/smoke-2d-renderer";
-import { WebGLSmokeRenderer } from "$lib/shared/animation-engine/services/smoke/web-gl-smoke-renderer";
-import { Sparkles2DRenderer } from "$lib/shared/effects/renderers/sparkles-2d-renderer";
-import { Goo2DRenderer } from "$lib/shared/effects/renderers/goo-2d-renderer";
-import { Zap2DRenderer } from "$lib/shared/effects/renderers/zap-2d-renderer";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+} from "#lib/shared/effects/renderers/pulse-2d-renderer.js";
+import { Silk2DRenderer } from "#lib/shared/effects/renderers/silk-2d-renderer.js";
+import { Animal2DRenderer } from "#lib/shared/effects/renderers/animal-2d-renderer.js";
+import { Smoke2DRenderer } from "#lib/shared/effects/renderers/smoke-2d-renderer.js";
+import { WebGLSmokeRenderer } from "#lib/shared/animation-engine/services/smoke/web-gl-smoke-renderer.js";
+import { Sparkles2DRenderer } from "#lib/shared/effects/renderers/sparkles-2d-renderer.js";
+import { Goo2DRenderer } from "#lib/shared/effects/renderers/goo-2d-renderer.js";
+import { Zap2DRenderer } from "#lib/shared/effects/renderers/zap-2d-renderer.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 
-import { Canvas2DTrailRenderer } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer";
+import { Canvas2DTrailRenderer } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
   TrailEffect,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import type {
   TrailPoint,
   TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
-import { WebGLFireRenderer } from "$lib/shared/animation-engine/services/fire/web-gl-fire-renderer";
-import { WebGLLedRenderer } from "$lib/shared/animation-engine/services/led/web-gl-led-renderer";
-import { CharcoalSparkRenderer } from "$lib/shared/animation-engine/services/charcoal/charcoal-spark-renderer";
+import { WebGLFireRenderer } from "#lib/shared/animation-engine/services/fire/web-gl-fire-renderer.js";
+import { WebGLLedRenderer } from "#lib/shared/animation-engine/services/led/web-gl-led-renderer.js";
+import { CharcoalSparkRenderer } from "#lib/shared/animation-engine/services/charcoal/charcoal-spark-renderer.js";
 import type {
   FireFrameInput,
   PropTipData,
-} from "$lib/shared/animation-engine/domain/types/fire-types";
-import { DEFAULT_FIRE_CONFIG } from "$lib/shared/animation-engine/domain/types/fire-types";
-import type { RenderedPropSprite } from "$lib/shared/animation-engine/domain/types/rendered-prop-sprite";
+} from "#lib/shared/animation-engine/domain/types/fire-types.js";
+import { DEFAULT_FIRE_CONFIG } from "#lib/shared/animation-engine/domain/types/fire-types.js";
+import type { RenderedPropSprite } from "#lib/shared/animation-engine/domain/types/rendered-prop-sprite.js";
 import type {
   LedFrameInput,
   LedSample,
-} from "$lib/shared/animation-engine/domain/types/led-types";
-import { DEFAULT_LED_CONFIG } from "$lib/shared/animation-engine/domain/types/led-types";
+} from "#lib/shared/animation-engine/domain/types/led-types.js";
+import { DEFAULT_LED_CONFIG } from "#lib/shared/animation-engine/domain/types/led-types.js";
 
 const VIEWBOX_SIZE = 950;
 const BLUE_COLOR = "#3575E2";

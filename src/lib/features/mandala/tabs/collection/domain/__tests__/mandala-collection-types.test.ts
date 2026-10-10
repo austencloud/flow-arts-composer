@@ -3,7 +3,7 @@ import {
   CollectedMandalaSchema,
   MANDALA_COLLECTION_STORAGE_KEY,
 } from "../mandala-collection-types";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 const valid = {
   id: "m1",

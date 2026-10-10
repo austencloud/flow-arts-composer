@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { PropBuild } from "@austencloud/scene-3d";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { buildForEffect } from "$lib/shared/3d/domain/build-for-effect";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { buildForEffect } from "#lib/shared/3d/domain/build-for-effect.js";
 
 /** The scene default: a pictograph fan, bare, on a fire-finish frame. */
 const DEFAULT_BUILD: PropBuild = {

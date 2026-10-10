@@ -8,26 +8,27 @@
   Can be selected to edit its contents.
 -->
 <script lang="ts">
-
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import { onMount, onDestroy, untrack } from "svelte";
-  import type { ArrangementCell } from "../domain/arrangement";
-  import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
-  import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import type { AdditionalLayerProps } from "$lib/shared/animation-engine/services/trail-capturer";
-  import type { FireOverlayConfig } from "$lib/shared/animation-engine/domain/types/fire-types";
-  import { DEFAULT_CHARCOAL_PARAMS } from "$lib/shared/animation-engine/domain/types/charcoal-spark-types";
-  import type { LedOverlayConfig } from "$lib/shared/animation-engine/domain/types/led-types";
+  import type { ArrangementCell } from "../domain/arrangement.js";
+  import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
+  import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import type { AdditionalLayerProps } from "#lib/shared/animation-engine/services/trail-capturer.js";
+  import type { FireOverlayConfig } from "#lib/shared/animation-engine/domain/types/fire-types.js";
+  import { DEFAULT_CHARCOAL_PARAMS } from "#lib/shared/animation-engine/domain/types/charcoal-spark-types.js";
+  import type { LedOverlayConfig } from "#lib/shared/animation-engine/domain/types/led-types.js";
 
   let {
     cell,
     cellIndex,
     currentStep,
     isPlaying,
+    animationPlaying = false,
+    virtualTimeMs = undefined,
     skipStartPlacement = true,
     isSelected = false,
     isDragging = false,
@@ -37,6 +38,9 @@
     cellIndex: number;
     currentStep: number;
     isPlaying: boolean;
+    /** Drives effects only while a source is playing; export uses the frame clock. */
+    animationPlaying?: boolean;
+    virtualTimeMs?: number;
     /** When true, step 0 (start position) is skipped and beats map to steps 1..N */
     skipStartPlacement?: boolean;
     isSelected?: boolean;
@@ -53,10 +57,13 @@
 
   // Animation states for primary and additional layers
   const primaryAnimationState = createAnimationPanelState();
-  let additionalAnimationStates = $state<ReturnType<typeof createAnimationPanelState>[]>([]);
+  let additionalAnimationStates = $state<
+    ReturnType<typeof createAnimationPanelState>[]
+  >([]);
 
   // Local state
   let initialized = $state(false);
+  let canvasReady = $state(false);
   let mounted = $state(false);
   // User-visible init failure (orchestrator construction or sequence load).
   // When set, the cell shows an error overlay with a retry button instead of
@@ -72,17 +79,22 @@
   const hasLayers = $derived(cell.layers.length > 0);
   const isAnimationType = $derived(cell.mediaType === "animation");
   const effectiveTipEffectMap = $derived.by(() => {
-    if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0) return cell.tipEffectMap;
+    if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0)
+      return cell.tipEffectMap;
     return cell.effect ? { "*": { effect: cell.effect } } : undefined;
   });
 
   // Media type display info
   const mediaTypeInfo = $derived.by(() => {
     switch (cell.mediaType) {
-      case "video": return { icon: "fa-video", label: "Video preview unavailable" };
-      case "image": return { icon: "fa-image", label: "Image preview unavailable" };
-      case "choreo-card": return { icon: "fa-id-card", label: "Card" };
-      default: return null;
+      case "video":
+        return { icon: "fa-video", label: "Video preview unavailable" };
+      case "image":
+        return { icon: "fa-image", label: "Image preview unavailable" };
+      case "choreo-card":
+        return { icon: "fa-id-card", label: "Card" };
+      default:
+        return null;
     }
   });
 
@@ -99,28 +111,35 @@
   function tipMapHasEffect(effectType: string): boolean {
     const map = cell.tipEffectMap;
     if (!map) return false;
-    return Object.values(map).some(v => v.effect === effectType);
+    return Object.values(map).some((v) => v.effect === effectType);
   }
 
   // Per-cell effect overrides - translate cell.effect AND tipEffectMap into
   // fireConfig/ledConfig. The renderers must be enabled if ANY tip is assigned
   // the effect, whether via the flat cell.effect or the per-tip matrix.
-  const cellFireConfig = $derived.by((): Partial<FireOverlayConfig> | undefined => {
-    const effect = cell.effect;
-    if (effect === 'fire' || tipMapHasEffect('fire')) return {};
-    if (effect === 'charcoal' || tipMapHasEffect('charcoal')) return { charcoalParams: { ...DEFAULT_CHARCOAL_PARAMS } };
-    if (effect && effect !== 'none') return undefined;
-    if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0) return undefined;
-    return undefined; // No per-cell override - global setting applies
-  });
+  const cellFireConfig = $derived.by(
+    (): Partial<FireOverlayConfig> | undefined => {
+      const effect = cell.effect;
+      if (effect === "fire" || tipMapHasEffect("fire")) return {};
+      if (effect === "charcoal" || tipMapHasEffect("charcoal"))
+        return { charcoalParams: { ...DEFAULT_CHARCOAL_PARAMS } };
+      if (effect && effect !== "none") return undefined;
+      if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0)
+        return undefined;
+      return undefined; // No per-cell override - global setting applies
+    }
+  );
 
-  const cellLedConfig = $derived.by((): Partial<LedOverlayConfig> | undefined => {
-    const effect = cell.effect;
-    if (effect === 'led' || tipMapHasEffect('led')) return { enabled: true };
-    if (effect && effect !== 'none') return { enabled: false };
-    if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0) return { enabled: false };
-    return undefined; // No per-cell override - global setting applies
-  });
+  const cellLedConfig = $derived.by(
+    (): Partial<LedOverlayConfig> | undefined => {
+      const effect = cell.effect;
+      if (effect === "led" || tipMapHasEffect("led")) return { enabled: true };
+      if (effect && effect !== "none") return { enabled: false };
+      if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0)
+        return { enabled: false };
+      return undefined; // No per-cell override - global setting applies
+    }
+  );
 
   // Per-cell motion visibility overrides (undefined defaults to visible)
   const leftVisible = $derived(cell.leftMotionVisible ?? true);
@@ -173,7 +192,10 @@
   const primaryStepData = $derived.by(() => {
     if (!primaryLayer?.sequence.steps) return null;
     const stepIndex = Math.floor(
-      Math.max(0, Math.min(primaryCurrentStep - 1, primaryLayer.sequence.steps.length - 1))
+      Math.max(
+        0,
+        Math.min(primaryCurrentStep - 1, primaryLayer.sequence.steps.length - 1)
+      )
     );
     return primaryLayer.sequence.steps[stepIndex] || null;
   });
@@ -216,10 +238,10 @@
         const nextStates: ReturnType<typeof createAnimationPanelState>[] = [];
         for (let i = 1; i < layerCount; i++) {
           nextOrchestrators.push(
-          new SequenceAnimationOrchestrator(
-            new AnimationStateManager(),
-            getViewerAnimationPropConfig
-          )
+            new SequenceAnimationOrchestrator(
+              new AnimationStateManager(),
+              getViewerAnimationPropConfig
+            )
           );
           nextStates.push(createAnimationPanelState());
         }
@@ -258,7 +280,9 @@
       try {
         primaryOrchestrator.initializeWithDomainData(primaryLayer.sequence);
         primaryAnimationState.setSequenceData(primaryLayer.sequence);
-        primaryAnimationState.setTotalSteps(primaryLayer.sequence.steps?.length || 0);
+        primaryAnimationState.setTotalSteps(
+          primaryLayer.sequence.steps?.length || 0
+        );
       } catch (err) {
         console.error(`[CellCanvas ${cellIndex}] Primary init failed:`, err);
         initError = "Sequence failed to load";
@@ -284,11 +308,16 @@
             animState.setSequenceData(layer.sequence);
             animState.setTotalSteps(layer.sequence.steps?.length || 0);
           } catch (err) {
-            console.error(`[CellCanvas ${cellIndex}] Layer ${i + 1} init failed:`, err);
+            console.error(
+              `[CellCanvas ${cellIndex}] Layer ${i + 1} init failed:`,
+              err
+            );
             initError = `Layer ${i + 1} failed to load`;
           }
         } else {
-          console.warn(`[CELL-DIAG ${cellIndex}] Layer ${i + 1}: MISSING orch=${!!orch} animState=${!!animState}`);
+          console.warn(
+            `[CELL-DIAG ${cellIndex}] Layer ${i + 1}: MISSING orch=${!!orch} animState=${!!animState}`
+          );
         }
       }
     }
@@ -339,7 +368,10 @@
   function handleRetry(e: Event) {
     e.stopPropagation();
     initError = null;
-    if (!initialized) initializeOrchestrators(isAnimationType ? Math.min(4, cell.layers.length) : 0);
+    if (!initialized)
+      initializeOrchestrators(
+        isAnimationType ? Math.min(4, cell.layers.length) : 0
+      );
     initAttempt++;
   }
 
@@ -356,9 +388,15 @@
   class:selected={isSelected}
   class:empty={!hasLayers && isAnimationType}
   class:other-media={!isAnimationType}
+  data-arrangement-cell-ready={!isAnimationType || !hasLayers || canvasReady}
+  data-arrangement-cell-error={initError ? "true" : undefined}
   role="button"
   tabindex="0"
-  aria-label="Cell {cellIndex + 1}{isAnimationType ? (hasLayers ? ` with ${cell.layers.length} layer${cell.layers.length > 1 ? 's' : ''}` : ', empty') : `, ${cell.mediaType}`}"
+  aria-label="Cell {cellIndex + 1}{isAnimationType
+    ? hasLayers
+      ? ` with ${cell.layers.length} layer${cell.layers.length > 1 ? 's' : ''}`
+      : ', empty'
+    : `, ${cell.mediaType}`}"
   aria-pressed={isSelected}
   onclick={handleClick}
   onkeydown={handleKeyDown}
@@ -374,13 +412,18 @@
         letter={primaryStepData?.letter || null}
         stepData={primaryStepData}
         currentStep={primaryCurrentStep}
+        isPlaying={animationPlaying}
+        virtualTime={virtualTimeMs}
+        onInitialized={() => (canvasReady = true)}
         sequenceData={primaryLayer?.sequence || null}
         word={null}
         {trailSettings}
         hideTkaGlyph={true}
         hideStepNumbers={true}
-        fireConfig={(cell.effect || cell.tipEffectMap) ? cellFireConfig : undefined}
-        ledConfig={(cell.effect || cell.tipEffectMap) ? cellLedConfig : undefined}
+        fireConfig={cell.effect || cell.tipEffectMap
+          ? cellFireConfig
+          : undefined}
+        ledConfig={cell.effect || cell.tipEffectMap ? cellLedConfig : undefined}
         tipEffectMap={effectiveTipEffectMap}
         tipEffortMap={cell.tipEffortMap}
       />
@@ -408,7 +451,7 @@
     <!-- Non-animation media type placeholder (video, image, or empty choreo-card) -->
     <div class="media-placeholder">
       <i class="fas {mediaTypeInfo?.icon ?? 'fa-film'}" aria-hidden="true"></i>
-      <span class="media-label">{mediaTypeInfo?.label ?? 'Content'}</span>
+      <span class="media-label">{mediaTypeInfo?.label ?? "Content"}</span>
     </div>
   {/if}
 
@@ -480,7 +523,8 @@
   .cell-canvas.selected {
     border-color: var(--theme-accent, #8b5cf6);
     box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--theme-accent, #8b5cf6) 45%, transparent),
+      0 0 0 3px
+        color-mix(in srgb, var(--theme-accent, #8b5cf6) 45%, transparent),
       0 0 16px color-mix(in srgb, var(--theme-accent, #8b5cf6) 30%, transparent);
   }
 
@@ -611,15 +655,24 @@
     padding: 4px 10px;
     font-size: var(--font-size-compact, 12px);
     color: var(--semantic-error, #ef4444);
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--semantic-error, #ef4444) 35%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 12%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--semantic-error, #ef4444) 35%, transparent);
     border-radius: var(--border-radius-sm, 6px);
     cursor: pointer;
     transition: background 0.15s ease;
   }
 
   .cell-error-retry:hover {
-    background: color-mix(in srgb, var(--semantic-error, #ef4444) 22%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--semantic-error, #ef4444) 22%,
+      transparent
+    );
   }
 
   .cell-error-retry:focus-visible {

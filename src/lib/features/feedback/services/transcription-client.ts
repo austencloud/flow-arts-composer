@@ -9,7 +9,7 @@ export async function transcribe(blob: Blob, mimeType: string): Promise<string> 
 	// Dynamic import: only load Firebase Functions SDK when actually transcribing
 	const { httpsCallable } = await import("firebase/functions");
 	const { getFunctionsInstance } = await import(
-		"$lib/shared/auth/firebase"
+		"#lib/shared/auth/firebase.js"
 	);
 
 	const functions = await getFunctionsInstance();

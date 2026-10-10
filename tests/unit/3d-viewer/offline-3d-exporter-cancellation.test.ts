@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CameraKeyframeBuffer } from "$lib/shared/video-export/domain/camera-keyframe";
-import { Offline3DExporter } from "$lib/shared/3d/services/offline-3d-exporter";
-import type { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
-import type { CanvasFrameCapturer } from "$lib/shared/video-export/services/canvas-frame-capturer";
+import { CameraKeyframeBuffer } from "#lib/shared/video-export/domain/camera-keyframe.js";
+import { Offline3DExporter } from "#lib/shared/3d/services/offline-3d-exporter.js";
+import type { BackgroundVideoEncoder } from "#lib/shared/animation-engine/services/background-video-encoder.js";
+import type { CanvasFrameCapturer } from "#lib/shared/video-export/services/canvas-frame-capturer.js";
 
 function createHarness() {
   const encoder = {

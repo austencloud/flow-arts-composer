@@ -1,4 +1,4 @@
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
 
 export interface PixelRect {
   x: number;

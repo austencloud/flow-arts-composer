@@ -1,9 +1,9 @@
 import { untrack } from "svelte";
-import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
+import type { StaffTipTrack } from "#lib/shared/media-composition/domain/staff-tip-track.js";
 import {
   loadStaffTipTrack,
   saveStaffTipTrack,
-} from "$lib/shared/media-composition/services/staff-tip-track-store";
+} from "#lib/shared/media-composition/services/staff-tip-track-store.js";
 
 /**
  * Finding the LED staffs in each take: whether it has been done, how far a
@@ -64,7 +64,7 @@ const defaultDeps: StaffTipAnalysisDeps = {
   async analyze(video, options) {
     // The tracker and its decoder load only when someone asks for it.
     const { analyzeStaffTips } = await import(
-      "$lib/shared/media-composition/services/staff-tip-analyzer"
+      "#lib/shared/media-composition/services/staff-tip-analyzer.js"
     );
     return analyzeStaffTips(video, {
       ...(options.signal ? { signal: options.signal } : {}),

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * PanelTabs - Segmented control / tab component
    *
@@ -114,7 +114,6 @@
       transparent
     );
     color: var(--theme-text);
-    box-shadow: 0 1px 3px var(--theme-shadow);
   }
 
   .panel-tab i {

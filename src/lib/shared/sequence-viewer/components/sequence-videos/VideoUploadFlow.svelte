@@ -9,32 +9,32 @@
   SequenceVideos, which receives the finished record through onUploaded.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { getVideoUploader } from "$lib/shared/share/get-video-uploader";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { getAuthSync } from "$lib/shared/auth/firebase";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { getVideoUploader } from "#lib/shared/share/get-video-uploader.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { getAuthSync } from "#lib/shared/auth/firebase.js";
   import {
     createVideoFromUpload,
     getVideoFileMetadata,
-  } from "$lib/shared/video-collaboration/helpers/create-video-from-upload";
+  } from "#lib/shared/video-collaboration/helpers/create-video-from-upload.js";
   import {
     extractVideoThumbnail,
     type ThumbnailResult,
-  } from "$lib/shared/video-collaboration/utils/thumbnail-extractor";
-  import { saveSequenceVideo } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import { getCurrentSequenceRevisionRef } from "$lib/shared/library/services/sequence-revision-reader";
-  import type { ArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
+  } from "#lib/shared/video-collaboration/utils/thumbnail-extractor.js";
+  import { saveSequenceVideo } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { CollaborativeVideo } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import { getCurrentSequenceRevisionRef } from "#lib/shared/library/services/sequence-revision-reader.js";
+  import type { ArtifactRevisionRef } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
   import {
     DEFAULT_VIDEO_VISIBILITY,
     VIDEO_VISIBILITY_OPTIONS,
     describeVideoVisibility,
     type VideoVisibility,
-  } from "$lib/shared/video-collaboration/domain/video-visibility";
+  } from "#lib/shared/video-collaboration/domain/video-visibility.js";
 
   interface Props {
     sequence: SequenceData;

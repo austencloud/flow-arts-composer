@@ -8,9 +8,9 @@
  * ultimately reduces to the same per-hand location walk.
  */
 
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { HandPathData } from "$lib/shared/foundation/domain/models/hand-path-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { HandPathData } from "#lib/shared/foundation/domain/models/hand-path-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { sampleSegmentPath } from "./trace-path-sampler";
 import { TRACE_PATH_SAMPLE_COUNT } from "../domain/trace-config";
 import type {

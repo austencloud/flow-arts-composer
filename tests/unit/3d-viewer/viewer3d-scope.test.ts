@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
 import { createViewer3DStateForTest } from "./viewer3d-test-helpers.svelte";
-import { __resetWebGL2CapabilityForTests } from "$lib/shared/3d/capabilities/webgl-capabilities";
+import { __resetWebGL2CapabilityForTests } from "#lib/shared/3d/capabilities/webgl-capabilities.js";
 import { Plane } from "@austencloud/scene-3d";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { tick } from "svelte";
-import { FALG } from "$lib/shared/combination/domain/demo-fixtures";
+import { FALG } from "#lib/shared/combination/domain/demo-fixtures.js";
 
 // The global test setup replaces document.createElement with a generic stub
 // that returns plain objects lacking getContext. The viewer3d factory's

@@ -5,8 +5,8 @@
  * Shortcuts are only active when the animation panel is open.
  */
 
-import type { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import type { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 export interface AnimationShortcutHandlers {
   onPlaybackToggle: () => void;
   onStepHalfBeatForward: () => void;

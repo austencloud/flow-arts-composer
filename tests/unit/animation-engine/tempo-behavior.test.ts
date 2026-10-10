@@ -6,11 +6,11 @@ import {
   calculateTapTempo,
   clampTempoBpm,
   recordTempoTap,
-} from "$lib/shared/animation-engine/domain/tempo-behavior";
+} from "#lib/shared/animation-engine/domain/tempo-behavior.js";
 import {
   PLAYBACK_MAX_BPM,
   PLAYBACK_MIN_BPM,
-} from "$lib/shared/animation-engine/domain/constants/timing";
+} from "#lib/shared/animation-engine/domain/constants/timing.js";
 
 describe("tempo behavior", () => {
   it("uses engine timing bounds for every tempo presentation", () => {

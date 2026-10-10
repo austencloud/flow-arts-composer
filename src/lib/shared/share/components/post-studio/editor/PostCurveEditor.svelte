@@ -16,14 +16,14 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     POST_EASING_X_MAX,
     POST_EASING_X_MIN,
     type PostEasing,
-  } from "$lib/shared/media-composition/domain/post-project";
-  import { easingControlPoints } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import ScrubbableNumber from "$lib/shared/ui/components/ScrubbableNumber.svelte";
+  } from "#lib/shared/media-composition/domain/post-project.js";
+  import { easingControlPoints } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+  import ScrubbableNumber from "#lib/shared/ui/components/ScrubbableNumber.svelte";
   import {
     CURVE_EDITOR_Y_MAX,
     CURVE_EDITOR_Y_MIN,

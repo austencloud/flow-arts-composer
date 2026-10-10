@@ -11,11 +11,11 @@ import {
 } from "../../shared/domain/enums/pictograph-enums";
 import type { PictographData } from "../../shared/domain/models/pictograph-data";
 import { createMotionData } from "../../shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   calculateBetaOffset,
   type BetaMotionInput,
-} from "$lib/shared/render/core/calculations/beta-offset";
+} from "#lib/shared/render/core/calculations/beta-offset.js";
 
 export interface PlacementPromptParts {
   lead: string;

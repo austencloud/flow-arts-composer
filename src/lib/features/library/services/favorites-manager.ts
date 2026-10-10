@@ -5,14 +5,14 @@
  * CollectionManager for the underlying collection membership.
  */
 
-import { logActivity } from "$lib/shared/analytics/services/posthog-activity-logger";
+import { logActivity } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import {
   getFavoritesCollection,
   removeSequenceFromCollection,
   addSequenceToCollection,
   getCollectionSequences,
-} from "$lib/shared/library/services/collection-manager";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+} from "#lib/shared/library/services/collection-manager.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 
 export class FavoritesManager {
   constructor() {}

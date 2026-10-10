@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
   import type { ArenaUserStats } from "../../domain/models/arena-models";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { stats }: { stats: ArenaUserStats | null } = $props();
 </script>

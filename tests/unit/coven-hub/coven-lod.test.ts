@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeCovenLods, type LodBand } from "$lib/features/coven-hub/domain/coven-lod";
+import { computeCovenLods, type LodBand } from "#lib/features/coven-hub/domain/coven-lod.js";
 
 const stations = [
   { id: "a", x: 0, z: 0 },

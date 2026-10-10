@@ -14,15 +14,15 @@
   needs equal turns on every beat, so the switch would be a lie.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import TnDModeGrid from "$lib/features/choreo-card/components/TnDModeGrid.svelte";
-  import RelationshipChoiceChip from "$lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte";
-  import { type TnDSelection } from "$lib/shared/create/domain/hand-relationship";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import TnDModeGrid from "#lib/features/choreo-card/components/TnDModeGrid.svelte";
+  import RelationshipChoiceChip from "#lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte";
+  import { type TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
   import { describeCreateTnDSelection } from "./tnd-presentation";
-  import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-  import type { StartFeasibilityResult } from "$lib/shared/create/domain/start-feasibility";
+  import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+  import type { StartFeasibilityResult } from "#lib/shared/create/domain/start-feasibility.js";
 
   let {
     handRelationship,

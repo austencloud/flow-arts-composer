@@ -6,13 +6,13 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$lib/shared/maps/google-maps-api-key";
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "#lib/shared/maps/google-maps-api-key.js";
   import { MarkerClusterer } from "@googlemaps/markerclusterer";
   import { getFestivalContext } from "../../context/festival-context";
   import FestivalMapPopup from "./FestivalMapPopup.svelte";
   import type { Festival } from "../../domain/models/festival";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import { getGoogleMapsLibraryLoader } from "$lib/shared/maps/getGoogleMapsLibraryLoader";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import { getGoogleMapsLibraryLoader } from "#lib/shared/maps/getGoogleMapsLibraryLoader.js";
 
   const { state: festivalState } = getFestivalContext();
 

@@ -8,19 +8,19 @@ import {
   type PresetRegionKeyframesTrack,
   type PresetSourceRole,
   type PresetVisualClipMotion,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+} from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
 import type {
   LayoutRegion,
   RegionEdge,
-} from "$lib/shared/media-composition/domain/media-layout-schema";
-import { regionEdge } from "$lib/shared/media-composition/domain/post-clip-edge";
+} from "#lib/shared/media-composition/domain/media-layout-schema.js";
+import { regionEdge } from "#lib/shared/media-composition/domain/post-clip-edge.js";
 import {
   ANIMATION_OVERLAY_ROLE,
   stripRole,
   takeRole,
-} from "$lib/shared/media-composition/domain/post-plan-compiler";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
-import { POST_STUDIO_ROLE } from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "#lib/shared/media-composition/domain/post-plan-compiler.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
+import { POST_STUDIO_ROLE } from "#lib/shared/media-composition/domain/post-studio-presets.js";
 import {
   MAIN_TRACK_INDEX,
   POST_BOX,
@@ -41,32 +41,32 @@ import {
   type PostTextStyle,
   type PostTextAnimation,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   channelValueAt,
   postSecondsOfKeyframe,
   sampleEasing,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   MOVE_EASING,
   tunnelHookBoxKeys,
   type TunnelBackdropFrame,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "#lib/shared/media-composition/domain/tunnel-hook.js";
 import {
   titlesPlanOf,
   type TunnelTitlesPlan,
-} from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import {
   PIP_HANDOFF_MAX_CLOCK_SECONDS,
   pipHandoffBoxAt,
   pipHandoffOf,
   withPipHandoffBoxKeys,
-} from "$lib/shared/media-composition/domain/pip-handoff";
+} from "#lib/shared/media-composition/domain/pip-handoff.js";
 import {
   clipBox,
   postOutputSize,
   type PostOutputSize,
-} from "$lib/shared/media-composition/domain/post-canvas";
+} from "#lib/shared/media-composition/domain/post-canvas.js";
 
 /**
  * Turns an edited project into the free-layout preset the evaluator, the

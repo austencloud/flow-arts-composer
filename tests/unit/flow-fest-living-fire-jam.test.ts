@@ -4,7 +4,7 @@ import {
   sampleFlowFestLivingCommunity,
   type FlowFestFestivalCommunityLayout,
   type FlowFestFestivalPersonPlacement,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam.js";
 
 function performer(
   ordinal: number,

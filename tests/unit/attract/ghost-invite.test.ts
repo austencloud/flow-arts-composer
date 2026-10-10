@@ -15,15 +15,15 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { createRng } from "$lib/shared/attract/services/rng";
-import { createTrail, type Trail } from "$lib/shared/attract/services/trail";
-import { createMemory } from "$lib/shared/attract/domain/scoring";
+import { createRng } from "#lib/shared/attract/services/rng.js";
+import { createTrail, type Trail } from "#lib/shared/attract/services/trail.js";
+import { createMemory } from "#lib/shared/attract/domain/scoring.js";
 import {
   EMPTY_WORLD,
   type GhostContext,
-} from "$lib/shared/attract/domain/intention";
-import { INVITE_INTENTIONS } from "$lib/shared/attract/intentions/invite";
-import { ALL_INTENTIONS } from "$lib/shared/attract/intentions";
+} from "#lib/shared/attract/domain/intention.js";
+import { INVITE_INTENTIONS } from "#lib/shared/attract/intentions/invite.js";
+import { ALL_INTENTIONS } from "#lib/shared/attract/intentions/index.js";
 
 /** A trail with `count` successful decisions already on it. */
 function warmTrail(count: number): Trail {

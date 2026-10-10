@@ -15,9 +15,9 @@
  * - Deduplicated by contentHash at publish time
  */
 
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { StepPairingData } from "$lib/shared/foundation/domain/models/step-pairing-data";
-import type { CreatorIntent } from "$lib/shared/foundation/domain/models/creator-intent";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { StepPairingData } from "#lib/shared/foundation/domain/models/step-pairing-data.js";
+import type { CreatorIntent } from "#lib/shared/foundation/domain/models/creator-intent.js";
 
 /**
  * PublicSequenceIndex - Self-contained public sequence for Browse

@@ -1,6 +1,6 @@
-import { getSceneUndoManager } from "$lib/shared/3d/undo/get-scene-undo-manager";
-import type { Viewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { getSceneUndoManager } from "#lib/shared/3d/undo/get-scene-undo-manager.js";
+import type { Viewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 import type { StagePerformanceFrame } from "../domain/stage-performance-sampler";
 import type { StageChoreography } from "../domain/stage-types";

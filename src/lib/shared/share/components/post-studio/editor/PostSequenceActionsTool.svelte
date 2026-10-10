@@ -1,11 +1,11 @@
 <script lang="ts">
-  import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte";
-  import type { PostSequenceAction } from "$lib/shared/media-composition/domain/post-project";
+  import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
+  import type { PostSequenceAction } from "#lib/shared/media-composition/domain/post-project.js";
   import {
     pressSequenceAction,
     resetSequenceActions,
-  } from "$lib/shared/media-composition/domain/post-sequence-actions";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+  } from "#lib/shared/media-composition/domain/post-sequence-actions.js";
+  import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 
   /**
    * Mirror, flip, turn, or swap the post's notation without touching its

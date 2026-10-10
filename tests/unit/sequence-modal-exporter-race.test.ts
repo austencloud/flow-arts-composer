@@ -25,35 +25,38 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("$lib/shared/animation-engine/get-video-export-orchestrator", () => ({
-  tryGetVideoExportOrchestrator: () =>
-    mocks.forceLazyResolution
-      ? null
-      : {
-          executeExport: mocks.executeExport,
-          cancelExport: mocks.cancelExport,
-        },
-  ensureVideoExportOrchestrator: () => mocks.lazyOrchestrator,
-}));
-vi.mock("$lib/shared/render/get-sequence-renderer", () => ({
+vi.mock(
+  "#lib/shared/animation-engine/get-video-export-orchestrator.js",
+  () => ({
+    tryGetVideoExportOrchestrator: () =>
+      mocks.forceLazyResolution
+        ? null
+        : {
+            executeExport: mocks.executeExport,
+            cancelExport: mocks.cancelExport,
+          },
+    ensureVideoExportOrchestrator: () => mocks.lazyOrchestrator,
+  })
+);
+vi.mock("#lib/shared/render/get-sequence-renderer.js", () => ({
   getSequenceRenderer: vi.fn(),
 }));
-vi.mock("$lib/shared/foundation/services/file-downloader", () => ({
+vi.mock("#lib/shared/foundation/services/file-downloader.js", () => ({
   sanitizeFilename: (value: string) => value,
 }));
-vi.mock("$lib/shared/foundation/utils/word-simplifier", () => ({
+vi.mock("#lib/shared/foundation/utils/word-simplifier.js", () => ({
   simplifyRepeatedWord: (value: string) => value,
 }));
-vi.mock("$lib/shared/animation-panel/state/export-timing-tracker", () => ({
+vi.mock("#lib/shared/animation-panel/state/export-timing-tracker.js", () => ({
   recordExportThroughput: vi.fn(),
 }));
-vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logShareAction: vi.fn(),
 }));
-vi.mock("$lib/shared/3d/get-offline-3d-exporter", () => ({
+vi.mock("#lib/shared/3d/get-offline-3d-exporter.js", () => ({
   getOffline3DExporter: vi.fn(),
 }));
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: { settings: {} },
 }));
 
@@ -62,7 +65,7 @@ import {
   type ExportCallbacks,
   type VideoExportDependencies,
   type VideoExportOptions,
-} from "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte";
+} from "#lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.js";
 
 function callbacks(): ExportCallbacks {
   return { onSuccess: vi.fn(), onError: vi.fn(), onHaptic: vi.fn() };

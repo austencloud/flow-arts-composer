@@ -3,7 +3,7 @@ import type { CollisionEvent } from "@austencloud/scene-3d";
 import {
   AVATAR_COLLISION_AUDIT_STORAGE_KEY,
   AvatarSequenceCollisionAudit,
-} from "$lib/shared/3d/collision/avatar-sequence-collision-audit";
+} from "#lib/shared/3d/collision/avatar-sequence-collision-audit.js";
 
 function event(
   stepNumber: number,

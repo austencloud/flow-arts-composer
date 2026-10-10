@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * ConversationItem
    *
@@ -7,15 +7,15 @@
    * Supports both direct (1:1) and group conversations.
    */
 
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import type { ConversationPreview } from "$lib/shared/messaging/domain/models/conversation-models";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import type { ConversationPreview } from "#lib/shared/messaging/domain/models/conversation-models.js";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import GroupAvatarStack from "./GroupAvatarStack.svelte";
   import { formatRelativeTime, truncateText } from "../../utils/format";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { getMessageDeliveryContext } from "../../context/message-delivery-context";
-  import { getUserIdentityLabels } from "$lib/shared/community/domain/user-identity-labels";
+  import { getUserIdentityLabels } from "#lib/shared/community/domain/user-identity-labels.js";
 
   interface Props {
     conversation: ConversationPreview;
@@ -382,7 +382,6 @@
     font-weight: 600;
     line-height: 22px;
     text-align: center;
-    box-shadow: 0 2px 4px var(--theme-shadow);
   }
 
   .selection-indicator {

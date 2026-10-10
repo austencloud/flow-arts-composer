@@ -3,27 +3,27 @@
   import {
     loadCatalogs,
     loadSequencesByIds,
-  } from "$lib/features/choreo-card/services/catalog-loader";
+  } from "#lib/features/choreo-card/services/catalog-loader.js";
   import {
     loadDiamondEdges,
     type CsvEdge,
-  } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
+  } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
   import {
     buildSequencePool,
     getAvailableWeights,
     composeDeck,
-  } from "$lib/features/choreo-card/services/deck-composer";
-  import type { DeckReleaseCard } from "$lib/features/choreo-card/domain/models/DeckRelease";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/features/choreo-card/services/deck-composer.js";
+  import type { DeckReleaseCard } from "#lib/features/choreo-card/domain/models/DeckRelease.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     applyVariation,
     BOOK_PATTERNS,
     TURN_PATTERNS,
     type VariationConfig,
     type VariantResult,
-  } from "$lib/features/choreo-card/services/deck-variation";
-  import PrintPreviewPages from "$lib/features/choreo-card/components/print-preview/PrintPreviewPages.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  } from "#lib/features/choreo-card/services/deck-variation.js";
+  import PrintPreviewPages from "#lib/features/choreo-card/components/print-preview/PrintPreviewPages.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
 
   let loading = $state(true);
   let error = $state("");

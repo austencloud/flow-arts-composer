@@ -5,15 +5,15 @@
   Hand and tip scopes offer the full renderer registry.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     TipEffectMap,
     EffectType,
-  } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-  import { getTipLabel } from "$lib/shared/animation-engine/domain/tip-label";
-  import type { CellEffect } from "$lib/shared/animation-engine/domain/compose-types";
-  import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
+  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+  import { getTipLabel } from "#lib/shared/animation-engine/domain/tip-label.js";
+  import type { CellEffect } from "#lib/shared/animation-engine/domain/compose-types.js";
+  import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
 
   const SHIPPED_CELL_EFFECTS = new Set<string>([
     "none",
@@ -22,7 +22,7 @@
     "led",
     "trails",
   ]);
-  import { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+  import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
   type Scope = "cell" | "hand" | "tip";
 
@@ -60,7 +60,9 @@
     color: e.color,
     label: e.label,
   }));
-  const cellEffectGrid = effectGrid.filter((effect) => SHIPPED_CELL_EFFECTS.has(effect.value));
+  const cellEffectGrid = effectGrid.filter((effect) =>
+    SHIPPED_CELL_EFFECTS.has(effect.value)
+  );
 
   const trailModes: { value: TrailMode; label: string }[] = [
     { value: TrailMode.FADE, label: "Fade" },
@@ -121,10 +123,13 @@
   });
 
   const gridTargetEffect = $derived.by<EffectType>(() => {
-    if (scope === "cell") return localMap["*"]?.effect ?? currentEffect as EffectType;
+    if (scope === "cell")
+      return localMap["*"]?.effect ?? (currentEffect as EffectType);
     return localMap[targetKey]?.effect ?? "none";
   });
-  const visibleEffectGrid = $derived(scope === "cell" ? cellEffectGrid : effectGrid);
+  const visibleEffectGrid = $derived(
+    scope === "cell" ? cellEffectGrid : effectGrid
+  );
 
   const gridTargetLabel = $derived.by(() => {
     if (scope === "cell") return "SELECT EFFECT";
@@ -147,7 +152,8 @@
   function handleGridTap(effect: EffectType) {
     if (scope === "cell") {
       if (!SHIPPED_CELL_EFFECTS.has(effect)) return;
-      const next: CellEffect = gridTargetEffect === effect ? "none" : effect as CellEffect;
+      const next: CellEffect =
+        gridTargetEffect === effect ? "none" : (effect as CellEffect);
       localMap = { "*": { effect: next } };
       onSetEffect(next);
       onUpdateMap(localMap);
@@ -166,7 +172,9 @@
 
     if (newScope === "cell") {
       const most = mostCommonEffect(Object.keys(localMap));
-      const cellEffect = SHIPPED_CELL_EFFECTS.has(most) ? most as CellEffect : "none";
+      const cellEffect = SHIPPED_CELL_EFFECTS.has(most)
+        ? (most as CellEffect)
+        : "none";
       newMap["*"] = { effect: cellEffect };
       onSetEffect(cellEffect);
       targetKey = "*";
@@ -344,7 +352,6 @@
       </div>
     </div>
   {/if}
-
 </div>
 
 <style>

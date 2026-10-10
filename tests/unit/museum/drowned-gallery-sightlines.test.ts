@@ -15,8 +15,8 @@ import {
 	GROTTO_WATERLINE_Y,
 	SHELF_Y,
 	inRectClosed,
-} from "$lib/features/museum/data/drowned-gallery-terrain";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+} from "#lib/features/museum/data/drowned-gallery-terrain.js";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 
 const layout = buildDrownedGalleryLayout(buildVulcanCaveFloorPlan().grid)!;
 

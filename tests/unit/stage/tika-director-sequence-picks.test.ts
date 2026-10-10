@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveDirectorSequenceAssignments } from "$lib/features/stage/domain/tika-director-sequences";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { resolveDirectorSequenceAssignments } from "#lib/features/stage/domain/tika-director-sequences.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function sequence(id: string): SequenceData {
   return {

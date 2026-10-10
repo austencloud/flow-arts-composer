@@ -14,13 +14,13 @@
 
   import { fade } from "svelte/transition";
   import type { IToolPanelMethods } from "../types/create-module-types";
-  import type { LetterSource } from "$lib/shared/create/domain/spell-models";
+  import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import WorkspacePanel from "../workspace-panel/core/WorkspacePanel.svelte";
   import WorkspaceSequenceHeader from "../workspace-panel/sequence-display/components/WorkspaceSequenceHeader.svelte";
   import { getCreateModuleContext } from "../context/create-module-context";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import { onDestroy, untrack } from "svelte";
 
   const ctx = getCreateModuleContext();
@@ -187,47 +187,44 @@
 
 {#snippet animation()}
   {#if retainedPlayback}
-    {#key retainedPlayback}
-      {@const session = retainedPlayback}
-      <LazyMount
-        loader={loadWorkspacePlayback}
-        active
-        retryKey={playbackRun}
-        props={{
-          sequence: session.sequence,
-          active: playback !== null && playbackKey === retainedPlaybackKey,
-          run: playbackRun,
-          onready: (readyRun: number) => {
-            if (!playbackCandidate || readyRun !== playbackRun) return;
-            readyPlayback = session;
-            panelState.confirmWorkspacePlaybackReady(playbackCandidate);
-          },
-          onerror: (failedRun: number) => {
-            if (failedRun === playbackRun)
-              panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
-          },
-          onclose: () => panelState.stopWorkspacePlayback(),
-          onStepChange: (step: number) => (playbackStep = Math.floor(step)),
-          onPlaybackChange: (
-            reportedRun: number,
-            step: number,
-            playing: boolean
-          ) => {
-            const candidate = playbackCandidate;
-            if (!candidate || reportedRun !== playbackRun) return;
-            panelState.updateWorkspacePlaybackProgress(
-              candidate,
-              step,
-              playing
-            );
-          },
-        }}
-        onStatusChange={(status) => {
-          if (status === "error" && playbackCandidate)
-            panelState.failWorkspacePlaybackPreparation(playbackCandidate);
-        }}
-      />
-    {/key}
+    <!-- One player serves every sequence. Any source change stops playback
+         first, so a new sequence always arrives while the player is hidden,
+         and loading it into the mounted engine skips the full rebuild. -->
+    {@const session = retainedPlayback}
+    <LazyMount
+      loader={loadWorkspacePlayback}
+      active
+      retryKey={playbackRun}
+      props={{
+        sequence: session.sequence,
+        active: playback !== null && playbackKey === retainedPlaybackKey,
+        run: playbackRun,
+        onready: (readyRun: number) => {
+          if (!playbackCandidate || readyRun !== playbackRun) return;
+          readyPlayback = session;
+          panelState.confirmWorkspacePlaybackReady(playbackCandidate);
+        },
+        onerror: (failedRun: number) => {
+          if (failedRun === playbackRun)
+            panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
+        },
+        onclose: () => panelState.stopWorkspacePlayback(),
+        onStepChange: (step: number) => (playbackStep = Math.floor(step)),
+        onPlaybackChange: (
+          reportedRun: number,
+          step: number,
+          playing: boolean
+        ) => {
+          const candidate = playbackCandidate;
+          if (!candidate || reportedRun !== playbackRun) return;
+          panelState.updateWorkspacePlaybackProgress(candidate, step, playing);
+        },
+      }}
+      onStatusChange={(status) => {
+        if (status === "error" && playbackCandidate)
+          panelState.failWorkspacePlaybackPreparation(playbackCandidate);
+      }}
+    />
   {/if}
 {/snippet}
 
@@ -255,7 +252,12 @@
       : (animatingStepNumber ?? practiceStepIndex)}
   />
   <div class="workspace-content">
+    <!-- Play collapses the tool panel as the grid hands off to the animator,
+         and Close brings it back. Holding the outgoing side spares the hidden
+         step grid or animator a re-layout at a size nobody sees. The
+         wrapper's overflow: hidden clips a held side larger than the stage. -->
     <DualSourceCrossfade
+      holdOutgoing
       active={playback !== null &&
       playbackKey === retainedPlaybackKey &&
       readyPlayback === retainedPlayback

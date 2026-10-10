@@ -15,8 +15,8 @@
   import {
     GridLocation,
     GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { createGridPointData } from "$lib/shared/pictograph/grid/utils/grid-coordinate-utils";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { createGridPointData } from "#lib/shared/pictograph/grid/utils/grid-coordinate-utils.js";
   import {
     sampleSegmentPath,
     STAGE_UNITS,

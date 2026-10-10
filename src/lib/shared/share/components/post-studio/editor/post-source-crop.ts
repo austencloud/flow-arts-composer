@@ -1,4 +1,4 @@
-import type { PostSourceGeometry } from "$lib/shared/media-composition/domain/post-project";
+import type { PostSourceGeometry } from "#lib/shared/media-composition/domain/post-project.js";
 
 export type SourceCropEdge = keyof PostSourceGeometry["crop"];
 export type SourceCropHandle =

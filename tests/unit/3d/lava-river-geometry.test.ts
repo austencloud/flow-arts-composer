@@ -10,9 +10,9 @@ import {
   LAVA_RIVER_MAX_MARGIN_DROP,
   LAVA_RIVER_SURFACE_OFFSET,
   type LavaTerrainSampler,
-} from "$lib/shared/3d/environments/scenes/ember/lava-river-geometry";
-import { createDefaultEmberConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/ember-scene-config";
-import volcanicWorldR7 from "$lib/shared/3d/environments/domain/models/scene-configs/ember-volcanic-world-r7.json";
+} from "#lib/shared/3d/environments/scenes/ember/lava-river-geometry.js";
+import { createDefaultEmberConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/ember-scene-config.js";
+import volcanicWorldR7 from "#lib/shared/3d/environments/domain/models/scene-configs/ember-volcanic-world-r7.json";
 import type { BufferGeometry } from "three";
 
 const RIVER_COMPONENT = resolve(

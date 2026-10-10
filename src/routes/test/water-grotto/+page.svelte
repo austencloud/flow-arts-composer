@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping, PCFSoftShadowMap } from "three";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import {
     BASIN_PERFORMER,
     CEILING_Y,
@@ -11,7 +11,7 @@
     grottoCeilingAt,
     grottoRelationToWater,
     grottoSurfaceAt,
-  } from "$lib/features/water-traverse/data/water-grotto-terrain";
+  } from "#lib/features/water-traverse/data/water-grotto-terrain.js";
   import WaterGrottoWalkScene from "./WaterGrottoWalkScene.svelte";
 
   let resetToken = $state(0);

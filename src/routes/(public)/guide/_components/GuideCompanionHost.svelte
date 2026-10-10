@@ -14,8 +14,8 @@
    * layout, e.g. level-2's `.guide-content` subgrid where each direct child of
    * a section matters for the prose-column confinement rule).
    */
-  import { browser } from "$app/environment";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { browser } from "$app/env";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import {
     setGuideSequenceClick,
@@ -25,12 +25,12 @@
   import {
     SequenceSelection,
     setSequenceSelection,
-  } from "$lib/shared/selection/sequence-selection.svelte";
-  import "$lib/shared/selection/selection.css";
+  } from "#lib/shared/selection/sequence-selection.svelte.js";
+  import "#lib/shared/selection/selection.css";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
-  import { ensureMotionData } from "$lib/shared/sequence-viewer/services/sequence-motion-loader";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { ensureMotionData } from "#lib/shared/sequence-viewer/services/sequence-motion-loader.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   let {
     pageTitle,

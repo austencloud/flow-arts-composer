@@ -2,18 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
   FEATURE_VIDEO_FILE_FORMAT,
   FeatureVideoFileSchema,
-} from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   POST_MUSIC_MAX_SECONDS,
   PostMusicSchema,
   type PostMusic,
-} from "$lib/shared/media-composition/domain/post-music";
+} from "#lib/shared/media-composition/domain/post-music.js";
 import {
   PostProjectSchema,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { setProjectAudio } from "$lib/shared/media-composition/domain/post-project-edits";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { setProjectAudio } from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 import { NOW, project, video } from "./post-project-fixtures";
 
 function music(fields: Partial<PostMusic> = {}): PostMusic {

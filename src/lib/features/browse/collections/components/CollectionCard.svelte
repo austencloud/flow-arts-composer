@@ -11,24 +11,24 @@ cancels) so the user never leaves the grid. Deleting asks for confirmation
 first and only removes the folder — the sequences inside stay in the library.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     CollectionAccessRole,
     LibraryCollection,
-  } from "$lib/shared/library/domain/models/collection";
-  import { isSystemCollection } from "$lib/shared/library/domain/models/collection";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
+  } from "#lib/shared/library/domain/models/collection.js";
+  import { isSystemCollection } from "#lib/shared/library/domain/models/collection.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
   import { communityCollectionsState } from "../state/community-collections-state.svelte";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
     ContextMenuState,
-  } from "$lib/shared/components/context-menu/context-menu-types";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import CollectionCardSurface from "./CollectionCardSurface.svelte";
   import CollectionDetailsDialog from "./CollectionDetailsDialog.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { openShareCollectionSheet } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { openShareCollectionSheet } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
 
   let {
     collection,

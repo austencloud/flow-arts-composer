@@ -6,11 +6,11 @@ Appears below the feedback banner during the feedback window.
 Tappable: navigates to TIKA with the misconception pre-loaded.
 -->
 <script lang="ts">
-  import { compare } from "$lib/features/learn/services/letter-breakdown-generator";
+  import { compare } from "#lib/features/learn/services/letter-breakdown-generator.js";
   import type { DetectedGap } from "../../../services/types";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { browser } from "$app/environment";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { browser } from "$app/env";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   let { gap }: { gap: DetectedGap } = $props();
 

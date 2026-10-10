@@ -6,13 +6,13 @@
    * Beat markers overlay on the waveform for visual alignment.
    */
 
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy } from "svelte";
   import WaveSurfer from "wavesurfer.js";
-  import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+  import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
   import { getTimelinePlayer } from "../services/timeline-playback-service";
-  import { generateStepTimestamps } from "$lib/shared/audio/bpm-analyzer";
-  import { timeToPixels } from "$lib/shared/animation-engine/domain/timeline-types";
+  import { generateStepTimestamps } from "#lib/shared/audio/bpm-analyzer.js";
+  import { timeToPixels } from "#lib/shared/animation-engine/domain/timeline-types.js";
 
   interface Props {
     headerWidth: number;
@@ -214,7 +214,7 @@
 
     try {
       const { analyzeAudioBpm } =
-        await import("$lib/shared/audio/bpm-analyzer");
+        await import("#lib/shared/audio/bpm-analyzer.js");
 
       // Use the audio URL from state (would need to store this)
       // For now, this is a placeholder

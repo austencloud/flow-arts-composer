@@ -8,9 +8,9 @@
   sits in that lifecycle and offers the one action that makes sense there.
 -->
 <script lang="ts">
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
   import type { CollectedTunnel } from "../domain/tunnel-collection-types";
   import {
     getTunnelPublicationStatus,

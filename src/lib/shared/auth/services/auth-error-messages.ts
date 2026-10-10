@@ -6,7 +6,7 @@
 //
 // `null` means "don't toast" — the user cancelled/dismissed the flow
 // themselves, which is not an error worth surfacing.
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 export function getAuthErrorCode(error: unknown): string | undefined {
   return (error as { code?: string } | null | undefined)?.code;

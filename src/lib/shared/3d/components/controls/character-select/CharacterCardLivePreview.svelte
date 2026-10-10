@@ -8,16 +8,16 @@
   } from "@austencloud/scene-3d";
   import { onDestroy, onMount, untrack } from "svelte";
 
-  import CanvasLifecycle from "$lib/shared/3d/components/CanvasLifecycle.svelte";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import type { CharacterId } from "$lib/shared/3d/domain/character-model";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  import CanvasLifecycle from "#lib/shared/3d/components/CanvasLifecycle.svelte";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
   import {
     createCharacterInstanceState,
     type CharacterInstanceState,
-  } from "$lib/shared/3d/state/character-instance-state.svelte";
-  import { makeStandaloneDefaults } from "$lib/shared/3d/state/performer-settings-types";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/3d/state/character-instance-state.svelte.js";
+  import { makeStandaloneDefaults } from "#lib/shared/3d/state/performer-settings-types.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
 
   interface Props {
     characterId: CharacterId;

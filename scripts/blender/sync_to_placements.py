@@ -73,7 +73,7 @@ def main():
     placements.sort(key=lambda p: p["sort_idx"])
 
     lines = []
-    lines.append('import type { ComposerPlacement } from "$lib/shared/3d/scene-composer/types";')
+    lines.append('import type { ComposerPlacement } from "#lib/shared/3d/scene-composer/types.js";')
     lines.append("")
     lines.append("function q(rotY: number): [number, number, number, number] {")
     lines.append("\treturn [0, Math.sin(rotY / 2), 0, Math.cos(rotY / 2)];")

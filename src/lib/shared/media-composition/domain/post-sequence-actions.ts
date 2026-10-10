@@ -1,13 +1,13 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   POST_MAX_SEQUENCE_ACTIONS,
   type PostProject,
   type PostSequenceAction,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   finish,
   type EditContext,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 
 /**
  * The whole-sequence changes a post makes to its notation, in the order they

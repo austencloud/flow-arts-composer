@@ -1,6 +1,6 @@
 <script lang="ts">
-  import HomeHero from "$lib/shared/landing/components/HomeHero.svelte";
-  import LaunchpadGrid from "$lib/shared/landing/components/launchpad/LaunchpadGrid.svelte";
+  import HomeHero from "#lib/shared/landing/components/HomeHero.svelte";
+  import LaunchpadGrid from "#lib/shared/landing/components/launchpad/LaunchpadGrid.svelte";
 </script>
 
 <svelte:head>

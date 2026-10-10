@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { WebGLLedRenderer } from "$lib/shared/animation-engine/services/led/web-gl-led-renderer";
+import { WebGLLedRenderer } from "#lib/shared/animation-engine/services/led/web-gl-led-renderer.js";
 import {
   DEFAULT_LED_CONFIG,
   type LedFrameInput,
   type LedSample,
-} from "$lib/shared/animation-engine/domain/types/led-types";
+} from "#lib/shared/animation-engine/domain/types/led-types.js";
 
 /** The streak geometry for one frame, read back from the instance buffer. */
 interface SegmentProbe {

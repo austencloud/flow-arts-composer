@@ -1,10 +1,10 @@
-import { error, json, type RequestHandler } from "@sveltejs/kit";
-import { authorizeLoopback, readJsonBody } from "$lib/server/dev-loopback";
+import { error, type RequestHandler } from "@sveltejs/kit";
+import { authorizeLoopback, readJsonBody } from "#lib/server/dev-loopback.js";
 import {
   featureVideoFailure,
   featureVideos,
-} from "$lib/server/feature-video-store";
-import { activeFeatureVideoSession } from "$lib/server/post-project-dev-bridge";
+} from "#lib/server/feature-video-store.js";
+import { activeFeatureVideoSession } from "#lib/server/post-project-dev-bridge.js";
 
 /**
  * Dev only: named edits to a feature video on disk. While an editor has the
@@ -26,7 +26,7 @@ export const POST: RequestHandler = async ({
       `An editor has ${slug} open; send edits through it (the CLI does this for you).`
     );
   try {
-    return json(await featureVideos().applyOps(slug, input.ops));
+    return Response.json(await featureVideos().applyOps(slug, input.ops));
   } catch (cause) {
     featureVideoFailure(cause);
   }

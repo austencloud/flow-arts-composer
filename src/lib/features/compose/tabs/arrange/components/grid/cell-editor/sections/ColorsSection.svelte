@@ -5,11 +5,11 @@
   displayed in a 2×2 chip grid matching the v4 mockup.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     TUNNEL_LAYER_COLORS,
     type PropColors,
-  } from "$lib/shared/animation-engine/domain/compose-types";
+  } from "#lib/shared/animation-engine/domain/compose-types.js";
 
   let {
     currentColors,

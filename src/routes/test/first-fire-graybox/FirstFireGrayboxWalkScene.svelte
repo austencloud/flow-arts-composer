@@ -4,28 +4,28 @@
   import { Box3, Color, Mesh, PointLight, type Object3D } from "three";
   import { CameraMode, UnifiedCameraController } from "@austencloud/camera-3d";
   import type { AvatarState, PhysicsProvider } from "@austencloud/camera-3d";
-  import MuseumPerformerStation3D from "$lib/features/museum/components/game/MuseumPerformerStation3D.svelte";
+  import MuseumPerformerStation3D from "#lib/features/museum/components/game/MuseumPerformerStation3D.svelte";
   import {
     createPhysicsWorldState,
     createRigidBody,
     disposePhysicsWorld,
     initPhysicsWorld,
     stepPhysics,
-  } from "$lib/shared/3d/physics/rapier-world";
+  } from "#lib/shared/3d/physics/rapier-world.js";
   import {
     createPlayerController,
     disposePlayerController,
-  } from "$lib/shared/3d/physics/player-controller";
-  import { createRapierPhysicsProvider } from "$lib/shared/3d/physics/rapier-physics-provider";
+  } from "#lib/shared/3d/physics/player-controller.js";
+  import { createRapierPhysicsProvider } from "#lib/shared/3d/physics/rapier-physics-provider.js";
   import type {
     PhysicsWorldState,
     PlayerControllerState,
-  } from "$lib/shared/3d/physics/types";
-  import GltfAsset from "$lib/shared/3d/environments/primitives/GltfAsset.svelte";
-  import { buildFirstFireBlenderContract } from "$lib/features/museum/data/first-fire-blender-contract";
-  import { findFirstFireLockedCameraView } from "$lib/features/museum/data/first-fire-locked-cameras";
-  import { firstFireCourtEffectId } from "$lib/features/museum/data/first-fire-court-vocabulary";
-  import type { FirstFireShrineId } from "$lib/features/museum/data/first-fire-procession-plan";
+  } from "#lib/shared/3d/physics/types.js";
+  import GltfAsset from "#lib/shared/3d/environments/primitives/GltfAsset.svelte";
+  import { buildFirstFireBlenderContract } from "#lib/features/museum/data/first-fire-blender-contract.js";
+  import { findFirstFireLockedCameraView } from "#lib/features/museum/data/first-fire-locked-cameras.js";
+  import { firstFireCourtEffectId } from "#lib/features/museum/data/first-fire-court-vocabulary.js";
+  import type { FirstFireShrineId } from "#lib/features/museum/data/first-fire-procession-plan.js";
   import {
     buildFirstFireGrayboxColliders,
     FIRST_FIRE_GRAYBOX_SPAWN,
@@ -44,10 +44,10 @@
     parseViewParam,
     registerViewSource,
     type ViewPose,
-  } from "$lib/shared/review/view-capture";
-  import FirstFireCinderStateEffects from "$lib/features/museum/components/game/first-fire/FirstFireCinderStateEffects.svelte";
-  import FirstFireProcessionFlames from "$lib/features/museum/components/game/first-fire/FirstFireProcessionFlames.svelte";
-  import FirstFireShrineVolumes from "$lib/features/museum/components/game/first-fire/FirstFireShrineVolumes.svelte";
+  } from "#lib/shared/review/view-capture.js";
+  import FirstFireCinderStateEffects from "#lib/features/museum/components/game/first-fire/FirstFireCinderStateEffects.svelte";
+  import FirstFireProcessionFlames from "#lib/features/museum/components/game/first-fire/FirstFireProcessionFlames.svelte";
+  import FirstFireShrineVolumes from "#lib/features/museum/components/game/first-fire/FirstFireShrineVolumes.svelte";
   import FirstFireEmberDressing from "./FirstFireEmberDressing.svelte";
   import FirstFireCoalDressing from "./FirstFireCoalDressing.svelte";
   import {
@@ -58,7 +58,7 @@
     extractFirstFireFlameAnchors,
     FIRST_FIRE_EXPECTED_FLAME_COUNT,
     type FirstFireFlameAnchor,
-  } from "$lib/features/museum/services/first-fire-flame-field";
+  } from "#lib/features/museum/services/first-fire-flame-field.js";
   import {
     activeFirstFireShrine,
     advanceFirstFireGrayboxProof,
@@ -68,7 +68,7 @@
     litFirstFireShrine,
     updateFirstFireGrayboxReview,
     visibleFirstFireFlameGroups,
-  } from "$lib/features/museum/data/first-fire-procession-review";
+  } from "#lib/features/museum/data/first-fire-procession-review.js";
 
   interface FirstFireGrayboxReviewDetails {
     phase: string;

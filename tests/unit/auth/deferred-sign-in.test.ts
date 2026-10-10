@@ -21,19 +21,19 @@ const auth = vi.hoisted(() => ({
 
 // The real auth state restores the session through Firebase. What matters
 // here is whether, and when, a page asks it to start.
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { initialize: auth.initialize },
 }));
 
 // The full Shape Engine app is irrelevant to sign-in and far too heavy to mount.
-vi.mock("$lib/shared/shape-matrix/app/ShapeMatrixApp.svelte", () => ({
+vi.mock("#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte", () => ({
   default: () => {},
 }));
 
 const { hasSavedFirebaseUser, signInWhenIdle } =
-  await import("$lib/shared/auth/services/deferred-sign-in");
+  await import("#lib/shared/auth/services/deferred-sign-in.js");
 const { default: SiteHeader } =
-  await import("$lib/shared/landing/components/SiteHeader.svelte");
+  await import("#lib/shared/landing/components/SiteHeader.svelte");
 const { default: ShapeEnginePage } =
   await import("../../../src/routes/(public)/shape-engine/+page.svelte");
 const { default: SequenceViewerRoute } =
@@ -308,6 +308,15 @@ describe("sequence viewer page", () => {
 describe("who can start the quiet sign-in", () => {
   const SIGN_IN = repoPath("src/lib/shared/auth/services/deferred-sign-in.ts");
 
+  // importGraph walks the repository's source one readFileSync at a time: 0.7
+  // to 2.9 s per test with the cores free (ten-file run, 2026-10-09), and five
+  // to eight times that under the full suite's 31 forks, where on 2026-10-08
+  // one full run blew the 30 s default. The walk lives in
+  // tests/helpers/import-graph.ts and serves other contracts, so this file
+  // budgets the scan, at the 120 s tests/unit/3d-animation gives a loaded
+  // machine, rather than reshaping the helper.
+  const GRAPH_TIMEOUT_MS = 120_000;
+
   it("is the one owner the site header, Shape Engine and the viewer all use", () => {
     for (const entry of [
       "src/lib/shared/landing/components/SiteHeader.svelte",
@@ -316,7 +325,7 @@ describe("who can start the quiet sign-in", () => {
     ]) {
       expect(importGraph([repoPath(entry)]).files, entry).toContain(SIGN_IN);
     }
-  });
+  }, GRAPH_TIMEOUT_MS);
 
   // Embeds run inside other people's sites and stay device-only. Dynamic
   // imports count: /embed/sequence loads its whole viewer that way.
@@ -329,5 +338,5 @@ describe("who can start the quiet sign-in", () => {
     expect(
       graph.files.has(SIGN_IN) ? chainTo(graph, SIGN_IN) : null
     ).toBeNull();
-  });
+  }, GRAPH_TIMEOUT_MS);
 });

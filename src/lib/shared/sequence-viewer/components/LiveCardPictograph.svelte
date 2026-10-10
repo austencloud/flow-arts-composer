@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import StepNumber from "$lib/shared/pictograph/shared/components/StepNumber.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import StepNumber from "#lib/shared/pictograph/shared/components/StepNumber.svelte";
   import { tick, untrack } from "svelte";
-  import type { ChoreoCardCell } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
-  import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
+  import type { ChoreoCardCell } from "#lib/shared/choreo-card/services/choreo-card-render-engine.js";
+  import type { PreparedPictographData } from "#lib/shared/pictograph/shared/domain/models/prepared-pictograph-data.js";
   import {
     GridMode,
     type GridLocation,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-  import PictographRenderer from "$lib/shared/pictograph/shared/components/PictographRenderer.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+  import PictographRenderer from "#lib/shared/pictograph/shared/components/PictographRenderer.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import { resolvePreviewCellRender } from "../services/preview-cell-render-contract";
-  import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
-  import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
+  import { ensureCardFonts } from "#lib/shared/render/services/gelasio-fonts.js";
+  import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
   import { renderStepNumber } from "@tka/render-composition";
 
   let {

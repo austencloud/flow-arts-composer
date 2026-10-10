@@ -13,8 +13,8 @@
  * 2. Each save/delete/favorite operation (push to cloud)
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import type { Composition } from "$lib/shared/animation-engine/domain/compose-types";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
 import {
   saveComposition as dexieSaveComposition,
   deleteComposition as dexieDeleteComposition,
@@ -30,12 +30,12 @@ import {
   getCompositions as firebaseGetCompositions,
   updateFavorite as firebaseUpdateFavorite,
 } from "./firebase-composition-repository";
-import type { ErrorHandler } from '$lib/shared/application/services/error-handler'
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
 import {
   trackCompositionDeleted,
   trackCompositionFavoriteChanged,
   trackCompositionSaved,
-} from "$lib/features/compose/analytics/compose-events";
+} from "#lib/features/compose/analytics/compose-events.js";
 
 export class CompositionSyncer {
   private syncedOwner: string | null = null;
@@ -62,7 +62,9 @@ export class CompositionSyncer {
         if (this.syncedOwner === ownerId) this.syncedOwner = null;
         try {
           const errorHandler = getErrorHandler() as ErrorHandler;
-          errorHandler.showWarning("Saved locally, but cloud sync failed. Changes may not appear on other devices.");
+          errorHandler.showWarning(
+            "Saved locally, but cloud sync failed. Changes may not appear on other devices."
+          );
         } catch {
           console.warn("Cloud save failed, composition saved locally:", err);
         }
@@ -84,14 +86,16 @@ export class CompositionSyncer {
    */
   async deleteComposition(compositionId: string): Promise<void> {
     const ownerId = this.currentOwner();
-    if (!await dexieGetCompositionForOwner(compositionId, ownerId)) return;
+    if (!(await dexieGetCompositionForOwner(compositionId, ownerId))) return;
     await dexieDeleteComposition(compositionId);
 
     if (ownerId !== "local:guest") {
       firebaseDeleteComposition(compositionId, ownerId).catch((err) => {
         try {
           const errorHandler = getErrorHandler() as ErrorHandler;
-          errorHandler.showWarning("Deleted locally, but cloud sync failed. It may reappear on other devices.");
+          errorHandler.showWarning(
+            "Deleted locally, but cloud sync failed. It may reappear on other devices."
+          );
         } catch {
           console.warn("Cloud delete failed:", err);
         }
@@ -106,22 +110,20 @@ export class CompositionSyncer {
    */
   async toggleFavorite(compositionId: string): Promise<boolean> {
     const ownerId = this.currentOwner();
-    if (!await dexieGetCompositionForOwner(compositionId, ownerId)) {
+    if (!(await dexieGetCompositionForOwner(compositionId, ownerId))) {
       throw new Error("Composition is unavailable for this account");
     }
-    const newStatus =
-      await dexieToggleFavorite(compositionId);
+    const newStatus = await dexieToggleFavorite(compositionId);
 
     if (ownerId !== "local:guest") {
-      firebaseUpdateFavorite(compositionId, newStatus, ownerId)
-        .catch((err) => {
-          try {
-            const errorHandler = getErrorHandler() as ErrorHandler;
-            errorHandler.showWarning("Updated locally, but cloud sync failed.");
-          } catch {
-            console.warn("Cloud favorite update failed:", err);
-          }
-        });
+      firebaseUpdateFavorite(compositionId, newStatus, ownerId).catch((err) => {
+        try {
+          const errorHandler = getErrorHandler() as ErrorHandler;
+          errorHandler.showWarning("Updated locally, but cloud sync failed.");
+        } catch {
+          console.warn("Cloud favorite update failed:", err);
+        }
+      });
     }
 
     trackCompositionFavoriteChanged(compositionId, newStatus);
@@ -136,7 +138,10 @@ export class CompositionSyncer {
   async getCompositions(): Promise<Composition[]> {
     const ownerId = this.currentOwner();
     if (ownerId !== "local:guest" && this.syncedOwner !== ownerId) {
-      if (await this.syncFromCloud(ownerId) && this.currentOwner() === ownerId) {
+      if (
+        (await this.syncFromCloud(ownerId)) &&
+        this.currentOwner() === ownerId
+      ) {
         this.syncedOwner = ownerId;
       }
     }
@@ -159,10 +164,17 @@ export class CompositionSyncer {
   }
 
   async importLegacyComposition(id: string): Promise<Composition | null> {
-    const legacy = (await dexieGetLegacyCompositions()).find((composition) => composition.id === id);
+    const legacy = (await dexieGetLegacyCompositions()).find(
+      (composition) => composition.id === id
+    );
     if (!legacy) return null;
-    const copy = { ...legacy, id: `comp-${crypto.randomUUID()}`, ownerId: this.currentOwner(),
-      createdAt: new Date(), updatedAt: new Date() };
+    const copy = {
+      ...legacy,
+      id: `comp-${crypto.randomUUID()}`,
+      ownerId: this.currentOwner(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
     return this.saveComposition(copy);
   }
 
@@ -180,7 +192,9 @@ export class CompositionSyncer {
       ]);
 
       if (this.currentOwner() !== ownerId) return false;
-      const ownedLocal = localCompositions.filter((composition) => composition.ownerId === ownerId);
+      const ownedLocal = localCompositions.filter(
+        (composition) => composition.ownerId === ownerId
+      );
 
       if (cloudCompositions.length === 0 && ownedLocal.length === 0) {
         return true;
@@ -197,13 +211,17 @@ export class CompositionSyncer {
 
         if (!localComp) {
           // Cloud-only: add to local
-          await dexieSaveComposition(ownedCloudComp, { preserveUpdatedAt: true });
+          await dexieSaveComposition(ownedCloudComp, {
+            preserveUpdatedAt: true,
+          });
         } else {
           // Both exist: cloud wins if newer
           const cloudTime = cloudComp.updatedAt?.getTime() ?? 0;
           const localTime = localComp.updatedAt?.getTime() ?? 0;
           if (cloudTime > localTime) {
-            await dexieSaveComposition(ownedCloudComp, { preserveUpdatedAt: true });
+            await dexieSaveComposition(ownedCloudComp, {
+              preserveUpdatedAt: true,
+            });
           } else if (localTime > cloudTime) {
             await firebaseSaveComposition(localComp, ownerId);
           }
@@ -222,7 +240,9 @@ export class CompositionSyncer {
       console.error("Cloud sync failed, using local data:", error);
       try {
         const errorHandler = getErrorHandler() as ErrorHandler;
-        errorHandler.showWarning("Couldn't sync compositions from the cloud. Showing local data.");
+        errorHandler.showWarning(
+          "Couldn't sync compositions from the cloud. Showing local data."
+        );
       } catch {
         // ErrorHandler not available
       }

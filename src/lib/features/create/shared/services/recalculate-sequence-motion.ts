@@ -1,10 +1,10 @@
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   updateEndOrientations,
   updateStartOrientations,
-} from "$lib/shared/pictograph/prop/services/orientation-calculator";
+} from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 
 /**
  * Rebuild orientation-dependent motion data from one changed beat onward, then

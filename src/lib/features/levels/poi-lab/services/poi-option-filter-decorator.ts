@@ -10,9 +10,9 @@
  * legality decision must come from the current settings.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { validateMotion, validateTransition } from "./poi-constraint-validator";
 
 export interface ActivePropTypes {

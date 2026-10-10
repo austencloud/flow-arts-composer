@@ -12,9 +12,9 @@ import type {
   TimeSeconds,
   SnapSettings,
   TimelineClip,
-} from "$lib/shared/animation-engine/domain/timeline-types";
-import { getClipEndTime } from "$lib/shared/animation-engine/domain/timeline-types";
-import { generateStepTimestamps } from "$lib/shared/audio/bpm-analyzer";
+} from "#lib/shared/animation-engine/domain/timeline-types.js";
+import { getClipEndTime } from "#lib/shared/animation-engine/domain/timeline-types.js";
+import { generateStepTimestamps } from "#lib/shared/audio/bpm-analyzer.js";
 
 // Types
 

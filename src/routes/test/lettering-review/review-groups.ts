@@ -10,15 +10,15 @@
  * each pair together, so a reviewer can check that both halves are the same
  * kind of move, and then every other frame letter.
  */
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import {
   skewedFrameLetterLabel,
   type SkewFrameHand,
   type SkewFrameLocation,
   type SkewFrameMotionType,
-} from "$lib/shared/pictograph/skew/skewed-frame-letter";
+} from "#lib/shared/pictograph/skew/skewed-frame-letter.js";
 
 export interface ReviewItem {
   readonly id: string;

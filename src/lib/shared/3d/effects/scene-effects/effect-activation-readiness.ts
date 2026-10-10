@@ -1,5 +1,5 @@
 type RegisteredEffectId =
-  (typeof import("$lib/shared/animation-engine/components/effects-panel/effect-registry"))["EFFECTS"][number]["id"];
+  (typeof import("#lib/shared/animation-engine/components/effects-panel/effect-registry.js"))["EFFECTS"][number]["id"];
 
 export type EffectActivationStrategy = "scene-pooled" | "rig-preallocated";
 

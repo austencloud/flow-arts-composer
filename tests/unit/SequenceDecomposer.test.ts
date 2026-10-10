@@ -3,24 +3,24 @@ import {
   extractLeftSoloProp,
   extractRightSoloProp,
   extractStepPairings,
-} from "$lib/shared/foundation/services/sequence-decomposer";
-import { deriveSteps } from "$lib/shared/foundation/services/step-deriver";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/foundation/services/sequence-decomposer.js";
+import { deriveSteps } from "#lib/shared/foundation/services/step-deriver.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   GridLocation,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   Orientation,
   MotionType,
   RotationDirection,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 
 function makeMotion(
   startLocation: GridLocation,

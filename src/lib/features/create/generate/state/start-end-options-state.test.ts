@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: {
     settings: {
       blockedStartPlacements: [],

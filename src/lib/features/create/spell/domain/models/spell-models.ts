@@ -16,4 +16,4 @@ export type {
   LOOPType,
   ExtensionAnalysis,
   LOOPOption,
-} from "$lib/shared/create/domain/spell-models";
+} from "#lib/shared/create/domain/spell-models.js";

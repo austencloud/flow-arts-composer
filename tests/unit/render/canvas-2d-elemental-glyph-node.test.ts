@@ -11,13 +11,13 @@ import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 const mocks = vi.hoisted(() => ({
   loadImage: vi.fn(),
@@ -30,8 +30,8 @@ vi.mock("canvas", () => ({
 import {
   drawElementalGlyph,
   drawPropElementalGlyph,
-} from "$lib/shared/render/services/canvas-2d-glyph-renderer";
-import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
+} from "#lib/shared/render/services/canvas-2d-glyph-renderer.js";
+import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
 
 /** Letter A at alpha3: w to n and e to s, split-same, the Water element. */
 const letterA = {

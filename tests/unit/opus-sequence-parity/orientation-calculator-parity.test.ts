@@ -25,7 +25,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { calculateEndOrientation as appCalculate } from "$lib/shared/render/core/calculations/orientation";
+import { calculateEndOrientation as appCalculate } from "#lib/shared/render/core/calculations/orientation.js";
 import { calculateEndOrientation as engineCalculate } from "@tka/sequence-engine/core";
 import { calculateEndOrientation as renderCoreCalculate } from "@tka/render-core";
 

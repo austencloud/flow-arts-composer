@@ -5,25 +5,25 @@
  * Follows the TikaSessionRepository pattern but simpler (no review workflow).
  */
 
-import { requireAuth } from "$lib/shared/firestore";
+import { requireAuth } from "#lib/shared/firestore/index.js";
 import {
   firestoreGet,
   firestoreList,
   firestoreSet,
   firestoreDelete,
-} from "$lib/shared/firestore";
+} from "#lib/shared/firestore/index.js";
 import {
   VoiceSessionSchema,
   VoiceSessionPreviewSchema,
-} from "$lib/shared/voice-control/domain/voice-session-schemas";
+} from "#lib/shared/voice-control/domain/voice-session-schemas.js";
 import type {
   VoiceSession,
   VoiceSessionPreview,
-} from "$lib/shared/voice-control/domain/voice-session-types";
+} from "#lib/shared/voice-control/domain/voice-session-types.js";
 import {
   getUserVoiceSessionsPath,
   VOICE_SESSION_LIMITS,
-} from "$lib/shared/voice-sessions/data/firestore-paths";
+} from "#lib/shared/voice-sessions/data/firestore-paths.js";
 
 export class VoiceSessionError extends Error {
   constructor(

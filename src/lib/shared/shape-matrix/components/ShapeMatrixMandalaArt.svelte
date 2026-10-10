@@ -13,9 +13,9 @@
   (a different flower or pair) crossfades in place through the shared
   Crossfade primitive; a resize repaints the current image without one. -->
 <script lang="ts">
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
-  import { DURATION, STAGGER } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
+  import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
   import {
     registerMandalaArtMeasurer,
     SHAPE_MATRIX_ACTIVE_MANDALA_NAME,

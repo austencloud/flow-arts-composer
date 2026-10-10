@@ -1,9 +1,9 @@
 <script lang="ts">
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import { loadSoloLibrarySequences } from "$lib/features/browse/shared/services/solo-library-sequence-loader";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { loadSoloLibrarySequences } from "#lib/features/browse/shared/services/solo-library-sequence-loader.js";
   import { isStructuredSoloLoop } from "../services/solo-loop-generator";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
 
   let {

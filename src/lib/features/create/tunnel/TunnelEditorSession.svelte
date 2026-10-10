@@ -1,23 +1,23 @@
 <script lang="ts">
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import {
     getEffectsConfigContext,
     setEffectsConfigContext,
-  } from "$lib/shared/effects/state/effects-config-context";
+  } from "#lib/shared/effects/state/effects-config-context.js";
   import {
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
-  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { setAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
   import {
     animationSettings,
     createAnimationSettingsState,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { openSequenceOverlay } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
-  import { persistViewerMode } from "$lib/shared/sequence-viewer/services/viewer-state-persistence";
-  import { createPersistenceHelper } from "$lib/shared/state/utils/persistent-state";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { stageTunnelSnapshotForViewer } from "$lib/shared/sequence-viewer/tunnel/stage-tunnel-snapshot-for-viewer";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { openSequenceOverlay } from "#lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte.js";
+  import { persistViewerMode } from "#lib/shared/sequence-viewer/services/viewer-state-persistence.js";
+  import { createPersistenceHelper } from "#lib/shared/state/utils/persistent-state.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+  import { stageTunnelSnapshotForViewer } from "#lib/shared/sequence-viewer/tunnel/stage-tunnel-snapshot-for-viewer.js";
   import { createTunnelCreatorState } from "./state/tunnel-creator-state.svelte";
   import { setTunnelCreatorContext } from "./context/tunnel-creator-context";
   import {

@@ -1,7 +1,7 @@
-import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-import type { ShortcutHelpLaunchOptions } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
-import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
-import { logKeyboardShortcutSettingsOpened } from "$lib/shared/keyboard/keyboard-shortcut-analytics";
+import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+import type { ShortcutHelpLaunchOptions } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
+import { keyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
+import { logKeyboardShortcutSettingsOpened } from "#lib/shared/keyboard/keyboard-shortcut-analytics.js";
 
 export type ShortcutSettingsSource =
   | "keyboard_shortcut"

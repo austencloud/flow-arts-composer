@@ -7,8 +7,8 @@
  * component-local ternary would have hidden it.
  */
 
-import { getLocale } from "$lib/shared/i18n/i18n.svelte";
-import { formatTimeAgo } from "$lib/shared/i18n/i18n-formatters";
+import { getLocale } from "#lib/shared/i18n/i18n.svelte.js";
+import { formatTimeAgo } from "#lib/shared/i18n/i18n-formatters.js";
 
 const monthYearFormatters = new Map<string, Intl.DateTimeFormat>();
 

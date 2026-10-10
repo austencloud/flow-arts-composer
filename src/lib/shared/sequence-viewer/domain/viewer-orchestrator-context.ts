@@ -1,37 +1,37 @@
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import type { VideoOpener } from "$lib/shared/share/domain/video-opener";
-import type { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import type { VideoOpener } from "#lib/shared/share/domain/video-opener.js";
+import type { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
 import type {
   AnimationPanelState,
   PlaybackMode,
-} from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
-import type { ExportRequestOptions } from "$lib/shared/sequence-viewer/components/export-coordinator.svelte";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-import type { TempoPracticeConfig } from "$lib/shared/sequence-viewer/services/tempo-practice-orchestrator";
-import type { PracticeViewPrefs } from "$lib/shared/sequence-viewer/state/practice-view-prefs.svelte";
-import type { createTempoPracticeState } from "$lib/shared/sequence-viewer/state/tempo-practice-state.svelte";
-import type { createViewerState } from "$lib/shared/sequence-viewer/state/viewer-state.svelte";
-import type { SequenceViewerVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-visibility-state.svelte";
-import type { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
-import type { MandalaViewerController } from "$lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte";
-import type { PendingActionType } from "$lib/shared/sequence-viewer/services/pending-action-queue";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { ViewerPropHand } from "$lib/shared/sequence-viewer/state/viewer-prop-visibility-state.svelte";
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import type { CardPresentation } from "$lib/shared/share/domain/models/card-presentation";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+} from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
+import type { ExportRequestOptions } from "#lib/shared/sequence-viewer/components/export-coordinator.svelte.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
+import type { TempoPracticeConfig } from "#lib/shared/sequence-viewer/services/tempo-practice-orchestrator.js";
+import type { PracticeViewPrefs } from "#lib/shared/sequence-viewer/state/practice-view-prefs.svelte.js";
+import type { createTempoPracticeState } from "#lib/shared/sequence-viewer/state/tempo-practice-state.svelte.js";
+import type { createViewerState } from "#lib/shared/sequence-viewer/state/viewer-state.svelte.js";
+import type { SequenceViewerVisibilityState } from "#lib/shared/sequence-viewer/state/viewer-visibility-state.svelte.js";
+import type { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
+import type { MandalaViewerController } from "#lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte.js";
+import type { PendingActionType } from "#lib/shared/sequence-viewer/services/pending-action-queue.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { ViewerPropHand } from "#lib/shared/sequence-viewer/state/viewer-prop-visibility-state.svelte.js";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import type { CardPresentation } from "#lib/shared/share/domain/models/card-presentation.js";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 import type {
   ImageCompositionProps,
   PropRenderingProps,
   ViewerPlaybackState,
 } from "./viewer-prop-groups";
-import type { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
+import type { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 
 export type ViewMode = "animation" | "image" | "split";
 export type ExportType = "animation" | "image" | "both";

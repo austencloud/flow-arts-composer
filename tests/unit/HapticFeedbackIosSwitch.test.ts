@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
   version: "test",
 }));
 
-vi.mock("$lib/shared/platform/services/platform-detector", () => ({
+vi.mock("#lib/shared/platform/services/platform-detector.js", () => ({
   isNative: vi.fn(() => false),
 }));
 
-import { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+import { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 
 // vitest-setup.ts globally replaces document.createElement with a mock that
 // returns plain objects (not Nodes) for canvas-capture tests. This suite needs

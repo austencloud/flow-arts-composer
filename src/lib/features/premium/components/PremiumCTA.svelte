@@ -2,7 +2,7 @@
   PremiumCTA - Call to action with price and subscribe button
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     price: number;
@@ -97,7 +97,6 @@
 
   .subscribe-button:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px var(--theme-shadow);
   }
 
   .subscribe-button:active:not(:disabled) {

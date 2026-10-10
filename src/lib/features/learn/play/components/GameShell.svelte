@@ -24,12 +24,12 @@ Question-to-question motion stays with the render kit's persistent-slot
 animations, exactly as the legacy quizzes did.
 -->
 <script lang="ts">
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
-  import { createSpring } from "$lib/shared/ui-animation/animations.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";
+  import { createSpring } from "#lib/shared/ui-animation/animations.svelte.js";
   import { getArcadeSession } from "../state/arcade-session-state.svelte";
   import { gameTitle, challengeTitle } from "../domain/play-labels";
   import { withViewTransition } from "../state/view-transition";

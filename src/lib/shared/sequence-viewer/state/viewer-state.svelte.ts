@@ -11,7 +11,7 @@ import {
 	isValidSplitConfig
 } from '../services/viewer-state-persistence';
 import { coerce3DContent, coerce3DSplit } from '../services/viewer-modes';
-import { viewportFits3D } from '$lib/shared/3d/capabilities/viewport-3d-gate.svelte';
+import { viewportFits3D } from '#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js';
 
 export type { ViewerMode, ExportContext, ContentType, SplitConfig };
 

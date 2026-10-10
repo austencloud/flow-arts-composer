@@ -8,9 +8,9 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     isOpen: boolean;
@@ -195,11 +195,7 @@
 <style>
   /* Backdrop styling */
   :global(.grid-settings-backdrop) {
-    background: color-mix(
-      in srgb,
-      var(--theme-shadow) 70%,
-      transparent
-    ) !important;
+    background: rgba(0, 0, 0, 0.7) !important;
   }
 
   /* Drawer content styling - content-aware sizing */

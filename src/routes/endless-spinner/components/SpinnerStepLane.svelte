@@ -18,9 +18,9 @@
   playback ownership.
 -->
 <script lang="ts">
-  import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
-  import { buildNotationCells } from "$lib/shared/timeline/notation-cell";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import StepStrip from "#lib/shared/timeline/StepStrip.svelte";
+  import { buildNotationCells } from "#lib/shared/timeline/notation-cell.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   let {
     sequence,

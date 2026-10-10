@@ -9,9 +9,9 @@
  * hashing it to a short, filename-safe digest for the storage path.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PreviewCellRenderOptions } from "$lib/shared/sequence-viewer/services/preview-cell-renderer";
-import { deriveCacheKey } from "$lib/shared/sequence-viewer/services/cell-cache-key-deriver";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PreviewCellRenderOptions } from "#lib/shared/sequence-viewer/services/preview-cell-renderer.js";
+import { deriveCacheKey } from "#lib/shared/sequence-viewer/services/cell-cache-key-deriver.js";
 
 /** Canonical render size for cloud-stored cells. High enough for any card cell. */
 export const CANONICAL_CELL_SIZE = 480;

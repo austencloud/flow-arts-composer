@@ -1,5 +1,11 @@
-import { t } from "$lib/shared/i18n/i18n.svelte";
-import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
+import {
+  baseLocale,
+  getLocale,
+  isTranslated,
+  t,
+  type Locale,
+} from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 
 // The public navigation and FAQ keep English source copy for their route data
 // and structured data. Resolve visible copy when rendered so locale changes
@@ -8,6 +14,12 @@ const keys: Record<string, string> = {
   History: "site_history",
   Notation: "site_notation",
   "Shape Engine": "site_shape_engine",
+  "By prop": "site_by_prop",
+  Staves: "site_prop_staves",
+  Poi: "site_prop_poi",
+  Fans: "site_prop_fans",
+  Clubs: "site_prop_clubs",
+  Buugeng: "site_prop_buugeng",
   Composer: "site_composer",
   Learn: "site_learn",
   "Interactive lessons": "site_interactive_lessons",
@@ -90,6 +102,9 @@ const keys: Record<string, string> = {
   "Double staves are the canonical prop. TKA also applies to dual-wielded static props such as fans, clubs, and buugeng. Momentum-based props, tosses, contact rolling, and grip changes are not covered as equals. Composer includes additional prop visuals, but a visual option does not mean every movement applies to that prop.":
     "site_faq_a_props",
   "Try props in the spinner": "site_faq_try_props",
+  "Poi can follow the notation with steady rotation, and the poi notation page shows where momentum draws the line.":
+    "site_faq_note_poi",
+  "poi notation page": "site_faq_note_poi_link",
   "Is there software for flow arts choreography?": "site_faq_q_software",
   "Yes. Flow Arts Composer is free flow arts software that runs in your browser. Build sequences step by step, generate them from parameters, animate the result, save it, and share it. Each sequence keeps its Kinetic Alphabet notation, so the structure remains visible beside the animation.":
     "site_faq_a_software",
@@ -104,4 +119,13 @@ const keys: Record<string, string> = {
 export function siteCopy(source: string): string {
   const key = keys[source];
   return key ? t(key as TranslationKey) : source;
+}
+
+/**
+ * The language public pages are written in right now: the chosen locale once
+ * it translates the site copy, English until then. The tile titles stand in
+ * for the whole set because the pages ship their translations together.
+ */
+export function siteCopyLocale(): Locale {
+  return isTranslated("site_composer") ? getLocale() : baseLocale;
 }

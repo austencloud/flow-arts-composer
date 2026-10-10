@@ -9,11 +9,11 @@
   Both act on the same axis (prop spin); this is the single destination for it.
 -->
 <script lang="ts">
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import SettingsDrillRow from "$lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import SettingsDrillRow from "#lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
   import ReversalPatternView from "./ReversalPatternView.svelte";
   import RotationDirectionView from "./RotationDirectionView.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { TargetHand } from "../../state/panel-coordination-state.svelte";
   import type { DirectionDrillRoute } from "./direction-drill-route";
 

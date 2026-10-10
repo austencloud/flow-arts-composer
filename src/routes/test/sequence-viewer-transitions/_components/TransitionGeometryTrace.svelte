@@ -1,6 +1,6 @@
 <script lang="ts">
   import { summarizeStudioSurfaceMotion } from "../studio-surface-motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { isWorkspaceReplayCommand } from "../workspace-review-replays";
   import {
     READABLE_PANE_SIZE,

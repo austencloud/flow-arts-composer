@@ -1,12 +1,12 @@
 <script lang="ts">
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import SettingToggleButton from "$lib/shared/settings/components/SettingToggleButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import SettingToggleButton from "#lib/shared/settings/components/SettingToggleButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     MODE_LABEL,
     MODE_ORDER,
     type VtgMode,
-  } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+  } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
   import { getThirdOrderContext } from "../context/third-order-context";
   import {
     THIRD_ORDER_FLOWER_RATIOS,

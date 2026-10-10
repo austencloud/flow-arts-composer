@@ -8,7 +8,7 @@ Shows:
 - Select All button (optional)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { fly } from "svelte/transition";
   import { backOut } from "svelte/easing";
 
@@ -95,7 +95,6 @@ Shows:
 
     background: hsl(var(--background));
     border-top: 1px solid hsl(var(--border));
-    box-shadow: 0 -4px 16px var(--theme-shadow);
   }
 
   .toolbar-button {

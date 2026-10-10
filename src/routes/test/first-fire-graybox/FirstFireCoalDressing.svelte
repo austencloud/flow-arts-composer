@@ -22,10 +22,10 @@
    */
   import { T } from "@threlte/core";
   import { MeshStandardMaterial } from "three";
-  import type { FirstFireBlenderContract } from "$lib/features/museum/data/first-fire-blender-contract";
-  import FirstFireCoalWall from "$lib/shared/3d/environments/scenes/first-fire/FirstFireCoalWall.svelte";
-  import FirstFireCoalLamp from "$lib/shared/3d/environments/scenes/first-fire/FirstFireCoalLamp.svelte";
-  import FirstFireSteamVent from "$lib/shared/3d/environments/scenes/first-fire/FirstFireSteamVent.svelte";
+  import type { FirstFireBlenderContract } from "#lib/features/museum/data/first-fire-blender-contract.js";
+  import FirstFireCoalWall from "#lib/shared/3d/environments/scenes/first-fire/FirstFireCoalWall.svelte";
+  import FirstFireCoalLamp from "#lib/shared/3d/environments/scenes/first-fire/FirstFireCoalLamp.svelte";
+  import FirstFireSteamVent from "#lib/shared/3d/environments/scenes/first-fire/FirstFireSteamVent.svelte";
 
   interface Props {
     contract: FirstFireBlenderContract;

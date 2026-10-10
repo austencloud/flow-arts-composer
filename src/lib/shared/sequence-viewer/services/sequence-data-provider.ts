@@ -8,12 +8,12 @@
  * Components use this single module instead of juggling multiple loaders.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository";
-import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { getLoopDetector } from "$lib/shared/create/get-loop-detector";
-import { hydrateSequence as hydrateSequenceSemantics } from "$lib/shared/navigation/services/sequence-hydrator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { getSequenceRepository } from "#lib/shared/create/get-sequence-repository.js";
+import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { getLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+import { hydrateSequence as hydrateSequenceSemantics } from "#lib/shared/navigation/services/sequence-hydrator.js";
 import { cellPreWarmer } from "./cell-pre-warmer";
 
 /** In-flight prefetch promises keyed by sequence identifier */

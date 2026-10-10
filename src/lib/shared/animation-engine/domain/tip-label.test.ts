@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getTipLabel } from "./tip-label";
 import { getTipPoints } from "./types/prop-tip-points";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 /**
  * The compose cell editor names each per-tip effect key with this label. It

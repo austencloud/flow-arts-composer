@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Snippet } from "svelte";
-import type { UnifiedPlaybackContext } from "$lib/shared/timeline/unified-playback-context";
+import type { UnifiedPlaybackContext } from "#lib/shared/timeline/unified-playback-context.js";
 import {
   createViewerStudioSurfaces,
   type StudioAnimationFrame,
-} from "$lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte";
+} from "#lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte.js";
 
 describe("shared Studio surfaces", () => {
   it("remembers the selected settings across Card round trips without sharing viewer state", () => {

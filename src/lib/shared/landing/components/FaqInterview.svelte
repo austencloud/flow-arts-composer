@@ -16,7 +16,12 @@
    * from the canonical FAQ_ITEMS (faq-items.ts) so schema and visible text
    * cannot drift.
    */
-  import { FAQ_ITEMS, faqPageJsonLd, type FaqItem } from "../faq/faq-items";
+  import {
+    FAQ_ITEMS,
+    faqPageJsonLd,
+    type FaqItem,
+    type FaqNote,
+  } from "../faq/faq-items";
   import { siteCopy } from "../site-copy";
 
   let {
@@ -36,12 +41,27 @@
       ...item,
       question: siteCopy(item.question),
       answer: siteCopy(item.answer),
+      note: item.note
+        ? {
+            ...item.note,
+            text: siteCopy(item.note.text),
+            linkLabel: siteCopy(item.note.linkLabel),
+          }
+        : undefined,
       cta: item.cta
         ? { ...item.cta, label: siteCopy(item.cta.label) }
         : undefined,
     }))
   );
   const schema = $derived(emitSchema ? faqPageJsonLd(localizedItems) : null);
+
+  // The prose around the note's link. A translation that lost the label still
+  // renders: the whole sentence, then the link after it.
+  function splitNote(note: FaqNote): [string, string] {
+    const at = note.text.indexOf(note.linkLabel);
+    if (at === -1) return [`${note.text} `, ""];
+    return [note.text.slice(0, at), note.text.slice(at + note.linkLabel.length)];
+  }
 </script>
 
 <svelte:head>
@@ -64,6 +84,12 @@
       <article class="qa">
         <h3 class="question">{faq.question}</h3>
         <p class="answer">{faq.answer}</p>
+        {#if faq.note}
+          {@const [before, after] = splitNote(faq.note)}
+          <p class="answer note">
+            {before}<a href={faq.note.href}>{faq.note.linkLabel}</a>{after}
+          </p>
+        {/if}
         {#if faq.cta}
           <a class="faq-cta" href={faq.cta.href}>
             {faq.cta.label}
@@ -126,6 +152,16 @@
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.74));
     font-size: 1rem;
     line-height: 1.7;
+  }
+  /* A one-sentence continuation of the answer, closer to it than the column's
+     gap so it reads as the same thought. */
+  .note {
+    margin-top: -0.4rem;
+  }
+  .note a {
+    color: #ffffff;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
   }
 
   /* The door: a button, not a text link (clickables look like buttons).

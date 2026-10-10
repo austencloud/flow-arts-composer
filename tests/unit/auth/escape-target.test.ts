@@ -3,7 +3,7 @@ import {
   buildAppBridgePath,
   resolveEscapeTarget,
   safeInternalPath,
-} from "$lib/shared/auth/services/escape-target";
+} from "#lib/shared/auth/services/escape-target.js";
 
 const base = { currentUrl: "https://tkaflowarts.com/create/construct" };
 

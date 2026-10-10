@@ -1,14 +1,18 @@
 <script lang="ts">
-  import type { ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
-  import { arrangementBeatAt } from "$lib/shared/media-composition/domain/post-arrangement-item";
-  import CellCanvas from "$lib/shared/media-composition/components/ArrangementCellCanvas.svelte";
+  import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+  import { arrangementBeatAt } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
+  import CellCanvas from "#lib/shared/media-composition/components/ArrangementCellCanvas.svelte";
 
   let {
     snapshot,
     sourceTimeSeconds,
+    playing = false,
+    exporting = false,
   }: {
     snapshot: ArrangementSnapshot;
     sourceTimeSeconds: number;
+    playing?: boolean;
+    exporting?: boolean;
   } = $props();
 
   const beat = $derived(arrangementBeatAt(snapshot, sourceTimeSeconds));
@@ -25,6 +29,7 @@
 <div
   class="arrangement-surface"
   data-arrangement-surface
+  data-arrangement-cell-count={cells.length}
   style:grid-template-columns={`repeat(${snapshot.gridCols}, minmax(0, 1fr))`}
   style:grid-template-rows={`repeat(${snapshot.gridRows}, minmax(0, 1fr))`}
 >
@@ -39,6 +44,8 @@
         cellIndex={cell.row * snapshot.gridCols + cell.col}
         currentStep={beat}
         isPlaying={true}
+        animationPlaying={playing && !exporting}
+        virtualTimeMs={sourceTimeSeconds * 1000}
         skipStartPlacement={snapshot.skipStartPlacement}
         onSelect={() => undefined}
       />

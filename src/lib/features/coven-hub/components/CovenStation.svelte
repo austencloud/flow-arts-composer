@@ -16,7 +16,7 @@
    * Parameterized from TelekineticFormation3D: takes ANY sequence, ANY effect,
    * an optional GLB stage, and a level-of-detail band.
    */
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { onDestroy, untrack } from "svelte";
   import { T } from "@threlte/core";
   import { Vector3, Quaternion, Color } from "three";
@@ -24,20 +24,20 @@
   import type { PropState3D } from "@austencloud/scene-3d";
   import { Plane } from "@austencloud/scene-3d";
   import { PlaneMode } from "@austencloud/scene-3d";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     createCharacterInstanceState,
     makeStandaloneDeps,
-  } from "$lib/shared/3d/state/character-instance-state.svelte";
+  } from "#lib/shared/3d/state/character-instance-state.svelte.js";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { buildTipEffectMap } from "$lib/features/coven-hub/domain/coven-effect-map";
-  import type { LodBand } from "$lib/features/coven-hub/domain/coven-lod";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { buildTipEffectMap } from "#lib/features/coven-hub/domain/coven-effect-map.js";
+  import type { LodBand } from "#lib/features/coven-hub/domain/coven-lod.js";
   import { useGltf } from "@threlte/extras";
-  import EffectOrchestrator3D from "$lib/shared/3d/effects/EffectOrchestrator3D.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  import EffectOrchestrator3D from "#lib/shared/3d/effects/EffectOrchestrator3D.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 
   interface Props {
     stationId: string;

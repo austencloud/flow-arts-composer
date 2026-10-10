@@ -5,9 +5,9 @@
   // context, no follow button. On the live /composer this row binds to
   // getFeaturedCreators(); here it renders static placeholder creators
   // (clearly not real users) so the layout evaluates signed-out.
-  import PanelGrid from "$lib/shared/components/panel/PanelGrid.svelte";
+  import PanelGrid from "#lib/shared/components/panel/PanelGrid.svelte";
   import ConnectCreatorCard from "./ConnectCreatorCard.svelte";
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
 
   const now = Date.now();
   const HOUR = 3_600_000;

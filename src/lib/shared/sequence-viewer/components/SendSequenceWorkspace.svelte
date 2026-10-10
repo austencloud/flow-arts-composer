@@ -10,20 +10,20 @@
   inbox drawer's send sheet; this file is only the viewer-sized presentation.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import SendDestinationPicker from "$lib/shared/inbox/components/messages/SendDestinationPicker.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import SendDestinationPicker from "#lib/shared/inbox/components/messages/SendDestinationPicker.svelte";
   import {
     getRegisteredMessageDeliveryState,
     onMessageDeliveryRegistered,
-  } from "$lib/shared/inbox/context/message-delivery-context";
-  import type { PendingMessageAttachment } from "$lib/shared/inbox/domain/pending-message-attachment";
+  } from "#lib/shared/inbox/context/message-delivery-context.js";
+  import type { PendingMessageAttachment } from "#lib/shared/inbox/domain/pending-message-attachment.js";
   import {
     createSendAttachmentState,
     SEND_MESSAGE_MAX,
-  } from "$lib/shared/inbox/state/send-attachment-state.svelte";
-  import type { SequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  } from "#lib/shared/inbox/state/send-attachment-state.svelte.js";
+  import type { SequenceSendSession } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
   import { onMount } from "svelte";
 
   interface Props {

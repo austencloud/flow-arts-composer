@@ -5,7 +5,7 @@ import {
   getBlossomPlannedGrassClumps,
   getBlossomStageContact,
   isBlossomGroundLifeTierVisible,
-} from "$lib/shared/3d/environments/scenes/cherry-blossom/blossom-ground";
+} from "#lib/shared/3d/environments/scenes/cherry-blossom/blossom-ground.js";
 
 describe("Blossom ground contract", () => {
   it("maps the authored habitat mask across the entire garden", () => {

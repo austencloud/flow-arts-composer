@@ -12,8 +12,8 @@
 <script lang="ts">
   import "./styles/config-page.css";
   import { untrack } from "svelte";
-  import * as singleBuyCheckoutCreator from "$lib/features/store/services/single-buy-checkout-creator";
-  import { getProductLoader } from "$lib/features/store/get-product-loader";
+  import * as singleBuyCheckoutCreator from "#lib/features/store/services/single-buy-checkout-creator.js";
+  import { getProductLoader } from "#lib/features/store/get-product-loader.js";
   import { createStoreState } from "./state/store-state.svelte";
   import { setStoreContext } from "./context/store-context";
   import ShopProductShell from "./components/shell/ShopProductShell.svelte";
@@ -21,15 +21,15 @@
   import BookCoverArt from "./components/BookCoverArt.svelte";
   import SleeveArt from "./components/SleeveArt.svelte";
   import PropPicker from "./components/PropPicker.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
   import { prewarmCovers } from "./services/cover-front-renderer";
   import { formatUsd } from "./domain/preorder-pricing";
   import { deriveCrossSell } from "./domain/catalog-listings";
   import { DEFAULT_SHOP_PROP } from "./domain/shop-prop-options";
   import { trackPropSelected } from "./analytics/shop-funnel";
   import { trackViewOnceLoaded } from "./analytics/shop-funnel-view.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { Product } from "./domain/models/product";
 
   interface Props {

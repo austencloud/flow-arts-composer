@@ -62,19 +62,20 @@ const firebaseBootstrap = vi.hoisted(() => ({
   async load() {
     firebaseBootstrap.loads();
     if (firebaseBootstrap.gate) await firebaseBootstrap.gate;
-    const { registerLoadedAuth } = await import("$lib/shared/auth/loaded-auth");
+    const { registerLoadedAuth } =
+      await import("#lib/shared/auth/loaded-auth.js");
     registerLoadedAuth(auth as never);
     return {};
   },
 }));
 
-vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$lib/shared/auth/firebase", () => firebaseBootstrap.load());
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("$app/env", () => ({ browser: true }));
+vi.mock("#lib/shared/auth/firebase.js", () => firebaseBootstrap.load());
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: settingsMock,
 }));
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: () => ({
       isDarkMode: () => false,
@@ -83,10 +84,10 @@ vi.mock(
   })
 );
 
-import { createExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
+import { createExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
 
 type ImageCompositionManager = ReturnType<
-  (typeof import("$lib/shared/share/state/image-composition-state.svelte"))["getImageCompositionManager"]
+  (typeof import("#lib/shared/share/state/image-composition-state.svelte.js"))["getImageCompositionManager"]
 >;
 
 const EXPORT_OPTIONS_KEY = "tka_export_options";
@@ -107,12 +108,12 @@ describe("card column preferences", () => {
     vi.resetModules();
     // resetModules keeps a mocked module's first result. Mock it again so
     // this page's Firebase load registers with this page's loaded-auth.
-    vi.doMock("$lib/shared/auth/firebase", () => firebaseBootstrap.load());
+    vi.doMock("#lib/shared/auth/firebase.js", () => firebaseBootstrap.load());
     auth.listeners.clear();
     settingsMock.remoteListeners.clear();
-    if (firebaseLoaded) await import("$lib/shared/auth/firebase");
+    if (firebaseLoaded) await import("#lib/shared/auth/firebase.js");
     const { getImageCompositionManager } =
-      await import("$lib/shared/share/state/image-composition-state.svelte");
+      await import("#lib/shared/share/state/image-composition-state.svelte.js");
     return getImageCompositionManager();
   }
 
@@ -180,7 +181,7 @@ describe("card column preferences", () => {
       expect(page.getColumnCountForStepCount(8)).toBe(8);
 
       // The visitor opens sign-in, which loads the Firebase bootstrap.
-      await import("$lib/shared/auth/firebase");
+      await import("#lib/shared/auth/firebase.js");
       auth.setUser({ uid: "user-1" });
 
       expect(page.getColumnCountForStepCount(8)).toBeNull();

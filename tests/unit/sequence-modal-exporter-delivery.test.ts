@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   reportImageExportDelivery,
   type ImageExportDeliveryCallbacks,
-} from "$lib/shared/sequence-viewer/services/image-export-delivery";
+} from "#lib/shared/sequence-viewer/services/image-export-delivery.js";
 
 function callbacks(): ImageExportDeliveryCallbacks & {
   onSuccess: ReturnType<typeof vi.fn>;

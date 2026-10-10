@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { page } from "$app/state";
-  import Seo from "$lib/shared/components/Seo.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
   import {
     hasSavedFirebaseUser,
     signInWhenIdle,
-  } from "$lib/shared/auth/services/deferred-sign-in";
+  } from "#lib/shared/auth/services/deferred-sign-in.js";
 
   let { data } = $props();
 

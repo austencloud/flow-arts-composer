@@ -5,8 +5,8 @@ import {
   stepToStepData,
 } from "../step-bridge";
 import { createStepData } from "../../factories/create-step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 describe("motionDataToMotion", () => {
   it("maps structural fields and drops embedded render data", () => {

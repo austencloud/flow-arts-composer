@@ -19,8 +19,8 @@ import {
   publishShareTargets,
   clearShareTargets,
   __resetPublisherForTests,
-} from "$lib/shared/share-intake/services/sharing-shortcuts-publisher";
-import type { ShareTarget } from "$lib/shared/share-intake/domain/share-target-selection";
+} from "#lib/shared/share-intake/services/sharing-shortcuts-publisher.js";
+import type { ShareTarget } from "#lib/shared/share-intake/domain/share-target-selection.js";
 
 function target(id: string, name: string, avatarUrl: string | null = null): ShareTarget {
   return { id, name, avatarUrl };

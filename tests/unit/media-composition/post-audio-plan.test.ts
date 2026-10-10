@@ -5,9 +5,9 @@ import {
   planPostAudio,
   planProjectAudio,
   type PostAudioSource,
-} from "$lib/shared/media-composition/domain/post-audio-plan";
-import type { CompiledAct } from "$lib/shared/media-composition/domain/post-plan-compiler";
-import type { CompiledPostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
+} from "#lib/shared/media-composition/domain/post-audio-plan.js";
+import type { CompiledAct } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
+import type { CompiledPostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
 
 function act(overrides: Partial<CompiledAct>): CompiledAct {
   return {

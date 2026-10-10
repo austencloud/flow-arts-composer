@@ -2,7 +2,7 @@
  * Co-exported types from retired interface contracts.
  */
 
-import type { FeedbackItem, FeedbackStatus, FeedbackType, FeedbackPriority, StagedImageState } from "$lib/shared/feedback/domain/models/feedback-models";
+import type { FeedbackItem, FeedbackStatus, FeedbackType, FeedbackPriority, StagedImageState } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 
 export type ClaimHealth =

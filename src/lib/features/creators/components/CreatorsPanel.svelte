@@ -2,31 +2,31 @@
      face, prop, activity, and join date. Its panel-local `em` ramp keeps type,
      spacing, and avatars proportional at 4K without imposing a content cap. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount } from "svelte";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { page } from "$app/state";
-  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$lib/shared/maps/google-maps-api-key";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "#lib/shared/maps/google-maps-api-key.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
   import {
     followUser,
     unfollowUser,
-  } from "$lib/shared/community/services/user-repository";
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import { setCommunityMapContext } from "$lib/features/community/context/community-map-context";
-  import { createCommunityMapState } from "$lib/features/community/state/community-map-state.svelte";
-  import { createFirestoreCommunityMapPort } from "$lib/features/community/services/community-map-port";
-  import { createEdgeCitySuggestion } from "$lib/features/community/services/edge-city-suggestion";
-  import { getGeocodingService } from "$lib/features/community/get-geocoding-service";
-  import PanelSearch from "$lib/shared/components/panel/PanelSearch.svelte";
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/community/services/user-repository.js";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import { setCommunityMapContext } from "#lib/features/community/context/community-map-context.js";
+  import { createCommunityMapState } from "#lib/features/community/state/community-map-state.svelte.js";
+  import { createFirestoreCommunityMapPort } from "#lib/features/community/services/community-map-port.js";
+  import { createEdgeCitySuggestion } from "#lib/features/community/services/edge-city-suggestion.js";
+  import { getGeocodingService } from "#lib/features/community/get-geocoding-service.js";
+  import PanelSearch from "#lib/shared/components/panel/PanelSearch.svelte";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { creatorsDataState } from "../state/creators-data-state.svelte";
   import {
     openCreatorProfile,
@@ -41,9 +41,9 @@
     type BandKey,
   } from "../domain/creator-recency";
   import { fitColumns } from "../domain/fit-columns";
-  import { dealByOwner } from "$lib/features/browse/gallery-home/pick-representatives";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { dealByOwner } from "#lib/features/browse/gallery-home/pick-representatives.js";
+  import { openSequenceViewer } from "#lib/shared/sequence-viewer/services/sequence-viewer-navigator.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import RosterBand from "./RosterBand.svelte";
   import WorkWall from "./WorkWall.svelte";
   import UserProfilePanel from "./UserProfilePanel.svelte";
@@ -498,7 +498,7 @@
             <LazyMount
               loader={() =>
                 import(
-                  "$lib/features/community/components/CommunityMapBand.svelte"
+                  "#lib/features/community/components/CommunityMapBand.svelte"
                 )}
               active={mapBandActive}
               props={{ compact: isShortLandscape }}

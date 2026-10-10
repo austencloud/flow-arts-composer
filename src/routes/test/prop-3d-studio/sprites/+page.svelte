@@ -19,11 +19,11 @@
   import { Canvas } from "@threlte/core";
   import { WebGLRenderer } from "three";
   import { page } from "$app/state";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { PROP_DIMENSIONS } from "$lib/shared/animation-engine/services/IPropTextureLoader";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
-  import { triangleSpriteKey } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
-  import { isRetiredModelSprite } from "$lib/shared/pictograph/prop/domain/retired-model-sprites";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { PROP_DIMENSIONS } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
+  import { triangleSpriteKey } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+  import { isRetiredModelSprite } from "#lib/shared/pictograph/prop/domain/retired-model-sprites.js";
   import {
     PropType as ScenePropType,
     type PropBuild,

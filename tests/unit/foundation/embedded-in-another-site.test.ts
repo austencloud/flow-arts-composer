@@ -5,7 +5,7 @@
  * reach it, while the toast says it saved.
  */
 import { describe, expect, it } from "vitest";
-import { isEmbeddedInAnotherSite } from "$lib/shared/foundation/utils/embedded-in-another-site";
+import { isEmbeddedInAnotherSite } from "#lib/shared/foundation/utils/embedded-in-another-site.js";
 
 function frameUnder(top: unknown): Window {
   const win = {} as { self: unknown; top: unknown };

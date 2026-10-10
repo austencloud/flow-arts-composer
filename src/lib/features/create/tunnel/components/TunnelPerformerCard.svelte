@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { TunnelPerformer } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-  import { copyOpsLabel } from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-  import StepGrid from "$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte";
-  import SequenceMetadataRail from "$lib/features/create/shared/workspace-panel/sequence-display/components/SequenceMetadataRail.svelte";
-  import WordLabel from "$lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
-  import { tryGetLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import OverflowMenu from "#lib/shared/ui/components/OverflowMenu.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { TunnelPerformer } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+  import { copyOpsLabel } from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+  import StepGrid from "#lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte";
+  import SequenceMetadataRail from "#lib/features/create/shared/workspace-panel/sequence-display/components/SequenceMetadataRail.svelte";
+  import WordLabel from "#lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
+  import { tryGetLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import type { TunnelSourceOrigin } from "../domain/tunnel-creator-draft";
 
   let {

@@ -6,15 +6,15 @@
 	Shows animated composition preview, metadata, and action buttons.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-  import { resolveThumbnail } from "$lib/features/compose/tabs/browse/services/composition-thumbnail-resolver";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import { resolveThumbnail } from "#lib/features/compose/tabs/browse/services/composition-thumbnail-resolver.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import type { CompositionBrowseItem } from "../state/composition-browse-state.svelte";
-  import { COMPOSE_MODE_CONFIG } from "$lib/features/compose/shared/domain/compose-mode-config";
+  import { COMPOSE_MODE_CONFIG } from "#lib/features/compose/shared/domain/compose-mode-config.js";
   import CompositionAnimatedPreview from "./CompositionAnimatedPreview.svelte";
   import CompositionMiniPreview from "./CompositionMiniPreview.svelte";
-  import { simplifyAndTruncate } from "$lib/shared/foundation/utils/word-simplifier";
+  import { simplifyAndTruncate } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   let {
     composition,

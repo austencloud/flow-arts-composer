@@ -4,17 +4,17 @@ import { Plane, PlaneMode } from "@austencloud/scene-3d";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 import {
   buildStanceYawTrackForSource,
   resolveTrackedUpperBodyStance,
   type StanceYawTrack,
-} from "$lib/shared/3d/collision/stance-yaw-track";
+} from "#lib/shared/3d/collision/stance-yaw-track.js";
 import {
   planUpperBodyStanceYawTarget,
   stanceSideBlend,
   stanceTargetsForPropStates,
-} from "$lib/shared/3d/collision/upper-body-stance-planner";
+} from "#lib/shared/3d/collision/upper-body-stance-planner.js";
 import {
   HARD_BEAT_MIN_RADIUS_M,
   LANE_KINDS,
@@ -27,9 +27,9 @@ import {
   type HardBeatSample,
   type HardBeatScoreSource,
   type HardBeatTrack,
-} from "$lib/shared/3d/collision/hard-beat-displacement";
+} from "#lib/shared/3d/collision/hard-beat-displacement.js";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
-import { gridJoinOffset3D } from "$lib/shared/3d/services/grid-join-3d";
+import { gridJoinOffset3D } from "#lib/shared/3d/services/grid-join-3d.js";
 
 /**
  * The rules for moving a staff so the hand can hold it: only along its own

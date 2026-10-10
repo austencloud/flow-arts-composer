@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   interpretConversationLocally,
   interpretStageDirectionLocally,
-} from "$lib/features/stage/domain/tika-director-interpreter";
-import { TIKA_DIRECTOR_FORMATIONS } from "$lib/features/stage/domain/tika-director";
+} from "#lib/features/stage/domain/tika-director-interpreter.js";
+import { TIKA_DIRECTOR_FORMATIONS } from "#lib/features/stage/domain/tika-director.js";
 
 describe("TIKA Stage direction interpreter", () => {
   it.each([

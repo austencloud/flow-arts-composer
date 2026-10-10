@@ -1,4 +1,4 @@
-import type { SeoDashboardSnapshot } from "$lib/features/admin/domain/models/seo-dashboard-model";
+import type { SeoDashboardSnapshot } from "#lib/features/admin/domain/models/seo-dashboard-model.js";
 
 const integerFormatter = new Intl.NumberFormat("en-US");
 const dateFormatter = new Intl.DateTimeFormat("en-US", {

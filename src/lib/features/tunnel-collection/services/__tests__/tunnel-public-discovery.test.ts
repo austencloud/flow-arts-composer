@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PublicArtifactEnvelope } from "$lib/shared/artifact-revisions/domain/public-artifact";
+import type { PublicArtifactEnvelope } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
 
 const loaders = vi.hoisted(() => ({
   listPublicArtifacts: vi.fn(),
@@ -7,7 +7,7 @@ const loaders = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "$lib/shared/artifact-revisions/services/public-artifact-loader",
+  "#lib/shared/artifact-revisions/services/public-artifact-loader.js",
   () => loaders
 );
 

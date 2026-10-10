@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fits3DViewport } from './viewport-3d-gate.svelte';
-import { MIN_3D_VIEWPORT_PX } from '$lib/shared/device/domain/constants/device-constants';
+import { MIN_3D_VIEWPORT_PX } from '#lib/shared/device/domain/constants/device-constants.js';
 
 describe('fits3DViewport', () => {
 	it('excludes phones in portrait', () => {

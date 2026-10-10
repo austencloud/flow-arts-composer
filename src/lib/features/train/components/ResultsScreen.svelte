@@ -5,8 +5,8 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
 
   interface Props {
     totalSteps: number;
@@ -206,7 +206,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--theme-shadow) 98%, transparent);
+    background: rgba(0, 0, 0, 0.98);
     z-index: 100;
     animation: fadeIn var(--duration-dramatic) ease-out;
   }
@@ -508,7 +508,7 @@
     justify-content: center;
     padding: 1rem 1.25rem;
     flex-shrink: 0; /* Never shrink - always visible */
-    background: color-mix(in srgb, var(--theme-shadow) 80%, transparent);
+    background: rgba(0, 0, 0, 0.8);
     border-top: 1px solid var(--theme-stroke, var(--theme-stroke));
   }
 

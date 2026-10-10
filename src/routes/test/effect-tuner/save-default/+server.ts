@@ -15,10 +15,10 @@
  *
  * Guarded to dev — never reachable in a production build.
  */
-import { json, error, type RequestHandler } from "@sveltejs/kit";
+import { error, type RequestHandler } from "@sveltejs/kit";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { dev } from "$app/environment";
+import { dev } from "$app/env";
 import { patchDefaultsBlock, patchPresetPatch } from "./patch-source";
 
 const DEFAULTS_PATH = resolve(
@@ -70,7 +70,7 @@ export const POST: RequestHandler = async ({ request }) => {
     }
     const changed = next !== src;
     if (changed) writeFileSync(DEFAULTS_PATH, next, "utf8");
-    return json({ ok: true, target: "default", file: "defaults.ts", patched, changed });
+    return Response.json({ ok: true, target: "default", file: "defaults.ts", patched, changed });
   }
 
   // ── Preset → <effect>-presets.ts ────────────────────────────────────────
@@ -86,7 +86,7 @@ export const POST: RequestHandler = async ({ request }) => {
   }
   const changed = next !== src;
   if (changed) writeFileSync(path, next, "utf8");
-  return json({
+  return Response.json({
     ok: true,
     target: { preset: presetId },
     file: `${effect === "trails" ? "trail" : effect}-presets.ts`,

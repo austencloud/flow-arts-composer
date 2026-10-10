@@ -1,6 +1,6 @@
 <script lang="ts">
   import { localizePrintLabel } from "../_components/localize-print-label";
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Type 5 - Dual-Dash - Level 2 body page 11 (manifest `t5-dual-dash`), faithful
    * to old p12. Both hands dash (dash|dash), so there are no hybrids; matching type
@@ -16,16 +16,16 @@
    * Ψ- section uses wide columns; Λ- section uses compressed columns + a continuation
    * column (like the p11 Λ page). Halfway poses from the engine interpolator.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { halfwayPose, type HalfwayMotion } from "../_data/halfway-pose";
 
   const S = 816 / 612;

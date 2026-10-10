@@ -8,7 +8,7 @@
  */
 
 import type CameraControls from "camera-controls";
-import type { CharacterInstanceState } from "$lib/shared/3d/state/character-instance-state.svelte";
+import type { CharacterInstanceState } from "#lib/shared/3d/state/character-instance-state.svelte.js";
 
 export type PerformerCountRule =
   | { kind: "exactly"; count: number }

@@ -3,19 +3,19 @@ import {
   type MediaCompositionPreset,
   type PresetClip,
   type PresetSourceRole,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
 import {
   POST_PLAN_MIN_ACT_SECONDS,
   type Caption,
   type PerformanceAct,
   type PostPlan,
   type PostStrip,
-} from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   BREAKDOWN_GEOMETRY,
   POST_STUDIO_ROLE,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "#lib/shared/media-composition/domain/post-studio-presets.js";
 
 /**
  * Turns a plan into the free-layout preset the evaluator already plays.

@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import StepGrid from "$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import StepGrid from "#lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     appendSoloContinuation,
     createSoloContinuationOptions,

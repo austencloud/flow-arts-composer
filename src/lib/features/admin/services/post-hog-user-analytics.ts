@@ -1,5 +1,5 @@
 /** Strict client for the named per-user analytics contracts. */
-import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
+import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
 import type {
   ContentMetrics,
   ModuleActivityBreakdown,

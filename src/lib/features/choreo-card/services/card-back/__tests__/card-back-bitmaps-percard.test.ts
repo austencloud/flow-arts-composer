@@ -19,7 +19,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 // rasterizeLoopIconByKind pulls CardBackLoopIcon → SwapIcon/CheckerboardCircleIcon
 // (Svelte components) which don't import cleanly in vitest; mock it to a fake

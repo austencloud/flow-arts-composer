@@ -3,7 +3,7 @@ LOOPExplanationPanel.svelte - Displays explanation of selected LOOP transformati
 Shows contextual information based on current selection
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   let { explanationText } = $props<{
     explanationText: string;
   }>();
@@ -16,7 +16,6 @@ Shows contextual information based on current selection
 
 <style>
   .explanation-panel {
-    background: var(--theme-shadow);
     border-radius: 10px;
     padding: 10px 14px;
     border: 1px solid var(--theme-stroke-strong);
@@ -28,7 +27,6 @@ Shows contextual information based on current selection
     font-size: var(--font-size-sm);
     font-weight: 600;
     margin: 0 0 6px 0;
-    text-shadow: 0 2px 4px var(--theme-shadow);
   }
 
   .explanation-panel p {
@@ -36,6 +34,5 @@ Shows contextual information based on current selection
     font-size: var(--font-size-compact);
     line-height: 1.4;
     margin: 0;
-    text-shadow: 0 1px 2px var(--theme-shadow);
   }
 </style>

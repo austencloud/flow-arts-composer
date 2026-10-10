@@ -12,8 +12,8 @@ Design Principles:
 - Consistent: Same size as other action buttons (48px circle), neutral slate color
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 
   type TabType = "construct" | "generate";
 
@@ -82,7 +82,6 @@ Design Principles:
     border: 1px solid var(--theme-stroke);
     border-radius: 50%;
     background: var(--theme-card-bg);
-    box-shadow: 0 2px 8px var(--theme-shadow);
     cursor: pointer;
     transition: all var(--transition-normal, var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1));
     color: var(--theme-text);
@@ -99,7 +98,6 @@ Design Principles:
     transform: scale(1.05);
     background: var(--theme-card-hover-bg);
     border-color: var(--theme-stroke-strong);
-    box-shadow: 0 4px 12px var(--theme-shadow);
   }
 
   .toggle-button:active {

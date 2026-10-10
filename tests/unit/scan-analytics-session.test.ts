@@ -1,16 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("$env/static/public", () => ({
-  PUBLIC_POSTHOG_HOST: "https://test.posthog.com",
-  PUBLIC_POSTHOG_KEY: "test-key",
-  PUBLIC_POSTHOG_PROJECT_ID: "test-project",
-}));
+vi.mock("$app/env/public", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule({
+    PUBLIC_POSTHOG_HOST: "https://test.posthog.com",
+    PUBLIC_POSTHOG_KEY: "test-key",
+    PUBLIC_POSTHOG_PROJECT_ID: "test-project",
+  });
+});
 import {
   createScanSessionState,
   finishScanSession,
   recordScanSessionInteraction,
   scanExportSessionInteraction,
-} from "$lib/shared/analytics/scan-analytics";
+} from "#lib/shared/analytics/scan-analytics.js";
 
 describe("scan analytics session summary", () => {
   it("aggregates semantic outcomes from the usable-viewer window", () => {

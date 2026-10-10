@@ -1,34 +1,34 @@
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   normalizePropLook,
   type PropLook,
-} from "$lib/shared/pictograph/prop/domain/prop-look";
-import { withPickVersion } from "$lib/shared/settings/domain/prop-version-rule";
-import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+} from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import { withPickVersion } from "#lib/shared/settings/domain/prop-version-rule.js";
+import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 import {
   PLAYBACK_MAX_BPM,
   PLAYBACK_MIN_BPM,
-} from "$lib/shared/animation-engine/domain/constants/timing";
-import type { AnimationSettingsState } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+} from "#lib/shared/animation-engine/domain/constants/timing.js";
+import type { AnimationSettingsState } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import {
   captureTunnelSnapshot,
   applyTunnelSnapshot,
   SNAPSHOT_VERSION,
   type SnapshotDeps,
   type TunnelSnapshot,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
 import {
   DEFAULT_CONFIG,
   type TunnelConfig,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import type { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
-import { DEFAULT_TUNNEL_CUSTOM_PROP_COLORS } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import type { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
+import { DEFAULT_TUNNEL_CUSTOM_PROP_COLORS } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 import type {
   ChiralityHand,
   PropChiralitySeam,
-} from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
+} from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
 
 interface TunnelPresentationInputs {
   initialSnapshot?: TunnelSnapshot | null;

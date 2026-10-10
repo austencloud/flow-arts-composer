@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import type { MotionCompositionV3 } from "$lib/shared/motion-composition/domain/motion-composition-types";
-import { IDENTITY_TRANSFORM } from "$lib/shared/motion-composition/domain/motion-composition-transform";
-import { sampleMotionCompositionAt } from "$lib/shared/motion-composition/services/motion-composition-sampler";
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
-import { bakeMotionCompositionTrajectories } from "$lib/shared/mandala/services/motion-trajectory-baker";
-import { projectWorldTrajectories } from "$lib/shared/mandala/services/trajectory-projector";
+import type { MotionCompositionV3 } from "#lib/shared/motion-composition/domain/motion-composition-types.js";
+import { IDENTITY_TRANSFORM } from "#lib/shared/motion-composition/domain/motion-composition-transform.js";
+import { sampleMotionCompositionAt } from "#lib/shared/motion-composition/services/motion-composition-sampler.js";
+import type { MandalaPaths } from "#lib/shared/mandala/domain/mandala-types.js";
+import { bakeMotionCompositionTrajectories } from "#lib/shared/mandala/services/motion-trajectory-baker.js";
+import { projectWorldTrajectories } from "#lib/shared/mandala/services/trajectory-projector.js";
 import {
   legacyMandalaPathsToLayers,
   projectedTrajectoriesToMandalaLayers,
-} from "$lib/shared/mandala/services/mandala-layer-adapter";
+} from "#lib/shared/mandala/services/mandala-layer-adapter.js";
 
 const HOLD = {
   offsetBeats: 0,

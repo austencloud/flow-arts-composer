@@ -10,11 +10,11 @@ Mounted once by CollectionPickerHost at app level, never by a card — see
 collection-picker-state for why.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import CollectionPickerContent from "./CollectionPickerContent.svelte";
 
   let {

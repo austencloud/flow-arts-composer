@@ -1,6 +1,6 @@
 import type { RenderContext } from "./render-context-registry";
 import { AnimationEngine } from "./animation-engine.svelte";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import type { AnimationVisibilityStateManager } from "../state/animation-visibility-state.svelte";
 
 export interface OffscreenContextOptions {

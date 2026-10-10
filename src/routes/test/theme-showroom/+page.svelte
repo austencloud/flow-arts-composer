@@ -1,9 +1,9 @@
 <script lang="ts">
   import { BackgroundType } from "@austencloud/backgrounds";
 
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import ThemeShowroom from "$lib/shared/settings/components/tabs/background/showroom/ThemeShowroom.svelte";
-  import type { AppSettings } from "$lib/shared/settings/domain/app-settings";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import ThemeShowroom from "#lib/shared/settings/components/tabs/background/showroom/ThemeShowroom.svelte";
+  import type { AppSettings } from "#lib/shared/settings/domain/app-settings.js";
 
   let settings = $state<AppSettings>({
     gridMode: GridMode.DIAMOND,

@@ -7,7 +7,7 @@
    */
   import type { TnDFamilyOption } from "../../services/deck-composer";
   import { TND_BY_FAMILY } from "../../domain/tnd-element";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   interface Props {
     families: TnDFamilyOption[];
@@ -190,7 +190,6 @@
     width: 44px;
     height: 44px;
     object-fit: contain;
-    filter: drop-shadow(0 2px 6px var(--theme-shadow, rgba(0, 0, 0, 0.35)));
     opacity: 0.55;
     transition: opacity var(--transition-fast);
   }

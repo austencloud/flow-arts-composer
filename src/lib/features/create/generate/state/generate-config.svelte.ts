@@ -6,7 +6,7 @@
  * Includes persistence to localStorage for settings persistence across sessions.
  */
 
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { LOOPType, Period } from "../circular/domain/models/circular-models";
 import {
   GenerationMode,
@@ -14,23 +14,23 @@ import {
 } from "../shared/domain/models/generate-models";
 import type { UIGenerationConfig } from "../shared/utils/config-mapper";
 import { getTemplateById } from "../../shared/domain/templates/duration-templates";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { resolveAccessTier } from "$lib/shared/auth/domain/access-tier";
-import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { resolveAccessTier } from "#lib/shared/auth/domain/access-tier.js";
+import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { fitLoopRhythmToLength } from "$lib/shared/create/services/loop-rhythm-gating";
-import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { fitLoopRhythmToLength } from "#lib/shared/create/services/loop-rhythm-gating.js";
+import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
 import { normalizePersistedGenerationConfig } from "../domain/generator-persistence-normalizer";
 import {
   DEFAULT_GENERATION_STYLE,
   type GenerationMotionTypeFilter,
   type GenerationStyleAxis,
-} from "$lib/shared/create/domain/generation-style";
+} from "#lib/shared/create/domain/generation-style.js";
 import {
   DEFAULT_TND_SELECTION,
   type TnDSelection,
-} from "$lib/shared/create/domain/hand-relationship";
+} from "#lib/shared/create/domain/hand-relationship.js";
 
 // Re-export for convenience
 export type { UIGenerationConfig };

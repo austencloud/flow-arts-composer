@@ -398,6 +398,20 @@ changes only through `post-project.mjs link-capture`, which sends
 Scripts read a feature video media URL with `featureMediaUrlParts` in
 `align-take.mjs`. Do not add a second recorder; extend these.
 
+A feature video's end card keeps its scan link as `qrUrl` on the card item
+(`domain/post-project.ts`); the canvas hands it to the Choreo Card's own
+`qrUrl`, so the code opens that link for anyone, signed in or not. Renders use
+the editor's own exporter: `post-project.mjs render` queues a job on the dev
+bridge (`server/post-project-dev-bridge.ts`), the editor's
+`services/post-project-dev-client.ts` runs it, and
+`services/feature-video-client.ts` sends the MP4 to
+`server/feature-video-exports.ts`, which saves it in `exports/` under a name
+from `domain/feature-video-export.ts`. `scripts/feature-video/render.mjs`
+finds or opens the editor, `stills.mjs` writes stills and contact sheets, and
+`render-check.mjs` checks a render end to end. Do not add a second renderer or
+a server-side encode; extend these. Searches: render, export, exports folder,
+end card, QR, scan link, stills, contact sheet.
+
 Post Studio keyframes live on the item: `post-project-keyframes.ts` owns
 content time, sampling, the auto-key rule, easing presets and every keyframe
 edit, and the compiler turns them into the preset's `motion` and
@@ -426,10 +440,13 @@ row, toolbar, dock, bottom sheet, side panel, inspector, crop tool.
 The editor's numbers are typed in a `TypeableValue`: a `ValueSlider`'s value,
 the clocks, trim points, the beat grid's offset and the Position tool's X, Y,
 width, height and turn. The small readings inside timeline buttons (a clip's speed,
-a lane's zoom or opacity) stay labels, typed in their tool. Where an item
+a lane's zoom or opacity) stay labels, typed in their tool. A clip's speed
+reads the same on its badge and in its tool (0.98×) through `formatPostSpeed`
+in `builder/post-builder-format.ts`. Where an item
 shows on the frame, for the preview's handles and the typed position alike, is
 `editor/post-item-rect.ts`; `typeBox` in `editor/post-box-drag.ts` applies a
-typed side. Searches: typed value, exact value, numeric entry, type a time.
+typed side. Searches: typed value, exact value, numeric entry, type a time,
+speed badge, speed label.
 
 While a box, the picture or a pinch moves, `PostEditorCanvas.svelte` shows a
 rule-of-thirds grid and, on a 9:16 post, the part of a Reel that Instagram's
@@ -525,6 +542,10 @@ another.
 | sign-up window on a page without the app shell, guest save limit, auth drawer host                                                  | `shared/auth/components/AuthModalHost.svelte` listens to `authDrawerState` and loads `AuthModal` only when something opens it. `MainApplication` hosts the window inside the app; mount the host on routes outside it (`/shape-engine`, `/embed/spinner` opened directly), never on a component the app also uses.                                                                                                                                                                                                                                                                                                                                           |
 | framed by another site, cross-site iframe, partitioned storage, embed account actions                                               | `shared/foundation/utils/embedded-in-another-site.ts`: `isEmbeddedInAnotherSite()` is true only inside another origin's frame. The canvas and card menus leave the library save out there, and the spinner page leaves out its sign-up window, since storage in that frame never reaches our own site.                                                                                                                                                                                                                                                                                                                                                       |
 | page stage, section glide, fly-through, scroll between sections, one section at a time                                              | `src/routes/(public)/composer/_glide/`: `ComposerGlide.svelte` stages the /composer sections and `glide-plan.ts` holds the math, timed by `DURATION.scene`. Smaller or zoomed windows, touch screens, and reduced motion keep the plain page; see that route's `presentation-guardrails.md`. /about renders the same sections unstaged.                                                                                                                                                                                                                                                                                                                      |
+| live preview in a choice card, card preview, preview stage, method preview, game preview, animated button card                      | Two consumers, no shared stage yet: Play's `features/learn/play/components/previews/` with `preview-map.ts` (shown by `GameCard`) and Create's `features/create/shared/components/method-previews/CreateMethodPreview.svelte`. Each draws a decorative stage with real renderers inside a button card and shows a finished picture under reduced motion. A third consumer extracts a shared stage from these two. Decision: compose; record the second use.                                                                                                                                                                                                  |
+| take turns, one card at a time, round robin, spotlight, attract loop, board order, hover hold, preview turns                        | `features/create/shared/state/method-preview-turns.svelte.ts`: `createMethodPreviewTurns()` passes one turn around the cards in board order for two rounds, then rests; hover and keyboard focus hold a card. `previewMotionReduced()` reads both the system setting and the app's Reduce Motion setting. Hidden and off-screen pauses stay with `shared/render-gating/render-activity-gate.ts`. Closest match kept separate: `LiveSlots` (`features/creators/components/profile/stage/live-slots.svelte.ts`) grants concurrent live tiles by viewport distance. Decision: create.                                                                           |
+| Assemble prop artwork, builder prop, prop hop, hop length, Assemble grid props                                                      | `features/assemble-lab/services/builder-prop-art.ts`: `builderPropType()` and `loadBuilderPropArt()` give each hand the user's prop type, look, and hand color for Assemble's `InteractiveGrid` and the Create front door's Assemble preview. `BUILDER_HOP_MS` in `features/assemble-lab/services/svg-prop-animator.ts` is the one hop length both use. Decision: extend these owners.                                                                                                                                                                                                                                                                       |
+| boot screen, boot splash, app-loading, wait for the splash, start after the app loads                                               | `features/create/shared/components/method-previews/after-boot-screen.ts`: `runAfterBootScreen()` runs a callback once the `#app-loading` boot screen from `app.html` starts to leave, so the Create previews' first round plays on a visible board. Feature-local with one consumer (`CreateFrontDoor`); a second consumer moves it to a shared owner. Decision: create.                                                                                                                                                                                                                                                                                     |
 
 When no owner exists, record the search evidence and establish one owner. A
 different style or smaller API is not a separate capability.

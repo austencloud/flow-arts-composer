@@ -12,27 +12,27 @@ import {
   PLANE_COLORS,
   PLANE_MODE_CONFIGS,
 } from "@austencloud/scene-3d/worker";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
 import {
   CENTER_POINT_SIZE,
   HAND_POINT_SIZE,
   OUTER_POINT_SIZE,
   getHandPoints,
   getOuterPoints,
-} from "$lib/shared/3d/domain/constants/grid-layout";
+} from "#lib/shared/3d/domain/constants/grid-layout.js";
 import {
   PLANE_NORMALS,
   getPlaneRotation,
   planeAngleToWorldPosition,
-} from "$lib/shared/3d/domain/constants/plane-transforms";
+} from "#lib/shared/3d/domain/constants/plane-transforms.js";
 import {
   getGridMarkerGeometry,
   getGridMaterial,
   getGridOrientationHelperArgs,
   getGridPlaneGeometry,
   getGridRingGeometry,
-} from "$lib/shared/3d/components/grid-render-resources";
+} from "#lib/shared/3d/components/grid-render-resources.js";
 import {
   createWorkerGridLabel,
   resolveWorkerGridCanvasFactory,

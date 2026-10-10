@@ -1,7 +1,7 @@
 <script lang="ts">
   import { localizePrintLabel } from "../_components/localize-print-label";
   import { guideTurnDisplayWord } from "../../level-1/_data/guide-turn-display-word";
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Dashes / Static turns - Level 2 body page 3 (manifest `turns-dash-static`),
    * faithful to old p4. Self-titled (two script heads).
@@ -16,25 +16,25 @@
    * to the shift-turn arrow (half circle around the empty start position) -
    * both drawn by the real renderer from motion data.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
-  import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
+  import { getSequenceSelection } from "#lib/shared/selection/sequence-selection.svelte.js";
   import {
     createMotionData,
     createPlaceholderMotion,
-  } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
     Orientation,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     GridMode,
     GridLocation,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import { bakeReversals } from "../../level-1/_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../../level-1/_data/guide-data-context";
   import { getGuideActiveStep } from "../../level-1/_data/guide-active-step.svelte";

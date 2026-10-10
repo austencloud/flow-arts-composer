@@ -1,11 +1,11 @@
-import { canonicalDigest } from "$lib/shared/foundation/utils/canonical-digest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { encodeSequence } from "$lib/shared/navigation/services/sequence-encoder";
-import { canonicalCellKeyString } from "$lib/shared/render/services/cloud-cell-key";
+import { canonicalDigest } from "#lib/shared/foundation/utils/canonical-digest.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { encodeSequence } from "#lib/shared/navigation/services/sequence-encoder.js";
+import { canonicalCellKeyString } from "#lib/shared/render/services/cloud-cell-key.js";
 import {
   getCanonicalSequenceCells,
   type WarmOptions,
-} from "$lib/shared/render/services/warm-sequence-cells";
+} from "#lib/shared/render/services/warm-sequence-cells.js";
 import { QR_IMAGE_CACHE_SCHEMA, type QrImageCache } from "./qr-image-cache";
 import type { QRCodeOptions, QRCodeResult } from "./types";
 
@@ -124,7 +124,7 @@ export class PreparedQrCache implements PreparedQrStore {
     await this.remember(`${PREFIX}:${key}`, result);
     try {
       const { getAuthInstance, getStorageInstance } =
-        await import("$lib/shared/auth/firebase");
+        await import("#lib/shared/auth/firebase.js");
       const auth = await getAuthInstance();
       await auth.authStateReady();
       if (!auth.currentUser) return;

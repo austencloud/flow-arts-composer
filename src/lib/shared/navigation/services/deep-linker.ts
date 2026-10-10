@@ -8,10 +8,10 @@
  * Domain: Navigation - Deep Linking
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { goto } from "$app/navigation";
 import { navigationState } from "../state/navigation-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { DeepLinkResult, DeepLinkData, ModuleMapping } from "./types";
 import { parseDeepLink } from "./sequence-encoder";
 import { removeCurrentUrlParams } from "./url-state";

@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   clearProjectKeyframes,
   updateItem,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   setKeyframe,
   keyframeCount,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import { card, overlay, project as rawProject } from "./post-project-fixtures";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
-import { loadTakeTiming } from "$lib/shared/media-composition/services/take-timing-store";
-import { DEFAULT_MAPPING_PREVIEW_APPEARANCE } from "$lib/shared/share/components/post-studio/builder/post-timing-animation";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+import { addTakeTap } from "#lib/shared/media-composition/domain/take-timing.js";
+import { loadTakeTiming } from "#lib/shared/media-composition/services/take-timing-store.js";
+import { DEFAULT_MAPPING_PREVIEW_APPEARANCE } from "#lib/shared/share/components/post-studio/builder/post-timing-animation.js";
 
 const LABELS = { runThrough: "Run through", slowMo: "Slow mo", card: "Card" };
 

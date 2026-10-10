@@ -5,7 +5,7 @@ import {
   type ArtifactPublicationSummary,
   type PublicationOwner,
   type PublishArtifactResult,
-} from "$lib/shared/artifact-revisions/services/artifact-publication-service";
+} from "#lib/shared/artifact-revisions/services/artifact-publication-service.js";
 import { currentTunnelRevisionRef } from "../domain/tunnel-revision";
 import { renderTunnelDiscoveryPoster } from "./tunnel-discovery-poster";
 import {

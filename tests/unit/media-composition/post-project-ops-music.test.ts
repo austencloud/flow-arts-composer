@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
+import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
 import type {
   PostProject,
   PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import { featureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video-url";
-import { NO_GRID_MESSAGE } from "$lib/shared/media-composition/domain/music-grid";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { featureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video-url.js";
+import { NO_GRID_MESSAGE } from "#lib/shared/media-composition/domain/music-grid.js";
+import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
 import {
   applyPostProjectOps,
   type PostProjectOp,
-} from "$lib/shared/media-composition/domain/post-project-ops";
+} from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { NOW, card, project, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };

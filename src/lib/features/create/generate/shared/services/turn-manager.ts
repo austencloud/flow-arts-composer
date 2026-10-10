@@ -2,13 +2,13 @@
  * Turn Manager — turn values and rotation directions for dash/static motions.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { PropContinuity } from "../domain/models/generate-models";
 
 // This module mutates generator-owned draft steps in place (legacy port

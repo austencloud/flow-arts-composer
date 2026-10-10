@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * ClipInspector - Container for clip property editor panel
    *
@@ -7,8 +7,8 @@
    * Decomposed from 772 lines to ~120 lines.
    */
 
-  import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
-  import type { TimelineClip } from "$lib/shared/animation-engine/domain/timeline-types";
+  import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
+  import type { TimelineClip } from "#lib/shared/animation-engine/domain/timeline-types.js";
   import ClipInfoSection from "./inspector/ClipInfoSection.svelte";
   import ClipSpeedSection from "./inspector/ClipSpeedSection.svelte";
   import ClipTrimSection from "./inspector/ClipTrimSection.svelte";
@@ -197,7 +197,6 @@
     display: flex;
     flex-direction: column;
     z-index: 50;
-    box-shadow: -4px 0 16px var(--theme-shadow);
   }
 
   .inspector-header {

@@ -4,26 +4,26 @@
   visual language. Hosts provide callbacks instead of rebuilding the chrome.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ShareActionMenuItem } from "$lib/shared/share/domain/models/share-action-menu";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import WordHeader from "$lib/shared/animation-engine/components/layers/WordHeader.svelte";
-  import WordActionMenu from "$lib/shared/choreo-card/components/WordActionMenu.svelte";
-  import ShareActionMenu from "$lib/shared/share/components/ShareActionMenu.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ShareActionMenuItem } from "#lib/shared/share/domain/models/share-action-menu.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import WordHeader from "#lib/shared/animation-engine/components/layers/WordHeader.svelte";
+  import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
+  import ShareActionMenu from "#lib/shared/share/components/ShareActionMenu.svelte";
   import { resolveSequenceIdentityTitle } from "../services/viewer-title";
   import MotionVisibilityToggle from "./MotionVisibilityToggle.svelte";
   import ViewerOverflowMenu from "./ViewerOverflowMenu.svelte";
-  import PropViewingControl from "$lib/shared/browse/components/PropViewingControl.svelte";
+  import PropViewingControl from "#lib/shared/browse/components/PropViewingControl.svelte";
   import {
     resolveViewingProps,
     viewingPropLabel,
-  } from "$lib/shared/foundation/services/prop-viewing";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/foundation/services/prop-viewing.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   const handColors = $derived(
     getSettings().primaryPropColors ?? {
@@ -707,11 +707,6 @@
         transparent 72%
       ),
       var(--theme-card-bg, rgba(255, 255, 255, 0.05));
-    box-shadow:
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-text, #ffffff) 8%, transparent),
-      0 2px 6px
-        color-mix(in srgb, var(--theme-shadow, #000000) 32%, transparent);
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.72));
     cursor: pointer;
     font-size: var(--font-size-min, 14px);
@@ -739,11 +734,6 @@
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.24));
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
     color: var(--theme-text, #ffffff);
-    box-shadow:
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-text, #ffffff) 13%, transparent),
-      0 5px 14px
-        color-mix(in srgb, var(--theme-shadow, #000000) 38%, transparent);
     transform: translateY(-1px);
   }
 
@@ -963,7 +953,6 @@
     padding: 7px 11px;
     border-radius: 8px;
     background: var(--semantic-success, #22c55e);
-    box-shadow: 0 8px 24px var(--theme-shadow, rgba(0, 0, 0, 0.35));
     color: #06140b;
     font-size: var(--font-size-compact, 12px);
     font-weight: 800;

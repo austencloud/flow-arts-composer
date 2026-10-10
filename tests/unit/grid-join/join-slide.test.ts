@@ -8,9 +8,9 @@ import {
   GridJoinTween,
   handOffsetsEqual,
   pictographJoinFrame,
-} from "$lib/shared/grid-join/grid-join-tween";
-import { joinSlideDrawingKey } from "$lib/shared/grid-join/join-slide.svelte";
-import { PILL_ORDER } from "$lib/shared/animation-panel/pill-nav/pill-types";
+} from "#lib/shared/grid-join/grid-join-tween.js";
+import { joinSlideDrawingKey } from "#lib/shared/grid-join/join-slide.svelte.js";
+import { PILL_ORDER } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
 
 const EAST_ONE: GridJoin = { toward: "e", steps: 1 };
 const EAST_TWO: GridJoin = { toward: "e", steps: 2 };

@@ -33,7 +33,7 @@
  * and `scripts/geospatial/build_flow_fest_eztree_species.ts` solves the ez-tree
  * parameters until the generated tree lands within tolerance.
  *
- * This module must stay free of `$lib` imports so the build script can load it
+ * This module must stay free of `#lib` imports so the build script can load it
  * with `tsx` outside the SvelteKit graph.
  */
 

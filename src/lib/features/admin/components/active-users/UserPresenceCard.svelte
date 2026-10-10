@@ -1,12 +1,12 @@
 <!-- UserPresenceCard.svelte - Vertical user card with avatar-based color theming -->
 <script lang="ts">
-  import type { UserPresenceWithId } from "$lib/shared/presence/domain/models/presence-models";
-  import { formatActivityTime, formatLocationLabel } from "$lib/shared/presence/domain/models/presence-models";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import type { UserPresenceWithId } from "#lib/shared/presence/domain/models/presence-models.js";
+  import { formatActivityTime, formatLocationLabel } from "#lib/shared/presence/domain/models/presence-models.js";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import {
     extractDominantColor,
     getCachedOrFallbackColor,
-  } from "$lib/shared/foundation/utils/color-extractor";
+  } from "#lib/shared/foundation/utils/color-extractor.js";
 
   interface Props {
     user: UserPresenceWithId;

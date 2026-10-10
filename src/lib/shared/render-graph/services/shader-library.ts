@@ -1164,41 +1164,113 @@ const PROGRAMS: Record<string, ProgramSpec> = {
   },
 };
 
+/** A program whose compile and link were sent but whose status is unread. */
+interface PendingProgram {
+  program: WebGLProgram;
+  vs: WebGLShader;
+  fs: WebGLShader;
+  spec: ProgramSpec;
+}
+
+interface ParallelShaderCompile {
+  COMPLETION_STATUS_KHR: number;
+}
+
+/** Longest stretch settle() spends reading statuses before it yields. */
+const SETTLE_SLICE_MS = 8;
+/** Wait between settle() passes while the driver is still compiling. */
+const SETTLE_POLL_MS = 8;
+
 export class ShaderLibrary {
   private readonly gl: WebGL2RenderingContext;
   private readonly cache = new Map<string, CompiledProgram>();
+  private readonly pending = new Map<string, PendingProgram>();
+  private readonly parallel: ParallelShaderCompile | null;
+  private disposed = false;
 
   constructor(gl: WebGL2RenderingContext) {
     this.gl = gl;
+    // Enabling the extension lets the driver compile on its own threads.
+    this.parallel = gl.getExtension(
+      "KHR_parallel_shader_compile"
+    ) as ParallelShaderCompile | null;
   }
 
   get(name: keyof typeof PROGRAMS | string): CompiledProgram {
     const cached = this.cache.get(name);
     if (cached) return cached;
 
+    const pending = this.pending.get(name);
+    if (pending) return this.finalize(name, pending);
+
     const spec = PROGRAMS[name];
     if (!spec) throw new Error(`ShaderLibrary: unknown program "${name}"`);
-
-    const compiled = this.compile(name, spec);
-    this.cache.set(name, compiled);
-    return compiled;
+    return this.finalize(name, this.dispatch(name, spec));
   }
 
-  precompile(names: readonly string[]): void {
-    for (const name of names) this.get(name);
+  /**
+   * Send compile and link for each program without reading any status.
+   * Status, attribute and uniform reads wait for the driver; reading them
+   * one program at a time held the main thread ~200 ms whenever an animation
+   * canvas mounted. settle() or the first get() reads them later.
+   */
+  compileInBackground(names: readonly string[]): void {
+    for (const name of names) {
+      if (this.cache.has(name) || this.pending.has(name)) continue;
+      const spec = PROGRAMS[name];
+      if (!spec) throw new Error(`ShaderLibrary: unknown program "${name}"`);
+      this.pending.set(name, this.dispatch(name, spec));
+    }
+  }
+
+  /**
+   * Resolve once every background program is checked, yielding between
+   * passes so the page keeps painting. With KHR_parallel_shader_compile it
+   * reads only programs whose non-blocking COMPLETION_STATUS_KHR says done;
+   * without it each read waits, so a pass stops after a short slice. Rejects
+   * on the first failed program, as a synchronous compile would throw.
+   */
+  async settle(): Promise<void> {
+    const gl = this.gl;
+    while (this.pending.size > 0 && !this.disposed) {
+      const started = performance.now();
+      for (const [name, pending] of this.pending) {
+        if (
+          this.parallel &&
+          !gl.getProgramParameter(
+            pending.program,
+            this.parallel.COMPLETION_STATUS_KHR
+          )
+        ) {
+          continue;
+        }
+        this.finalize(name, pending);
+        if (performance.now() - started >= SETTLE_SLICE_MS) break;
+      }
+      if (this.pending.size > 0 && !this.disposed) {
+        await new Promise((resolve) => setTimeout(resolve, SETTLE_POLL_MS));
+      }
+    }
   }
 
   dispose(): void {
+    this.disposed = true;
     for (const { program } of this.cache.values()) {
       this.gl.deleteProgram(program);
     }
+    for (const { program, vs, fs } of this.pending.values()) {
+      this.gl.deleteProgram(program);
+      this.gl.deleteShader(vs);
+      this.gl.deleteShader(fs);
+    }
     this.cache.clear();
+    this.pending.clear();
   }
 
-  private compile(name: string, spec: ProgramSpec): CompiledProgram {
+  private dispatch(name: string, spec: ProgramSpec): PendingProgram {
     const gl = this.gl;
-    const vs = this.compileShader(gl.VERTEX_SHADER, spec.vertex, `${name}.vert`);
-    const fs = this.compileShader(gl.FRAGMENT_SHADER, spec.fragment, `${name}.frag`);
+    const vs = this.createShader(gl.VERTEX_SHADER, spec.vertex, `${name}.vert`);
+    const fs = this.createShader(gl.FRAGMENT_SHADER, spec.fragment, `${name}.frag`);
 
     const program = gl.createProgram();
     if (!program) {
@@ -1209,13 +1281,24 @@ export class ShaderLibrary {
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
     gl.linkProgram(program);
+    return { program, vs, fs, spec };
+  }
+
+  private finalize(name: string, pending: PendingProgram): CompiledProgram {
+    const gl = this.gl;
+    const { program, vs, fs, spec } = pending;
+    this.pending.delete(name);
 
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      const log = gl.getProgramInfoLog(program) ?? "(no log)";
+      // A shader that failed to compile also fails the link; report it first.
+      const reason =
+        this.compileFailure(vs, `${name}.vert`) ??
+        this.compileFailure(fs, `${name}.frag`) ??
+        `link failed for "${name}": ${gl.getProgramInfoLog(program) ?? "(no log)"}`;
       gl.deleteProgram(program);
       gl.deleteShader(vs);
       gl.deleteShader(fs);
-      throw new Error(`ShaderLibrary: link failed for "${name}": ${log}`);
+      throw new Error(`ShaderLibrary: ${reason}`);
     }
 
     gl.deleteShader(vs);
@@ -1230,20 +1313,23 @@ export class ShaderLibrary {
       uniforms[uniformName] = gl.getUniformLocation(program, uniformName);
     }
 
-    return { program, attribs, uniforms };
+    const compiled = { program, attribs, uniforms };
+    this.cache.set(name, compiled);
+    return compiled;
   }
 
-  private compileShader(type: number, source: string, label: string): WebGLShader {
+  private createShader(type: number, source: string, label: string): WebGLShader {
     const gl = this.gl;
     const shader = gl.createShader(type);
     if (!shader) throw new Error(`ShaderLibrary: gl.createShader returned null for "${label}"`);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      const log = gl.getShaderInfoLog(shader) ?? "(no log)";
-      gl.deleteShader(shader);
-      throw new Error(`ShaderLibrary: compile failed for "${label}": ${log}`);
-    }
     return shader;
+  }
+
+  private compileFailure(shader: WebGLShader, label: string): string | null {
+    const gl = this.gl;
+    if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return null;
+    return `compile failed for "${label}": ${gl.getShaderInfoLog(shader) ?? "(no log)"}`;
   }
 }

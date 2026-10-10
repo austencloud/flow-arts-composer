@@ -30,8 +30,8 @@
   import { setEnvironmentTransitionVisualContext } from "../environments/context/environment-transition-visual-context";
   import { createEnvironmentTransitionVisualState } from "../environments/state/environment-transition-visual-state.svelte";
 
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 
   export type CameraMode = "orthographic-2d" | "perspective-3d";
 

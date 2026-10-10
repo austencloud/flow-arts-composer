@@ -6,7 +6,7 @@
   Handles both standard and scroll modes. Extracted from ChoreoCard.svelte.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { fade, scale } from "svelte/transition";
   import { flip } from "svelte/animate";
   import { cubicOut } from "svelte/easing";
@@ -34,23 +34,23 @@
     }
     return flip(node, animation, params);
   }
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { TimelineRow } from "$lib/shared/create/utils/grid-calculations";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { TimelineRow } from "#lib/shared/create/utils/grid-calculations.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import CellRenderer from "./CellRenderer.svelte";
-  import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import { getQRCellScale } from "$lib/shared/qr/qr-cell-scale";
+  import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import { getQRCellScale } from "#lib/shared/qr/qr-cell-scale.js";
   import { calculateQrCellGeometry } from "@tka/render-composition";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { toMandalaPathShape } from "$lib/shared/mandala/services/mandala-path-policy";
-  import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
-  import { mandalaGridJoinOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { toMandalaPathShape } from "#lib/shared/mandala/services/mandala-path-policy.js";
+  import type { MandalaPathShape } from "#lib/shared/mandala/domain/mandala-types.js";
+  import { mandalaGridJoinOffsets } from "#lib/shared/mandala/services/mandala-grid-join.js";
 
-  import type { ChoreoCardCell as CellData } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
+  import type { ChoreoCardCell as CellData } from "#lib/shared/choreo-card/services/choreo-card-render-engine.js";
 
   interface MandalaPlacement {
     row: number;

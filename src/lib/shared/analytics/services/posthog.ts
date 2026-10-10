@@ -19,15 +19,14 @@ import type {
   BeforeSendFn,
   CaptureResult,
 } from "posthog-js";
-import { browser } from "$app/environment";
-import * as staticPublicEnv from "$env/static/public";
-import { getDeviceId } from "$lib/shared/foundation/services/device-id";
+import { browser } from "$app/env";
+import * as staticPublicEnv from "$app/env/public";
+import { getDeviceId } from "#lib/shared/foundation/services/device-id.js";
 
-// Capacitor serves a static bundle and has no server route for SvelteKit's
-// /_app/env.js. Build-time public constants work in the WebView and remain safe
-// when this module appears in a worker import graph. Reading through the module
-// namespace also lets hosts omit optional PostHog values without failing the
-// build on a missing named export.
+// src/env.ts declares the PostHog values static, so they are inlined at build
+// time. Capacitor serves a static bundle with no Worker behind it, and inlined
+// constants also stay safe when this module appears in a worker import graph.
+// Every value is optional; an unset one reads as undefined.
 const publicEnv = staticPublicEnv as Record<string, string | undefined>;
 const POSTHOG_US_INGESTION_HOST = "https://us.i.posthog.com";
 const POSTHOG_FIRST_PARTY_RELAY = "https://rune.tkaflowarts.com";

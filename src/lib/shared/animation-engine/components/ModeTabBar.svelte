@@ -5,7 +5,7 @@
   The pill slides smoothly between options.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   export type SettingsMode = "playback" | "visual";
 
   let {
@@ -75,7 +75,6 @@
     border-radius: 10px;
     transition: transform var(--duration-dramatic)
       cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 2px 6px var(--theme-shadow);
     pointer-events: none;
   }
 

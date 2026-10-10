@@ -8,7 +8,7 @@ import {
   dampAnimalMotionBlend3D,
   stepAnimalSpineDynamics3D,
   writeAnimalRotationMinimizingFrames3D,
-} from "$lib/shared/3d/effects/animal/animal-spine-3d";
+} from "#lib/shared/3d/effects/animal/animal-spine-3d.js";
 
 function frameBuffers(count: number) {
   return {

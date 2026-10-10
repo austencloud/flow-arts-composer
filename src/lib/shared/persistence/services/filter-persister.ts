@@ -4,7 +4,7 @@
  * Just saves/loads basic filter history - no complex state management.
  */
 
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
 import type { BrowseFilterType } from "../domain/enums/filtering-enums";
 import type { BrowseFilterValue } from "../domain/types/filtering-types";
 import type {

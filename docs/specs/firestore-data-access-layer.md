@@ -131,7 +131,7 @@ Simple repos collapse to near-nothing:
 
 ```typescript
 // festival-repository.ts — AFTER (entire file)
-import { firestoreGet, firestoreList, firestoreSet, firestoreDelete } from '$lib/shared/firestore/firestore-crud';
+import { firestoreGet, firestoreList, firestoreSet, firestoreDelete } from '#lib/shared/firestore/firestore-crud.js';
 import { FestivalSchema, type Festival } from '../domain/models/festival';
 
 const COLLECTION = 'festivals';

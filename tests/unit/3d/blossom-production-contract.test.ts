@@ -5,19 +5,19 @@ import {
   getBlossomCameraContract,
   getBlossomCirculationPaths,
   getBlossomTerrainBounds,
-} from "$lib/shared/3d/environments/scenes/cherry-blossom/blossom-site";
+} from "#lib/shared/3d/environments/scenes/cherry-blossom/blossom-site.js";
 import {
   getBlossomPerformanceEnvelope,
   getBlossomStageOperations,
   getBlossomStageProtectedClearance,
-} from "$lib/shared/3d/environments/scenes/cherry-blossom/blossom-stage-operations";
+} from "#lib/shared/3d/environments/scenes/cherry-blossom/blossom-stage-operations.js";
 import {
   getBlossomRiverBounds,
   getBlossomRiverOutline,
   getBlossomRiverShoreFade,
   getBlossomRiverShoreline,
   getBlossomRiverSurfaceElevation,
-} from "$lib/shared/3d/environments/scenes/cherry-blossom/blossom-water";
+} from "#lib/shared/3d/environments/scenes/cherry-blossom/blossom-water.js";
 
 describe("Blossom lantern garden production contract", () => {
   it("enables the garden's life and atmosphere", () => {

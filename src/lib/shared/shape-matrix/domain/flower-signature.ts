@@ -1,6 +1,6 @@
-import { TURN_VALUES } from "$lib/features/choreo-card/domain/turn-pattern-parser";
-import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { TURN_VALUES } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
+import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export type FlowerStyle = "pro" | "anti";
 export type ShapePathStyle = FlowerStyle | "float";

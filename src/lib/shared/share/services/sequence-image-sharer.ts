@@ -5,10 +5,10 @@
  * and image composition settings.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceRenderer } from "$lib/shared/render/services/sequence-renderer";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceRenderer } from "#lib/shared/render/services/sequence-renderer.js";
 import type { ShareResult } from "./types";
-import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
 import { buildCardRenderOptions } from "./card-render-options";
 
 export class SequenceImageSharer {

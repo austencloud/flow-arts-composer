@@ -1,5 +1,7 @@
 <script module>
-  import { fade } from "svelte/transition";
+  // The content wrapper rests at full opacity, so it fades without Svelte
+  // fade's computed-style read (one forced style pass per pictograph swap).
+  import { opaqueFade } from "#lib/shared/transitions/motion.js";
 </script>
 
 <!--
@@ -27,7 +29,7 @@ with pre-prepared data for better performance.
 -->
 
 <script lang="ts">
-  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
+  import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
   import { onMount, untrack, tick } from "svelte";
   import { getVisibilityStateManager } from "../state/visibility-state.svelte";
   import { getAnimationVisibilityManager } from "../../../animation-engine/state/animation-visibility-state.svelte";
@@ -38,8 +40,8 @@ with pre-prepared data for better performance.
   import type { PictographData } from "../domain/models/pictograph-data";
   import { isVisibleMotion } from "../domain/models/motion-data";
   import { describePictograph } from "../domain/utils/pictograph-description";
-  import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import { derivePropElementalTypeForStep } from "#lib/shared/shape-matrix/domain/prop-relationship.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { PropType } from "../../prop/domain/enums/prop-type";
   import {
     type FanAppearance,
@@ -815,8 +817,8 @@ with pre-prepared data for better performance.
       {#key contentKey}
         <div
           class="transition-wrapper"
-          in:fade={{ duration: 200 }}
-          out:fade={{ duration: 150 }}
+          in:opaqueFade={{ duration: 200 }}
+          out:opaqueFade={{ duration: 150 }}
         >
           <PictographRenderer
             pictograph={preparedData}

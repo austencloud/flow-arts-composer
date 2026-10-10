@@ -22,19 +22,19 @@
 
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { validateSequence } from "$lib/features/create/spell/services/orientation-continuity-validator";
-import type { WalkBlock } from "$lib/shared/combination/domain/types";
-import { findCombinations } from "$lib/shared/combination/services/sequence-combinator";
-import { buildResult } from "$lib/shared/combination/services/splice-builder";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { validateSequence } from "#lib/features/create/spell/services/orientation-continuity-validator.js";
+import type { WalkBlock } from "#lib/shared/combination/domain/types.js";
+import { findCombinations } from "#lib/shared/combination/services/sequence-combinator.js";
+import { buildResult } from "#lib/shared/combination/services/splice-builder.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 import { GGGG_CW, HHHH_CCW } from "./fixtures";
 import { loadPictographDatasetForTests } from "./pictograph-dataset";

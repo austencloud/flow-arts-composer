@@ -9,18 +9,18 @@
  * Handles RAF scheduling, trail point gathering, and scene rendering.
  */
 
-import type { IAnimationRenderer as AnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
+import type { IAnimationRenderer as AnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
 import {
   frameOffset,
   sameFrame,
   squareFrame,
   type CanvasFrame,
 } from "../domain/types/canvas-frame";
-import type { ITrailCapturer as TrailCapturer } from "$lib/shared/animation-engine/services/ITrailCapturer";
+import type { ITrailCapturer as TrailCapturer } from "#lib/shared/animation-engine/services/ITrailCapturer.js";
 import type { TrailPoint, TrailSettings } from "../domain/types/trail-types";
 import { TrailMode } from "../domain/types/trail-types";
-import type { AnimationPathCache } from "$lib/shared/animation-engine/services/animation-path-cache";
-import type { FrameBudgetMonitor } from "$lib/shared/animation-engine/services/frame-budget-monitor";
+import type { AnimationPathCache } from "#lib/shared/animation-engine/services/animation-path-cache.js";
+import type { FrameBudgetMonitor } from "#lib/shared/animation-engine/services/frame-budget-monitor.js";
 import type { WebGLFireRenderer } from "./fire/web-gl-fire-renderer";
 import type { CharcoalSparkRenderer } from "./charcoal/charcoal-spark-renderer";
 import type {
@@ -32,7 +32,7 @@ import type { LedSample } from "../domain/types/led-types";
 import type { FireTipTrackerConfig } from "./fire-tip-tracker";
 import { tipPointSignature } from "../domain/types/prop-tip-points";
 import type { FireTipTracker } from "./fire-tip-tracker";
-import type { WebGLLedRenderer } from "$lib/shared/animation-engine/services/led/web-gl-led-renderer";
+import type { WebGLLedRenderer } from "#lib/shared/animation-engine/services/led/web-gl-led-renderer.js";
 import type { LedSamplerConfig } from "./led-sampler";
 import type { LedSampler } from "./led-sampler";
 import type { ITrailOverlayCanvas } from "./ITrailOverlayCanvas";
@@ -55,23 +55,23 @@ import {
   tunnelPerformerPair,
   type TunnelPropColorPair,
   type TunnelLayerSelection,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 import type { FireTipUpdateResult } from "./fire-tip-tracker";
 import type { FireFrameInput } from "../domain/types/fire-types";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
-import { MandalaPathPreparer } from "$lib/shared/mandala/services/mandala-path-preparer";
-import { mandalaOffsetsFromHandUnits } from "$lib/shared/mandala/services/mandala-grid-join";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { MandalaOverlayCanvas } from "#lib/shared/mandala/services/mandala-overlay-canvas.js";
+import { MandalaPathPreparer } from "#lib/shared/mandala/services/mandala-path-preparer.js";
+import { mandalaOffsetsFromHandUnits } from "#lib/shared/mandala/services/mandala-grid-join.js";
 import {
   DEFAULT_MANDALA_OVERLAY_CONFIG,
   type MandalaOverlayConfig,
   MANDALA_GUIDE_FLOOR_OPACITY,
-} from "$lib/shared/mandala/domain/mandala-overlay-types";
-import type { MandalaHandVisibility } from "$lib/shared/mandala/domain/mandala-types";
-import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
+} from "#lib/shared/mandala/domain/mandala-overlay-types.js";
+import type { MandalaHandVisibility } from "#lib/shared/mandala/domain/mandala-types.js";
+import type { RenderActivityGate } from "#lib/shared/render-gating/render-activity-gate.js";
 import { shiftTrailPointsBy } from "./animation-grid-join";
-import type { HandOffsets } from "$lib/shared/grid-join/grid-join-tween";
+import type { HandOffsets } from "#lib/shared/grid-join/grid-join-tween.js";
 import {
   MotionSubSampler,
   pickEvenIndices,
@@ -568,12 +568,7 @@ export class AnimationRenderLoop {
       this.rafId = null;
     }
     this.getFrameParamsCallback = null;
-    // Reset loop tracking on stop
-    this.previousStep = 0;
-    this.previousStepDrawn = false;
-    this.loopOccurredAtStep = null;
-    this.hasLoopedAtLeastOnce = false;
-    this.loopStartTime = 0;
+    this.forgetLoopTracking();
     // Reset effect error tracking so effects can retry on next start
     this.consecutiveFireErrors = 0;
     this.consecutiveLedErrors = 0;
@@ -582,6 +577,22 @@ export class AnimationRenderLoop {
     this.effectErrors.clear();
     this.effectDisabled.clear();
     this.effectLastFrameTime.clear();
+  }
+
+  resetRunHistory(): void {
+    this.forgetLoopTracking();
+    for (const entry of this.effectDispatchRegistry) {
+      const renderer = entry.getRenderer(this);
+      if (renderer?.isInitialized()) renderer.clear();
+    }
+  }
+
+  private forgetLoopTracking(): void {
+    this.previousStep = 0;
+    this.previousStepDrawn = false;
+    this.loopOccurredAtStep = null;
+    this.hasLoopedAtLeastOnce = false;
+    this.loopStartTime = 0;
   }
 
   isRunning(): boolean {

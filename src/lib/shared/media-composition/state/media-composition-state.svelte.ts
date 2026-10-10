@@ -1,27 +1,27 @@
-import type { MediaSourceKind } from "$lib/shared/media-composition/domain/media-source-schema";
-import type { ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+import type { MediaSourceKind } from "#lib/shared/media-composition/domain/media-source-schema.js";
+import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import type { MediaCompositionPreset } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
 import type {
   ClipTransform,
   LayoutRegion,
-} from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "#lib/shared/media-composition/domain/media-layout-schema.js";
 import {
   evaluatePresetFrame,
   evaluateRegionRects,
   resolvePresetTimePoint,
-} from "$lib/shared/media-composition/services/frame-evaluator";
-import type { SequenceTimeMap } from "$lib/shared/media-composition/domain/sequence-time-map";
-import type { PostStudioLayerPainter } from "$lib/shared/media-composition/services/post-studio-layer-painter";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import { clampTempoBpm } from "$lib/shared/animation-engine/domain/tempo-behavior";
-import { getStepDuration } from "$lib/shared/animation-engine/timeline/services/step-grid-calculator";
+} from "#lib/shared/media-composition/services/frame-evaluator.js";
+import type { SequenceTimeMap } from "#lib/shared/media-composition/domain/sequence-time-map.js";
+import type { PostStudioLayerPainter } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { MediaCompositionPresetSchema } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import { clampTempoBpm } from "#lib/shared/animation-engine/domain/tempo-behavior.js";
+import { getStepDuration } from "#lib/shared/animation-engine/timeline/services/step-grid-calculator.js";
 import {
   BREAKDOWN_MARKER,
   POST_STUDIO_SOURCES,
   type PostStudioRenderMode,
   type PostStudioRoleKey,
-} from "$lib/shared/media-composition/domain/post-studio-presets";
+} from "#lib/shared/media-composition/domain/post-studio-presets.js";
 import {
   normalizePresetToSlots,
   slotIsOccupied,
@@ -30,7 +30,7 @@ import {
   withSlotSource,
   withSlotSplit,
   type PostStudioSlotId,
-} from "$lib/shared/media-composition/domain/post-studio-slots";
+} from "#lib/shared/media-composition/domain/post-studio-slots.js";
 import {
   breakdownFraming,
   breakdownSection,
@@ -38,7 +38,7 @@ import {
   withBreakdownMarker,
   type BreakdownFraming,
   type BreakdownSection,
-} from "$lib/shared/media-composition/domain/post-studio-breakdown";
+} from "#lib/shared/media-composition/domain/post-studio-breakdown.js";
 
 type VisualPresetClip = Extract<
   MediaCompositionPreset["clips"][number],

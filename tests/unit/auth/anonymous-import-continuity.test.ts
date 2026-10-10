@@ -17,12 +17,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const repoSaveSequenceMock = vi.fn().mockResolvedValue({});
 const showToastMock = vi.fn();
 
-vi.mock("$lib/shared/library/get-library-repository", () => ({
+vi.mock("#lib/shared/library/get-library-repository.js", () => ({
   getLibraryRepository: () => ({
     saveSequence: (...a: unknown[]) => repoSaveSequenceMock(...a),
   }),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { info: vi.fn(), warning: vi.fn(), error: vi.fn(), success: vi.fn() },
   showToast: (...a: unknown[]) => showToastMock(...a),
 }));
@@ -30,7 +30,7 @@ vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
 const signedInUid = { value: "account-B" as string | undefined };
 /** Simulates an auth lookup that cannot answer. */
 const authReadThrows = { value: false };
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getAuthInstance: async () => {
     if (authReadThrows.value) throw new Error("auth unavailable");
     return {
@@ -38,25 +38,28 @@ vi.mock("$lib/shared/auth/firebase", () => ({
     };
   },
 }));
-vi.mock("$lib/shared/auth/services/pending-credential-link", () => ({
+vi.mock("#lib/shared/auth/services/pending-credential-link.js", () => ({
   stashPendingLink: vi.fn(),
 }));
-vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
+vi.mock("#lib/shared/auth/services/last-auth-method.svelte.js", () => ({
   recordLastAuthMethod: vi.fn(),
 }));
-vi.mock("$lib/shared/gamification/get-prop-unlock-manager", () => ({
+vi.mock("#lib/shared/gamification/get-prop-unlock-manager.js", () => ({
   getPropUnlockManager: () => ({ mergeGuestCollection: vi.fn() }),
 }));
-vi.mock("$lib/shared/analytics/services/posthog-lifecycle-reporter", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-lifecycle-reporter.js", () => ({
   reportPostHogLifecycleEvent: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("$lib/shared/auth/services/auth-analytics-bridge", () => ({
+vi.mock("#lib/shared/auth/services/auth-analytics-bridge.js", () => ({
   getAuthSubmissionContext: () => ({}),
 }));
-vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => ({
-  getAllSequences: vi.fn().mockResolvedValue([]),
-}));
-vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+vi.mock(
+  "#lib/shared/persistence/services/dexie-persistence-service.js",
+  () => ({
+    getAllSequences: vi.fn().mockResolvedValue([]),
+  })
+);
+vi.mock("#lib/shared/library/services/saved-sequence-ledger.js", () => ({
   getSavedSequenceIds: vi.fn().mockReturnValue([]),
   getOwnedSequenceIdSet: vi.fn().mockReturnValue(new Set()),
   recordSavedSequenceId: vi.fn(),
@@ -67,13 +70,13 @@ vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
 }));
 
 const { importDrafts } =
-  await import("$lib/shared/auth/services/anonymous-upgrade");
+  await import("#lib/shared/auth/services/anonymous-upgrade.js");
 const {
   anonymousImportPrompt,
   promptAnonymousImport,
   confirmAnonymousImport,
   cancelAnonymousImport,
-} = await import("$lib/shared/auth/state/anonymous-import-prompt.svelte");
+} = await import("#lib/shared/auth/state/anonymous-import-prompt.svelte.js");
 
 /** Above MIN_COMMUNITY_STEPS (4) so the community gate cannot mask visibility. */
 function makeDraft(id: string, extra: Record<string, unknown> = {}) {

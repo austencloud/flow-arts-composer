@@ -1,11 +1,11 @@
 import { Vector3, PerspectiveCamera, type DirectionalLight, type Camera } from "three";
-import type { PhysicsWorldState, PlayerControllerState } from "$lib/shared/3d/physics/types";
-import type { TerrainPhysicsManager } from "$lib/shared/3d/physics/terrain-collider";
+import type { PhysicsWorldState, PlayerControllerState } from "#lib/shared/3d/physics/types.js";
+import type { TerrainPhysicsManager } from "#lib/shared/3d/physics/terrain-collider.js";
 import {
   getPlayerPosition,
   snapToGround,
   teleportPlayer,
-} from "$lib/shared/3d/physics/player-controller";
+} from "#lib/shared/3d/physics/player-controller.js";
 import type { HybridChunkManager } from "../core/hybrid-chunk-manager";
 import type { VegetationManager } from "../rendering/instanced-vegetation";
 import type { AtmosphereManager } from "../rendering/atmosphere";
@@ -14,8 +14,8 @@ import type { DrainageWaterManager } from "../rendering/drainage-water";
 import type { SeededNoise} from "../generation/seed-generator";
 import { getBiome } from "../generation/seed-generator";
 import { isPointInPolygon } from "../generation/real-terrain-zone";
-import { findInteractableSlot } from "$lib/shared/museum/services/interaction-detector";
-import type { ExhibitSlot } from "$lib/shared/museum/domain/museum-types";
+import { findInteractableSlot } from "#lib/shared/museum/services/interaction-detector.js";
+import type { ExhibitSlot } from "#lib/shared/museum/domain/museum-types.js";
 import type { RealmConfig } from "../core/world-config";
 
 export interface GameLoopContext {

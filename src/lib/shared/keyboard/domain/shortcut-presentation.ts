@@ -1,7 +1,7 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import type { TranslationKey } from "$lib/shared/i18n/i18n-types.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 import type { ShortcutWithBinding } from "../services/types";
-import { getModuleDefinitions } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+import { getModuleDefinitions } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
 
 const TRANSLATABLE_IDS = new Set([
   "global.command-palette", "global.shortcuts-help", "global.quick-feedback",

@@ -16,23 +16,23 @@
    * 3. Read results from [data-benchmark-results]
    */
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { page } from "$app/state";
-  import { getThumbnailRenderOrchestrator } from "$lib/shared/browse/get-thumbnail-render-orchestrator";
-  import { deriveKey as deriveThumbnailKey } from "$lib/shared/browse/services/thumbnail-key-deriver";
-  import { getThumbnailMetricsCollector } from "$lib/shared/browse/get-thumbnail-metrics-collector";
-  import { getThumbnailLocalCache } from "$lib/shared/browse/get-thumbnail-local-cache";
-  import { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ThumbnailRenderOrchestrator } from "$lib/shared/browse/services/thumbnail-render-orchestrator";
-  import type { ThumbnailRenderInput } from "$lib/shared/browse/services/thumbnail-key-deriver";
-  import type { ThumbnailMetricsSummary } from "$lib/shared/browse/services/thumbnail-metrics-collector";
-  import type { ThumbnailRequestMetrics } from "$lib/shared/browse/services/thumbnail-metrics-collector";
-  import type { ThumbnailMetricsCollector } from "$lib/shared/browse/services/thumbnail-metrics-collector";
-  import type { ThumbnailLocalCache } from "$lib/shared/browse/services/thumbnail-local-cache";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { getThumbnailRenderOrchestrator } from "#lib/shared/browse/get-thumbnail-render-orchestrator.js";
+  import { deriveKey as deriveThumbnailKey } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
+  import { getThumbnailMetricsCollector } from "#lib/shared/browse/get-thumbnail-metrics-collector.js";
+  import { getThumbnailLocalCache } from "#lib/shared/browse/get-thumbnail-local-cache.js";
+  import { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ThumbnailRenderOrchestrator } from "#lib/shared/browse/services/thumbnail-render-orchestrator.js";
+  import type { ThumbnailRenderInput } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
+  import type { ThumbnailMetricsSummary } from "#lib/shared/browse/services/thumbnail-metrics-collector.js";
+  import type { ThumbnailRequestMetrics } from "#lib/shared/browse/services/thumbnail-metrics-collector.js";
+  import type { ThumbnailMetricsCollector } from "#lib/shared/browse/services/thumbnail-metrics-collector.js";
+  import type { ThumbnailLocalCache } from "#lib/shared/browse/services/thumbnail-local-cache.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   // Configuration
   const DEFAULT_SEQUENCE_COUNT = 50;

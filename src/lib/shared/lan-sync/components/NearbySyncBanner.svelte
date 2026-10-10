@@ -7,10 +7,10 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
   import { lanSyncState } from "../state/lan-sync-state.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { goto } from "$app/navigation";
-  import { saveSequenceRouteHandoff } from "$lib/shared/coordinators/sequence-handoff.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { saveSequenceRouteHandoff } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   let joining = $state(false);
   let error = $state<string | null>(null);
@@ -124,7 +124,6 @@
     );
     color: white;
     padding: 12px 16px;
-    box-shadow: 0 2px 8px var(--theme-shadow, rgba(0, 0, 0, 0.25));
   }
 
   .banner-content {

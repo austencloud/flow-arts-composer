@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { searchNearest } from "$lib/features/stage/locomotion/motion-matching/search";
-import { FEATURE_STRIDE, type MotionDatabase } from "$lib/features/stage/locomotion/motion-matching/feature-types";
+import { searchNearest } from "#lib/features/stage/locomotion/motion-matching/search.js";
+import { FEATURE_STRIDE, type MotionDatabase } from "#lib/features/stage/locomotion/motion-matching/feature-types.js";
 
 function dbOf(rows: number[][]): MotionDatabase {
   const features = new Float32Array(rows.length * FEATURE_STRIDE);

@@ -4,44 +4,44 @@
   import MandalaPane from "./MandalaPane.svelte";
   import TunnelArtView from "../tunnel/TunnelArtView.svelte";
   import ArtSettingsPanel from "./ArtSettingsPanel.svelte";
-  import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
-  import { toExportTakeoverPhase } from "$lib/shared/video-export/services/export-takeover-phase";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import ExportTakeover from "#lib/shared/video-export/components/ExportTakeover.svelte";
+  import { toExportTakeoverPhase } from "#lib/shared/video-export/services/export-takeover-phase.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import VideoPreviewPanel from "./VideoPreviewPanel.svelte";
   import { sequenceModalExporter } from "../services/sequence-modal-exporter.svelte";
   import { exportVideoFilename } from "../services/export-video-filename";
-  import { shareOrDownloadBlob } from "$lib/shared/foundation/services/file-downloader";
+  import { shareOrDownloadBlob } from "#lib/shared/foundation/services/file-downloader.js";
   import { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
   import {
     MandalaViewerController,
     type MandalaExportPhase,
   } from "../state/mandala-viewer-controller.svelte";
   import type { MandalaExportDelivery } from "../services/mandala-export-delivery";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import type { ViewerPlaybackState } from "../domain/viewer-prop-groups";
   import type {
     PlaybackMode,
     StepPlaybackStepSize,
-  } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import {
     captureTunnelSnapshot,
     type SnapshotDeps,
     type TunnelSavedCallback,
   } from "../tunnel/tunnel-snapshot";
   import { capturePosterFromContainer } from "../tunnel/tunnel-poster";
-  import { tunnelCollectionState } from "$lib/features/tunnel-collection/state/tunnel-collection-state.svelte";
-  import { TUNNEL_AUTO_EXPORT_INTENT_KEY } from "$lib/features/tunnel-collection/services/open-tunnel-in-viewer";
-  import { refreshTunnelPoster } from "$lib/features/tunnel-collection/services/tunnel-poster-refresh";
-  import { deriveTunnelName } from "$lib/shared/sequence-viewer/tunnel/tunnel-name";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { tunnelCollectionState } from "#lib/features/tunnel-collection/state/tunnel-collection-state.svelte.js";
+  import { TUNNEL_AUTO_EXPORT_INTENT_KEY } from "#lib/features/tunnel-collection/services/open-tunnel-in-viewer.js";
+  import { refreshTunnelPoster } from "#lib/features/tunnel-collection/services/tunnel-poster-refresh.js";
+  import { deriveTunnelName } from "#lib/shared/sequence-viewer/tunnel/tunnel-name.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import {
     exportDeliveryStage,
     mandalaStageForPhase,
@@ -63,8 +63,8 @@
     createTunnelSaveFingerprint,
     finishTunnelSaveAttempt,
   } from "../domain/tunnel-save-deduplication";
-  import { reportPostHogLifecycleEvent } from "$lib/shared/analytics/services/posthog-lifecycle-reporter";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { reportPostHogLifecycleEvent } from "#lib/shared/analytics/services/posthog-lifecycle-reporter.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     primaryTunnelSourceSequenceId,
     type TunnelComposition,

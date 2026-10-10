@@ -6,10 +6,10 @@
    * Horizontal scroll on mobile, grid on desktop.
    */
 
-  import type { SharedSequenceSummary } from "$lib/shared/community/services/types";
+  import type { SharedSequenceSummary } from "#lib/shared/community/services/types.js";
   // A LOOP word repeats by construction; the raw field is routinely FΨFΨFΨFΨ
   // where the only correct display is FΨ (simplified-word-display.md).
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   interface Props {
     sharedSequences: SharedSequenceSummary[];

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	LOCOMOTION_PARAMS,
 	LocomotionMode,
-} from '$lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-locomotion';
+} from '#lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-locomotion.js';
 
 describe('fish-locomotion-params', () => {
 	it('has params for all 6 locomotion modes', () => {

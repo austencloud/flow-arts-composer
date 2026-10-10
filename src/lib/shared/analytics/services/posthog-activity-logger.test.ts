@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$app/environment", () => ({ browser: true }));
+vi.mock("$app/env", () => ({ browser: true }));
 vi.mock("./posthog", () => ({ captureWhenReady: vi.fn() }));
 
 import { captureWhenReady } from "./posthog";
 import { logSessionStart } from "./posthog-activity-logger";
-import { SW_UPDATE_RELOAD_MARKER_KEY } from "$lib/shared/offline/services/sw-update-manager";
-import { rememberChunkRecoveryReload } from "$lib/shared/offline/services/chunk-recovery-marker";
+import { SW_UPDATE_RELOAD_MARKER_KEY } from "#lib/shared/offline/services/sw-update-manager.js";
+import { rememberChunkRecoveryReload } from "#lib/shared/offline/services/chunk-recovery-marker.js";
 
 describe("logSessionStart", () => {
   beforeEach(() => {

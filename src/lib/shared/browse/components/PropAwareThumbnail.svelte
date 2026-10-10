@@ -15,25 +15,25 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import RenderingOverlay from "$lib/shared/components/loading/RenderingOverlay.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import RenderingOverlay from "#lib/shared/components/loading/RenderingOverlay.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type {
     ThumbnailVariant,
     ThumbnailRenderInput,
     ThumbnailVisibilitySettings,
     ThumbnailCacheKey,
-  } from "$lib/shared/browse/services/thumbnail-key-deriver";
-  import { getThumbnailRenderOrchestrator } from "$lib/shared/browse/get-thumbnail-render-orchestrator";
-  import { getThumbnailLocalCache } from "$lib/shared/browse/get-thumbnail-local-cache";
+  } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
+  import { getThumbnailRenderOrchestrator } from "#lib/shared/browse/get-thumbnail-render-orchestrator.js";
+  import { getThumbnailLocalCache } from "#lib/shared/browse/get-thumbnail-local-cache.js";
   import type {
     ThumbnailLoadStatus,
     ThumbnailRenderOrchestrator,
-  } from "$lib/shared/browse/services/thumbnail-render-orchestrator";
-  import type { ThumbnailLocalCache } from "$lib/shared/browse/services/thumbnail-local-cache";
-  import { deriveKey } from "$lib/shared/browse/services/thumbnail-key-deriver";
+  } from "#lib/shared/browse/services/thumbnail-render-orchestrator.js";
+  import type { ThumbnailLocalCache } from "#lib/shared/browse/services/thumbnail-local-cache.js";
+  import { deriveKey } from "#lib/shared/browse/services/thumbnail-key-deriver.js";
   import {
     buildGalleryRenderInput,
     deriveThumbnailSequenceName,
@@ -41,18 +41,18 @@
     galleryThumbnailRequestChanged,
     galleryStepCount,
     type GalleryQrPolicy,
-  } from "$lib/shared/browse/services/gallery-render-input";
-  import { repairThumbnailCaches } from "$lib/shared/browse/services/thumbnail-repair";
-  import { calculateGalleryAspectRatio } from "$lib/shared/render/services/layout-calculator";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+  } from "#lib/shared/browse/services/gallery-render-input.js";
+  import { repairThumbnailCaches } from "#lib/shared/browse/services/thumbnail-repair.js";
+  import { calculateGalleryAspectRatio } from "#lib/shared/render/services/layout-calculator.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   // auth-state's signed-in answer without auth-state itself, which would put
   // Firebase on the first download of every public page that shows cards.
-  import { loadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import { loadedAuthState } from "#lib/shared/auth/state/loaded-auth-state.svelte.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 
   interface Props {
     sequence: SequenceData;

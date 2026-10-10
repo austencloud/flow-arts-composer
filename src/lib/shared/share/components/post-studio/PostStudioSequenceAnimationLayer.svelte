@@ -1,49 +1,49 @@
 <script lang="ts">
   import { onDestroy, untrack } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import SequenceProgressBar from "$lib/shared/animation-engine/components/layers/SequenceProgressBar.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import SequenceProgressBar from "#lib/shared/animation-engine/components/layers/SequenceProgressBar.svelte";
   import {
     AnimationVisibilityStateManager,
     getAnimationVisibilityManager,
-  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import type {
     PostAnimationItem,
     PostMovesMode,
-  } from "$lib/shared/media-composition/domain/post-project";
-  import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
-  import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-  import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
+  } from "#lib/shared/media-composition/domain/post-project.js";
+  import { getViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
+  import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+  import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
   import PostStudioBreakdownMandala from "./PostStudioBreakdownMandala.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { withSequenceJoinApplied } from "$lib/shared/grid-join/sequence-grid-join";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { withSequenceJoinApplied } from "#lib/shared/grid-join/sequence-grid-join.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     clampDisplayedBeatNumber,
     displayedBeatNumber,
-  } from "$lib/shared/animation-engine/services/step-calculator";
-  import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+  } from "#lib/shared/animation-engine/services/step-calculator.js";
+  import { createStartPlacementFromBeatStart } from "#lib/shared/create/services/sequence-transforms.js";
   import {
     copyPostAnimationEffects,
     postAnimationTrailSettings,
   } from "./post-animation-effects.svelte";
-  import { sequenceArrowLayers } from "$lib/shared/media-composition/domain/sequence-frame";
+  import { sequenceArrowLayers } from "#lib/shared/media-composition/domain/sequence-frame.js";
   import {
     tunnelHookCopyOpacity,
     tunnelHookPanelOpacity,
     type TunnelHook,
-  } from "$lib/shared/media-composition/domain/tunnel-hook";
-  import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
-  import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-  import { buildTunnelLayers } from "$lib/shared/sequence-viewer/tunnel/tunnel-layer-builder";
-  import { sampleTunnelProps } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-sampling";
+  } from "#lib/shared/media-composition/domain/tunnel-hook.js";
+  import { sampleEasing } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+  import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
+  import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+  import { buildTunnelLayers } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-builder.js";
+  import { sampleTunnelProps } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-sampling.js";
 
   let {
     sequence,

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PillId } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
   import {
     type ScopeLevel,
     PILL_SCOPE_CONFIG,

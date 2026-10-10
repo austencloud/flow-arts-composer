@@ -1,17 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { effect_root } from "svelte/internal/client";
 import type { GridJoin } from "@tka/tka-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { MandalaFrameSpec } from "$lib/shared/mandala/services/mandala-frame-renderer";
-import { mandalaGridJoinOffsets } from "$lib/shared/mandala/services/mandala-grid-join";
-import { MandalaViewerController } from "$lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { MandalaFrameSpec } from "#lib/shared/mandala/services/mandala-frame-renderer.js";
+import { mandalaGridJoinOffsets } from "#lib/shared/mandala/services/mandala-grid-join.js";
+import { MandalaViewerController } from "#lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
 const exporter = vi.hoisted(() => ({
   specs: [] as unknown[],
 }));
 
-vi.mock("$lib/shared/mandala/services/mandala-video-exporter", () => ({
+vi.mock("#lib/shared/mandala/services/mandala-video-exporter.js", () => ({
   mandalaBitrateFor: () => 1_000_000,
   exportMandalaVideo: (spec: unknown) => {
     exporter.specs.push(spec);

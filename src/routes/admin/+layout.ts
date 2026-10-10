@@ -23,7 +23,7 @@ export const load: LayoutLoad = async () => {
   }
 
   const { isInitialized, isAdmin, initializeAuthListener } =
-    await import("$lib/shared/auth/state/auth-state.svelte");
+    await import("#lib/shared/auth/state/auth-state.svelte.js");
 
   // On a direct load / hard refresh this guard runs BEFORE the root layout
   // mounts, so nothing has started auth init yet — polling alone would time

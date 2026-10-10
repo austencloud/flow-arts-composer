@@ -20,6 +20,7 @@ import {
   createIdAllocator,
   defaultBoxFor,
   findItem,
+  isPostCardQrUrl,
   itemEnd,
   mainItemAt,
   overlaysAnchoredTo,
@@ -52,24 +53,24 @@ import {
   type PostTextSize,
   type PostTrack,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 import {
   arrangementDurationSeconds,
   createArrangementItem,
-} from "$lib/shared/media-composition/domain/post-arrangement-item";
+} from "#lib/shared/media-composition/domain/post-arrangement-item.js";
 import {
   validateArrangementSnapshot,
   type ArrangementSnapshot,
-} from "$lib/shared/media-composition/domain/arrangement";
+} from "#lib/shared/media-composition/domain/arrangement.js";
 import {
   clampShapeRatio,
   postCanvasOf,
-} from "$lib/shared/media-composition/domain/post-canvas";
+} from "#lib/shared/media-composition/domain/post-canvas.js";
 import {
   edgeOf,
   mergeEdge,
-} from "$lib/shared/media-composition/domain/post-clip-edge";
+} from "#lib/shared/media-composition/domain/post-clip-edge.js";
 import {
   framingAt,
   channelValueAt,
@@ -78,8 +79,8 @@ import {
   isAnimated,
   shiftKeyframes,
   writeChannelValue,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   rerecordedTakeTiming,
   resolveTakeTiming,
@@ -87,14 +88,14 @@ import {
   takePassStartsAround,
   takeTimingMoveBeats,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   DEFAULT_TUNNEL_HOOK,
   DEFAULT_TUNNEL_HOOK_SECONDS,
   type TunnelBackdropFrame,
   type TunnelHook,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
-import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/tunnel-hook.js";
+import { openingTitlesSpan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 
 /**
  * The timeline's edits. Each one is pure: it takes the project and returns
@@ -1944,6 +1945,8 @@ export interface PostItemPatch {
   animationAppearance?: PostAnimationItem["animationAppearance"] | null;
   cardAppearance?: PostCardItem["cardAppearance"] | null;
   qrAppearance?: PostImageItem["qrAppearance"] | null;
+  /** A card's scan link; null removes it. A link that breaks the rule is passed over. */
+  qrUrl?: string | null;
 }
 
 export function updateItem(
@@ -2108,6 +2111,10 @@ export function updateItem(
   if (item.kind === "card" && patch.cardAppearance !== undefined) {
     if (patch.cardAppearance) next.cardAppearance = patch.cardAppearance;
     else delete next.cardAppearance;
+  }
+  if (item.kind === "card" && patch.qrUrl !== undefined) {
+    if (patch.qrUrl === null) delete next.qrUrl;
+    else if (isPostCardQrUrl(patch.qrUrl)) next.qrUrl = patch.qrUrl;
   }
   if (item.kind === "moves" && patch.mode) next.mode = patch.mode;
   if (item.kind === "titles" && patch.spoken !== undefined) {

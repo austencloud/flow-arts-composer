@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
-import { PostProjectSchema } from "$lib/shared/media-composition/domain/post-project";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   setArrangementSnapshot,
   splitItemAt,
   trimItem,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-import { createBlankArrangementSnapshot } from "$lib/shared/share/components/post-studio/editor/post-editor-arrangement";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+import { createBlankArrangementSnapshot } from "#lib/shared/share/components/post-studio/editor/post-editor-arrangement.js";
 
 const sequence = {
   id: "seq-arrangement",

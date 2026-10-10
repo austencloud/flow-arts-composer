@@ -7,7 +7,7 @@ import { computeStanceLoss } from "./stance-optimizer";
 import { StanceSimulator, restPoseFromHeight } from "./stance-simulator";
 import type { SimPropTarget } from "./types";
 import type { StancePose } from "../domain/types";
-import { propStateToStaffTarget } from "$lib/shared/3d/services/swept-volume/swept-volume-builder";
+import { propStateToStaffTarget } from "#lib/shared/3d/services/swept-volume/swept-volume-builder.js";
 const ZERO_STANCE: StancePose = {
   footOffsetX: 0,
   footOffsetZ: 0,

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping, PCFSoftShadowMap, WebGLRenderer } from "three";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import FirstFireGrayboxWalkScene from "./FirstFireGrayboxWalkScene.svelte";
-  import { captureCurrentView } from "$lib/shared/review/view-capture";
+  import { captureCurrentView } from "#lib/shared/review/view-capture.js";
 
   interface ReviewDetails {
     phase: string;

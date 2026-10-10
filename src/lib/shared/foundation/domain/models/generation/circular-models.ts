@@ -5,7 +5,7 @@
  * LOOPs are TKA's algorithmic extension patterns that transform sequences.
  */
 
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /**
  * LOOP Type Enum

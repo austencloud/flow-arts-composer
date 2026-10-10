@@ -4,7 +4,7 @@
   with PNG downloads for the print pipeline.
 -->
 <script lang="ts">
-  import { renderSignupCardPair } from "$lib/features/choreo-card/services/PrintCardRenderer";
+  import { renderSignupCardPair } from "#lib/features/choreo-card/services/PrintCardRenderer.js";
 
   const THEMES = ["cosmic", "ocean", "ember"] as const;
 

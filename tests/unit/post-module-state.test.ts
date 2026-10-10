@@ -1,18 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   FEATURE_VIDEO_FILE_FORMAT,
   type FeatureVideoFile,
-} from "$lib/shared/media-composition/domain/feature-video";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/feature-video.js";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   createFeatureVideoSync,
   type FeatureVideoSync,
-} from "$lib/shared/media-composition/services/feature-video-client";
+} from "#lib/shared/media-composition/services/feature-video-client.js";
 import {
   createPostModuleState,
   type PostModuleServices,
-} from "$lib/features/post/state/post-module-state.svelte";
+} from "#lib/features/post/state/post-module-state.svelte.js";
 
 afterEach(() => localStorage.clear());
 

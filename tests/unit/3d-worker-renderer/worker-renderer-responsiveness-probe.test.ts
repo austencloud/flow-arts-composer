@@ -3,7 +3,7 @@ import {
   createWorkerRendererResponsivenessState,
   recordMainThreadTimer,
   recordOutgoingWorkerFrame,
-} from "$lib/shared/3d/worker-renderer/services/worker-renderer-responsiveness-probe";
+} from "#lib/shared/3d/worker-renderer/services/worker-renderer-responsiveness-probe.js";
 
 describe("worker renderer responsiveness accounting", () => {
   it("counts application-thread timer stalls above the 50ms contract", () => {

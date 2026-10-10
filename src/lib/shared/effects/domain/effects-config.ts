@@ -8,12 +8,12 @@
  * trail brightness, LED color) independent of any backend.
  */
 
-import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 import type {
   FireColorCurve,
   PropFlameColor,
-} from "$lib/shared/animation-engine/domain/types/fire-types";
-import type { LedSimulatorConfig } from "$lib/shared/animation-engine/domain/types/led-types";
+} from "#lib/shared/animation-engine/domain/types/fire-types.js";
+import type { LedSimulatorConfig } from "#lib/shared/animation-engine/domain/types/led-types.js";
 
 export const EFFECTS_CONFIG_VERSION = 39;
 

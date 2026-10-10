@@ -12,7 +12,7 @@
     Sidebar,
     type ModuleDefinition as SidebarModuleDefinition,
   } from "@austencloud/sidebar";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { HapticFeedback } from "../../application/services/haptic-feedback";
   import type { ModuleDefinition, Section, ModuleId } from "../domain/types";
   import {

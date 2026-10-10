@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createBeatClock,
   fitTapsToGrid,
-} from "$lib/shared/media-composition/domain/tap-fit";
+} from "#lib/shared/media-composition/domain/tap-fit.js";
 
 function seededRandom(seed: number) {
   let state = seed >>> 0;

@@ -1,6 +1,6 @@
-import { DURATION } from "$lib/shared/transitions/transitions";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import { normalizeAngleSigned } from "$lib/shared/animation-engine/services/angle-calculator";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import { normalizeAngleSigned } from "#lib/shared/animation-engine/services/angle-calculator.js";
 
 /** One structural phrase: reveal the prepared formation and settle. */
 export const TUNNEL_REVEAL_DURATION = DURATION.emphasis + DURATION.normal;

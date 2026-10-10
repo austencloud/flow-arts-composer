@@ -4,16 +4,16 @@ import {
   charactersWithPresentation,
   countCharacterPresentations,
   type CharacterPresentation,
-} from "$lib/shared/3d/config/character-presentation";
-import { DEPLOYED_CHARACTER_IDS } from "$lib/shared/3d/config/deployed-characters";
-import { CHARACTER_DEFINITIONS } from "$lib/shared/3d/domain/character-model";
+} from "#lib/shared/3d/config/character-presentation.js";
+import { DEPLOYED_CHARACTER_IDS } from "#lib/shared/3d/config/deployed-characters.js";
+import { CHARACTER_DEFINITIONS } from "#lib/shared/3d/domain/character-model.js";
 import {
   TikaDirectorRequestSchema,
   TikaDirectorResponseSchema,
   TIKA_DIRECTOR_PRESENTATIONS,
-} from "$lib/features/stage/domain/tika-director";
-import { validateTikaDirectorPlanCatalog } from "$lib/features/stage/domain/tika-director-plan-validation";
-import { resolveDirectorAppearanceAssignments } from "$lib/features/stage/services/tika-director-service";
+} from "#lib/features/stage/domain/tika-director.js";
+import { validateTikaDirectorPlanCatalog } from "#lib/features/stage/domain/tika-director-plan-validation.js";
+import { resolveDirectorAppearanceAssignments } from "#lib/features/stage/services/tika-director-service.js";
 
 const scene = {
   id: "s",

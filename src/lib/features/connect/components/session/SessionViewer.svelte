@@ -10,30 +10,30 @@
 -->
 <script lang="ts">
 
-import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { onMount, onDestroy } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { connectState } from '../../state/connect-state.svelte';
-	import { getBrowseLoader } from '$lib/shared/browse/get-browse-loader';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
-	import { lanSyncState } from '$lib/shared/lan-sync/state/lan-sync-state.svelte';
+	import { getBrowseLoader } from '#lib/shared/browse/get-browse-loader.js';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
+	import { lanSyncState } from '#lib/shared/lan-sync/state/lan-sync-state.svelte.js';
 	import type { DisplayPreference, SyncSession } from '../../domain/models/connect-models';
 	import {
 		createSequenceData,
 		type SequenceData
-	} from '$lib/shared/foundation/domain/models/sequence-data';
-	import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-	import type { AnimationPanelState } from '$lib/shared/animation-engine/state/animation-panel-state.svelte';
+	} from '#lib/shared/foundation/domain/models/sequence-data.js';
+	import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+	import type { AnimationPanelState } from '#lib/shared/animation-engine/state/animation-panel-state.svelte.js';
 	import SessionControls from './SessionControls.svelte';
 	import SyncToggle from './SyncToggle.svelte';
 	import ParticipantsList from './ParticipantsList.svelte';
 	import DisplayPreferenceSelector from './DisplayPreferenceSelector.svelte';
-	import ProgressRing from '$lib/shared/components/loading/ProgressRing.svelte';
+	import ProgressRing from '#lib/shared/components/loading/ProgressRing.svelte';
 
 	// Lazy load heavy components
-	import AnimationPlayer from '$lib/shared/sequence-viewer/components/AnimationPlayer.svelte';
-	import ChoreoCard from '$lib/shared/sequence-viewer/components/ChoreoCard.svelte';
+	import AnimationPlayer from '#lib/shared/sequence-viewer/components/AnimationPlayer.svelte';
+	import ChoreoCard from '#lib/shared/sequence-viewer/components/ChoreoCard.svelte';
 
 	interface Props {
 		session: SyncSession;

@@ -13,7 +13,7 @@ import type {
   ExtensionAnalysis,
   ExtensionFlowStart,
 } from "../services/sequence-extender";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { SubDrawerType } from "../services/sub-drawer-state-persister";
 
 export type SequenceActionsSubView =

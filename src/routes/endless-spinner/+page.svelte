@@ -1,26 +1,26 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import type { SourceMode } from "$lib/shared/animation-engine/domain/chaining-types";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { TrackingMode } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
-  import { setAnimationScopeContext } from "$lib/shared/animation-engine/state/animation-scope-context";
-  import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import StepGrid from "$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { SourceMode } from "#lib/shared/animation-engine/domain/chaining-types.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { TrackingMode } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { createAnimationScope } from "#lib/shared/animation-engine/state/animation-scope.svelte.js";
+  import { setAnimationScopeContext } from "#lib/shared/animation-engine/state/animation-scope-context.js";
+  import { setAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import StepGrid from "#lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   // Mode toggle and infinite generation
   import type {
     SpinnerMode,
     GeneratedSequenceInfo,
-  } from "$lib/features/landing/domain/models/spinner-models";
-  import SpinnerModeToggle from "$lib/features/landing/components/SpinnerModeToggle.svelte";
+  } from "#lib/features/landing/domain/models/spinner-models.js";
+  import SpinnerModeToggle from "#lib/features/landing/components/SpinnerModeToggle.svelte";
 
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
 
   // Local extracted components and services
   import SpinnerControls from "./components/SpinnerControls.svelte";

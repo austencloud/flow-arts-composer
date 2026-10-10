@@ -10,7 +10,7 @@
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
-  import BaseCard from "$lib/features/create/generate/components/cards/BaseCard.svelte";
+  import BaseCard from "#lib/features/create/generate/components/cards/BaseCard.svelte";
   import type { FuseRecipeDestination } from "../domain/fuse-recipe-destination";
   import FuseRecipeSettingContent from "./FuseRecipeSettingContent.svelte";
 
@@ -112,7 +112,6 @@
     background:
       linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)),
       color-mix(in srgb, var(--theme-text) 8%, black);
-    box-shadow: 0 24px 72px var(--theme-shadow);
   }
 
   :global(.fuse-recipe-popover[data-state="open"]) {

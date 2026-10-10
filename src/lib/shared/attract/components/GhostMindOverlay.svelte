@@ -12,7 +12,7 @@
   visible control instead of a dot hiding behind a panel.
 -->
 <script lang="ts">
-  import { portal } from "$lib/features/create/generate/components/modals/portal";
+  import { portal } from "#lib/features/create/generate/components/modals/portal.js";
   import type { GhostMood } from "../domain/intention";
   import type { GhostMindStatus } from "../services/mind.svelte";
 

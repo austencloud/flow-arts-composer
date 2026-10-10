@@ -6,20 +6,20 @@
   - Bilateral prop toggle for both ends vs single end
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { onMount } from "svelte";
   import {
     animationSettings,
     TrailMode,
     TrackingMode,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import {
     getAnimationVisibilityManager,
     type TrailVisibility,
-  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { isBilateralProp, getBilateralEndLabels } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { isBilateralProp, getBilateralEndLabels } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const animationVisibilityManager = getAnimationVisibilityManager();
   const settingsState = settingsService;
@@ -209,9 +209,6 @@
     background: var(--theme-card-bg);
     border: 1.5px solid var(--theme-stroke, var(--theme-stroke));
     border-radius: 14px;
-    box-shadow:
-      0 1px 3px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke);
   }
 
   .label {
@@ -242,9 +239,6 @@
     cursor: pointer;
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
-    box-shadow:
-      0 1px 3px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke);
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -253,9 +247,6 @@
       border-color: var(--theme-stroke-strong);
       color: var(--theme-text);
       transform: translateY(-1px);
-      box-shadow:
-        0 2px 8px var(--theme-shadow),
-        inset 0 1px 0 var(--theme-stroke);
     }
   }
 

@@ -1,5 +1,5 @@
-import type { InkIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { InkIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 export interface InkPresetCandidate {
   id: string;

@@ -13,43 +13,43 @@
   Sections: Effects → Props → Motion → Display → Export.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { fade } from "svelte/transition";
   import type { ExportOptionsStateManager } from "../state/export-options-state.svelte";
-  import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
+  import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
   import {
     formatExportDuration,
     formatExportTimeEstimate,
   } from "../state/export-timing-tracker";
-  import EffectsPanel from "$lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
-  import PlaybackModeToggle from "$lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
-  import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  import EffectsPanel from "#lib/shared/animation-engine/components/effects-panel/EffectsPanel.svelte";
+  import PlaybackModeToggle from "#lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
+  import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import "../bento/rail-tile.css";
   import "../pill-nav/pill-nav.css";
   import TempoControl from "./TempoControl.svelte";
-  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { getAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
+  import PanelSpinner from "#lib/shared/components/panel/PanelSpinner.svelte";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { getAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
   import {
     EFFECT_COLORS,
     EFFECT_LABELS,
     effectNavIcon,
-  } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-  import EffortPanel from "$lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
-  import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
-  import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
+  } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+  import EffortPanel from "#lib/shared/animation-engine/components/settings-panels/EffortPanel.svelte";
+  import DisplayPanel from "#lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
+  import PathShapePanel from "#lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropChiralitySeam } from "#lib/shared/settings/components/tabs/prop-type/prop-chirality-seam.js";
   import HandPropToolbar, {
     type HandPropToolbarProps,
-  } from "$lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
+  } from "#lib/shared/settings/components/tabs/prop-type/HandPropToolbar.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { viewingPropLabel } from "#lib/shared/foundation/services/prop-viewing.js";
   import AnimatorInspectorShell from "./AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "./AnimatorInspectorFooter.svelte";
   import { RAIL_CATEGORY_ACCENTS } from "../pill-nav/rail-category-accents";
@@ -57,7 +57,7 @@
     type ControlDockTab,
     type ControlDockAction,
     type ControlDockLink,
-  } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
+  } from "#lib/shared/sequence-viewer/components/ControlDock.svelte";
   import {
     animationPillOrder,
     buildPillSpecs,
@@ -79,13 +79,13 @@
   import {
     VIDEO_OPENER_OPTIONS,
     type VideoOpener,
-  } from "$lib/shared/share/domain/video-opener";
+  } from "#lib/shared/share/domain/video-opener.js";
   import {
     reportViewerControlChange,
     type ViewerControlSink,
     type ViewerControlValue,
-  } from "$lib/shared/sequence-viewer/domain/viewer-control-analytics";
-  import { getOptionalViewerAnimatorInspectorContext } from "$lib/shared/sequence-viewer/context/viewer-animator-inspector-context";
+  } from "#lib/shared/sequence-viewer/domain/viewer-control-analytics.js";
+  import { getOptionalViewerAnimatorInspectorContext } from "#lib/shared/sequence-viewer/context/viewer-animator-inspector-context.js";
 
   type PanelLayout = "sidebar" | "bottom";
   type PanelPresentation = "full" | "navigation" | "content";
@@ -864,7 +864,7 @@
       {#if layout === "sidebar" && handProps}
         <HandPropToolbar {handProps} />
       {/if}
-      {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
+      {#await import("#lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
         <div class="pill-pending"><PanelSpinner /></div>
       {:then mod}
         <mod.default

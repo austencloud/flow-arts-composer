@@ -14,7 +14,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { MediaPipeDetector } from "./media-pipe-detector";
 import type { HandLandmarker } from "./hand-landmarker";
 import type { HandTrackingStabilizer } from "./hand-tracking-stabilizer";
-import type { DetectionFrame } from "$lib/shared/train/domain/detection-frame";
+import type { DetectionFrame } from "#lib/shared/train/domain/detection-frame.js";
 
 interface Deferred<T> {
   promise: Promise<T>;

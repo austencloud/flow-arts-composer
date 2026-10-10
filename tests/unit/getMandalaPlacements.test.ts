@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
 	getMandalaPlacements,
 	type GetMandalaPlacementsArgs,
-} from "$lib/shared/sequence-viewer/services/get-mandala-placements";
+} from "#lib/shared/sequence-viewer/services/get-mandala-placements.js";
 
 function args(overrides: Partial<GetMandalaPlacementsArgs> = {}): GetMandalaPlacementsArgs {
 	return {

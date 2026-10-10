@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   changelogPlainText,
   toChangelogSegments,
-} from "$lib/shared/versioning/domain/utils/changelog-rich-text";
+} from "#lib/shared/versioning/domain/utils/changelog-rich-text.js";
 
 describe("toChangelogSegments", () => {
   it("passes plain text through as one segment", () => {

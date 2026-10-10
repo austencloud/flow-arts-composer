@@ -33,7 +33,7 @@ describe("compact character sheet layout", () => {
 
   it("enters through the reduced-motion-aware canonical transition", () => {
     expect(bottomSheetSource).toContain(
-      'import { flyFade } from "$lib/shared/transitions/motion"'
+      'import { flyFade } from "#lib/shared/transitions/motion.js"'
     );
     expect(bottomSheetSource).toContain(
       "transition:flyFade={{ y: 24, duration: DURATION.emphasis }}"

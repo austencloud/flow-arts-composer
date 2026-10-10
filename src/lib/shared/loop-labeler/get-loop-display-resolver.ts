@@ -1,11 +1,11 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceEntry } from "$lib/shared/loop-labeler/domain/sequence-models";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceEntry } from "#lib/shared/loop-labeler/domain/sequence-models.js";
 import type {
   LOOPSpecWire,
   ReflectionAxis,
 } from "@tka/sequence-engine/loop";
-import type { LOOPComponent, LOOPDomain } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import type { LOOPComponent, LOOPDomain } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 /**
  * Return type of resolveLoopDisplay.

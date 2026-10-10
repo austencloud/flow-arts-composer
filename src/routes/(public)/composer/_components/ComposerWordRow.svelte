@@ -11,7 +11,7 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import WordLabel from "$lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
+  import WordLabel from "#lib/features/create/shared/workspace-panel/sequence-display/components/WordLabel.svelte";
 
   let {
     word = "",

@@ -11,14 +11,14 @@
 
 import {
   GridLocation,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 import type { RetroHandData } from "../domain/pictograph-types";
 

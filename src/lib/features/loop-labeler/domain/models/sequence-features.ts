@@ -8,7 +8,7 @@
 import type {
   GridMode,
   GridPlacementGroup,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { CircularityAnalysis, StrictLoopType } from "../../../create/shared/services/sequence-analyzer";
 
 /**

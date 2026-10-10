@@ -22,7 +22,7 @@ import {
   RotationDirection,
 } from "../../../src/lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { createSequenceData } from "../../../src/lib/shared/foundation/domain/models/sequence-data";
-import { OrientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
+import { OrientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
 
 const dashMotion = (
   color: HandSide,

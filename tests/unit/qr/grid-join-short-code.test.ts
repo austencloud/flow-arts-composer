@@ -98,34 +98,34 @@ vi.mock("firebase/firestore", () => ({
     }
   ),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 
-import { loopDetector } from "$lib/shared/create/services/loop-detector";
-import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
+import { loopDetector } from "#lib/shared/create/services/loop-detector.js";
+import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
-import { sha256Hex } from "$lib/shared/foundation/utils/canonical-digest";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { sha256Hex } from "#lib/shared/foundation/utils/canonical-digest.js";
 import {
   decodeSequenceFromQR,
   encodeSequence,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { deriveLettersForSequence } from "$lib/shared/navigation/services/letter-deriver";
-import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
+import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
 import {
   choreographyDigest,
   findChoreographyMismatch,
   projectChoreography,
   verifyEncodedChoreography,
-} from "$lib/shared/qr/services/choreography-fidelity";
-import { buildHandPathShortCodePayload } from "$lib/shared/qr/services/hand-path-short-code-payload";
-import { hydrateSelfContainedShortCodePayload } from "$lib/shared/qr/services/short-code-payload-hydrator";
-import { ShortCodeManager } from "$lib/shared/qr/services/short-code-manager";
-import type { ShortCodeData } from "$lib/shared/qr/services/types";
+} from "#lib/shared/qr/services/choreography-fidelity.js";
+import { buildHandPathShortCodePayload } from "#lib/shared/qr/services/hand-path-short-code-payload.js";
+import { hydrateSelfContainedShortCodePayload } from "#lib/shared/qr/services/short-code-payload-hydrator.js";
+import { ShortCodeManager } from "#lib/shared/qr/services/short-code-manager.js";
+import type { ShortCodeData } from "#lib/shared/qr/services/types.js";
 import realRecords from "../../fixtures/shortcode-payloads/real-records.json";
 import {
   buildJoinFixture,

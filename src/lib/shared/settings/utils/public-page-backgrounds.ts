@@ -5,7 +5,7 @@
  * (landing, about, privacy, terms, etc.).
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { BackgroundType } from "@austencloud/backgrounds";
 
 /**

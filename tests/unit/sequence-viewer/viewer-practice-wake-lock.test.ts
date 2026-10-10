@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import type { AnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 
 const wakeLock = vi.hoisted(() => ({
   setActive: vi.fn(),
   dispose: vi.fn(),
 }));
 
-vi.mock("$lib/shared/device/services/screen-wake-lock-manager", () => ({
+vi.mock("#lib/shared/device/services/screen-wake-lock-manager.js", () => ({
   createScreenWakeLockManager: () => wakeLock,
 }));
 
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: () => ({
       getPlaybackMode: () => "continuous",
@@ -23,17 +23,17 @@ vi.mock(
   })
 );
 
-vi.mock("$lib/shared/lan-sync/state/lan-sync-state.svelte", () => ({
+vi.mock("#lib/shared/lan-sync/state/lan-sync-state.svelte.js", () => ({
   lanSyncState: {
     updatePlayback: vi.fn(),
   },
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   showToast: vi.fn(),
 }));
 
-vi.mock("$lib/shared/audio/metronome", () => ({
+vi.mock("#lib/shared/audio/metronome.js", () => ({
   Metronome: class {
     resume() {}
     tick() {}
@@ -42,7 +42,7 @@ vi.mock("$lib/shared/audio/metronome", () => ({
 }));
 
 vi.mock(
-  "$lib/shared/sequence-viewer/state/tempo-practice-state.svelte",
+  "#lib/shared/sequence-viewer/state/tempo-practice-state.svelte.js",
   () => ({
     createTempoPracticeState: () => ({
       userConfig: {},
@@ -56,7 +56,7 @@ vi.mock(
 );
 
 vi.mock(
-  "$lib/shared/sequence-viewer/services/tempo-practice-orchestrator",
+  "#lib/shared/sequence-viewer/services/tempo-practice-orchestrator.js",
   () => ({
     TempoPracticeOrchestrator: class {
       private active = false;
@@ -95,7 +95,7 @@ vi.mock(
   })
 );
 
-import { createPlaybackController } from "$lib/shared/sequence-viewer/components/playback-controller.svelte";
+import { createPlaybackController } from "#lib/shared/sequence-viewer/components/playback-controller.svelte.js";
 
 function createModalAnimationState(): AnimationPanelState {
   return {

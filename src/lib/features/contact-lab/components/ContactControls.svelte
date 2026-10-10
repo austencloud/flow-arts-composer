@@ -1,6 +1,6 @@
 <script lang="ts">
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { getContactLabContext } from "../context/contact-lab-context";
   import type { ContactCameraPreset } from "../state/contact-lab-state.svelte";
 

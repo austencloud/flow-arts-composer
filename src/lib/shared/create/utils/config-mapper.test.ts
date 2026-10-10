@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   DIFFICULTY_TO_LEVEL,
   LEVEL_TO_DIFFICULTY,

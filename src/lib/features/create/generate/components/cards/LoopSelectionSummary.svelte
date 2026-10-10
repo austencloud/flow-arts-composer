@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { LOOPSpecWire } from "@tka/sequence-engine/loop";
 
-  import LoopBlockTimeline from "$lib/shared/components/LoopBlockTimeline.svelte";
-  import type { GuestLoopLock } from "$lib/shared/create/services/loop-guest-gate";
-  import type { RhythmGate } from "$lib/shared/create/services/loop-rhythm-gating";
-  import { blockSignatures } from "$lib/shared/create/services/loop-block-signatures";
-  import { flyFade, motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import LoopBlockTimeline from "#lib/shared/components/LoopBlockTimeline.svelte";
+  import type { GuestLoopLock } from "#lib/shared/create/services/loop-guest-gate.js";
+  import type { RhythmGate } from "#lib/shared/create/services/loop-rhythm-gating.js";
+  import { blockSignatures } from "#lib/shared/create/services/loop-block-signatures.js";
+  import { flyFade, motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     wordMathText: string | null;

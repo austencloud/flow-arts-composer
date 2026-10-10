@@ -5,11 +5,11 @@
  * Extracts handler logic from component to improve testability and maintainability.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import type { CreateModuleState } from "../state/create-module-state.svelte";
 import type { PanelCoordinationState } from "../state/panel-coordination-state.svelte";
 import type { ConstructTabState } from "../state/construct-tab-state.svelte";
-import type { CreateModuleOrchestrator } from "$lib/features/create/shared/services/create-module-orchestrator";
+import type { CreateModuleOrchestrator } from "#lib/features/create/shared/services/create-module-orchestrator.js";
 
 /**
  * Parameters for clear sequence handler
@@ -19,8 +19,8 @@ export interface ClearSequenceParams {
   constructTabState: ConstructTabState;
   panelState: PanelCoordinationState;
 }
-import type { StepOperator } from "$lib/features/create/shared/services/step-operator";
-import { executeClearSequenceWorkflow } from "$lib/shared/create/utils/clear-sequence-workflow";
+import type { StepOperator } from "#lib/features/create/shared/services/step-operator.js";
+import { executeClearSequenceWorkflow } from "#lib/shared/create/utils/clear-sequence-workflow.js";
 
 export class CreateModuleHandlers {
   constructor(

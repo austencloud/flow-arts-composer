@@ -21,7 +21,7 @@ import {
   layerSignature,
   formatSignature,
 } from "@tka/sequence-engine/core";
-import { predictLayerSignature } from "$lib/shared/create/domain/layer-prediction";
+import { predictLayerSignature } from "#lib/shared/create/domain/layer-prediction.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");

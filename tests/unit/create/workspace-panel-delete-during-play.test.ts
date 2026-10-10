@@ -12,23 +12,23 @@
 import { flushSync, mount, unmount } from "svelte";
 import { effect_root } from "svelte/internal/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 const grid = vi.hoisted(() => ({
   props: null as { onStepDelete: (stepNumber: number) => void } | null,
 }));
 const removeStep = vi.hoisted(() => vi.fn());
 
-vi.mock("$lib/shared/navigation/state/navigation-state.svelte", () => ({
+vi.mock("#lib/shared/navigation/state/navigation-state.svelte.js", () => ({
   navigationState: { activeTab: "generate" },
 }));
-vi.mock("$lib/features/create/shared/get-step-operator", () => ({
+vi.mock("#lib/features/create/shared/get-step-operator.js", () => ({
   getStepOperator: () => ({ removeStep }),
 }));
 vi.mock(
-  "$lib/features/create/shared/workspace-panel/sequence-display/components/SequenceDisplay.svelte",
+  "#lib/features/create/shared/workspace-panel/sequence-display/components/SequenceDisplay.svelte",
   () => ({
     default: (
       _anchor: unknown,
@@ -40,9 +40,9 @@ vi.mock(
 );
 
 const { createPanelCoordinationState } =
-  await import("$lib/shared/create/state/panel-coordination-state.svelte");
+  await import("#lib/shared/create/state/panel-coordination-state.svelte.js");
 const { default: WorkspacePanel } =
-  await import("$lib/features/create/shared/workspace-panel/core/WorkspacePanel.svelte");
+  await import("#lib/features/create/shared/workspace-panel/core/WorkspacePanel.svelte");
 
 // vitest-setup.ts swaps document.createElement for canvas stubs that are not
 // DOM nodes. Mounting a component needs jsdom's own, from document's prototype.

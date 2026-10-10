@@ -15,8 +15,8 @@ import {
 } from "firebase/firestore";
 import { Capacitor, type PluginListenerHandle } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
-import { getFirestoreInstance, app } from "$lib/shared/auth/firebase";
-import { getDeviceId } from "$lib/shared/auth/services/device-id-service";
+import { getFirestoreInstance, app } from "#lib/shared/auth/firebase.js";
+import { getDeviceId } from "#lib/shared/auth/services/device-id-service.js";
 import { ANDROID_NOTIFICATION_CHANNELS } from "../notification-channels";
 import { VAPID_KEY } from "../config/vapid";
 

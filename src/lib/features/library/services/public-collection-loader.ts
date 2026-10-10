@@ -30,21 +30,21 @@ import {
   type QueryDocumentSnapshot,
   type Unsubscribe,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
 import {
   SYSTEM_COLLECTION_IDS,
   isSmartCollection,
-} from "$lib/shared/library/domain/models/collection";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+} from "#lib/shared/library/domain/models/collection.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 import {
   getUserCollectionsPath,
   getUserCollectionPath,
-} from "$lib/shared/library/data/firestore-paths";
+} from "#lib/shared/library/data/firestore-paths.js";
 import {
   mapDocToCollection,
   batchFetchPublicSequences,
-} from "$lib/shared/library/services/collection-firestore-mapper";
+} from "#lib/shared/library/services/collection-firestore-mapper.js";
 
 export async function getUserPublicCollections(
   userId: string

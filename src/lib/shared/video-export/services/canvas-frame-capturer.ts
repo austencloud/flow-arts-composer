@@ -1,4 +1,4 @@
-import type { CapturedFrame } from "$lib/shared/video-export/domain/captured-frame";
+import type { CapturedFrame } from "#lib/shared/video-export/domain/captured-frame.js";
 
 /**
  * Canvas Frame Capturer

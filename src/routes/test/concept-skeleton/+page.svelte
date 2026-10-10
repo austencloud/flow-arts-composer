@@ -17,11 +17,11 @@
   ConceptExperience under features/learn.
 -->
 <script lang="ts">
-  import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
+  import LessonGridDisplay from "#lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
   import GuidePictograph from "../../(public)/guide/level-1/_components/GuidePictograph.svelte";
   import GuideMotionVideo from "../../(public)/guide/level-1/_components/GuideMotionVideo.svelte";
   import placementsData from "../../(public)/guide/level-1/_data/placements-motions.json";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const pictographs = (placementsData as { pictographs: Record<string, unknown> }).pictographs;
   function pick(id: string) {

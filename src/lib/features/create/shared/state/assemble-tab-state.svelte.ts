@@ -11,23 +11,23 @@
  * editor mutations hydrate the builder through the same state boundary.
  */
 
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import type { SequenceStatsCalculator } from "$lib/features/create/shared/services/sequence-stats-calculator";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { SequenceValidator } from "$lib/features/create/shared/services/sequence-validator";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { SequenceStatsCalculator } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { SequenceValidator } from "#lib/features/create/shared/services/sequence-validator.js";
 import {
   reversalDetector,
   type ReversalDetector,
-} from "$lib/shared/create/services/reversal-detector";
+} from "#lib/shared/create/services/reversal-detector.js";
 import { createSequenceState } from "./sequence-state-orchestrator.svelte";
 import type { SequenceState } from "./sequence-state-orchestrator.svelte";
-import { createAssembleState } from "$lib/features/assemble-lab/state/assemble-state.svelte";
+import { createAssembleState } from "#lib/features/assemble-lab/state/assemble-state.svelte.js";
 import type {
   AssembleDocumentChange,
   AssembleState,
   BuilderPhase,
-} from "$lib/features/assemble-lab/state/assemble-state.svelte";
+} from "#lib/features/assemble-lab/state/assemble-state.svelte.js";
 import {
   stepToMotion,
   convertToStartPlacement,
@@ -35,17 +35,17 @@ import {
   lookupLetter,
   sequenceToBuilderHydration,
   withCalculatedArrowLocations,
-} from "$lib/features/assemble-lab/services/builder-step-converter";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { getPropUnlockManager } from "$lib/shared/gamification/get-prop-unlock-manager";
-import { generateSequenceWord } from "$lib/features/create/shared/services/sequence-stats-calculator";
-import { createHistoryTransitionPlan } from "$lib/features/create/shared/services/history-transition-planner";
+} from "#lib/features/assemble-lab/services/builder-step-converter.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { getPropUnlockManager } from "#lib/shared/gamification/get-prop-unlock-manager.js";
+import { generateSequenceWord } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
+import { createHistoryTransitionPlan } from "#lib/features/create/shared/services/history-transition-planner.js";
 
 export function createAssembleTabState(
   sequenceService?: SequenceRepository,

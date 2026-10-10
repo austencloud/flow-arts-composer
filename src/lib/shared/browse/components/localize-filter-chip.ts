@@ -1,11 +1,11 @@
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import type { TranslationKey } from "$lib/shared/i18n/i18n-types.js";
-import { localizedModeName } from "$lib/shared/shape-matrix/domain/shape-matrix-display";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
+import { localizedModeName } from "#lib/shared/shape-matrix/domain/shape-matrix-display.js";
 import {
   MODE_FAMILY_ID,
   type VtgMode,
-} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+} from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 
 /** Translate built-in chip copy at display time; saved labels and user names stay intact. */
 export function localizeFilterChip(filter: {

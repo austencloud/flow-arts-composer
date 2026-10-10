@@ -6,7 +6,7 @@ import {
 	tileKey,
 	type MuseumGrid,
 	type TileType,
-} from "$lib/features/museum/domain/museum-grid-types";
+} from "#lib/features/museum/domain/museum-grid-types.js";
 
 /**
  * Round-trip: serialize then deserialize should produce an identical grid.

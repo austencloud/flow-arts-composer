@@ -2,37 +2,37 @@
   import { onDestroy, onMount } from "svelte";
   import { T, useTask, useThrelte } from "@threlte/core";
   import { Color, Mesh, PointLight, Vector3, type Object3D } from "three";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import { CameraMode, UnifiedCameraController } from "@austencloud/camera-3d";
   import type { AvatarState, PhysicsProvider } from "@austencloud/camera-3d";
   import {
     MUSEUM_GRAVITY,
     MUSEUM_JUMP_VELOCITY,
-  } from "$lib/features/museum/domain/museum-design-rules";
+  } from "#lib/features/museum/domain/museum-design-rules.js";
   import {
     createPhysicsWorldState,
     createRigidBody,
     disposePhysicsWorld,
     initPhysicsWorld,
     stepPhysics,
-  } from "$lib/shared/3d/physics/rapier-world";
+  } from "#lib/shared/3d/physics/rapier-world.js";
   import {
     createPlayerController,
     disposePlayerController,
-  } from "$lib/shared/3d/physics/player-controller";
-  import { createRapierPhysicsProvider } from "$lib/shared/3d/physics/rapier-physics-provider";
+  } from "#lib/shared/3d/physics/player-controller.js";
+  import { createRapierPhysicsProvider } from "#lib/shared/3d/physics/rapier-physics-provider.js";
   import type {
     PhysicsWorldState,
     PlayerControllerState,
-  } from "$lib/shared/3d/physics/types";
-  import GltfAsset from "$lib/shared/3d/environments/primitives/GltfAsset.svelte";
-  import PedestalMesh from "$lib/features/museum/components/graybox/PedestalMesh.svelte";
-  import MuseumPerformerStation3D from "$lib/features/museum/components/game/MuseumPerformerStation3D.svelte";
-  import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import ConsoleMesh from "$lib/features/museum/components/graybox/ConsoleMesh.svelte";
-  import { pedestalFaceDataUri } from "$lib/features/museum/services/pedestal-face";
+  } from "#lib/shared/3d/physics/types.js";
+  import GltfAsset from "#lib/shared/3d/environments/primitives/GltfAsset.svelte";
+  import PedestalMesh from "#lib/features/museum/components/graybox/PedestalMesh.svelte";
+  import MuseumPerformerStation3D from "#lib/features/museum/components/game/MuseumPerformerStation3D.svelte";
+  import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import ConsoleMesh from "#lib/features/museum/components/graybox/ConsoleMesh.svelte";
+  import { pedestalFaceDataUri } from "#lib/features/museum/services/pedestal-face.js";
   import {
     CONSOLE_BUTTON_D,
     CONSOLE_FACE,
@@ -50,13 +50,13 @@
     verbsFor,
     type ConsoleVerb,
     type PerformerSettings,
-  } from "$lib/features/museum/domain/exhibit-console";
+  } from "#lib/features/museum/domain/exhibit-console.js";
   import {
     boundSteps,
     effectiveSteps,
-  } from "$lib/features/museum/services/exhibit-console-sequence";
-  import ReflectivePool from "$lib/shared/3d/environments/primitives/ReflectivePool.svelte";
-  import EmberFountains from "$lib/shared/3d/environments/scenes/ember/EmberFountains.svelte";
+  } from "#lib/features/museum/services/exhibit-console-sequence.js";
+  import ReflectivePool from "#lib/shared/3d/environments/primitives/ReflectivePool.svelte";
+  import EmberFountains from "#lib/shared/3d/environments/scenes/ember/EmberFountains.svelte";
   import { userProportionsState } from "@austencloud/scene-3d";
   import {
     CAUSEWAY_Y,
@@ -65,7 +65,7 @@
     WATERLINE_Y,
     DOME_APEX_Y,
     inRectClosed,
-  } from "$lib/features/museum/data/drowned-gallery-terrain";
+  } from "#lib/features/museum/data/drowned-gallery-terrain.js";
   import { buildDrownedGalleryWalkSetup } from "./drowned-gallery-graybox-colliders";
 
   interface Props {

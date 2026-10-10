@@ -7,9 +7,9 @@ import {
   resolveFanRenderKey,
   parseFanRenderKey,
   fanAppearanceArtwork,
-} from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import { resolvePropTipAnchors3D } from "$lib/shared/3d/effects/prop-tip-geometry-3d";
-import { buildForEffect } from "$lib/shared/3d/domain/build-for-effect";
+} from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import { resolvePropTipAnchors3D } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
+import { buildForEffect } from "#lib/shared/3d/domain/build-for-effect.js";
 
 const appearance = {
   build: "flat-grip",

@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     handleKeyDown as arrangeHandleKeyDown,
     findAdjacentCell,
-  } from "$lib/features/compose/tabs/arrange/services/arrange-keyboard-handler";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
+  } from "#lib/features/compose/tabs/arrange/services/arrange-keyboard-handler.js";
+  import EditHistoryShortcutBridge from "#lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
   /**
    * ArrangeTab - Grid-based composition builder
    *
@@ -32,12 +32,12 @@
   import CellEditorPanel from "./components/grid/cell-editor/CellEditorPanel.svelte";
   import PlaybackBar from "./components/shared/PlaybackBar.svelte";
   import StaggerControls from "./components/shared/StaggerControls.svelte";
-  import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
+  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import SaveCompositionModal from "./components/grid/SaveCompositionModal.svelte";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { CellMediaType } from "$lib/shared/animation-engine/domain/compose-types";
-  import type { TransformType } from "$lib/shared/animation-engine/domain/compose-types";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { CellMediaType } from "#lib/shared/animation-engine/domain/compose-types.js";
+  import type { TransformType } from "#lib/shared/animation-engine/domain/compose-types.js";
   import type { KeyboardContext, KeyboardCallbacks } from "./services/types";
 
   let { embedded = false }: { embedded?: boolean } = $props();
@@ -405,20 +405,20 @@
     undoLabel={gridState.undoDescription}
     redoLabel={gridState.redoDescription}
   />
-    <div class="desktop-content">
-      <!-- Left: Grid Canvas Area -->
-      <div class="canvas-area">
-        <!-- Utility buttons (top-left) -->
-        <div class="canvas-utils">
-          <button
-            class="util-btn"
-            onclick={handleCopyState}
-            title={t("compose_ui_copy_grid_state_to_clipboard")}
-            aria-label={t("compose_ui_copy_grid_state_to_clipboard")}
-          >
-            <i class="fas fa-clipboard" aria-hidden="true"></i>
-          </button>
-          {#if !embedded}
+  <div class="desktop-content">
+    <!-- Left: Grid Canvas Area -->
+    <div class="canvas-area">
+      <!-- Utility buttons (top-left) -->
+      <div class="canvas-utils">
+        <button
+          class="util-btn"
+          onclick={handleCopyState}
+          title={t("compose_ui_copy_grid_state_to_clipboard")}
+          aria-label={t("compose_ui_copy_grid_state_to_clipboard")}
+        >
+          <i class="fas fa-clipboard" aria-hidden="true"></i>
+        </button>
+        {#if !embedded}
           <button
             data-save-shortcut
             class="util-btn"
@@ -428,110 +428,102 @@
           >
             <i class="fas fa-bookmark" aria-hidden="true"></i>
           </button>
-          {/if}
-        </div>
-
-        <CompositionGrid
-          cells={gridState.cells}
-          gridRows={gridState.gridRows}
-          gridCols={gridState.gridCols}
-          currentStep={gridState.currentStep}
-          isPlaying={gridState.isPlaying}
-          skipStartPlacement={gridState.skipStartPlacement}
-          selectedCellId={gridState.selectedCellId}
-          occupiedPositions={gridState.occupiedPositions}
-          stateGridBounds={gridState.gridBounds}
-          onSelectCell={handleSelectCell}
-          onSetCellSpan={handleSetCellSpan}
-        />
-
-        {#if gridState.hasAnyLayers}
-          <div class="playback-strip">
-            <PlaybackBar
-              isPlaying={gridState.isPlaying}
-              currentStep={gridState.currentStep}
-              totalSteps={gridState.totalSteps}
-              bpm={gridState.bpm}
-              skipStartPlacement={gridState.skipStartPlacement}
-              onPlayPause={handlePlayPause}
-              onStop={handleStop}
-              onStepHalfBack={handleStepHalfBack}
-              onStepHalfFwd={handleStepHalfFwd}
-              onStepFullBack={handleStepFullBack}
-              onStepFullFwd={handleStepFullFwd}
-              onBpmChange={handleBpmChange}
-              onToggleLoop={handleToggleLoop}
-            />
-          </div>
         {/if}
       </div>
 
-      <!-- Right: Unified Sidebar -->
-      <CellEditorPanel
+      <CompositionGrid
+        cells={gridState.cells}
         gridRows={gridState.gridRows}
         gridCols={gridState.gridCols}
-        hasContent={gridState.hasAnyLayers}
-        onSetGridRows={handleSetGridRows}
-        onSetGridCols={handleSetGridCols}
-        onSetDimensions={handleSetDimensions}
-        onPresetLayout={handlePresetLayout}
-        cell={selectedCell}
-        cellIndex={selectedCell
-          ? gridState.getCellDisplayIndex(selectedCell.id)
-          : 0}
-        clipboardHasData={gridState.clipboard !== null}
-        transformingLayer={gridState.transformingLayer}
-        onAddSequence={handleAddSequence}
-        onRemoveLayer={handleRemoveLayer}
-        onEditLayerOffset={handleEditLayerOffset}
-        onClearCell={handleClearCell}
-        onMediaTypeChange={handleMediaTypeChange}
-        onCopyLayer={handleCopyLayer}
-        onCopyCell={handleCopyCell}
-        onPasteLayer={handlePasteLayer}
-        onTransformLayer={handleTransformLayer}
-        onSetSpeed={selectedCell
-          ? (speed) => gridState.setCellSpeed(selectedCell.id, speed)
-          : undefined}
-        onSetEffect={selectedCell
-          ? (effect) => gridState.setCellEffect(selectedCell.id, effect)
-          : undefined}
-        onSetTrailMode={selectedCell
-          ? (mode) => gridState.setCellTrailMode(selectedCell.id, mode)
-          : undefined}
-        onSetEffort={selectedCell
-          ? (effort) => gridState.setCellEffort(selectedCell.id, effort)
-          : undefined}
-        onSetLeftVisible={selectedCell
-          ? (visible) =>
-              gridState.setCellMotionVisibility(
-                selectedCell.id,
-                "left",
-                visible
-              )
-          : undefined}
-        onSetRightVisible={selectedCell
-          ? (visible) =>
-              gridState.setCellMotionVisibility(
-                selectedCell.id,
-                "right",
-                visible
-              )
-          : undefined}
-        onSetOffset={selectedCell
-          ? (offset) => gridState.setCellBeatOffset(selectedCell.id, offset)
-          : undefined}
-        onSetColors={selectedCell
-          ? (colors) => gridState.setCellPropColors(selectedCell.id, colors)
-          : undefined}
-        onSetTipEffectMap={selectedCell
-          ? (map) => gridState.setCellTipEffectMap(selectedCell.id, map)
-          : undefined}
-        onSetTipEffortMap={selectedCell
-          ? (map) => gridState.setCellTipEffortMap(selectedCell.id, map)
-          : undefined}
+        currentStep={gridState.currentStep}
+        isPlaying={gridState.isPlaying}
+        skipStartPlacement={gridState.skipStartPlacement}
+        selectedCellId={gridState.selectedCellId}
+        occupiedPositions={gridState.occupiedPositions}
+        stateGridBounds={gridState.gridBounds}
+        onSelectCell={handleSelectCell}
+        onSetCellSpan={handleSetCellSpan}
       />
+
+      {#if gridState.hasAnyLayers}
+        <div class="playback-strip">
+          <PlaybackBar
+            isPlaying={gridState.isPlaying}
+            currentStep={gridState.currentStep}
+            totalSteps={gridState.totalSteps}
+            bpm={gridState.bpm}
+            skipStartPlacement={gridState.skipStartPlacement}
+            onPlayPause={handlePlayPause}
+            onStop={handleStop}
+            onStepHalfBack={handleStepHalfBack}
+            onStepHalfFwd={handleStepHalfFwd}
+            onStepFullBack={handleStepFullBack}
+            onStepFullFwd={handleStepFullFwd}
+            onBpmChange={handleBpmChange}
+            onToggleLoop={handleToggleLoop}
+          />
+        </div>
+      {/if}
     </div>
+
+    <!-- Right: Unified Sidebar -->
+    <CellEditorPanel
+      gridRows={gridState.gridRows}
+      gridCols={gridState.gridCols}
+      hasContent={gridState.hasAnyLayers}
+      onSetGridRows={handleSetGridRows}
+      onSetGridCols={handleSetGridCols}
+      onSetDimensions={handleSetDimensions}
+      onPresetLayout={handlePresetLayout}
+      cell={selectedCell}
+      cellIndex={selectedCell
+        ? gridState.getCellDisplayIndex(selectedCell.id) - 1
+        : 0}
+      clipboardHasData={gridState.clipboard !== null}
+      transformingLayer={gridState.transformingLayer}
+      onAddSequence={handleAddSequence}
+      onRemoveLayer={handleRemoveLayer}
+      onEditLayerOffset={handleEditLayerOffset}
+      onClearCell={handleClearCell}
+      onMediaTypeChange={handleMediaTypeChange}
+      onCopyLayer={handleCopyLayer}
+      onCopyCell={handleCopyCell}
+      onPasteLayer={handlePasteLayer}
+      onTransformLayer={handleTransformLayer}
+      onSetSpeed={selectedCell
+        ? (speed) => gridState.setCellSpeed(selectedCell.id, speed)
+        : undefined}
+      onSetEffect={selectedCell
+        ? (effect) => gridState.setCellEffect(selectedCell.id, effect)
+        : undefined}
+      onSetTrailMode={selectedCell
+        ? (mode) => gridState.setCellTrailMode(selectedCell.id, mode)
+        : undefined}
+      onSetEffort={selectedCell
+        ? (effort) => gridState.setCellEffort(selectedCell.id, effort)
+        : undefined}
+      onSetLeftVisible={selectedCell
+        ? (visible) =>
+            gridState.setCellMotionVisibility(selectedCell.id, "left", visible)
+        : undefined}
+      onSetRightVisible={selectedCell
+        ? (visible) =>
+            gridState.setCellMotionVisibility(selectedCell.id, "right", visible)
+        : undefined}
+      onSetOffset={selectedCell
+        ? (offset) => gridState.setCellBeatOffset(selectedCell.id, offset)
+        : undefined}
+      onSetColors={selectedCell
+        ? (colors) => gridState.setCellPropColors(selectedCell.id, colors)
+        : undefined}
+      onSetTipEffectMap={selectedCell
+        ? (map) => gridState.setCellTipEffectMap(selectedCell.id, map)
+        : undefined}
+      onSetTipEffortMap={selectedCell
+        ? (map) => gridState.setCellTipEffortMap(selectedCell.id, map)
+        : undefined}
+    />
+  </div>
 
   <!-- Sequence picker modal -->
   <SequencePickerModal
@@ -651,7 +643,9 @@
   }
 
   @media (max-width: 767px) {
-    .arrange-tab { overflow-y: auto; }
+    .arrange-tab {
+      overflow-y: auto;
+    }
     .desktop-content {
       display: flex;
       flex-direction: column;
@@ -660,7 +654,14 @@
       gap: var(--spacing-sm);
       padding: var(--spacing-sm);
     }
-    .canvas-area { min-height: 300px; height: min(55vh, 440px); flex: none; }
-    .util-btn { width: 44px; height: 44px; }
+    .canvas-area {
+      min-height: 300px;
+      height: min(55vh, 440px);
+      flex: none;
+    }
+    .util-btn {
+      width: 44px;
+      height: 44px;
+    }
   }
 </style>

@@ -19,39 +19,39 @@ mean "card discovered in the wild"; filing your own deck would pollute
 the geo dashboard).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
   import { fly } from "svelte/transition";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { CameraManager } from "$lib/shared/train/services/camera-manager";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import { CameraManager } from "#lib/shared/train/services/camera-manager.js";
   import {
     createTkaQrDetector,
     type TkaQrDetector,
-  } from "$lib/shared/qr/services/tka-qr-detector";
-  import { extractScanCode } from "$lib/shared/qr/services/extract-scan-code";
+  } from "#lib/shared/qr/services/tka-qr-detector.js";
+  import { extractScanCode } from "#lib/shared/qr/services/extract-scan-code.js";
   import {
     padQrBox,
     frameBoxToScreenRect,
     type FrameBox,
-  } from "$lib/shared/qr/services/scan-capture-geometry";
-  import { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
+  } from "#lib/shared/qr/services/scan-capture-geometry.js";
+  import { getQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
   import { getAppCanonicalURL } from "../../../../../config/domains";
-  import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-  import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import { getLibrarySaveService } from "$lib/features/library/get-library-save-service";
+  import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+  import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import { getLibrarySaveService } from "#lib/features/library/get-library-save-service.js";
   import {
     addSequenceToCollection,
     removeSequenceFromCollection,
-  } from "$lib/shared/library/services/collection-manager";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-  import { LIBRARY_LIMITS } from "$lib/shared/library/data/firestore-paths";
-  import { LibraryError } from "$lib/shared/library/domain/library-error";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { browseScrollState } from "$lib/shared/browse/state/browse-scroll-state.svelte";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { postSaveActivation } from "$lib/shared/onboarding/state/post-save-activation-state.svelte";
+  } from "#lib/shared/library/services/collection-manager.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+  import { LIBRARY_LIMITS } from "#lib/shared/library/data/firestore-paths.js";
+  import { LibraryError } from "#lib/shared/library/domain/library-error.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { postSaveActivation } from "#lib/shared/onboarding/state/post-save-activation-state.svelte.js";
 
   let {
     collectionId,
@@ -438,7 +438,7 @@ the geo dashboard).
         // must be removed too — guests read their library from Dexie, and
         // an orphaned row would make the "removed" card reappear on reload.
         const { deleteSequence: deleteLocalSequence } =
-          await import("$lib/shared/persistence/services/dexie-persistence-service");
+          await import("#lib/shared/persistence/services/dexie-persistence-service.js");
         await deleteLocalSequence(scan.createdLibraryId);
       }
       // Let the same card scan again — the undo was deliberate, but so is

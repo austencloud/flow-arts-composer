@@ -1,4 +1,4 @@
-import type { WingDeclaration } from "$lib/features/museum/data/wing-declarations/types";
+import type { WingDeclaration } from "#lib/features/museum/data/wing-declarations/types.js";
 
 type LocationLabel = WingDeclaration["review"]["locationLabels"][number];
 

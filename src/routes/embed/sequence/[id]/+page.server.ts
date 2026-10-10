@@ -15,11 +15,12 @@ import {
   emptySequenceMeta,
   loadPublishedMeta,
 } from "../../../sequence/[id]/published-meta";
-import { parseSequenceRouteId } from "$lib/shared/navigation/services/sequence-encoder";
+import { parseSequenceRouteId } from "#lib/shared/navigation/services/sequence-encoder.js";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 const SITE_URL = "https://tkaflowarts.com";
 
-export const load: PageServerLoad = async ({ params, url, platform }) => {
+export const load: PageServerLoad = async ({ params, url }) => {
   const fallback: SequenceRouteMeta = {
     ...emptySequenceMeta(),
     word: cleanSequenceText(url.searchParams.get("word")),
@@ -37,7 +38,7 @@ export const load: PageServerLoad = async ({ params, url, platform }) => {
     ? await loadPublishedMeta(
         legacyId,
         fallback,
-        platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
+        workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
       )
     : fallback;
 

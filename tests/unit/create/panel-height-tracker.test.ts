@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPanelHeightTracker } from "$lib/features/create/shared/state/managers/panel-height-tracker.svelte";
-import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
+import { createPanelHeightTracker } from "#lib/features/create/shared/state/managers/panel-height-tracker.svelte.js";
+import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 import {
   PANEL_MOTION_ATTRIBUTE,
   PANEL_SETTLE_EVENT,
-} from "$lib/shared/panels/panel-motion";
+} from "#lib/shared/panels/panel-motion.js";
 
 type FrameCallback = FrameRequestCallback;
 

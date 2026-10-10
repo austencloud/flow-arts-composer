@@ -2,13 +2,13 @@ import { describe, it, expect } from "vitest";
 import {
   getArrowPath,
   getArrowSvgPath,
-} from "$lib/shared/pictograph/arrow/rendering/services/arrow-path-resolver";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createArrowPlacementData } from "$lib/shared/pictograph/arrow/positioning/placement/domain/create-arrow-placement-data";
+} from "#lib/shared/pictograph/arrow/rendering/services/arrow-path-resolver.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createArrowPlacementData } from "#lib/shared/pictograph/arrow/positioning/placement/domain/create-arrow-placement-data.js";
 import {
   MotionType,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const HALF = { t0: 0, t1: 0.5 };
 

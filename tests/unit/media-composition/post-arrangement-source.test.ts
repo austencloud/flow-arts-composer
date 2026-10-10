@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
-import { MediaSourceSchema } from "$lib/shared/media-composition/domain/media-source-schema";
-import { PostProjectSchema } from "$lib/shared/media-composition/domain/post-project";
+import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { MediaSourceSchema } from "#lib/shared/media-composition/domain/media-source-schema.js";
+import { PostProjectSchema } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   arrangementBeatAt,
   arrangementDurationSeconds,
   createArrangementItem,
   createArrangementProject,
-} from "$lib/shared/media-composition/domain/post-arrangement-item";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+} from "#lib/shared/media-composition/domain/post-arrangement-item.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 
 function cell(
   id: string,

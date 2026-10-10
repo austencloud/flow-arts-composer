@@ -17,15 +17,15 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   deriveKey,
   inputUsesDefaults,
   THUMBNAIL_RENDERER_VERSION,
   type ThumbnailRenderInput,
-} from "$lib/shared/browse/services/thumbnail-key-deriver";
-import { ThumbnailRenderer } from "$lib/shared/browse/services/thumbnail-renderer";
+} from "#lib/shared/browse/services/thumbnail-key-deriver.js";
+import { ThumbnailRenderer } from "#lib/shared/browse/services/thumbnail-renderer.js";
 
 const sequence = {
   id: "public-1",

@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { getReportResolver } from '$lib/features/moderation/get-report-resolver';
-	import { toast } from '$lib/shared/toast/state/toast-state.svelte';
+	import { getReportResolver } from '#lib/features/moderation/get-report-resolver.js';
+	import { toast } from '#lib/shared/toast/state/toast-state.svelte.js';
 	import { adminReportsState } from '../state/admin-reports-state.svelte';
 	import {
 		REPORT_RESOLUTIONS,
 		type ReportResolution,
 		type UserReport
 	} from '../domain/models/report-models';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 
 	interface Props {
 		report: UserReport;

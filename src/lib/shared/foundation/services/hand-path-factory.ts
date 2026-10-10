@@ -1,9 +1,9 @@
-import { hashHandPath } from "$lib/shared/foundation/services/content-hasher";
+import { hashHandPath } from "#lib/shared/foundation/services/content-hasher.js";
 import type { HandPathData } from "../domain/models/hand-path-data";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 const CARDINAL_LOCATIONS = new Set<GridLocation>([
   GridLocation.NORTH,

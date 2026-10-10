@@ -20,52 +20,52 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   createMotionData,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
-import { reconcileStepDerived } from "$lib/shared/create/services/sequence-derived-fields";
-import { deriveSequenceLetters } from "$lib/shared/create/services/sequence-transforms";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { hashSequenceContent } from "$lib/shared/foundation/services/content-hasher";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
-import { turnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
-import { interpolatePropAngles } from "$lib/shared/animation-engine/services/prop-interpolator";
-import { FrameParameterBuilder } from "$lib/shared/animation-engine/services/frame-parameter-builder";
-import { ensureMotionData } from "$lib/shared/sequence-viewer/services/sequence-motion-loader";
-import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
+import { reconcileStepDerived } from "#lib/shared/create/services/sequence-derived-fields.js";
+import { deriveSequenceLetters } from "#lib/shared/create/services/sequence-transforms.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+import { hashSequenceContent } from "#lib/shared/foundation/services/content-hasher.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+import { turnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
+import { interpolatePropAngles } from "#lib/shared/animation-engine/services/prop-interpolator.js";
+import { FrameParameterBuilder } from "#lib/shared/animation-engine/services/frame-parameter-builder.js";
+import { ensureMotionData } from "#lib/shared/sequence-viewer/services/sequence-motion-loader.js";
+import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
 
-vi.mock("$lib/shared/browse/get-browse-loader", () => ({
+vi.mock("#lib/shared/browse/get-browse-loader.js", () => ({
   getBrowseLoader: vi.fn(),
 }));
 
 // Wave 0 guards: hydrateSequence's letter/position derivers hit the pictograph
 // dataframe (fetch) — identity-stub them so the gridMode donor loop is the
 // unit under test.
-vi.mock("$lib/shared/navigation/services/letter-deriver", () => ({
+vi.mock("#lib/shared/navigation/services/letter-deriver.js", () => ({
   deriveLettersForSequence: vi.fn(async (s: unknown) => s),
 }));
-vi.mock("$lib/shared/navigation/services/position-deriver", () => ({
+vi.mock("#lib/shared/navigation/services/position-deriver.js", () => ({
   derivePositionsForSequence: vi.fn(async (s: unknown) => s),
 }));
-import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
-import { analyzeDifficulty } from "$lib/shared/browse/services/sequence-difficulty-calculator";
-import { enrichStepsWithGridPlacements } from "$lib/shared/qr/services/compositional-utils";
-import { extractPattern } from "$lib/features/create/shared/services/rotation-direction-pattern-manager";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
+import { analyzeDifficulty } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
+import { enrichStepsWithGridPlacements } from "#lib/shared/qr/services/compositional-utils.js";
+import { extractPattern } from "#lib/features/create/shared/services/rotation-direction-pattern-manager.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 function motion(overrides: Partial<MotionData> = {}): MotionData {
   return createMotionData({

@@ -6,12 +6,12 @@
   Opens as an overlay from the Effects section in CellEditorPanel.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     TipEffectMap,
     EffectType,
-  } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
 
   type Scope = "cell" | "hand" | "tip";
 

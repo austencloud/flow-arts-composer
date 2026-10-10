@@ -11,7 +11,7 @@ import {
   worldToProjectedMeters,
   type GeospatialTerrainManifestV2,
   type TerrainFetch,
-} from "$lib/shared/3d/procedural-engine/generation/geospatial-terrain";
+} from "#lib/shared/3d/procedural-engine/generation/geospatial-terrain.js";
 
 function heightBytes(values: number[]): ArrayBuffer {
   const bytes = new ArrayBuffer(values.length * Float32Array.BYTES_PER_ELEMENT);

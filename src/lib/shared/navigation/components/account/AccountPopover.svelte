@@ -1,24 +1,24 @@
 <!-- AccountPopover: Desktop-only popover menu above AccountRow in sidebar -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { signInWithGoogle } from "$lib/shared/auth/services/authenticator";
-  import { upgradeAnonymousWithGoogle } from "$lib/shared/auth/services/anonymous-upgrade";
-  import { promptAnonymousImport } from "$lib/shared/auth/state/anonymous-import-prompt.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { signInWithGoogle } from "#lib/shared/auth/services/authenticator.js";
+  import { upgradeAnonymousWithGoogle } from "#lib/shared/auth/services/anonymous-upgrade.js";
+  import { promptAnonymousImport } from "#lib/shared/auth/state/anonymous-import-prompt.svelte.js";
   import {
     isExpectedAuthInterruption,
     mapAuthError,
-  } from "$lib/shared/auth/services/auth-error-messages";
-  import { getAuthInstance } from "$lib/shared/auth/firebase";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  } from "#lib/shared/auth/services/auth-error-messages.js";
+  import { getAuthInstance } from "#lib/shared/auth/firebase.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { authState } from "../../../auth/state/auth-state.svelte";
   import { whatsNewState } from "../../../settings/state/whats-new-state.svelte";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import RobustAvatar from "../../../components/avatar/RobustAvatar.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import type { ModuleId } from "../../domain/types";
-  import { tryGetAccountSetupContext } from "$lib/shared/onboarding/context/account-setup-context";
-  import { supportModalState } from "$lib/shared/support/state/support-modal-state.svelte";
+  import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
+  import { supportModalState } from "#lib/shared/support/state/support-modal-state.svelte.js";
 
   let { isOpen, onClose, anchorElement } = $props<{
     isOpen: boolean;

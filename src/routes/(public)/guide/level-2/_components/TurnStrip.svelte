@@ -1,6 +1,6 @@
 <script lang="ts" module>
   import type { HalfwayMotion } from "../_data/halfway-pose";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
   /**
    * One reflowable lesson strip: start pose → (poses/half) → end pose → an
@@ -78,18 +78,18 @@
 <script lang="ts">
   import GuidePictograph from "../../level-1/_components/GuidePictograph.svelte";
   import { guideTurnDisplayWord } from "../../level-1/_data/guide-turn-display-word";
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   import PoseFrame from "./PoseFrame.svelte";
-  import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
-  import "$lib/shared/selection/selection.css";
-  import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
+  import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
+  import "#lib/shared/selection/selection.css";
+  import { getSequenceSelection } from "#lib/shared/selection/sequence-selection.svelte.js";
   import { getGuideSequenceClick } from "../../level-1/_data/guide-data-context";
   import { getGuideActiveStep } from "../../level-1/_data/guide-active-step.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     MotionType,
     HandSide,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   let {
     frames,

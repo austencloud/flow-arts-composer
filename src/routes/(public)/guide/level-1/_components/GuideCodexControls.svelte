@@ -13,13 +13,13 @@
    * Blue/Red card pair for turns, and full-width labeled action chips for the
    * transforms - no bespoke icon rows, no cryptic icon-only segmented control.
    */
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import PropControlPair from "$lib/features/create/shared/components/sequence-actions/PropControlPair.svelte";
-  import PropTurnsControl from "$lib/features/create/shared/components/sequence-actions/PropTurnsControl.svelte";
-  import PropSelectionSheet from "$lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { HandSide, RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import PropControlPair from "#lib/features/create/shared/components/sequence-actions/PropControlPair.svelte";
+  import PropTurnsControl from "#lib/features/create/shared/components/sequence-actions/PropTurnsControl.svelte";
+  import PropSelectionSheet from "#lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { HandSide, RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { getGuideCodexState } from "../_data/guide-codex-state.svelte";
   import type { GuideCodexVisibility } from "../_data/guide-codex-persistence";
 

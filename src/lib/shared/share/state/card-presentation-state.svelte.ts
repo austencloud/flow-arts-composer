@@ -1,9 +1,9 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   cardPresentationsEqual,
   normalizeCardPresentation,
   type CardPresentation,
-} from "$lib/shared/share/domain/models/card-presentation";
+} from "#lib/shared/share/domain/models/card-presentation.js";
 
 interface CardPresentationStateInputs {
   getDefault: () => CardPresentation;

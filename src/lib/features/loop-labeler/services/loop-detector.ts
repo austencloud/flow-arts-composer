@@ -1,4 +1,4 @@
-import type { SequenceEntry } from "$lib/shared/loop-labeler/domain/sequence-models";
+import type { SequenceEntry } from "#lib/shared/loop-labeler/domain/sequence-models.js";
 import type {
   ILOOPDetector,
   LOOPDetectionResult,
@@ -16,7 +16,7 @@ import {
   LOOPComponent,
   type DetectedComponent,
   type LOOPDomain,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import { detectOrientationPass } from "./loop-orientation-detector";
 import { detectUniformPattern } from "./detection";
 

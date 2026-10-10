@@ -33,7 +33,7 @@ export interface ImpersonatedUser {
  * Handles provider-specific logic for Facebook and Google profile pictures.
  */
 
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export interface GeneratedAvatarData {
   gradientId: string;

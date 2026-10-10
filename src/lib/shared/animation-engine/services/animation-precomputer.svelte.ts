@@ -8,17 +8,17 @@
  * Uses reactive state ownership - service owns $state, component derives from it.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { TrailSettings } from "../domain/types/trail-types";
-import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import type { ITrailCapturer as TrailCapturer } from "$lib/shared/animation-engine/services/ITrailCapturer";
-import type { IAnimationRenderer as AnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
-import { AnimationPathCache } from "$lib/shared/animation-engine/services/animation-path-cache";
+import type { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import type { ITrailCapturer as TrailCapturer } from "#lib/shared/animation-engine/services/ITrailCapturer.js";
+import type { IAnimationRenderer as AnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
+import { AnimationPathCache } from "#lib/shared/animation-engine/services/animation-path-cache.js";
 import type { AnimationVisibilityStateManager } from "../state/animation-visibility-state.svelte";
 import {
   SequenceFramePreRenderer,
   type PreRenderProgress,
-} from "$lib/shared/animation-engine/services/sequence-frame-pre-renderer";
+} from "#lib/shared/animation-engine/services/sequence-frame-pre-renderer.js";
 import type {
   PrecomputationServiceConfig,
   PrecomputationState,

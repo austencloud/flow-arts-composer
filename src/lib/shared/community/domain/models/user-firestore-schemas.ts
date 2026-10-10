@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { firestoreDate } from "$lib/shared/firestore";
+import { firestoreDate } from "#lib/shared/firestore/index.js";
 
 /**
  * Zod schema matching the FirestoreUserData interface in user-repository.ts.

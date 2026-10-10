@@ -1,20 +1,20 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { computeHash } from "$lib/shared/library/services/sequence-content-hasher";
-import { LibraryError } from "$lib/shared/library/domain/library-error";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { PropType as PropTypeValues } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { computeHash } from "#lib/shared/library/services/sequence-content-hasher.js";
+import { LibraryError } from "#lib/shared/library/domain/library-error.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { PropType as PropTypeValues } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   removeToast,
   showToast,
-} from "$lib/shared/toast/state/toast-state.svelte";
-import { postSaveActivation } from "$lib/shared/onboarding/state/post-save-activation-state.svelte";
+} from "#lib/shared/toast/state/toast-state.svelte.js";
+import { postSaveActivation } from "#lib/shared/onboarding/state/post-save-activation-state.svelte.js";
 import type { LibrarySaveService } from "../library-save-service";
 import type {
   IVisualSequenceSaveCoordinator,
   VisualSequenceSaveIntent,
   VisualSequenceSaveOutcome,
-} from "$lib/shared/library/services/contracts/IVisualSequenceSaveCoordinator";
+} from "#lib/shared/library/services/contracts/IVisualSequenceSaveCoordinator.js";
 
 const PROP_TYPES = new Set<string>(Object.values(PropTypeValues));
 

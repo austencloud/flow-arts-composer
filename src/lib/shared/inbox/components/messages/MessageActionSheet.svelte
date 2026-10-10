@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import { getMessagePreviewText } from "../../utils/message-preview";
-  import type { Message } from "$lib/shared/messaging/domain/models/message-models";
+  import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
 
   type Action = () => void | Promise<void>;
   type ReactionAction = (emoji: string) => void | Promise<void>;
@@ -245,7 +245,6 @@
   :global(.message-action-sheet) {
     --sheet-bg: var(--theme-panel-bg);
     --sheet-border: 1px solid var(--theme-stroke-strong);
-    --sheet-shadow: 0 -16px 48px var(--theme-shadow);
     --sheet-max-height: min(92dvh, 44rem);
   }
 

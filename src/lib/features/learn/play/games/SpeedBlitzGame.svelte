@@ -28,10 +28,10 @@ existing QuizLetterButton state machine already gives us "incorrect shows the
 correct letter" for free).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onDestroy, onMount } from "svelte";
   import * as QuestionGenerator from "../../quiz/services/question-generator";
   import { QuizType } from "../../quiz/domain/enums/quiz-enums";

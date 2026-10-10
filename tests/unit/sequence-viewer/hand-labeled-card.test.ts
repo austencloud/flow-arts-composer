@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { flushSync } from "svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { createHandLabeledCardHarness } from "./hand-labeled-card-harness.svelte";
 
 function makeSequence(id: string): SequenceData {

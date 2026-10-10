@@ -34,8 +34,8 @@
  * Spec: docs/architecture/landing-analytics-taxonomy.md §4
  */
 
-import { browser } from "$app/environment";
-import { getPostHogInstance } from "$lib/shared/analytics/services/posthog";
+import { browser } from "$app/env";
+import { getPostHogInstance } from "#lib/shared/analytics/services/posthog.js";
 import {
   trackAuthModalSubmitted,
   getAuthEncounterProperties,
@@ -43,7 +43,7 @@ import {
   disarmAuthFunnel,
   type AuthMethod,
   type AuthMode,
-} from "$lib/shared/analytics/auth-events";
+} from "#lib/shared/analytics/auth-events.js";
 
 /**
  * Magic link is the one method whose submission and completion happen in

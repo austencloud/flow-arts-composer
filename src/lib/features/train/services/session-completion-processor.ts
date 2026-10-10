@@ -6,7 +6,7 @@
  */
 
 import type * as performanceHistoryTrackerModule from "./performance-history-tracker";
-import type { StoredPerformance } from "$lib/shared/train/domain/train-database-models";
+import type { StoredPerformance } from "#lib/shared/train/domain/train-database-models.js";
 import { PracticeMode } from "../domain/enums/train-enums";
 import { trackTrainSessionCompleted } from "../analytics/train-events";
 

@@ -6,7 +6,7 @@
  */
 
 import { collection, query, getDocs, orderBy, limit } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import type { TopSequenceData } from "./types";
 
 // Timeout for Firebase queries (10 seconds)

@@ -10,10 +10,10 @@ Features frame processing loop for pose estimation and overlay support.
   import {
     CameraManager,
     isCameraAcquisitionCancelled,
-  } from "$lib/shared/train/services/camera-manager";
+  } from "#lib/shared/train/services/camera-manager.js";
   import type { Snippet } from "svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     onCameraReady?: () => void;
@@ -198,7 +198,7 @@ Features frame processing loop for pose estimation and overlay support.
     justify-content: center;
     gap: var(--spacing-md, 16px);
     color: var(--theme-text);
-    background: color-mix(in srgb, var(--theme-shadow) 80%, transparent);
+    background: rgba(0, 0, 0, 0.8);
   }
 
   .error-icon {

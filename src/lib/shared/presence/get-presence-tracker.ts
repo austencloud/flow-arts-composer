@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { PresenceTracker } from './services/presence-tracker';
 
 let instance: PresenceTracker | null = null;

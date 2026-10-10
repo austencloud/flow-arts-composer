@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import fs from "fs";
 import { GLOSSARY, LETTER_TYPES } from "@tka/domain";
-import { TikaPictographLoader } from "$lib/features/tika/services/tika-pictograph-loader";
-import { TikaToolExecutor } from "$lib/features/tika/services/tika-tool-executor";
-import { TikaSequenceGenerator } from "$lib/features/tika/services/tika-sequence-generator";
-import { TikaSequenceValidator } from "$lib/features/tika/services/tika-sequence-validator";
+import { TikaPictographLoader } from "#lib/features/tika/services/tika-pictograph-loader.js";
+import { TikaToolExecutor } from "#lib/features/tika/services/tika-tool-executor.js";
+import { TikaSequenceGenerator } from "#lib/features/tika/services/tika-sequence-generator.js";
+import { TikaSequenceValidator } from "#lib/features/tika/services/tika-sequence-validator.js";
 
 describe("TIKA canonical knowledge loading", () => {
   it("serves glossary and type definitions without retired JSON files", () => {

@@ -9,7 +9,7 @@
  * Domain: Keyboard Shortcuts - Registration
  */
 
-import type { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
+import type { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
 import type { createKeyboardShortcutState } from "../state/keyboard-shortcut-state.svelte";
 import {
   handleModuleChange,
@@ -19,7 +19,7 @@ import { authState } from "../../auth/state/auth-state.svelte";
 import { isModuleAccessible } from "../../auth/domain/guest-access-config";
 import { resolveAccessTier } from "../../auth/domain/access-tier";
 import { isPremiumOrAbove } from "../../auth/domain/models/user-role";
-import { quickFeedbackState } from "$lib/shared/feedback/state/quick-feedback-state.svelte";
+import { quickFeedbackState } from "#lib/shared/feedback/state/quick-feedback-state.svelte.js";
 import { adminToolbarState } from "../../debug/state/admin-toolbar-state.svelte";
 import { settingsService } from "../../settings/state/settings-state.svelte";
 import { getAnimationVisibilityManager } from "../../animation-engine/state/animation-visibility-state.svelte";

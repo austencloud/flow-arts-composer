@@ -5,17 +5,17 @@ to three rows. Click opens the expanded overlay.
 (Rhythm was removed pending a finished rhythm-preset design.)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type {
     StartEndOptions,
     PanelCoordinationState,
-  } from "$lib/shared/create/state/panel-coordination-state.svelte";
+  } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
   import { onMount, getContext } from "svelte";
-  import { customizeOverlayWasOpen } from "$lib/shared/create/state/customize-overlay-hmr";
+  import { customizeOverlayWasOpen } from "#lib/shared/create/state/customize-overlay-hmr.js";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import CardHeader from "./shared/CardHeader.svelte";
   import {
     buildCustomizeSummary,
@@ -103,7 +103,12 @@ to three rows. Click opens the expanded overlay.
   // the card is 64px tall with a 28px summary band, room for one row — so the
   // budget is measured rather than fixed at three. The full list still reaches
   // the accessible name either way.
-  let cardHeight = $state(0);
+  // Read from the resize observer rather than `bind:clientHeight`, which also
+  // reads the height synchronously as the card mounts and forces a layout of
+  // the whole half-built Generate panel. The observer reports before the first
+  // paint, and the button has no border, so its border box is its client box.
+  let cardBox = $state<readonly ResizeObserverSize[]>();
+  const cardHeight = $derived(Math.round(cardBox?.[0]?.blockSize ?? 0));
   const summaryLines = $derived(
     capSummaryFacts(summary.facts, summaryRowBudget(cardHeight))
   );
@@ -142,7 +147,7 @@ to three rows. Click opens the expanded overlay.
 <button
   class="customize-card"
   style="--card-color: {color}; --shadow-color: {shadowColor}; --card-index: {cardIndex};"
-  bind:clientHeight={cardHeight}
+  bind:borderBoxSize={cardBox}
   onclick={handleClick}
   onkeydown={handleKeydown}
   aria-label={t("create_ui_customize_card_label", { summary: summary.accessibleSummary })}
@@ -190,7 +195,12 @@ to three rows. Click opens the expanded overlay.
       0 4px 8px hsl(var(--shadow-color) / 0.1),
       inset 0 1px 0 var(--theme-stroke);
 
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    /* Only what hover and press change. `all` also eased the container-unit
+       padding, so every resize of the panel re-laid the grid out each frame. */
+    transition:
+      transform var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
+      filter var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Glossy sheen */
@@ -228,7 +238,10 @@ to three rows. Click opens the expanded overlay.
 
   .customize-card:active {
     transform: translateY(0) scale(0.98);
-    transition: all var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      transform var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1),
+      filter var(--duration-instant) cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .card-value {

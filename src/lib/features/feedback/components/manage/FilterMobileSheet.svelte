@@ -1,19 +1,19 @@
 <!-- FilterMobileSheet - Bottom sheet with all filter sections for mobile -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { FeedbackManageState } from "$lib/shared/feedback/state/feedback-manage-state.svelte";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { FeedbackManageState } from "#lib/shared/feedback/state/feedback-manage-state.svelte.js";
   import type { FilterBarUIState } from "../../state/filter-bar-ui-state.svelte";
   import {
     TYPE_CONFIG,
     STATUS_CONFIG,
     PRIORITY_CONFIG,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import type {
     FeedbackType,
     FeedbackStatus,
     FeedbackPriority,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import FilterSectionHeader from "./FilterSectionHeader.svelte";
   import FilterOptionGrid from "./FilterOptionGrid.svelte";
 

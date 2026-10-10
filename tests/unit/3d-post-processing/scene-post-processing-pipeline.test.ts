@@ -13,11 +13,11 @@ import {
 import {
   getSceneColorSnapshot3D,
   requestSceneColorSnapshot3D,
-} from "$lib/shared/3d/effects/post-processing/scene-color-snapshot-3d";
+} from "#lib/shared/3d/effects/post-processing/scene-color-snapshot-3d.js";
 import {
   ScenePostProcessingPipeline,
   type ScenePostProcessingPipelineConfig,
-} from "$lib/shared/3d/effects/post-processing/scene-post-processing-pipeline";
+} from "#lib/shared/3d/effects/post-processing/scene-post-processing-pipeline.js";
 
 interface MockEffect {
   name: string;

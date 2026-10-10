@@ -13,20 +13,20 @@ import {
   type PostKeyframeChannel,
   type PostProject,
   type PostTrack,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   channelsOf,
   clampChannelValue,
   postSecondsOfKeyframe,
   sameChannelValue,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
-import { arrangementDurationSeconds } from "$lib/shared/media-composition/domain/post-arrangement-item";
-import { withMotionKeys } from "$lib/shared/media-composition/domain/post-project-motion-keys";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
+import { arrangementDurationSeconds } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
+import { withMotionKeys } from "#lib/shared/media-composition/domain/post-project-motion-keys.js";
 import {
   mergeSeparateTunnelHook,
   splitTunnelHookTitles,
-} from "$lib/shared/media-composition/domain/post-project-hook-migration";
+} from "#lib/shared/media-composition/domain/post-project-hook-migration.js";
 
 /**
  * The timeline's rules, applied after every edit so the stored project is

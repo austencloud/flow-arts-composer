@@ -1,7 +1,7 @@
 <script lang="ts">
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 
   const sequence = createSequenceData({
     id: "seek-lifecycle",

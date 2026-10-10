@@ -3,8 +3,8 @@ GridModeCard.svelte - Card for toggling grid mode
 Shows BOTH grid mode options vertically with clear active/inactive states
 -->
 <script lang="ts">
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import ToggleCard from "./ToggleCard.svelte";
 
   let {

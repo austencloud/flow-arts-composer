@@ -23,20 +23,20 @@ import {
   MissingDeckSequenceError,
 } from "../../../services/deck-variation";
 import { hashRecipe } from "../../../services/deck-recipe";
-import { makeRng, childSeed } from "$lib/shared/foundation/utils/seeded-rng";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { makeRng, childSeed } from "#lib/shared/foundation/utils/seeded-rng.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   GenerationMode,
   type GenerationOptions,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { levelToDifficulty } from "$lib/shared/create/utils/config-mapper";
-import { resolveLoopConfig } from "$lib/shared/create/services/loop-type-utils";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { hashSequenceSkeleton } from "$lib/shared/foundation/services/content-hasher";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { levelToDifficulty } from "#lib/shared/create/utils/config-mapper.js";
+import { resolveLoopConfig } from "#lib/shared/create/services/loop-type-utils.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { hashSequenceSkeleton } from "#lib/shared/foundation/services/content-hasher.js";
 import type { ArchivedDeckPayload } from "../../../services/deck-archive-store";
 import {
   buildGalleryDeckResult,

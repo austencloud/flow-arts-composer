@@ -1,27 +1,27 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { onMount, tick } from "svelte";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
-  import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
-  import { registerLibraryRepository } from "$lib/shared/composition-root/register-library-repository";
-  import { configureShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import { registerLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-  import { createCollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import SequenceViewerOrchestrator from "$lib/shared/sequence-viewer/components/SequenceViewerOrchestrator.svelte";
-  import SequenceViewerShell from "$lib/shared/sequence-viewer/components/SequenceViewerShell.svelte";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+  import { initializeAppServices } from "#lib/shared/application/state/services.svelte.js";
+  import { registerLibraryRepository } from "#lib/shared/composition-root/register-library-repository.js";
+  import { configureShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import { registerLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+  import { createCollaborativeVideo } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import { getSequenceVideosStore } from "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js";
+  import SequenceViewerOrchestrator from "#lib/shared/sequence-viewer/components/SequenceViewerOrchestrator.svelte";
+  import SequenceViewerShell from "#lib/shared/sequence-viewer/components/SequenceViewerShell.svelte";
   import {
     motionDuration,
     reducedMotion,
-  } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     VIEWER_MODE_DISSOLVE_CLASS,
     VIEWER_MODE_DISSOLVE_DURATION,
-  } from "$lib/shared/transitions/viewer-mode-dissolve";
+  } from "#lib/shared/transitions/viewer-mode-dissolve.js";
   import { TRANSITION_REVIEW_SEQUENCE } from "../transition-review-fixture";
   import {
     isWorkspaceReplayCommand,

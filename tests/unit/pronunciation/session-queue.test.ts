@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { createSessionQueue, REQUEUE_DISTANCE, MAX_ATTEMPTS } from "$lib/features/lab/pronunciation-recorder/domain/session-queue";
-import { createAbortMonitor, ABORT_CONSECUTIVE_FAILURES } from "$lib/features/lab/pronunciation-recorder/domain/session-abort";
+import { createSessionQueue, REQUEUE_DISTANCE, MAX_ATTEMPTS } from "#lib/features/lab/pronunciation-recorder/domain/session-queue.js";
+import { createAbortMonitor, ABORT_CONSECUTIVE_FAILURES } from "#lib/features/lab/pronunciation-recorder/domain/session-abort.js";
 
 const WORDS = Array.from({ length: 20 }, (_, index) => `w${index}`);
 

@@ -20,15 +20,15 @@
  * the freeform output in the first place.
  */
 
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 import {
   GridMode,
   type GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 
 import type { CandidateUnit } from "../domain/closure-types";
 import { admissibleClosures, type ClosureOptions } from "./loop-closure";

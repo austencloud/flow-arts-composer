@@ -28,10 +28,11 @@
 /**
  * IMPORT BOUNDARY — this module must not statically import a renderer package.
  *
- * It is a few hundred bytes, which puts it under Rollup's
- * `experimentalMinChunkSize` floor (vite.config.ts, `clientOnlyChunkMergePlugin`),
- * so the bundler is free to merge it into whatever chunk it happens to sit
- * beside — and it did: into the root layout's own chunk. A static
+ * It is a few hundred bytes, which put it under the Rollup build's
+ * `experimentalMinChunkSize` floor, so the bundler was free to merge it into
+ * whatever chunk it happened to sit beside — and it did: into the root
+ * layout's own chunk. The Rolldown build has no such merge yet (vite.config.ts,
+ * "NO SMALL-CHUNK MERGE UNDER ROLLDOWN"), but one may return. A static
  * `@austencloud/backgrounds` import here therefore became a static edge from
  * `+layout.svelte` into the shared `vendor` chunk, and every route (landing
  * included) preloaded 3.28 MB / 918 KB gzip of unrelated packages before it

@@ -1,18 +1,18 @@
-import { setLocale } from "$lib/shared/i18n/i18n.svelte";
+import { setLocale } from "#lib/shared/i18n/i18n.svelte.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const detectPlatform = vi.hoisted(() => vi.fn(() => "desktop"));
 const supportsNativeFileShare = vi.hoisted(() => vi.fn(() => true));
 const canNativeShareFile = vi.hoisted(() => vi.fn(() => true));
 
-vi.mock("$lib/shared/mobile/services/platform-detector", () => ({
+vi.mock("#lib/shared/mobile/services/platform-detector.js", () => ({
   detectPlatform,
 }));
 
-vi.mock("$lib/shared/foundation/services/file-downloader", async () => {
+vi.mock("#lib/shared/foundation/services/file-downloader.js", async () => {
   const actual = await vi.importActual<
-    typeof import("$lib/shared/foundation/services/file-downloader")
-  >("$lib/shared/foundation/services/file-downloader");
+    typeof import("#lib/shared/foundation/services/file-downloader.js")
+  >("#lib/shared/foundation/services/file-downloader.js");
   return { ...actual, supportsNativeFileShare, canNativeShareFile };
 });
 
@@ -21,7 +21,7 @@ const {
   copyLink,
   copyPreparedLink,
   resolveDestinations,
-} = await import("$lib/shared/share/services/post-handoff");
+} = await import("#lib/shared/share/services/post-handoff.js");
 
 function pngBlob(): Blob {
   return new Blob(["x"], { type: "image/png" });

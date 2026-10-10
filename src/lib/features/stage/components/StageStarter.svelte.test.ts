@@ -1,7 +1,7 @@
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 
 vi.mock("./StudioCastPreview.svelte", async () => ({
   default: (await import("./StudioCastPreviewTestStub.svelte")).default,

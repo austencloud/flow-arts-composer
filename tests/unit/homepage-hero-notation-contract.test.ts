@@ -61,7 +61,7 @@ describe("homepage hero notation rail contract", () => {
   it("reuses the shared StepStrip through the hero's lazy stage seam", () => {
     expect(homeHero).toContain("showNotationStrip={true}");
     expect(sequenceHero).toContain(
-      'import("$lib/shared/timeline/StepStrip.svelte")'
+      'import("#lib/shared/timeline/StepStrip.svelte")'
     );
     expect(sequenceHero).toContain('density: "compact"');
     expect(sequenceHero).toContain(

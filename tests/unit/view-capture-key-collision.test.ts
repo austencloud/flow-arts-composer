@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import type { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-import type { ShortcutRegistrationOptions } from "$lib/shared/keyboard/domain/types/keyboard-types";
-import { VIEW_CAPTURE_KEY_CODE } from "$lib/shared/review/view-capture";
-import { registerGlobalShortcuts } from "$lib/shared/keyboard/registration/register-global-shortcuts";
-import { registerCreateShortcuts } from "$lib/shared/keyboard/registration/register-create-shortcuts";
-import { registerChoreoShortcuts } from "$lib/shared/keyboard/registration/register-choreo-shortcuts";
-import { registerStageShortcuts } from "$lib/shared/keyboard/registration/register-stage-shortcuts";
-import { register3DViewerShortcuts } from "$lib/shared/keyboard/registration/register-3d-viewer-shortcuts";
-import { registerEscapeShortcut } from "$lib/shared/keyboard/registration/register-escape-shortcut";
-import { registerSaveShortcut } from "$lib/shared/keyboard/registration/register-save-shortcut";
-import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
-import { AnimationShortcutRegistrar } from "$lib/shared/animation-engine/services/animation-shortcut-registrar";
+import type { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+import type { ShortcutRegistrationOptions } from "#lib/shared/keyboard/domain/types/keyboard-types.js";
+import { VIEW_CAPTURE_KEY_CODE } from "#lib/shared/review/view-capture.js";
+import { registerGlobalShortcuts } from "#lib/shared/keyboard/registration/register-global-shortcuts.js";
+import { registerCreateShortcuts } from "#lib/shared/keyboard/registration/register-create-shortcuts.js";
+import { registerChoreoShortcuts } from "#lib/shared/keyboard/registration/register-choreo-shortcuts.js";
+import { registerStageShortcuts } from "#lib/shared/keyboard/registration/register-stage-shortcuts.js";
+import { register3DViewerShortcuts } from "#lib/shared/keyboard/registration/register-3d-viewer-shortcuts.js";
+import { registerEscapeShortcut } from "#lib/shared/keyboard/registration/register-escape-shortcut.js";
+import { registerSaveShortcut } from "#lib/shared/keyboard/registration/register-save-shortcut.js";
+import { registerEditHistoryShortcuts } from "#lib/shared/keyboard/registration/register-edit-history-shortcuts.js";
+import { AnimationShortcutRegistrar } from "#lib/shared/animation-engine/services/animation-shortcut-registrar.js";
 
 /**
  * Regression test for the bare-P collision.

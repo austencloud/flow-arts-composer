@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { createSequenceCoreState } from "./sequence-core-state.svelte";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 describe("setCurrentSequence reconciles derived fields", () => {
   it("heals a stale alpha2/box step and derives state.gridMode (not trusts stored)", () => {

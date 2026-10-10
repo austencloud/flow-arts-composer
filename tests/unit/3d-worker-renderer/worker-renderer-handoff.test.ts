@@ -4,7 +4,7 @@ import {
   createWorkerRendererHandoffState,
   rejectWorkerEnvironment,
   requestWorkerEnvironment,
-} from "$lib/shared/3d/worker-renderer/domain/worker-renderer-handoff";
+} from "#lib/shared/3d/worker-renderer/domain/worker-renderer-handoff.js";
 
 describe("worker renderer handoff", () => {
   it("does not expose the first world until its worker renders a frame", () => {

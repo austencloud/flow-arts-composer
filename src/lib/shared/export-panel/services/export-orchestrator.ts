@@ -7,19 +7,19 @@
  * Domain: Export Panel - Export Orchestration
  */
 
-import type { Sharer } from "$lib/shared/share/services/sharer";
-import type { IVideoExportOrchestrator, VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { Sharer } from "#lib/shared/share/services/sharer.js";
+import type { IVideoExportOrchestrator, VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ExportSettings } from "../domain/models/export-settings";
 import type { ExportResult, AnimationExportDependencies } from "./types";
-import type { ShareOptions } from "$lib/shared/share/domain/models/share-options";
-import { DEFAULT_SHARE_OPTIONS } from "$lib/shared/share/domain/models/share-options";
-import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-import { VIDEO_EXPORT_SUCCESS_DELAY_MS } from "$lib/shared/animation-engine/domain/constants/timing";
-import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { hashString } from "$lib/shared/foundation/services/content-hasher";
-import { shareBlobNatively } from "$lib/shared/foundation/services/file-downloader";
+import type { ShareOptions } from "#lib/shared/share/domain/models/share-options.js";
+import { DEFAULT_SHARE_OPTIONS } from "#lib/shared/share/domain/models/share-options.js";
+import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+import { VIDEO_EXPORT_SUCCESS_DELAY_MS } from "#lib/shared/animation-engine/domain/constants/timing.js";
+import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
+import { shareBlobNatively } from "#lib/shared/foundation/services/file-downloader.js";
 
 interface PreparedStaticShare {
   key: string;

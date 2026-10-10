@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-import { addTakeTap } from "$lib/shared/media-composition/domain/take-timing";
-import { resolvePostStudioDraft } from "$lib/shared/media-composition/services/post-project-backup";
-import { readPostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import { addTakeTap } from "#lib/shared/media-composition/domain/take-timing.js";
+import { resolvePostStudioDraft } from "#lib/shared/media-composition/services/post-project-backup.js";
+import { readPostDraftRecords } from "#lib/shared/media-composition/services/post-draft-storage.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 
 const LABELS = { runThrough: "Run through", slowMo: "Slow mo", card: "Card" };
 const SEQUENCE_ID = "seq-reload-history";

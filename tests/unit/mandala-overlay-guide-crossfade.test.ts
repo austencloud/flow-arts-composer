@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
+import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
 import {
   MandalaOverlayCanvas,
   scaleGuideForOverlay,
-} from "$lib/shared/mandala/services/mandala-overlay-canvas";
-import type { PreparedMandalaPaths } from "$lib/shared/mandala/services/types";
-import { DURATION } from "$lib/shared/transitions/transitions";
+} from "#lib/shared/mandala/services/mandala-overlay-canvas.js";
+import type { PreparedMandalaPaths } from "#lib/shared/mandala/services/types.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 // The overlay drives its guide crossfade with DURATION.dramatic. Read it from
 // the same token rather than restating a number, so a retuned fade moves both.

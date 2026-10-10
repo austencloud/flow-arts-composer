@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { SequenceRevisionRefSchema } from "$lib/shared/media-composition/domain/sequence-time-map";
-import { arrangementSnapshotSchema } from "$lib/shared/media-composition/domain/arrangement";
+import { SequenceRevisionRefSchema } from "#lib/shared/media-composition/domain/sequence-time-map.js";
+import { arrangementSnapshotSchema } from "#lib/shared/media-composition/domain/arrangement.js";
 
 const NonEmptyIdSchema = z.string().trim().min(1);
 const TimestampSchema = z.number().finite().int().nonnegative();

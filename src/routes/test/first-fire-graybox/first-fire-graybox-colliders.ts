@@ -1,4 +1,4 @@
-import type { FirstFireBlenderContract } from "$lib/features/museum/data/first-fire-blender-contract";
+import type { FirstFireBlenderContract } from "#lib/features/museum/data/first-fire-blender-contract.js";
 
 export const FIRST_FIRE_GRAYBOX_SPAWN = {
   x: -27,

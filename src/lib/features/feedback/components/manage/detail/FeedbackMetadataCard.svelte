@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { FeedbackDetailState } from "../../../state/feedback-detail-state.svelte";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
 
   interface Props {
     detailState: FeedbackDetailState;

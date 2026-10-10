@@ -9,13 +9,13 @@
   fine — the bar's inline controls apply live; this sets the next run's defaults.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { Popover } from "bits-ui";
   import type { TempoPracticeConfig } from "../services/tempo-practice-orchestrator";
   import {
     PLAYBACK_MIN_BPM,
     PLAYBACK_MAX_BPM,
-  } from "$lib/shared/animation-engine/domain/constants/timing";
+  } from "#lib/shared/animation-engine/domain/constants/timing.js";
 
   interface Props {
     config: Partial<TempoPracticeConfig>;

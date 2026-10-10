@@ -13,14 +13,14 @@
   import { untrack, onDestroy } from "svelte";
   import { PerformerRig, Plane, PlaneMode, userProportionsState } from "@austencloud/scene-3d";
   import type { GridMode } from "@austencloud/scene-3d";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     createCharacterInstanceState,
     makeStandaloneDeps,
-  } from "$lib/shared/3d/state/character-instance-state.svelte";
-  import { computeFramingShot } from "$lib/shared/3d/camera/compute-framing-shot";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  } from "#lib/shared/3d/state/character-instance-state.svelte.js";
+  import { computeFramingShot } from "#lib/shared/3d/camera/compute-framing-shot.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
 
   let { sequence, active = true }: { sequence: SequenceData; active?: boolean } = $props();
 

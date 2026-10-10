@@ -39,10 +39,10 @@ import {
 } from "./services/runtime-ambient-provider";
 import { findCombinations } from "./services/sequence-combinator";
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 
 /**
  * Longest word `candidateWords` looks for by default.

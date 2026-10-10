@@ -4,8 +4,8 @@
   Displays a list of recent training sessions.
 -->
 <script lang="ts">
-  import type { StoredPerformance } from "$lib/shared/train/domain/train-database-models";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { StoredPerformance } from "#lib/shared/train/domain/train-database-models.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     sessions: StoredPerformance[];
@@ -165,7 +165,6 @@
     font-size: 1.25rem;
     font-weight: 700;
     color: #000000;
-    box-shadow: 0 2px 4px var(--theme-shadow, var(--theme-shadow));
     flex-shrink: 0;
   }
 

@@ -5,7 +5,7 @@
  * Replaces 13 prev* state variables with a single hash.
  */
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export type ThumbnailVariant = "gallery" | "wordcard";
 

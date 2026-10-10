@@ -14,7 +14,7 @@ import {
   MIN_CATALOG_PORTRAIT,
   MIN_LIST_ROW,
   type EffectCatalogFit,
-} from "$lib/shared/animation-engine/domain/effect-catalog-fit";
+} from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
 
 const COUNT = 16;
 const INSET = 2 * (CATALOG_TILE_PAD + CATALOG_TILE_BORDER);

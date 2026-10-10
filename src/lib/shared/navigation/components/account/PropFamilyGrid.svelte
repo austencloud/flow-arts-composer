@@ -1,13 +1,13 @@
 <!-- Profile skill families. Only families with real skill splits open details. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     PROFILE_PROP_FAMILIES,
     getProfilePropFamilyByRepresentative,
     getSelectedFamilyChoices,
-  } from "$lib/shared/community/domain/profile-prop-catalog";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { growFade } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/community/domain/profile-prop-catalog.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import PropFamilyCard from "./PropFamilyCard.svelte";
   import PropVariantPicker from "./PropVariantPicker.svelte";
 

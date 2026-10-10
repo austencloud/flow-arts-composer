@@ -53,7 +53,7 @@ The state follows the factory pattern with context-based dependency injection:
 
 ```svelte
 <script lang="ts">
-  import { initTrainState } from "$lib/modules/train/state";
+  import { initTrainState } from "#lib/modules/train/state";
 
   // Initialize with custom config
   const trainState = initTrainState({
@@ -68,8 +68,8 @@ The state follows the factory pattern with context-based dependency injection:
 
 ```svelte
 <script lang="ts">
-  import { getTrainState } from "$lib/modules/train/state";
-  import { TrainMode } from "$lib/modules/train/domain/enums/TrainEnums";
+  import { getTrainState } from "#lib/modules/train/state";
+  import { TrainMode } from "#lib/modules/train/domain/enums/TrainEnums";
 
   const state = getTrainState();
 

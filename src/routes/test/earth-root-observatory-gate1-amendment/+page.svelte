@@ -5,8 +5,8 @@
     earthRootObservatoryFloorSightlineMargin,
     earthRootObservatoryMinimumRouteSeparation,
     earthRootObservatoryViewingSamples,
-  } from "$lib/features/museum/data/earth-root-observatory-plan";
-  import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+  } from "#lib/features/museum/data/earth-root-observatory-plan.js";
+  import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 
   const cave = buildVulcanCaveFloorPlan();
   const plan = buildEarthRootObservatoryPlanForGrid(cave.grid);

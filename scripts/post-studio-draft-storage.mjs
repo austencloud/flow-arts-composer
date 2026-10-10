@@ -87,7 +87,8 @@ function recordFacts(record) {
       value && value.format === BACKUP_FORMAT && "project" in value
         ? value.project
         : value;
-    const scopedStudio = typeof project?.sequenceId === "string" &&
+    const scopedStudio =
+      typeof project?.sequenceId === "string" &&
       project.sequenceId.startsWith("studio-arrangement:") &&
       (sequenceId.startsWith("account:") || sequenceId.startsWith("guest:")) &&
       sequenceId.endsWith(`:${project.sequenceId}`);

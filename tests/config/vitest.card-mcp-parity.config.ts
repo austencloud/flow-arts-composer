@@ -1,4 +1,5 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { svelteOptions } from "../../src/config/svelte-options.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { playwright } from "@vitest/browser-playwright";
@@ -17,7 +18,7 @@ export default defineConfig({
     // this single release-runner flag into the browser bundle instead.
     __MCP_PACKED_ROOT__: JSON.stringify(Boolean(process.env.MCP_PACKED_ROOT)),
   },
-  plugins: [svelte()],
+  plugins: [svelte(svelteOptions)],
   publicDir: path.resolve(projectRoot, "static"),
   optimizeDeps: {
     include: [
@@ -41,7 +42,6 @@ export default defineConfig({
   resolve: {
     conditions: ["browser"],
     alias: {
-      $lib: path.resolve(projectRoot, "src/lib"),
       // Always the checkout's own package, never a node_modules link to another one.
       "@tka/render-composition": path.resolve(
         projectRoot,
@@ -51,7 +51,16 @@ export default defineConfig({
         projectRoot,
         "packages/render-core/src/index.ts"
       ),
-      "$app/environment": path.resolve(
+      // Listed before `$app/env`, which would otherwise match these as a prefix.
+      "$app/env/public": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-public.ts"
+      ),
+      "$app/env/private": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-private.ts"
+      ),
+      "$app/env": path.resolve(
         projectRoot,
         "tests/render-parity/stubs/app-environment.ts"
       ),
@@ -59,19 +68,7 @@ export default defineConfig({
         projectRoot,
         "tests/render-parity/stubs/app-navigation.ts"
       ),
-      "$app/stores": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/app-stores.ts"
-      ),
       "$app/state": path.resolve(projectRoot, "tests/setup/stubs/app-state.ts"),
-      "$env/static/public": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/env-static-public.ts"
-      ),
-      "$env/dynamic/public": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/env-dynamic-public.ts"
-      ),
     },
   },
   test: {

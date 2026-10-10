@@ -10,13 +10,13 @@ owned by someone with an account; this fills that same line by hand until the
 real profile exists.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import CollectionPropField from "$lib/features/library/components/CollectionPropField.svelte";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-  import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import CollectionPropField from "#lib/features/library/components/CollectionPropField.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+  import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
   import { communityCollectionsState } from "../state/community-collections-state.svelte";
 
   let {

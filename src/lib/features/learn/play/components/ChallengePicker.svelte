@@ -26,8 +26,8 @@ tree, so exactly one heading is ever announced.
     ChallengeMode,
   } from "../domain/arcade-types";
   import { getArcadeSession } from "../state/arcade-session-state.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getGamePreview } from "./previews/preview-map";
   import {
     gameTitle,

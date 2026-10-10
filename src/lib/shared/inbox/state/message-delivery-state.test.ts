@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { buildSequenceSharePayload } from "../domain/build-sequence-share-payload";
 import {
   getMessageDraftId,

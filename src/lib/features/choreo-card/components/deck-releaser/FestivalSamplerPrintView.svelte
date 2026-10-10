@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import CardInspectModal from "../CardInspectModal.svelte";
   import FestivalSamplerSheetPreview from "./FestivalSamplerSheetPreview.svelte";
   import {
@@ -17,7 +17,7 @@
   } from "../../services/print-pdf-exporter";
   import { printPdfBlob } from "../../services/print-blob";
   import { exportDeckZIP } from "../../services/print-zip-exporter";
-  import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
+  import { downloadBlobToDisk } from "#lib/shared/foundation/services/file-downloader.js";
   import { createFestivalSamplerPrintState } from "./state/festival-sampler-print-state.svelte";
   import { canvasToBlob } from "../../services/DeckCardBlobCache";
 
@@ -932,11 +932,7 @@
   .primary-action {
     min-height: 50px;
     padding: 11px 15px;
-    background: color-mix(
-      in srgb,
-      var(--semantic-success, #10b981) 68%,
-      var(--theme-shadow, #000)
-    );
+    background: color-mix(in srgb, var(--semantic-success, #10b981) 68%, #000);
     color: var(--theme-text-on-accent, #fff);
   }
 

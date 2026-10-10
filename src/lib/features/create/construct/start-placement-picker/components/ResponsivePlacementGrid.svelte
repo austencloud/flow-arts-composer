@@ -5,114 +5,64 @@
   const {
     isTransitioning = false,
     hasOverflow = false,
-    isSideBySideLayout = () => false,
     children,
   }: {
     isTransitioning?: boolean;
     hasOverflow?: boolean;
-    isSideBySideLayout?: () => boolean;
     children?: import("svelte").Snippet;
   } = $props();
+
+  // 4 Alpha + 4 Beta + 8 Gamma
+  const TOTAL_ITEMS = 16;
+  const MIN_TILE = 44;
+  // Eight columns may give tiles up to 5% smaller than four and still win
+  const EIGHT_COLUMN_TOLERANCE = 0.95;
 
   let gridWrapperElement: HTMLDivElement | null = null;
   let containerWidth = $state(0);
   let containerHeight = $state(0);
 
-  // Calculate optimal columns based on layout mode and container dimensions
-  // Uses aspect ratio to determine best layout for non-square containers
-  const optimalColumns = $derived(() => {
-    if (containerWidth === 0 || containerHeight === 0) return 4;
-
-    if (isSideBySideLayout()) {
-      // Side-by-side layout (desktop): Always 4 columns for better fit
-      return 4;
-    } else {
-      // Stacked layout: Use intelligent aspect ratio detection
-      const aspectRatio = containerWidth / containerHeight;
-
-      // If container is very wide (aspect > 1.8), prefer 8-column layout
-      // Otherwise use 4-column layout for better item sizing
-      if (containerWidth >= 650 && aspectRatio > 1.5) {
-        return 8;
-      }
-      return 4;
-    }
-  });
-
-  // Check if we're in 8-column layout (for conditional spacing)
-  const isEightColumnLayout = $derived(() => optimalColumns() === 8);
-
-  // Calculate grid layout configuration
-  const gridLayout = $derived(() => {
-    const columns = optimalColumns();
-    const totalItems = 16; // 4 Alpha + 4 Beta + 8 Gamma
-    const rows = Math.ceil(totalItems / columns);
-
-    return {
-      columns,
-      rows,
-      gridColumns: `repeat(${columns}, 1fr)`,
-      itemsPerRow: columns,
-    };
-  });
-
-  // Calculate responsive gap and padding based on container size
-  // Scales proportionally with container to maintain visual consistency
-  const responsiveSizing = $derived(() => {
+  // Gap and padding scale with the container (8px at 800px wide, 4-12px range)
+  const responsiveSizing = $derived.by(() => {
     if (containerWidth === 0 || containerHeight === 0) {
       return { gap: 8, padding: 8 };
     }
-
-    // Base sizes for reference (at 800px width)
-    const baseWidth = 800;
-    const baseGap = 8;
-    const basePadding = 8;
-
-    // Scale factor based on container width, clamped between 0.5x and 1.5x
-    const scaleFactor = Math.min(
-      Math.max(containerWidth / baseWidth, 0.5),
-      1.5
-    );
-
+    const scaleFactor = Math.min(Math.max(containerWidth / 800, 0.5), 1.5);
     return {
-      gap: Math.max(Math.round(baseGap * scaleFactor), 4), // Min 4px gap
-      padding: Math.max(Math.round(basePadding * scaleFactor), 4), // Min 4px padding
+      gap: Math.max(Math.round(8 * scaleFactor), 4),
+      padding: Math.max(Math.round(8 * scaleFactor), 4),
     };
   });
 
-  // Calculate maximum pictograph size to fit within container
-  // Intelligently accounts for both width and height constraints
-  const maxPictographSize = $derived(() => {
-    if (containerWidth === 0 || containerHeight === 0) return "auto";
+  // Largest square tile that fits `columns` across. Eight columns put Alpha and
+  // Beta on one row and Gamma on the next, with one extra gap between them.
+  function tileSizeFor(columns: number): number {
+    const { gap, padding } = responsiveSizing;
+    const rows = Math.ceil(TOTAL_ITEMS / columns);
+    const groupGap = columns === 8 ? gap : 0;
+    const width =
+      (containerWidth - padding * 2 - gap * (columns - 1)) / columns;
+    const height =
+      (containerHeight - padding * 2 - gap * (rows - 1) - groupGap) / rows;
+    return Math.min(width, height);
+  }
 
-    const layout = gridLayout();
-    const sizing = responsiveSizing();
-
-    // Total gap space (between items)
-    const totalGapWidth = sizing.gap * (layout.columns - 1);
-    const totalGapHeight = sizing.gap * (layout.rows - 1);
-
-    // Total padding (on all sides)
-    const totalPaddingWidth = sizing.padding * 2;
-    const totalPaddingHeight = sizing.padding * 2;
-
-    // Available space after accounting for gaps and padding
-    const availableWidth = containerWidth - totalPaddingWidth - totalGapWidth;
-    const availableHeight =
-      containerHeight - totalPaddingHeight - totalGapHeight;
-
-    // Calculate max size per item based on constraints
-    const maxWidthPerItem = availableWidth / layout.columns;
-    const maxHeightPerItem = availableHeight / layout.rows;
-
-    // Use the smaller dimension to ensure grid fits perfectly
-    // This prevents overflow in non-square containers
-    const maxSize = Math.min(maxWidthPerItem, maxHeightPerItem);
-
-    // Clamp between minimum touch target (48px) and maximum size
-    const clampedSize = Math.max(Math.min(maxSize, 200), 44);
-
-    return clampedSize + "px";
+  // Two rows of eight when that gives bigger tiles than four rows of four.
+  // Near a tie (wide panes around 2:1) eight wins because it fits the pane's
+  // shape. Tracks are sized to the tile so the block stays compact and
+  // centered instead of spreading across the pane.
+  const gridLayout = $derived.by(() => {
+    if (containerWidth === 0 || containerHeight === 0) {
+      return { columns: 4, tileSize: null as number | null };
+    }
+    const four = tileSizeFor(4);
+    const eight = tileSizeFor(8);
+    const columns = eight >= four * EIGHT_COLUMN_TOLERANCE ? 8 : 4;
+    const tileSize = Math.max(
+      Math.floor(columns === 8 ? eight : four),
+      MIN_TILE
+    );
+    return { columns, tileSize };
   });
 
   // Setup ResizeObserver to track container dimensions for responsive layout
@@ -149,11 +99,15 @@
   <div
     class="pictograph-grid"
     class:transitioning={isTransitioning}
-    class:eight-column={isEightColumnLayout()}
-    style:--grid-columns={gridLayout().gridColumns}
-    style:--grid-gap={responsiveSizing().gap + "px"}
-    style:--grid-padding={responsiveSizing().padding + "px"}
-    style:--max-pictograph-size={maxPictographSize()}
+    class:eight-column={gridLayout.columns === 8}
+    style:--grid-columns={gridLayout.tileSize === null
+      ? `repeat(${gridLayout.columns}, 1fr)`
+      : `repeat(${gridLayout.columns}, ${gridLayout.tileSize}px)`}
+    style:--grid-gap={responsiveSizing.gap + "px"}
+    style:--grid-padding={responsiveSizing.padding + "px"}
+    style:--max-pictograph-size={gridLayout.tileSize === null
+      ? "auto"
+      : gridLayout.tileSize + "px"}
   >
     {@render children?.()}
   </div>
@@ -161,9 +115,8 @@
 
 <style>
   .pictograph-grid-wrapper {
-    /* Enable container queries for this element */
+    /* Size containment: the measured box must not grow with the tiles */
     container-type: size;
-    container-name: grid-wrapper;
 
     display: flex;
     flex-direction: column;
@@ -177,6 +130,8 @@
   .pictograph-grid {
     display: grid;
     grid-template-columns: var(--grid-columns, repeat(4, 1fr));
+    justify-content: center;
+    align-content: center;
     gap: var(--grid-gap, 8px);
     width: 100%;
     max-width: 100%;
@@ -186,12 +141,9 @@
     align-items: center;
     justify-items: center;
     box-sizing: border-box;
-    transition:
-      grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      gap 0.2s ease;
   }
 
-  /* All grid items scale intelligently based on calculated size */
+  /* Every tile takes the computed square size */
   .pictograph-grid > :global(*) {
     width: var(--max-pictograph-size, auto);
     height: var(--max-pictograph-size, auto);
@@ -200,37 +152,8 @@
     box-sizing: border-box;
   }
 
-  /* Add extra spacing between Alpha/Beta rows and Gamma rows in 8-column layout */
+  /* Separate the Alpha/Beta row from the Gamma row in the eight-column layout */
   .pictograph-grid.eight-column > :global(*:nth-child(n + 9)) {
     margin-top: var(--grid-gap, 8px);
-  }
-
-  /* Container query: Adjust for very small containers */
-  @container grid-wrapper (max-width: 400px) {
-    .pictograph-grid {
-      /* Reduce gap further in tiny containers */
-      gap: max(4px, calc(var(--grid-gap, 8px) * 0.5));
-      padding: max(4px, calc(var(--grid-padding, 8px) * 0.5));
-    }
-  }
-
-  /* Container query: Optimize for very tall, narrow containers */
-  @container grid-wrapper (aspect-ratio < 0.8) {
-    .pictograph-grid {
-      /* Force 4-column layout for narrow containers regardless of width */
-      grid-template-columns: repeat(4, 1fr) !important;
-    }
-
-    .pictograph-grid.eight-column > :global(*:nth-child(n + 9)) {
-      margin-top: 0; /* Remove extra spacing in tall layout */
-    }
-  }
-
-  /* Container query: Optimize for very wide, short containers */
-  @container grid-wrapper (aspect-ratio > 2.5) {
-    .pictograph-grid {
-      /* Prefer 8-column layout for ultra-wide containers if not already set */
-      padding: max(4px, calc(var(--grid-padding, 8px) * 0.75));
-    }
   }
 </style>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { DefaultArrowPlacementRepository } from "$lib/shared/pictograph/arrow/positioning/default-override/services/default-arrow-placement-repository";
+import { DefaultArrowPlacementRepository } from "#lib/shared/pictograph/arrow/positioning/default-override/services/default-arrow-placement-repository.js";
 
 // Persister is unused on the read/local path; a no-op double satisfies the ctor.
 const noopPersister = {
@@ -7,7 +7,7 @@ const noopPersister = {
   saveValue: async () => {},
   deleteValue: async () => {},
   subscribe: () => () => {},
-} as unknown as import("$lib/shared/pictograph/arrow/positioning/default-override/services/default-arrow-placement-persister").DefaultArrowPlacementPersister;
+} as unknown as import("#lib/shared/pictograph/arrow/positioning/default-override/services/default-arrow-placement-persister.js").DefaultArrowPlacementPersister;
 
 describe("default repo per-prop", () => {
   it("local save + getValue round-trip under a prop", () => {

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import { createStartPlacementFromBeatStart } from "#lib/shared/create/services/sequence-transforms.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
   import { FUSE_LIVE_GRID_GAP } from "../services/fuse-workspace-split";
 

@@ -1,16 +1,16 @@
 <script lang="ts">
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import type { BrowseEngine } from "$lib/shared/browse/engine/types";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { CollaborativeVideo } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import type { BrowseEngine } from "#lib/shared/browse/engine/types.js";
 
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import GalleryFilterSheet from "$lib/features/browse/gallery-home/GalleryFilterSheet.svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import InviteCollaboratorsPanel from "$lib/shared/video-collaboration/components/InviteCollaboratorsPanel.svelte";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import GalleryFilterSheet from "#lib/features/browse/gallery-home/GalleryFilterSheet.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
+  import InviteCollaboratorsPanel from "#lib/shared/video-collaboration/components/InviteCollaboratorsPanel.svelte";
   import SortJumpSheet from "../../sequences/navigation/components/SortJumpSheet.svelte";
-  import { sequencePanelManager } from "$lib/shared/browse/state/sequence-panel-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { sequencePanelManager } from "#lib/shared/browse/state/sequence-panel-state.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     isMobile: boolean;
@@ -158,7 +158,6 @@
     --sheet-radius-large: 0;
     --sheet-border-radius-top-left: 16px;
     --sheet-border-radius-top-right: 16px;
-    --sheet-shadow: -4px 0 24px var(--theme-shadow);
     --sheet-transition:
       transform 350ms cubic-bezier(0.32, 0.72, 0, 1),
       opacity 350ms cubic-bezier(0.32, 0.72, 0, 1);

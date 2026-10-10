@@ -19,7 +19,7 @@
  * Spec: docs/superpowers/specs/2026-08-16-museum-pedestal-and-console-design.md
  * (§8 per-performer, §10 the Cave control tier, §11 persistence and restore)
  */
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 /**
  * What a Cave console can do.

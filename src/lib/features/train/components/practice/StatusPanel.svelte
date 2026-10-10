@@ -6,8 +6,8 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { getPositionDetector } from "$lib/features/train/get-position-detector";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getPositionDetector } from "#lib/features/train/get-position-detector.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     isCameraReady?: boolean;
@@ -191,7 +191,7 @@
     flex-direction: column;
     gap: var(--space-2026-xs, 6px);
     padding: var(--space-2026-sm, 12px);
-    background: color-mix(in srgb, var(--theme-shadow) 20%, transparent);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: var(--radius-2026-sm, 10px);
     font-family: "Courier New", monospace;
     font-size: var(--font-size-compact, 12px);

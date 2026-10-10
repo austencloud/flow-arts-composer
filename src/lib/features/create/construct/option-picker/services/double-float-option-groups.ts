@@ -2,13 +2,13 @@ import {
   MotionType,
   type ElementalType,
   type TnDMode,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 
 export interface DoubleFloatPathOption<T extends PictographData> {
   readonly id: string;

@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { getGlyphCache } from "$lib/shared/render/get-glyph-cache";
-  import { isDashLetter, getBaseLetter } from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
+  import { getGlyphCache } from "#lib/shared/render/get-glyph-cache.js";
+  import { isDashLetter, getBaseLetter } from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
   import {
     compressWord,
     parseWordNotation,
     stripWordNotation,
-  } from "$lib/shared/foundation/utils/word-simplifier";
+  } from "#lib/shared/foundation/utils/word-simplifier.js";
   import {
     getSkewBraceInk,
     skewBraceInkFontScale,
     skewBraceLineBoxDrop,
-  } from "$lib/shared/pictograph/tka-glyph/utils/skew-brace-layout";
+  } from "#lib/shared/pictograph/tka-glyph/utils/skew-brace-layout.js";
 
   interface Props {
     word: string;

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { buildBackJob } from "../../services/card-back/card-back-job-builder";
   import { paintBackJob } from "../../services/card-back/card-back-raster";
   import { hydrateSequence } from "../../services/sequence-render-hydrator";

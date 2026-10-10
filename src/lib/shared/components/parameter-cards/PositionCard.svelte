@@ -4,15 +4,15 @@ Styled to match Generate module's card aesthetic
 Supports Alpha, Beta, Gamma placements with Greek symbol pills
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { attachRipple } from "$lib/shared/application/services/ripple-effect";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { attachRipple } from "#lib/shared/application/services/ripple-effect.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount } from "svelte";
   import {
     type StartingPlacement,
     STARTING_PLACEMENTS_LIST,
-  } from "$lib/shared/domain/models/sequence-parameters";
+  } from "#lib/shared/domain/models/sequence-parameters.js";
 
   let {
     value = null,
@@ -253,7 +253,6 @@ Supports Alpha, Beta, Gamma placements with Greek symbol pills
   .pill-option.selected {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.95));
     color: #6d28d9;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .pill-option:active:not(:disabled) {

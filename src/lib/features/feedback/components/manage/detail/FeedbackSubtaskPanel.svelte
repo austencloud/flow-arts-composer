@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { FeedbackSubtask } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { getFeedbackSubtaskManager } from "$lib/features/feedback/get-feedback-subtask-manager";
+  import type { FeedbackSubtask } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { getFeedbackSubtaskManager } from "#lib/features/feedback/get-feedback-subtask-manager.js";
 
   interface Props {
     subtasks: FeedbackSubtask[];

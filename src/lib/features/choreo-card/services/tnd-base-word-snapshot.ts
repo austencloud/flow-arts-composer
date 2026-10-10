@@ -1,5 +1,5 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { jsonCache } from "$lib/shared/pictograph/shared/services/simple-json-cache";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { jsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
 import { hydrateSequence } from "./sequence-render-hydrator";
 
 const TND_BASE_WORDS_URL = "/data/hero/tnd-base-words.json";

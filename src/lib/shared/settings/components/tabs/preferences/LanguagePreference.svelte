@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import OverflowMenu from "#lib/shared/ui/components/OverflowMenu.svelte";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     getBaseLocale,
     getLocale,
     locales,
     t,
-  } from "$lib/shared/i18n/i18n.svelte.js";
-  import { switchLocale } from "$lib/shared/i18n/locale-state.svelte";
+  } from "#lib/shared/i18n/i18n.svelte.js";
+  import { switchLocale } from "#lib/shared/i18n/locale-state.svelte.js";
 
   const languageNames: Record<string, string> = {
     en: "English",

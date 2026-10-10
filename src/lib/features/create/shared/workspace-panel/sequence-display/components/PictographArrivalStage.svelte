@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { flushSync, onDestroy, onMount } from "svelte";
   import { fade } from "svelte/transition";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     bootProfiler,
     isBootProfileVerbose,
-  } from "$lib/shared/analytics/boot-profiler";
+  } from "#lib/shared/analytics/boot-profiler.js";
   import {
     calculatePictographArrivalTransform,
     type ArrivalRect,

@@ -23,7 +23,7 @@
    */
   import { poseAt, type HalfwayMotion } from "../_data/halfway-pose";
   import { poseArrow, POSE_ARROW_RED } from "../_data/pose-arrow";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   let {
     motion,

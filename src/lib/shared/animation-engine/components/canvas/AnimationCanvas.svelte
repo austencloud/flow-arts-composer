@@ -7,15 +7,15 @@
   Now includes AnimationVideoPlayer for video generation/playback.
 -->
 <script lang="ts">
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
-  import type { VideoRenderResult } from "$lib/shared/animation-engine/services/video-pre-renderer";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+  import type { VideoRenderResult } from "#lib/shared/animation-engine/services/video-pre-renderer.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
   let {
     leftProp = null,
@@ -78,7 +78,7 @@
   </div>
 
   <!-- Video player overlay -->
-  {#await import("$lib/features/compose/components/canvas/AnimationVideoPlayer.svelte") then mod}
+  {#await import("#lib/features/compose/components/canvas/AnimationVideoPlayer.svelte") then mod}
     <mod.default
       {sequenceData}
       {isPlaying}

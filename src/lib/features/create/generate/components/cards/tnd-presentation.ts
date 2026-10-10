@@ -1,5 +1,5 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
 
 /** Words shown by the Create timing card; the selection codes remain stable. */
 export function describeCreateTnDSelection(selection: TnDSelection): string {

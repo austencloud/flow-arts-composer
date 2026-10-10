@@ -33,10 +33,10 @@ Pointer discipline
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
   import type { TraceHand, TraceSample } from "../domain/trace-types";
   import { normalizeStagePoint } from "../services/trace-path-sampler";
   import { getTracePaths, handName } from "../state/trace-paths-state.svelte";

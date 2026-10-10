@@ -2,9 +2,12 @@
   import type {
     PostItem,
     PostItemKind,
-  } from "$lib/shared/media-composition/domain/post-project";
-  import { formatPostClock } from "../../builder/post-builder-format";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/media-composition/domain/post-project.js";
+  import {
+    formatPostClock,
+    formatPostSpeed,
+  } from "../../builder/post-builder-format";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   /**
    * One clip block on the timeline. Purely presentational: the parent does
@@ -68,7 +71,9 @@
   };
 
   const speedLabel = $derived(
-    item.kind === "video" && item.speed !== 1 ? `${item.speed}×` : null
+    item.kind === "video" && item.speed !== 1
+      ? formatPostSpeed(item.speed)
+      : null
   );
   const isMuted = $derived(item.kind === "video" && item.volume === 0);
 

@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import { saveMandalaToCollection } from "$lib/features/mandala/tabs/collection/services/save-mandala-to-collection";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { saveMandalaToCollection } from "#lib/features/mandala/tabs/collection/services/save-mandala-to-collection.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type {
     MandalaPathShape,
     MandalaRenderOptions,
-  } from "$lib/shared/mandala/domain/mandala-types";
-  import PanelHeader from "$lib/shared/create/components/PanelHeader.svelte";
-  import MandalaPane from "$lib/shared/sequence-viewer/components/MandalaPane.svelte";
-  import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
-  import { MandalaViewerController } from "$lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  } from "#lib/shared/mandala/domain/mandala-types.js";
+  import PanelHeader from "#lib/shared/create/components/PanelHeader.svelte";
+  import MandalaPane from "#lib/shared/sequence-viewer/components/MandalaPane.svelte";
+  import type { ControlDockAction } from "#lib/shared/sequence-viewer/components/ControlDock.svelte";
+  import { MandalaViewerController } from "#lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   interface Props {
     sequence: SequenceData;

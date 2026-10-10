@@ -1,20 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAnimationPlaybackController } from "./animation-playback-controller-factory";
-import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // A Create sequence spelling "T" downloaded as a video titled "SPM". An unsaved
 // workspace sequence stores an empty `word` and an automatic name such as

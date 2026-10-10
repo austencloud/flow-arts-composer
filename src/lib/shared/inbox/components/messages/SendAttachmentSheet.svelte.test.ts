@@ -1,4 +1,4 @@
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { buildSequenceSharePayload } from "../../domain/build-sequence-share-payload";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
@@ -20,19 +20,19 @@ const mocks = vi.hoisted(() => ({
   fullAccount: true,
 }));
 
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: mocks.showUserError }),
 }));
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/auth/services/guest-identity", () => ({
+vi.mock("#lib/shared/auth/services/guest-identity.js", () => ({
   ensureGuestIdentity: mocks.ensureGuestIdentity,
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: {
     user: { uid: "current-user" },
     get isFullAccount() {
@@ -41,11 +41,11 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   },
 }));
 
-vi.mock("$lib/shared/auth/state/auth-drawer-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-drawer-state.svelte.js", () => ({
   authDrawerState: { show: mocks.authDrawerShow },
 }));
 
-vi.mock("$lib/shared/messaging/services/conversation-manager", () => ({
+vi.mock("#lib/shared/messaging/services/conversation-manager.js", () => ({
   conversationService: {
     getOrCreateConversation: mocks.getOrCreateConversation,
   },
@@ -55,13 +55,13 @@ vi.mock("../../context/message-delivery-context", () => ({
   getMessageDeliveryContext: () => ({ queueMessage: mocks.queueMessage }),
 }));
 
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: () => ({
     createShortCode: mocks.createShortCode,
   }),
 }));
 
-vi.mock("$lib/shared/user-search/services/user-searcher", () => ({
+vi.mock("#lib/shared/user-search/services/user-searcher.js", () => ({
   searchUsers: mocks.searchUsers,
 }));
 

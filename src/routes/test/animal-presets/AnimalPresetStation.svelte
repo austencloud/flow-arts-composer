@@ -6,12 +6,12 @@
    * resolve a different Animal intent. Keeping the states local also prevents
    * this review page from touching Austen's saved Effects settings.
    */
-  import TelekineticFormation3D from "$lib/features/museum/components/game/TelekineticFormation3D.svelte";
-  import type { EffectPreset } from "$lib/shared/animation-engine/components/effects-panel/presets/types";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  import TelekineticFormation3D from "#lib/features/museum/components/game/TelekineticFormation3D.svelte";
+  import type { EffectPreset } from "#lib/shared/animation-engine/components/effects-panel/presets/types.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 
   interface Props {
     preset: EffectPreset<"animal">;

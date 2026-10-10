@@ -22,8 +22,8 @@
 
 <script lang="ts">
 	import { MediaQuery } from "svelte/reactivity";
-	import Crossfade from "$lib/shared/components/Crossfade.svelte";
-	import { DURATION } from "$lib/shared/transitions/transitions";
+	import Crossfade from "#lib/shared/components/Crossfade.svelte";
+	import { DURATION } from "#lib/shared/transitions/transitions.js";
 
 	let {
 		figures,

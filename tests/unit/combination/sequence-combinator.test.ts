@@ -26,9 +26,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type {
   CombinationSearchReport,
   WalkBlock,
-} from "$lib/shared/combination/domain/types";
-import { findCombinations } from "$lib/shared/combination/services/sequence-combinator";
-import { contentDedupKey } from "$lib/shared/combination/services/walk-classifier";
+} from "#lib/shared/combination/domain/types.js";
+import { findCombinations } from "#lib/shared/combination/services/sequence-combinator.js";
+import { contentDedupKey } from "#lib/shared/combination/services/walk-classifier.js";
 
 import { AAAA_CCW, FALG, GGGG_CW, HHHH_CCW, HHHH_CW } from "./fixtures";
 import { loadPictographDatasetForTests } from "./pictograph-dataset";

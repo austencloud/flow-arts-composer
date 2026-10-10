@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   mapDocToPreview,
   previewNeedsRefresh,
-} from "$lib/shared/messaging/services/conversation-mappers";
+} from "#lib/shared/messaging/services/conversation-mappers.js";
 
 const timestamp = { toDate: () => new Date("2026-08-20T12:00:00Z") };
 

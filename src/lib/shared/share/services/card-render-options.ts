@@ -13,26 +13,26 @@
  * impossible: add a toggle here once and all paths honor it.
  */
 
-import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
-import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+import { resolveViewingProps } from "#lib/shared/foundation/services/prop-viewing.js";
+import type { ResolvedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
 import {
   getStepColumnsForLayout,
   type ResolvedAutoLayout,
-} from "$lib/shared/render/services/container-aware-layout";
-import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
-import { resolveInfoCellDisplay } from "$lib/shared/sequence-viewer/services/info-cell-display";
-import { getAuthSync } from "$lib/shared/auth/firebase";
-import { toMandalaPathShape } from "$lib/shared/mandala/services/mandala-path-policy";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/render/services/container-aware-layout.js";
+import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
+import { resolveInfoCellDisplay } from "#lib/shared/sequence-viewer/services/info-cell-display.js";
+import { getAuthSync } from "#lib/shared/auth/firebase.js";
+import { toMandalaPathShape } from "#lib/shared/mandala/services/mandala-path-policy.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import {
   cardPresentationFromFooterSettings,
   resolveCardFooter,
   type CardPresentation,
-} from "$lib/shared/share/domain/models/card-presentation";
+} from "#lib/shared/share/domain/models/card-presentation.js";
 
 export interface CardRenderOptionsInput {
   propConfig?: ResolvedPropConfig;

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FormDraftPersister } from "$lib/features/feedback/services/form-draft-persister.svelte";
+import { FormDraftPersister } from "#lib/features/feedback/services/form-draft-persister.svelte.js";
 
 describe("FormDraftPersister", () => {
   beforeEach(() => {

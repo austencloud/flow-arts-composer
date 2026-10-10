@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import manifests from "$lib/features/choreo-card/data/festival-sampler-manifests.json";
-import { buildFestivalSamplerRenderOptions } from "$lib/features/choreo-card/services/festival-sampler-render-options";
+import manifests from "#lib/features/choreo-card/data/festival-sampler-manifests.json";
+import { buildFestivalSamplerRenderOptions } from "#lib/features/choreo-card/services/festival-sampler-render-options.js";
 import {
   festivalSamplerCardKey,
   type FestivalSamplerCardManifest,
-} from "$lib/features/choreo-card/services/festival-sampler-manifest";
-import { resolveFestivalSamplerCardSequence } from "$lib/features/choreo-card/services/festival-sampler-turns";
+} from "#lib/features/choreo-card/services/festival-sampler-manifest.js";
+import { resolveFestivalSamplerCardSequence } from "#lib/features/choreo-card/services/festival-sampler-turns.js";
 
 const allCards = manifests.candidates.flatMap(
   (pack) => pack.cards as FestivalSamplerCardManifest[]

@@ -2,9 +2,9 @@
 Type1PictographDisplay - Pictograph visualizer with loading state
 -->
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
 
   let {
     isLoading,
@@ -42,7 +42,6 @@ Type1PictographDisplay - Pictograph visualizer with loading state
     background: white;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 12px var(--theme-shadow);
   }
 
   .loading-state,

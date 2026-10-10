@@ -24,11 +24,11 @@ import {
 import {
   shutterCutoffSeconds,
   type LedShutter,
-} from "$lib/shared/animation-engine/domain/led-photometry";
+} from "#lib/shared/animation-engine/domain/led-photometry.js";
 import { createLedMaterial, type LedMaterialOptions } from "../led/led-material-3d";
 import { QualityTier } from "../types";
 import { PovTrailRing, type PovTrailSnapshot } from "./pov-trail-ring";
-import type { StripPattern } from "$lib/shared/poi/domain/strip-pattern";
+import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
 
 /** Rendered-LED ceiling per quality tier. A shorter device keeps its own count. */
 const LEDS_PER_TIER: Record<QualityTier, number> = {

@@ -1,18 +1,18 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   applyTorchContrastPalette,
   isTorchProp,
   TORCH_CONTRAST_PALETTE,
   TORCH_FLAME_OUTLINE,
-} from "$lib/shared/pictograph/prop/domain/torch-contrast";
-import { contrastRatio } from "$lib/shared/settings/utils/background-theme-calculator";
-import { applyMotionColorToSvg } from "$lib/shared/utils/svg-color-utils";
-import { getPropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
-import { generatePropSvg } from "$lib/shared/animation-engine/services/svg-generator";
+} from "#lib/shared/pictograph/prop/domain/torch-contrast.js";
+import { contrastRatio } from "#lib/shared/settings/utils/background-theme-calculator.js";
+import { applyMotionColorToSvg } from "#lib/shared/utils/svg-color-utils.js";
+import { getPropDimensions } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+import { generatePropSvg } from "#lib/shared/animation-engine/services/svg-generator.js";
 
 const readProp = (family: "pictograph" | "animated", filename: string) =>
   readFileSync(

@@ -1,19 +1,19 @@
 import { describe, it, expect } from "vitest";
-import { CandidateGenerator } from "$lib/features/lab/tabs/collision-lab/services/candidate-generator";
-import { StanceOptimizer } from "$lib/features/lab/tabs/collision-lab/services/stance-optimizer";
+import { CandidateGenerator } from "#lib/features/lab/tabs/collision-lab/services/candidate-generator.js";
+import { StanceOptimizer } from "#lib/features/lab/tabs/collision-lab/services/stance-optimizer.js";
 import {
   StanceSimulator,
   restPoseFromHeight,
-} from "$lib/features/lab/tabs/collision-lab/services/stance-simulator";
-import { STANCE_BOUNDS } from "$lib/features/lab/tabs/collision-lab/domain/types";
+} from "#lib/features/lab/tabs/collision-lab/services/stance-simulator.js";
+import { STANCE_BOUNDS } from "#lib/features/lab/tabs/collision-lab/domain/types.js";
 import type {
   OptimizerBounds,
   OptimizerInput,
-} from "$lib/features/lab/tabs/collision-lab/services/contracts/IStanceOptimizer";
+} from "#lib/features/lab/tabs/collision-lab/services/contracts/IStanceOptimizer";
 import type {
   PoseDefinition,
   StancePose,
-} from "$lib/features/lab/tabs/collision-lab/domain/types";
+} from "#lib/features/lab/tabs/collision-lab/domain/types.js";
 import { Plane } from "@austencloud/scene-3d";
 import { Vector3 } from "three";
 

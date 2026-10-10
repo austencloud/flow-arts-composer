@@ -9,29 +9,29 @@
 
 import { Point } from "fabric";
 import { calculateAdjustment } from "./keyboard-arrow-adjuster";
-import type { ScreenSpaceAdjustmentTransformer } from "$lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer";
-import type { ArrowAdjustmentCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator";
-import type { ArrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-import type { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
-import type { PictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { GlobalAdjustmentKeyGenerator } from "$lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-key-generator";
-import { getGlobalAdjustmentRepository } from "$lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton";
-import { globalAdjustmentVersion } from "$lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte";
+import type { ScreenSpaceAdjustmentTransformer } from "#lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer.js";
+import type { ArrowAdjustmentCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator.js";
+import type { ArrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+import type { TurnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
+import type { PictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { GlobalAdjustmentKeyGenerator } from "#lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-key-generator.js";
+import { getGlobalAdjustmentRepository } from "#lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton.js";
+import { globalAdjustmentVersion } from "#lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte.js";
 import type {
   GlobalAdjustmentKey,
   GlobalArrowAdjustmentInput,
-} from "$lib/shared/pictograph/arrow/positioning/global/domain/global-arrow-adjustment";
+} from "#lib/shared/pictograph/arrow/positioning/global/domain/global-arrow-adjustment.js";
 import {
   HandSide,
   type HandSide as HandSideValue,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { arrowAdjustmentUndoStack } from "$lib/shared/pictograph/arrow/positioning/global/state/arrow-adjustment-undo-stack";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { arrowAdjustmentUndoStack } from "#lib/shared/pictograph/arrow/positioning/global/state/arrow-adjustment-undo-stack.js";
 import {
   createCanonicalPlacementContext,
   rotateScreenVectorToCanonical,
-} from "$lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame";
+} from "#lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame.js";
 
 /**
  * Arrow selection context for adjustment operations
@@ -68,7 +68,7 @@ export interface CascadingLookupResult {
   adjustment: { x: number; y: number };
   layer: 1 | 2 | 3 | null;
 }
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const logger = createComponentLogger("ArrowAdjustmentOrchestrator");
 
@@ -431,11 +431,11 @@ export class ArrowAdjustmentOrchestrator {
 // ============================================================================
 // DIRECT SINGLETON EXPORT
 // ============================================================================
-import { screenSpaceAdjustmentTransformer } from "$lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer";
-import { arrowAdjustmentCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator";
-import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { turnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
+import { screenSpaceAdjustmentTransformer } from "#lib/shared/pictograph/arrow/positioning/calculation/services/screen-space-adjustment-transformer.js";
+import { arrowAdjustmentCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator.js";
+import { arrowLocationCalculator } from "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { turnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
 
 export const arrowAdjustmentOrchestrator = new ArrowAdjustmentOrchestrator(
   screenSpaceAdjustmentTransformer,

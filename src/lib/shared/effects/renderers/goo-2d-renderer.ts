@@ -2,7 +2,7 @@ import type { GooParams } from "../translators/canvas2d-types";
 import type { WaterPalette } from "../domain/water-palettes";
 import type { EmitterTip } from "./emitter-tip";
 import { emitterId } from "./emitter-tip";
-import { curl2D } from "$lib/shared/3d/effects/smoke/smoke-curl-field";
+import { curl2D } from "#lib/shared/3d/effects/smoke/smoke-curl-field.js";
 
 /**
  * Gooey-liquid renderer for the Canvas2D backend — the "Goo" look.

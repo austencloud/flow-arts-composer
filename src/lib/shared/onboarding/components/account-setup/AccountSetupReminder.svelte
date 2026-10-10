@@ -3,10 +3,10 @@
   import {
     showToast,
     toastQueue,
-  } from "$lib/shared/toast/state/toast-state.svelte";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import { logAccountSetupReminder } from "$lib/shared/analytics/services/onboarding-events";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import { logAccountSetupReminder } from "#lib/shared/analytics/services/onboarding-events.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   const accountSetup = getAccountSetupContext();
 

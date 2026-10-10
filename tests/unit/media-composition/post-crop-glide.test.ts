@@ -8,7 +8,7 @@ import {
   type CropCamera,
   type CropPoint,
   type CropPose,
-} from "$lib/shared/share/components/post-studio/editor/post-crop-geometry";
+} from "#lib/shared/share/components/post-studio/editor/post-crop-geometry.js";
 import {
   boxPicture,
   frameGlideStart,
@@ -17,7 +17,7 @@ import {
   transformOfStyle,
   transformPicture,
   type StagePicture,
-} from "$lib/shared/share/components/post-studio/editor/post-crop-glide";
+} from "#lib/shared/share/components/post-studio/editor/post-crop-glide.js";
 
 // The DCKΨ- take (720x1280) in a 1080x1920 slot, on a 1400x900 stage.
 const STAGE = { width: 1400, height: 900 };

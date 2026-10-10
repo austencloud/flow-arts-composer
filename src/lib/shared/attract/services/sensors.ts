@@ -16,8 +16,8 @@
  * travels with the component through refactors.
  */
 
-import { MODULE_DEFINITIONS } from "$lib/shared/navigation/config/module-definitions";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { MODULE_DEFINITIONS } from "#lib/shared/navigation/config/module-definitions.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import {
   LINGER_SEL,
   NAV_MODULE_ID_ATTR,

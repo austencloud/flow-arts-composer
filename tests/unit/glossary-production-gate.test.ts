@@ -16,7 +16,7 @@ const sitemap = readSource("src/routes/sitemap.xml/+server.ts");
 
 describe("Kinetic Atlas production gate", () => {
   it("keeps the complete Atlas available in development and gates production", () => {
-    expect(route).toContain('import { dev } from "$app/environment"');
+    expect(route).toContain('import { dev } from "$app/env"');
     expect(route).toMatch(/\{#if dev\}\s*<KineticAtlasDraft \{data\} \/>/);
     expect(route).toContain("UnderConstruction");
     expect(route).toContain('eyebrow="Coming soon"');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createOrganicPondPoints } from "$lib/shared/3d/environments/primitives/organic-pond-shape";
+import { createOrganicPondPoints } from "#lib/shared/3d/environments/primitives/organic-pond-shape.js";
 
 describe("organic pond shape", () => {
   it("stays within the intended irregularity band", () => {

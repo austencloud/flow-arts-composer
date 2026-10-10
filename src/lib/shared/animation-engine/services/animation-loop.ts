@@ -7,7 +7,7 @@
 
 import { frameStatsRecorder } from "./frame-stats-recorder";
 import { PLAYBACK_MIN_SPEED, PLAYBACK_MAX_SPEED } from "../domain/constants/timing";
-import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
+import type { RenderActivityGate } from "#lib/shared/render-gating/render-activity-gate.js";
 
 export class AnimationLoop {
   private animationFrameId: number | null = null;

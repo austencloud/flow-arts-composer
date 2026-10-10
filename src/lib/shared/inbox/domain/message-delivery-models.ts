@@ -1,7 +1,7 @@
 import type {
   MessageAttachment,
   ReplyPreview,
-} from "$lib/shared/messaging/domain/models/message-models";
+} from "#lib/shared/messaging/domain/models/message-models.js";
 import type {
   CollectionSharePayload,
   PendingMessageAttachment,

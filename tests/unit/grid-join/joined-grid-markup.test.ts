@@ -7,7 +7,7 @@ import {
 import {
   joinedGridFitTransform,
   joinedGridMarkup,
-} from "$lib/shared/pictograph/grid/services/joined-grid-markup";
+} from "#lib/shared/pictograph/grid/services/joined-grid-markup.js";
 
 const HAND_COLORS = { left: "#2e3192", right: "#ed1c24" } as const;
 const circles = (svg: string) => svg.match(/<circle\b[^>]*>/g) ?? [];

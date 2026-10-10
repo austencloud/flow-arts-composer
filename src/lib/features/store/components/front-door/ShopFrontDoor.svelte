@@ -12,8 +12,8 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
-  import ShimmerBlock from "$lib/shared/components/loading/ShimmerBlock.svelte";
+  import { browser } from "$app/env";
+  import ShimmerBlock from "#lib/shared/components/loading/ShimmerBlock.svelte";
   import type { Product } from "../../domain/models/product";
   import { SALES_LIVE } from "../../domain/purchase-state";
   import WaitlistForm from "../WaitlistForm.svelte";

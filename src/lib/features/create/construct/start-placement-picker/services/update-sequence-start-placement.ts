@@ -1,13 +1,13 @@
-import { recalculateSequenceMotionFrom } from "$lib/features/create/shared/services/recalculate-sequence-motion";
-import { withLoopCertificateCleared } from "$lib/shared/create/services/loop-certificate";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import { recalculateSequenceMotionFrom } from "#lib/features/create/shared/services/recalculate-sequence-motion.js";
+import { withLoopCertificateCleared } from "#lib/shared/create/services/loop-certificate.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 import type {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 export type StartPlacementUpdateResult =
   | { ok: true; sequence: SequenceData }

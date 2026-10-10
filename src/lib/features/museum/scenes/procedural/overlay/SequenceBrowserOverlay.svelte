@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { getBrowseThumbnailProvider } from "$lib/shared/browse/get-browse-thumbnail-provider";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-  import type { BrowseThumbnailProvider } from "$lib/shared/browse/services/browse-thumbnail-provider";
-  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { getBrowseThumbnailProvider } from "#lib/shared/browse/get-browse-thumbnail-provider.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+  import type { BrowseThumbnailProvider } from "#lib/shared/browse/services/browse-thumbnail-provider.js";
+  import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
   interface Props {
     visible: boolean;

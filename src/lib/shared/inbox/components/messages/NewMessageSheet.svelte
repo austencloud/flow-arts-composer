@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * NewMessageSheet
    *
@@ -9,17 +9,17 @@
    * - Existing group with same participants is reused
    */
 
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import { conversationService } from "$lib/shared/messaging/services/conversation-manager";
-  import UserSearchInput from "$lib/shared/user-search/UserSearchInput.svelte";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { conversationService } from "#lib/shared/messaging/services/conversation-manager.js";
+  import UserSearchInput from "#lib/shared/user-search/UserSearchInput.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { inboxState } from "../../state/inbox-state.svelte";
-  import { getFollowing } from "$lib/shared/community/services/user-repository";
-  import type { UserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { getUserIdentityLabels } from "$lib/shared/community/domain/user-identity-labels";
+  import { getFollowing } from "#lib/shared/community/services/user-repository.js";
+  import type { UserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { getUserIdentityLabels } from "#lib/shared/community/domain/user-identity-labels.js";
 
   interface MessageRecipient {
     id: string;

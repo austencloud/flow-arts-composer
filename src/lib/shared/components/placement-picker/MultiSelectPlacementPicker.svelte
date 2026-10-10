@@ -8,21 +8,21 @@ Displays all 16 placements with toggle behavior:
 Uses blocklist approach: placements in blockedPlacements are excluded.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import {
     GridMode,
     GridPlacement,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { onMount } from "svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { getLetterBorderColorSafe } from "$lib/shared/pictograph/shared/utils/letter-border-utils";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { getLetterBorderColorSafe } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import { createStartPlacementVariations } from "./start-placement-utils";
-  import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { startPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import {
     blockAllExcept,
     hasSameBlockedPlacements,

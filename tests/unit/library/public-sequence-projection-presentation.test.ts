@@ -2,28 +2,28 @@ import { describe, expect, it } from "vitest";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   buildPublicSequenceProjection,
   type ProjectionSourceSequence,
   type PublicProjectionContext,
-} from "$lib/shared/library/services/public-sequence-projection";
-import { normalizeSequenceForPersistence } from "$lib/shared/library/services/sequence-persistence-normalizer";
+} from "#lib/shared/library/services/public-sequence-projection.js";
+import { normalizeSequenceForPersistence } from "#lib/shared/library/services/sequence-persistence-normalizer.js";
 import {
   parsePublicSequenceWireDocument,
   toPublicSequenceProjection,
-} from "$lib/shared/foundation/domain/models/public-sequence-wire-schema";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/foundation/domain/models/public-sequence-wire-schema.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 const BASE = {
   id: "seq-null-presentation",

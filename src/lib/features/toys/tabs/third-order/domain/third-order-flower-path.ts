@@ -5,7 +5,7 @@ import {
   pointAt,
   propIndexAt,
   type QftKnobs,
-} from "$lib/shared/notation/qft/qft-model";
+} from "#lib/shared/notation/qft/qft-model.js";
 import {
   THIRD_ORDER_CHILD_SCALE,
   THIRD_ORDER_VIEWBOX_SIZE,

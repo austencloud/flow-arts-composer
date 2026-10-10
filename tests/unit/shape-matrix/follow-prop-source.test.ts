@@ -24,10 +24,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { flushSync } from "svelte";
 
-import { buildFlowerAxis } from "$lib/shared/shape-matrix/domain/flower-signature";
-import { createShapeMatrixAppState } from "$lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte";
-import { createShapeEnginePropSource } from "$lib/features/create/shape-engine/shape-engine-prop-source";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { buildFlowerAxis } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+import { createShapeMatrixAppState } from "#lib/shared/shape-matrix/app/state/shape-matrix-app-state.svelte.js";
+import { createShapeEnginePropSource } from "#lib/features/create/shape-engine/shape-engine-prop-source.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   mountFollowPropSource,
   propSourceSettingsHarness,

@@ -7,7 +7,7 @@ import {
   shownPanel,
   toolRow,
   type PostToolSelection,
-} from "$lib/shared/share/components/post-studio/editor/post-editor-tools";
+} from "#lib/shared/share/components/post-studio/editor/post-editor-tools.js";
 
 const POST: PostToolSelection = { kind: null, hasLayout: false };
 const MAIN_CLIP: PostToolSelection = { kind: "video", hasLayout: true };

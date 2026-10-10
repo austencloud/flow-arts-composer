@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { createWorkerPerformerEffectIntent } from "$lib/shared/3d/worker-renderer/services/worker-performer-effect-intent";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { createWorkerPerformerEffectIntent } from "#lib/shared/3d/worker-renderer/services/worker-performer-effect-intent.js";
 
 const propBuild = {
   finish: "fire",

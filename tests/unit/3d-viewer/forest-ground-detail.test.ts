@@ -5,14 +5,14 @@ import {
   Vector2,
   type WebGLProgramParametersWithUniforms,
 } from "three";
-import { patchRootedWindMaterial } from "$lib/shared/3d/environments/primitives/rooted-wind-material";
-import { FOREST_LIVING_GRASS_MATERIAL_PROFILE } from "$lib/shared/3d/environments/scenes/forest/forest-grass-material-profile";
+import { patchRootedWindMaterial } from "#lib/shared/3d/environments/primitives/rooted-wind-material.js";
+import { FOREST_LIVING_GRASS_MATERIAL_PROFILE } from "#lib/shared/3d/environments/scenes/forest/forest-grass-material-profile.js";
 import {
   isForestGroundMaterial,
   getForestGroundDetailFamily,
   inheritForestGroundDetailPatch,
   patchForestGroundDetailMaterial,
-} from "$lib/shared/3d/environments/scenes/forest/forest-ground-detail";
+} from "#lib/shared/3d/environments/scenes/forest/forest-ground-detail.js";
 
 describe("Forest ground detail", () => {
   it("keeps living grass matte and stable across camera angles", () => {

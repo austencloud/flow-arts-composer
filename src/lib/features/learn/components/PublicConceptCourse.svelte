@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { page } from "$app/state";
   import LearnTab from "../LearnTab.svelte";
   import { getConceptById } from "../domain/concepts";
@@ -10,18 +10,31 @@
   import {
     buildConceptPath,
     CONCEPT_LIST_PATH,
+    conceptIdFromPathname,
   } from "../domain/concept-routes";
-  import Seo from "$lib/shared/components/Seo.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
   import { LANDING_DOMAIN } from "../../../../config/domains";
-  import { getLocale, t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale, t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "../domain/localized-concept";
 
   const courseName = $derived(tDynamic("learn_public_course_name"));
   const courseDescription = $derived(tDynamic("learn_public_course_description"));
 
-  const concept = $derived(
-    page.params.conceptId ? getConceptById(page.params.conceptId) : undefined
-  );
+  // Lesson links inside the course move with shallow routing (pushState and
+  // replaceState). That changes the address bar and page.state, but page.url
+  // and page.params stay on the last real navigation, so reading page.url
+  // would leave the title, description and canonical on the lesson the page
+  // first loaded with. SvelteKit reassigns page.state on every shallow push,
+  // replace and Back/Forward step, so reading it here re-derives the lesson
+  // from the address bar the reader is actually looking at.
+  const shownPathname = $derived.by(() => {
+    const loadedPathname = page.url.pathname;
+    if (!browser) return loadedPathname;
+    void page.state;
+    return window.location.pathname;
+  });
+  const conceptId = $derived(conceptIdFromPathname(shownPathname));
+  const concept = $derived(conceptId ? getConceptById(conceptId) : undefined);
 
   // The server-rendered page is what search engines and no-JS readers get, so
   // it carries the course order and links the app itself renders client-side.

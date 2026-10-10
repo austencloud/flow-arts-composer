@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { getSequenceRepository } from "#lib/shared/create/get-sequence-repository.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   // Sequence state
   let sequenceData = $state<SequenceData | null>(null);

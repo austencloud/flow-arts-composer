@@ -12,7 +12,7 @@
   import { navigationState } from "../../navigation/state/navigation-state.svelte";
   import { getAnimationPlaybackRef } from "../../coordinators/animation-playback-ref.svelte";
   import { getSequenceViewerRef } from "../../coordinators/sequence-viewer-ref.svelte";
-  import { getGeneratorVoiceRef } from "$lib/shared/create/state/generator-voice-ref.svelte";
+  import { getGeneratorVoiceRef } from "#lib/shared/create/state/generator-voice-ref.svelte.js";
   import { MODULE_DEFINITIONS } from "../../navigation/config/module-definitions";
 
   const isOpen = $derived(voiceControlState.helpOverlayOpen);

@@ -9,20 +9,18 @@
  * but don't block the user.
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import { auth } from "$lib/shared/auth/firebase";
-import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import { auth } from "#lib/shared/auth/firebase.js";
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
 import {
   firestoreGet,
   firestoreList,
   firestoreSet,
   firestoreDelete,
-} from "$lib/shared/firestore";
+} from "#lib/shared/firestore/index.js";
 import { CompositionSchema } from "../compose/domain/composition-schemas";
-import {
-  getUserCompositionsPath,
-} from "../data/firestore-paths";
-import type { Composition } from "$lib/shared/animation-engine/domain/compose-types";
+import { getUserCompositionsPath } from "../data/firestore-paths";
+import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
 
 /**
  * Get the current authenticated user ID.
@@ -43,9 +41,13 @@ export function isAuthenticated(): boolean {
  * Save a composition to Firestore.
  * Uses merge to avoid overwriting fields not present in the update.
  */
-export async function saveComposition(composition: Composition, userId = getUserId()): Promise<void> {
+export async function saveComposition(
+  composition: Composition,
+  userId = getUserId()
+): Promise<void> {
   if (!userId) return;
-  if (composition.ownerId !== userId) throw new Error("Composition owner changed before cloud save");
+  if (composition.ownerId !== userId)
+    throw new Error("Composition owner changed before cloud save");
 
   const { createdAt, updatedAt, ...rest } = composition;
 
@@ -54,10 +56,12 @@ export async function saveComposition(composition: Composition, userId = getUser
     composition.id,
     {
       ...rest,
-      createdAt: createdAt instanceof Date ? createdAt.toISOString() : createdAt,
-      updatedAt: updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt,
+      createdAt:
+        createdAt instanceof Date ? createdAt.toISOString() : createdAt,
+      updatedAt:
+        updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt,
     } as Record<string, unknown>,
-    { merge: true, trackOffline: true },
+    { merge: true, trackOffline: true }
   );
 }
 
@@ -66,7 +70,7 @@ export async function saveComposition(composition: Composition, userId = getUser
  */
 export async function getComposition(
   compositionId: string,
-  userId = getUserId(),
+  userId = getUserId()
 ): Promise<Composition | null> {
   if (!userId) return null;
 
@@ -74,18 +78,18 @@ export async function getComposition(
     const parsed = await firestoreGet(
       getUserCompositionsPath(userId),
       compositionId,
-      CompositionSchema,
+      CompositionSchema
     );
     return parsed as unknown as Composition | null;
   } catch (error) {
     console.error(
       `Failed to load composition ${compositionId} from Firebase:`,
-      error,
+      error
     );
     try {
       const errorHandler = getErrorHandler() as ErrorHandler;
       errorHandler.showWarning(
-        "Couldn't load a composition from the cloud. Using local version.",
+        "Couldn't load a composition from the cloud. Using local version."
       );
     } catch {
       // ErrorHandler not available
@@ -97,16 +101,21 @@ export async function getComposition(
 /**
  * Load all compositions from Firestore for the current user.
  */
-export async function getCompositions(userId = getUserId()): Promise<Composition[]> {
+export async function getCompositions(
+  userId = getUserId()
+): Promise<Composition[]> {
   if (!userId) return [];
 
   try {
     const parsed = await firestoreList(
       getUserCompositionsPath(userId),
       CompositionSchema,
-      { orderBy: [{ field: "updatedAt", direction: "desc" }] },
+      { orderBy: [{ field: "updatedAt", direction: "desc" }] }
     );
-    return (parsed as unknown as Composition[]).map((composition) => ({ ...composition, ownerId: userId }));
+    return (parsed as unknown as Composition[]).map((composition) => ({
+      ...composition,
+      ownerId: userId,
+    }));
   } catch (error) {
     console.error("Failed to load compositions from Firebase:", error);
     throw error;
@@ -116,7 +125,10 @@ export async function getCompositions(userId = getUserId()): Promise<Composition
 /**
  * Delete a composition from Firestore.
  */
-export async function deleteComposition(compositionId: string, userId = getUserId()): Promise<void> {
+export async function deleteComposition(
+  compositionId: string,
+  userId = getUserId()
+): Promise<void> {
   if (!userId) return;
 
   try {
@@ -126,12 +138,12 @@ export async function deleteComposition(compositionId: string, userId = getUserI
   } catch (error) {
     console.error(
       `Failed to delete composition ${compositionId} from Firebase:`,
-      error,
+      error
     );
     try {
       const errorHandler = getErrorHandler() as ErrorHandler;
       errorHandler.showWarning(
-        "Composition deleted locally, but cloud deletion failed. It may reappear on sync.",
+        "Composition deleted locally, but cloud deletion failed. It may reappear on sync."
       );
     } catch {
       // ErrorHandler not available
@@ -145,7 +157,7 @@ export async function deleteComposition(compositionId: string, userId = getUserI
 export async function updateFavorite(
   compositionId: string,
   isFavorite: boolean,
-  userId = getUserId(),
+  userId = getUserId()
 ): Promise<void> {
   if (!userId) return;
 
@@ -154,17 +166,14 @@ export async function updateFavorite(
       getUserCompositionsPath(userId),
       compositionId,
       { isFavorite } as Record<string, unknown>,
-      { merge: true, trackOffline: true },
+      { merge: true, trackOffline: true }
     );
   } catch (error) {
-    console.error(
-      `Failed to update favorite for ${compositionId}:`,
-      error,
-    );
+    console.error(`Failed to update favorite for ${compositionId}:`, error);
     try {
       const errorHandler = getErrorHandler() as ErrorHandler;
       errorHandler.showWarning(
-        "Favorite updated locally, but cloud sync failed.",
+        "Favorite updated locally, but cloud sync failed."
       );
     } catch {
       // ErrorHandler not available

@@ -17,8 +17,8 @@ import {
 import {
   getFirestoreInstance,
   getStorageInstance,
-} from "$lib/shared/auth/firebase";
-import { stripUndefined } from "$lib/shared/firestore/firestore-helpers";
+} from "#lib/shared/auth/firebase.js";
+import { stripUndefined } from "#lib/shared/firestore/firestore-helpers.js";
 import {
   ARTIFACT_PUBLICATION_SCHEMA_VERSION,
   publicationRequestId,

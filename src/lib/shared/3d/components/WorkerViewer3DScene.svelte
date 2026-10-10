@@ -4,14 +4,14 @@
   import { userProportionsState } from "@austencloud/scene-3d";
   import { BackgroundType } from "@austencloud/backgrounds";
 
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import { getPerformerColor } from "../constants/performer-colors";
   import { getViewer3DContext } from "../context/viewer-3d-context";
   import {
@@ -31,8 +31,8 @@
   } from "../environments/domain/performer-stage-bounds";
   import type { QualityTier } from "../effects/types";
   import { resolvePerformerProp } from "../state/performer-prop-resolution";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
   import { computeViewerAlignedCamera } from "../camera/viewer-camera-framing";
   import { resolveGridJoin3D } from "../services/grid-join-3d";
   import WorkerEnvironmentRenderer from "../worker-renderer/components/WorkerEnvironmentRenderer.svelte";
@@ -118,7 +118,7 @@
     createEffectsConfigState(undefined, { persist: false });
   const visibility = getAnimationVisibilityManager();
   type SettingsService =
-    (typeof import("$lib/shared/settings/state/settings-state.svelte"))["settingsService"];
+    (typeof import("#lib/shared/settings/state/settings-state.svelte.js"))["settingsService"];
   let viewerSettings = $state<SettingsService | null>(null);
   let globalTipEffectMap = $state<TipEffectMap>(
     visibility.effectsConfigState?.tipEffectMap ?? {}
@@ -379,7 +379,7 @@
 
   onMount(() => {
     let mounted = true;
-    void import("$lib/shared/settings/state/settings-state.svelte").then(
+    void import("#lib/shared/settings/state/settings-state.svelte.js").then(
       ({ settingsService }) => {
         if (mounted) viewerSettings = settingsService;
       }

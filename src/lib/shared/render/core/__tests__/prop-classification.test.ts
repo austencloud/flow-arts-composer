@@ -5,7 +5,7 @@ import {
   isStrictPlacedProp,
   pictographRequiresStrictHandpoints,
   getBetaOffsetSize,
-} from "$lib/shared/render/core/constants/prop-classification";
+} from "#lib/shared/render/core/constants/prop-classification.js";
 
 /**
  * Prop classification drives beta-offset skip conditions and offset distances.

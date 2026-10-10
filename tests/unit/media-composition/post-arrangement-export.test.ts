@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import type { ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
-import { createArrangementProject } from "$lib/shared/media-composition/domain/post-arrangement-item";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { createArrangementProject } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
 import {
   renderPostStudioFrame,
   type RenderPostStudioFrameInput,
-} from "$lib/shared/media-composition/services/post-studio-frame-compositor";
+} from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
 
 const snapshot: ArrangementSnapshot = {
   schemaVersion: 1,
@@ -38,6 +38,7 @@ const snapshot: ArrangementSnapshot = {
 
 describe("arrangement frame export", () => {
   it("captures and draws the live arrangement surface", async () => {
+    vi.stubGlobal("CSS", { escape: (value: string) => value });
     const project = createArrangementProject(
       snapshot,
       "studio-arrangement:export",
@@ -61,6 +62,10 @@ describe("arrangement frame export", () => {
     mounted.dataset.renderMode = "arrangement";
     const surface = create("div");
     surface.dataset.arrangementSurface = "";
+    surface.dataset.arrangementCellCount = "1";
+    const cell = create("div");
+    cell.dataset.arrangementCellReady = "false";
+    surface.append(cell);
     vi.spyOn(surface, "getBoundingClientRect").mockReturnValue({
       width: 300,
       height: 300,
@@ -88,7 +93,7 @@ describe("arrangement frame export", () => {
       context as unknown as CanvasRenderingContext2D
     );
 
-    await renderPostStudioFrame({
+    const rendering = renderPostStudioFrame({
       canvas,
       root,
       preset: compiled.preset,
@@ -98,6 +103,11 @@ describe("arrangement frame export", () => {
         capture,
       } as unknown as RenderPostStudioFrameInput["pictographCapture"],
     });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(capture).not.toHaveBeenCalled();
+    cell.dataset.arrangementCellReady = "true";
+    await rendering;
 
     expect(capture).toHaveBeenCalledWith(surface, 300, 300, 3.6);
     expect(drawImage.mock.calls.some(([source]) => source === captured)).toBe(

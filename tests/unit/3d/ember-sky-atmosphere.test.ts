@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   EMBER_ATMOSPHERE_LOOK_IDS,
   getEmberAtmosphereLook,
-} from "$lib/shared/3d/environments/domain/models/scene-configs/ember-atmosphere-looks";
+} from "#lib/shared/3d/environments/domain/models/scene-configs/ember-atmosphere-looks.js";
 
 const world = JSON.parse(
   readFileSync(

@@ -1,8 +1,8 @@
-import type { GridTopology } from "$lib/shared/multi-grid/domain/models/grid-topology";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PropPlacement } from "$lib/shared/conjoined-grid/domain/types";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { GridLocation } from "$lib/shared/render/core/types";
+import type { GridTopology } from "#lib/shared/multi-grid/domain/models/grid-topology.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PropPlacement } from "#lib/shared/conjoined-grid/domain/types.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { GridLocation } from "#lib/shared/render/core/types.js";
 
 /**
  * Maps a pictograph's left and right prop end positions onto a multi-grid topology.

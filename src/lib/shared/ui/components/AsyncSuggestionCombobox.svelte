@@ -22,8 +22,8 @@
   first and last option.
 -->
 <script lang="ts" generics="T">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onDestroy, type Snippet } from "svelte";
 
   interface RowState {
@@ -543,7 +543,7 @@
     color: var(--theme-text);
     font-size: var(--font-size-sm);
     transition: all var(--duration-normal) ease;
-    box-shadow: var(--theme-shadow, 0 2px 8px var(--theme-shadow));
+    box-shadow: var(--theme-shadow, none);
   }
 
   .search-input:focus {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateStepTimestamps } from "$lib/shared/audio/bpm-analyzer";
+import { generateStepTimestamps } from "#lib/shared/audio/bpm-analyzer.js";
 
 /**
  * The analyzer moved from Compose to `shared/audio` for its second user, the

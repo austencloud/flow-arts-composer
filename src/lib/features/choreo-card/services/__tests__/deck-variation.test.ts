@@ -10,9 +10,9 @@ import {
   type Rng,
 } from "../deck-variation";
 import type { VariationConfig } from "../deck-variation";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 /** Deterministic rng that yields the given values in order, then 0. */
 function seededRng(values: number[]): Rng {
@@ -224,7 +224,7 @@ describe("resolveDeckSequences (positional seam)", () => {
 });
 
 import { resolveStartOrientation, type StartOriMode } from "../deck-variation";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 describe("resolveStartOrientation (family-aware)", () => {
   it("maps register + family to its per-hand orientation pair", () => {

@@ -3,13 +3,13 @@ LevelCard.svelte - Card for selecting difficulty level
 Uses stepper pattern for space-efficient level selection
 -->
 <script lang="ts">
-  import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { isBrightBackground } from "../../shared/domain/card-colors";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { DIFFICULTY_LEVELS } from "$lib/shared/config/difficulty-styles";
-  import { MAX_AVAILABLE_LEVEL } from "$lib/shared/create/utils/config-mapper";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { DIFFICULTY_LEVELS } from "#lib/shared/config/difficulty-styles.js";
+  import { MAX_AVAILABLE_LEVEL } from "#lib/shared/create/utils/config-mapper.js";
   import StepperCard from "./StepperCard/StepperCard.svelte";
 
   let {

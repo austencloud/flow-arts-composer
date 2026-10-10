@@ -21,7 +21,7 @@ import type {
 	WallMaterialId,
 } from "../domain/room-types";
 import { GRID_CELL, snapToGrid } from "../domain/room-types";
-import { DEFAULT_PLAYER_CONFIG } from "$lib/shared/3d/physics/types";
+import { DEFAULT_PLAYER_CONFIG } from "#lib/shared/3d/physics/types.js";
 
 type Vec3 = [number, number, number];
 

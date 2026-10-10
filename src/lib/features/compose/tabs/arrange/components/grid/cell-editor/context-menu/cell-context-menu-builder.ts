@@ -9,15 +9,15 @@
 import type {
   ContextMenuEntry,
   ContextMenuItem,
-} from "$lib/shared/components/context-menu/context-menu-types";
+} from "#lib/shared/components/context-menu/context-menu-types.js";
 import type { GridCell } from "../../../../state/arrange-grid-state.svelte";
 import type {
   TransformType,
   CellEffect,
-} from "$lib/shared/animation-engine/domain/compose-types";
-import { buildVisualSequenceSaveMenuItem } from "$lib/shared/library/services/visual-sequence-save-menu-item";
-import { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
+} from "#lib/shared/animation-engine/domain/compose-types.js";
+import { buildVisualSequenceSaveMenuItem } from "#lib/shared/library/services/visual-sequence-save-menu-item.js";
+import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { EFFORTS } from "#lib/shared/effort/domain/effort-types.js";
 
 // Callbacks Interface
 

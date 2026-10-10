@@ -24,8 +24,8 @@
   out of flow, and its bound clientHeight is the caller's em in pixels.
 -->
 <script lang="ts">
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import { isTkaWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { isTkaWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
   interface Props {
     /** The name to render. Alphabet tokens inside it are drawn as glyphs. */

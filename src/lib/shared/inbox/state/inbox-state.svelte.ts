@@ -7,9 +7,9 @@
 import type {
   ConversationPreview,
   Conversation,
-} from "$lib/shared/messaging/domain/models/conversation-models";
-import type { Message } from "$lib/shared/messaging/domain/models/message-models";
-import type { UserNotification } from "$lib/shared/notifications/domain/models/notification-models";
+} from "#lib/shared/messaging/domain/models/conversation-models.js";
+import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
+import type { UserNotification } from "#lib/shared/notifications/domain/models/notification-models.js";
 import type { SequenceSharePayload } from "../domain/models/sequence-share-payload";
 import type { PendingMessageAttachment } from "../domain/pending-message-attachment";
 

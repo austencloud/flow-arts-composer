@@ -4,7 +4,7 @@
    * with the variables spelled out as headings, using the simplified hand
    * substitution the written guide uses throughout.
    */
-  import type { QftIncrement } from "$lib/shared/notation/qft/qft-model";
+  import type { QftIncrement } from "#lib/shared/notation/qft/qft-model.js";
 
   interface Props {
     increments: QftIncrement[];

@@ -6,7 +6,7 @@ import type { Product } from "../domain/models/product";
 // Firebase modules themselves: the build's small-chunk merge (vite.config.ts)
 // can fold a small wrapper module back into the page.
 async function loadFirestore() {
-  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
   return getFirestoreInstance();
 }
 

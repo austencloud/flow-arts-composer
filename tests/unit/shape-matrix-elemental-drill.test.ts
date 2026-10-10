@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { FAMILY_BY_MODE } from "$lib/shared/shape-matrix/services/build-mode-realizations";
-import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
+import { FAMILY_BY_MODE } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
+import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
 
 describe("elemental drill mode mapping", () => {
   it("maps every VTG mode to a distinct TnD element", () => {

@@ -22,18 +22,18 @@ const PUBLIC_ROUTES_DIR = "src/routes/(public)";
 const LAB_HARNESS_ROUTE = "src/routes/test/shape-matrix/+page.svelte";
 const SHAPE_MATRIX_MODULE_DIR = "src/lib/shared/shape-matrix";
 
-const VTG_LAB_DEEP_IMPORT = /\$lib\/features\/lab\/vtg-lab\//;
-const FEATURES_LAB_IMPORT = /\$lib\/features\/lab\//;
+const VTG_LAB_DEEP_IMPORT = /#lib\/features\/lab\/vtg-lab\//;
+const FEATURES_LAB_IMPORT = /#lib\/features\/lab\//;
 
 // Documented, deliberate exceptions (see shape-matrix/README.md "Known
 // lab-side dependencies"): these two helpers drag in lab-only domain modules
 // shared with other genuinely lab-only consumers, so extracting them is out
-// of scope. Any OTHER `$lib/features/lab/` import inside the module is a
+// of scope. Any OTHER `#lib/features/lab/` import inside the module is a
 // violation.
 const ALLOWED_LAB_IMPORT_LINES = new Set([
-  'import { bakeVariationFront, bakeVariationBack } from "$lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices";',
-  'import { resolveRotationStyleMatrices } from "$lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices";',
-  'import { buildFlowerSequence } from "$lib/features/lab/vtg-lab/services/build-flower-sequence";',
+  'import { bakeVariationFront, bakeVariationBack } from "#lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices.js";',
+  'import { resolveRotationStyleMatrices } from "#lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices.js";',
+  'import { buildFlowerSequence } from "#lib/features/lab/vtg-lab/services/build-flower-sequence.js";',
 ]);
 
 function read(rel: string): string {
@@ -73,15 +73,15 @@ describe("shape-matrix engine contract", () => {
 
   it("the lab dev harness route imports the engine from its shared home", () => {
     const source = read(LAB_HARNESS_ROUTE);
-    expect(source).toContain("$lib/shared/shape-matrix/services/shape-matrix-flowers");
-    expect(source).toContain("$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte");
-    expect(source).toContain("$lib/shared/shape-matrix/domain/filter-flower-axis");
+    expect(source).toContain("#lib/shared/shape-matrix/services/shape-matrix-flowers.js");
+    expect(source).toContain("#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte");
+    expect(source).toContain("#lib/shared/shape-matrix/domain/filter-flower-axis.js");
     // The lab route legitimately still imports its own diagnostic harness
     // (ShapeMatrixDrillModal/ShapeMatrixFilters, which stayed in vtg-lab) —
     // only the moved engine symbols must no longer resolve to the old path.
-    expect(source).not.toContain("$lib/features/lab/vtg-lab/services/shape-matrix-flowers");
-    expect(source).not.toContain("$lib/features/lab/vtg-lab/components/ShapeMatrixGrid.svelte");
-    expect(source).not.toContain("$lib/features/lab/vtg-lab/domain/filter-flower-axis");
+    expect(source).not.toContain("#lib/features/lab/vtg-lab/services/shape-matrix-flowers");
+    expect(source).not.toContain("#lib/features/lab/vtg-lab/components/ShapeMatrixGrid.svelte");
+    expect(source).not.toContain("#lib/features/lab/vtg-lab/domain/filter-flower-axis");
   });
 
   it("src/lib/shared/shape-matrix/** has no undocumented imports from src/lib/features/lab/", () => {

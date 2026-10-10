@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveWallRuns } from "$lib/features/museum/services/wall-run-resolver";
+import { resolveWallRuns } from "#lib/features/museum/services/wall-run-resolver.js";
 
 // isWall over a 6x5 room border (room bounds x:0..5, y:0..4), with a 1-tile
 // door gap on the south border at x=2.

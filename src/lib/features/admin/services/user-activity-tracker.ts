@@ -14,16 +14,16 @@ import {
   Timestamp,
   onSnapshot,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import type { PresenceTracker } from "$lib/shared/presence/services/presence-tracker";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import type { PresenceTracker } from "#lib/shared/presence/services/presence-tracker.js";
 import type {
   UserWithActivity, SessionSummary, UserActivityQueryOptions } from "./types";
 import type {
   ActivityEvent,
   ActivityCategory,
   ActivityEventType,
-} from "$lib/shared/analytics/domain/models/activity-event";
-import type { UserPresenceWithId } from "$lib/shared/presence/domain/models/presence-models";
+} from "#lib/shared/analytics/domain/models/activity-event.js";
+import type { UserPresenceWithId } from "#lib/shared/presence/domain/models/presence-models.js";
 export class UserActivityTracker {
   constructor(private presenceService: PresenceTracker) {}
 
@@ -81,7 +81,7 @@ export class UserActivityTracker {
         email: string;
         photoURL: string | null;
         isAnonymous: boolean;
-        lastLocation: import("$lib/shared/presence/domain/models/presence-models").PresenceLocation | null;
+        lastLocation: import("#lib/shared/presence/domain/models/presence-models.js").PresenceLocation | null;
       }
     > = new Map();
     let presenceUsers: UserPresenceWithId[] = [];
@@ -111,7 +111,7 @@ export class UserActivityTracker {
                 isAnonymous: (data["isAnonymous"] as boolean) ?? false,
                 lastLocation:
                   (data["lastLocation"] as
-                    | import("$lib/shared/presence/domain/models/presence-models").PresenceLocation
+                    | import("#lib/shared/presence/domain/models/presence-models.js").PresenceLocation
                     | undefined) ?? null,
               });
             });

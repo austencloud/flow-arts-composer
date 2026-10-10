@@ -7,11 +7,11 @@
   - full: TransportControls + SettingsTogglePanel
 -->
 <script lang="ts">
-	import { t } from "$lib/shared/i18n/i18n.svelte.js";
-	import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
-	import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
-	import SettingsTogglePanel from "$lib/shared/animation-engine/components/controls/SettingsTogglePanel.svelte";
-	import { sequencePanelManager } from "$lib/shared/browse/state/sequence-panel-state.svelte";
+	import { t } from "#lib/shared/i18n/i18n.svelte.js";
+	import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
+	import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
+	import SettingsTogglePanel from "#lib/shared/animation-engine/components/controls/SettingsTogglePanel.svelte";
+	import { sequencePanelManager } from "#lib/shared/browse/state/sequence-panel-state.svelte.js";
 	import type { ControlsLevel } from "../domain/types";
 
 	let {

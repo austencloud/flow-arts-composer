@@ -4,12 +4,12 @@ The grid IS the experience. Place two hands, see the placement type.
 Discover all three to unlock the quiz.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import PlacementGrid from './PlacementGrid.svelte';
   import type { PlacementsExperienceStateManager } from './placement-experience-state.svelte';
   import type { HandPosition, PlacementType } from '../../../domain/constants/placement-quiz-data';
   import { PLACEMENT_TYPE_INFO } from '../../../domain/constants/placement-quiz-data';
-  import { GridMode } from '$lib/shared/pictograph/grid/domain/enums/grid-enums';
+  import { GridMode } from '#lib/shared/pictograph/grid/domain/enums/grid-enums.js';
 interface Props {
     experienceState: PlacementsExperienceStateManager;
   }

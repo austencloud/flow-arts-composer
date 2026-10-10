@@ -3,7 +3,7 @@ import { page, userEvent } from "vitest/browser";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import FilterChipBase from "./FilterChipBase.svelte";
 import FilterChipDropdownTestHarness from "./FilterChipDropdownTestHarness.svelte";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 
 describe("FilterChipBase (toggle mode)", () => {
   it("exposes aria-pressed reflecting `active` on the toggle button", async () => {

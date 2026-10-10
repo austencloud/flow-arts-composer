@@ -10,7 +10,7 @@
  * - Fetches full sequence data on demand via sourceRef
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 import type {
   DocumentData,
   Query,
@@ -20,17 +20,17 @@ import type {
 import {
   getPublicSequencePath,
   getPublicSequencesPath,
-} from "$lib/shared/library/data/firestore-paths";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
-import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
-import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
-import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
-import type { GalleryOfflineCache } from "$lib/shared/offline/services/gallery-offline-cache";
-import { networkStatusState } from "$lib/shared/offline/state/network-status-state.svelte";
-import { isDesktop } from "$lib/shared/desktop/is-desktop";
+} from "#lib/shared/library/data/firestore-paths.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+import type { PublicSequenceIndex } from "#lib/shared/foundation/domain/models/public-sequence-index.js";
+import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
+import type { GalleryOfflineCache } from "#lib/shared/offline/services/gallery-offline-cache.js";
+import { networkStatusState } from "#lib/shared/offline/state/network-status-state.svelte.js";
+import { isDesktop } from "#lib/shared/desktop/is-desktop.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
-import { fetchPublicSequenceIndexPage } from "$lib/shared/browse/services/public-sequence-index-rest-reader";
+import { fetchPublicSequenceIndexPage } from "#lib/shared/browse/services/public-sequence-index-rest-reader.js";
 
 /** How long the desktop viewer waits on Firestore before opening from the bundled index. */
 const DESKTOP_SOURCE_READ_TIMEOUT_MS = 2500;
@@ -64,7 +64,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 // modules themselves: the build's small-chunk merge (vite.config.ts) can fold a
 // small wrapper module back into the page.
 async function loadFirestore() {
-  const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+  const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
   return getFirestoreInstance();
 }
 

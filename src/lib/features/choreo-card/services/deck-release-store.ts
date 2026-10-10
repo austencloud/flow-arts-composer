@@ -9,14 +9,14 @@ import {
   writeBatch,
   type Firestore,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import {
   getDeckReleaseCardPath,
   getDeckReleaseCardsPath,
   getDeckReleaseCounterPath,
   getDeckReleaseManifestPath,
   getDeckReleaseManifestsPath,
-} from "$lib/shared/library/data/firestore-paths";
+} from "#lib/shared/library/data/firestore-paths.js";
 import {
   INSERT_CARD_VERSION,
   type DeckRelease,
@@ -25,7 +25,7 @@ import {
   type DeckRecipe,
 } from "../domain/models/DeckRelease";
 import { normalizeDeckRelease } from "../domain/normalize-deck-release";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /** Firestore's per-commit write cap. Chunk large decks' card-data writes to it. */
 const MAX_BATCH_WRITES = 450;

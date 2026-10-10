@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { WorkerEnvironmentRenderer } from "$lib/shared/3d/worker-renderer/services/worker-environment-renderer";
+import { WorkerEnvironmentRenderer } from "#lib/shared/3d/worker-renderer/services/worker-environment-renderer.js";
 
 class FakeWorker {
   onmessage: ((event: MessageEvent<unknown>) => void) | null = null;

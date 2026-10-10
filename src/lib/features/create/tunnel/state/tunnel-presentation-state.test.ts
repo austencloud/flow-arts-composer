@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   createAnimationSettingsState,
   DEFAULT_TRAIL_SETTINGS,
-} from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-import type { TunnelConfig } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import type { TunnelPresetRecipe } from "$lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe";
-import { hasModelSprite } from "$lib/shared/pictograph/prop/domain/prop-look";
-import type { TunnelSnapshot } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
-import type { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte";
+} from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import type { TunnelConfig } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import type { TunnelPresetRecipe } from "#lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe.js";
+import { hasModelSprite } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import type { TunnelSnapshot } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
+import type { TunnelViewController } from "#lib/shared/sequence-viewer/tunnel/tunnel-view-controller.svelte.js";
 import { createTunnelPresentationState } from "./tunnel-presentation-state.svelte";
 
 function savedSnapshot(): TunnelSnapshot {

@@ -25,7 +25,7 @@ import {
   mirrorLocation,
   mirrorOrientation,
   mirrorRotationDirection,
-} from "$lib/shared/pictograph/shared/domain/geometry/mirror-vertical";
+} from "#lib/shared/pictograph/shared/domain/geometry/mirror-vertical.js";
 import { signatureKey, type HandMotionSignature } from "./movement-annotation";
 
 /**

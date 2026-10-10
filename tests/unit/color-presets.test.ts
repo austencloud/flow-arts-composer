@@ -8,7 +8,7 @@ import {
   COLOR_PRESETS,
   COLOR_PRESET_COLUMNS,
   type ColorPresetRow,
-} from "$lib/shared/ui/color-presets";
+} from "#lib/shared/ui/color-presets.js";
 
 const ROWS: ColorPresetRow[] = ["light", "vivid", "deep", "neutral"];
 

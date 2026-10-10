@@ -1,14 +1,14 @@
 import type { RequestHandler } from "@sveltejs/kit";
-import { json } from "@sveltejs/kit";
-import { env } from "$env/dynamic/private";
-import { requireAdmin } from "$lib/server/auth/requireAdmin";
+
+import * as env from "$app/env/private";
+import { requireAdmin } from "#lib/server/auth/requireAdmin.js";
 import {
   mapPostHogSharingResponse,
   postHogAppOrigin,
-} from "$lib/server/analytics/posthog-replay-access";
-import { logAdminAction } from "$lib/server/security/audit-logger";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
+} from "#lib/server/analytics/posthog-replay-access.js";
+import { logAdminAction } from "#lib/server/security/audit-logger.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
 
 const SESSION_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 
@@ -32,11 +32,14 @@ export const POST: RequestHandler = async (event) => {
     sessionId.length > 128 ||
     !SESSION_ID_PATTERN.test(sessionId)
   ) {
-    return json({ message: "Valid session ID required" }, { status: 400 });
+    return Response.json(
+      { message: "Valid session ID required" },
+      { status: 400 }
+    );
   }
 
   if (!env.POSTHOG_PERSONAL_API_KEY || !env.POSTHOG_PROJECT_ID) {
-    return json(
+    return Response.json(
       {
         state: "configuration",
         embedUrl: null,
@@ -50,7 +53,7 @@ export const POST: RequestHandler = async (event) => {
   try {
     appOrigin = postHogAppOrigin(env.POSTHOG_API_HOST);
   } catch {
-    return json(
+    return Response.json(
       {
         state: "configuration",
         embedUrl: null,
@@ -77,7 +80,7 @@ export const POST: RequestHandler = async (event) => {
     console.error("[session-replay] PostHog request failed", {
       message: cause instanceof Error ? cause.message : String(cause),
     });
-    return json(
+    return Response.json(
       {
         state: "error",
         embedUrl: null,
@@ -112,5 +115,5 @@ export const POST: RequestHandler = async (event) => {
           : access.state === "configuration"
             ? 503
             : 502;
-  return json(access, { status });
+  return Response.json(access, { status });
 };
