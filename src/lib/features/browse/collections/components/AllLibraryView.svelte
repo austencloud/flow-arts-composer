@@ -48,6 +48,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
   const previewReadOnly = $derived(userPreviewState.isActive);
 
   const engine = createBrowseEngine({
+    progressiveLibrary: true,
     persistKey: "tka-browse-library-all",
     initialSource: "my-library",
     initialSort: BrowseSortMethod.DATE_ADDED,
@@ -278,7 +279,7 @@ the gallery's, and the source is pinned to my-library with no toggle.
       backLabel={t("browse_ui_collections_tab")}
       hideToolbarSearch
       warming={gridWarming || (!engine.sectionsReady && !engine.error)}
-      showToolbar={engine.sectionsReady || !!engine.error}
+      showToolbar={true}
       showFilterBar={engine.sectionsReady || !!engine.error}
       onOpenFilters={() => (libraryView = "workspace")}
       onSaveSmart={() => (smartSaveOpen = true)}
