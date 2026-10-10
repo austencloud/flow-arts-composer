@@ -89,6 +89,12 @@
     }))
   );
   let epoch = $state(0);
+  // A transform, an example or Clear replaces the whole pair, which restarts
+  // the grid's own edit history. The pairs they replaced stay here so Undo can
+  // step back past them once the grid has nothing left to undo.
+  let replacedPairs = $state<
+    { left: GridLocation | null; right: GridLocation | null }[]
+  >([]);
   let showReference = $state<boolean | null>(null);
   let hoveredExample = $state<PlacementType | null>(null);
   let boardWidth = $state(300);
@@ -167,11 +173,18 @@
   );
   const handHistory = {
     get canUndo() {
-      return placement.canUndo;
+      return placement.canUndo || replacedPairs.length > 0;
     },
     canRedo: false,
     undo() {
-      grid?.undoPlacement();
+      if (placement.canUndo) {
+        grid?.undoPlacement();
+        return true;
+      }
+      const previous = replacedPairs.at(-1);
+      if (!previous) return false;
+      replacedPairs = replacedPairs.slice(0, -1);
+      loadPair(previous.left, previous.right);
       return true;
     },
     redo() {
@@ -247,9 +260,20 @@
     workshop.edited();
   }
 
+  function replacePair(left: GridLocation | null, right: GridLocation | null) {
+    // Swapping two hands on one point changes nothing worth undoing.
+    if (left === placement.leftLocation && right === placement.rightLocation)
+      return;
+    replacedPairs = [
+      ...replacedPairs,
+      { left: placement.leftLocation, right: placement.rightLocation },
+    ];
+    loadPair(left, right);
+  }
+
   function study(kind: PlacementType) {
     const example = workshop.examplePair(kind, gridMode);
-    loadPair(example.left, example.right);
+    replacePair(example.left, example.right);
   }
 
   // Same 45-degree steps and reflection axes as the app's transform tools:
@@ -266,7 +290,7 @@
       action === "flip" ? "mirror" : action,
       { rotationSteps, reflectionAxis: action === "flip" ? 2 : 0 }
     );
-    loadPair(result.left, result.right);
+    replacePair(result.left, result.right);
   }
 
   function changeGrid(mode: GridMode) {
@@ -278,6 +302,7 @@
       mode
     );
     gridMode = mode;
+    replacedPairs = [];
     loadPair(pair.left, pair.right);
   }
 
@@ -285,6 +310,7 @@
     workshop.practice();
     gridMode = workshop.challenge!.gridMode;
     showReference = null;
+    replacedPairs = [];
     loadPair(null, null);
     await tick();
     boardElement.focus({ preventScroll: true });
@@ -299,6 +325,7 @@
     if (workshop.challenge) {
       gridMode = workshop.challenge.gridMode;
       showReference = null;
+      replacedPairs = [];
       loadPair(null, null);
     }
     await tick();
@@ -554,7 +581,7 @@
           <ClearSequenceButton
             disabled={!placement.leftLocation && !placement.rightLocation}
             label={t("learn_ui_clear_both_hands")}
-            onclick={() => loadPair(null, null)}
+            onclick={() => replacePair(null, null)}
           />
           {#if freePlay}
             <div
