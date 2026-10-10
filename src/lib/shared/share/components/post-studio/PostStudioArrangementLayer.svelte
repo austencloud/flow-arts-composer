@@ -36,6 +36,7 @@
   {#each cells as cell (cell.id)}
     <div
       class="arrangement-cell"
+      data-media-type={cell.mediaType}
       style:grid-column={`${cell.col + 1} / span ${Math.min(cell.colSpan, snapshot.gridCols - cell.col)}`}
       style:grid-row={`${cell.row + 1} / span ${Math.min(cell.rowSpan, snapshot.gridRows - cell.row)}`}
     >
