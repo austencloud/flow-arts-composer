@@ -52,6 +52,50 @@ describe("toChangelogSegments", () => {
     const kinds = toChangelogSegments(text).map((s) => s.kind);
     expect(kinds).toEqual(["text", "icon", "text", "link", "text"]);
   });
+
+  it("parses **bold** runs into strong segments", () => {
+    expect(
+      toChangelogSegments("**Stick props.** Choose **Stick** under styles.")
+    ).toEqual([
+      { kind: "strong", children: [{ kind: "text", value: "Stick props." }] },
+      { kind: "text", value: " Choose " },
+      { kind: "strong", children: [{ kind: "text", value: "Stick" }] },
+      { kind: "text", value: " under styles." },
+    ]);
+  });
+
+  it("keeps links and icons working inside bold runs", () => {
+    expect(
+      toChangelogSegments(
+        "**Open {icon:play} [Create](/create/construct)** now"
+      )
+    ).toEqual([
+      {
+        kind: "strong",
+        children: [
+          { kind: "text", value: "Open " },
+          { kind: "icon", name: "fa-play" },
+          { kind: "text", value: " " },
+          {
+            kind: "link",
+            label: "Create",
+            href: "/create/construct",
+            external: false,
+          },
+        ],
+      },
+      { kind: "text", value: " now" },
+    ]);
+  });
+
+  it("leaves unpaired or spaced asterisks as text", () => {
+    expect(toChangelogSegments("Rate 2 ** 3 and ** loose")).toEqual([
+      { kind: "text", value: "Rate 2 ** 3 and ** loose" },
+    ]);
+    expect(toChangelogSegments("A lone **marker")).toEqual([
+      { kind: "text", value: "A lone **marker" },
+    ]);
+  });
 });
 
 describe("changelogPlainText", () => {
@@ -61,5 +105,13 @@ describe("changelogPlainText", () => {
         "The {icon:play} Play button is in [Construct](https://tkaflowarts.com/create/construct)."
       )
     ).toBe("The Play button is in Construct.");
+  });
+
+  it("drops bold markers", () => {
+    expect(
+      changelogPlainText(
+        "**Stick props.** Choose **Stick** in [Props](/settings/props)."
+      )
+    ).toBe("Stick props. Choose Stick in Props.");
   });
 });

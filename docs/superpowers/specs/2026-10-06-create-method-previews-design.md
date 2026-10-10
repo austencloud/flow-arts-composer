@@ -80,14 +80,15 @@ The preview replaces the icon box. The board's existing `create-entry`
 container tiers choose the arrangement, so every card in a row gets the same
 one and nothing is measured per card.
 
-| Board tier                                        | Card shape there  | Preview                                                    |
-| ------------------------------------------------- | ----------------- | ---------------------------------------------------------- |
-| Narrow, icon above text (iPhone SE, Fold cover)   | 171–174 wide      | Full-width strip where the icon row is today               |
-| 480–1199 px, portrait board (Fold, tablet)        | 336–392 × 207–315 | Strip on top, text below                                   |
-| 480–1199 px, landscape board (Fold landscape)     | 394×172           | Square beside the text                                     |
-| Short landscape (existing height rule)            | 427×105           | Square beside the text                                     |
-| 1200 px and up, primary row (Construct, Generate) | 557–790 wide      | Strip four steps wide on top (2026-10-09; was a square)    |
-| 1200 px and up, other rows                        | 306–385 wide      | Strip on top; these cards grow into the spare board height |
+| Board tier                                        | Card shape there     | Preview                                                    |
+| ------------------------------------------------- | -------------------- | ---------------------------------------------------------- |
+| Narrow, icon above text (iPhone SE, Fold cover)   | 171–174 wide         | Full-width strip where the icon row is today               |
+| 480–1199 px, portrait board (Fold, tablet)        | 336–392 × 207–315    | Strip on top, text below                                   |
+| 480–1199 px, landscape and 960 px tall or more    | 551×317 at 1197×1167 | Strip on top, text below (2026-10-10; was a 140 px square) |
+| 480–1199 px, landscape board (Fold landscape)     | 394×172              | Square beside the text, up to 18% of the board's height    |
+| Short landscape (existing height rule)            | 427×105              | Square beside the text                                     |
+| 1200 px and up, primary row (Construct, Generate) | 557–790 wide         | Strip four steps wide on top (2026-10-09; was a square)    |
+| 1200 px and up, other rows                        | 306–385 wide         | Strip on top; these cards grow into the spare board height |
 
 These rules hold everywhere:
 
@@ -166,6 +167,19 @@ each with its own small tap, as the option picker adds steps to the step grid.
 Drawn with `PictographContainer` from the demo sequence's start position and
 first steps.
 
+Each box offers three small choices in a row before it fills (2026-10-10):
+the real step and two other moves Construct really offers there. The start
+box offers the start position picker's α and β placements beside the demo's
+γ; each step box offers moves from the option picker's list after the steps
+before it. The finger taps the real one, it grows to fill the box, and the
+other two fade, while the next box shows its choices. The real step's spot
+moves box to box and turn to turn, one spot left per box, and the finger
+starts on the first pick, so the last pick lands before the three-second turn
+ends on the largest stages. The other moves are baked from the
+production options pipeline into `method-preview-construct-choices.json`, so
+the front door never loads the pictograph dataset; a test rebuilds them and
+fails on drift.
+
 A short strip holds the start and two or three steps; a roomy strip holds up
 to four. A square shows a 2×2 grid that wraps like the step grid. The finished
 picture is the start position with its steps.
@@ -174,9 +188,12 @@ picture is the start position with its steps.
 
 The dice is pressed and the whole strip washes in at once, in the step grid's
 own diagonal wave: each cell's band is its row plus its column, staggered by
-CSS animation delay. Each turn rolls a different real sequence from
-`drawMatrixRealization()`; if that source fails, turns step through the demo
-sequence instead. The dice is drawn as a plain glyph for `GhostPointer` to
+CSS animation delay. Each turn rolls twice (2026-10-10): the finger starts on
+the dice, taps, a real sequence washes in, then it taps again and a different
+one washes in, so the preview shows that every tap is fresh. Each roll is a
+real sequence from `drawMatrixRealization()`, two kept ready between turns; if
+that source fails, rolls step through the demo sequence instead. The dice is
+drawn as a plain glyph for `GhostPointer` to
 press, never a real button.
 
 Before its first turn, the card rests on the demo sequence half a turn on,

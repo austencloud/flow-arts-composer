@@ -1,13 +1,10 @@
 <script lang="ts">
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
-  import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
-  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
 
   let { onopen }: { onopen: (id: string) => void } = $props();
   let owned = $state<Composition[]>([]);
   let legacy = $state<Composition[]>([]);
-  let picker = $state(false);
   let loading = $state(true);
   let busy = $state(false);
   let error = $state<string | null>(null);
@@ -66,24 +63,6 @@
     }
   }
 
-  async function create(sequence: SequenceData): Promise<void> {
-    picker = false;
-    busy = true;
-    error = null;
-    try {
-      const { createStudioArrangement } =
-        await import("../services/studio-arrangement-projects");
-      onopen(await createStudioArrangement(sequence));
-    } catch (cause) {
-      error =
-        cause instanceof Error
-          ? cause.message
-          : "The arrangement could not be created.";
-    } finally {
-      busy = false;
-    }
-  }
-
   async function importTimeline(): Promise<void> {
     busy = true;
     error = null;
@@ -102,76 +81,69 @@
   }
 </script>
 
-<section aria-label="Arrangements" class="arrangements">
-  <div class="arrangement-heading">
-    <div>
-      <h2>Arrangements</h2>
-      <p>Build a grid of sequences, then add music or export a video.</p>
+{#if owned.length || legacy.length || hasTimeline || error}
+  <section aria-label="Older Compose projects" class="arrangements">
+    <div class="arrangement-heading">
+      <div>
+        <h2>From Compose</h2>
+        <p>Open a saved arrangement or import an older timeline.</p>
+      </div>
     </div>
-    <button type="button" disabled={busy} onclick={() => (picker = true)}
-      ><i class="fas fa-plus" aria-hidden="true"></i> New arrangement</button
-    >
-  </div>
-  {#if error}<p class="error" role="alert">{error}</p>{/if}
-  {#if loading}<p class="status" role="status">
-      Loading saved arrangements…
-    </p>{/if}
-  {#if busy}<p class="status" role="status">Opening arrangement…</p>{/if}
-  {#if owned.length}
-    <ul>
-      {#each owned as composition (composition.id)}
-        <li>
-          <button
-            type="button"
-            disabled={busy}
-            onclick={() => openSaved(composition.id)}
-          >
-            <i class="fas fa-table-cells" aria-hidden="true"></i><strong
-              >{composition.name}</strong
+    {#if error}<p class="error" role="alert">{error}</p>{/if}
+    {#if loading}<p class="status" role="status">
+        Loading saved arrangements…
+      </p>{/if}
+    {#if busy}<p class="status" role="status">Opening arrangement…</p>{/if}
+    {#if owned.length}
+      <ul>
+        {#each owned as composition (composition.id)}
+          <li>
+            <button
+              type="button"
+              disabled={busy}
+              onclick={() => openSaved(composition.id)}
             >
-            <span>{composition.layout.cols} × {composition.layout.rows}</span
-            ><span>Open in Studio</span>
-          </button>
-        </li>
-      {/each}
-    </ul>
-  {/if}
-  {#if legacy.length}
-    <h3>Older arrangements on this device</h3>
-    <p>Choose one to import a copy into Studio. The original stays here.</p>
-    <ul>
-      {#each legacy as composition (composition.id)}
-        <li>
-          <button
-            type="button"
-            disabled={busy}
-            onclick={() => openSaved(composition.id, true)}
-          >
-            <i class="fas fa-table-cells" aria-hidden="true"></i><strong
-              >{composition.name}</strong
-            ><span>Import copy</span>
-          </button>
-        </li>
-      {/each}
-    </ul>
-  {/if}
-  {#if hasTimeline}
-    <h3>Older Compose timeline</h3>
-    <p>
-      Import its animation clips as editable arrangements. The original stays on
-      this device.
-    </p>
-    <button type="button" disabled={busy} onclick={importTimeline}
-      >Import timeline copy</button
-    >
-  {/if}
-</section>
-
-<SequencePickerModal
-  open={picker}
-  onSelect={create}
-  onClose={() => (picker = false)}
-/>
+              <i class="fas fa-table-cells" aria-hidden="true"></i><strong
+                >{composition.name}</strong
+              >
+              <span>{composition.layout.cols} × {composition.layout.rows}</span
+              ><span>Open in Studio</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    {#if legacy.length}
+      <h3>Older arrangements on this device</h3>
+      <p>Choose one to import a copy into Studio. The original stays here.</p>
+      <ul>
+        {#each legacy as composition (composition.id)}
+          <li>
+            <button
+              type="button"
+              disabled={busy}
+              onclick={() => openSaved(composition.id, true)}
+            >
+              <i class="fas fa-table-cells" aria-hidden="true"></i><strong
+                >{composition.name}</strong
+              ><span>Import copy</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    {#if hasTimeline}
+      <h3>Older Compose timeline</h3>
+      <p>
+        Import its animation clips as editable arrangements. The original stays
+        on this device.
+      </p>
+      <button type="button" disabled={busy} onclick={importTimeline}
+        >Import timeline copy</button
+      >
+    {/if}
+  </section>
+{/if}
 
 <style>
   .arrangements {

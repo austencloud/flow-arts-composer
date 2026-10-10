@@ -19,6 +19,7 @@
   import SelectionToolbar from "#lib/shared/components/selection/SelectionToolbar.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { withResultsMorph } from "#lib/shared/transitions/results-morph.js";
+  import { createDestinationFade } from "#lib/shared/transitions/motion.js";
 
   interface Props {
     collectionPropType?: PropType | null;
@@ -147,6 +148,18 @@
   let contentEl: HTMLElement | null = $state(null);
   let containerEl: HTMLElement | null = $state(null);
   let activeSection = $state<string | undefined>(undefined);
+  let gridContentEl: HTMLElement | null = $state(null);
+  let destinationFade: ReturnType<typeof createDestinationFade> | null = null;
+
+  $effect(() => {
+    if (!gridContentEl) return;
+    const fade = createDestinationFade(gridContentEl);
+    destinationFade = fade;
+    return () => {
+      fade.destroy();
+      destinationFade = null;
+    };
+  });
   // Set once the sectioned virtual grid mounts. When present, it owns
   // section-jump + active-section (the DOM-offset scan can't see off-screen,
   // virtualized headers).
@@ -250,7 +263,9 @@
   function scrollToSection(sectionTitle: string) {
     // Virtualized: delegate to the grid (target header may be unmounted).
     if (sectionApi) {
+      activeSection = sectionTitle;
       sectionApi.scrollToSectionTitle(sectionTitle);
+      destinationFade?.play();
       return;
     }
     if (!contentEl) return;
@@ -262,6 +277,8 @@
     const elRect = el.getBoundingClientRect();
     const targetScroll = elRect.top - containerRect.top + contentEl.scrollTop;
     contentEl.scrollTo({ top: targetScroll, behavior: "instant" });
+    activeSection = sectionTitle;
+    destinationFade?.play();
   }
 
   const overlayState = getSequenceOverlayState();
@@ -455,7 +472,7 @@
           />
         {/if}
         {#if hasSequences}
-          <div class="grid-area">
+          <div class="grid-area" bind:this={gridContentEl}>
             <BrowseGrid
               {engine}
               {thumbnailService}

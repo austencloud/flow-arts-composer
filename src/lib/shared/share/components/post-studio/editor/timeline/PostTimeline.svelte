@@ -1574,7 +1574,13 @@
             >
               {#if row.isMain && mainItemsList.length === 0}
                 <div class="empty-hint">
-                  <span>{t("post_timeline_empty_hint")}</span>
+                  <span
+                    >{project.sourceKind === "none"
+                      ? project.tracks.some((track) => track.items.length > 0)
+                        ? "Add footage to the main track"
+                        : "Start with footage, text, or an image"
+                      : t("post_timeline_empty_hint")}</span
+                  >
                   {#if onAddVideo}
                     <button
                       type="button"

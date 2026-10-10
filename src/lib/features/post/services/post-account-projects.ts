@@ -30,6 +30,7 @@ import {
 } from "./post-workspace-projects";
 import { loadPostPlan } from "#lib/shared/media-composition/services/post-plan-store.js";
 import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
+import { isIndependentStudioProjectId } from "#lib/shared/media-composition/domain/studio-project-id.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   cachePostSequence,
@@ -68,6 +69,10 @@ function parseCloudPost(record: z.infer<typeof CloudPostSchema>): PostProject {
     parsed.data.updatedAt !== record.projectUpdatedAt
   )
     throw new Error(`A saved cloud post (${record.sequenceId}) is invalid.`);
+  if (parsed.data.sourceKind === "none" && record.source)
+    throw new Error(
+      `A saved cloud post (${record.sequenceId}) has an unexpected source.`
+    );
   if (record.source)
     cachePostSequence(parseCloudSequence(record.source, record.sequenceId));
   return parsed.data;
@@ -141,6 +146,44 @@ export async function loadAccountPostProject(
   return project;
 }
 
+/** Reads a saved project and its source for library cards without changing the editor cache. */
+export async function readAccountPostProjectPreview(
+  uid: string,
+  sequenceId: string
+): Promise<{ project: PostProject; source: SequenceData | null } | null> {
+  const record = await firestoreGetDetailed(
+    path(uid),
+    documentId(sequenceId),
+    CloudPostSchema
+  );
+  if (auth.currentUser?.uid !== uid)
+    throw new Error("The account changed while loading project previews.");
+  if (record.status === "unknown")
+    throw new Error(
+      "Cloud project previews could not be checked while offline."
+    );
+  if (record.status === "invalid")
+    throw new Error("The cloud project preview has invalid data.");
+  if (record.status === "absent") return null;
+  const cloud = record.data;
+  const project = PostProjectSchema.safeParse(JSON.parse(cloud.project));
+  if (
+    !project.success ||
+    project.data.sequenceId !== sequenceId ||
+    project.data.updatedAt !== cloud.projectUpdatedAt ||
+    cloud.id !== documentId(sequenceId)
+  )
+    throw new Error(`A saved cloud post (${sequenceId}) is invalid.`);
+  if (project.data.sourceKind === "none" && cloud.source)
+    throw new Error(
+      `A saved cloud post (${sequenceId}) has an unexpected source.`
+    );
+  return {
+    project: project.data,
+    source: cloud.source ? parseCloudSequence(cloud.source, sequenceId) : null,
+  };
+}
+
 /**
  * Writes the post to the account. The newest edit wins: when another tab or
  * device has since saved a later edit, that copy stays and is handed back
@@ -149,15 +192,23 @@ export async function loadAccountPostProject(
 export async function saveAccountPostProject(
   uid: string,
   project: PostProject,
-  sequence: SequenceData
+  sequence: SequenceData | null
 ): Promise<PostProject | null> {
   const validated = PostProjectSchema.parse(project);
   const payload = JSON.stringify(validated);
-  if (sequence.id !== validated.sequenceId || !sequence.steps?.length)
+  if (
+    validated.sourceKind === "none"
+      ? sequence !== null
+      : !sequence ||
+        sequence.id !== validated.sequenceId ||
+        !sequence.steps?.length
+  )
     throw new Error(
       "The source sequence is missing. This post was kept on this device."
     );
-  const source = JSON.stringify(sequence);
+  // Deployed Firestore rules require a string source field. Empty means the
+  // project explicitly has no sequence; readers treat it as absent.
+  const source = sequence ? JSON.stringify(sequence) : "";
   const encoder = new TextEncoder();
   if (
     encoder.encode(payload).length > 700_000 ||
@@ -227,12 +278,12 @@ export async function listSyncedPostProjects(): Promise<{
     legacyChoices = legacy.projects.filter(
       (choice) =>
         choice.hasDraft &&
-        (!owner || choice.sequenceId.startsWith("studio-arrangement:"))
+        (!owner || isIndependentStudioProjectId(choice.sequenceId))
     );
     if (legacy.error) errors.push(legacy.error);
     for (const choice of legacyChoices) {
       const unclaimedStudio =
-        !owner && choice.sequenceId.startsWith("studio-arrangement:");
+        !owner && isIndependentStudioProjectId(choice.sequenceId);
       const draft = unclaimedStudio
         ? await loadUnclaimedStudioDraft(choice.sequenceId)
         : await loadPostDraft(choice.sequenceId);
@@ -249,7 +300,7 @@ export async function listSyncedPostProjects(): Promise<{
       if (!project) continue;
       if (auth.currentUser?.uid !== uid)
         throw new Error("The account changed while importing device posts.");
-      if (unclaimedStudio) {
+      if (unclaimedStudio && project.sourceKind !== "none") {
         const source = await resolvePostSequence(choice.sequenceId);
         if (!source) {
           errors.push(
@@ -287,8 +338,11 @@ export async function listSyncedPostProjects(): Promise<{
       const remote = cloudById.get(project.sequenceId);
       if (!remote) {
         try {
-          const source = await resolvePostSequence(project.sequenceId);
-          if (!source)
+          const source =
+            project.sourceKind === "none"
+              ? null
+              : await resolvePostSequence(project.sequenceId);
+          if (!source && project.sourceKind !== "none")
             throw new Error(
               `The source sequence for ${project.sequenceId} is unavailable. This post was kept on this device.`
             );
@@ -305,8 +359,12 @@ export async function listSyncedPostProjects(): Promise<{
       } else if (project.updatedAt > remote.updatedAt) {
         // This device has the newer copy; it goes up.
         try {
-          const source = await resolvePostSequence(project.sequenceId);
-          if (source) await saveAccountPostProject(uid, project, source);
+          const source =
+            project.sourceKind === "none"
+              ? null
+              : await resolvePostSequence(project.sequenceId);
+          if (source || project.sourceKind === "none")
+            await saveAccountPostProject(uid, project, source);
           cloudById.set(project.sequenceId, project);
         } catch (cause) {
           console.warn(`[Post] ${project.sequenceId} will sync later:`, cause);
@@ -320,7 +378,7 @@ export async function listSyncedPostProjects(): Promise<{
     if (!existing || project.updatedAt > existing.updatedAt)
       choices.set(project.sequenceId, {
         sequenceId: project.sequenceId,
-        title: project.sequenceId,
+        title: project.title ?? project.sequenceId,
         word: "",
         updatedAt: project.updatedAt,
         hasDraft: true,
@@ -341,7 +399,7 @@ export async function loadSyncedPostDraft(sequenceId: string): Promise<{
   if (!uid) return loadPostDraft(sequenceId);
   let local = loadPostProject(sequenceId);
   if (!local && !legacyPostOwner()) {
-    const legacy = sequenceId.startsWith("studio-arrangement:")
+    const legacy = isIndependentStudioProjectId(sequenceId)
       ? await loadUnclaimedStudioDraft(sequenceId)
       : await loadPostDraft(sequenceId);
     const project =
@@ -438,8 +496,12 @@ function keepOnDisk(project: PostProject): void {
  */
 export async function saveSyncedPostDraft(
   project: PostProject,
-  sequence: SequenceData
+  sequence: SequenceData | null
 ): Promise<PostProject | null> {
+  if (!sequence && project.sourceKind !== "none")
+    throw new Error(
+      "The source sequence is missing. This post was kept on this device."
+    );
   keepOnDisk(project);
   const pending = cloudRetries.get(project.sequenceId);
   clearTimeout(pending?.timer);

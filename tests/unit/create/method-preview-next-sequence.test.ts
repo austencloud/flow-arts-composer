@@ -76,6 +76,36 @@ describe("next sequence draw", () => {
     }
   });
 
+  it("keeps as many ready as asked, drawing one at a time", async () => {
+    const second = { id: "second", steps: [{}] } as unknown as SequenceData;
+    let landFirst: (draw: { sequence: SequenceData }) => void = () => {};
+    drawMatrixRealization
+      .mockImplementationOnce(
+        () => new Promise((resolve) => (landFirst = resolve))
+      )
+      .mockResolvedValueOnce({ sequence: second });
+    const draw = createNextSequenceDraw({
+      emptyWarning: "empty",
+      errorWarning: "failed",
+      capacity: 2,
+      reducedMotion: () => false,
+    });
+    draw.request();
+    draw.request();
+    await flushDraw();
+    // The second draw waits for the first.
+    expect(drawMatrixRealization).toHaveBeenCalledTimes(1);
+    landFirst({ sequence: SEQUENCE });
+    await vi.waitFor(() =>
+      expect(drawMatrixRealization).toHaveBeenCalledTimes(2)
+    );
+    await flushDraw();
+    expect(draw.take()).toBe(SEQUENCE);
+    expect(draw.take()).toBe(second);
+    expect(draw.take()).toBeNull();
+    expect(drawMatrixRealization).toHaveBeenCalledTimes(2);
+  });
+
   it("drops a draw that lands after the scene has gone", async () => {
     drawMatrixRealization.mockResolvedValue({ sequence: SEQUENCE });
     const { draw } = setup();

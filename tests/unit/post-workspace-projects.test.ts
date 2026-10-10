@@ -7,6 +7,7 @@ import {
   rememberPostSequence,
   resolvePostSequence,
 } from "#lib/features/post/services/post-workspace-projects.js";
+import { studioLibraryEntries } from "#lib/features/post/components/studio-library-entry.js";
 
 const { loadByIdentifier } = vi.hoisted(() => ({ loadByIdentifier: vi.fn() }));
 vi.mock(
@@ -32,6 +33,33 @@ const sequence = (id: string, word: string) => ({
 });
 
 describe("Post project selection", () => {
+  it("lists a source-free project by its saved title without a recent sequence", async () => {
+    const id = "studio-project:showcase:blank";
+    const project = createEmptyPostProject({
+      sequenceId: id,
+      now: 100,
+      sourceKind: "none",
+      title: "Software tour",
+    });
+    localStorage.setItem(
+      `tka:post-studio:project:v2:${id}`,
+      JSON.stringify(project)
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue({ ok: true, json: async () => ({ records: [] }) })
+    );
+    const result = await listPostProjects();
+    expect(result.projects).toEqual([
+      expect.objectContaining({
+        sequenceId: id,
+        title: "Software tour",
+        hasDraft: true,
+      }),
+    ]);
+  });
   it("simplifies displayed words without changing saved sequence or project data", async () => {
     const id = "Δ-ΛRZ";
     const word = id.repeat(4);
@@ -77,6 +105,31 @@ describe("Post project selection", () => {
     expect(loadByIdentifier).toHaveBeenCalledWith("missing-id", {
       wordFallback: false,
     });
+  });
+
+  it("keeps missing independent Studio sources out of the public gallery", async () => {
+    const id = "studio-project:tutorial:archived";
+    expect(await resolvePostSequence(id)).toBeNull();
+    expect(loadByIdentifier).not.toHaveBeenCalled();
+
+    rememberPostSequence(sequence(id, "A") as never);
+    expect((await resolvePostSequence(id))?.id).toBe(id);
+    expect(loadByIdentifier).not.toHaveBeenCalled();
+  });
+
+  it("labels archived Studio drafts when only their machine ID remains", () => {
+    const id = "studio-project:tutorial:archived";
+    const choice = {
+      sequenceId: id,
+      title: id,
+      word: "",
+      updatedAt: 1,
+      hasDraft: true,
+    };
+    expect(studioLibraryEntries([choice], [])[0]?.title).toBe("Saved tutorial");
+    expect(
+      studioLibraryEntries([{ ...choice, title: "My tutorial" }], [])[0]?.title
+    ).toBe("My tutorial");
   });
 
   it("discovers browser, disk, and legacy plans without making copies", async () => {

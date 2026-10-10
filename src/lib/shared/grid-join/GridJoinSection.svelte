@@ -3,10 +3,10 @@
   grid one or two hand points across from blue's. Every choice is shown as the
   sequence's own start position drawn that way, so the picture is the control.
 
-  Reads and changes the join through the surrounding GridJoinController (the
-  same one the right-click menus use), so the section, the menus, the canvas
-  and the link all agree. The choices come from grid-join-choices. All nine
-  options are one native radio group: arrow keys move through them.
+  Uses the surrounding GridJoinController by default, or a controlled join
+  and callback when a 3D performer owns the choice. The choices come from
+  grid-join-choices. All nine options are one native radio group: arrow keys
+  move through them.
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -31,6 +31,11 @@
     rightPropType,
     fill = false,
     compact = false,
+    join = null,
+    gridMode: controlledGridMode,
+    onChange,
+    mixed = false,
+    embedded = false,
   }: {
     /** The pose every preview draws: the sequence's start position. */
     pictograph: PictographData | null;
@@ -40,6 +45,12 @@
     fill?: boolean;
     /** Short tray (the phone dock): no hints, smaller one-grid row. */
     compact?: boolean;
+    /** A performer can own its join independently of the surrounding viewer. */
+    join?: GridJoin | null;
+    gridMode?: GridMode;
+    onChange?: (join: GridJoin | null) => void;
+    mixed?: boolean;
+    embedded?: boolean;
   } = $props();
 
   const follower = followGridJoin();
@@ -53,11 +64,16 @@
 
   const gridMode = $derived.by(() => {
     void follower.version();
-    return (controller?.gridMode() ?? undefined) as GridMode | undefined;
+    return onChange
+      ? controlledGridMode
+      : ((controller?.gridMode() ?? undefined) as GridMode | undefined);
   });
   const selection = $derived.by(() => {
     void follower.version();
-    return gridJoinSelection(controller?.current() ?? null, gridMode);
+    return gridJoinSelection(
+      onChange ? join : (controller?.current() ?? null),
+      gridMode
+    );
   });
   const directions = $derived(offeredGridJoinDirections(gridMode));
 
@@ -79,13 +95,15 @@
   ];
 
   function isChosen(join: GridJoin | null): boolean {
+    if (mixed) return false;
     const current = selection.current;
     if (!join || !current) return !join && !current;
     return current.toward === join.toward && current.steps === join.steps;
   }
 
   function choose(join: GridJoin | null): void {
-    controller?.set(join);
+    if (onChange) onChange(join);
+    else controller?.set(join);
   }
 
   // The pictures are sized in CSS from the groups box less the two heads.
@@ -121,8 +139,8 @@
   const groupName = `grid-join-${Math.random().toString(36).slice(2, 10)}`;
 </script>
 
-{#if controller && pictograph}
-  <div class="join-host" class:fill>
+{#if (controller || onChange) && pictograph}
+  <div class="join-host" class:fill class:embedded>
     <div
       class="join-page"
       class:fill
@@ -208,6 +226,20 @@
 {/if}
 
 <style>
+  .join-host.embedded {
+    container-type: inline-size;
+  }
+
+  .embedded .join-page {
+    padding: 0;
+  }
+
+  @container (max-width: 360px) {
+    .embedded .tile-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
   input[type="radio"] {
     position: absolute;
     opacity: 0;

@@ -26,6 +26,7 @@
   interface Props {
     editor: PostEditorState;
     catalog: readonly CatalogTakeSource[];
+    hasSequence?: boolean;
     /** A picked file is being read. */
     busy?: boolean;
     onAddDeviceVideo: () => void;
@@ -36,6 +37,7 @@
   let {
     editor,
     catalog,
+    hasSequence = true,
     busy = false,
     onAddDeviceVideo,
     onAdded,
@@ -200,7 +202,7 @@
         </span>
       </PanelButton>
     {/each}
-    {#each ITEMS as item (item.id)}
+    {#each ITEMS.filter((item) => hasSequence || ["arrangement", "text"].includes(item.id)) as item (item.id)}
       <PanelButton onclick={item.run} fullWidth>
         <i class="fa-solid {item.icon}" aria-hidden="true"></i>
         {item.label}
