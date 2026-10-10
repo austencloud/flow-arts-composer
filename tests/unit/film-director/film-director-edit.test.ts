@@ -34,6 +34,36 @@ function castOf(input: FilmDirectorInput) {
 }
 
 describe("applyPerformerEdit", () => {
+  it("writes and resets a grid join on exactly the named slots", () => {
+    const input = film({ performers: [{ id: "a" }, { id: "b" }] });
+    const joined = edit(input, {
+      sceneId: "s1",
+      performerIds: ["b"],
+      field: "gridJoin",
+      value: { toward: "ne", steps: 1 },
+    });
+    expect(castOf(joined).map((performer) => performer.gridJoin)).toEqual([
+      undefined,
+      { toward: "ne", steps: 1 },
+    ]);
+    const shared = edit(joined, {
+      sceneId: "s1",
+      performerIds: ["b"],
+      field: "gridJoin",
+      value: null,
+    });
+    expect(castOf(shared)[1]!.gridJoin).toBeNull();
+    const reset = edit(shared, {
+      sceneId: "s1",
+      performerIds: ["b"],
+      field: "gridJoin",
+      value: undefined,
+    });
+    expect(castOf(reset)[1]!.gridJoin).toBeUndefined();
+    expect(input.scenes[0]!.performance).toEqual({
+      performers: [{ id: "a" }, { id: "b" }],
+    });
+  });
   it("writes the value onto the named performer's slot", () => {
     const input = film({
       performers: [

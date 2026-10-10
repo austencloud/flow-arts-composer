@@ -11,6 +11,7 @@
   import { getPerformerColor } from "../../constants/performer-colors";
   import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import PerformerPropSizeSlider from "./PerformerPropSizeSlider.svelte";
+  import PerformerGridPanel from "./PerformerGridPanel.svelte";
   import CharacterSelectWorkspace from "./character-select/CharacterSelectWorkspace.svelte";
   import { resolveCharacterPreviewPerformer } from "./character-select/character-preview-source";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
@@ -216,6 +217,7 @@
     { id: "character", label: "Character", icon: "fa-user" },
     { id: "sequence", label: "Sequence", icon: "fa-film" },
     { id: "prop", label: "Prop", icon: "fa-shapes" },
+    { id: "grid", label: "Grid", icon: "fa-braille" },
     { id: "planes", label: "Planes", icon: "fa-layer-group" },
     { id: "effort", label: "Effort", icon: "fa-gauge-high" },
     { id: "effects", label: "Effects", icon: "fa-wand-sparkles" },
@@ -522,6 +524,23 @@
         </div>
       {/if}
 
+      {#if activeTab === "grid"}
+        <div
+          id="hub-panel-grid"
+          class="tab-pane active"
+          role="tabpanel"
+          aria-labelledby="hub-tab-grid"
+        >
+          <PerformerGridPanel
+            performers={selectedPerformers}
+            onChange={(join) =>
+              writeParameter({ field: "gridJoin", value: join }, () =>
+                viewer.setGridJoinScoped(join)
+              )}
+          />
+        </div>
+      {/if}
+
       {#if activeTab === "planes"}
         <div
           id="hub-panel-planes"
@@ -677,7 +696,6 @@
     );
   }
 
-  /* ─── Tab bar (6 columns) ─── */
   .tab-bar {
     position: relative;
     display: grid;
@@ -865,8 +883,7 @@
     }
   }
 
-  /* Six side-by-side icon + label pairs overflow their 1/6 column below this
-     width ("Character" ran into the Sequence icon), so stack them. */
+  /* Stack icons above labels when the inspector is too narrow for both. */
   @container (max-width: 620px) {
     .tab-btn {
       flex-direction: column;

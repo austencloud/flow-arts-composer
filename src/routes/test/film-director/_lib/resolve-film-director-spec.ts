@@ -23,6 +23,7 @@ import {
 import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
 import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { GridJoin } from "@tka/tka-types";
 
 import {
   AUDIENCE_FACING_ANGLE,
@@ -140,6 +141,7 @@ interface ResolvedPerformerFields {
   characterId: CharacterId;
   prop: PropType;
   propBuild?: DirectorPropBuild;
+  gridJoin?: GridJoin | null;
   effect: EffectType;
   handEffects?: ResolvedDirectorHandEffects;
   effort: EffortId;
@@ -778,6 +780,7 @@ function buildResolvedPerformers(
       characterId: input.characterId,
       prop: input.prop,
       ...(input.propBuild ? { propBuild: input.propBuild } : {}),
+      ...(input.gridJoin !== undefined ? { gridJoin: input.gridJoin } : {}),
       effect: input.effect,
       ...(input.handEffects ? { handEffects: input.handEffects } : {}),
       effort: input.effort,
@@ -1145,6 +1148,7 @@ function resolveScene(
       ...(input.propBuild ?? cast?.defaults?.propBuild
         ? { propBuild: input.propBuild ?? cast!.defaults!.propBuild! }
         : {}),
+      ...(input.gridJoin !== undefined ? { gridJoin: input.gridJoin } : {}),
       effect: resolvedEffects[index]! as EffectType,
       ...(resolvedHandEffects[index]
         ? { handEffects: resolvedHandEffects[index]! }

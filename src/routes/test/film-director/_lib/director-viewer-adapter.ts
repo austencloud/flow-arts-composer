@@ -92,6 +92,7 @@ export function buildDirectorViewerSeed(
         effortId: performer.effort,
         effect: performer.effect,
         staffLengthCm: performer.staffLengthCm,
+        gridJoin: performer.gridJoin,
       },
     })),
     selectedPerformerIndex: null,
@@ -179,6 +180,7 @@ export function applyDirectorSceneToViewer(
       });
       performer.setEffort(directed.effort);
       performer.setStaffLengthCm(directed.staffLengthCm);
+      performer.setGridJoin(directed.gridJoin);
 
       // Before the planes, not after: `loadSequence` rebuilds this performer's
       // step configs from whatever plane assignment is current and wipes their
@@ -195,7 +197,7 @@ export function applyDirectorSceneToViewer(
       } else {
         const directedSequence =
           options.sequences?.get(directed.id) ?? sequenceData;
-        if (directedSequence && performer.loadedSequence !== directedSequence) {
+        if (directedSequence && performer.sourceSequence !== directedSequence) {
           performer.loadSequence(directedSequence);
         }
       }
