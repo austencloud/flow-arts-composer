@@ -7,7 +7,7 @@ import {
 } from "../state/animation-visibility-state.svelte";
 import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import { FIRE_PRESETS } from "./effects-panel/presets/fire-presets";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const mocks = vi.hoisted(() => {
   const initializations: Array<() => Promise<void>> = [];

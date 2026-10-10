@@ -3,7 +3,7 @@ import { PlaybackSync, type PlaybackSyncDeps } from "./playback-sync";
 import type { AnimatorState } from "../../state/animator-state.svelte";
 import type { AnimationEngineProps } from "../animation-engine.svelte";
 import type { RenderFrameParams } from "../IAnimationRenderLoop";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 function deferred() {
   let resolve!: () => void;

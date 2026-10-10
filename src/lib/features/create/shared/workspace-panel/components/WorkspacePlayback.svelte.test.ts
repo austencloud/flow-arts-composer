@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import WorkspacePlayback from "./WorkspacePlayback.svelte";
 
 vi.mock(
-  "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte",
+  "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte",
   async () => ({
     default: (await import("./__test-stubs__/PlayerStub.svelte")).default,
   })
 );
-vi.mock("$lib/shared/timeline/StepStrip.svelte", async () => ({
+vi.mock("#lib/shared/timeline/StepStrip.svelte", async () => ({
   default: (await import("./__test-stubs__/StripStub.svelte")).default,
 }));
 
