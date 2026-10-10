@@ -18,24 +18,44 @@
    * lands as a floating layer over the other half's cell, and both props
    * show as they meet.
    *
-   * Finished picture: the fused steps, both hands, with their arrows.
+   * Each turn is a Regenerate (2026-10-10): one hand gets a new path from
+   * Fuse's own path maker while the other keeps its own, red first, then
+   * blue, so a new pair forms each turn. The next pair is made and drawn
+   * into the hidden sources while the scene rests, and the fused row takes
+   * it while it is faded out. The kept hand's halves show the very steps
+   * they showed before; the new hand's arrive a beat later with a small pop.
+   * A pair not made yet, or a maker that fails, replays the current pair.
+   *
+   * Finished picture: the latest pair's fused steps, both hands, with their
+   * arrows.
    */
-  import { untrack } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
+  import type { FuseSide } from "#lib/features/fuse/state/fuse-shuffle-pool.svelte.js";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
   import { fuseLayout } from "./method-preview-compositions";
-  import { DEMO_SEQUENCE, DEMO_STEP_START } from "./method-preview-demo";
+  import { DEMO_SEQUENCE } from "./method-preview-demo";
   import {
+    FIRST_FUSE_SWAP,
+    FUSE_PREVIEW_DRAW_WAIT_MS,
+    FUSE_PREVIEW_STEPS,
     FUSE_PREVIEW_TIMING,
-    fuseFrames,
+    fusePreviewFrames,
     fuseSources,
+    nextFuseSwap,
   } from "./method-preview-fuse";
+  import type { FusePreviewPair } from "./method-preview-fuse-swap";
   import { waitUntil, type SceneRun } from "./method-preview-run";
   import { playSceneTurns } from "./method-preview-scene-turns.svelte";
   import type { MethodPreviewSceneProps } from "./method-preview-scenes";
 
   /** The step grid's entrance easing. */
   const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+  /**
+   * Where a new path's half pops in from: a little smaller, still centered
+   * on its cell (sources scale from their top-left corner).
+   */
+  const NEW_HAND_FROM = "translate(5%, 5%) scale(0.9)";
 
   let {
     playing,
@@ -47,7 +67,7 @@
     onready,
   }: MethodPreviewSceneProps = $props();
 
-  const frames = fuseFrames(DEMO_SEQUENCE, 2, DEMO_STEP_START.fuse);
+  const restFrames = fusePreviewFrames(DEMO_SEQUENCE);
 
   let root = $state<HTMLElement | null>(null);
   let fusedRow = $state<HTMLElement | null>(null);
@@ -55,7 +75,28 @@
   /** True while the halves slide together: the floating half's box dissolves. */
   let sliding = $state(false);
   /** Each fused step's travel, 0 to 1. Null rests on the finished step. */
-  let progress = $state.raw<(number | null)[]>(frames.map(() => null));
+  let progress = $state.raw<(number | null)[]>(
+    Array.from({ length: FUSE_PREVIEW_STEPS }, () => null)
+  );
+  /** The steps the fused row shows. */
+  let fusedFrames = $state.raw(restFrames);
+  /** The steps the sources show: the fused row's, or the next pair's. */
+  let sourceFrames = $state.raw(restFrames);
+  /** Bumped when a row takes new steps, so each of its cells reports again. */
+  let fusedEpoch = $state(0);
+  let sourceEpoch = $state(0);
+
+  /** The pair the fused row shows. Null is the demo's own two hands. */
+  let pair: FusePreviewPair | null = null;
+  /** A pair made while a turn played. The sources take it at rest. */
+  let upcoming: FusePreviewPair | null = null;
+  /** The pair the hidden sources show, which the next turn fuses. */
+  let staged: FusePreviewPair | null = null;
+  /** The hand the next new pair gives a new path. */
+  let swapSide: FuseSide = FIRST_FUSE_SWAP;
+  let making = false;
+  let makerFailed = false;
+  let destroyed = false;
 
   const layout = $derived(fuseLayout(shape, width, height));
   const sources = $derived(layout ? fuseSources(layout) : []);
@@ -73,11 +114,11 @@
   const renderedCells = $derived.by(() => {
     if (!layout) return [];
     const keys: string[] = [];
-    for (const index of frames.keys()) {
+    for (const index of fusedFrames.keys()) {
       if (layout.combined[index]) keys.push(`fused:${index}`);
     }
     for (const source of sources) {
-      if (frames[source.step]) keys.push(source.key);
+      if (sourceFrames[source.step]) keys.push(source.key);
     }
     return keys;
   });
@@ -85,6 +126,59 @@
   function handleReady(cell: string): void {
     readyCells.add(cell);
   }
+
+  const isFused = (cell: string) => cell.startsWith("fused:");
+
+  /** True once every fused cell (or every source) shown has drawn. */
+  function drawn(fused: boolean): boolean {
+    return renderedCells
+      .filter((cell) => isFused(cell) === fused)
+      .every((cell) => readyCells.has(cell));
+  }
+
+  /** The fused cells (or the sources) start drawing new steps. */
+  function forget(fused: boolean): void {
+    for (const cell of [...readyCells]) {
+      if (isFused(cell) === fused) readyCells.delete(cell);
+    }
+  }
+
+  /**
+   * Make the next pair in the background, as Regenerate would: the hand
+   * after the last swap gets a new path. Fuse's maker loads only now, after
+   * the scene first drew.
+   */
+  async function makeNextPair(): Promise<void> {
+    if (making || upcoming || staged || makerFailed || destroyed) return;
+    making = true;
+    try {
+      const { demoFusePair, swapFuseHand } =
+        await import("./method-preview-fuse-swap");
+      const next = await swapFuseHand(pair ?? demoFusePair(), swapSide);
+      if (destroyed) return;
+      upcoming = next;
+      stageUpcoming();
+    } catch (error) {
+      makerFailed = true;
+      console.warn("Fuse preview: no new path, so this pair replays.", error);
+    } finally {
+      making = false;
+    }
+  }
+
+  /** At rest, the hidden sources draw the next pair for the next turn. */
+  function stageUpcoming(): void {
+    if (!upcoming || phase !== "rest") return;
+    staged = upcoming;
+    upcoming = null;
+    sourceFrames = staged.frames;
+    sourceEpoch += 1;
+    forget(false);
+  }
+
+  onDestroy(() => {
+    destroyed = true;
+  });
 
   // Ready once every cell now shown has drawn. A resize can change which
   // cells are shown before the last one reports, so this re-checks when the
@@ -95,7 +189,10 @@
     if (cells.length === 0) return;
     if (!cells.every((cell) => readyCells.has(cell))) return;
     announced = true;
-    untrack(() => onready());
+    untrack(() => {
+      onready();
+      void makeNextPair();
+    });
   });
 
   function track(
@@ -113,9 +210,10 @@
   function settle(): void {
     for (const animation of animations) animation.cancel();
     animations = [];
-    progress = frames.map(() => null);
+    progress = fusedFrames.map(() => null);
     sliding = false;
     phase = "rest";
+    stageUpcoming();
   }
 
   /** Play one fused step: its props travel from the pose before it. */
@@ -164,8 +262,15 @@
     });
     if (sources.length === 0 || halves.length !== sources.length) return;
     const timing = FUSE_PREVIEW_TIMING;
+    // The pair the hidden sources drew fuses this turn. Sources still
+    // drawing it get a moment; the turn then plays what they show.
+    const next = staged;
     phase = "fusing";
     sliding = false;
+    if (next && !drawn(false)) {
+      await waitUntil(run, () => drawn(false), FUSE_PREVIEW_DRAW_WAIT_MS, 16);
+      if (run.aborted) return;
+    }
 
     // The finished fused steps step aside, and their props go back to the
     // start of their travel while no one sees them.
@@ -175,15 +280,43 @@
       fill: "forwards",
     });
     if (!(await run.wait(timing.clearMs))) return;
-    progress = frames.map(() => 0);
+    if (next) {
+      // Out of sight, the fused row takes the new pair, and the pair after
+      // it starts being made.
+      staged = null;
+      pair = next;
+      fusedFrames = next.frames;
+      fusedEpoch += 1;
+      forget(true);
+      swapSide = nextFuseSwap(swapSide);
+      void makeNextPair();
+    }
+    progress = fusedFrames.map(() => 0);
 
-    // The blue path and the red path appear apart, one hand each.
-    for (const { piece } of halves) {
-      track(piece, [{ opacity: 0 }, { opacity: 1 }], {
-        duration: timing.sourcesInMs,
-        easing: "ease-out",
-        fill: "forwards",
-      });
+    // The blue path and the red path appear apart, one hand each. A new
+    // path arrives last, with a small pop, so the eye finds what changed.
+    for (const { source, piece } of halves) {
+      if (source.hand === next?.changed) {
+        track(
+          piece,
+          [
+            { opacity: 0, transform: NEW_HAND_FROM },
+            { opacity: 1, transform: "none" },
+          ],
+          {
+            duration: timing.newHandMs,
+            delay: timing.sourcesInMs - timing.newHandMs,
+            easing: "ease-out",
+            fill: "both",
+          }
+        );
+      } else {
+        track(piece, [{ opacity: 0 }, { opacity: 1 }], {
+          duration: timing.sourcesInMs,
+          easing: "ease-out",
+          fill: "forwards",
+        });
+      }
     }
     if (!(await run.wait(timing.sourcesInMs))) return;
 
@@ -200,11 +333,14 @@
     }
     if (!(await run.wait(timing.slideMs))) return;
     // A stalled main thread can leave the slides short of their cells when
-    // the timer fires. Merging then would jump, so wait for them to land.
+    // the timer fires. Merging then would jump, so wait for them to land,
+    // and for the fused row to finish drawing a new pair.
     // Not animation.finished: settle() cancels it, which rejects.
     await waitUntil(
       run,
-      () => slides.every((slide) => slide.playState === "finished"),
+      () =>
+        slides.every((slide) => slide.playState === "finished") &&
+        (!next || drawn(true)),
       250,
       16
     );
@@ -236,7 +372,7 @@
     }
 
     // The fused steps play once.
-    for (const index of frames.keys()) {
+    for (const index of fusedFrames.keys()) {
       if (!(await travel(run, index))) return;
     }
     settle();
@@ -259,7 +395,7 @@
 >
   {#if layout}
     <div class="fused" bind:this={fusedRow}>
-      {#each frames as frame, index (index)}
+      {#each fusedFrames as frame, index (index)}
         {@const cell = layout.combined[index]}
         {#if cell}
           <div
@@ -274,6 +410,7 @@
               motionStartData={frame.motionStartData}
               motionProgress={progress[index] ?? null}
               arrowOpacity={progress[index] ?? 1}
+              readyEpoch={fusedEpoch}
               onReady={() => handleReady(`fused:${index}`)}
             />
           </div>
@@ -281,7 +418,7 @@
       {/each}
     </div>
     {#each sources as source (source.key)}
-      {@const frame = frames[source.step]}
+      {@const frame = sourceFrames[source.step]}
       {#if frame}
         <div
           class="cell source"
@@ -299,6 +436,7 @@
             motionStartData={frame.motionStartData}
             motionProgress={0}
             arrowOpacity={0}
+            readyEpoch={sourceEpoch}
             onReady={() => handleReady(source.key)}
           />
         </div>
