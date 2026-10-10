@@ -295,5 +295,5 @@ export const handleError: HandleServerError = ({ kind, error, event }) => {
   );
 
   // Production keeps SvelteKit's safe message ("Internal Error", "Not Found").
-  if (dev) return { message: err.message };
+  return dev ? { message: err.message } : undefined;
 };

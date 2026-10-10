@@ -355,10 +355,13 @@ export function validatePhysicalCardCompletionRequest(
   };
 }
 
+// crypto.getRandomValues accepts only arrays backed by a plain ArrayBuffer.
+type FillRandomValues = (bytes: Uint8Array<ArrayBuffer>) => Uint8Array;
+
 function randomId(
   length: number,
   alphabet: string,
-  fillRandomValues: (bytes: Uint8Array) => Uint8Array
+  fillRandomValues: FillRandomValues
 ): string {
   // Rejection sampling avoids modulo bias because neither alphabet length
   // divides 256. IDs are public identifiers, but uniform allocation also keeps
@@ -378,12 +381,12 @@ function randomId(
   return result;
 }
 
-function cryptoRandomValues(bytes: Uint8Array): Uint8Array {
+function cryptoRandomValues(bytes: Uint8Array<ArrayBuffer>): Uint8Array {
   return crypto.getRandomValues(bytes);
 }
 
 export function createPhysicalCardId(
-  fillRandomValues: (bytes: Uint8Array) => Uint8Array = cryptoRandomValues
+  fillRandomValues: FillRandomValues = cryptoRandomValues
 ): string {
   return randomId(
     PHYSICAL_CARD_ID_LENGTH,
@@ -393,7 +396,7 @@ export function createPhysicalCardId(
 }
 
 export function createPrintRunId(
-  fillRandomValues: (bytes: Uint8Array) => Uint8Array = cryptoRandomValues
+  fillRandomValues: FillRandomValues = cryptoRandomValues
 ): string {
   return randomId(PRINT_RUN_ID_LENGTH, PRINT_RUN_ALPHABET, fillRandomValues);
 }

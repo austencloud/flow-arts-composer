@@ -64,7 +64,7 @@
 
   function selectPill(value: Platform) {
     selectedPill = value;
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.set("install", value);
     void goto(url, { shallow: true, replace: true, state: page.state });
   }
@@ -72,7 +72,7 @@
   function handleClose() {
     showGuide = false;
     if (page.url.searchParams.has("install")) {
-      const url = new URL(page.url);
+      const url = new URL(page.url.href);
       url.searchParams.delete("install");
       void goto(url, { shallow: true, replace: true, state: page.state });
     }

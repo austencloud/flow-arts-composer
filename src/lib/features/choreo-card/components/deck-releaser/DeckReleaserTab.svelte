@@ -287,7 +287,7 @@
   }
 
   async function closeFestivalSampler(): Promise<void> {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.delete("pack");
     url.searchParams.delete("review");
     await goto(`${url.pathname}${url.search}${url.hash}`, {
@@ -296,7 +296,7 @@
   }
 
   async function openFestivalSampler(): Promise<void> {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.set("pack", "festival-sampler-2026");
     url.searchParams.delete("review");
     await goto(`${url.pathname}${url.search}${url.hash}`, {
@@ -305,7 +305,7 @@
   }
 
   async function openFestivalTurnReview(): Promise<void> {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.set("pack", "festival-sampler-2026");
     url.searchParams.set("review", "turn-patterns");
     await goto(`${url.pathname}${url.search}${url.hash}`, {
@@ -314,7 +314,7 @@
   }
 
   async function closeFestivalTurnReview(): Promise<void> {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.delete("review");
     await goto(`${url.pathname}${url.search}${url.hash}`, {
       reset: false,

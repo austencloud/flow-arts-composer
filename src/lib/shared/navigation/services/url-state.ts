@@ -1,4 +1,4 @@
-import type { NavigationBase } from "@sveltejs/kit";
+import type { NavigationBase } from "$app/navigation";
 import { browser } from "$app/env";
 import { pushState, replaceState } from "$app/navigation";
 import { page } from "$app/state";

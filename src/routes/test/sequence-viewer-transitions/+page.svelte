@@ -325,7 +325,7 @@
 
   function selectGate(gateId: TransitionReviewGateId): void {
     review.selectGate(gateId);
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.set("gate", gateId);
     goto(url, { shallow: true, replace: true, state: page.state });
     frameMetrics = null;

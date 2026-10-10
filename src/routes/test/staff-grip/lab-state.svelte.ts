@@ -141,7 +141,7 @@ export class StaffLabState {
    * navigations, so reads follow the address bar in every direction —
    * clicks, Back, Forward, paste, reload.
    */
-  #url = $state(new URL(page.url));
+  #url = $state(new URL(page.url.href));
 
   /**
    * Phase is the one axis that changes continuously, so it cannot be read

@@ -47,7 +47,7 @@ export class ReachLabState {
    * before the history call and re-seeded from `popstate` and real
    * navigations, so reads follow the address bar in every direction.
    */
-  #url = $state(new URL(page.url));
+  #url = $state(new URL(page.url.href));
 
   readonly character = $derived.by((): CharacterId => {
     const raw = this.#url.searchParams.get(REACH_PARAM.character);

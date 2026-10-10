@@ -107,7 +107,7 @@ function option<T extends string>(
 
 /** Shareable URL state with a per-tab draft for in-progress edits and history. */
 export function createContactInspectionState() {
-  let url = $state(new URL(page.url));
+  let url = $state(new URL(page.url.href));
   let phase = $state(numberInRange(url.searchParams.get("phase"), 0));
   let playing = $state(url.searchParams.get("play") === "1");
   let view = $state<InspectionView>(

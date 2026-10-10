@@ -8,7 +8,8 @@ import { env } from "cloudflare:workers";
  * argument to clear them.
  */
 export function setWorkerEnv(values: Partial<Cloudflare.Env> = {}): void {
-  const target = env as Record<string, unknown>;
+  // Cloudflare.Env names fixed bindings; tests clear and refill them by key.
+  const target = env as unknown as Record<string, unknown>;
   for (const key of Object.keys(target)) delete target[key];
   Object.assign(target, values);
 }
