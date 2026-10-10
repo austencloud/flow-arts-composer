@@ -645,9 +645,36 @@
       );
     }
 
-    /* Primary cards, and all three cards of a three-method board, set the
-       square beside their words. */
-    .method-item.primary-method .method-card,
+    /* Primary cards set a strip four steps wide above their words, so the
+       two methods most people start with show their steps the largest. A
+       square beside the words left them smaller than the strips below.
+       These rules also undo Construct's own-row square on an odd board. */
+    .method-item.primary-method .method-card {
+      --settings-method-icon-size: 72px;
+      min-height: 0;
+      grid-template-rows: subgrid;
+      grid-template-columns: minmax(0, 1fr);
+      align-items: normal;
+      padding: 32px;
+      background: color-mix(
+        in srgb,
+        var(--method-color) 11%,
+        var(--theme-card-bg)
+      );
+    }
+
+    .method-item.primary-method .method-stage {
+      width: 100%;
+      aspect-ratio: 4;
+    }
+
+    .method-item.primary-method .method-copy {
+      grid-row: 2;
+      grid-column: 1;
+    }
+
+    /* All three cards of a three-method board set the square beside their
+       words. */
     .method-index[data-method-count="3"] .method-card {
       min-height: 200px;
       grid-template-rows: none;
@@ -657,16 +684,6 @@
       padding: 32px;
     }
 
-    .method-item.primary-method .method-card {
-      --settings-method-icon-size: 72px;
-      background: color-mix(
-        in srgb,
-        var(--method-color) 11%,
-        var(--theme-card-bg)
-      );
-    }
-
-    .method-item.primary-method .method-stage,
     .method-index[data-method-count="3"] .method-stage {
       width: var(--preview-side);
       aspect-ratio: 1;
@@ -674,7 +691,6 @@
       justify-items: center;
     }
 
-    .method-item.primary-method .method-copy,
     .method-index[data-method-count="3"] .method-copy {
       grid-row: 1;
       grid-column: 2;
