@@ -50,17 +50,18 @@ export type GridCallout = {
   align: "start" | "end";
 };
 
-// The figure's overlay spans x -225..1175 so labels sit beside the 950-unit
-// grid. Anchors are free points that the ALPHA3 hands do not cover: the
-// center, the north hand point and the west outer point.
+// Labels sit inside the 950-unit grid square, in the corners the diamond
+// leaves empty, so the picture can use the figure's full width on a phone.
+// Anchors are free points that the ALPHA3 hands do not cover: the center,
+// the north hand point and the west outer point.
 export const GRID_OVERVIEW_CALLOUTS: readonly GridCallout[] = [
   {
     id: "center",
     unit: "centerPoint",
     label: ["verified_level1_center", "verified_level1_point"],
     anchor: { x: 475, y: 475 },
-    lineEnd: { x: 960, y: 840 },
-    labelAt: { x: 1150, y: 900 },
+    lineEnd: { x: 760, y: 820 },
+    labelAt: { x: 905, y: 885 },
     align: "end",
   },
   {
@@ -68,8 +69,8 @@ export const GRID_OVERVIEW_CALLOUTS: readonly GridCallout[] = [
     unit: "handPoints",
     label: ["verified_level1_hand", "verified_level1_points"],
     anchor: { x: 475, y: 331.9 },
-    lineEnd: { x: 960, y: 150 },
-    labelAt: { x: 1150, y: 120 },
+    lineEnd: { x: 760, y: 140 },
+    labelAt: { x: 905, y: 105 },
     align: "end",
   },
   {
@@ -77,8 +78,8 @@ export const GRID_OVERVIEW_CALLOUTS: readonly GridCallout[] = [
     unit: "outerPoints",
     label: ["verified_level1_outer", "verified_level1_points"],
     anchor: { x: 175, y: 475 },
-    lineEnd: { x: -40, y: 840 },
-    labelAt: { x: -200, y: 900 },
+    lineEnd: { x: 150, y: 820 },
+    labelAt: { x: 45, y: 885 },
     align: "start",
   },
 ];

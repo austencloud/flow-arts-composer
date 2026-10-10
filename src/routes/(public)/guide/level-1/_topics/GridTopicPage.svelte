@@ -72,7 +72,7 @@
 
 <style>
   .grid-topic {
-    max-width: 76rem;
+    max-width: 90rem;
     margin: 0 auto;
     padding: 1.5rem clamp(1rem, 4cqw, 2.5rem) 2rem;
     display: grid;
@@ -93,10 +93,16 @@
     color: inherit;
     font-weight: 700;
   }
+  /* One centered axis: the header, the 8-point comparison, the closing line
+     and the lesson link share the middle of the page; the overview pairs the
+     figure with its definitions as one centered unit. */
   .topic-head {
     display: grid;
     gap: 0.5rem;
-    max-width: 44rem;
+    justify-items: center;
+    max-width: 46rem;
+    margin: 0 auto;
+    text-align: center;
   }
   .kicker {
     margin: 0;
@@ -110,7 +116,7 @@
     grid-column: auto;
     margin: 0;
     padding: 0;
-    text-align: left;
+    text-align: center;
     color: var(--ink, #1a1a1a);
     font-size: clamp(2.4rem, 5cqw, 3.6rem);
     font-weight: 750;
@@ -121,21 +127,36 @@
     margin: 0;
     font-size: clamp(1.05rem, 1.6cqw, 1.25rem);
     line-height: 1.55;
+    text-wrap: balance;
   }
   .overview {
     display: grid;
-    gap: 1.5rem;
+    gap: 1.75rem;
+    justify-items: center;
     align-items: center;
+  }
+  /* The figure is the artifact, so it grows with the page; prose keeps its
+     measure. */
+  .overview :global(.labeled-grid) {
+    width: min(100%, 30rem);
   }
   @container (min-width: 56rem) {
     .overview {
-      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-      gap: clamp(2rem, 4cqw, 4rem);
+      grid-template-columns:
+        minmax(0, clamp(20rem, 38cqw, 46rem))
+        minmax(0, 30rem);
+      justify-content: center;
+      justify-items: stretch;
+      gap: clamp(2.5rem, 5cqw, 5rem);
+    }
+    .overview :global(.labeled-grid) {
+      width: 100%;
     }
   }
   .definitions {
     display: grid;
     gap: 1rem;
+    width: min(100%, 30rem);
   }
   .lead {
     margin: 0;
@@ -177,10 +198,22 @@
     width: 0.85rem;
     height: 0.85rem;
   }
+  /* The prose keeps a 40rem measure; the equation is an artifact and may
+     run wider on large screens. */
   .modes {
     display: grid;
     gap: 0.75rem;
-    max-width: 44rem;
+    justify-items: center;
+    text-align: center;
+  }
+  .modes > h2,
+  .modes > p {
+    max-width: 40rem;
+  }
+  .modes :global(.modes-equation) {
+    width: min(100%, clamp(20rem, 50cqw + 8rem, 60rem));
+    max-width: none;
+    margin-top: 0.75rem;
   }
   .grid-topic h2 {
     margin: 0;
@@ -191,9 +224,12 @@
   .modes p {
     margin: 0;
     line-height: 1.55;
+    text-wrap: pretty;
   }
   .remember {
-    max-width: 44rem;
+    justify-self: center;
+    max-width: 40rem;
+    text-align: center;
     padding: 1rem 1.25rem;
     border-radius: 0.75rem;
     border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
@@ -207,6 +243,7 @@
      palette, as the host does for its own title-band chip. */
   .lesson-link {
     margin: 0;
+    justify-self: center;
     --theme-text: var(--ink, #1a1a1a);
     --theme-accent: #647ff1;
   }

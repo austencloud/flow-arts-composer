@@ -447,6 +447,14 @@
     .interactive-lesson {
       justify-self: center;
     }
+    /* On a phone the empty slot beside the first or last page would push
+       the two buttons to one side; let the buttons share the row instead. */
+    .nav-spacer {
+      display: none;
+    }
+    .nav-link.hub {
+      flex: 1 1 0;
+    }
   }
 
   @media (prefers-color-scheme: dark) {

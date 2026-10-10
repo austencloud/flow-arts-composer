@@ -22,7 +22,7 @@
 <figure class="labeled-grid">
   <div class="stage">
     <div class="art"><GridHandsArt {darkMode} {printMode} /></div>
-    <svg class="callouts" viewBox="-225 0 1400 950" aria-hidden="true">
+    <svg class="callouts" viewBox="0 0 950 950" aria-hidden="true">
       {#each GRID_OVERVIEW_CALLOUTS as callout (callout.id)}
         {@const start = calloutLineStart(callout)}
         <line
@@ -49,20 +49,16 @@
     gap: 0.6rem;
     color: var(--ink, #1a1a1a);
   }
-  /* The overlay is 1400 units wide with the 950-unit grid inset by 225, so
-     the art box takes 950/1400 of the width, offset by 225/1400. */
+  /* The overlay shares the art's 950-unit square, labels in its corners. */
   .stage {
     position: relative;
-    aspect-ratio: 1400 / 950;
+    aspect-ratio: 1;
+    border-radius: 0.75rem;
+    overflow: hidden;
   }
   .art {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 16.0714%;
-    width: 67.8571%;
-    border-radius: 0.75rem;
-    overflow: hidden;
+    inset: 0;
   }
   .callouts {
     position: absolute;
@@ -81,8 +77,8 @@
   }
   .callouts text {
     fill: currentColor;
-    font-size: 60px;
-    font-weight: 600;
+    font-size: 50px;
+    font-weight: 650;
     font-family: inherit;
   }
   figcaption {
