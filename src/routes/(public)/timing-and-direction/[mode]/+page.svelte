@@ -21,7 +21,11 @@
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
-  import { flyFade, reducedMotion } from "#lib/shared/transitions/motion.js";
+  import {
+    flyFade,
+    growFade,
+    reducedMotion,
+  } from "#lib/shared/transitions/motion.js";
   import { getTimingDirectionState } from "../_state/timing-direction-state.svelte";
   import TimingDirectionModeCard from "../_components/TimingDirectionModeCard.svelte";
   import {
@@ -147,16 +151,17 @@
       .then((loaded) => {
         if (request !== loopsRequest) return;
         if (loaded.length === 0) {
-          loopsError = "No loops are available for this mode yet.";
+          loopsError = "No sequences are available for this mode yet.";
           return;
         }
         originalLoops = loaded;
         loops = loaded;
         untrack(() => selectLoop(loaded[0]!));
       })
-      .catch(() => {
+      .catch((error) => {
         if (request !== loopsRequest) return;
-        loopsError = "Loops could not load. Try again.";
+        console.error(`${code} mode sequences failed to load`, error);
+        loopsError = "Sequences could not load.";
       })
       .finally(() => {
         if (request === loopsRequest) loopsLoading = false;
@@ -427,33 +432,36 @@
         color="accent"
       />
     </div>
-    {#if playback.propDisplay === "staff"}
-      <div class="turn-editor-toggle">
+    <div class="editor-toggles">
+      {#if playback.propDisplay === "staff"}
+        <div class="turn-editor-toggle" transition:growFade>
+          <PanelButton
+            bind:ref={turnTrigger}
+            onclick={openTurnEditor}
+            ariaExpanded={turnEditorOpen}
+            disabled={!selectedLoop}
+            fullWidth
+          >
+            Turns
+          </PanelButton>
+        </div>
+      {/if}
+      <div class="action-editor-toggle">
         <PanelButton
-          bind:ref={turnTrigger}
-          onclick={openTurnEditor}
-          ariaExpanded={turnEditorOpen}
+          bind:ref={actionTrigger}
+          onclick={() => (actionEditorOpen = !actionEditorOpen)}
+          ariaExpanded={actionEditorOpen}
           disabled={!selectedLoop}
           fullWidth
         >
-          Turns
+          Actions
         </PanelButton>
       </div>
-    {/if}
-    <div class="action-editor-toggle">
-      <PanelButton
-        bind:ref={actionTrigger}
-        onclick={() => (actionEditorOpen = !actionEditorOpen)}
-        ariaExpanded={actionEditorOpen}
-        disabled={!selectedLoop}
-        fullWidth
-      >
-        Actions
-      </PanelButton>
     </div>
     {#if browser}
       <TransportControls
-        isPlaying={playback.playing}
+        isPlaying={playback.playing && !!selectedLoop}
+        disabled={!selectedLoop}
         onPlaybackToggle={playback.togglePlayback}
       />
     {/if}
@@ -710,7 +718,7 @@
                 <p>{loopsError}</p>
                 <PanelButton onclick={retryLoops}>Try again</PanelButton>
               {:else}
-                <p>Loading {loopCountWord} loops…</p>
+                <p>Loading {loopCountWord} sequences…</p>
               {/if}
             </div>
           {/if}
@@ -719,54 +727,60 @@
     </section>
   </div>
 
-  <section class="history" aria-labelledby="learning-title">
-    <h2 id="learning-title">Learn from other spinners</h2>
-    <ul class="sources">
-      {#each article.learningResources as resource (resource.url)}
-        <li>
-          <PanelButton href={resource.url} fullWidth>
-            <span class="source-copy">
-              <strong>{resource.label}</strong>
-              <span>{resource.detail}</span>
-            </span>
-            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"
-            ></i>
-          </PanelButton>
-        </li>
-      {/each}
-    </ul>
-  </section>
+  <div class="further">
+    <section class="history learning" aria-labelledby="learning-title">
+      <h2 id="learning-title">Learn from other spinners</h2>
+      <ul class="sources">
+        {#each article.learningResources as resource (resource.url)}
+          <li>
+            <PanelButton href={resource.url} fullWidth>
+              <span class="source-copy">
+                <strong>{resource.label}</strong>
+                <span>{resource.detail}</span>
+              </span>
+              <i
+                class="fa-solid fa-arrow-up-right-from-square"
+                aria-hidden="true"
+              ></i>
+            </PanelButton>
+          </li>
+        {/each}
+      </ul>
+    </section>
 
-  <section class="history" aria-labelledby="history-title">
-    <h2 id="history-title">History & sources</h2>
-    <p>{article.history}</p>
-    <p class="source-note">
-      These are dated examples of public use, not claims of invention.
-    </p>
-    <ul class="sources">
-      {#each article.sources as source}
-        <li>
-          <PanelButton href={source.url} fullWidth>
-            <span class="source-copy">
-              <strong>{source.label}</strong>
-              <span>{source.detail}</span>
-            </span>
-            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"
-            ></i>
-          </PanelButton>
-        </li>
-      {/each}
-    </ul>
-  </section>
+    <section class="history origins" aria-labelledby="history-title">
+      <h2 id="history-title">History & sources</h2>
+      <p class="history-copy">{article.history}</p>
+      <p class="source-note">
+        These are dated examples of public use, not claims of invention.
+      </p>
+      <ul class="sources">
+        {#each article.sources as source}
+          <li>
+            <PanelButton href={source.url} fullWidth>
+              <span class="source-copy">
+                <strong>{source.label}</strong>
+                <span>{source.detail}</span>
+              </span>
+              <i
+                class="fa-solid fa-arrow-up-right-from-square"
+                aria-hidden="true"
+              ></i>
+            </PanelButton>
+          </li>
+        {/each}
+      </ul>
+    </section>
 
-  <nav class="related" aria-label="Other timing and direction modes">
-    <h2>Other modes</h2>
-    <div class="related-modes">
-      {#each relatedArticles as related (related.code)}
-        <TimingDirectionModeCard article={related} />
-      {/each}
-    </div>
-  </nav>
+    <nav class="related" aria-label="Other timing and direction modes">
+      <h2>Other modes</h2>
+      <div class="related-modes">
+        {#each relatedArticles as related (related.code)}
+          <TimingDirectionModeCard article={related} />
+        {/each}
+      </div>
+    </nav>
+  </div>
 </article>
 
 <style>
@@ -876,6 +890,15 @@
   }
   .player-controls :global(.segmented-control) {
     width: 100%;
+  }
+  /* Turns carries its own space below it, so growFade folds the button and
+     that space away together when Hands hides it. */
+  .editor-toggles {
+    display: flex;
+    flex-direction: column;
+  }
+  .turn-editor-toggle {
+    margin-bottom: 0.5rem;
   }
   .player-controls :global(.transport-controls) {
     margin: auto 0 0;
@@ -1011,12 +1034,41 @@
     padding-top: 1.5rem;
     border-top: 1px solid var(--theme-stroke);
   }
+  .history-copy {
+    max-width: 68ch;
+    margin-bottom: 0.75rem;
+  }
   .source-note {
+    margin: 0;
     font-size: 1rem;
+    color: var(--theme-text-dim);
+  }
+  /* Wide frames set the reading next to the outside links, so neither runs
+     across the whole band nor leaves it half empty. */
+  @container mode-page (min-width: 75rem) {
+    .further {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas:
+        "learning origins"
+        "related origins";
+      align-content: start;
+      column-gap: 3rem;
+    }
+    .learning {
+      grid-area: learning;
+    }
+    .origins {
+      grid-area: origins;
+    }
+    .related {
+      grid-area: related;
+      align-self: start;
+    }
   }
   .sources {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
     gap: 0.5rem;
     padding: 0;
     margin: 1rem 0 0;
@@ -1099,7 +1151,7 @@
   @media (max-width: 599.98px) {
     .mode-page {
       --page-pad: 1rem;
-      --title-gap: 0.75rem;
+      --title-gap: 0.625rem;
       max-width: 100%;
       padding: calc(var(--header-h) + 0.75rem) var(--page-pad) 2rem;
     }
@@ -1120,7 +1172,20 @@
       .player-controls .display-switch {
         grid-column: 1 / -1;
       }
+      /* Fixed cells: hiding Turns for Hands leaves its cell empty instead of
+         sliding Actions over. */
+      .editor-toggles {
+        display: contents;
+      }
+      .turn-editor-toggle {
+        grid-area: 2 / 1;
+        margin-bottom: 0;
+      }
+      .action-editor-toggle {
+        grid-area: 2 / 2;
+      }
       .player-controls :global(.transport-controls) {
+        grid-area: 2 / 3;
         margin: 0;
         justify-self: center;
       }
