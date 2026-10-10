@@ -104,8 +104,21 @@ export const PROTECTED_ROUTES = [
   "/sequence/[id]",
 ];
 
-const nodeKey = (index) =>
-  `.svelte-kit/generated/client-optimized/nodes/${index}.js`;
+/** Where SvelteKit generates the browser entry and route nodes it builds. */
+export const GENERATED_CLIENT_DIR =
+  ".svelte-kit/generated/build/client-optimized";
+
+const nodeKey = (index) => `${GENERATED_CLIENT_DIR}/nodes/${index}.js`;
+
+/**
+ * The start entry and the client runtime it loads at once. SvelteKit 3's start
+ * entry only records the page's payload, then loads the runtime with import(),
+ * so a static walk from the entry alone would miss everything the runtime pulls
+ * in.
+ */
+export function startEntryKeys(clientManifest, startKey) {
+  return [startKey, ...(clientManifest[startKey]?.dynamicImports ?? [])];
+}
 
 /** Every chunk reachable from the entries through static imports. */
 export function staticClosure(clientManifest, entryKeys) {
@@ -182,7 +195,7 @@ export function inspectRoutes({
     }
 
     const loaded = staticClosure(clientManifest, [
-      startKey,
+      ...startEntryKeys(clientManifest, startKey),
       appKey,
       ...nodes.map(nodeKey),
     ]);
@@ -252,7 +265,7 @@ async function main() {
     fs.readFileSync(clientManifestPath, "utf8")
   );
   const { manifest } = await import(pathToFileURL(serverManifestPath).href);
-  const { client, routes } = manifest._;
+  const { client, routes } = manifest;
   const serverOnlyNodes = findServerOnlyNodes(
     path.join(out, "server", "nodes")
   );

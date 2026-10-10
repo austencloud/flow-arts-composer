@@ -23,7 +23,7 @@ import { spawn, type ChildProcess } from "child_process";
 import fs from "fs";
 import type { IncomingMessage, ServerResponse } from "http";
 import path from "path";
-import type { Rolldown, ViteDevServer } from "vite";
+import type { ViteDevServer } from "vite";
 import type { Adapter } from "@sveltejs/kit";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
@@ -702,7 +702,9 @@ const packageJson = JSON.parse(
 //     Every route imports `$app/state`/navigation; putting that small runtime in
 //     the same manual chunk as PostHog, Capacitor, QR styling, and other
 //     feature-only packages forced all of them onto even the SSR scan shell's
-//     critical path. `vendor-sveltekit` depends only on the Svelte/devalue leaf.
+//     critical path. Under SvelteKit 3 that runtime stays in the automatic
+//     split (see classifyChunk); `vendor-sveltekit` keeps only Vite's preload
+//     helper.
 // Verified acyclic via DIAG_CHUNKS — see scripts/.. build log (no "Circular chunk").
 // Measured small, scene-only leaves. Rollup otherwise folds some into shared
 // startup chunks, where their Three imports pull vendor-three into boot.
@@ -767,15 +769,15 @@ const classifyChunk = (id: string): string | undefined => {
     ) {
       return "vendor-svelte";
     }
-    // SvelteKit's client entry must stay a small chunk that dynamically
-    // imports the router (runtime/client/client-entry.js); the build reads
-    // that edge to find the router and fails if a named chunk swallows both.
-    if (id.includes("node_modules/@sveltejs/kit/src/runtime/client/")) {
-      return undefined;
-    }
-    if (id.includes("node_modules/@sveltejs/kit/")) {
-      return "vendor-sveltekit";
-    }
+    // SvelteKit's own browser code stays in the bundler's automatic split.
+    // SvelteKit 3's start entry sets the page's payload and only then loads
+    // the modules that read it. A named chunk also takes in its modules'
+    // dependencies, so naming any SvelteKit module put the payload and the
+    // public env module into one chunk the start entry loads, and opening the
+    // app crashed with "Cannot read properties of undefined (reading
+    // 'PUBLIC_ENVIRONMENT')". The build also reads the start entry's dynamic
+    // import of the router, which a named chunk would swallow.
+    if (id.includes("node_modules/@sveltejs/kit/")) return undefined;
     // hooks.client needs only Capacitor's platform check. Keeping core in the
     // general vendor bucket made that tiny startup dependency pull PostHog and
     // every other unrelated package in the bucket into SvelteKit's app entry.
@@ -911,72 +913,17 @@ const classifyChunk = (id: string): string | undefined => {
   return undefined;
 };
 
-// Collapse the bundler's automatic micro-chunks in the CLIENT bundle only.
+// NO SMALL-CHUNK MERGE UNDER ROLLDOWN.
 //
-// Rolldown has no `experimentalMinChunkSize`; its equivalent is a catch-all
-// group for app source with `entriesAware`, which keeps modules that load for
-// different sets of entries apart and merges the pieces under the threshold.
-// Measured 2026-10-10 on the Vite 8 build: 1583 client JS files outside
-// workers/ (1248 under 10 KB) without it, about 800 (some 400 under 10 KB)
-// with it.
-//
-// A merged chunk is named "app~" plus the entries it serves ("nodes/0~
-// nodes/3~…"), and its CSS file takes that name, slashes included, which
-// nested assets/ up to 13 folders deep. JS chunk files are hash-only, so only
-// asset names are cut back to the last segment.
-//
-// WHY A PLUGIN. The obvious spelling is an inline output option gated on
-// defineConfig's `isSsrBuild`. That gate does not hold: SvelteKit drives both
-// builds through Vite's environments API, the config factory is evaluated
-// once, and `isSsrBuild` was undefined — so the option reached the SERVER
-// build too, where merging folds neighbouring modules into a route's own chunk
-// and SvelteKit's endpoint analysis aborts:
-//   Error: Invalid export 'P' in /api/gallery-write
-// (Verified under Vite 7: baseline builds clean, inline+isSsrBuild reproduces
-// the abort.) `outputOptions` runs per build with the resolved output dir,
-// which is an unambiguous discriminator — SvelteKit writes the browser bundle
-// to .svelte-kit/output/client and the server bundle to .../server.
-//
-// Server bundles are read off local disk and gain nothing from fewer files;
-// the round trips this fixes are the browser's.
-const clientOnlyChunkMergePlugin = () => ({
-  name: "tka-client-chunk-merge",
-  apply: "build" as const,
-  outputOptions(options: Rolldown.OutputOptions) {
-    const dir = (options.dir ?? "").replace(/\\/g, "/");
-    if (!dir.includes("/output/client")) return null;
-    const splitting =
-      typeof options.codeSplitting === "object" ? options.codeSplitting : {};
-    const assetPattern = options.assetFileNames;
-    return {
-      ...options,
-      assetFileNames:
-        typeof assetPattern === "string"
-          ? (asset: Rolldown.PreRenderedAsset) => {
-              const name = asset.names[0] ?? "";
-              if (!name.includes("~")) return assetPattern;
-              const stem = path
-                .basename(name.replace(/^.*~/, ""), path.extname(name))
-                .replace(/[^\w.-]/g, "");
-              return assetPattern.replace("[name]", stem || "app");
-            }
-          : assetPattern,
-      codeSplitting: {
-        ...splitting,
-        groups: [
-          ...(splitting.groups ?? []),
-          {
-            name: "app",
-            test: (id: string) =>
-              !id.includes("node_modules") && !/\.css(?:$|\?)/.test(id),
-            entriesAware: true,
-            entriesAwareMergeThreshold: 20_000,
-          },
-        ],
-      },
-    };
-  },
-});
+// Under Rollup the client build set `experimentalMinChunkSize: 20_000`; the
+// output comment in the build config says what that saved. Rolldown has no
+// such option. Its closest spelling, a catch-all group with `entriesAware`
+// and `entriesAwareMergeThreshold`, merges small pieces into neighbours
+// without Rollup's guarantee that no page loads more code than it did before.
+// Tried 2026-10-10: all 53 public pages then loaded Firebase at startup,
+// Three.js and the media export joined the startup graph
+// (verify:public-firebase, verify:boot-chunks). Until Rolldown can merge without changing what a page loads, the client
+// keeps the automatic split.
 
 // HTTP/2 DEV SERVER: load the mkcert-signed cert if present so Vite serves over
 // HTTP/2 (multiplexed — no 6-connection-per-origin HTTP/1.1 ceiling). That ceiling
@@ -1163,7 +1110,6 @@ export default defineConfig(({ command, mode }) => ({
     // vite-plugin-svelte 6 — preserveLocalState/injectCss no longer exist.
     // For state preservation across HMR, use `// @hmr:keep-all` comments.
     sveltekit(svelteKitOptions),
-    clientOnlyChunkMergePlugin(),
     deployStaticCopyPlugin(), // Copies static/ into the client build minus files the deploy trim deletes
     dictionaryPlugin(),
     screenshotsPlugin(), // Screenshot gallery for Lab module
@@ -1338,18 +1284,10 @@ export default defineConfig(({ command, mode }) => ({
         // critical path latency was 6,225 ms with the last resource landing
         // at 6.8 s.
         //
-        // The client build appends an "app" group after this one that merges
-        // small app chunks into siblings loaded for compatible entry sets.
-        // Groups claim modules in order, so classifyChunk's named chunks
-        // (vendor-three, vendor-svelte and the acyclicity they buy) are
-        // settled before the merge group sees anything.
-        //
-        // The tradeoff is deliberate: a merged chunk can pull in a little code
-        // a given route doesn't need. At these sizes that is a few KB against
-        // a round trip, and the round trips were the whole cost.
-        //
-        // Applied CLIENT-ONLY by the clientOnlyChunkMergePlugin — see there
-        // for why this cannot live inline.
+        // Rollup merged chunks under 20 KB into siblings with a compatible
+        // entry set, which removed most of those round trips. Rolldown has no
+        // merge that keeps each page's startup graph intact; see "NO
+        // SMALL-CHUNK MERGE UNDER ROLLDOWN" after classifyChunk.
       },
     },
     chunkSizeWarningLimit: 1000, // Warn for 1MB+ chunks
