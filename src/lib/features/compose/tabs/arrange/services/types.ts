@@ -10,7 +10,6 @@ import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence
  * Session-only: undo history is NOT persisted to localStorage.
  */
 
-
 /**
  * Types of undoable operations in the Arrange grid
  */
@@ -38,6 +37,8 @@ export interface ArrangeGridSnapshot {
   cells: GridCell[];
   gridRows: number;
   gridCols: number;
+  bpm: number;
+  skipStartPlacement: boolean;
 }
 
 /**
@@ -80,7 +81,6 @@ export interface ArrangeUndoEntry {
  * - Transform hotkeys (R/M/V/S/I, Shift+R) on selected cell layer 0
  */
 
-
 /**
  * Snapshot of UI state needed to decide how to handle a keypress.
  * Passed in by the component so the handler stays UI-framework-agnostic.
@@ -122,7 +122,6 @@ export interface KeyboardCallbacks {
  * underlying sequence transformer may need to recompute orientations.
  */
 
-
 export interface TransformResult {
   success: boolean;
   transformed?: SequenceData;
@@ -135,7 +134,6 @@ export interface TransformResult {
  * Deduplicates sequences, foregrounds transforms, separates grid structure from content.
  * Used for clipboard export and debugging.
  */
-
 
 export interface SerializationContext {
   cells: GridCell[];
@@ -151,7 +149,6 @@ export interface SerializationContext {
  * Converts between the Arrange tab's GridCell[] format and the
  * Composition format used by Dexie persistence and the Browse tab.
  */
-
 
 export interface GridStateSnapshot {
   cells: GridCell[];

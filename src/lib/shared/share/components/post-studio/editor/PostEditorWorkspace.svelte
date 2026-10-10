@@ -6,6 +6,7 @@
   import { keyboardShortcutState } from "#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js";
   import { onDestroy, onMount, tick, untrack } from "svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
   import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
   import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { getViewerStudioSurfaces } from "#lib/shared/sequence-viewer/context/viewer-studio-surfaces-context.js";
@@ -67,6 +68,7 @@
     setProjectBackground,
     setProjectCanvas,
     setTrackFlag,
+    setArrangementSnapshot,
   } from "#lib/shared/media-composition/domain/post-project-edits.js";
   import type { StripMode } from "#lib/shared/media-composition/domain/strip-view.js";
   import {
@@ -219,6 +221,8 @@
     active: boolean;
     sequence: SequenceData;
     initialProject?: PostProject;
+    /** Open a standalone arrangement at its grid on first load. */
+    editArrangementOnOpen?: boolean;
     /**
      * A feature video. Its post saves to its folder on this computer, never
      * to this browser's Post Studio storage; see feature-video-client.ts.
@@ -252,6 +256,7 @@
     active,
     sequence,
     initialProject,
+    editArrangementOnOpen = false,
     feature,
     onSaveDraft,
     draftLoadError = null,
@@ -315,6 +320,44 @@
     // this browser's Post Studio storage.
     store: featureVideo?.store,
   });
+
+  let editingArrangementId = $state<string | null>(null);
+  let ArrangementEditorComponent = $state<
+    | import("#lib/shared/composition-root/arrangement-editor.js").ArrangementEditorComponent
+    | null
+  >(null);
+  const editingArrangement = $derived.by(() => {
+    const item = editingArrangementId
+      ? findItem(editor.project, editingArrangementId)?.item
+      : null;
+    return item?.kind === "arrangement" ? item : null;
+  });
+
+  $effect(() => {
+    if (editingArrangement && !ArrangementEditorComponent) {
+      void import("#lib/shared/composition-root/arrangement-editor.js")
+        .then((module) => module.loadArrangementEditor())
+        .then((component) => (ArrangementEditorComponent = component));
+    }
+  });
+
+  onMount(() => {
+    if (!editArrangementOnOpen) return;
+    const items = editor.project.tracks.flatMap((track) => track.items);
+    const first =
+      items.length === 1 && items[0]?.kind === "arrangement" ? items[0] : null;
+    if (first) editingArrangementId = first.id;
+  });
+
+  function applyArrangement(snapshot: ArrangementSnapshot): void {
+    const item = editingArrangement;
+    if (!item || editor.isLocked(item.id)) return;
+    editor.edit((project, context) =>
+      setArrangementSnapshot(project, item.id, snapshot, context)
+    );
+    editingArrangementId = null;
+    void focusAfterUpdate({ kind: "row" });
+  }
 
   onMount(() => {
     if (!import.meta.env.DEV) return;
@@ -703,6 +746,22 @@
   }
 
   function bindingFor(role: string): CompositionSourceBinding | null {
+    if (role.startsWith("arrangement:")) {
+      const item = findItem(
+        editor.project,
+        role.slice("arrangement:".length)
+      )?.item;
+      if (item?.kind !== "arrangement") return null;
+      return {
+        roleKey: role,
+        kind: "arrangement",
+        label: item.label ?? "Arrangement",
+        previewUrl: null,
+        renderMode: "arrangement",
+        status: "ready",
+        arrangementSnapshot: item.snapshot,
+      };
+    }
     if (role.startsWith("image:")) {
       const imageId = role.slice("image:".length);
       const asset = editor.images.find((entry) => entry.id === imageId);
@@ -1617,6 +1676,11 @@
 
   /** New text opens its words; anything else shows the new item's tools. */
   function itemAdded(kind: PostItemKind): void {
+    if (kind === "arrangement") {
+      editingArrangementId = editor.selectedItemId;
+      activeTool = null;
+      return;
+    }
     if (kind === "text") {
       activeTool = "text";
       void focusAfterUpdate({ kind: "field", selector: "textarea" });
@@ -1912,6 +1976,7 @@
     if (
       !active ||
       exporting ||
+      editingArrangementId !== null ||
       event.key !== " " ||
       event.ctrlKey ||
       event.metaKey ||
@@ -1950,7 +2015,7 @@
    * history, which presses the top bar's Undo and Redo.
    */
   function handleKey(event: KeyboardEvent): void {
-    if (!active || exporting) return;
+    if (!active || exporting || editingArrangementId) return;
     if (showTimingStage) {
       session.handleKey(event);
       return;
@@ -2696,6 +2761,18 @@
       onAddDeviceVideo={pickDeviceVideo}
       onAdded={itemAdded}
     />
+  {:else if tool === "arrangement" && editor.selectedItem?.kind === "arrangement"}
+    <div class="arrangement-tool">
+      <p>Edit this arrangement's grid, sequences, and timing.</p>
+      <PanelButton
+        variant="primary"
+        disabled={!editor.selectionEditable}
+        onclick={() => (editingArrangementId = editor.selectedItemId)}
+      >
+        <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i>
+        Edit arrangement
+      </PanelButton>
+    </div>
   {:else if tool === "canvas"}
     <div class="canvas-tool">
       <PostRatioPicker
@@ -2900,7 +2977,7 @@
       canUndo={session.canUndo}
       canRedo={session.canRedo}
     />
-  {:else}
+  {:else if !editingArrangementId}
     <EditHistoryShortcutBridge
       onUndo={editor.undo}
       onRedo={editor.redo}
@@ -2908,319 +2985,339 @@
       canRedo={editor.canRedo}
     />
   {/if}
-  <div
-    class="layout"
-    style:--post-timeline-height="{shownTimelineHeightPx}px"
-    style:--post-stage-min={heldStageHeight === null
-      ? null
-      : `${heldStageHeight}px`}
-    style:--post-dock-panel-max={dockPanelMax === null
-      ? null
-      : `${dockPanelMax}px`}
-  >
-    {#if showTimingStage}
-      <div class="timing-toolbar">
-        <PanelButton onclick={session.exit} ariaLabel="Back to editing">
-          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-          <span class="back-label">Back to editing</span><span
-            class="back-short">Back</span
-          >
-        </PanelButton>
-        <label class="take-picker">
-          <span>Take</span>
-          <select
-            aria-label="Take to map"
-            value={session.take?.id ?? ""}
-            onchange={(event) => session.selectTake(event.currentTarget.value)}
-          >
-            {#each session.takes as take (take.id)}<option value={take.id}
-                >{take.label}</option
-              >{/each}
-          </select>
-        </label>
-        <div class="timing-save">{@render draftStatus()}</div>
-      </div>
-    {/if}
-    {#if !showTimingStage && !panelBeside}
-      <div class="top-bar-slot" inert={sharing || undefined}>
-        {@render topBar()}
-      </div>
-    {/if}
-
-    <div class="stage-row" bind:this={stageRow}>
-      {#if showTimingStage}
-        <div class="timing-stage" style:--take-ratio={timingRatio}>
-          <PostTimingStage
-            {session}
-            bind:ratio={timingRatio}
-            onOpenAnimation={openTimingAnimation}
-          >
-            {#snippet preview()}<PostTimingAnimationPreview
-                {editor}
-                {session}
-                sequence={displaySequence}
-              />{/snippet}
-          </PostTimingStage>
-        </div>
+  {#if editingArrangement}
+    <div class="arrangement-workspace">
+      {#if ArrangementEditorComponent}
+        <ArrangementEditorComponent
+          snapshot={editingArrangement.snapshot}
+          {active}
+          onapply={applyArrangement}
+          oncancel={() => (editingArrangementId = null)}
+          title={editingArrangement.label ?? "Arrangement"}
+        />
       {:else}
-        <div class="preview-frame">
-          <div
-            class="preview-host"
-            inert={!!previewTarget}
-            use:reparentToInspector={previewTarget}
-          >
-            <div class="canvas-slot">
-              <PostEditorCanvas
-                bind:this={playbackCanvas}
-                {editor}
-                sequence={displaySequence}
-                {bindingFor}
-                {labelFor}
-                {cardRenderOptions}
-                showStripGuide={editor.selectedItem?.kind === "video"}
-                interactive={!exporting && !sharing && !previewTarget}
-                {exporting}
-                crop={cropMode ? crop : null}
-                {cropSourceView}
-                keepSourceCropRatio={cropSourceShape !== "free"}
-                onSourceSize={noteSourceSize}
-                onMusicMissing={(missing) => (musicMissing = missing)}
-                bind:root={canvasRoot}
-              />
-            </div>
-          </div>
-        </div>
-      {/if}
-
-      {#if panelBeside}
-        <!-- Beside the preview, or moved into the viewer's side panel: the
-             top bar with the panel under it, the way desktop editors keep
-             Export above the settings. -->
-        <aside
-          class="panel-host"
-          class:external={layout === "viewer"}
-          class:appearance={shown === "appearance" &&
-            editor.selectedItem?.kind === "animation"}
-          tabindex="-1"
-          data-viewer-keys-ignore
-          bind:this={panelHost}
-          use:reparentToInspector={externalInspector}
-          inert={sharing || undefined}
-          aria-label={t("post_editor_tools")}
-        >
-          {#if showTimingStage}
-            {@render timingPanel()}
-          {:else}
-            <div class="side-column">
-              {@render topBar()}
-              <div class="panel-slot" tabindex="-1" bind:this={panelSlot}>
-                {#if shown}
-                  <Crossfade
-                    key={shown}
-                    mode="swap"
-                    duration={DURATION.fast}
-                    fill={layout === "wide" ||
-                      (layout === "viewer" &&
-                        shown === "appearance" &&
-                        editor.selectedItem?.kind === "animation")}
-                    animateHeight={layout === "viewer" &&
-                      !(
-                        shown === "appearance" &&
-                        editor.selectedItem?.kind === "animation"
-                      )}
-                  >
-                    {@render panel(shown, "side")}
-                  </Crossfade>
-                {/if}
-              </div>
-            </div>
-          {/if}
-        </aside>
+        <p>Opening arrangement…</p>
       {/if}
     </div>
+  {:else}
+    <div
+      class="layout"
+      style:--post-timeline-height="{shownTimelineHeightPx}px"
+      style:--post-stage-min={heldStageHeight === null
+        ? null
+        : `${heldStageHeight}px`}
+      style:--post-dock-panel-max={dockPanelMax === null
+        ? null
+        : `${dockPanelMax}px`}
+    >
+      {#if showTimingStage}
+        <div class="timing-toolbar">
+          <PanelButton onclick={session.exit} ariaLabel="Back to editing">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+            <span class="back-label">Back to editing</span><span
+              class="back-short">Back</span
+            >
+          </PanelButton>
+          <label class="take-picker">
+            <span>Take</span>
+            <select
+              aria-label="Take to map"
+              value={session.take?.id ?? ""}
+              onchange={(event) =>
+                session.selectTake(event.currentTarget.value)}
+            >
+              {#each session.takes as take (take.id)}<option value={take.id}
+                  >{take.label}</option
+                >{/each}
+            </select>
+          </label>
+          <div class="timing-save">{@render draftStatus()}</div>
+        </div>
+      {/if}
+      {#if !showTimingStage && !panelBeside}
+        <div class="top-bar-slot" inert={sharing || undefined}>
+          {@render topBar()}
+        </div>
+      {/if}
 
-    {#if showTimingStage}
-      <div class="timing-timeline">
-        <PostTimingTimeline
-          {session}
-          squarePainter={stripPainters.get("arrows") ?? null}
-        />
-      </div>
-    {/if}
-
-    {#if !showTimingStage}
-      <div class="transport-slot" bind:this={transportSlot}>
-        {#if cropMode && crop.item}
-          {@const clip = crop.item}
-          <PostCropTimeline
-            {editor}
-            item={clip}
-            steps={cropSteps}
-            stepName={cropStepName}
-            locked={editor.isLocked(clip.id)}
-            keys={cropKeys}
-            onToggle={toggleCropPlayback}
-            onSeek={seekInClip}
-            onMoveKey={(fromSeconds, toSeconds) =>
-              editKeys(clip.id, (it) =>
-                moveKeyframe(it, "framing", fromSeconds, toSeconds)
-              )}
-            onDeleteKey={(seconds) =>
-              editKeys(clip.id, (it) => removeKeyframe(it, "framing", seconds))}
-            onOpenCurve={openCropCurve}
-          />
+      <div class="stage-row" bind:this={stageRow}>
+        {#if showTimingStage}
+          <div class="timing-stage" style:--take-ratio={timingRatio}>
+            <PostTimingStage
+              {session}
+              bind:ratio={timingRatio}
+              onOpenAnimation={openTimingAnimation}
+            >
+              {#snippet preview()}<PostTimingAnimationPreview
+                  {editor}
+                  {session}
+                  sequence={displaySequence}
+                />{/snippet}
+            </PostTimingStage>
+          </div>
         {:else}
-          <PostEditorTransport {editor} disabled={exporting} />
+          <div class="preview-frame">
+            <div
+              class="preview-host"
+              inert={!!previewTarget}
+              use:reparentToInspector={previewTarget}
+            >
+              <div class="canvas-slot">
+                <PostEditorCanvas
+                  bind:this={playbackCanvas}
+                  {editor}
+                  sequence={displaySequence}
+                  {bindingFor}
+                  {labelFor}
+                  {cardRenderOptions}
+                  showStripGuide={editor.selectedItem?.kind === "video"}
+                  interactive={!exporting && !sharing && !previewTarget}
+                  {exporting}
+                  crop={cropMode ? crop : null}
+                  {cropSourceView}
+                  keepSourceCropRatio={cropSourceShape !== "free"}
+                  onSourceSize={noteSourceSize}
+                  onMusicMissing={(missing) => (musicMissing = missing)}
+                  bind:root={canvasRoot}
+                />
+              </div>
+            </div>
+          </div>
         {/if}
-        {#if fileError}
-          <p class="file-error" role="alert">{fileError}</p>
-        {/if}
-        {#if showImportDifferences && editor.project.importSource?.unresolved.length}
-          <details
-            class="import-differences"
-            open
-            ontoggle={(event) => {
-              if (!event.currentTarget.open) showImportDifferences = false;
-            }}
+
+        {#if panelBeside}
+          <!-- Beside the preview, or moved into the viewer's side panel: the
+             top bar with the panel under it, the way desktop editors keep
+             Export above the settings. -->
+          <aside
+            class="panel-host"
+            class:external={layout === "viewer"}
+            class:appearance={shown === "appearance" &&
+              editor.selectedItem?.kind === "animation"}
+            tabindex="-1"
+            data-viewer-keys-ignore
+            bind:this={panelHost}
+            use:reparentToInspector={externalInspector}
+            inert={sharing || undefined}
+            aria-label={t("post_editor_tools")}
           >
-            <summary>InShot import: rendering differences remain</summary>
-            <ul>
-              {#each editor.project.importSource.unresolved as difference}
-                <li>{difference}</li>
-              {/each}
-            </ul>
-          </details>
+            {#if showTimingStage}
+              {@render timingPanel()}
+            {:else}
+              <div class="side-column">
+                {@render topBar()}
+                <div class="panel-slot" tabindex="-1" bind:this={panelSlot}>
+                  {#if shown}
+                    <Crossfade
+                      key={shown}
+                      mode="swap"
+                      duration={DURATION.fast}
+                      fill={layout === "wide" ||
+                        (layout === "viewer" &&
+                          shown === "appearance" &&
+                          editor.selectedItem?.kind === "animation")}
+                      animateHeight={layout === "viewer" &&
+                        !(
+                          shown === "appearance" &&
+                          editor.selectedItem?.kind === "animation"
+                        )}
+                    >
+                      {@render panel(shown, "side")}
+                    </Crossfade>
+                  {/if}
+                </div>
+              </div>
+            {/if}
+          </aside>
         {/if}
       </div>
 
-      <!-- The crop screen takes the editor over: it stows the post's timeline
+      {#if showTimingStage}
+        <div class="timing-timeline">
+          <PostTimingTimeline
+            {session}
+            squarePainter={stripPainters.get("arrows") ?? null}
+          />
+        </div>
+      {/if}
+
+      {#if !showTimingStage}
+        <div class="transport-slot" bind:this={transportSlot}>
+          {#if cropMode && crop.item}
+            {@const clip = crop.item}
+            <PostCropTimeline
+              {editor}
+              item={clip}
+              steps={cropSteps}
+              stepName={cropStepName}
+              locked={editor.isLocked(clip.id)}
+              keys={cropKeys}
+              onToggle={toggleCropPlayback}
+              onSeek={seekInClip}
+              onMoveKey={(fromSeconds, toSeconds) =>
+                editKeys(clip.id, (it) =>
+                  moveKeyframe(it, "framing", fromSeconds, toSeconds)
+                )}
+              onDeleteKey={(seconds) =>
+                editKeys(clip.id, (it) =>
+                  removeKeyframe(it, "framing", seconds)
+                )}
+              onOpenCurve={openCropCurve}
+            />
+          {:else}
+            <PostEditorTransport {editor} disabled={exporting} />
+          {/if}
+          {#if fileError}
+            <p class="file-error" role="alert">{fileError}</p>
+          {/if}
+          {#if showImportDifferences && editor.project.importSource?.unresolved.length}
+            <details
+              class="import-differences"
+              open
+              ontoggle={(event) => {
+                if (!event.currentTarget.open) showImportDifferences = false;
+              }}
+            >
+              <summary>InShot import: rendering differences remain</summary>
+              <ul>
+                {#each editor.project.importSource.unresolved as difference}
+                  <li>{difference}</li>
+                {/each}
+              </ul>
+            </details>
+          {/if}
+        </div>
+
+        <!-- The crop screen takes the editor over: it stows the post's timeline
            and the tool row out of sight, still mounted, so they come back
            scrolled where they were. Its own clip timeline stands in for
            them, and Done or Cancel brings them back. -->
-      {#if panelBeside && !showTimingStage && !cropMode}
-        <div class="timeline-resizer">
-          <ResizeHandle
-            direction="vertical"
-            size={12}
-            ariaLabel="Resize preview and timeline"
-            ariaValueNow={editorHeight > 0
-              ? (100 * (editorHeight - shownTimelineHeightPx)) / editorHeight
-              : 50}
-            disabled={maxTimelineHeightPx <= minTimelineHeightPx}
-            onDragStart={() => (timelineResizeStartPx = shownTimelineHeightPx)}
-            onDrag={resizeTimeline}
-            onKeydown={resizeTimelineWithKeys}
-            onDoubleClick={() =>
-              (timelineHeightPx = DEFAULT_TIMELINE_HEIGHT_PX)}
+        {#if panelBeside && !showTimingStage && !cropMode}
+          <div class="timeline-resizer">
+            <ResizeHandle
+              direction="vertical"
+              size={12}
+              ariaLabel="Resize preview and timeline"
+              ariaValueNow={editorHeight > 0
+                ? (100 * (editorHeight - shownTimelineHeightPx)) / editorHeight
+                : 50}
+              disabled={maxTimelineHeightPx <= minTimelineHeightPx}
+              onDragStart={() =>
+                (timelineResizeStartPx = shownTimelineHeightPx)}
+              onDrag={resizeTimeline}
+              onKeydown={resizeTimelineWithKeys}
+              onDoubleClick={() =>
+                (timelineHeightPx = DEFAULT_TIMELINE_HEIGHT_PX)}
+            />
+          </div>
+        {/if}
+        {#if panelBeside}
+          <div
+            class="row-slot"
+            class:stowed={cropMode}
+            tabindex="-1"
+            bind:this={rowSlot}
+            inert={sharing || cropMode || undefined}
+          >
+            <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
+              {@render row()}
+            </Crossfade>
+          </div>
+        {:else}
+          {@render dock()}
+        {/if}
+        <div
+          class="timeline-slot"
+          class:stowed={cropMode}
+          inert={sharing || exporting || cropMode || undefined}
+        >
+          <PostTimeline
+            project={editor.project}
+            durationSeconds={editor.durationSeconds}
+            playheadSeconds={editor.previewSeconds}
+            isPlaying={editor.isPlaying}
+            selectedItemId={editor.selectedItemId}
+            selectedPart={editor.selectedPart}
+            {labelFor}
+            onSeek={seekFromTimeline}
+            onSelect={(itemId) => {
+              musicSelected = false;
+              editor.selectedItemId = itemId;
+            }}
+            onSelectTunnel={(itemId) => editor.selectTunnel(itemId)}
+            onGestureStart={() => {
+              editor.pause();
+              editor.beginGesture();
+            }}
+            onGestureEnd={editor.endGesture}
+            onGestureCancel={editor.cancelGesture}
+            onTrim={(itemId, edge, seconds) =>
+              asOneStep(() => editor.trimLive(itemId, edge, seconds))}
+            onMoveMain={(itemId, start) =>
+              applyMove((project, context) =>
+                placeMainItem(project, itemId, start, context)
+              )}
+            onMoveOverlay={(itemId, start, trackIndex) =>
+              applyMove((project, context) =>
+                moveOverlayItem(project, itemId, { start, trackIndex }, context)
+              )}
+            onOpenCrossfade={openCrossfade}
+            onMoveSelection={(itemIds, draggedItemId, start, trackIndex) =>
+              applyMove((project, context) =>
+                moveSelectedItems(
+                  project,
+                  itemIds,
+                  draggedItemId,
+                  start,
+                  trackIndex,
+                  context
+                )
+              )}
+            onTrackFlag={(trackId, flag, value) =>
+              editor.edit((project, context) =>
+                setTrackFlag(project, trackId, flag, value, context)
+              )}
+            {keyChannel}
+            toolChannel={keyChannel}
+            onKeyChannel={pickKeyRow}
+            onToggleKey={(itemId, channel, seconds) =>
+              editKeys(itemId, (it) => toggleKeyframe(it, channel, seconds))}
+            onMoveKey={(itemId, channel, fromSeconds, toSeconds) =>
+              editKeys(itemId, (it) =>
+                moveKeyframe(it, channel, fromSeconds, toSeconds)
+              )}
+            onDeleteKey={(itemId, channel, seconds) =>
+              editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
+            onOpenCurve={openKeyCurve}
+            toolbarStart={editor.selectedItem && keyChannel
+              ? timelineKeys
+              : undefined}
+            onAddVideo={pickDeviceVideo}
+            {musicSelected}
+            {musicMissing}
+            onSelectMusic={selectMusic}
+            onMoveMusic={(startSeconds) =>
+              applyMove((project, context) =>
+                updateMusic(project, { startSeconds }, context)
+              )}
+            onTrimMusic={(edge, seconds) =>
+              applyMove((project, context) =>
+                trimMusic(project, edge, seconds, context)
+              )}
+            onMoveDownbeat={(downbeatSeconds) =>
+              applyMove((project, context) =>
+                updateMusic(project, { downbeatSeconds }, context)
+              )}
+            bind:pixelsPerSecond
           />
         </div>
       {/if}
-      {#if panelBeside}
-        <div
-          class="row-slot"
-          class:stowed={cropMode}
-          tabindex="-1"
-          bind:this={rowSlot}
-          inert={sharing || cropMode || undefined}
-        >
-          <Crossfade key={rowKey} mode="swap" duration={DURATION.fast}>
-            {@render row()}
-          </Crossfade>
-        </div>
-      {:else}
+
+      {#if !panelBeside && showTimingStage}
         {@render dock()}
       {/if}
-      <div
-        class="timeline-slot"
-        class:stowed={cropMode}
-        inert={sharing || exporting || cropMode || undefined}
-      >
-        <PostTimeline
-          project={editor.project}
-          durationSeconds={editor.durationSeconds}
-          playheadSeconds={editor.previewSeconds}
-          isPlaying={editor.isPlaying}
-          selectedItemId={editor.selectedItemId}
-          selectedPart={editor.selectedPart}
-          {labelFor}
-          onSeek={seekFromTimeline}
-          onSelect={(itemId) => {
-            musicSelected = false;
-            editor.selectedItemId = itemId;
-          }}
-          onSelectTunnel={(itemId) => editor.selectTunnel(itemId)}
-          onGestureStart={() => {
-            editor.pause();
-            editor.beginGesture();
-          }}
-          onGestureEnd={editor.endGesture}
-          onGestureCancel={editor.cancelGesture}
-          onTrim={(itemId, edge, seconds) =>
-            asOneStep(() => editor.trimLive(itemId, edge, seconds))}
-          onMoveMain={(itemId, start) =>
-            applyMove((project, context) =>
-              placeMainItem(project, itemId, start, context)
-            )}
-          onMoveOverlay={(itemId, start, trackIndex) =>
-            applyMove((project, context) =>
-              moveOverlayItem(project, itemId, { start, trackIndex }, context)
-            )}
-          onOpenCrossfade={openCrossfade}
-          onMoveSelection={(itemIds, draggedItemId, start, trackIndex) =>
-            applyMove((project, context) =>
-              moveSelectedItems(
-                project,
-                itemIds,
-                draggedItemId,
-                start,
-                trackIndex,
-                context
-              )
-            )}
-          onTrackFlag={(trackId, flag, value) =>
-            editor.edit((project, context) =>
-              setTrackFlag(project, trackId, flag, value, context)
-            )}
-          {keyChannel}
-          toolChannel={keyChannel}
-          onKeyChannel={pickKeyRow}
-          onToggleKey={(itemId, channel, seconds) =>
-            editKeys(itemId, (it) => toggleKeyframe(it, channel, seconds))}
-          onMoveKey={(itemId, channel, fromSeconds, toSeconds) =>
-            editKeys(itemId, (it) =>
-              moveKeyframe(it, channel, fromSeconds, toSeconds)
-            )}
-          onDeleteKey={(itemId, channel, seconds) =>
-            editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
-          onOpenCurve={openKeyCurve}
-          toolbarStart={editor.selectedItem && keyChannel
-            ? timelineKeys
-            : undefined}
-          onAddVideo={pickDeviceVideo}
-          {musicSelected}
-          {musicMissing}
-          onSelectMusic={selectMusic}
-          onMoveMusic={(startSeconds) =>
-            applyMove((project, context) =>
-              updateMusic(project, { startSeconds }, context)
-            )}
-          onTrimMusic={(edge, seconds) =>
-            applyMove((project, context) =>
-              trimMusic(project, edge, seconds, context)
-            )}
-          onMoveDownbeat={(downbeatSeconds) =>
-            applyMove((project, context) =>
-              updateMusic(project, { downbeatSeconds }, context)
-            )}
-          bind:pixelsPerSecond
-        />
-      </div>
-    {/if}
-
-    {#if !panelBeside && showTimingStage}
-      {@render dock()}
-    {/if}
-  </div>
+    </div>
+  {/if}
 
   <input
     bind:this={fileInput}
@@ -3375,6 +3472,22 @@
     min-height: 0;
     overflow-y: auto;
     background: var(--theme-panel-bg, transparent);
+  }
+
+  .arrangement-workspace {
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  .arrangement-tool {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .arrangement-tool p {
+    margin: 0;
+    color: var(--theme-text-secondary, #aaa);
   }
 
   /* A phone stacks the parts in the order they are used: the top bar, the

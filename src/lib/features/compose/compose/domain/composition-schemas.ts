@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { firestoreDate } from "#lib/shared/firestore/index.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
+import { arrangementSnapshotSchema } from "#lib/shared/media-composition/domain/arrangement.js";
 
 const PersistedSequenceSchema = z.preprocess(
   normalizeLegacySequence,
@@ -27,6 +28,8 @@ export const CompositionSchema = z
     creator: z.string(),
     isFavorite: z.boolean(),
     thumbnailUrl: z.string().optional(),
+    ownerId: z.string().optional(),
+    arrangement: arrangementSnapshotSchema.optional(),
   })
   .passthrough();
 

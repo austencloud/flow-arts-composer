@@ -38,6 +38,11 @@
     type PostVideoColorGrade,
   } from "#lib/shared/media-composition/domain/post-video-color-grade.js";
 
+  // A post without an arrangement should not load the grid's canvas engines.
+  let ArrangementLayer = $state<
+    (typeof import("./PostStudioArrangementLayer.svelte"))["default"] | null
+  >(null);
+
   interface Props {
     binding: CompositionSourceBinding;
     fit: LayoutRegion["fit"];
@@ -116,6 +121,21 @@
     onSourceSize,
     onPlaybackVideo,
   }: Props = $props();
+  $effect(() => {
+    if (
+      binding.renderMode !== "arrangement" ||
+      !binding.arrangementSnapshot ||
+      ArrangementLayer
+    )
+      return;
+    let current = true;
+    void import("./PostStudioArrangementLayer.svelte").then((module) => {
+      if (current) ArrangementLayer = module.default;
+    });
+    return () => {
+      current = false;
+    };
+  });
   const composition = tryGetMediaCompositionContext();
   // The footage stays alive when the editor refreshes its binding each frame.
   const videoSource = $derived(binding.previewUrl ?? "");
@@ -711,7 +731,16 @@
   data-render-mode={binding.renderMode ?? "external-media"}
   oncontextmenu={handleContextMenu}
 >
-  {#if binding.renderMode === "sequence-animation" && sequencePosition !== undefined}
+  {#if binding.renderMode === "arrangement" && binding.arrangementSnapshot}
+    {#if ArrangementLayer}
+      <ArrangementLayer
+        snapshot={binding.arrangementSnapshot}
+        {sourceTimeSeconds}
+        {playing}
+        {exporting}
+      />
+    {/if}
+  {:else if binding.renderMode === "sequence-animation" && sequencePosition !== undefined}
     <PostStudioSequenceAnimationLayer
       {sequence}
       {sequencePosition}

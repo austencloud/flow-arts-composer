@@ -39,13 +39,23 @@ export interface CompositionStats {
   totalCells: number;
 }
 
-
-export async function saveComposition(composition: Composition): Promise<Composition> {
+export async function saveComposition(
+  composition: Composition,
+  options: { preserveUpdatedAt?: boolean } = {}
+): Promise<Composition> {
   try {
+    const existing = await db.compositions.get(composition.id);
+    if (
+      existing?.ownerId &&
+      composition.ownerId &&
+      existing.ownerId !== composition.ownerId
+    ) {
+      throw new Error("A composition with this ID belongs to another account");
+    }
     const now = new Date();
     const compositionToSave: Composition = {
       ...composition,
-      updatedAt: now,
+      updatedAt: options.preserveUpdatedAt ? composition.updatedAt : now,
       createdAt: composition.createdAt || now,
     };
 
@@ -59,7 +69,9 @@ export async function saveComposition(composition: Composition): Promise<Composi
   }
 }
 
-export async function getComposition(compositionId: string): Promise<Composition | null> {
+export async function getComposition(
+  compositionId: string
+): Promise<Composition | null> {
   try {
     const composition = await db.compositions.get(compositionId);
     return composition ?? null;
@@ -67,6 +79,20 @@ export async function getComposition(compositionId: string): Promise<Composition
     console.error(`Failed to get composition ${compositionId}:`, error);
     return null;
   }
+}
+
+export async function getCompositionForOwner(
+  compositionId: string,
+  ownerId: string | null
+): Promise<Composition | null> {
+  const composition = await getComposition(compositionId);
+  return composition?.ownerId === ownerId ? composition : null;
+}
+
+export async function getLegacyCompositions(): Promise<Composition[]> {
+  return (await getCompositions()).filter(
+    (composition) => !composition.ownerId
+  );
 }
 
 export async function updateComposition(
@@ -203,9 +229,7 @@ export async function getFavorites(): Promise<Composition[]> {
     // value is never the numeric 1 this query looked for, making .equals(1)
     // match nothing. Filter-scan to match the boolean, as getCompositions/
     // getStats already do.
-    return await db.compositions
-      .filter((c) => c.isFavorite === true)
-      .toArray();
+    return await db.compositions.filter((c) => c.isFavorite === true).toArray();
   } catch (error) {
     console.error("Failed to get favorites:", error);
     return [];
@@ -216,7 +240,9 @@ export async function getFavorites(): Promise<Composition[]> {
 // BATCH OPERATIONS
 // ============================================================================
 
-export async function deleteCompositions(compositionIds: string[]): Promise<void> {
+export async function deleteCompositions(
+  compositionIds: string[]
+): Promise<void> {
   try {
     await db.compositions.bulkDelete(compositionIds);
   } catch (error) {
@@ -273,7 +299,9 @@ export async function exists(compositionId: string): Promise<boolean> {
   }
 }
 
-export async function count(options?: CompositionQueryOptions): Promise<number> {
+export async function count(
+  options?: CompositionQueryOptions
+): Promise<number> {
   try {
     if (!options) {
       return await db.compositions.count();

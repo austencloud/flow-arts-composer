@@ -9,6 +9,7 @@ import {
 import { overlay, project as buildProject } from "./post-project-fixtures";
 import {
   loadAccountPostProject,
+  listSyncedPostProjects,
   loadSyncedPostDraft,
   resolveSyncedPostSequence,
   saveAccountPostProject,
@@ -28,9 +29,19 @@ const mocks = vi.hoisted(() => ({
   /** The whole cloud document, when a test needs more than its revision. */
   remote: null as Record<string, unknown> | null,
   cachedSource: null as SequenceData | null,
+  legacyChoices: [] as {
+    sequenceId: string;
+    title: string;
+    word: string;
+    updatedAt: number;
+    hasDraft: boolean;
+  }[],
 }));
 vi.mock("#lib/features/post/services/post-workspace-projects.js", () => ({
-  listPostProjects: vi.fn().mockResolvedValue({ projects: [], error: null }),
+  listPostProjects: vi.fn(async () => ({
+    projects: mocks.legacyChoices,
+    error: null,
+  })),
   cachePostSequence: vi.fn((sequence: SequenceData) => {
     mocks.cachedSource = sequence;
   }),
@@ -59,6 +70,7 @@ beforeEach(() => {
   mocks.revision = 0;
   mocks.remote = null;
   mocks.cachedSource = null;
+  mocks.legacyChoices = [];
   localStorage.clear();
   vi.useRealTimers();
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}")));
@@ -79,6 +91,56 @@ beforeEach(() => {
 
 describe("account Post writes", () => {
   const source = (id: string) => ({ id, steps: [{}] }) as SequenceData;
+  it("claims an unscoped guest Studio draft and its source into the account", async () => {
+    const sequenceId = "studio-arrangement:guest-scene";
+    const project = createEmptyPostProject({ sequenceId, now: 42 });
+    localStorage.setItem(
+      `tka:post-studio:project:v2:${sequenceId}`,
+      JSON.stringify(project)
+    );
+    mocks.cachedSource = source(sequenceId);
+    mocks.legacyChoices = [
+      {
+        sequenceId,
+        title: "Guest scene",
+        word: "",
+        updatedAt: 42,
+        hasDraft: true,
+      },
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ records: [] })))
+    );
+
+    await listSyncedPostProjects();
+
+    expect(loadPostProject(sequenceId)?.updatedAt).toBe(42);
+    expect(localStorage.getItem("tka:post-studio:legacy-owner:v1")).toBe(
+      "owner"
+    );
+    expect(mocks.set).toHaveBeenCalledWith(
+      `users/owner/postProjects/${encodeURIComponent(sequenceId)}`,
+      expect.objectContaining({ source: JSON.stringify(source(sequenceId)) })
+    );
+  });
+  it("opens an unclaimed guest Studio draft directly before the project list is visited", async () => {
+    const sequenceId = "studio-arrangement:direct-open";
+    const project = createEmptyPostProject({ sequenceId, now: 43 });
+    localStorage.setItem(
+      `tka:post-studio:project:v2:${sequenceId}`,
+      JSON.stringify(project)
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(null, { status: 404 }))
+    );
+
+    const opened = await loadSyncedPostDraft(sequenceId);
+
+    expect(opened.project?.updatedAt).toBe(43);
+    expect(loadPostProject(sequenceId)?.updatedAt).toBe(43);
+  });
   it("creates a post only after checking the remote document", async () => {
     const project = createEmptyPostProject({ sequenceId: "post-1", now: 10 });
     await loadAccountPostProject("owner", project.sequenceId);

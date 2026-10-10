@@ -17,6 +17,7 @@ import type { PostToolId } from "./post-editor-tools";
 
 export const ITEM_KIND_ICON: Record<PostItemKind, string> = {
   video: "fa-film",
+  arrangement: "fa-table-cells-large",
   image: "fa-image",
   card: "fa-id-card",
   animation: "fa-person-running",
@@ -35,6 +36,8 @@ export function itemKindLabel(
   switch (kind) {
     case "video":
       return t("post_editor_kind_video");
+    case "arrangement":
+      return "Arrangement";
     case "image":
       return "Image";
     case "card":
@@ -64,6 +67,7 @@ export function itemIcon(item: PostItem): string {
 export const TOOL_ICON: Record<PostToolId, string> = {
   videos: "fa-photo-film",
   add: "fa-plus",
+  arrangement: "fa-table-cells-large",
   canvas: "fa-ruler-combined",
   look: "fa-palette",
   export: "fa-file-export",
@@ -102,6 +106,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_videos");
     case "add":
       return t("post_editor_add");
+    case "arrangement":
+      return "Edit arrangement";
     case "canvas":
       return t("post_editor_tool_canvas");
     case "look":

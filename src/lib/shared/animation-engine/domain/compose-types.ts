@@ -243,6 +243,12 @@ export interface Composition {
   /** Cell configurations (one per grid cell) */
   cells: CellConfig[];
 
+  /** Full-fidelity Arrange state for new saves; older compositions use cells/layout. */
+  arrangement?: import("#lib/shared/media-composition/domain/arrangement.js").ArrangementSnapshot;
+
+  /** Account that owns this local copy. Missing on older records pending explicit import. */
+  ownerId?: string;
+
   /** Creation timestamp */
   createdAt: Date;
 
