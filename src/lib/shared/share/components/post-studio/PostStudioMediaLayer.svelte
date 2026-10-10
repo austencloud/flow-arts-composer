@@ -491,7 +491,7 @@
     if (event.defaultPrevented) return;
     if (plugin?.ui?.layerContextMenu) {
       event.preventDefault();
-      plugin.ui.layerContextMenu(event);
+      plugin.ui.layerContextMenu(event, editor);
     }
   }
 

@@ -116,8 +116,6 @@ export function createPostEditorState(deps: PostEditorDeps) {
   timing.selectedTakeId =
     core.takesInUse[0]?.id ?? core.project.takes[0]?.id ?? null;
 
-  let mode = $state<PostEditorMode>("edit");
-
   /** Import through the same atomic history path as every other edit. */
   function importProject(
     next: PostProject,
@@ -204,8 +202,22 @@ export function createPostEditorState(deps: PostEditorDeps) {
     core.attachLibraryTakes();
   }
 
+  /**
+   * The package state's part, read as tka reads it: the opening tunnel counts
+   * only while the selected animation still carries it (an undo can take the
+   * hook away under the selection).
+   */
+  function selectedPart(): "tunnel" | null {
+    const item = core.selectedItem;
+    return core.selectedPart === "tunnel" &&
+      item?.kind === "animation" &&
+      item.tunnelHook
+      ? "tunnel"
+      : null;
+  }
+
   function deleteSelected(): boolean {
-    if (timing.selectedPart !== "tunnel") return core.deleteSelected();
+    if (selectedPart() !== "tunnel") return core.deleteSelected();
     const target = core.selectedItem;
     if (!target || core.isLocked(target.id)) return false;
     // With the opening tunnel in hand, only the tunnel goes; the animation stays.
@@ -344,11 +356,11 @@ export function createPostEditorState(deps: PostEditorDeps) {
     },
     host,
     get mode() {
-      return mode;
+      return core.mode as PostEditorMode;
     },
     set mode(next: PostEditorMode) {
       if (next === "timing") core.pause();
-      mode = next;
+      core.mode = next;
     },
     get selectedItemId() {
       return core.selectedItemId;
@@ -358,15 +370,14 @@ export function createPostEditorState(deps: PostEditorDeps) {
     },
     /** `"tunnel"` while an animation's opening tunnel is what is selected. */
     get selectedPart() {
-      return timing.selectedPart;
+      return selectedPart();
     },
     /** Selects an animation's opening tunnel, which has a look of its own. */
-    selectTunnel: timing.selectTunnel,
-    /** Package parts; tka's only part is the opening tunnel, still held by the timing state. */
-    selectPart(itemId: string, part: string) {
-      if (part === "tunnel") timing.selectTunnel(itemId);
-      else core.selectPart(itemId, part);
+    selectTunnel(itemId: string): void {
+      core.selectPart(itemId, "tunnel");
     },
+    /** Package parts; tka's only part is the opening tunnel. */
+    selectPart: (itemId: string, part: string) => core.selectPart(itemId, part),
     get tunnelHook() {
       return timing.tunnelHook;
     },
@@ -416,7 +427,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     redoTiming: timing.redoTiming,
     confirmTiming: timing.confirmTiming,
     exitTiming(_reason: "done" | "back"): void {
-      mode = "edit";
+      core.mode = "edit";
     },
     persist: core.persist,
     commit: core.commit,

@@ -89,10 +89,6 @@ export function createPostTimingState(deps: PostTimingDeps) {
   let timingRedo = $state.raw<Record<string, TakeHistoryEntry[]>>({});
   let lastMappingSetting: Record<string, { key: string; at: number }> = {};
   let timingTakeId = $state<string | null>(null);
-  /** The animation whose opening tunnel, not the rest of it, is selected. */
-  let tunnelSelectedFor = $state<string | null>(null);
-  /** True while the wrapper selects the way an edit does, keeping the tunnel. */
-  let keepingPart = false;
   /**
    * The step map an older editor tapped for each catalog video, as the last
    * add or catalog lookup of that video carried it. It seeds a timing the
@@ -135,17 +131,6 @@ export function createPostTimingState(deps: PostTimingDeps) {
       clocks,
     })
   );
-
-  const selectedPart = $derived.by(() => {
-    if (!editor) return null;
-    const selectedItem = editor.selectedItem;
-    return tunnelSelectedFor !== null &&
-      tunnelSelectedFor === editor.selectedItemId &&
-      selectedItem?.kind === "animation" &&
-      selectedItem.tunnelHook
-      ? ("tunnel" as const)
-      : null;
-  });
 
   function statusOf(takeId: string): TakeTimingStatus {
     const timing = timings[takeId];
@@ -534,9 +519,6 @@ export function createPostTimingState(deps: PostTimingDeps) {
       compileContext: () => ({
         animationOverlay: deps.hasAnimationOverlay?.() ?? false,
       }),
-      selected() {
-        if (!keepingPart) tunnelSelectedFor = null;
-      },
     };
   }
 
@@ -582,27 +564,17 @@ export function createPostTimingState(deps: PostTimingDeps) {
     get timings() {
       return timings;
     },
-    /** `"tunnel"` while an animation's opening tunnel is what is selected. */
-    get selectedPart() {
-      return selectedPart;
-    },
-    /** Selects an animation's opening tunnel, which has a look of its own. */
-    selectTunnel(itemId: string): void {
-      const current = core();
-      current.selectedItemId = itemId;
-      tunnelSelectedFor = current.selectedItemId;
-    },
     /**
      * Selects as the editor's own edits do: a tunnel chosen earlier stays
      * chosen, so it is selected again when its animation is.
      */
     selectKeepingPart(itemId: string | null): void {
-      keepingPart = true;
-      try {
-        core().selectedItemId = itemId;
-      } finally {
-        keepingPart = false;
-      }
+      const current = core();
+      const kept = current.selectedPart;
+      const keptFor = current.selectedItemId;
+      current.selectedItemId = itemId;
+      if (kept !== null && itemId !== null && itemId === keptFor)
+        current.selectPart(itemId, kept);
     },
     get tunnelHook() {
       return findTunnelHook(core().project);

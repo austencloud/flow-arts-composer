@@ -30,7 +30,7 @@
   import type { PostStudioShareExport } from "./post-studio-share-export";
   import { withPostStudioPropType } from "$lib/shared/post-studio-plugin/ui/post-studio-prop-render-options";
   import PostEditorWorkspace from "./editor/PostEditorWorkspace.svelte";
-  import { createTkaEditorPlugin } from "$lib/shared/post-studio-plugin/ui/tka-editor-plugin";
+  import TkaEditorScope from "$lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
 
   /**
    * Post Studio's host-facing shell. It owns what outlives one sequence (the
@@ -86,6 +86,7 @@
     cardRenderOptions = null,
     isPreparingCard = false,
     isPreparingAnimation = false,
+    onRequestAnimation,
     onExported,
     onSharePost,
     previewTarget = null,
@@ -100,9 +101,6 @@
   const animationVisibility =
     getAnimationVisibilityContext() ?? getAnimationVisibilityManager();
   setAnimationVisibilityContext(animationVisibility);
-
-  /** tka's plugin with its editor UI, made once for every post this opens. */
-  const plugin = createTkaEditorPlugin();
 
   // ps slice: a shared link can carry the prop and the sound. See
   // `ps-slice.ts`, "Own-link rule": any non-null URL payload is an override.
@@ -195,32 +193,55 @@
 </script>
 
 {#key sequence.id}
-  <PostEditorWorkspace
-    {plugin}
+  <TkaEditorScope
     {active}
     {sequence}
     {initialProject}
     {feature}
-    {onSaveDraft}
-    {draftLoadError}
     {cardPreviewUrl}
     {animationPreviewUrl}
     {animationPreviewType}
     cardRenderOptions={synchronizedCardRenderOptions}
     {isPreparingCard}
     {isPreparingAnimation}
-    {onExported}
-    {onSharePost}
-    {previewTarget}
-    {sharing}
     {selectedPropType}
     onPropChange={(propType) => {
       urlPropType = undefined;
       projectPropType = propType;
     }}
     onProjectPropChange={(propType) => (projectPropType = propType)}
-    {audioSeed}
-    onAudioChange={setAudio}
-    {registerExport}
-  />
+    {onRequestAnimation}
+  >
+    {#snippet children(scope)}
+      <PostEditorWorkspace
+        editor={scope.editor}
+        plugin={scope.plugin}
+        inspectorTarget={scope.inspectorTarget}
+        {active}
+        {sequence}
+        {feature}
+        {onSaveDraft}
+        {draftLoadError}
+        {cardPreviewUrl}
+        {animationPreviewUrl}
+        {animationPreviewType}
+        cardRenderOptions={synchronizedCardRenderOptions}
+        {isPreparingCard}
+        {isPreparingAnimation}
+        {onExported}
+        {onSharePost}
+        {previewTarget}
+        {sharing}
+        {selectedPropType}
+        onPropChange={(propType) => {
+          urlPropType = undefined;
+          projectPropType = propType;
+        }}
+        onProjectPropChange={(propType) => (projectPropType = propType)}
+        {audioSeed}
+        onAudioChange={setAudio}
+        {registerExport}
+      />
+    {/snippet}
+  </TkaEditorScope>
 {/key}

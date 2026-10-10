@@ -1,25 +1,15 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
-  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-  import { registerEditHistoryShortcuts } from "$lib/shared/keyboard/registration/register-edit-history-shortcuts";
-  import { keyboardShortcutState } from "$lib/shared/keyboard/state/keyboard-shortcut-state.svelte";
   import { onDestroy, onMount, tick, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
   import { reparentToInspector } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-  import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { createPostSequenceView } from "$lib/shared/media-composition/services/post-sequence-view.svelte";
   import {
     mirrorPostProject,
-    POST_STUDIO_ROLE,
-    ANIMATION_OVERLAY_ROLE,
-    stripModeFromRole,
-    stripRole,
     takeIdFromRole,
     takeRole,
     takeFileKey,
@@ -47,7 +37,6 @@
     toggleKeyframe,
     itemIdFromTextRole,
     textRole,
-    itemIdFromTitlesRole,
     musicAudioKey,
     planMusicAudio,
     planProjectAudio,
@@ -64,42 +53,24 @@
     updateMusic,
     type MusicPatch,
   } from "@austencloud/video-editor/core";
-  import {
-    DEFAULT_HAND_LABELING,
-    type HandLabeling,
-  } from "$lib/shared/video-collaboration/domain/hand-labeling";
-  import {
-    createTkaSurfaces,
-    itemIdFromMovesAnimationRole,
-    itemIdFromStaffEffectRole,
-    staffEffectRole,
-  } from "$lib/shared/post-studio-plugin";
-  import type { StripMode } from "$lib/shared/media-composition/domain/strip-view";
+  import { createTkaSurfaces } from "$lib/shared/post-studio-plugin";
   import type {
     CompositionSourceBinding,
     LibraryTake,
     VideoEditorPlugin,
   } from "@austencloud/video-editor";
-  import {
-    createPostEditorState,
-    type CatalogTakeSource,
-    type PostEdit,
+  import type {
+    PostEditorState,
+    PostEdit,
   } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
-  import { createBeatCarouselPainter } from "$lib/shared/media-composition/services/beat-carousel-painter";
-  import { createSequenceStripPainter } from "$lib/shared/media-composition/services/sequence-strip-painter";
-  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import {
-    createTextItemPainter,
+    createTextPainters,
     exportPostStudioVideo,
     type PostStudioExportProgress,
     AudioDownloadStalledError,
     buildMixedAudioTrack,
   } from "@austencloud/video-editor/render";
-  import { createStaffEffectPainter } from "$lib/shared/media-composition/services/staff-effect-painter";
-  import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
-  import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
-  import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
@@ -119,26 +90,17 @@
   import PostTimingStage from "../builder/PostTimingStage.svelte";
   import PostTimingTimeline from "../builder/PostTimingTimeline.svelte";
   import PostTimingPanel from "../builder/PostTimingPanel.svelte";
-  import { createPostTimingSession } from "../builder/post-timing-session.svelte";
   import { formatTakeClock } from "./post-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
-  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
-  import {
-    qrImageForAppearance,
-    qrPayloadForImage,
-  } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
+  import { qrImageForAppearance } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
   import {
     createTabSync,
     createVideoPreviews,
     provideEditorUi,
     resolveServices,
+    translatorFor,
   } from "@austencloud/video-editor";
-  import { getPreviewVideoCache } from "$lib/shared/media-composition/get-preview-video-cache";
-  import { tkaEditorServices } from "$lib/shared/post-studio-plugin/ui/tka-host";
-  import {
-    provideTkaEditor,
-    registerTkaEditor,
-  } from "$lib/shared/post-studio-plugin/ui/tka-editor-context";
+  import { useTkaEditor } from "$lib/shared/post-studio-plugin/ui/tka-editor-context";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorActions from "./PostEditorActions.svelte";
   import PostSaveButton from "./PostSaveButton.svelte";
@@ -214,9 +176,10 @@
    * the frame the file gets.
    */
   interface Props {
+    /** The post's editor, which TkaEditorScope creates. */
+    editor: PostEditorState;
     active: boolean;
     sequence: SequenceData;
-    initialProject?: PostProject;
     /**
      * A feature video. Its post saves to its folder on this computer, never
      * to this browser's Post Studio storage; see feature-video-client.ts.
@@ -246,12 +209,14 @@
     registerExport: (controls: PostStudioShareExport) => () => void;
     /** The editor plugin with its UI (tka's, from PostStudio); null for the core editor alone. */
     plugin: VideoEditorPlugin | null;
+    /** The viewer's side inspector, where the tool panel goes; null outside the viewer. */
+    inspectorTarget?: HTMLElement | null;
   }
 
   let {
+    editor,
     active,
     sequence,
-    initialProject,
     feature,
     onSaveDraft,
     draftLoadError = null,
@@ -272,77 +237,15 @@
     onAudioChange,
     registerExport,
     plugin,
+    inspectorTarget = null,
   }: Props = $props();
 
-  const sharedSurfaces = getViewerStudioSurfaces();
-  const externalInspector = $derived(
-    sharedSurfaces?.externalInspectorTarget ?? null
-  );
-
-  // The per-sequence catalog, shared with the rest of the app, so a video
-  // uploaded elsewhere shows up here without reopening.
-  const videoLibrary = untrack(() =>
-    sequence.id ? getSequenceVideosStore(sequence.id) : null
-  );
-  $effect(() => {
-    void videoLibrary?.load();
-  });
-
-  const catalogVideos = $derived(videoLibrary?.videos ?? []);
-  const catalog = $derived<CatalogTakeSource[]>(
-    catalogVideos
-      .filter((video) => Boolean(video.videoUrl) && video.duration > 0)
-      .map((video) => ({
-        videoId: video.id,
-        label: video.description?.trim() || t("share_studio_saved_video"),
-        url: video.videoUrl,
-        durationSeconds: video.duration,
-        ...(video.beatMap ? { legacyStepMap: video.beatMap } : {}),
-      }))
-  );
-  // Today's list as library takes, until Task 15a loads services.mediaLibrary.
-  const libraryCatalog = $derived<LibraryTake[]>(
-    catalog.map((video) => ({
-      id: video.videoId,
-      label: video.label,
-      url: video.url,
-      durationSeconds: video.durationSeconds,
-      ...(video.legacyStepMap
-        ? { detail: t("share_studio_timing_saved") }
-        : {}),
-    }))
-  );
-
-  let overlayPainter = $state.raw<PostStudioLayerPainter | null>(null);
+  /** tka's side of the post, from TkaEditorScope until Task 15b moves the rest. */
+  const tka = useTkaEditor();
 
   // Read once: the Post page opens a new workspace for another feature video.
   const featureVideo = feature;
 
-  let qrImageIds = $state<Record<string, boolean>>({});
-
-  const editor = createPostEditorState({
-    initialProject,
-    getSequence: () => sequence,
-    getCatalogVideo: (videoId) =>
-      catalog.find((video) => video.videoId === videoId) ?? null,
-    hasAnimationOverlay: () => overlayPainter !== null,
-    // A feature video keeps its post, timings and undo history apart from
-    // this browser's Post Studio storage.
-    store: featureVideo?.store,
-    services: tkaEditorServices(videoLibrary),
-  });
-  /** The save menu a right click on a media layer opens; mounted once below. */
-  let saveMenuHost = $state<VisualSequenceSaveContextMenuHost | undefined>();
-  registerTkaEditor(editor, {
-    wrapper: editor,
-    isQrImage: (id) => qrImageIds[id] === true,
-    plugin,
-    openSaveMenu: (event) =>
-      saveMenuHost?.openContextMenu(event.clientX, event.clientY),
-    get cardRenderOptions() {
-      return cardRenderOptions ?? null;
-    },
-  });
   const services = resolveServices(editor.host);
   provideEditorUi({ editor, host: editor.host, plugin, services });
 
@@ -374,16 +277,6 @@
     };
   });
 
-  $effect(() => onProjectPropChange(editor.project.propType));
-
-  function choosePropType(propType: PropType): void {
-    editor.edit((project, context) =>
-      project.propType === propType
-        ? project
-        : { ...project, propType, updatedAt: context.now }
-    );
-    onPropChange(propType);
-  }
   const videoPreviews = createVideoPreviews(
     () =>
       editor.takes.map((take) => ({
@@ -393,19 +286,11 @@
         assetKey: takeFileKey(take.ref),
       })),
     () => editor.isPlaying,
-    getPreviewVideoCache()
+    services.previewCache
   );
-  const session = createPostTimingSession(
-    editor,
-    (takeId, url) => videoPreviews.resolve(takeId, url).url
-  );
-  onMount(() => {
-    // Standalone sequence pages have no app shortcut coordinator. Reuse its
-    // manager and history bindings; both are safe to initialize again in-app.
-    const manager = getKeyboardShortcutManager();
-    manager.initialize();
-    registerEditHistoryShortcuts(manager, keyboardShortcutState.isMac);
-  });
+  // The scope's timing session, read here until Task 15b moves the timing
+  // branches out.
+  const session = tka.timing;
 
   let draftSaving = $state(false);
   let draftError = $state<string | null>(draftLoadError);
@@ -560,9 +445,52 @@
     }
   });
 
+  // The host's media library, listed once and again whenever it changes.
+  let catalog = $state.raw<readonly LibraryTake[]>([]);
+  let catalogLoading = $state(false);
+  let catalogError = $state<string | null>(null);
+  /**
+   * The last list failed. A failed list changes the library too, and a
+   * library that loads again on every list would retry forever, so a change
+   * after a failure does not list again; the next editor that opens does.
+   */
+  let lastFailed = false;
   $effect(() => {
-    void catalog;
-    untrack(() => editor.attachCatalogTakes());
+    const library = services.mediaLibrary;
+    if (!library) return;
+    let stale = false;
+    let listing = false;
+    // An arrow, so the narrowed `library` reaches it.
+    const load = async (): Promise<void> => {
+      listing = true;
+      catalogLoading = true;
+      try {
+        const takes = await library.listTakes();
+        if (stale) return;
+        lastFailed = false;
+        catalog = takes;
+        catalogError = null;
+        editor.attachLibraryTakes();
+      } catch (cause) {
+        if (stale) return;
+        lastFailed = true;
+        catalog = [];
+        catalogError = cause instanceof Error ? cause.message : String(cause);
+      } finally {
+        listing = false;
+        if (!stale) catalogLoading = false;
+      }
+    };
+    void load();
+    // A list in flight reads the library as it settles, so a change it
+    // causes or meets is already in its result.
+    const off = library.onChange?.(() => {
+      if (!listing && !lastFailed) void load();
+    });
+    return () => {
+      stale = true;
+      off?.();
+    };
   });
 
   let audioReported = false;
@@ -572,196 +500,41 @@
     audioReported = true;
   });
 
-  /**
-   * The performer works in their own frame and the camera sees it reflected,
-   * so beside footage the notation follows the take's hand labeling: a
-   * catalog video remembers its own, anything else mirrors.
-   */
-  const handLabeling = $derived.by((): HandLabeling | null => {
-    const take = editor.takesInUse[0] ?? editor.takes[0];
-    if (!take) return null;
-    if (take.ref.kind === "catalog") {
-      const videoId = take.ref.videoId;
-      const video = catalogVideos.find((entry) => entry.id === videoId);
-      if (video?.handLabeling) return video.handLabeling;
-    }
-    return DEFAULT_HAND_LABELING;
-  });
-  const labeledCard = createPostSequenceView({
-    getSequence: () => sequence,
-    getLabeling: () => handLabeling,
-    getMirrored: () => editor.project.mirrored ?? false,
-    getActions: () => editor.project.sequenceActions ?? [],
-  });
-  const displaySequence = $derived(labeledCard.sequence);
   /** A notice the top bar shows beside Undo and Redo. */
   const draftNotice = $derived(
-    !!labeledCard.error ||
+    !!tka.sequenceError ||
       (!!(editor.project.mirrored || editor.project.sequenceActions?.length) &&
-        labeledCard.pending)
+        tka.sequenceBusy)
   );
 
   // ---- What each layer draws -----------------------------------------------
 
-  const carouselPainter = $derived(createBeatCarouselPainter(displaySequence));
-  const animationVisibility = getAnimationVisibilityManager();
-  let progressBarVisible = $state(
-    animationVisibility.getVisibility("progressBar")
-  );
-  function syncProgressBarVisibility(): void {
-    progressBarVisible = animationVisibility.getVisibility("progressBar");
-  }
-  animationVisibility.registerObserver(syncProgressBarVisibility);
-  onDestroy(() =>
-    animationVisibility.unregisterObserver(syncProgressBarVisibility)
-  );
-  const stripPainters = $derived(
-    new Map<StripMode, PostStudioLayerPainter>(
-      (["arrows", "mandala", "alternate"] as const).map((mode) => [
-        mode,
-        createSequenceStripPainter({
-          sequence: displaySequence,
-          mode,
-          showProgressBar: () => progressBarVisible,
-        }),
-      ])
-    )
-  );
-
   /** One painter per text item, reading its words live from the project. */
-  const textPainters = new Map<string, PostStudioLayerPainter>();
-  function textPainterFor(itemId: string): PostStudioLayerPainter {
-    let painter = textPainters.get(itemId);
-    if (!painter) {
-      painter = createTextItemPainter(
-        () =>
-          editor.compiled?.texts.find((text) => text.itemId === itemId) ?? null
-      );
-      textPainters.set(itemId, painter);
-    }
-    return painter;
+  const textPainters = createTextPainters(() => editor.compiled);
+  function textPainterFor(role: string): PostStudioLayerPainter | null {
+    const compiled = editor.compiled;
+    return compiled
+      ? textPainters.create(role, { project: editor.project, compiled })
+      : null;
   }
 
-  /** One painter per titles clip: the sequence's name and how to say it. */
-  const titlesPainters = new Map<string, PostStudioLayerPainter>();
-  function titlesPainterFor(itemId: string): PostStudioLayerPainter {
-    let painter = titlesPainters.get(itemId);
-    if (!painter) {
-      painter = createTunnelTitlesPainter(
-        () =>
-          editor.compiled?.titles.find((plan) => plan.itemId === itemId) ??
-          null,
-        () =>
-          simplifyRepeatedWord(
-            displaySequence.word || deriveWord(displaySequence)
-          )
-      );
-      titlesPainters.set(itemId, painter);
-    }
-    return painter;
-  }
-
-  /** Where each take's LED staffs are, found once per video. */
-  const staffTips = createStaffTipAnalysis();
-  $effect(() => {
-    for (const take of editor.takes) staffTips.ensure(take.takeKey);
-  });
-
-  // What the plugin's tool panels read beyond the editor; TkaEditorScope
-  // provides it from Task 15a.
-  provideTkaEditor({
-    editor,
-    get staffTips() {
-      return staffTips;
-    },
-    get cardRenderOptions() {
-      return cardRenderOptions ?? null;
-    },
-    get featureMode() {
-      return !!featureVideo;
-    },
-    get stepCount() {
-      return displaySequence.steps?.length ?? 0;
-    },
-    get sequenceBusy() {
-      return labeledCard.pending;
-    },
-    get sequence() {
-      return displaySequence;
-    },
-    // The canvas was never handed a separate scan record, so a card's QR
-    // opens the sequence the post draws.
-    qrSequence: undefined,
-    bindingFor,
-  });
-
-  function videoItem(itemId: string): PostVideoItem | null {
-    const found = findItem(editor.project, itemId)?.item;
-    return found?.kind === "video" ? found : null;
-  }
-
-  /** One painter per clip, reading its effect and its take's staff ends live. */
-  const staffPainters = new Map<string, PostStudioLayerPainter>();
-  function staffPainterFor(itemId: string): PostStudioLayerPainter {
-    let painter = staffPainters.get(itemId);
-    if (!painter) {
-      painter = createStaffEffectPainter({
-        track: () => {
-          const item = videoItem(itemId);
-          const take = item
-            ? editor.takes.find((entry) => entry.id === item.takeId)
-            : null;
-          return take ? staffTips.track(take.takeKey) : null;
-        },
-        effect: () => videoItem(itemId)?.staffEffect?.effect ?? null,
-        fit: () => videoItem(itemId)?.fit ?? "cover",
-      });
-      staffPainters.set(itemId, painter);
-    }
-    return painter;
-  }
-
-  let overlayVersion = 0;
-  let overlaySequence = $state.raw<SequenceData | null>(null);
-  let overlayError = $state<string | null>(null);
-  $effect(() => {
-    const drawn = displaySequence;
-    const version = ++overlayVersion;
-    overlayError = null;
-    void loadAnimationOverlayPainter(drawn)
-      .then((painter) => {
-        if (version === overlayVersion) {
-          overlayPainter = painter;
-          overlaySequence = drawn;
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("[PostStudio] Beat overlay unavailable:", error);
-        if (version === overlayVersion) {
-          overlayPainter = null;
-          overlayError =
-            "Could not prepare the animation. Reload the saved post to retry.";
-        }
-      });
-  });
-
-  function painted(
-    roleKey: string,
-    label: string,
-    painter: PostStudioLayerPainter
-  ): CompositionSourceBinding {
-    return {
-      roleKey,
-      kind: "image",
-      label,
-      previewUrl: null,
-      renderMode: "painted",
-      painter,
-      status: sequence.steps.length > 0 ? "ready" : "missing",
-    };
-  }
+  // Declared after videoPreviews, whose resolver the scope's timing session
+  // reads through the bindings.
+  const pluginBindings =
+    plugin?.ui?.createBindings?.({
+      editor,
+      t: translatorFor(editor.host),
+      previewUrl: (takeId, url) => videoPreviews.resolve(takeId, url).url,
+    }) ?? null;
+  onDestroy(() => pluginBindings?.dispose());
+  // The plugin's layers read another role's source through the context.
+  tka.bindingFor = bindingFor;
 
   function bindingFor(role: string): CompositionSourceBinding | null {
+    return coreBindingFor(role) ?? pluginBindings?.bindingFor(role) ?? null;
+  }
+
+  function coreBindingFor(role: string): CompositionSourceBinding | null {
     if (role.startsWith("image:")) {
       const imageId = role.slice("image:".length);
       const asset = editor.images.find((entry) => entry.id === imageId);
@@ -797,127 +570,35 @@
         missingMessage: t("share_studio_repick_local"),
       };
     }
-    const staffItemId = itemIdFromStaffEffectRole(role);
-    if (staffItemId) {
-      return {
-        roleKey: role,
-        kind: "image",
-        label: t("post_staff_effect"),
-        previewUrl: null,
-        renderMode: "painted",
-        painter: staffPainterFor(staffItemId),
-        status: "ready",
-        bareWhileCropping: true,
-      };
-    }
-    const textItemId = itemIdFromTextRole(role);
-    if (textItemId) {
+    const textPainter = itemIdFromTextRole(role) ? textPainterFor(role) : null;
+    if (textPainter) {
       return {
         roleKey: role,
         kind: "image",
         label: t("post_editor_kind_text"),
         previewUrl: null,
         renderMode: "painted",
-        painter: textPainterFor(textItemId),
+        painter: textPainter,
         status: "ready",
       };
     }
-    const titlesItemId = itemIdFromTitlesRole(role);
-    if (titlesItemId) {
-      return painted(
-        role,
-        t("post_editor_kind_titles"),
-        titlesPainterFor(titlesItemId)
-      );
-    }
-    if (itemIdFromMovesAnimationRole(role)) {
-      return {
-        roleKey: role,
-        kind: "sequence-animation",
-        label: t("share_studio_deep_moves"),
-        previewUrl: null,
-        renderMode: "sequence-animation",
-        status: sequence.steps.length > 0 ? "ready" : "missing",
-      };
-    }
-    const strip = stripModeFromRole(role);
-    if (strip) {
-      const painter = stripPainters.get(strip);
-      return painter
-        ? painted(role, t("share_studio_deep_moves"), painter)
-        : null;
-    }
-    switch (role) {
-      case POST_STUDIO_ROLE.animation:
-        return {
-          roleKey: role,
-          kind: "sequence-animation",
-          label: t("share_studio_deep_animation"),
-          previewUrl: animationPreviewUrl,
-          previewType: animationPreviewType,
-          renderMode: "sequence-animation",
-          status:
-            sequence.steps.length > 0 || animationPreviewUrl
-              ? "ready"
-              : isPreparingAnimation
-                ? "preparing"
-                : "missing",
-        };
-      case POST_STUDIO_ROLE.carousel:
-        return painted(
-          role,
-          t("share_studio_deep_beat_carousel"),
-          carouselPainter
-        );
-      case ANIMATION_OVERLAY_ROLE:
-        return overlayPainter
-          ? painted(
-              role,
-              t("share_studio_deep_beat_and_letter"),
-              overlayPainter
-            )
-          : null;
-      case POST_STUDIO_ROLE.card:
-        return {
-          roleKey: role,
-          kind: "choreo-card",
-          label: t("share_studio_deep_choreo_card"),
-          previewUrl: cardPreviewUrl,
-          previewType: "image",
-          renderMode: "choreo-card",
-          status:
-            sequence.steps.length > 0 || cardPreviewUrl
-              ? "ready"
-              : isPreparingCard
-                ? "preparing"
-                : "missing",
-        };
-      default:
-        return null;
-    }
+    return null;
   }
 
   /** Every painter the post draws, keyed the way the exporter looks them up. */
   function exportPainters(): Map<string, PostStudioLayerPainter> {
-    const painters = new Map<string, PostStudioLayerPainter>([
-      [POST_STUDIO_ROLE.carousel, carouselPainter],
+    return new Map([
+      ...corePainters(),
+      ...(pluginBindings?.exportPainters() ?? []),
     ]);
-    for (const [mode, painter] of stripPainters) {
-      painters.set(stripRole(mode), painter);
-    }
+  }
+
+  /** The core roles' painters: the text items. */
+  function corePainters(): Map<string, PostStudioLayerPainter> {
+    const painters = new Map<string, PostStudioLayerPainter>();
     for (const text of editor.compiled?.texts ?? []) {
-      painters.set(textRole(text.itemId), textPainterFor(text.itemId));
-    }
-    if (overlayPainter) painters.set(ANIMATION_OVERLAY_ROLE, overlayPainter);
-    for (const plan of editor.compiled?.titles ?? []) {
-      painters.set(plan.role, titlesPainterFor(plan.itemId));
-    }
-    for (const track of editor.project.tracks) {
-      for (const item of track.items) {
-        if (item.kind === "video" && item.staffEffect) {
-          painters.set(staffEffectRole(item.id), staffPainterFor(item.id));
-        }
-      }
+      const painter = textPainterFor(textRole(text.itemId));
+      if (painter) painters.set(textRole(text.itemId), painter);
     }
     return painters;
   }
@@ -1117,13 +798,13 @@
     Boolean(editor.compiled) &&
       editor.durationSeconds > 0 &&
       !exporting &&
-      !labeledCard.pending &&
-      !labeledCard.error &&
+      !tka.sequenceBusy &&
+      !tka.sequenceError &&
       (!editor.project.tracks.some((track) =>
         track.items.some((item) => item.kind === "moves")
       ) ||
-        (overlaySequence === displaySequence && !overlayError)) &&
-      !sharedSurfaces?.moving
+        (tka.overlay.sequence === tka.displaySequence && !tka.overlay.error)) &&
+      !tka.viewerMoving
   );
 
   /** The clip Beats opens: the selected video, else the one under the playhead. */
@@ -1138,25 +819,6 @@
   );
 
   // ---- Tools -----------------------------------------------------------------
-
-  $effect(() => {
-    const imageIds = new Set(
-      editor.project.tracks.flatMap((track) =>
-        track.items.flatMap((item) =>
-          item.kind === "image" ? [item.imageId] : []
-        )
-      )
-    );
-    for (const imageId of imageIds) {
-      const url = editor.imageUrl(imageId);
-      if (!url) continue;
-      void qrPayloadForImage(url).then((payload) => {
-        if (editor.imageUrl(imageId) === url) {
-          qrImageIds = { ...qrImageIds, [imageId]: payload !== null };
-        }
-      });
-    }
-  });
 
   /** The editor's own width, not the window's: wide enough for a panel
    * beside a full-height preview. */
@@ -1173,13 +835,13 @@
 
   const shortMappingLayout = $derived(
     showTimingStage &&
-      !externalInspector &&
+      !inspectorTarget &&
       editorHeight < 28 * remPixels &&
       editorWidth >= LANDSCAPE_WIDE_REM * remPixels &&
       editorWidth > editorHeight
   );
   const layout = $derived<"phone" | "wide" | "viewer">(
-    externalInspector
+    inspectorTarget
       ? "viewer"
       : !shortMappingLayout &&
           (editorWidth >= WIDE_REM * remPixels ||
@@ -2169,37 +1831,6 @@
     }
   }
 
-  // ---- The viewer shell ------------------------------------------------------
-
-  // The viewer shell shows the studio's own panel in its side inspector.
-  $effect(() => {
-    if (active) sharedSurfaces?.setInspectorContent("studio");
-  });
-
-  $effect(() =>
-    sharedSurfaces?.setControls(() => ({
-      playing: editor.isPlaying,
-      bpm: 60,
-      propType: selectedPropType,
-      toggle: editor.togglePlayback,
-      setBpm: () => undefined,
-      setProp: choosePropType,
-    }))
-  );
-
-  let sharedEntryRevision = 0;
-  $effect(() => {
-    if (!active || !sharedSurfaces?.active) return;
-    const entry = sharedSurfaces.entry;
-    if (entry.revision === sharedEntryRevision) return;
-    sharedEntryRevision = entry.revision;
-    untrack(() => {
-      if (editor.isPlaying !== entry.playing && editor.mode !== "timing") {
-        editor.togglePlayback();
-      }
-    });
-  });
-
   // ---- Focus -----------------------------------------------------------------
 
   type FocusTarget =
@@ -2317,7 +1948,7 @@
 
   $effect(() => {
     // The shell reads the outgoing play intent before releasing its loan.
-    if (!active && !sharedSurfaces?.active) {
+    if (!active && !tka.viewerActive) {
       untrack(() => {
         editor.pause();
         session.pause();
@@ -2397,8 +2028,8 @@
   async function renderPost(name?: string): Promise<boolean> {
     if (!canRender) {
       exportError =
-        labeledCard.error ??
-        overlayError ??
+        tka.sequenceError ??
+        tka.overlay.error ??
         "The animation is still being prepared. Try again in a moment.";
       return false;
     }
@@ -2555,8 +2186,8 @@
       if (exporting) throw new Error("This editor is already rendering.");
       if (Date.now() > deadline)
         throw new Error(
-          labeledCard.error ??
-            overlayError ??
+          tka.sequenceError ??
+            tka.overlay.error ??
             "The editor was not ready to render after 60 s."
         );
       await new Promise((resolve) => setTimeout(resolve, 250));
@@ -2591,8 +2222,6 @@
     releaseExport();
     if (frameRequest !== null) cancelAnimationFrame(frameRequest);
     if (exportedUrl) URL.revokeObjectURL(exportedUrl);
-    editor.dispose();
-    staffTips.dispose();
   });
 </script>
 
@@ -2604,9 +2233,9 @@
 <svelte:document onvisibilitychange={pauseWhenHidden} />
 
 {#snippet draftStatus()}
-  {#if labeledCard.error}
-    <span class="draft-notice" role="alert">{labeledCard.error}</span>
-  {:else if (editor.project.mirrored || editor.project.sequenceActions?.length) && labeledCard.pending}
+  {#if tka.sequenceError}
+    <span class="draft-notice" role="alert">{tka.sequenceError}</span>
+  {:else if (editor.project.mirrored || editor.project.sequenceActions?.length) && tka.sequenceBusy}
     <span class="draft-notice" role="status"
       >Preparing the changed animation and cards…</span
     >
@@ -2733,9 +2362,9 @@
   {#if tool === "videos"}
     <PostMediaPanel
       {editor}
-      catalog={libraryCatalog}
-      catalogLoading={videoLibrary?.loading ?? false}
-      catalogError={videoLibrary?.error || null}
+      {catalog}
+      {catalogLoading}
+      {catalogError}
       busy={readingFile}
       onAddDeviceVideo={pickDeviceVideo}
       onTapBeats={openTakeBeats}
@@ -2744,7 +2373,7 @@
     <PostAddPanel
       {editor}
       {plugin}
-      catalog={libraryCatalog}
+      {catalog}
       busy={readingFile}
       onAddDeviceVideo={pickDeviceVideo}
       onAdded={itemAdded}
@@ -2783,8 +2412,8 @@
       showTempoControls={false}
       showEffectsPlayback={false}
       {selectedPropType}
-      onPropChange={choosePropType}
-      sequence={displaySequence}
+      onPropChange={tka.choosePropType}
+      sequence={tka.displaySequence}
     />
   {:else if tool === "export"}
     <PostExportPanel
@@ -3006,7 +2635,7 @@
             {#snippet preview()}<PostTimingAnimationPreview
                 {editor}
                 {session}
-                sequence={displaySequence}
+                sequence={tka.displaySequence}
               />{/snippet}
           </PostTimingStage>
         </div>
@@ -3050,7 +2679,7 @@
           tabindex="-1"
           data-viewer-keys-ignore
           bind:this={panelHost}
-          use:reparentToInspector={externalInspector}
+          use:reparentToInspector={inspectorTarget}
           inert={sharing || undefined}
           aria-label={t("post_editor_tools")}
         >
@@ -3089,7 +2718,7 @@
       <div class="timing-timeline">
         <PostTimingTimeline
           {session}
-          squarePainter={stripPainters.get("arrows") ?? null}
+          squarePainter={tka.strips.painterFor?.("arrows") ?? null}
         />
       </div>
     {/if}
@@ -3349,12 +2978,6 @@
       : t("share_studio_rendering")}
   onCancel={cancelExport}
   label={t("share_studio_rendering_post")}
-/>
-
-<!-- One save menu for every media layer; its menu and prompt portal out. -->
-<VisualSequenceSaveContextMenuHost
-  bind:this={saveMenuHost}
-  sequence={displaySequence}
 />
 
 {#if showTimingStage && !panelBeside}
