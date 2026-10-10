@@ -1,5 +1,5 @@
 <script lang="ts">
-  import StudioArrangements from "./components/StudioArrangements.svelte";
+  import StudioProjectLibrary from "./components/StudioProjectLibrary.svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import {
@@ -159,112 +159,20 @@
     <div class="editor-status" role="status">Studio is in early access.</div>
   {:else}
     <div class="project-list" hidden={!state.showingProjects}>
-      <header class="list-header">
-        <h1>Projects</h1>
-        <p>Arrange sequences and edit videos in one project.</p>
-      </header>
-      <StudioArrangements onopen={openProject} />
-      {#if authState.user && !authState.user.isAnonymous}<p class="notice">
-          Saved edits sync with your account. You need to select this device’s
-          videos again on another device.
-        </p>{/if}
-      {#if state.catalogError}<p class="notice" role="status">
-          {state.catalogError}
-        </p>{/if}
-      {#if state.loadingCatalog}<p class="list-status" role="status">
-          Loading projects…
-        </p>
-      {:else if state.projects.length === 0}<p class="list-status">
-          Your Studio projects will appear here. Start an arrangement or open
-          Studio from a sequence.
-        </p>
-      {:else}
-        <ul>
-          {#each state.projects as project (project.sequenceId)}
-            {@const projectWord = project.word || project.sequenceId}
-            {@const showProjectWord = projectWord !== project.title}
-            <li>
-              <button
-                type="button"
-                aria-label={`Open ${project.title}`}
-                onclick={() => openProject(project.sequenceId)}
-              >
-                <span class="project-mark"
-                  ><i class="fas fa-clapperboard" aria-hidden="true"></i></span
-                >
-                <div class="project-info">
-                  {#if isTkaWord(project.title)}
-                    <TKAWordGlyph word={project.title} height={24} darkMode />
-                  {:else}
-                    <strong>{project.title}</strong>
-                  {/if}
-                  {#if showProjectWord || project.hasDraft}
-                    <div class="project-details">
-                      {#if showProjectWord}
-                        {#if isTkaWord(projectWord)}
-                          <TKAWordGlyph
-                            word={projectWord}
-                            height={14}
-                            darkMode
-                          />
-                        {:else}
-                          <span>{projectWord}</span>
-                        {/if}
-                      {/if}
-                      {#if project.hasDraft}
-                        <span>{showProjectWord ? "· " : ""}Saved draft</span>
-                      {/if}
-                    </div>
-                  {/if}
-                </div>
-                <span class="project-date"
-                  >{new Date(project.updatedAt).toLocaleDateString()}</span
-                >
-                <i class="fas fa-chevron-right" aria-hidden="true"></i>
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-      {#if state.features.length || state.unreadableFeatures.length || state.featureError}
-        <section class="feature-videos" aria-labelledby="feature-videos-title">
-          <h2 id="feature-videos-title">Feature videos</h2>
-          {#if state.featureError}<p class="notice" role="status">
-              {state.featureError}
-            </p>{/if}
-          {#if state.unreadableFeatures.length}<p class="notice" role="status">
-              Could not read the project.json in {state.unreadableFeatures.join(
-                ", "
-              )}. Each folder's history keeps earlier copies.
-            </p>{/if}
-          {#if state.features.length}
-            <ul>
-              {#each state.features as video (video.slug)}
-                <li>
-                  <button
-                    type="button"
-                    aria-label={`Open ${video.title}`}
-                    onclick={() => openFeature(video.slug)}
-                  >
-                    <span class="project-mark"
-                      ><i class="fas fa-film" aria-hidden="true"></i></span
-                    >
-                    <div class="project-info">
-                      <strong>{video.title}</strong>
-                      <div class="project-details">
-                        <span>{video.slug} · {video.sequenceId}</span>
-                      </div>
-                    </div>
-                    <span class="project-date"
-                      >{new Date(video.savedAt).toLocaleDateString()}</span
-                    >
-                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
-                  </button>
-                </li>
-              {/each}
-            </ul>
-          {/if}
-        </section>
+      {#if state.showingProjects}
+        {#key authState.user?.uid ?? "guest"}
+          <StudioProjectLibrary
+            projects={state.projects}
+            features={state.features}
+            loading={state.loadingCatalog}
+            error={state.catalogError}
+            featureError={state.featureError}
+            unreadableFeatures={state.unreadableFeatures}
+            onopen={openProject}
+            onfeature={openFeature}
+            onrefresh={() => void state.refreshProjects()}
+          />
+        {/key}
       {/if}
     </div>
     <div class="editor-host" hidden={state.showingProjects}>
@@ -339,117 +247,11 @@
     background: var(--theme-panel-bg);
   }
   .project-list {
-    max-width: 940px;
     height: 100%;
     overflow-y: auto;
-    margin: 0 auto;
-    padding: clamp(20px, 4vw, 52px);
   }
   .post-module [hidden] {
     display: none;
-  }
-  .list-header {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 24px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--theme-stroke);
-  }
-  .list-header h1 {
-    margin: 2px 0 0;
-    font-size: clamp(28px, 4vw, 40px);
-  }
-  .list-header p {
-    max-width: 250px;
-    margin: 0;
-    color: var(--theme-text-secondary);
-    font-size: 14px;
-    line-height: 1.45;
-  }
-  .notice {
-    color: var(--theme-text-secondary);
-    font-size: 13px;
-  }
-  .list-status {
-    padding: 40px 0;
-    color: var(--theme-text-secondary);
-  }
-  .feature-videos {
-    margin-top: 36px;
-  }
-  .feature-videos h2 {
-    margin: 0;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--theme-stroke);
-    font-size: 18px;
-  }
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  li {
-    border-bottom: 1px solid var(--theme-stroke);
-  }
-  li button {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    min-height: 76px;
-    padding: 12px 6px;
-    border: 0;
-    color: inherit;
-    background: transparent;
-    text-align: left;
-    cursor: pointer;
-  }
-  li button:hover,
-  li button:focus-visible {
-    background: var(--theme-card-bg);
-    outline: 2px solid transparent;
-  }
-  li button:focus-visible {
-    outline-color: var(--theme-text-secondary);
-  }
-  .project-mark {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    background: var(--theme-card-bg);
-    color: var(--theme-text-secondary);
-    flex: none;
-  }
-  .project-info {
-    display: grid;
-    gap: 4px;
-    min-width: 0;
-    flex: 1;
-  }
-  .project-info strong,
-  .project-details {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .project-details,
-  .project-date {
-    color: var(--theme-text-secondary);
-    font-size: 12px;
-  }
-  .project-details {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .project-details > span {
-    flex-shrink: 0;
-  }
-  .project-date {
-    white-space: nowrap;
   }
   .editor-host {
     display: flex;
@@ -528,19 +330,5 @@
   ) {
     flex: 1;
     min-height: 0;
-  }
-  @media (max-width: 600px) {
-    .list-header {
-      display: block;
-    }
-    .list-header p {
-      margin-top: 10px;
-    }
-    .project-date {
-      display: none;
-    }
-    .project-list {
-      padding: 20px 16px;
-    }
   }
 </style>

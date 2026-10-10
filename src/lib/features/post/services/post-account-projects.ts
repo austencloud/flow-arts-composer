@@ -30,6 +30,7 @@ import {
 } from "./post-workspace-projects";
 import { loadPostPlan } from "#lib/shared/media-composition/services/post-plan-store.js";
 import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
+import { isIndependentStudioProjectId } from "#lib/shared/media-composition/domain/studio-project-id.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   cachePostSequence,
@@ -141,6 +142,40 @@ export async function loadAccountPostProject(
   return project;
 }
 
+/** Reads a saved project and its source for library cards without changing the editor cache. */
+export async function readAccountPostProjectPreview(
+  uid: string,
+  sequenceId: string
+): Promise<{ project: PostProject; source: SequenceData | null } | null> {
+  const record = await firestoreGetDetailed(
+    path(uid),
+    documentId(sequenceId),
+    CloudPostSchema
+  );
+  if (auth.currentUser?.uid !== uid)
+    throw new Error("The account changed while loading project previews.");
+  if (record.status === "unknown")
+    throw new Error(
+      "Cloud project previews could not be checked while offline."
+    );
+  if (record.status === "invalid")
+    throw new Error("The cloud project preview has invalid data.");
+  if (record.status === "absent") return null;
+  const cloud = record.data;
+  const project = PostProjectSchema.safeParse(JSON.parse(cloud.project));
+  if (
+    !project.success ||
+    project.data.sequenceId !== sequenceId ||
+    project.data.updatedAt !== cloud.projectUpdatedAt ||
+    cloud.id !== documentId(sequenceId)
+  )
+    throw new Error(`A saved cloud post (${sequenceId}) is invalid.`);
+  return {
+    project: project.data,
+    source: cloud.source ? parseCloudSequence(cloud.source, sequenceId) : null,
+  };
+}
+
 /**
  * Writes the post to the account. The newest edit wins: when another tab or
  * device has since saved a later edit, that copy stays and is handed back
@@ -227,12 +262,12 @@ export async function listSyncedPostProjects(): Promise<{
     legacyChoices = legacy.projects.filter(
       (choice) =>
         choice.hasDraft &&
-        (!owner || choice.sequenceId.startsWith("studio-arrangement:"))
+        (!owner || isIndependentStudioProjectId(choice.sequenceId))
     );
     if (legacy.error) errors.push(legacy.error);
     for (const choice of legacyChoices) {
       const unclaimedStudio =
-        !owner && choice.sequenceId.startsWith("studio-arrangement:");
+        !owner && isIndependentStudioProjectId(choice.sequenceId);
       const draft = unclaimedStudio
         ? await loadUnclaimedStudioDraft(choice.sequenceId)
         : await loadPostDraft(choice.sequenceId);
@@ -341,7 +376,7 @@ export async function loadSyncedPostDraft(sequenceId: string): Promise<{
   if (!uid) return loadPostDraft(sequenceId);
   let local = loadPostProject(sequenceId);
   if (!local && !legacyPostOwner()) {
-    const legacy = sequenceId.startsWith("studio-arrangement:")
+    const legacy = isIndependentStudioProjectId(sequenceId)
       ? await loadUnclaimedStudioDraft(sequenceId)
       : await loadPostDraft(sequenceId);
     const project =
