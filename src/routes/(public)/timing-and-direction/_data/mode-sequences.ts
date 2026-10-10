@@ -2,6 +2,7 @@ import {
   applyBoxMode,
   applyVariationDescriptor,
 } from "#lib/features/choreo-card/services/deck-variation.js";
+import { handPathIdFor } from "#lib/features/choreo-card/services/hand-path-data-builder.js";
 import { processReversals } from "#lib/shared/create/services/reversal-detector.js";
 import {
   flipSequence,
@@ -260,6 +261,22 @@ export async function transformModeLoops(
       };
     })
   );
+}
+
+/**
+ * Group loops that trace the same hand path, in first-seen order. With props
+ * hidden, loops in one group look identical, so the guide shows each group
+ * once.
+ */
+export function groupByHandPath(loops: readonly ModeLoop[]): ModeLoop[][] {
+  const groups = new Map<string, ModeLoop[]>();
+  for (const loop of loops) {
+    const id = handPathIdFor(loop.sequence);
+    const group = groups.get(id);
+    if (group) group.push(loop);
+    else groups.set(id, [loop]);
+  }
+  return [...groups.values()];
 }
 
 // TnDMode's enum values are the same two-letter codes as VtgMode.

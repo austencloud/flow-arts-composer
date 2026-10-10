@@ -6,9 +6,11 @@ import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/ut
 import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
 import { jsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
 import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+import { handPathIdFor } from "#lib/features/choreo-card/services/hand-path-data-builder.js";
 import {
   adjustModeLoop,
   adjustModeLoops,
+  groupByHandPath,
   loadModeLoops,
   modeLoopCount,
   modeLoopsPerGrid,
@@ -88,6 +90,44 @@ describe("mode guide four-count loops", () => {
           }
         }
       }
+    }
+  });
+
+  it("derives the stored hand-path ID from each base word's own steps", () => {
+    for (const [index, record] of records.entries()) {
+      expect(handPathIdFor(sequences[index]!)).toBe(record.metadata.handPathId);
+    }
+  });
+
+  it("shows each distinct hand path once per grid, including after a swap", async () => {
+    const expected = {
+      SS: [["AAAA", "BBBB", "CCCC"]],
+      TS: [["GGGG", "HHHH", "IIII"]],
+      QS: [
+        ["SSSS", "TTTT"],
+        ["UUUU", "VVVV"],
+      ],
+      SO: [["JDJD", "KEKE", "LFLF"]],
+      TO: [["DJDJ", "EKEK", "FLFL"]],
+      QO: [["MPMP", "NQNQ", "OROR"]],
+    } as const;
+    for (const code of MODE_ORDER) {
+      const loops = selectModeLoops(code, sequences);
+      for (const gridMode of ["diamond", "box"] as const) {
+        const groups = groupByHandPath(
+          loops.filter((loop) => loop.gridMode === gridMode)
+        );
+        expect(groups).toHaveLength(expected[code].length);
+        if (gridMode === "diamond") {
+          expect(groups.map((group) => group.map((loop) => loop.word))).toEqual(
+            expected[code]
+          );
+        }
+      }
+      // Box and diamond versions trace different paths.
+      expect(groupByHandPath(loops)).toHaveLength(2 * expected[code].length);
+      const swapped = await transformModeLoops(loops, "swap");
+      expect(groupByHandPath(swapped)).toHaveLength(2 * expected[code].length);
     }
   });
 

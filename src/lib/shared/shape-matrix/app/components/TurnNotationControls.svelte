@@ -32,6 +32,11 @@
     turnValues?: readonly TurnValue[];
     primaryPropColors?: ViewerCustomColorPair | null;
     disabled?: boolean;
+    /** "menu" puts each hand's values behind a trigger. "inline" lays them
+        out as visible choices, for a host with height to spare. */
+    layout?: "menu" | "inline";
+    /** Columns the inline values wrap into. */
+    inlineColumns?: number;
     onturn: (hand: Hand, turn: TurnValue) => void;
     onlabelmodechange: (mode: MatrixLabelMode) => void;
   }
@@ -43,6 +48,8 @@
     turnValues = matrixTurnsForLevel(4),
     primaryPropColors = getSettings().primaryPropColors,
     disabled = false,
+    layout = "menu",
+    inlineColumns = 4,
     onturn,
     onlabelmodechange,
   }: Props = $props();
@@ -88,7 +95,11 @@
   }
 </script>
 
-<div class="turn-controls" aria-label={t("shape_engine_turns_aria")}>
+<div
+  class="turn-controls"
+  class:inline={layout === "inline"}
+  aria-label={t("shape_engine_turns_aria")}
+>
   <div class="notation-control">
     <SegmentedControl
       options={notationOptions}
@@ -103,89 +114,115 @@
   </div>
 
   {#each [{ hand: "left" as const, label: t("shape_engine_left"), turn: leftTurn }, { hand: "right" as const, label: t("shape_engine_right"), turn: rightTurn }] as axis (axis.hand)}
-    <Popover.Root
-      open={axis.hand === "left" ? leftOpen : rightOpen}
-      onOpenChange={(open) => setOpen(axis.hand, open)}
-    >
-      <Popover.Trigger>
-        {#snippet child({ props })}
-          <button
-            {...props}
-            type="button"
-            class="turn-trigger"
-            class:left={axis.hand === "left"}
-            class:right={axis.hand === "right"}
-            aria-label={t("shape_engine_choose_axis_value", {
-              axis: axis.label,
-              value: localizedMatrixTurnSpokenLabel(axis.turn, labelMode),
-            })}
-            {disabled}
-          >
-            <span class="hand-label">{axis.label}</span>
-            <span
-              class="turn-value"
-              style:color={primaryPropColors?.[axis.hand]}
-              >{matrixTurnVisibleLabel(axis.turn, labelMode)}</span
+    {@const unit =
+      labelMode === "ratios" ? t("shape_engine_ratio") : t("shape_engine_turn")}
+    {#if layout === "inline"}
+      <div
+        class="turn-values"
+        style:--dm-motion-blue={primaryPropColors?.left}
+        style:--dm-motion-red={primaryPropColors?.right}
+      >
+        <span class="hand-label">{axis.label}</span>
+        <SegmentedControl
+          options={optionsFor(axis.hand)}
+          value={turnValueToKey(axis.turn)}
+          onchange={(value: string) => chooseTurn(axis.hand, value)}
+          columns={inlineColumns}
+          size="md"
+          density="standard"
+          color="accent"
+          semantics="radiogroup"
+          ariaLabel={t("shape_engine_axis_value_short", {
+            axis: axis.label,
+            unit,
+          })}
+        />
+      </div>
+    {:else}
+      <Popover.Root
+        open={axis.hand === "left" ? leftOpen : rightOpen}
+        onOpenChange={(open) => setOpen(axis.hand, open)}
+      >
+        <Popover.Trigger>
+          {#snippet child({ props })}
+            <button
+              {...props}
+              type="button"
+              class="turn-trigger"
+              class:left={axis.hand === "left"}
+              class:right={axis.hand === "right"}
+              aria-label={t("shape_engine_choose_axis_value", {
+                axis: axis.label,
+                value: localizedMatrixTurnSpokenLabel(axis.turn, labelMode),
+              })}
+              {disabled}
             >
-            <i class="fas fa-chevron-down" aria-hidden="true"></i>
-          </button>
-        {/snippet}
-      </Popover.Trigger>
-
-      <Popover.Portal>
-        <Popover.Content
-          side="bottom"
-          align="start"
-          sideOffset={6}
-          avoidCollisions={true}
-          collisionPadding={8}
-          forceMount
-        >
-          {#snippet child({ open, wrapperProps, props })}
-            <div {...wrapperProps}>
-              {#if open}
-                <section
-                  {...props}
-                  class="turn-popover"
-                  style:--dm-motion-blue={primaryPropColors?.left}
-                  style:--dm-motion-red={primaryPropColors?.right}
-                  transition:flyFade={{ y: -6, duration: DURATION.normal }}
-                  aria-label={t("shape_engine_choose_axis_unit", {
-                    axis: axis.label,
-                    unit:
-                      labelMode === "ratios"
-                        ? t("shape_engine_ratio")
-                        : t("shape_engine_turn"),
-                  })}
-                >
-                  <ShapeMatrixValueScroller
-                    label={t("shape_engine_axis_unit", {
-                      axis: axis.label,
-                      unit:
-                        labelMode === "ratios"
-                          ? t("shape_engine_ratio")
-                          : t("shape_engine_turn"),
-                    })}
-                    options={optionsFor(axis.hand)}
-                    keys={turnKeys}
-                    value={turnValueToKey(axis.turn)}
-                    onchange={(value) => chooseTurn(axis.hand, value)}
-                    layout="tray"
-                    ariaLabel={t("shape_engine_axis_value_short", {
-                      axis: axis.label,
-                      unit:
-                        labelMode === "ratios"
-                          ? t("shape_engine_ratio")
-                          : t("shape_engine_turn"),
-                    })}
-                  />
-                </section>
-              {/if}
-            </div>
+              <span class="hand-label">{axis.label}</span>
+              <span
+                class="turn-value"
+                style:color={primaryPropColors?.[axis.hand]}
+                >{matrixTurnVisibleLabel(axis.turn, labelMode)}</span
+              >
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
           {/snippet}
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+        </Popover.Trigger>
+
+        <Popover.Portal>
+          <Popover.Content
+            side="bottom"
+            align="start"
+            sideOffset={6}
+            avoidCollisions={true}
+            collisionPadding={8}
+            forceMount
+          >
+            {#snippet child({ open, wrapperProps, props })}
+              <div {...wrapperProps}>
+                {#if open}
+                  <section
+                    {...props}
+                    class="turn-popover"
+                    style:--dm-motion-blue={primaryPropColors?.left}
+                    style:--dm-motion-red={primaryPropColors?.right}
+                    transition:flyFade={{ y: -6, duration: DURATION.normal }}
+                    aria-label={t("shape_engine_choose_axis_unit", {
+                      axis: axis.label,
+                      unit:
+                        labelMode === "ratios"
+                          ? t("shape_engine_ratio")
+                          : t("shape_engine_turn"),
+                    })}
+                  >
+                    <ShapeMatrixValueScroller
+                      label={t("shape_engine_axis_unit", {
+                        axis: axis.label,
+                        unit:
+                          labelMode === "ratios"
+                            ? t("shape_engine_ratio")
+                            : t("shape_engine_turn"),
+                      })}
+                      options={optionsFor(axis.hand)}
+                      keys={turnKeys}
+                      value={turnValueToKey(axis.turn)}
+                      onchange={(value) => chooseTurn(axis.hand, value)}
+                      layout="tray"
+                      ariaLabel={t("shape_engine_axis_value_short", {
+                        axis: axis.label,
+                        unit:
+                          labelMode === "ratios"
+                            ? t("shape_engine_ratio")
+                            : t("shape_engine_turn"),
+                      })}
+                    />
+                  </section>
+                {/if}
+              </div>
+            {/snippet}
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
+    {/if}
   {/each}
 </div>
 
@@ -299,6 +336,17 @@
     overscroll-behavior: contain;
     box-shadow: 0 12px 30px rgb(0 0 0 / 0.28);
     z-index: var(--z-dropdown, 1000);
+  }
+
+  .turn-controls.inline {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing-sm, 8px);
+  }
+
+  .turn-values {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
   }
 
   @container (max-width: 410px) {

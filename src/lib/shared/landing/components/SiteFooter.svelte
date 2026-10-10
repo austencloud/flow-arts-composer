@@ -362,14 +362,15 @@
   .col-disclosure[open] .col-chevron {
     transform: rotate(180deg);
   }
+  /* Several standalone links share a wrapping row, as LinkChip asks. A
+     single-file stack left each pill a different width down a ragged edge. */
   .col ul {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.45rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .bottom {
@@ -476,35 +477,43 @@
     .sitemap .col ul {
       padding: 0.25rem 0.5rem 0.5rem;
     }
+    /* A phone's row holds one or two pills. Growing them to fill it keeps
+       both edges straight instead of a ragged stack. */
+    .col-disclosure li {
+      flex: 1 1 auto;
+    }
+    .col-disclosure :global(.link-chip) {
+      width: 100%;
+      justify-content: space-between;
+    }
   }
 
-  /* ≥560px: the two link columns sit side by side under the brand block. */
+  /* ≥560px: each link group is one full-width row under the brand block.
+     Side by side, the halves were too narrow for the rows to wrap well. */
   @media (min-width: 560px) {
     .cols {
-      grid-template-columns: repeat(2, 1fr);
+      gap: 1.75rem;
     }
     .brand {
-      grid-column: 1 / -1;
+      margin-bottom: 0.75rem;
     }
   }
 
-  /* ≥1024px: brand joins the row; bottom bar splits left/right.
-     `auto` tracks for the two link columns, not `1fr` each: with only two
-     columns left, equal fractions stretched four short link labels across
-     ~800px apiece at 4K and left a lake of nothing inside each column. Sized
-     to content, the pair anchors to the right edge of the band and the brand
-     holds the left, which is the shape a footer is supposed to have. The slack
-     lives between the two groups, not inside them. */
+  /* ≥1024px: the brand holds the left and the two link rows stack on the
+     right; the bottom bar splits left/right. The rows' track is sized to its
+     content, so on a wide screen each group sits on one line against the right
+     edge and the slack stays between brand and links, not inside a group. */
   @media (min-width: 1024px) {
     .cols {
-      grid-template-columns: minmax(0, 1fr) auto auto;
-      gap: clamp(32px, 3.5vw, 84px);
+      grid-template-columns: minmax(15rem, 1fr) auto;
+      column-gap: clamp(32px, 3.5vw, 84px);
     }
     .sitemap .cols {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .brand {
-      grid-column: auto;
+      grid-row: span 2;
+      margin-bottom: 0;
     }
     .compact-main {
       justify-content: flex-start;
