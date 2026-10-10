@@ -514,11 +514,14 @@
     }
   }
 
-  /* A landscape board is short, so every card sets its square beside its
-     words and the rows share the height. */
-  @container create-entry (min-width: 480px) and (max-width: 1199px) and (orientation: landscape) {
+  /* A short landscape board sets every card's square beside its words and
+     the rows share the height. The square grows with the board; below
+     960px tall it stays under about 172px, well inside a card's row. From
+     960px tall the stages stay above the words, where a strip the card's
+     full width shows more than any square beside them. */
+  @container create-entry (min-width: 480px) and (max-width: 1199px) and (orientation: landscape) and (max-height: 959px) {
     .method-index {
-      --preview-side: clamp(49px, min(18cqi, 18cqh), 140px);
+      --preview-side: max(49px, min(18cqi, 18cqh));
       grid-auto-rows: minmax(min-content, 1fr);
     }
 
