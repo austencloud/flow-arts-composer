@@ -17,7 +17,6 @@
     POST_TIME_EPSILON,
     findItem,
     itemEnd,
-    mainItemAt,
     textBox,
     wrapDegrees,
     type PostBox,
@@ -29,18 +28,13 @@
     edgeOf,
     postOutputSize,
     ratioValue,
-    TUNNEL_BACKDROP_MAX_ZOOM,
-    type TunnelBackdropFrame,
     autoGradeVideo,
     type PostVideoColorGrade,
     boxAt,
     channelValueAt,
-    EASING_PRESETS,
-    easingPresetOf,
     framingAt,
     isAnimated,
     opacityAt,
-    type PostEasingPresetId,
     setItemFill,
     setTrackFlag,
     setVideoSpeed,
@@ -50,26 +44,6 @@
     updateItemAt,
     type PostItemPatch,
   } from "@austencloud/video-editor/core";
-  import {
-    POST_MAX_SPOKEN_LENGTH,
-    POST_QR_URL_RULE,
-    isPostCardQrUrl,
-    type PostAnimationAppearance,
-    type PostMovesMode,
-  } from "$lib/shared/post-studio-plugin";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import {
-    canReplaceOverlayVideoWithAnimation,
-    replaceOverlayVideoWithAnimation,
-    setTunnelAppearance,
-    setTunnelHookBackdropFrame,
-    setTunnelHookSpeed,
-  } from "$lib/shared/media-composition/domain/post-project-edits";
-  import {
-    applyLook,
-    lookOf,
-    type PostLook,
-  } from "$lib/shared/media-composition/domain/post-project-looks";
   import type {
     PostEdit,
     PostEditorState,
@@ -80,10 +54,8 @@
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import { formatPostSpeed, formatTakeClock, parseClock } from "./post-format";
-  import { easingPresetLabel, itemDisplayLabel } from "./post-editor-labels";
-  import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
-  import PostCurveEditor from "./PostCurveEditor.svelte";
+  import { formatPostSpeed, formatTakeClock } from "./post-format";
+  import { itemDisplayLabel } from "./post-editor-labels";
   import { boxTurn, typeBox, type BoxField } from "./post-box-drag";
   import { keepsShape, keptBox, shownBox } from "./post-item-rect";
   import { panelChannel, type PostPanelToolId } from "./post-editor-tools";
@@ -95,16 +67,12 @@
   } from "./post-crop-geometry";
   import type { CropSession, CropShapeKind } from "./post-crop-session.svelte";
   import PostRatioPicker, { type RatioOption } from "./PostRatioPicker.svelte";
-  import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
-  import PostStaffEffectsTool from "$lib/shared/post-studio-plugin/ui/PostStaffEffectsTool.svelte";
   import PostNativeTextTool from "./PostNativeTextTool.svelte";
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
   import { sourceCropAtRatio, sourceFillBox } from "./post-source-crop";
-  import PostAnimationAppearanceTool from "$lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
-  import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
-  import PostCardAppearanceTool from "$lib/shared/post-studio-plugin/ui/PostCardAppearanceTool.svelte";
-  import PostSequenceActionsTool from "$lib/shared/post-studio-plugin/ui/PostSequenceActionsTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
+  import ToolReadout from "./item-tool/ToolReadout.svelte";
+  import ToolStatus from "./item-tool/ToolStatus.svelte";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a
@@ -114,7 +82,10 @@
    */
   interface Props {
     editor: PostEditorState;
-    /** The plugin whose kinds name an item with no name of its own. */
+    /**
+     * The plugin whose kinds name an item with no name of its own, and whose
+     * tool panels render after the core tool's own controls.
+     */
     plugin: VideoEditorPlugin | null;
     item: PostItem;
     tool: PostPanelToolId;
@@ -129,16 +100,6 @@
     chosenSourceShape?: CropShapeKind | null;
     onCropFramingControl?: () => void;
     onCropSourceControl?: () => void;
-    /** Where each take's LED staffs are, for the Effects tool. */
-    staffTips?: StaffTipAnalysis | null;
-    cardRenderOptions?: Partial<SequenceExportOptions> | null;
-    stepCount?: number;
-    /** The post's changed notation is still being prepared. */
-    sequenceBusy?: boolean;
-    /** The animation's opening tunnel is what is selected, with a look of its own. */
-    tunnel?: boolean;
-    /** A feature video's editor: a card can carry the link its QR shows. */
-    featureMode?: boolean;
   }
 
   let {
@@ -152,14 +113,7 @@
     chosenSourceShape = $bindable(null),
     onCropFramingControl,
     onCropSourceControl,
-    staffTips = null,
-    cardRenderOptions = null,
-    stepCount = 0,
-    sequenceBusy = false,
-    tunnel = false,
-    featureMode = false,
   }: Props = $props();
-  const uid = $props.id();
   let grading = $state(false);
   let gradeError = $state("");
 
@@ -205,43 +159,6 @@
   function patchItem(patch: PostItemPatch): void {
     if (locked) return;
     editor.edit((project, ctx) => updateItem(project, item.id, patch, ctx));
-  }
-
-  /** The Scan link field on screen; another card or tool makes a new one. */
-  let cardLinkField = $state<HTMLInputElement | null>(null);
-  /** The card the field belongs to and the saved link it shows. */
-  const cardLinkShown = $derived(
-    item.kind === "card" ? `${item.id} ${item.qrUrl ?? ""}` : ""
-  );
-  /**
-   * True while the field holds a typed link the rule refused; the field's
-   * handler sets it. A new field, or a saved link put in this one by an undo
-   * or a script's edit, makes it false again.
-   */
-  let cardLinkRefused = $derived.by(() => {
-    void cardLinkField;
-    void cardLinkShown;
-    return false;
-  });
-
-  function changeCardLink(value: string): void {
-    if (item.kind !== "card") return;
-    const link = value.trim();
-    if (!link) {
-      cardLinkRefused = false;
-      patchItem({ qrUrl: null });
-      return;
-    }
-    if (!isPostCardQrUrl(link)) {
-      cardLinkRefused = true;
-      return;
-    }
-    cardLinkRefused = false;
-    // The link shows only in the QR cell, so setting one picks that cell.
-    patchItem({
-      qrUrl: link,
-      cardAppearance: { ...item.cardAppearance, infoCellChoice: "qr" },
-    });
   }
 
   async function autoAdjustColor(): Promise<void> {
@@ -334,111 +251,11 @@
     editor.edit((project, ctx) => setItemFill(project, item.id, fill, ctx));
   }
 
-  function replaceWithLiveAnimation(): void {
-    if (locked) return;
-    editor.pause();
-    editor.edit((project, ctx) =>
-      replaceOverlayVideoWithAnimation(project, item.id, ctx)
-    );
-  }
-
-  const HOOK_SPEED_PRESETS = [
-    "linear",
-    "ease-in",
-    "ease-out",
-    "ease-in-out",
-    "smooth",
-  ] as const satisfies readonly PostEasingPresetId[];
-  const HOOK_DEFAULT_SPEED = EASING_PRESETS.smooth;
-
-  type AnimationAppearance = PostAnimationAppearance;
-  /** What the tunnel shows: the animation's look with the tunnel's own changes over it. */
-  const tunnelLook = $derived(
-    item.kind === "animation"
-      ? { ...item.animationAppearance, ...item.tunnelAppearance }
-      : null
-  );
-
-  /**
-   * The tunnel keeps only the flags changed on it; everything else goes on
-   * following the animation.
-   */
-  function commitTunnelAppearance(
-    look: AnimationAppearance,
-    settingKey: string | undefined,
-    changed: (keyof AnimationAppearance)[]
-  ): void {
-    if (locked || changed.length === 0) return;
-    const changes = Object.fromEntries(
-      changed.map((key) => [
-        key,
-        // The slider leaves the default thickness unsaid; the tunnel says it,
-        // so it is not taken for "follow the animation".
-        key === "mandalaThickness"
-          ? (look.mandalaThickness ??
-            DEFAULT_MANDALA_OVERLAY_CONFIG.strokeWidth)
-          : look[key],
-      ])
-    ) as AnimationAppearance;
-    const change = (
-      project: Parameters<typeof setTunnelAppearance>[0],
-      ctx: Parameters<typeof setTunnelAppearance>[2]
-    ) => setTunnelAppearance(project, changes, ctx);
-    if (settingKey)
-      editor.editSetting(`${item.id}:tunnel:effects:${settingKey}`, change);
-    else editor.edit(change);
-  }
-
-  function commitHookSpeed(next: readonly number[]): void {
-    if (locked) return;
-    const speed = next as [number, number, number, number];
-    editor.editSetting(`${item.id}:hook-speed`, (project, ctx) =>
-      setTunnelHookSpeed(project, speed, ctx)
-    );
-  }
-
-  /**
-   * The footage behind the opening, as framed now: the hook's own framing, or
-   * the whole picture centred where the clip under it is framed.
-   */
-  const backdropFrame = $derived.by((): TunnelBackdropFrame | null => {
-    if (item.kind !== "animation" || !item.tunnelHook?.backdrop) return null;
-    if (item.tunnelHook.backdropFrame) return item.tunnelHook.backdropFrame;
-    const under = mainItemAt(editor.project, item.start);
-    const crop =
-      under && (under.kind === "video" || under.kind === "image")
-        ? under.sourceGeometry?.crop
-        : undefined;
-    return {
-      zoom: 1,
-      x: crop ? (crop.left + crop.right) / 2 : 0.5,
-      y: crop ? (crop.top + crop.bottom) / 2 : 0.5,
-    };
-  });
-
-  function commitBackdropFrame(
-    patch: Partial<TunnelBackdropFrame>,
-    field: string
-  ): void {
-    if (locked || !backdropFrame) return;
-    const next = { ...backdropFrame, ...patch };
-    editor.editSetting(`${item.id}:backdrop-frame:${field}`, (project, ctx) =>
-      setTunnelHookBackdropFrame(project, next, ctx)
-    );
-  }
-
-  const zoomTimes = (value: number) => `${value.toFixed(2)}×`;
-
   function setSpeed(speed: number): void {
     if (locked) return;
     editor.editSetting(`${item.id}:speed`, (project, ctx) =>
       setVideoSpeed(project, item.id, speed, ctx)
     );
-  }
-
-  function setLook(look: PostLook): void {
-    if (locked) return;
-    editor.edit((project, ctx) => applyLook(project, item.id, look, ctx));
   }
 
   function place(box: PostBox): void {
@@ -716,22 +533,6 @@
     placements.length === 1 ? placements[0]! : null
   );
 
-  const MOVES_MODES = $derived<
-    { value: PostMovesMode; label: string; disabled: boolean }[]
-  >([
-    { value: "arrows", label: t("post_editor_moves_arrows"), disabled: locked },
-    {
-      value: "mandala",
-      label: t("post_editor_moves_mandala"),
-      disabled: locked,
-    },
-    {
-      value: "alternate",
-      label: t("post_editor_moves_alternate"),
-      disabled: locked,
-    },
-  ]);
-
   const TEXT_SIZES = $derived<
     { value: PostTextSize; label: string; disabled: boolean }[]
   >([
@@ -849,16 +650,6 @@
   const formatSpeed = (stop: number) => formatPostSpeed(speedFromStop(stop));
 </script>
 
-{#snippet status(text: string, icon: string, action: string, run: () => void)}
-  <div class="status" role="status">
-    <p>{text}</p>
-    <PanelButton onclick={run}>
-      <i class="fa-solid {icon}" aria-hidden="true"></i>
-      {action}
-    </PanelButton>
-  </div>
-{/snippet}
-
 {#snippet borderSwatch(pick: BorderPick)}
   {#if pick === "none"}
     {t("post_editor_border_none")}
@@ -871,37 +662,6 @@
   {/if}
 {/snippet}
 
-{#snippet readout(
-  name: string,
-  value: string,
-  typed: (seconds: number) => void,
-  set: { icon: string; run: () => void } | null
-)}
-  <div class="readout">
-    <div class="readout-text">
-      <span class="readout-name" aria-hidden="true">{name}</span>
-      <TypeableValue
-        label={name}
-        text={value}
-        draft={value}
-        parse={parseClock}
-        disabled={locked}
-        oncommit={typed}
-      />
-    </div>
-    {#if set}
-      <PanelButton
-        onclick={set.run}
-        disabled={locked || !playheadInside}
-        ariaLabel={`${t("post_editor_set_to_playhead")}: ${name}`}
-      >
-        <i class="fa-solid {set.icon}" aria-hidden="true"></i>
-        {t("post_editor_set_to_playhead")}
-      </PanelButton>
-    {/if}
-  </div>
-{/snippet}
-
 <div
   class="item-tool"
   class:animation-appearance={appearanceFill &&
@@ -909,53 +669,44 @@
     (item.kind === "animation" || item.kind === "moves")}
 >
   {#if locked}
-    {@render status(
-      t("post_editor_layer_locked"),
-      "fa-lock-open",
-      t("post_editor_unlock_layer"),
-      unlock
-    )}
+    <ToolStatus
+      text={t("post_editor_layer_locked")}
+      icon="fa-lock-open"
+      action={t("post_editor_unlock_layer")}
+      run={unlock}
+    />
   {:else if channel !== null && !withinSpan}
-    {@render status(
-      t("post_editor_outside_item"),
-      "fa-location-crosshairs",
-      t("post_editor_go_to_item"),
-      goToItem
-    )}
+    <ToolStatus
+      text={t("post_editor_outside_item")}
+      icon="fa-location-crosshairs"
+      action={t("post_editor_go_to_item")}
+      run={goToItem}
+    />
   {/if}
 
   {#if tool === "trim" && item.kind === "video"}
-    {@render readout(
-      t("post_editor_in"),
-      formatTakeClock(item.sourceIn),
-      (seconds) => trimToSource("start", seconds),
-      {
+    <ToolReadout
+      name={t("post_editor_in")}
+      value={formatTakeClock(item.sourceIn)}
+      typed={(seconds) => trimToSource("start", seconds)}
+      set={{
         icon: "fa-arrow-right-to-bracket",
         run: () => trimToPlayhead("start"),
-      }
-    )}
-    {@render readout(
-      t("post_editor_out"),
-      formatTakeClock(item.sourceOut),
-      (seconds) => trimToSource("end", seconds),
-      {
+      }}
+      {locked}
+      {playheadInside}
+    />
+    <ToolReadout
+      name={t("post_editor_out")}
+      value={formatTakeClock(item.sourceOut)}
+      typed={(seconds) => trimToSource("end", seconds)}
+      set={{
         icon: "fa-arrow-right-from-bracket",
         run: () => trimToPlayhead("end"),
-      }
-    )}
-    {#if !onMain && canReplaceOverlayVideoWithAnimation(editor.project, item.id)}
-      <div class="actions">
-        <PanelButton onclick={replaceWithLiveAnimation} disabled={locked}>
-          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-          Replace with live sequence animation
-        </PanelButton>
-      </div>
-      <p class="hint">
-        Uses the camera video's beat map. Keeps this clip's timing and position.
-        The original video stays available for undo; its audio, if any, leaves
-        the mix.
-      </p>
-    {/if}
+      }}
+      {locked}
+      {playheadInside}
+    />
   {:else if tool === "timing"}
     {#if !onMain}
       <SegmentedControl
@@ -975,25 +726,29 @@
     {/if}
     {#if onMain || !item.fill}
       {#if !onMain}
-        {@render readout(
-          t("post_editor_start"),
-          formatTakeClock(item.start),
-          (seconds) => trimTo("start", seconds),
-          {
+        <ToolReadout
+          name={t("post_editor_start")}
+          value={formatTakeClock(item.start)}
+          typed={(seconds) => trimTo("start", seconds)}
+          set={{
             icon: "fa-arrow-right-to-bracket",
             run: () => trimToPlayhead("start"),
-          }
-        )}
+          }}
+          {locked}
+          {playheadInside}
+        />
       {/if}
-      {@render readout(
-        t("post_editor_end"),
-        formatTakeClock(itemEnd(item)),
-        (seconds) => trimTo("end", seconds),
-        {
+      <ToolReadout
+        name={t("post_editor_end")}
+        value={formatTakeClock(itemEnd(item))}
+        typed={(seconds) => trimTo("end", seconds)}
+        set={{
           icon: "fa-arrow-right-from-bracket",
           run: () => trimToPlayhead("end"),
-        }
-      )}
+        }}
+        {locked}
+        {playheadInside}
+      />
     {/if}
   {:else if tool === "position" && (item.kind === "video" || item.kind === "image") && (item.sourceGeometry || item.keyframes?.sourceGeometry?.length)}
     {@const geometry = channelValueAt(item, "sourceGeometry", seconds)}
@@ -1104,92 +859,6 @@
       onChange={(next, field) =>
         change(`source-geometry:${field}`, { sourceGeometry: next })}
     />
-  {:else if tool === "crop" && item.kind === "animation" && backdropFrame}
-    <p class="hint">{t("post_editor_backdrop_frame_hint")}</p>
-    <ValueSlider
-      label={t("post_editor_backdrop_zoom")}
-      value={backdropFrame.zoom}
-      min={1}
-      max={TUNNEL_BACKDROP_MAX_ZOOM}
-      step={0.01}
-      origin={1}
-      format={zoomTimes}
-      disabled={locked}
-      onchange={(zoom) => commitBackdropFrame({ zoom }, "zoom")}
-    />
-    <ValueSlider
-      label={t("post_editor_backdrop_up_down")}
-      value={backdropFrame.y * 100}
-      min={0}
-      max={100}
-      step={0.5}
-      format={percent}
-      disabled={locked}
-      onchange={(value) => commitBackdropFrame({ y: value / 100 }, "y")}
-    />
-    <ValueSlider
-      label={t("post_editor_backdrop_left_right")}
-      value={backdropFrame.x * 100}
-      min={0}
-      max={100}
-      step={0.5}
-      format={percent}
-      disabled={locked}
-      onchange={(value) => commitBackdropFrame({ x: value / 100 }, "x")}
-    />
-    {#if item.tunnelHook?.backdropFrame}
-      <PanelButton
-        disabled={locked}
-        onclick={() =>
-          editor.edit((project, ctx) =>
-            setTunnelHookBackdropFrame(project, null, ctx)
-          )}
-      >
-        {t("post_editor_backdrop_whole")}
-      </PanelButton>
-    {/if}
-  {:else if tool === "speed" && item.kind === "animation" && item.tunnelHook}
-    {@const hookSpeed = item.tunnelHook.speed ?? HOOK_DEFAULT_SPEED}
-    <PostCurveEditor easing={hookSpeed} {locked} onCommit={commitHookSpeed}>
-      {#snippet presets()}
-        <div
-          class="preset-list"
-          role="listbox"
-          aria-label={t("post_curve_presets")}
-        >
-          {#each HOOK_SPEED_PRESETS as id (id)}
-            <ChipPopoverOption
-              label={easingPresetLabel(id)}
-              selected={easingPresetOf([...hookSpeed]) === id}
-              onclick={() => commitHookSpeed([...EASING_PRESETS[id]])}
-            />
-          {/each}
-        </div>
-      {/snippet}
-    </PostCurveEditor>
-    <PanelButton
-      onclick={() => {
-        editor.seek(item.start);
-        editor.togglePlayback();
-      }}
-    >
-      <i class="fa-solid fa-play" aria-hidden="true"></i>
-      {t("post_editor_hook_play")}
-    </PanelButton>
-  {:else if tool === "titles" && item.kind === "titles"}
-    <div class="hook-titles">
-      <span class="readout-name">{t("post_editor_hook_spoken")}</span>
-      <input
-        class="field"
-        value={item.spoken ?? ""}
-        placeholder={t("post_editor_hook_spoken_placeholder")}
-        maxlength={POST_MAX_SPOKEN_LENGTH}
-        aria-label={t("post_editor_hook_spoken")}
-        disabled={locked}
-        oninput={(event) =>
-          change("titles-spoken", { spoken: event.currentTarget.value })}
-      />
-    </div>
   {:else if tool === "speed" && item.kind === "video"}
     <ValueSlider
       label={t("post_editor_speed")}
@@ -1215,31 +884,13 @@
       onchange={(value) => change("volume", { volume: value / 100 })}
     />
     {#if editor.project.audio === "silent"}
-      {@render status(
-        t("post_editor_post_silent"),
-        "fa-volume-high",
-        t("post_editor_use_video_sound"),
-        () => editor.setAudio("takes")
-      )}
+      <ToolStatus
+        text={t("post_editor_post_silent")}
+        icon="fa-volume-high"
+        action={t("post_editor_use_video_sound")}
+        run={() => editor.setAudio("takes")}
+      />
     {/if}
-  {:else if tool === "layout" && item.kind === "video"}
-    <SegmentedControl
-      color="accent"
-      options={[
-        { value: "dual", label: t("post_editor_look_dual"), disabled: locked },
-        {
-          value: "breakdown",
-          label: t("post_editor_look_breakdown"),
-          disabled: locked,
-        },
-        { value: "full", label: t("post_editor_look_full"), disabled: locked },
-      ]}
-      value={lookOf(editor.project, item.id) ?? "custom"}
-      onchange={(look) => {
-        if (look !== "custom") setLook(look);
-      }}
-      ariaLabel={t("post_editor_look")}
-    />
   {:else if tool === "position"}
     {#if onlyPlacement}
       {@const only = onlyPlacement}
@@ -1416,121 +1067,6 @@
         </p>
       </details>
     {/if}
-    {#if staffTips}
-      {@const take = editor.takes.find((entry) => entry.id === item.takeId)}
-      <PostStaffEffectsTool
-        {item}
-        takeKey={take?.takeKey ?? null}
-        mediaUrl={editor.mediaUrl(item.takeId)}
-        analysis={staffTips}
-        {locked}
-        onPick={(effect) => patchItem({ staffEffect: effect })}
-      />
-    {/if}
-  {:else if tool === "appearance" && tunnel && item.kind === "animation"}
-    <PostAnimationAppearanceTool
-      fill={appearanceFill}
-      {editor}
-      appearanceOverride={tunnelLook}
-      onAppearanceChange={commitTunnelAppearance}
-      appearanceKey="{item.id}:tunnel"
-      scopeLabel={t("post_timeline_tunnel")}
-      {locked}
-      defaultPropType={cardRenderOptions?.propTypeOverride}
-    />
-  {:else if tool === "appearance" && (item.kind === "animation" || item.kind === "moves")}
-    <PostAnimationAppearanceTool
-      fill={appearanceFill}
-      {editor}
-      {item}
-      {locked}
-      defaultPropType={cardRenderOptions?.propTypeOverride}
-    />
-  {:else if tool === "appearance" && item.kind === "card"}
-    <PostCardAppearanceTool
-      {item}
-      options={cardRenderOptions}
-      {stepCount}
-      {locked}
-      onchange={(value) => patchItem({ cardAppearance: value })}
-    />
-    {#if featureMode}
-      <!-- Keyed so text typed for one card never shows on the next. -->
-      {#key item.id}
-        <div class="card-link">
-          <span class="readout-name">Scan link</span>
-          <input
-            class="field"
-            type="url"
-            value={item.qrUrl ?? ""}
-            placeholder="https://tka.run/..."
-            aria-label="Scan link"
-            aria-invalid={cardLinkRefused}
-            aria-describedby="{uid}-link-note"
-            disabled={locked}
-            bind:this={cardLinkField}
-            onchange={(event) => changeCardLink(event.currentTarget.value)}
-          />
-          {#if cardLinkRefused}
-            <p class="link-error" id="{uid}-link-note" role="alert">
-              {POST_QR_URL_RULE}
-            </p>
-          {:else}
-            <p class="hint" id="{uid}-link-note">
-              The card's QR opens this link for anyone who scans it.
-            </p>
-          {/if}
-        </div>
-      {/key}
-    {/if}
-  {:else if tool === "appearance" && item.kind === "image"}
-    <div class="qr-appearance">
-      <strong>QR code</strong>
-      <SegmentedControl
-        color="accent"
-        options={[
-          { value: "poster", label: "Poster", disabled: locked },
-          { value: "light", label: "Light", disabled: locked },
-          { value: "dark", label: "Dark", disabled: locked },
-        ]}
-        value={item.qrAppearance ?? "poster"}
-        onchange={(value) =>
-          patchItem({
-            qrAppearance: value === "poster" ? null : value,
-          })}
-        ariaLabel="QR code appearance"
-      />
-      <p>Poster follows the card's light or dark mode.</p>
-    </div>
-  {:else if tool === "sequence" && (item.kind === "animation" || item.kind === "moves" || item.kind === "card")}
-    <PostSequenceActionsTool {editor} {locked} busy={sequenceBusy} />
-  {:else if tool === "labels" && item.kind === "animation"}
-    <SegmentedControl
-      color="accent"
-      options={[
-        {
-          value: "shown",
-          label: t("post_editor_labels_shown"),
-          disabled: locked,
-        },
-        {
-          value: "hidden",
-          label: t("post_editor_labels_hidden"),
-          disabled: locked,
-        },
-      ]}
-      value={item.overlay ? "shown" : "hidden"}
-      onchange={(value) => patchItem({ overlay: value === "shown" })}
-      ariaLabel={t("share_studio_deep_beat_and_letter")}
-    />
-  {:else if tool === "shows" && item.kind === "moves"}
-    <SegmentedControl
-      color="accent"
-      options={MOVES_MODES}
-      value={item.mode}
-      onchange={(mode) => patchItem({ mode })}
-      ariaLabel={t("post_editor_moves_show")}
-    />
   {:else if tool === "text" && item.kind === "text"}
     <textarea
       class="field text-field"
@@ -1574,14 +1110,20 @@
       onchange={(event) => rename(event.currentTarget.value)}
     />
   {/if}
+  {#if plugin}
+    {@const KindPanel = plugin.itemKinds.find((d) => d.kind === item.kind)?.ui
+      ?.toolPanel}
+    {#if KindPanel}
+      <KindPanel {editor} {item} {tool} {locked} {appearanceFill} />
+    {/if}
+    {#if plugin.ui?.toolPanel}
+      {@const ItemPanel = plugin.ui.toolPanel}
+      <ItemPanel {editor} {item} {tool} {locked} {appearanceFill} />
+    {/if}
+  {/if}
 </div>
 
 <style>
-  .preset-list {
-    display: grid;
-    gap: 0.125rem;
-  }
-
   .native-limit {
     margin: 0;
     color: var(--text-secondary, #a3a3a3);
@@ -1623,42 +1165,6 @@
     min-height: 0;
   }
 
-  .hook-titles,
-  .card-link {
-    display: grid;
-    gap: 0.5rem;
-    min-width: 0;
-  }
-
-  .qr-appearance {
-    display: grid;
-    gap: 0.75rem;
-    min-width: 0;
-  }
-
-  .qr-appearance p {
-    margin: 0;
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.8125rem;
-  }
-
-  .status {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem 0.75rem;
-    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
-    border: 1px solid var(--semantic-warning, #fbbf24);
-    border-radius: 0.625rem;
-  }
-
-  .status p {
-    margin: 0;
-    color: var(--theme-text, #fff);
-    font-size: 0.875rem;
-  }
-
   .readout {
     display: flex;
     flex-wrap: wrap;
@@ -1666,20 +1172,6 @@
     justify-content: space-between;
     gap: 0.5rem 0.75rem;
     min-width: 0;
-  }
-
-  /* The time sits in a box that takes a typed time. */
-  .readout-text {
-    --typeable-font-size: 1rem;
-    --typeable-min-width: 6rem;
-    display: grid;
-    justify-items: start;
-    gap: 0.125rem;
-  }
-
-  .readout-name {
-    color: var(--theme-text-secondary, #aaa);
-    font-size: 0.8125rem;
   }
 
   .actions {
@@ -1753,12 +1245,5 @@
 
   .field:disabled {
     opacity: 0.5;
-  }
-
-  .link-error {
-    margin: 0;
-    color: var(--semantic-error, #f87171);
-    font-size: 0.875rem;
-    line-height: 1.4;
   }
 </style>

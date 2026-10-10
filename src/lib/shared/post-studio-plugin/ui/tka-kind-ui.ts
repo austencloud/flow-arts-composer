@@ -6,10 +6,12 @@ import {
   faSun,
   faTableCells,
 } from "@austencloud/video-editor/icons";
+import TkaKindTools from "./TkaKindTools.svelte";
 
 /**
  * The icons and names the editor shows for tka's kinds, as post-editor-labels.ts
- * gave them (`ITEM_KIND_ICON`, `MANDALA_ICON`, `itemKindLabel`).
+ * gave them (`ITEM_KIND_ICON`, `MANDALA_ICON`, `itemKindLabel`), and the item
+ * tool's panels for the animation, moves and titles kinds.
  */
 export const TKA_KIND_UI: Record<
   "animation" | "moves" | "carousel" | "titles",
@@ -18,6 +20,7 @@ export const TKA_KIND_UI: Record<
   animation: {
     icon: faPersonRunning,
     label: (t) => t("post_editor_kind_animation"),
+    toolPanel: TkaKindTools,
   },
   moves: {
     icon: faShapes,
@@ -27,6 +30,7 @@ export const TKA_KIND_UI: Record<
       item?.kind === "moves" && item.mode === "mandala"
         ? t("post_editor_kind_mandala")
         : t("post_editor_kind_moves"),
+    toolPanel: TkaKindTools,
   },
   carousel: {
     icon: faTableCells,
@@ -35,5 +39,6 @@ export const TKA_KIND_UI: Record<
   titles: {
     icon: faHeading,
     label: (t) => t("post_editor_kind_titles"),
+    toolPanel: TkaKindTools,
   },
 };

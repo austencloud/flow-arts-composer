@@ -134,7 +134,10 @@
   } from "@austencloud/video-editor";
   import { getPreviewVideoCache } from "$lib/shared/media-composition/get-preview-video-cache";
   import { tkaEditorServices } from "$lib/shared/post-studio-plugin/ui/tka-host";
-  import { registerTkaEditor } from "$lib/shared/post-studio-plugin/ui/tka-editor-context";
+  import {
+    provideTkaEditor,
+    registerTkaEditor,
+  } from "$lib/shared/post-studio-plugin/ui/tka-editor-context";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorActions from "./PostEditorActions.svelte";
   import PostSaveButton from "./PostSaveButton.svelte";
@@ -654,6 +657,27 @@
   const staffTips = createStaffTipAnalysis();
   $effect(() => {
     for (const take of editor.takes) staffTips.ensure(take.takeKey);
+  });
+
+  // What the plugin's tool panels read beyond the editor; TkaEditorScope
+  // provides it from Task 15a.
+  provideTkaEditor({
+    editor,
+    get staffTips() {
+      return staffTips;
+    },
+    get cardRenderOptions() {
+      return cardRenderOptions ?? null;
+    },
+    get featureMode() {
+      return !!featureVideo;
+    },
+    get stepCount() {
+      return displaySequence.steps?.length ?? 0;
+    },
+    get sequenceBusy() {
+      return labeledCard.pending;
+    },
   });
 
   function videoItem(itemId: string): PostVideoItem | null {
@@ -2782,18 +2806,12 @@
       {plugin}
       item={editor.selectedItem}
       {tool}
-      tunnel={editor.selectedPart === "tunnel"}
       appearanceFill={placement === "side"}
       crop={cropMode ? crop : null}
       {cropSourceView}
       bind:chosenSourceShape={cropSourceShape}
       onCropFramingControl={() => (cropSourceView = false)}
       onCropSourceControl={() => (cropSourceView = true)}
-      {staffTips}
-      {cardRenderOptions}
-      stepCount={displaySequence.steps?.length ?? 0}
-      sequenceBusy={labeledCard.pending}
-      featureMode={!!featureVideo}
     />
   {/if}
 {/snippet}

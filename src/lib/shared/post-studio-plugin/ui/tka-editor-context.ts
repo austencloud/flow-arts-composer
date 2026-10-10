@@ -4,6 +4,8 @@ import type {
   VideoEditorState,
 } from "@austencloud/video-editor";
 import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
+import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
 
 /** What tka's plugin functions need beyond the generic state. */
 export interface TkaEditorFacts {
@@ -36,6 +38,14 @@ export function tkaEditorOf(
 /** Design H's context; Tasks 13 to 15b add its members. */
 export interface TkaEditorContext {
   editor: PostEditorState;
+  /** Where each take's LED staffs are, for the Effects tool. */
+  readonly staffTips: StaffTipAnalysis | null;
+  readonly cardRenderOptions: Partial<SequenceExportOptions> | null;
+  /** A feature video's editor: a card can carry the link its QR shows. */
+  readonly featureMode: boolean;
+  readonly stepCount: number;
+  /** The post's changed notation is still being prepared. */
+  readonly sequenceBusy: boolean;
 }
 
 const TKA_EDITOR = Symbol("tka-editor");
