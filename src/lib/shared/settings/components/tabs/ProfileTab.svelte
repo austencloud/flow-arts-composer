@@ -957,15 +957,19 @@
     color: var(--semantic-warning);
   }
 
+  /* Two columns that share one seam: profile, flow identity and security on
+     the left; personal details and sign-in methods on the right. The middle
+     row is flexible, so the shorter column ends early instead of stretching
+     the personal rows to match the taller one. */
   @container profile-tab (min-width: 48rem) {
     .account-workspace {
       grid-template-columns: minmax(15rem, 0.78fr) minmax(24rem, 1.22fr);
-      min-height: clamp(30em, 56vh, 38em);
+      grid-template-rows: auto 1fr auto;
     }
 
     .identity-pane {
       grid-column: 1;
-      grid-row: 1;
+      grid-row: 1 / span 2;
     }
 
     .personal-section {
@@ -976,13 +980,19 @@
     }
 
     .access-pane {
-      grid-column: 1 / -1;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      display: contents;
     }
 
-    .workspace-group + .workspace-group {
-      border-top: 0;
+    .sign-in-section {
+      grid-column: 2;
+      grid-row: 2 / span 2;
+      border-top: 1px solid var(--theme-stroke);
       border-left: 1px solid var(--theme-stroke);
+    }
+
+    .security-section {
+      grid-column: 1;
+      grid-row: 3;
     }
   }
 
@@ -992,6 +1002,7 @@
         minmax(18rem, 1fr)
         minmax(26rem, 1.15fr)
         minmax(22rem, 1fr);
+      grid-template-rows: auto;
       min-height: clamp(30em, 50vh, 42em);
     }
 
@@ -1006,6 +1017,7 @@
     }
 
     .access-pane {
+      display: grid;
       grid-column: 3;
       grid-row: 1;
       grid-template-columns: minmax(0, 1fr);
@@ -1014,8 +1026,14 @@
       border-left: 1px solid var(--theme-stroke);
     }
 
-    .workspace-group + .workspace-group {
-      border-top: 1px solid var(--theme-stroke);
+    .sign-in-section,
+    .security-section {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    .sign-in-section {
+      border-top: 0;
       border-left: 0;
     }
   }
