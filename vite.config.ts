@@ -24,6 +24,7 @@ import fs from "fs";
 import type { IncomingMessage, ServerResponse } from "http";
 import path from "path";
 import type { Rolldown, ViteDevServer } from "vite";
+import type { Adapter } from "@sveltejs/kit";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -996,54 +997,79 @@ const dependencyCachePlan = createViteDependencyCachePlan({
   projectRoot: dirname,
 });
 
+// Cloudflare Pages: requests matching these rules skip the Worker and are
+// served from the static asset layer.
+const pagesRouteExcludes = [
+  "/_app/immutable/*",
+  "/_app/version.json",
+  "/.well-known/*",
+  "/animations/*",
+  "/assets/*",
+  "/audio/*",
+  "/branding/*",
+  "/data/*",
+  "/fonts/*",
+  "/gallery/*",
+  "/guide/*",
+  "/guides/*",
+  "/images/*",
+  "/models/*",
+  "/pictographs/*",
+  "/pwa/*",
+  "/retro-eras/*",
+  "/screenshots/*",
+  "/sounds/*",
+  "/textures/*",
+  "/thumbnails/*",
+  "/favicon.png",
+  "/firebase-messaging-handler.js",
+  "/firebase-messaging-sw.js",
+  "/legacy-sw.js",
+  "/manifest.webmanifest",
+  "/og-default.png",
+  "/sw.js",
+  // Serve prerendered pages (landing, about, glossary, …) from the
+  // static asset layer instead of waking the Worker — without this,
+  // "/" returns cf-cache-status: DYNAMIC and pays ~1-2s Worker TTFB.
+  // MUST stay LAST: Cloudflare caps _routes.json at 100 rules and the
+  // adapter truncates overflow. Placed last, only tail-end prerendered
+  // pages fall off; placed first, it would truncate the asset wildcards
+  // above and route every static asset through the Worker.
+  "<prerendered>",
+];
+
+// Cloudflare rejects a _routes.json in which a splat rule ("/guide/*") also
+// covers another rule ("/guide/codex"): "Overlapping rules found". The splat
+// already keeps those prerendered pages off the Worker, so they are left out
+// of the list the adapter writes, which also leaves more of the 100-rule cap
+// for pages no splat covers. SvelteKit 3 prerenders the guide early enough
+// that its pages landed inside the cap and made the file invalid.
+function withoutSplatCoveredPrerenders(base: Adapter): Adapter {
+  const splats = pagesRouteExcludes
+    .filter((rule) => rule.endsWith("/*"))
+    .map((rule) => rule.slice(0, -1));
+  return {
+    ...base,
+    adapt(builder) {
+      const paths = builder.prerendered.paths.filter(
+        (page) => !splats.some((prefix) => page.startsWith(prefix))
+      );
+      return base.adapt(
+        Object.create(builder, {
+          prerendered: { value: { ...builder.prerendered, paths } },
+        })
+      );
+    },
+  };
+}
+
 // SvelteKit options. Before SvelteKit 3 these lived in svelte.config.js.
 const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
   ...svelteOptions,
 
-  adapter: adapter({
-    routes: {
-      include: ["/*"],
-      exclude: [
-        "/_app/immutable/*",
-        "/_app/version.json",
-        "/.well-known/*",
-        "/animations/*",
-        "/assets/*",
-        "/audio/*",
-        "/branding/*",
-        "/data/*",
-        "/fonts/*",
-        "/gallery/*",
-        "/guide/*",
-        "/guides/*",
-        "/images/*",
-        "/models/*",
-        "/pictographs/*",
-        "/pwa/*",
-        "/retro-eras/*",
-        "/screenshots/*",
-        "/sounds/*",
-        "/textures/*",
-        "/thumbnails/*",
-        "/favicon.png",
-        "/firebase-messaging-handler.js",
-        "/firebase-messaging-sw.js",
-        "/legacy-sw.js",
-        "/manifest.webmanifest",
-        "/og-default.png",
-        "/sw.js",
-        // Serve prerendered pages (landing, about, glossary, …) from the
-        // static asset layer instead of waking the Worker — without this,
-        // "/" returns cf-cache-status: DYNAMIC and pays ~1-2s Worker TTFB.
-        // MUST stay LAST: Cloudflare caps _routes.json at 100 rules and the
-        // adapter truncates overflow. Placed last, only tail-end prerendered
-        // guide pages fall off (already covered by the /guide/* wildcard);
-        // placed first, it would truncate the asset wildcards above and
-        // route every static asset through the Worker.
-        "<prerendered>",
-      ],
-    },
-  }),
+  adapter: withoutSplatCoveredPrerenders(
+    adapter({ routes: { include: ["/*"], exclude: pagesRouteExcludes } })
+  ),
 
   // PostHog session replay requires absolute paths to properly record assets.
   // By default, Svelte uses relative paths during SSR which breaks replay.
