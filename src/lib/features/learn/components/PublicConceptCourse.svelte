@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from "$app/env";
+  import { afterNavigate, replaceState } from "$app/navigation";
   import { page } from "$app/state";
   import LearnTab from "../LearnTab.svelte";
   import { getConceptById } from "../domain/concepts";
@@ -11,11 +12,25 @@
     buildConceptPath,
     CONCEPT_LIST_PATH,
     conceptIdFromPathname,
+    conceptRestartFromUrl,
   } from "../domain/concept-routes";
+  import { getExperiencePersistence } from "../state/experience-persistence.svelte";
   import Seo from "#lib/shared/components/Seo.svelte";
   import { LANDING_DOMAIN } from "../../../../config/domains";
   import { getLocale, t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "../domain/localized-concept";
+
+  // A "from the start" link clears the lesson's saved place here, before the
+  // lesson below creates its state from it, then drops the flag from the
+  // address bar once the navigation settles, so a reload resumes as usual.
+  const restart = browser
+    ? conceptRestartFromUrl(new URL(window.location.href))
+    : null;
+  if (restart) getExperiencePersistence(restart.conceptId).reset();
+  afterNavigate(() => {
+    const pending = conceptRestartFromUrl(new URL(window.location.href));
+    if (pending) replaceState(pending.cleanHref, page.state);
+  });
 
   const courseName = $derived(tDynamic("learn_public_course_name"));
   const courseDescription = $derived(tDynamic("learn_public_course_description"));
@@ -187,6 +202,32 @@
     width: 100%;
     min-height: calc(100dvh - 64px);
     margin-top: 64px;
+  }
+
+  /* Lesson titles use the brand's page-title face, the same wonky Fraunces
+     italic as the guide and the rest of the public site. Each lesson styles
+     its own h1; the doubled class outranks those rules for the public course
+     only, so the app's own Learn tab keeps its type. */
+  .public-course.public-course :global(h1) {
+    font-family: var(--page-title-font, "Fraunces", Georgia, serif);
+    font-style: italic;
+    font-weight: 700;
+    font-variation-settings:
+      "opsz" 144,
+      "wght" 700,
+      "SOFT" 0,
+      "WONK" 1;
+    letter-spacing: -0.01em;
+  }
+
+  /* The fallback below is for search engines and readers without
+     JavaScript. A browser that runs scripts replaces it with the lesson a
+     moment later, so it stays hidden there instead of flashing a different
+     page first. */
+  @media (scripting: enabled) {
+    .course-prerender {
+      visibility: hidden;
+    }
   }
 
   .course-prerender {

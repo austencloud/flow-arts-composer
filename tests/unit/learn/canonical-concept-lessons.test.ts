@@ -393,15 +393,17 @@ describe("canonical concept lesson composition", () => {
     // The same i18n pass flattened these too. Each bold term names what the
     // learner should find on the grid at that step.
     const english = readMessages("en");
+    // The intro, two-modes line and point definitions come from the shared
+    // Grid topic record (Austen's guide wording, src/lib/shared/guide-topics).
     const boldTerms = {
-      learn_ui_grid_intro: ["4-point grid"],
-      learn_ui_grid_two_modes_intro: ["Diamond", "Box"],
+      verified_level1_grid_intro: [],
+      guide_topic_grid_two_modes: [],
       learn_ui_diamond_directions: ["Diamond"],
       learn_ui_box_directions: ["Box"],
       learn_ui_merged_grid_intro: ["Diamond + Box"],
-      learn_ui_center_point_intro: ["center point"],
-      learn_ui_hand_points_intro: ["Hand points"],
-      learn_ui_outer_points_intro: ["Outer points"],
+      guide_topic_grid_center_point: ["center point"],
+      guide_topic_grid_hand_points: ["hand points"],
+      guide_topic_grid_outer_points: ["outer points"],
       learn_ui_point_types_intro: ["center, hand, and outer"],
     };
 
