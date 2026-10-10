@@ -23,8 +23,6 @@ import {
   HASH_VERSION_V3,
 } from "#lib/shared/library/services/sequence-content-hasher.js";
 import { MotionDataSchema } from "#lib/shared/pictograph/shared/domain/schemas/pictograph-schemas.js";
-import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
-import { isSeamlesslyLoopable3D } from "#lib/shared/3d/services/sequence-loopability-3d.js";
 
 type CorpusMotion = {
   hand: "left" | "right";

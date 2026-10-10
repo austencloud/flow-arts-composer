@@ -20,6 +20,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { SourceMap } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { stripVTControlCharacters } from "node:util";
 import { compile, preprocess } from "svelte/compiler";
 
 /** Repo-relative .svelte paths added or modified on HEAD since it left base. */
@@ -113,7 +114,7 @@ function originalPosition(start, map) {
   return { line, column: column + 1 };
 }
 
-// esbuild and PostCSS report errors against the block's content alone, so
+// The script transform and PostCSS report errors against the block's content, so
 // "Foo.svelte:4:10" in their message means line 4 of the <script>, not of the
 // file. Record where the block starts so the report can point into the file.
 function recordBlockStart(group) {
@@ -140,9 +141,14 @@ function recordBlockStart(group) {
 }
 
 function preprocessFailure(error) {
-  const { loc, blockStart } = error ?? {};
+  const { blockStart } = error ?? {};
+  // Rolldown (vite-plugin-svelte 7) reports the position and an ANSI-colored
+  // message on each entry of `errors`, also relative to the block.
+  const first = error?.errors?.[0];
+  const loc = error?.loc ?? first?.loc;
   const text =
-    error?.errors?.[0]?.text ??
+    first?.text ??
+    (first?.message && stripVTControlCharacters(first.message)) ??
     error?.reason ??
     String(error?.message ?? error);
   const failure = { code: "preprocess_failed", message: text.split("\n")[0] };

@@ -278,9 +278,10 @@ if (browser && !dev) {
   });
 }
 
-// SvelteKit routes load/navigation errors here — they never reach
+// SvelteKit routes unexpected load/navigation errors here — they never reach
 // window.onerror, so PostHog's auto-capture misses them without this hook.
-// Errors thrown with `error(...)` arrive too; those are expected, not reported.
+// Since SvelteKit 3, errors thrown with `error(...)` arrive too; those are
+// expected, not reported.
 export const handleError: HandleClientError = ({ kind, error }) => {
   if (kind === "app") return;
   const status = kind === "framework" ? error.status : 500;
