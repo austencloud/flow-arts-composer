@@ -131,12 +131,6 @@ Always opens selector panel when clicked
     /* Subtle animated shimmer */
     animation: accentShimmer 6s ease-in-out infinite;
 
-    /* Accent glow shadow */
-    box-shadow:
-      0 2px 4px var(--theme-shadow),
-      0 4px 12px color-mix(in srgb, var(--theme-accent) 20%, transparent),
-      inset 0 1px 0 var(--theme-stroke-strong);
-
     /* Accent border */
     border: 1px solid color-mix(in srgb, var(--theme-accent) 40%, transparent);
   }
@@ -164,14 +158,6 @@ Always opens selector panel when clicked
     animation: none !important;
   }
 
-  /* Ensure text is always readable with subtle shadow */
-  .loop-card-wrapper :global(.base-card .card-header),
-  .loop-card-wrapper :global(.base-card .card-value) {
-    text-shadow:
-      0 1px 2px var(--theme-shadow),
-      0 2px 4px color-mix(in srgb, var(--theme-shadow) 20%, transparent);
-  }
-
   /* Multi-component LOOP labels ("Mirrored / Inverted / Rotated") are wider than
      one line. BaseCard's default nowrap + card overflow:visible let the text
      spill past the card edges. Wrap and clip so every selected component stays
@@ -187,11 +173,6 @@ Always opens selector panel when clicked
   @media (hover: hover) {
     .loop-card-wrapper:hover {
       transform: scale(1.02);
-      box-shadow:
-        0 2px 4px var(--theme-shadow),
-        0 6px 16px color-mix(in srgb, var(--theme-accent) 30%, transparent),
-        0 12px 24px color-mix(in srgb, var(--theme-accent) 15%, transparent),
-        inset 0 1px 0 var(--theme-stroke-strong);
       border-color: color-mix(in srgb, var(--theme-accent) 60%, transparent);
       transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
     }

@@ -1272,7 +1272,6 @@
       var(--theme-text, #fff)
     );
     background: var(--theme-panel-bg, #0c0e16);
-    box-shadow: 0 10px 28px var(--theme-shadow, rgba(0, 0, 0, 0.4));
     font-size: 13px;
     pointer-events: none;
   }

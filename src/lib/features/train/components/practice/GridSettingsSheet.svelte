@@ -195,11 +195,7 @@
 <style>
   /* Backdrop styling */
   :global(.grid-settings-backdrop) {
-    background: color-mix(
-      in srgb,
-      var(--theme-shadow) 70%,
-      transparent
-    ) !important;
+    background: rgba(0, 0, 0, 0.7) !important;
   }
 
   /* Drawer content styling - content-aware sizing */

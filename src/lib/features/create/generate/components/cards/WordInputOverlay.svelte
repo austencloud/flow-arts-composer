@@ -193,7 +193,6 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    box-shadow: 0 16px 48px var(--theme-shadow, rgba(0, 0, 0, 0.4));
     animation: slideDown 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -253,7 +252,7 @@
   .word-field {
     flex: 1;
     min-width: 0;
-    background: var(--theme-shadow, rgba(0, 0, 0, 0.3));
+    background: rgba(0, 0, 0, 0.3);
     border: 2px solid var(--theme-stroke, rgba(255, 255, 255, 0.2));
     border-radius: 14px;
     color: var(--theme-text, white);

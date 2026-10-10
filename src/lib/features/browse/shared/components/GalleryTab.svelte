@@ -158,7 +158,6 @@
     --sheet-radius-large: 0;
     --sheet-border-radius-top-left: 16px;
     --sheet-border-radius-top-right: 16px;
-    --sheet-shadow: -4px 0 24px var(--theme-shadow);
     --sheet-transition:
       transform 350ms cubic-bezier(0.32, 0.72, 0, 1),
       opacity 350ms cubic-bezier(0.32, 0.72, 0, 1);

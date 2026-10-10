@@ -502,7 +502,6 @@
     aspect-ratio: 1;
     overflow: hidden;
     border-radius: 12px;
-    box-shadow: 0 4px 16px var(--theme-shadow, rgba(0, 0, 0, 0.3));
   }
 
   .pictograph-layer {
@@ -518,11 +517,6 @@
   .dragging-left,
   .dragging-right {
     cursor: grabbing;
-  }
-  .grabbed-left :global(.left-prop-svg),
-  .grabbed-right :global(.right-prop-svg) {
-    filter: drop-shadow(0 5px 5px var(--theme-shadow))
-      drop-shadow(0 0 5px var(--placement-grab-color));
   }
   .can-drag-locations.grabbed-left :global(.click-target),
   .can-drag-locations.grabbed-right :global(.click-target) {

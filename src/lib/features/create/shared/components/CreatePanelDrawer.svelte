@@ -291,10 +291,7 @@
     /* Ensure panel appears above navigation (z-index: 100) */
     --sheet-z-index: 150;
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
-    box-shadow:
-      0 -8px 32px rgba(0, 0, 0, 0.5),
-      0 -2px 8px var(--theme-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    box-shadow: none;
   }
 
   /* The step editor keeps a dense, animated SVG tree open for the lifetime of

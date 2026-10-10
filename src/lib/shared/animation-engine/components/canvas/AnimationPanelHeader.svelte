@@ -79,7 +79,6 @@
     cursor: pointer;
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
-    box-shadow: 0 2px 8px var(--theme-shadow);
     pointer-events: auto;
   }
 
@@ -92,7 +91,6 @@
     .mobile-close-btn:hover {
       background: var(--theme-card-hover-bg);
       transform: scale(1.05);
-      box-shadow: 0 4px 12px var(--theme-shadow);
     }
   }
 

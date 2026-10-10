@@ -167,7 +167,6 @@
     background: var(--theme-accent);
     border-color: var(--theme-accent);
     color: white;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   @media (hover: hover) and (pointer: fine) {

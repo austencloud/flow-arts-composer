@@ -146,13 +146,11 @@
         var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1)
       );
     flex-shrink: 0;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   :global(.panel-header .action-button:hover),
   .close-button:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px var(--theme-shadow);
   }
 
   :global(.panel-header .action-button:active),

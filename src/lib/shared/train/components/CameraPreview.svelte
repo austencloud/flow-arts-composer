@@ -198,7 +198,7 @@ Features frame processing loop for pose estimation and overlay support.
     justify-content: center;
     gap: var(--spacing-md, 16px);
     color: var(--theme-text);
-    background: color-mix(in srgb, var(--theme-shadow) 80%, transparent);
+    background: rgba(0, 0, 0, 0.8);
   }
 
   .error-icon {

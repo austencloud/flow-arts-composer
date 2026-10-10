@@ -79,7 +79,6 @@
     align-items: center;
     justify-content: center;
     margin-bottom: 16px;
-    box-shadow: 0 4px 12px var(--theme-shadow);
   }
 
   .empty-icon i {
@@ -137,9 +136,7 @@
     background: var(--theme-accent-strong);
     border-color: var(--theme-accent-strong);
     transform: translateY(-2px);
-    box-shadow:
-      0 4px 12px var(--theme-shadow),
-      0 0 16px color-mix(in srgb, var(--theme-accent) 30%, transparent);
+    box-shadow: none;
   }
 
   .action-btn.primary:active {

@@ -197,7 +197,6 @@
     display: flex;
     flex-direction: column;
     z-index: 50;
-    box-shadow: -4px 0 16px var(--theme-shadow);
   }
 
   .inspector-header {

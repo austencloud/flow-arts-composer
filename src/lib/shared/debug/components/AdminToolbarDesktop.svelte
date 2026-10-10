@@ -407,7 +407,6 @@
       rgba(15, 23, 42, 0.95) 100%
     );
     border-bottom: 1px solid rgba(59, 130, 246, 0.3);
-    box-shadow: 0 2px 12px var(--theme-shadow);
   }
 
   .toolbar-row {

@@ -84,9 +84,6 @@ Presentational component for a single toggle option with icon and label
     color: var(--theme-text, white);
     font-weight: 700;
     border-color: white;
-    box-shadow:
-      0 2px 8px var(--theme-shadow, var(--theme-shadow)),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.3);
     transform: scale(1.02);
   }
 

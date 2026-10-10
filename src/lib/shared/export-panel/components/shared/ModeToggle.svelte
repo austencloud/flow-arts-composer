@@ -165,9 +165,6 @@
     border-radius: 8px;
     transition: transform var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 0;
-    box-shadow:
-      0 2px 8px var(--theme-shadow),
-      0 0 0 1px var(--theme-accent-glow);
   }
 
   /* Mobile optimization */

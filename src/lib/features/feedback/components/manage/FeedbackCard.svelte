@@ -435,7 +435,6 @@
   @media (hover: hover) and (pointer: fine) {
     .feedback-card:hover:not(.swiping) {
       transform: translateY(-2px);
-      box-shadow: 0 4px 16px var(--theme-shadow);
     }
 
     .feedback-card:active:not(.swiping) {

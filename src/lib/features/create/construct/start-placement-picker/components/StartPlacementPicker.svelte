@@ -713,7 +713,6 @@ Controls moved below the grid for better UX
       background: var(--theme-card-hover-bg);
       border-color: var(--theme-stroke-strong);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px var(--theme-shadow, var(--theme-shadow));
     }
 
     .control-button:hover .control-icon {

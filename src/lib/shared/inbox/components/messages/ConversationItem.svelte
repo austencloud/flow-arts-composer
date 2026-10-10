@@ -382,7 +382,6 @@
     font-weight: 600;
     line-height: 22px;
     text-align: center;
-    box-shadow: 0 2px 4px var(--theme-shadow);
   }
 
   .selection-indicator {

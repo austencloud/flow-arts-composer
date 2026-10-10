@@ -215,6 +215,5 @@
     white-space: nowrap;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 2px 6px var(--theme-shadow);
   }
 </style>

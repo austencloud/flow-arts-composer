@@ -176,7 +176,6 @@
     backdrop-filter: blur(24px) saturate(150%);
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.18));
     border-radius: 16px;
-    box-shadow: 0 12px 40px var(--theme-shadow, rgba(0, 0, 0, 0.55));
     z-index: 100;
     overflow: hidden;
   }

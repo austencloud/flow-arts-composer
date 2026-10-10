@@ -77,7 +77,6 @@
     min-height: var(--min-touch-target);
     background: color-mix(in srgb, var(--theme-panel-bg) 72%, transparent);
     border-color: color-mix(in srgb, var(--theme-text) 24%, transparent);
-    box-shadow: inset 0 1px 2px var(--theme-shadow);
   }
 
   .choice-control :global(.segment) {

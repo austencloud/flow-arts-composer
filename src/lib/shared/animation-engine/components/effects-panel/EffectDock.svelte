@@ -288,7 +288,6 @@
     margin-top: -5px;
     border-radius: 50%;
     background: var(--theme-text, white);
-    box-shadow: 0 2px 6px var(--theme-shadow, rgba(0, 0, 0, 0.4));
     cursor: pointer;
   }
   .slider::-moz-range-track {
@@ -307,7 +306,6 @@
     border: none;
     border-radius: 50%;
     background: var(--theme-text, white);
-    box-shadow: 0 2px 6px var(--theme-shadow, rgba(0, 0, 0, 0.4));
     cursor: pointer;
   }
 

@@ -69,9 +69,6 @@
     background: var(--theme-panel-bg, rgba(22, 24, 32, 0.82));
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
     border-radius: var(--radius-xl, 20px);
-    box-shadow:
-      0 18px 48px var(--theme-shadow, rgba(0, 0, 0, 0.45)),
-      0 2px 8px rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(20px) saturate(1.2);
     -webkit-backdrop-filter: blur(20px) saturate(1.2);
   }

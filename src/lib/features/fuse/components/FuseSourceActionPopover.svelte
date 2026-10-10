@@ -188,9 +188,6 @@
     background:
       linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)),
       color-mix(in srgb, var(--theme-text) 8%, black);
-    box-shadow:
-      0 24px 70px var(--theme-shadow),
-      0 0 34px color-mix(in srgb, var(--source-color) 12%, transparent);
   }
 
   :global(.fuse-source-action-popover.red) {

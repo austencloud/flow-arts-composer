@@ -61,8 +61,6 @@
       var(--theme-stroke-strong, color-mix(in srgb, #fff 20%, transparent));
     backdrop-filter: blur(10px);
     z-index: var(--z-toast);
-    box-shadow: 0 -4px 12px
-      var(--theme-shadow, color-mix(in srgb, #000 15%, transparent));
   }
 
   .price-info {
@@ -93,8 +91,6 @@
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-fast, var(--duration-fast) ease);
-    box-shadow: 0 2px 8px
-      var(--theme-shadow, color-mix(in srgb, #000 15%, transparent));
   }
 
   .cta-button:active:not(:disabled) {

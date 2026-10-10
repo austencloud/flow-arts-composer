@@ -176,10 +176,6 @@
     background: var(--theme-panel-bg, rgba(10, 18, 30, 0.98));
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-radius: var(--radius-xl, 16px);
-    box-shadow:
-      0 18px 48px var(--theme-shadow, rgba(0, 0, 0, 0.58)),
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-accent, #22b8db) 24%, transparent);
     transform-origin: var(
       --bits-popover-content-transform-origin,
       bottom center

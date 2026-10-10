@@ -277,7 +277,6 @@
         var(--theme-panel-bg, rgba(12, 14, 22, 0.96))
       ),
       color-mix(in srgb, var(--theme-text, white) 8%, black);
-    box-shadow: 0 12px 40px var(--theme-shadow);
   }
 
   .preview-stage {

@@ -204,7 +204,7 @@
     background: var(--theme-panel-elevated-bg);
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
     border-radius: 1rem;
-    box-shadow: var(--theme-panel-shadow, 0 20px 60px var(--theme-shadow));
+    box-shadow: var(--theme-panel-shadow, none);
     overflow: hidden;
   }
 

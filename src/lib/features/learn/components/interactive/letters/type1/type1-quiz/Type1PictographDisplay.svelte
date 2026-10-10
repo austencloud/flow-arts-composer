@@ -42,7 +42,6 @@ Type1PictographDisplay - Pictograph visualizer with loading state
     background: white;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 12px var(--theme-shadow);
   }
 
   .loading-state,

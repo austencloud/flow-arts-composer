@@ -143,7 +143,6 @@
   .letter-card:hover {
     border-color: var(--card-accent);
     transform: translateY(-4px);
-    box-shadow: 0 12px 40px var(--theme-shadow, rgba(0, 0, 0, 0.2));
   }
 
   .letter-card.thesis {
