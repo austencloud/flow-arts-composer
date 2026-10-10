@@ -20,86 +20,26 @@
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
   import { getSequenceSelection } from "#lib/shared/selection/sequence-selection.svelte.js";
-  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
-  import {
-    MotionType,
-    HandSide,
-    Orientation,
-    RotationDirection,
-  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
-  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
-  import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
-  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import { pt, ptDrag, editText, guideEdit, registerEditSource } from "../_data/guide-edit.svelte";
   import { bakeReversals } from "../_data/guide-sequence-adapter";
   import { getGuideSequenceClick } from "../_data/guide-data-context";
   import { getGuideActiveStep } from "../_data/guide-active-step.svelte";
   import { overrideStepsFor } from "../_data/guide-overrides.svelte";
+  import { aabbWordSteps } from "../_data/aabb-word";
 
   const S = 816 / 612; // pt → px (4/3)
-  const { NORTH: N, EAST: E, SOUTH: SO_, WEST: W } = GridLocation;
   const { IN, OUT } = Orientation;
-  const CW = RotationDirection.CLOCKWISE;
-  const CCW = RotationDirection.COUNTER_CLOCKWISE;
 
   // Reader wiring (all null on /print,/book - pages stay pristine).
   const selection = getSequenceSelection();
   const activeStep = getGuideActiveStep();
   const emitSequence = getGuideSequenceClick();
 
-  // ── AABB: A A around (pro), B B back (anti) ─────────────────────────────────
-  type Leg = { from: GridLocation; to: GridLocation; anti: boolean };
-  const BLUE_LEGS: Leg[] = [
-    { from: SO_, to: W, anti: false },
-    { from: W, to: N, anti: false },
-    { from: N, to: W, anti: true },
-    { from: W, to: SO_, anti: true },
-  ];
-  const RED_LEGS: Leg[] = [
-    { from: N, to: E, anti: false },
-    { from: E, to: SO_, anti: false },
-    { from: SO_, to: E, anti: true },
-    { from: E, to: N, anti: true },
-  ];
-  const LETTERS = [Letter.A, Letter.A, Letter.B, Letter.B];
-
-  const HP_CW = new Set(["s-w", "w-n", "n-e", "e-s"]);
-  const hpDir = (from: GridLocation, to: GridLocation) => (HP_CW.has(`${from}-${to}`) ? CW : CCW);
-  const flip = (o: Orientation) => (o === IN ? OUT : IN);
-
-  // Orientation at the START of step i, given the row's starting orientation:
-  // pro (steps 1-2) preserves, anti (step 3) flips into step 4, which flips back.
-  const oriAt = (o0: Orientation, i: number): Orientation => (i === 3 ? flip(o0) : o0);
-
-  const hand = (color: HandSide, leg: Leg, so: Orientation) => {
-    const dir = hpDir(leg.from, leg.to);
-    return createMotionData({
-      motionType: leg.anti ? MotionType.ANTI : MotionType.PRO,
-      rotationDirection: leg.anti ? (dir === CW ? CCW : CW) : dir,
-      startLocation: leg.from,
-      endLocation: leg.to,
-      startOrientation: so,
-      endOrientation: leg.anti ? flip(so) : so,
-      turns: 0,
-      color,
-      propType: PropType.STAFF,
-      gridMode: GridMode.DIAMOND,
-    });
-  };
-  const stat = (color: HandSide, loc: GridLocation, ori: Orientation) =>
-    createMotionData({
-      motionType: MotionType.STATIC,
-      startLocation: loc,
-      endLocation: loc,
-      startOrientation: ori,
-      endOrientation: ori,
-      color,
-      propType: PropType.STAFF,
-      gridMode: GridMode.DIAMOND,
-    });
-
+  // ── AABB: one shared builder (aabb-word.ts) ─────────────────────────────────
   type RowDef = { key: string; y: number; leftOri: Orientation; rightOri: Orientation; label: string };
   const ROWS: RowDef[] = [
     { key: "w-aabb-ii", y: 228.0, leftOri: IN, rightOri: IN, label: "in | in" },
@@ -107,35 +47,8 @@
     { key: "w-aabb-io", y: 427.9, leftOri: IN, rightOri: OUT, label: "in | out" },
   ];
 
-  const rowStep = (r: RowDef, i: number): StepData =>
-    ({
-      id: `${r.key}-${i + 1}`,
-      letter: LETTERS[i]!,
-      gridMode: GridMode.DIAMOND,
-      startPlacement: getGridPlacementFromLocations(BLUE_LEGS[i]!.from, RED_LEGS[i]!.from),
-      endPlacement: getGridPlacementFromLocations(BLUE_LEGS[i]!.to, RED_LEGS[i]!.to),
-      stepNumber: i + 1,
-      motions: {
-        left: hand(HandSide.LEFT, BLUE_LEGS[i]!, oriAt(r.leftOri, i)),
-        right: hand(HandSide.RIGHT, RED_LEGS[i]!, oriAt(r.rightOri, i)),
-      },
-    }) as unknown as StepData;
-
-  const startBox = (r: RowDef): StepData =>
-    ({
-      id: `${r.key}-0`,
-      letter: Letter.ALPHA,
-      gridMode: GridMode.DIAMOND,
-      stepNumber: 0,
-      startPlacement: getGridPlacementFromLocations(SO_, N),
-      endPlacement: getGridPlacementFromLocations(SO_, N),
-      motions: {
-        left: stat(HandSide.LEFT, SO_, r.leftOri),
-        right: stat(HandSide.RIGHT, N, r.rightOri),
-      },
-    }) as unknown as StepData;
-
-  const rowSteps = (r: RowDef): StepData[] => [startBox(r), ...[0, 1, 2, 3].map((i) => rowStep(r, i))];
+  const rowSteps = (r: RowDef): StepData[] =>
+    aabbWordSteps(r.key, r.leftOri, r.rightOri);
 
   // Admin override (guide-overrides.svelte) replaces the WHOLE strip when
   // present, resolved before baking - reversal dots stay derived either way.
