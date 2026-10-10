@@ -8,11 +8,14 @@
    * demo sequence's blue hand and red hand stand apart, slide together, and
    * the fused steps play once through Fuse's motion seam
    * (resolveFusePictographMotionFrame): the props travel from the pose before
-   * each step and the arrows reveal with the motion, as on Fuse's own cards.
+   * each step.
    *
-   * Each source shows its step at the start of its travel, so a blue half and
-   * a red half on one cell make that fused step exactly, and the fused cell
-   * takes over without a jump. Each pictograph paints its own opaque cell, so
+   * Each source shows its step's arrow, as Fuse's source cards do, with its
+   * prop at the start of its travel, so a blue half and a red half on one cell
+   * make that fused step exactly, and the fused cell takes over without a
+   * jump. The arrows stay while the fused steps play, and the props travel
+   * along them (2026-10-10: arrows that appeared only after the halves met
+   * read as something new arriving). Each pictograph paints its own opaque cell, so
    * the half drawn on top (FuseSource.onTop) keeps only its props and takes
    * its cell backdrop from a ::before that dissolves during the slide: it
    * lands as a floating layer over the other half's cell, and both props
@@ -409,7 +412,6 @@
               data={frame.step}
               motionStartData={frame.motionStartData}
               motionProgress={progress[index] ?? null}
-              arrowOpacity={progress[index] ?? 1}
               readyEpoch={fusedEpoch}
               onReady={() => handleReady(`fused:${index}`)}
             />
@@ -435,7 +437,6 @@
             transparentBackground={source.onTop}
             motionStartData={frame.motionStartData}
             motionProgress={0}
-            arrowOpacity={0}
             readyEpoch={sourceEpoch}
             onReady={() => handleReady(source.key)}
           />
