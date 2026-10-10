@@ -17,6 +17,8 @@
   const MIN_TILE = 44;
   // Eight columns may give tiles up to 5% smaller than four and still win
   const EIGHT_COLUMN_TOLERANCE = 0.95;
+  // Extra space between letter groups, as a multiple of the tile gap
+  const GROUP_GAP_SCALE = 2;
 
   let gridWrapperElement: HTMLDivElement | null = null;
   let containerWidth = $state(0);
@@ -25,25 +27,29 @@
   // Gap and padding scale with the container (8px at 800px wide, 4-12px range)
   const responsiveSizing = $derived.by(() => {
     if (containerWidth === 0 || containerHeight === 0) {
-      return { gap: 8, padding: 8 };
+      return { gap: 8, padding: 8, groupGap: 8 * GROUP_GAP_SCALE };
     }
     const scaleFactor = Math.min(Math.max(containerWidth / 800, 0.5), 1.5);
+    const gap = Math.max(Math.round(8 * scaleFactor), 4);
     return {
-      gap: Math.max(Math.round(8 * scaleFactor), 4),
+      gap,
       padding: Math.max(Math.round(8 * scaleFactor), 4),
+      groupGap: gap * GROUP_GAP_SCALE,
     };
   });
 
-  // Largest square tile that fits `columns` across. Eight columns put Alpha and
-  // Beta on one row and Gamma on the next, with one extra gap between them.
+  // The 16 tiles form four groups of four: Alpha, Beta, and the two mirror
+  // sets of Gamma. Four columns give each group its own row. Eight columns put
+  // Alpha | Beta on top and Gamma | mirrored Gamma below, split by a gutter.
+  // Every row break is a group break, so rows always get the extra gap.
   function tileSizeFor(columns: number): number {
-    const { gap, padding } = responsiveSizing;
+    const { gap, padding, groupGap } = responsiveSizing;
     const rows = Math.ceil(TOTAL_ITEMS / columns);
-    const groupGap = columns === 8 ? gap : 0;
+    const gutter = columns === 8 ? groupGap : 0;
     const width =
-      (containerWidth - padding * 2 - gap * (columns - 1)) / columns;
+      (containerWidth - padding * 2 - gap * (columns - 1) - gutter) / columns;
     const height =
-      (containerHeight - padding * 2 - gap * (rows - 1) - groupGap) / rows;
+      (containerHeight - padding * 2 - (gap + groupGap) * (rows - 1)) / rows;
     return Math.min(width, height);
   }
 
@@ -102,8 +108,13 @@
     class:eight-column={gridLayout.columns === 8}
     style:--grid-columns={gridLayout.tileSize === null
       ? `repeat(${gridLayout.columns}, 1fr)`
-      : `repeat(${gridLayout.columns}, ${gridLayout.tileSize}px)`}
+      : gridLayout.columns === 8
+        ? `repeat(4, ${gridLayout.tileSize}px) ${gridLayout.tileSize + responsiveSizing.groupGap}px repeat(3, ${gridLayout.tileSize}px)`
+        : `repeat(4, ${gridLayout.tileSize}px)`}
     style:--grid-gap={responsiveSizing.gap + "px"}
+    style:--group-row-gap={responsiveSizing.gap +
+      responsiveSizing.groupGap +
+      "px"}
     style:--grid-padding={responsiveSizing.padding + "px"}
     style:--max-pictograph-size={gridLayout.tileSize === null
       ? "auto"
@@ -132,7 +143,8 @@
     grid-template-columns: var(--grid-columns, repeat(4, 1fr));
     justify-content: center;
     align-content: center;
-    gap: var(--grid-gap, 8px);
+    column-gap: var(--grid-gap, 8px);
+    row-gap: var(--group-row-gap, 24px);
     width: 100%;
     max-width: 100%;
     max-height: 100%;
@@ -152,8 +164,9 @@
     box-sizing: border-box;
   }
 
-  /* Separate the Alpha/Beta row from the Gamma row in the eight-column layout */
-  .pictograph-grid.eight-column > :global(*:nth-child(n + 9)) {
-    margin-top: var(--grid-gap, 8px);
+  /* The fifth track is widened by the group gutter; its tile sits at the far
+     edge so the space opens between the fourth and fifth tiles */
+  .pictograph-grid.eight-column > :global(*:nth-child(8n + 5)) {
+    justify-self: end;
   }
 </style>
