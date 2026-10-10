@@ -19,8 +19,11 @@
     onSettingChange,
   }: Props = $props();
 
-  const currentCm = $derived(performer.settings.staffLengthCm ?? 81);
+  const currentCm = $derived(
+    (performer.staffLength * 100) / performer.gridScale
+  );
   const displayInches = $derived(Math.round(currentCm / 2.54));
+  const joined = $derived(performer.gridScale < 1);
 
   function handleInput(e: Event) {
     const cm = Number((e.currentTarget as HTMLInputElement).value);
@@ -43,7 +46,7 @@
 
 <div class="prop-size">
   <div class="size-header">
-    <span class="size-label">Prop size</span>
+    <span class="size-label">{joined ? "Base prop size" : "Prop size"}</span>
     <span class="size-value">{mixed ? "Mixed" : `${displayInches} in`}</span>
   </div>
   <input
@@ -54,8 +57,13 @@
     step="1"
     value={currentCm}
     oninput={handleInput}
-    aria-label="Prop size"
+    aria-label={joined ? "Base prop size" : "Prop size"}
   />
+  {#if joined && !mixed}
+    <span class="size-label">
+      Joined grids use {Math.round(performer.gridScale * 100)}% of this size.
+    </span>
+  {/if}
 </div>
 
 <style>

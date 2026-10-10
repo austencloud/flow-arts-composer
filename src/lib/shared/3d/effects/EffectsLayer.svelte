@@ -30,7 +30,7 @@
   } from "#lib/shared/effects/translators/webgl3d-translator.js";
   import type { EffectType } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import { QualityTier, type TipPositionData3D } from "./types";
-  import { resolvePropTipAnchors3D } from "./prop-tip-geometry-3d";
+  import { resolveScaledPropTipAnchors3D } from "./prop-tip-geometry-3d";
 
   // Effect components
   // Trails are no longer mounted here. The single consolidated 3D trail
@@ -69,6 +69,7 @@
     isPlaying: boolean;
     /** Staff length for end position calculations */
     staffLength?: number;
+    propScale?: number;
     /**
      * The effects actually selected for THIS 3D rig's tips, resolved by
      * EffectOrchestrator3D from its tipEffectMap / globalTipEffectMap props.
@@ -108,6 +109,7 @@
     rightPropType = PropType.STAFF,
     isPlaying,
     staffLength = AUSTEN_STAFF.length,
+    propScale = 1,
     activeEffects = [],
     leftHandPos,
     rightHandPos,
@@ -246,7 +248,12 @@
     );
     const finalQuat = propState.worldRotation.clone().multiply(horizontalQuat);
 
-    const anchors = resolvePropTipAnchors3D(propType, halfLength, propBuild);
+    const anchors = resolveScaledPropTipAnchors3D(
+      propType,
+      halfLength,
+      propScale,
+      propBuild
+    );
     const endAt = (slot: 0 | 1): Vector3 | null => {
       const anchor = anchors.find((a) => a.effectTipIndex === slot);
       return anchor
@@ -472,6 +479,7 @@
     params={ghost3D}
     enabled={ghostEnabled && isPlaying}
     propLength={staffLength}
+    geometryScale={propScale}
     handAnchor={leftHandPos}
     {currentStep}
     {totalSteps}
@@ -485,6 +493,7 @@
     params={ghost3D}
     enabled={ghostEnabled && isPlaying}
     propLength={staffLength}
+    geometryScale={propScale}
     handAnchor={rightHandPos}
     {currentStep}
     {totalSteps}

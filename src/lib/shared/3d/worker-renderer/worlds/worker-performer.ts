@@ -161,6 +161,7 @@ export async function createWorkerPerformerProp(
     propType,
     color: side === "left" ? "blue" : "red",
     length: snapshot.staffLength,
+    geometryScale: snapshot.propScale,
     thickness: snapshot.staffThickness,
     build: snapshot.propBuild,
     loadModel: (url) => propModels.load(url),
@@ -294,6 +295,7 @@ export class WorkerPerformer {
       snapshot.leftPropType === this.snapshot.leftPropType &&
       snapshot.rightPropType === this.snapshot.rightPropType &&
       snapshot.staffLength === this.snapshot.staffLength &&
+      snapshot.propScale === this.snapshot.propScale &&
       snapshot.staffThickness === this.snapshot.staffThickness &&
       snapshot.propBuild.finish === this.snapshot.propBuild.finish &&
       snapshot.propBuild.fanBuild === this.snapshot.propBuild.fanBuild &&
@@ -548,6 +550,7 @@ export class WorkerPerformer {
       sourceIdBase: this.effectSourceIdBase,
       deltaSeconds,
       staffHalfLength: this.snapshot.staffLength / 2,
+      propScale: this.snapshot.propScale ?? 1,
       collisionFloorY: this.root.position.y + this.snapshot.groundY,
       intent,
       left: {

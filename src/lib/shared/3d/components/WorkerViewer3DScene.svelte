@@ -251,6 +251,7 @@
             leftPropType: resolvedLeft,
             rightPropType: resolvedRight,
             staffHalfLength: resolveWorkerPerformerStaffLength(performer) / 2,
+            propScale: performer.gridScale,
             tipEffectMap,
             globalTipEffectMap: {},
             effectsConfig: currentEffects,

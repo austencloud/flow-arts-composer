@@ -32,6 +32,27 @@ the two rigs. The real staff recheck in
 length on today's grid and found 85 to 87% fewer chest hits than at 86 cm.
 The isolation section below shows why isolation takes the same cap.
 
+## Conjoined grid sizing
+
+Conjoined layouts derive a physical scale from their separation:
+`2 / (2 + steps)`. One-step joins use two-thirds size; two-step joins use
+half size. The grid radius and center separation shrink together, keeping
+the outermost hand point within the original maximum hand radius.
+
+The performer state applies the same factor to directional hand distances
+and prop length. Both renderers scale the complete prop geometry, including
+models with fixed dimensions; effect anchors and ghost props follow that
+scale. Contact planning and camera framing consume the effective dimensions.
+Avatar height is unchanged.
+
+Saved staff size and the base hand-distance profile remain unscaled. Changing
+or removing the join derives fresh dimensions from those originals, so
+switching layouts and restoring scenes cannot compound the scale. The size
+control shows the base size and the joined percentage.
+
+This preserves the original reach envelope; it does not certify every motion
+as collision-free or replace the body-fit work described below.
+
 ## Extension: full reach
 
 Austen, 2026-09-27: in the extension style the hands sit as far out as the

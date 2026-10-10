@@ -15,7 +15,7 @@
   import { getViewer3DContext } from "../context/viewer-3d-context";
   import { getSceneFeatureContext } from "../scene-features/context/scene-feature-context";
   import SeatedAudience3D from "./SeatedAudience3D.svelte";
-  import { Plane, GRID_OFFSETS, cmToUnits } from "@austencloud/scene-3d";
+  import { Plane, GRID_OFFSETS } from "@austencloud/scene-3d";
   import type { GridMode } from "@austencloud/scene-3d";
   import Grid3D from "./Grid3D.svelte";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
@@ -795,11 +795,9 @@
         performerSequence?.steps[0]?.gridMode ??
         "diamond"}
       {@const performerGridMode: GridMode = sequenceGridMode === "box" ? "box" : "diamond"}
-      {@const performerGridJoin = resolveGridJoin3D(performerSequence)}
+      {@const performerGridJoin = resolveGridJoin3D(performer.loadedSequence)}
       {@const performerGridOffset = GRID_OFFSETS[performer.planeMode]}
-      {@const perfStaffCm = performer.settings.staffLengthCm}
-      {@const propLength =
-        perfStaffCm != null ? cmToUnits(perfStaffCm) : undefined}
+      {@const propLength = performer.staffLength}
       {@const propBuild = performer.effectivePropBuild}
       {@const resolvedLeftProp = resolvePerformerProp(
         performer,
@@ -835,7 +833,9 @@
       <!-- Staffs the hands cannot hold from the planned stance move toward
          them, radially and in depth; a seek clears the animator's contact
          history. -->
-      {@const contact = resolvePerformerContact(performer)}
+      {@const contact = resolvePerformerContact(performer, {
+        staffLengthM: propLength,
+      })}
       <PerformerVisualPickTarget
         performerIndex={i}
         register={performerInteraction?.registerVisualPickTarget}
@@ -868,6 +868,7 @@
               contactResetKey={contact.resetKey}
               tipEffectMap={perfTipMap}
               {propLength}
+              propScale={performer.gridScale}
               {propBuild}
               isPlaying={renderEntry.presencePhase !== "exiting" &&
                 isPlaying &&
@@ -914,18 +915,18 @@
                     userData={{ performerInteractionExcluded: true }}
                   >
                     <Grid3D
+                      size={userProportionsState.gridSize * performer.gridScale}
                       visiblePlanes={explicitPlanes}
                       gridMode={performerGridMode}
                       gridJoin={performerGridJoin}
                       handDistance={performer.handDistance}
-                      staffHalfLength={(propLength ??
-                        userProportionsState.staffLength) / 2}
+                      staffHalfLength={propLength / 2}
                       outerPointRadius={performerGridJoin
                         ? Math.max(
                             performer.handDistance.left.max,
                             performer.handDistance.right.max
                           ) +
-                          (propLength ?? userProportionsState.staffLength) / 2
+                          propLength / 2
                         : undefined}
                       planeMode={performer.planeMode}
                       showLabels={viewer3DState.showGridLabels}
@@ -957,6 +958,7 @@
                       rightPropType={toScenePropType(resolvedRightProp)}
                       isPlaying={rigPlaying}
                       {staffHalfLength}
+                      propScale={performer.gridScale}
                       {propBuild}
                       tipEffectMap={perfTipMap}
                       {leftHandPos}

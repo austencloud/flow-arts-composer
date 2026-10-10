@@ -75,6 +75,8 @@ export interface WorkerPropFactoryOptions {
   color: WorkerPropColor;
   /** The resolved performer staff length in scene metres. */
   length: number;
+  /** Uniform joined-grid scale; length already includes this factor. */
+  geometryScale?: number;
   /** The resolved performer staff radius in scene metres. */
   thickness: number;
   build: WorkerPropBuild;
