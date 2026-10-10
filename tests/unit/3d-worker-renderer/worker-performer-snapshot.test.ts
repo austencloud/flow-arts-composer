@@ -54,6 +54,10 @@ function performer(): CharacterInstanceState {
     facingAngle: 0.4,
     planeMode: PlaneMode.WALL,
     settings: { staffLengthCm: null },
+    get staffLength() {
+      return userProportionsState.staffLength;
+    },
+    gridScale: 1,
     showLeft: true,
     showRight: false,
     leftPropState: prop,
@@ -128,6 +132,7 @@ describe("worker performer snapshots", () => {
     expect(snapshot.position).toEqual([6, CANONICAL_PERFORMER_ANCHOR_Y, 7]);
     expect(snapshot.groundY).toBe(userProportionsState.groundY);
     expect(snapshot.staffLength).toBe(userProportionsState.staffLength);
+    expect(snapshot.propScale).toBe(1);
     expect(snapshot.staffThickness).toBe(
       userProportionsState.dimensions.staffRadius
     );
@@ -147,6 +152,23 @@ describe("worker performer snapshots", () => {
       opacity: 0.6,
       selected: false,
     });
+  });
+
+  it("serializes the already-resolved joined size for prop and dual-wheel anchors", () => {
+    const joined = {
+      ...performer(),
+      staffLength: 0.54,
+      gridScale: 2 / 3,
+      planeMode: PlaneMode.DUAL_WHEEL,
+    } as CharacterInstanceState;
+    const snapshot = createWorkerPerformerSnapshot(joined, {
+      leftPropType: "staff",
+      rightPropType: "staff",
+      propBuild: PROP_BUILD,
+    });
+    expect(snapshot.staffLength).toBeCloseTo(0.54);
+    expect(snapshot.propScale).toBeCloseTo(2 / 3);
+    expect(snapshot.leftProp?.handAnchor[0]).toBeCloseTo(0.27);
   });
 
   it("serializes Buugeng chirality at the same correction boundary as PerformerRig", () => {

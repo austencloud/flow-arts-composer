@@ -40,7 +40,7 @@
     TipPositionBridge3D,
     type TrailSourceId3D,
   } from "./tip-position-bridge-3d";
-  import { resolvePropTipAnchors3D } from "./prop-tip-geometry-3d";
+  import { resolveScaledPropTipAnchors3D } from "./prop-tip-geometry-3d";
   import {
     PovStripRenderer3D,
     shutterToPovPersistence,
@@ -115,6 +115,7 @@
     rightPropType?: PropType;
     isPlaying: boolean;
     staffHalfLength?: number;
+    propScale?: number;
     propBuild?: PropBuild;
     /**
      * Fractional animation step index. Only Ghost (inside EffectsLayer) reads
@@ -159,6 +160,7 @@
     rightPropType = PropType.STAFF,
     isPlaying,
     staffHalfLength = 0.5,
+    propScale = 1,
     propBuild: propBuildOverride,
     currentStep = 0,
     totalSteps = 0,
@@ -191,14 +193,20 @@
    * exist on the prop in hand.
    */
   const leftTipEffectKeys = $derived(
-    resolvePropTipAnchors3D(leftPropType, staffHalfLength, propBuild).map(
-      (anchor) => anchor.effectKeyIndex
-    )
+    resolveScaledPropTipAnchors3D(
+      leftPropType,
+      staffHalfLength,
+      propScale,
+      propBuild
+    ).map((anchor) => anchor.effectKeyIndex)
   );
   const rightTipEffectKeys = $derived(
-    resolvePropTipAnchors3D(rightPropType, staffHalfLength, propBuild).map(
-      (anchor) => anchor.effectKeyIndex
-    )
+    resolveScaledPropTipAnchors3D(
+      rightPropType,
+      staffHalfLength,
+      propScale,
+      propBuild
+    ).map((anchor) => anchor.effectKeyIndex)
   );
 
   /**
@@ -882,7 +890,8 @@
         staffHalfLength,
         dt,
         leftPropType,
-        propBuild
+        propBuild,
+        propScale
       );
       leftEffectTips = result.tips;
       result.tips.forEach((tip, emitterIndex) => {
@@ -984,7 +993,8 @@
         staffHalfLength,
         dt,
         rightPropType,
-        propBuild
+        propBuild,
+        propScale
       );
       rightEffectTips = result.tips;
       result.tips.forEach((tip, emitterIndex) => {
@@ -1109,7 +1119,7 @@
         rigLocalCenter: leftRigCenter,
         ledColors: moonLedColors,
         brightness: ledBrightness,
-        scale: leftPropType === PropType.BIGFAN ? 1.4 : 1,
+        scale: (leftPropType === PropType.BIGFAN ? 1.4 : 1) * propScale,
       });
     } else {
       leftMoonDiffuser?.reset();
@@ -1126,7 +1136,7 @@
         rigLocalCenter: rightRigCenter,
         ledColors: moonLedColors,
         brightness: ledBrightness,
-        scale: rightPropType === PropType.BIGFAN ? 1.4 : 1,
+        scale: (rightPropType === PropType.BIGFAN ? 1.4 : 1) * propScale,
       });
     } else {
       rightMoonDiffuser?.reset();
@@ -1356,6 +1366,7 @@
   {rightPropType}
   {isPlaying}
   staffLength={staffHalfLength * 2}
+  {propScale}
   activeEffects={layerActiveEffects}
   {leftHandPos}
   {rightHandPos}

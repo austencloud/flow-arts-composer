@@ -124,6 +124,33 @@ describe("worker prop factory support", () => {
 });
 
 describe("worker prop canonical transforms", () => {
+  it.each([
+    PropType.STAFF,
+    PropType.CLUB,
+    PropType.CAPSULE_BATON,
+    PropType.FIRE_DOUBLE_STAFF,
+  ])(
+    "scales joined %s geometry once, including fixed-size models",
+    async (propType) => {
+      const base = await visual(propType);
+      const baseSize = boundsSize(base.root);
+      for (const scale of [2 / 3, 1 / 2]) {
+        const joined = await visual(propType, {
+          length: 0.8636 * scale,
+          geometryScale: scale,
+        });
+        const joinedSize = boundsSize(joined.root);
+        for (const axis of ["x", "y", "z"] as const) {
+          expect(joinedSize[axis]).toBeCloseTo(baseSize[axis] * scale, 7);
+        }
+        joined.setState({ worldRotation: new Quaternion() });
+        expect(joined.root.scale.toArray()).toEqual([scale, scale, scale]);
+        joined.dispose();
+      }
+      base.dispose();
+    }
+  );
+
   it("uses the registry's measured chicken scale, grip offset, and long-axis flip", async () => {
     const entry = PROP_MODEL_REGISTRY[PropType.CHICKEN];
     expect(entry).toBeTruthy();

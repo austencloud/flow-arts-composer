@@ -2150,7 +2150,7 @@ diff --git a/dist/lib/components/LimbSegment.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index cde3408aa49f552ba186378457fee937ba0d21ec..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/PerformerRig.svelte b/dist/lib/components/PerformerRig.svelte
-index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c39a24bb2 100644
+index 99a40cd26b35183a5e71c93105e0704084dbf9e9..180dd50da097eeb57eb24b661d93b15611759e91 100644
 --- a/dist/lib/components/PerformerRig.svelte
 +++ b/dist/lib/components/PerformerRig.svelte
 @@ -16,11 +16,12 @@
@@ -2207,15 +2207,17 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
  
      // Prop state overrides (for dual-wheel mode - caller swaps before passing)
      bluePropState?: PropState3D | null;
-@@ -79,6 +100,7 @@
+@@ -79,6 +100,9 @@
      isPlaying?: boolean;
      staffHalfLength?: number;
      propLength?: number;
++    /** Uniform joined-grid scale; propLength already includes this factor. */
++    propScale?: number;
 +    propBuild?: PropBuild;
  
      // Vertical offset (museum platforms, stages)
      groundOffset?: number;
-@@ -90,6 +112,13 @@
+@@ -90,6 +114,13 @@
      enableLocomotion?: boolean;
      isMoving?: boolean;
      moveSpeed?: number;
@@ -2229,7 +2231,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
  
      /** When true, facingAngle is driven by root motion yawDelta from
       *  the animation clip (accumulated each frame). When false (default),
-@@ -100,6 +129,14 @@
+@@ -100,6 +131,14 @@
       *  is true. The consumer receives the new accumulated angle so it can
       *  sync its own sequence/state representation if needed. */
      onYawIntegrated?: (newAngle: number) => void;
@@ -2244,7 +2246,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
      /** Enable idle/walk locomotion animation on the avatar.
       *  When true, the avatar breathes/sways while standing. */
      enableRootMotion?: boolean;
-@@ -119,23 +156,76 @@
+@@ -119,23 +158,76 @@
       * effect orchestrator can place tip-tracking effects (trails, LED, etc.)
       * in the correct rig-root-local frame without duplicating rig internals.
       */
@@ -2332,7 +2334,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
    }
  
    let {
-@@ -149,44 +239,73 @@
+@@ -149,44 +241,74 @@
      showEffects = true,
      visiblePlanes = new Set([Plane.WALL, Plane.WHEEL, Plane.FLOOR]),
      gridMode = "diamond" as GridMode,
@@ -2346,6 +2348,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
      isPlaying = false,
      staffHalfLength: staffHalfLengthProp,
      propLength,
++    propScale = 1,
 +    propBuild,
      groundOffset = 0,
      avatarId,
@@ -2416,7 +2419,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
  
    // Derive mode config and grid offset from the current plane mode
    const modeConfig = $derived(PLANE_MODE_CONFIGS[planeMode]);
-@@ -247,7 +366,23 @@
+@@ -247,7 +369,23 @@
  
    // When a turn is active, enable animation-driven yaw so the rig
    // rotates from the turn clip's root motion rather than snapping.
@@ -2441,7 +2444,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
  
    // Turn completion snap: when turnRequest goes null after being active,
    // snap avatarState to the post-turn heading so the sync effect below
-@@ -259,6 +394,8 @@
+@@ -259,6 +397,8 @@
        // Turn just completed - snap avatarState to post-turn heading
        avatarState.snapFacingAngle(turnTargetHeading);
        turnTargetHeading = null;
@@ -2450,7 +2453,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
      }
    });
  
-@@ -280,56 +417,129 @@
+@@ -280,56 +420,129 @@
    const dualWheelOffset = $derived(staffHalfLength);
    const blueHandPos = $derived({
      x: isDualWheel ? dualWheelOffset : modeConfig.blueLateralOffset,
@@ -2591,7 +2594,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
                accumulatedYaw += delta.yawDelta;
                onYawIntegrated?.(accumulatedYaw);
              }
-@@ -339,15 +549,12 @@
+@@ -339,15 +552,12 @@
    {/if}
  
    <!-- Grid (consumer-provided via gridSlot) -->
@@ -2609,7 +2612,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
      {#if bluePropState && blueVisible}
        <T.Group
          bind:ref={bluePropAnchorRef}
-@@ -355,23 +562,23 @@
+@@ -355,23 +565,24 @@
          position.y={bluePropState.worldPosition.y}
          position.z={bluePropState.worldPosition.z}
        >
@@ -2628,6 +2631,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
 +              propState={bluePropState}
 +              color="blue"
 +              length={propLength}
++              geometryScale={propScale}
 +              build={propBuild}
 +            />
 +          {/if}
@@ -2645,7 +2649,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
      {#if redPropState && redVisible}
        <T.Group
          bind:ref={redPropAnchorRef}
-@@ -379,20 +586,23 @@
+@@ -379,20 +590,24 @@
          position.y={redPropState.worldPosition.y}
          position.z={redPropState.worldPosition.z}
        >
@@ -2664,6 +2668,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
 +              propState={redPropState}
 +              color="red"
 +              length={propLength}
++              geometryScale={propScale}
 +              build={propBuild}
 +            />
 +          {/if}
@@ -2679,7 +2684,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
        {@render effectsSlot({
          bluePropState,
 diff --git a/dist/lib/components/PerformerRig.svelte.d.ts b/dist/lib/components/PerformerRig.svelte.d.ts
-index 8caa93994d4c204b5d45daeae8b06c191c822e4f..3097393f7ab094ff0891fc6ceef065143ec91cb9 100644
+index 8caa93994d4c204b5d45daeae8b06c191c822e4f..96626eea63f2d647a5bd2f26a66d708d498f1ffa 100644
 --- a/dist/lib/components/PerformerRig.svelte.d.ts
 +++ b/dist/lib/components/PerformerRig.svelte.d.ts
 @@ -1,5 +1,6 @@
@@ -2699,7 +2704,7 @@ index 8caa93994d4c204b5d45daeae8b06c191c822e4f..3097393f7ab094ff0891fc6ceef06514
  interface Props {
      /** World position (x/z). y=0 is ground level. */
      position: {
-@@ -27,18 +31,31 @@ interface Props {
+@@ -27,18 +31,32 @@ interface Props {
      visiblePlanes?: Set<Plane>;
      gridMode?: GridMode;
      bluePropType?: PropType;
@@ -2712,6 +2717,7 @@ index 8caa93994d4c204b5d45daeae8b06c191c822e4f..3097393f7ab094ff0891fc6ceef06514
      isPlaying?: boolean;
      staffHalfLength?: number;
      propLength?: number;
++    propScale?: number;
 +    propBuild?: PropBuild;
      groundOffset?: number;
      avatarId?: import("../config/avatar-definitions").AvatarId;
@@ -2731,7 +2737,7 @@ index 8caa93994d4c204b5d45daeae8b06c191c822e4f..3097393f7ab094ff0891fc6ceef06514
      /** When true, facingAngle is driven by root motion yawDelta from
       *  the animation clip (accumulated each frame). When false (default),
       *  facingAngle is consumer-authoritative - the rig rotation matches
-@@ -48,6 +65,14 @@ interface Props {
+@@ -48,6 +66,14 @@ interface Props {
       *  is true. The consumer receives the new accumulated angle so it can
       *  sync its own sequence/state representation if needed. */
      onYawIntegrated?: (newAngle: number) => void;
@@ -2746,7 +2752,7 @@ index 8caa93994d4c204b5d45daeae8b06c191c822e4f..3097393f7ab094ff0891fc6ceef06514
      /** Enable idle/walk locomotion animation on the avatar.
       *  When true, the avatar breathes/sways while standing. */
      enableRootMotion?: boolean;
-@@ -84,14 +109,61 @@ interface Props {
+@@ -84,14 +110,61 @@ interface Props {
              effectsParentRef: Group | undefined;
          }
      ]>;
@@ -4224,7 +4230,7 @@ index 9ed038d07d35b4d5d340c578e100415154ac1178..2010455db305109b7f9b401189134afe
 +    /** Scale only the model's long axis, preserving the grip diameter. */
 +    lengthScaleY?: number;
    }
-
+ 
    const props: Props = $props();
 @@ -44,6 +47,7 @@
    // We need a fresh clone for each color to avoid shared material mutation.
@@ -4507,10 +4513,14 @@ diff --git a/dist/lib/components/props/Poi3D.svelte.d.ts.map b/dist/lib/componen
 deleted file mode 100644
 index 4c2d4a9b12da3596bfed1803e1a6d6649fa0dfd9..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Prop3D.svelte b/dist/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b00753fdc0e504b14ff42779ebabf11ca8f45433 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..3f2bcccdd0c7da899ec20d18b5be71b7c0729842 100644
 --- a/dist/lib/components/props/Prop3D.svelte
 +++ b/dist/lib/components/props/Prop3D.svelte
-@@ -13,6 +13,9 @@
+@@ -10,9 +10,13 @@
+    * Scenes should use <Prop3D> instead of <Staff3D> directly.
+    */
+ 
++  import { T } from "@threlte/core";
    import { PropType } from "../../domain/enums/PropType";
    import type { PropState3D } from "../../domain/models/PropState3D";
    import { resolvePropModel } from "./prop-model-registry";
@@ -4520,7 +4530,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b00753fdc0e504b14ff42779ebabf11c
    import GltfProp3D from "./GltfProp3D.svelte";
  
    // Procedural fallback geometry components
-@@ -25,6 +28,7 @@
+@@ -25,6 +29,7 @@
    import Sword3D from "./Sword3D.svelte";
    import Buugeng3D from "./Buugeng3D.svelte";
    import Triad3D from "./Triad3D.svelte";
@@ -4528,21 +4538,26 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b00753fdc0e504b14ff42779ebabf11c
    import Doublestar3D from "./Doublestar3D.svelte";
    import Chicken3D from "./Chicken3D.svelte";
    import Guitar3D from "./Guitar3D.svelte";
-@@ -39,6 +43,7 @@
+@@ -39,6 +44,9 @@
      visible?: boolean;
      isActivePlayer?: boolean;
      length?: number;
++    /** Uniform scale; length is the effective, already-scaled staff length. */
++    geometryScale?: number;
 +    build?: PropBuild;
    }
  
    let {
-@@ -48,27 +53,48 @@
+@@ -48,114 +56,165 @@
      visible = true,
      isActivePlayer = false,
      length,
++    geometryScale = 1,
 +    build: buildOverride,
    }: Props = $props();
  
++  const nominalLength = $derived(length === undefined ? undefined : length / geometryScale);
++
 +  const build = $derived(buildOverride ?? propFinishState.build);
 +
    // "Big" variants use a 1.4x scale on the base prop.
@@ -4567,6 +4582,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b00753fdc0e504b14ff42779ebabf11c
  </script>
  
  {#if visible}
++  <T.Group scale={geometryScale}>
    <!-- Tier 1: GLTF model (when available in registry) -->
 -  {#if gltfResolution}
 -    <GltfProp3D
@@ -4588,25 +4604,35 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b00753fdc0e504b14ff42779ebabf11c
 +        {visible}
 +        {isActivePlayer}
 +        extraScale={gltfResolution.scale}
-+        lengthScaleY={stretchesToStaffLength ? (length ?? userProportionsState.staffLength) / 0.9 : 1}
++        lengthScaleY={stretchesToStaffLength ? (nominalLength ?? userProportionsState.staffLength) / 0.9 : 1}
 +      />
 +    {/key}
  
    <!-- Tier 2: Procedural fallback geometry -->
    {:else if propType === PropType.STAFF || propType === PropType.SIMPLESTAFF || propType === PropType.STAFF2}
-@@ -82,14 +108,22 @@
-     <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
+-    <Staff3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Staff3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGSTAFF}
+-    <Staff3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Staff3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+ 
+   {:else if propType === PropType.CLUB}
+-    <Club3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Club3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGCLUB}
+-    <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Club3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
  
    {:else if propType === PropType.FAN}
 -    <Fan3D {propState} {color} {visible} {isActivePlayer} {length} />
-+    <Fan3D {propState} {color} {visible} {isActivePlayer} {length} {build} />
++    <Fan3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} {build} />
    {:else if propType === PropType.BIGFAN}
 -    <Fan3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
-+    <Fan3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} {build} />
++    <Fan3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} {build} />
  
    {:else if propType === PropType.TRIAD}
 -    <Triad3D {propState} {color} {visible} {isActivePlayer} {length} />
-+    <Triad3D {propState} {color} {visible} {isActivePlayer} {length} variant={build.finish} />
++    <Triad3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} variant={build.finish} />
    {:else if propType === PropType.BIGTRIAD}
 -    <Triad3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
 +    <Triad3D
@@ -4614,37 +4640,87 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b00753fdc0e504b14ff42779ebabf11c
 +      {color}
 +      {visible}
 +      {isActivePlayer}
-+      {length}
++      length={nominalLength}
 +      scale={BIG_SCALE}
 +      variant={build.finish}
 +    />
  
    {:else if propType === PropType.MINIHOOP}
-     <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -102,10 +136,19 @@
-     <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
+-    <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Hoop3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGHOOP}
+-    <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Hoop3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+ 
+   {:else if propType === PropType.BUUGENG || propType === PropType.FRACTALGENG}
+-    <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Buugeng3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGBUUGENG}
+-    <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Buugeng3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
  
    {:else if propType === PropType.TRIGENG}
 -    <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} />
-+    <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} variant="trigeng" />
++    <Buugeng3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} variant="trigeng" />
  
 -  {:else if propType === PropType.TRIQUETRA || propType === PropType.TRIQUETRA2}
+-    <Triquetra3D {propState} {color} {visible} {isActivePlayer} {length} />
 +  {:else if propType === PropType.TRIQUETRA}
-     <Triquetra3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Triquetra3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
 +  {:else if propType === PropType.TRIQUETRA2}
 +    <Triquetra3D
 +      {propState}
 +      {color}
 +      {visible}
 +      {isActivePlayer}
-+      {length}
++      length={nominalLength}
 +      variant="triquetra2"
 +    />
  
    {:else if propType === PropType.SWORD}
-     <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -140,7 +183,15 @@
-     <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
+-    <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Sword3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+ 
+   {:else if propType === PropType.CHICKEN}
+-    <Chicken3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Chicken3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGCHICKEN}
+-    <Chicken3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Chicken3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+ 
+   {:else if propType === PropType.GUITAR}
+-    <Guitar3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Guitar3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.UKULELE}
+-    <Guitar3D {propState} {color} {visible} {isActivePlayer} {length} scale={0.75} />
++    <Guitar3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={0.75} />
+ 
+   {:else if propType === PropType.DOUBLESTAR}
+-    <Doublestar3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Doublestar3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGDOUBLESTAR}
+-    <Doublestar3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Doublestar3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+ 
+   {:else if propType === PropType.EIGHTRINGS}
+-    <Eightrings3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Eightrings3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGEIGHTRINGS}
+-    <Eightrings3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Eightrings3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+ 
+   {:else if propType === PropType.CONTACTBALL}
+-    <Ball3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Ball3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGCONTACTBALL}
+-    <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Ball3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+   {:else if propType === PropType.DOUBLECONTACTBALL}
+-    <Ball3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Ball3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGDOUBLECONTACTBALL}
+-    <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Ball3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
  
    {:else if propType === PropType.QUIAD}
 -    <Triad3D {propState} {color} {visible} {isActivePlayer} {length} />
@@ -4653,13 +4729,34 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..b00753fdc0e504b14ff42779ebabf11c
 +      {color}
 +      {visible}
 +      {isActivePlayer}
-+      {length}
++      length={nominalLength}
 +      frame={QUIAD_PROP}
 +      variant={build.finish}
 +    />
  
    {:else if propType === PropType.TORCH}
-     <Torch3D {propState} {color} {visible} {isActivePlayer} {length} />
+-    <Torch3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Torch3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGTORCH}
+-    <Torch3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Torch3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+ 
+   {:else if propType === PropType.POI}
+-    <Poi3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Poi3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+ 
+   {:else if propType === PropType.HAND}
+     <!-- Hand = no prop visible, just the trail indicator -->
+-    <Staff3D {propState} {color} visible={false} {isActivePlayer} {length} />
++    <Staff3D {propState} {color} visible={false} {isActivePlayer} length={nominalLength} />
+ 
+   {:else}
+     <!-- Unknown prop type: fall back to staff -->
+-    <Staff3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Staff3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {/if}
++  </T.Group>
+ {/if}
 diff --git a/dist/lib/components/props/Prop3D.svelte.d.ts b/dist/lib/components/props/Prop3D.svelte.d.ts
 deleted file mode 100644
 index a794c3ef563a60a0f44f5322687deba71e16433b..0000000000000000000000000000000000000000
@@ -22854,7 +22951,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..09e68d79d9dccea769814beac7063a25
        position={[position.x, groupY, position.z]}
        rotation.y={facingAngle}
 diff --git a/src/lib/components/PerformerRig.svelte b/src/lib/components/PerformerRig.svelte
-index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c39a24bb2 100644
+index 99a40cd26b35183a5e71c93105e0704084dbf9e9..180dd50da097eeb57eb24b661d93b15611759e91 100644
 --- a/src/lib/components/PerformerRig.svelte
 +++ b/src/lib/components/PerformerRig.svelte
 @@ -16,11 +16,12 @@
@@ -22911,15 +23008,17 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
  
      // Prop state overrides (for dual-wheel mode - caller swaps before passing)
      bluePropState?: PropState3D | null;
-@@ -79,6 +100,7 @@
+@@ -79,6 +100,9 @@
      isPlaying?: boolean;
      staffHalfLength?: number;
      propLength?: number;
++    /** Uniform joined-grid scale; propLength already includes this factor. */
++    propScale?: number;
 +    propBuild?: PropBuild;
  
      // Vertical offset (museum platforms, stages)
      groundOffset?: number;
-@@ -90,6 +112,13 @@
+@@ -90,6 +114,13 @@
      enableLocomotion?: boolean;
      isMoving?: boolean;
      moveSpeed?: number;
@@ -22933,7 +23032,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
  
      /** When true, facingAngle is driven by root motion yawDelta from
       *  the animation clip (accumulated each frame). When false (default),
-@@ -100,6 +129,14 @@
+@@ -100,6 +131,14 @@
       *  is true. The consumer receives the new accumulated angle so it can
       *  sync its own sequence/state representation if needed. */
      onYawIntegrated?: (newAngle: number) => void;
@@ -22948,7 +23047,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
      /** Enable idle/walk locomotion animation on the avatar.
       *  When true, the avatar breathes/sways while standing. */
      enableRootMotion?: boolean;
-@@ -119,23 +156,76 @@
+@@ -119,23 +158,76 @@
       * effect orchestrator can place tip-tracking effects (trails, LED, etc.)
       * in the correct rig-root-local frame without duplicating rig internals.
       */
@@ -23036,7 +23135,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
    }
  
    let {
-@@ -149,44 +239,73 @@
+@@ -149,44 +241,74 @@
      showEffects = true,
      visiblePlanes = new Set([Plane.WALL, Plane.WHEEL, Plane.FLOOR]),
      gridMode = "diamond" as GridMode,
@@ -23050,6 +23149,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
      isPlaying = false,
      staffHalfLength: staffHalfLengthProp,
      propLength,
++    propScale = 1,
 +    propBuild,
      groundOffset = 0,
      avatarId,
@@ -23120,7 +23220,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
  
    // Derive mode config and grid offset from the current plane mode
    const modeConfig = $derived(PLANE_MODE_CONFIGS[planeMode]);
-@@ -247,7 +366,23 @@
+@@ -247,7 +369,23 @@
  
    // When a turn is active, enable animation-driven yaw so the rig
    // rotates from the turn clip's root motion rather than snapping.
@@ -23145,7 +23245,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
  
    // Turn completion snap: when turnRequest goes null after being active,
    // snap avatarState to the post-turn heading so the sync effect below
-@@ -259,6 +394,8 @@
+@@ -259,6 +397,8 @@
        // Turn just completed - snap avatarState to post-turn heading
        avatarState.snapFacingAngle(turnTargetHeading);
        turnTargetHeading = null;
@@ -23154,7 +23254,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
      }
    });
  
-@@ -280,56 +417,129 @@
+@@ -280,56 +420,129 @@
    const dualWheelOffset = $derived(staffHalfLength);
    const blueHandPos = $derived({
      x: isDualWheel ? dualWheelOffset : modeConfig.blueLateralOffset,
@@ -23295,7 +23395,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
                accumulatedYaw += delta.yawDelta;
                onYawIntegrated?.(accumulatedYaw);
              }
-@@ -339,15 +549,12 @@
+@@ -339,15 +552,12 @@
    {/if}
  
    <!-- Grid (consumer-provided via gridSlot) -->
@@ -23313,7 +23413,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
      {#if bluePropState && blueVisible}
        <T.Group
          bind:ref={bluePropAnchorRef}
-@@ -355,23 +562,23 @@
+@@ -355,23 +565,24 @@
          position.y={bluePropState.worldPosition.y}
          position.z={bluePropState.worldPosition.z}
        >
@@ -23332,6 +23432,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
 +              propState={bluePropState}
 +              color="blue"
 +              length={propLength}
++              geometryScale={propScale}
 +              build={propBuild}
 +            />
 +          {/if}
@@ -23349,7 +23450,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
      {#if redPropState && redVisible}
        <T.Group
          bind:ref={redPropAnchorRef}
-@@ -379,20 +586,23 @@
+@@ -379,20 +590,24 @@
          position.y={redPropState.worldPosition.y}
          position.z={redPropState.worldPosition.z}
        >
@@ -23368,6 +23469,7 @@ index 99a40cd26b35183a5e71c93105e0704084dbf9e9..9613fb529e537b0a12f4d7a4a94d897c
 +              propState={redPropState}
 +              color="red"
 +              length={propLength}
++              geometryScale={propScale}
 +              build={propBuild}
 +            />
 +          {/if}
@@ -24745,7 +24847,7 @@ index 9ed038d07d35b4d5d340c578e100415154ac1178..2010455db305109b7f9b401189134afe
 +    /** Scale only the model's long axis, preserving the grip diameter. */
 +    lengthScaleY?: number;
    }
-
+ 
    const props: Props = $props();
 @@ -44,6 +47,7 @@
    // We need a fresh clone for each color to avoid shared material mutation.
@@ -25066,10 +25168,14 @@ index 8a455aeebd6a4c8f408c732ac0c1bb2c177c2ab3..7cb29372ae34f587e0d58225dc3a5659
    const rotation = $derived(computePropRotation(propState));
  
 diff --git a/src/lib/components/props/Prop3D.svelte b/src/lib/components/props/Prop3D.svelte
-index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..ed0d1156e7f2f4b781b1f5983acd91878e5c14c0 100644
+index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..93b2f91991d481f921cd0e28fab61f501f2d71fb 100644
 --- a/src/lib/components/props/Prop3D.svelte
 +++ b/src/lib/components/props/Prop3D.svelte
-@@ -13,6 +13,9 @@
+@@ -10,9 +10,13 @@
+    * Scenes should use <Prop3D> instead of <Staff3D> directly.
+    */
+ 
++  import { T } from "@threlte/core";
    import { PropType } from "../../domain/enums/PropType";
    import type { PropState3D } from "../../domain/models/PropState3D";
    import { resolvePropModel } from "./prop-model-registry";
@@ -25079,7 +25185,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..ed0d1156e7f2f4b781b1f5983acd9187
    import GltfProp3D from "./GltfProp3D.svelte";
  
    // Procedural fallback geometry components
-@@ -20,11 +23,13 @@
+@@ -20,11 +24,13 @@
    import Club3D from "./Club3D.svelte";
    import Fan3D from "./Fan3D.svelte";
    import Hoop3D from "./Hoop3D.svelte";
@@ -25093,21 +25199,26 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..ed0d1156e7f2f4b781b1f5983acd9187
    import Doublestar3D from "./Doublestar3D.svelte";
    import Chicken3D from "./Chicken3D.svelte";
    import Guitar3D from "./Guitar3D.svelte";
-@@ -39,6 +44,7 @@
+@@ -39,6 +45,9 @@
      visible?: boolean;
      isActivePlayer?: boolean;
      length?: number;
++    /** Uniform scale; length is the effective, already-scaled staff length. */
++    geometryScale?: number;
 +    build?: PropBuild;
    }
  
    let {
-@@ -48,27 +54,48 @@
+@@ -48,114 +57,167 @@
      visible = true,
      isActivePlayer = false,
      length,
++    geometryScale = 1,
 +    build: buildOverride,
    }: Props = $props();
  
++  const nominalLength = $derived(length === undefined ? undefined : length / geometryScale);
++
 +  const build = $derived(buildOverride ?? propFinishState.build);
 +
    // "Big" variants use a 1.4x scale on the base prop.
@@ -25132,6 +25243,7 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..ed0d1156e7f2f4b781b1f5983acd9187
  </script>
  
  {#if visible}
++  <T.Group scale={geometryScale}>
    <!-- Tier 1: GLTF model (when available in registry) -->
 -  {#if gltfResolution}
 -    <GltfProp3D
@@ -25153,25 +25265,35 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..ed0d1156e7f2f4b781b1f5983acd9187
 +        {visible}
 +        {isActivePlayer}
 +        extraScale={gltfResolution.scale}
-+        lengthScaleY={stretchesToStaffLength ? (length ?? userProportionsState.staffLength) / 0.9 : 1}
++        lengthScaleY={stretchesToStaffLength ? (nominalLength ?? userProportionsState.staffLength) / 0.9 : 1}
 +      />
 +    {/key}
  
    <!-- Tier 2: Procedural fallback geometry -->
    {:else if propType === PropType.STAFF || propType === PropType.SIMPLESTAFF || propType === PropType.STAFF2}
-@@ -82,19 +109,29 @@
-     <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
+-    <Staff3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Staff3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGSTAFF}
+-    <Staff3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Staff3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+ 
+   {:else if propType === PropType.CLUB}
+-    <Club3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Club3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGCLUB}
+-    <Club3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Club3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
  
    {:else if propType === PropType.FAN}
 -    <Fan3D {propState} {color} {visible} {isActivePlayer} {length} />
-+    <Fan3D {propState} {color} {visible} {isActivePlayer} {length} {build} />
++    <Fan3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} {build} />
    {:else if propType === PropType.BIGFAN}
 -    <Fan3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
-+    <Fan3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} {build} />
++    <Fan3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} {build} />
  
    {:else if propType === PropType.TRIAD}
 -    <Triad3D {propState} {color} {visible} {isActivePlayer} {length} />
-+    <Triad3D {propState} {color} {visible} {isActivePlayer} {length} variant={build.finish} />
++    <Triad3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} variant={build.finish} />
    {:else if propType === PropType.BIGTRIAD}
 -    <Triad3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
 +    <Triad3D
@@ -25179,44 +25301,89 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..ed0d1156e7f2f4b781b1f5983acd9187
 +      {color}
 +      {visible}
 +      {isActivePlayer}
-+      {length}
++      length={nominalLength}
 +      scale={BIG_SCALE}
 +      variant={build.finish}
 +    />
  
    {:else if propType === PropType.MINIHOOP}
-     <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} />
+-    <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Hoop3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
    {:else if propType === PropType.BIGHOOP}
-     <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
+-    <Hoop3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Hoop3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
 +  {:else if propType === PropType.TRIANGLE}
 +    <Triangle3D {propState} {color} {visible} {isActivePlayer} {build} />
  
    {:else if propType === PropType.BUUGENG || propType === PropType.FRACTALGENG}
-     <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -102,10 +139,19 @@
-     <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
+-    <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Buugeng3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGBUUGENG}
+-    <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Buugeng3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
  
    {:else if propType === PropType.TRIGENG}
 -    <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} />
-+    <Buugeng3D {propState} {color} {visible} {isActivePlayer} {length} variant="trigeng" />
++    <Buugeng3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} variant="trigeng" />
  
 -  {:else if propType === PropType.TRIQUETRA || propType === PropType.TRIQUETRA2}
+-    <Triquetra3D {propState} {color} {visible} {isActivePlayer} {length} />
 +  {:else if propType === PropType.TRIQUETRA}
-     <Triquetra3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Triquetra3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
 +  {:else if propType === PropType.TRIQUETRA2}
 +    <Triquetra3D
 +      {propState}
 +      {color}
 +      {visible}
 +      {isActivePlayer}
-+      {length}
++      length={nominalLength}
 +      variant="triquetra2"
 +    />
  
    {:else if propType === PropType.SWORD}
-     <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
-@@ -140,7 +186,15 @@
-     <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
+-    <Sword3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Sword3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+ 
+   {:else if propType === PropType.CHICKEN}
+-    <Chicken3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Chicken3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGCHICKEN}
+-    <Chicken3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Chicken3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+ 
+   {:else if propType === PropType.GUITAR}
+-    <Guitar3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Guitar3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.UKULELE}
+-    <Guitar3D {propState} {color} {visible} {isActivePlayer} {length} scale={0.75} />
++    <Guitar3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={0.75} />
+ 
+   {:else if propType === PropType.DOUBLESTAR}
+-    <Doublestar3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Doublestar3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGDOUBLESTAR}
+-    <Doublestar3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Doublestar3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+ 
+   {:else if propType === PropType.EIGHTRINGS}
+-    <Eightrings3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Eightrings3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGEIGHTRINGS}
+-    <Eightrings3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Eightrings3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+ 
+   {:else if propType === PropType.CONTACTBALL}
+-    <Ball3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Ball3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGCONTACTBALL}
+-    <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Ball3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+   {:else if propType === PropType.DOUBLECONTACTBALL}
+-    <Ball3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Ball3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGDOUBLECONTACTBALL}
+-    <Ball3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Ball3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
  
    {:else if propType === PropType.QUIAD}
 -    <Triad3D {propState} {color} {visible} {isActivePlayer} {length} />
@@ -25225,13 +25392,34 @@ index 8f023f7b8a3dc4f441fc086719b929b5b56e9c74..ed0d1156e7f2f4b781b1f5983acd9187
 +      {color}
 +      {visible}
 +      {isActivePlayer}
-+      {length}
++      length={nominalLength}
 +      frame={QUIAD_PROP}
 +      variant={build.finish}
 +    />
  
    {:else if propType === PropType.TORCH}
-     <Torch3D {propState} {color} {visible} {isActivePlayer} {length} />
+-    <Torch3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Torch3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {:else if propType === PropType.BIGTORCH}
+-    <Torch3D {propState} {color} {visible} {isActivePlayer} {length} scale={BIG_SCALE} />
++    <Torch3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} scale={BIG_SCALE} />
+ 
+   {:else if propType === PropType.POI}
+-    <Poi3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Poi3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+ 
+   {:else if propType === PropType.HAND}
+     <!-- Hand = no prop visible, just the trail indicator -->
+-    <Staff3D {propState} {color} visible={false} {isActivePlayer} {length} />
++    <Staff3D {propState} {color} visible={false} {isActivePlayer} length={nominalLength} />
+ 
+   {:else}
+     <!-- Unknown prop type: fall back to staff -->
+-    <Staff3D {propState} {color} {visible} {isActivePlayer} {length} />
++    <Staff3D {propState} {color} {visible} {isActivePlayer} length={nominalLength} />
+   {/if}
++  </T.Group>
+ {/if}
 diff --git a/src/lib/components/props/Prop3DProps.ts b/src/lib/components/props/Prop3DProps.ts
 index a31ce7d182d1d2b7f4be226346abc023e5ed7254..9d000a64000545cd365859bf2230f96049e0d042 100644
 --- a/src/lib/components/props/Prop3DProps.ts

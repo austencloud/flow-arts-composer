@@ -1,209 +1,62 @@
-<!--
-  ComposeModule.svelte - Choreography & Arrangement Module
-
-  Tabs:
-  - Arrange: Tunnel mode - layer sequences on canvas with split-view controls
-  - Browse: Saved compositions gallery
-  - Timeline: Timeline-based composition editor
-
-  Architecture:
-  - ArrangeTab: Desktop-first split-view (canvas left, controls right)
-  - Tunnel mode: Add up to 4 sequences, play them together
-  - PlaybackOverlay used for Browse tab saved compositions
--->
 <script lang="ts">
-  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
-  import { onMount, untrack } from "svelte";
-  import { removeCurrentUrlParams } from "#lib/shared/navigation/services/url-state.js";
-  import { getComposeModuleState } from "./shared/state/compose-module-state.svelte.ts";
-  import type { ComposeTab } from "./shared/state/compose-module-state.svelte.ts";
-  import type { URLSyncer } from "#lib/shared/navigation/services/url-syncer.js";
-  import { getURLSyncer } from "#lib/shared/navigation/get-url-syncer.js";
+  import { goto } from "$app/navigation";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import {
+    consumeSequenceHandoff,
+    saveSequenceHandoff,
+  } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
   import { deepLinker } from "#lib/shared/navigation/services/deep-linker.js";
-  import { consumeSequenceHandoff } from "#lib/shared/coordinators/sequence-handoff.svelte.js";
-  import { arrangeGridState } from "./tabs/arrange/state/arrange-grid-state.svelte";
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
-  import ArrangeTab from "./tabs/arrange/ArrangeTab.svelte";
-  import BrowseTab from "./tabs/browse/CompositionBrowseTab.svelte";
-  import TimelinePanel from "./timeline/components/TimelinePanel.svelte";
-
-  // Import playback overlay (for Browse tab - legacy saved compositions)
-  import PlaybackOverlay from "./tabs/playback/PlaybackTab.svelte";
-
-  // Get module state (singleton)
-  const composeState = getComposeModuleState();
-
-  // Services
-  let urlSyncService: URLSyncer | null = $state(null);
-
-  // Track if deep link has been processed
-  let deepLinkProcessed = $state(false);
-
-  // Sync current tab with navigation state
+  // Keep old /compose and /animate links alive without loading a second editor.
+  let started = false;
+  let openError = $state<string | null>(null);
   $effect(() => {
-    const section = navigationState.activeTab;
-    if (
-      section === "arrange" ||
-      section === "browse" ||
-      section === "timeline"
-    ) {
-      composeState.setCurrentTab(section as ComposeTab);
-    }
+    if (!authState.initialized || started) return;
+    started = true;
+    void openStudio();
   });
 
-  // Sync tab to URL for sharing
-  $effect(() => {
-    if (!urlSyncService) return;
-    const currentModule = navigationState.currentModule;
-    if (currentModule !== "compose") return;
+  async function openStudio(): Promise<void> {
+    openError = null;
+    const handoff = consumeSequenceHandoff();
+    const deepLink = deepLinker.consumeData("compose");
+    const sequence = handoff?.sequence ?? deepLink?.sequence;
 
-    // TODO: Sync composition ID to URL when viewing saved compositions
-  });
-
-  onMount(() => {
-    // Resolve services
-    try {
-      urlSyncService = getURLSyncer();
-    } catch (error) {
-      console.warn("Failed to resolve navigation services:", error);
-    }
-
-    // Set default tab if none persisted or invalid
-    const section = navigationState.activeTab;
-    if (
-      !section ||
-      (section !== "arrange" && section !== "browse" && section !== "timeline")
-    ) {
-      navigationState.setActiveTab("arrange");
-    }
-
-    // Check for sequence handoff from Viewer (e.g., "Open in Compose" button)
-    const url = new URL(window.location.href);
-    if (url.searchParams.has("handoff")) {
-      const handoff = consumeSequenceHandoff();
-      removeCurrentUrlParams(["handoff"]);
-      if (handoff) {
-        // Navigate to Arrange tab
-        navigationState.setActiveTab("arrange");
-        composeState.setCurrentTab("arrange");
-
-        // Set up single cell layout and add the sequence
-        arrangeGridState.setPresetLayout("single");
-        const firstCell = arrangeGridState.visibleCells[0];
-        const word =
-          handoff.sequence.word || handoff.sequence.name || "Sequence";
-
-        if (firstCell) {
-          const result = arrangeGridState.addLayerToCell(
-            firstCell.id,
-            handoff.sequence
-          );
-          if (result.success) {
-            showToast({
-              message: `Loaded "${word}" into Compose`,
-              type: "success",
-              duration: 3000,
-            });
-          } else {
-            showToast({
-              message: result.error || "Failed to load sequence",
-              type: "error",
-              duration: 5000,
-            });
-          }
-        }
-      }
-    }
-
-    // Check for deep link (e.g., shared composition URL)
-    const deepLinkData = deepLinker.consumeData("compose");
-    if (deepLinkData) {
+    if (sequence) {
       try {
-        // TODO: Load composition by ID and open playback overlay
-        // For now, just navigate to the specified tab
-        if (
-          deepLinkData.tabId &&
-          (deepLinkData.tabId === "arrange" ||
-            deepLinkData.tabId === "browse" ||
-            deepLinkData.tabId === "timeline")
-        ) {
-          navigationState.setActiveTab(deepLinkData.tabId);
-          composeState.setCurrentTab(deepLinkData.tabId as ComposeTab);
-        }
-      } catch (err) {
-        console.error("❌ Failed to load deep link composition:", err);
+        const { createStudioArrangement } =
+          await import("#lib/features/post/services/studio-arrangement-projects.js");
+        const projectId = await createStudioArrangement(sequence);
+        await goto(`/post?project=${encodeURIComponent(projectId)}`, {
+          replaceState: true,
+        });
+        return;
+      } catch (error) {
+        // A failed save must leave the source available for retry or refresh.
+        saveSequenceHandoff(handoff ?? { sequence });
+        openError =
+          error instanceof Error
+            ? error.message
+            : "Could not open this sequence in Studio.";
+        showToast({
+          message: openError,
+          type: "error",
+          duration: 5000,
+        });
+        return;
       }
     }
 
-    // Mark deep link as processed
-    deepLinkProcessed = true;
-  });
-
-  // Check if tab is active
-  function isTabActive(tab: ComposeTab): boolean {
-    return composeState.currentTab === tab;
+    await goto("/post?library=1", { replaceState: true });
   }
 </script>
 
-<div class="compose-module">
-  <div class="content-container">
-    {#key composeState.currentTab}
-      <div class="tab-panel">
-        {#if isTabActive("arrange")}
-          <ArrangeTab />
-        {:else if isTabActive("browse")}
-          <BrowseTab />
-        {:else if isTabActive("timeline")}
-          <TimelinePanel />
-        {/if}
-      </div>
-    {/key}
+{#if openError}
+  <div role="alert">
+    <p>{openError}</p>
+    <button type="button" onclick={() => void openStudio()}>Try again</button>
   </div>
-
-  <!-- Playback Overlay - renders fullscreen over tabs when open -->
-  {#if composeState.isPlaybackOpen}
-    <div class="playback-overlay">
-      <PlaybackOverlay />
-    </div>
-  {/if}
-</div>
-
-<style>
-  .compose-module {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    background: transparent;
-    color: var(--foreground, #ffffff);
-  }
-
-  .content-container {
-    position: relative;
-    flex: 1;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .tab-panel {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  /* Playback overlay - fullscreen over tabs */
-  .playback-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 100;
-    background: transparent;
-  }
-</style>
+{:else}
+  <p role="status">Opening Studio…</p>
+{/if}

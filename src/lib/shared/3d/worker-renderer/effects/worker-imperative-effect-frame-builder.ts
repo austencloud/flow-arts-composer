@@ -57,6 +57,7 @@ export interface WorkerImperativeEffectFrameInput {
   sourceIdBase: number;
   deltaSeconds: number;
   staffHalfLength: number;
+  propScale?: number;
   collisionFloorY: number;
   intent: WorkerPerformerEffectIntent;
   left: WorkerEffectPropFrameInput;
@@ -229,7 +230,8 @@ export class WorkerImperativeEffectFrameBuilder {
         input.staffHalfLength,
         Math.min(input.deltaSeconds, 1 / 15),
         prop.propType,
-        input.intent.propBuild
+        input.intent.propBuild,
+        input.propScale ?? 1
       );
       for (const tip of tipFrame.tips) {
         const pooled = pooledSource(input, propIndex, tip);
@@ -293,7 +295,8 @@ export class WorkerImperativeEffectFrameBuilder {
           worldRotation: prop.worldRotation,
           ledColors: stripColors(moonPattern, moonFrame),
           brightness,
-          scale: prop.propType === "bigfan" ? 1.4 : 1,
+          scale:
+            (prop.propType === "bigfan" ? 1.4 : 1) * (input.propScale ?? 1),
         });
         continue;
       }

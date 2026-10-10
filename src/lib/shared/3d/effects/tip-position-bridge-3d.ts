@@ -3,7 +3,7 @@ import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-ty
 import type { PropTipPositions3D, TipPositionData3D } from "./types";
 import {
 	propTipAnchorSignature3D,
-	resolvePropTipAnchors3D,
+	resolveScaledPropTipAnchors3D,
 } from "./prop-tip-geometry-3d";
 import type { PropBuild } from "@austencloud/scene-3d/worker";
 
@@ -173,7 +173,8 @@ export class TipPositionBridge3D {
 		staffHalfLength: number,
 		deltaTime: number,
 		propType: string | undefined,
-		build: PropBuild
+		build: PropBuild,
+		propScale = 1
 	): PropTipPositions3D {
 		const center = new Vector3(
 			rigLocalCenter.x,
@@ -197,7 +198,12 @@ export class TipPositionBridge3D {
 		// Each anchor carries its logical end and the 2D tip its effects key.
 		// The prop mesh's positive axis points toward the thumb end, which is
 		// the end a single-ended prop keeps.
-		const anchors = resolvePropTipAnchors3D(propType, staffHalfLength, build);
+		const anchors = resolveScaledPropTipAnchors3D(
+			propType,
+			staffHalfLength,
+			propScale,
+			build
+		);
 
 		// Swapping the prop mid-playback moves a tip discontinuously. Dropping
 		// this prop's history turns that into one zero-velocity frame instead of

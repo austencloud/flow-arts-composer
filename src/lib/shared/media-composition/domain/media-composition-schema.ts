@@ -38,7 +38,12 @@ function sequenceRefsMatch(
 function sourceSequenceRef(
   source: MediaSource
 ): z.infer<typeof SequenceRevisionRefSchema> | null {
-  if (source.kind === "image" || source.kind === "audio") return null;
+  if (
+    source.kind === "image" ||
+    source.kind === "audio" ||
+    source.kind === "arrangement"
+  )
+    return null;
   return source.sequenceRef ?? null;
 }
 

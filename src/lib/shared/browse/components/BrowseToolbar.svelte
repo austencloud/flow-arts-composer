@@ -502,28 +502,35 @@
       type="button"
       class="filters-pill"
       onclick={onOpenFilters}
-      aria-label={activeUserFilterCount > 0
-        ? t("browse_audit_filters_with_active", {
-            results:
-              engine.resultCount === 1
-                ? t("browse_audit_one_sequence", { count: engine.resultCount })
-                : t("browse_audit_many_sequences", {
-                    count: engine.resultCount,
-                  }),
-            active: activeUserFilterCount,
-          })
-        : t("browse_audit_filters_with_results", {
-            results:
-              engine.resultCount === 1
-                ? t("browse_audit_one_sequence", { count: engine.resultCount })
-                : t("browse_audit_many_sequences", {
-                    count: engine.resultCount,
-                  }),
-          })}
+      aria-label={!engine.isLibraryComplete
+        ? `At least ${engine.resultCount} sequences loaded. More may be available.`
+        : activeUserFilterCount > 0
+          ? t("browse_audit_filters_with_active", {
+              results:
+                engine.resultCount === 1
+                  ? t("browse_audit_one_sequence", {
+                      count: engine.resultCount,
+                    })
+                  : t("browse_audit_many_sequences", {
+                      count: engine.resultCount,
+                    }),
+              active: activeUserFilterCount,
+            })
+          : t("browse_audit_filters_with_results", {
+              results:
+                engine.resultCount === 1
+                  ? t("browse_audit_one_sequence", {
+                      count: engine.resultCount,
+                    })
+                  : t("browse_audit_many_sequences", {
+                      count: engine.resultCount,
+                    }),
+            })}
     >
       <i class="fas fa-sliders" aria-hidden="true"></i>
       <span class="filters-pill-count">
-        {engine.resultCount}<span class="result-count-word"
+        {engine.resultCount}{engine.isLibraryComplete ? "" : "+"}<span
+          class="result-count-word"
           >&nbsp;{engine.resultCount === 1
             ? t("browse_audit_sequence")
             : t("browse_audit_sequences")}</span
@@ -534,9 +541,11 @@
       {/if}
     </button>
     <span class="sr-only" aria-live="polite" aria-atomic="true">
-      {engine.resultCount === 1
-        ? t("browse_audit_one_sequence", { count: engine.resultCount })
-        : t("browse_audit_many_sequences", { count: engine.resultCount })}
+      {engine.isLibraryComplete
+        ? engine.resultCount === 1
+          ? t("browse_audit_one_sequence", { count: engine.resultCount })
+          : t("browse_audit_many_sequences", { count: engine.resultCount })
+        : `At least ${engine.resultCount} sequences loaded`}
     </span>
   {/if}
 
@@ -668,10 +677,18 @@
   {#if !onOpenFilters}
     <span class="result-count" aria-live="polite" aria-atomic="true">
       {#if resultTotal !== undefined && resultTotal !== engine.resultCount}
-        {t("browse_verified_results_shown", { count: engine.resultCount, total: resultTotal })}
+        {t("browse_verified_results_shown", {
+          count: engine.resultCount,
+          total: resultTotal,
+        })}
       {:else}
-        {engine.resultCount}<span class="result-count-word"
-          >&nbsp;{t(engine.resultCount === 1 ? "browse_audit_sequence" : "browse_audit_sequences")}</span
+        {engine.resultCount}{engine.isLibraryComplete ? "" : "+"}<span
+          class="result-count-word"
+          >&nbsp;{t(
+            engine.resultCount === 1
+              ? "browse_audit_sequence"
+              : "browse_audit_sequences"
+          )}</span
         >
       {/if}
     </span>

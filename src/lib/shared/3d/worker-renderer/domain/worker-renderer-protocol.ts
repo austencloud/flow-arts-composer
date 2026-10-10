@@ -252,6 +252,8 @@ export interface WorkerPerformerSnapshot {
   avatarHeightCm: number;
   groundY: number;
   staffLength: number;
+  /** Physical visual scale for joined grids; absent keeps the original size. */
+  propScale?: number;
   staffThickness: number;
   propBuild: WorkerPropBuild;
   /** Absent means the props' authored palette. */

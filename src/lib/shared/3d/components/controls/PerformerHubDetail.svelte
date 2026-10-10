@@ -290,9 +290,11 @@
       : undefined;
   });
   const propSizeMixed = $derived.by(() => {
-    const first = selectedPerformers[0]?.settings.staffLengthCm ?? 81;
+    const first = selectedPerformers[0];
     return selectedPerformers.some(
-      (item) => (item.settings.staffLengthCm ?? 81) !== first
+      (item) =>
+        item.staffLength !== first?.staffLength ||
+        item.gridScale !== first?.gridScale
     );
   });
 

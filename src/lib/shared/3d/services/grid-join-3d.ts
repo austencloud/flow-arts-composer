@@ -10,7 +10,26 @@ import { planeAngleToWorldPosition } from "../domain/constants/plane-transforms"
 import {
   DEFAULT_HAND_DISTANCE,
   type HandDistance,
+  type PerformerHandDistance,
 } from "../domain/performer-hand-distance";
+
+/** Keep the farthest joined hand point within its original grid radius. */
+export function gridJoinScale3D(join: GridJoinSpec | null | undefined): number {
+  return isGridJoin(join) ? 2 / (2 + join.steps) : 1;
+}
+
+/** Scale directional reach without discarding each hand's original shape. */
+export function scalePerformerHandDistance3D(
+  hands: PerformerHandDistance,
+  scale: number
+): PerformerHandDistance {
+  if (scale === 1) return hands;
+  const scaleHand = (hand: HandDistance): HandDistance => ({
+    toward: (plane, angle) => hand.toward(plane, angle) * scale,
+    max: hand.max * scale,
+  });
+  return { left: scaleHand(hands.left), right: scaleHand(hands.right) };
+}
 
 /** Resolve the one sequence-wide join against the same grid mode its cells draw. */
 export function resolveGridJoin3D(

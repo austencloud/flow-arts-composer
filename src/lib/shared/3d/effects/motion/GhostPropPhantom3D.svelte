@@ -25,6 +25,7 @@
     lifetimeSeconds: number;
     rimPower: number;
     propLength: number;
+    geometryScale?: number;
     slotIndex: number;
   }
 
@@ -37,6 +38,7 @@
     lifetimeSeconds,
     rimPower,
     propLength,
+    geometryScale = 1,
     slotIndex,
   }: Props = $props();
 
@@ -70,7 +72,11 @@
     if (!root) return;
     void propType;
     const ageSeconds = sample?.ageSeconds ?? lifetimeSeconds;
-    const visual = resolveGhostAgeVisual(ageSeconds, lifetimeSeconds, intensity);
+    const visual = resolveGhostAgeVisual(
+      ageSeconds,
+      lifetimeSeconds,
+      intensity
+    );
     // GLTF props finish loading (and re-clone on a hand color change) after
     // mount, so re-skin on every update rather than once.
     for (const material of sourceMaterials.apply(root)) {
@@ -94,5 +100,6 @@
     color={propHand === "left" ? "blue" : "red"}
     visible={true}
     length={propLength}
+    {geometryScale}
   />
 </T.Group>

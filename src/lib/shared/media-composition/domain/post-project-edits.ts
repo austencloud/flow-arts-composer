@@ -56,6 +56,14 @@ import {
 } from "#lib/shared/media-composition/domain/post-project.js";
 import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 import {
+  arrangementDurationSeconds,
+  createArrangementItem,
+} from "#lib/shared/media-composition/domain/post-arrangement-item.js";
+import {
+  validateArrangementSnapshot,
+  type ArrangementSnapshot,
+} from "#lib/shared/media-composition/domain/arrangement.js";
+import {
   clampShapeRatio,
   postCanvasOf,
 } from "#lib/shared/media-composition/domain/post-canvas.js";
@@ -97,6 +105,83 @@ import { openingTitlesSpan } from "#lib/shared/media-composition/domain/tunnel-t
 
 export interface EditContext {
   now: number;
+}
+
+/** A new arrangement joins the main track when it is empty, otherwise it overlays the playhead. */
+export function addArrangementItem(
+  project: PostProject,
+  snapshot: ArrangementSnapshot,
+  at: number,
+  ctx: EditContext
+): { project: PostProject; itemId: string } {
+  const valid = validateArrangementSnapshot(snapshot);
+  const nextId = createIdAllocator(project);
+  const main = project.tracks[MAIN_TRACK_INDEX]!;
+  const onMain = main.items.length === 0;
+  const itemId = nextId("arrangement");
+  const item = createArrangementItem(
+    valid,
+    itemId,
+    onMain ? 0 : Math.max(0, at),
+    onMain
+  );
+  if (onMain)
+    return { project: finish(appendToMain(project, item), ctx), itemId };
+  const under = mainItemAt(project, item.start);
+  const overlay = {
+    ...item,
+    anchor: under
+      ? { itemId: under.id, offset: item.start - under.start }
+      : null,
+  };
+  const top = project.tracks.length - 1;
+  const track = project.tracks[top]!;
+  const next =
+    top > MAIN_TRACK_INDEX &&
+    !track.hidden &&
+    !track.locked &&
+    trackHasRoom(track, overlay.start, itemEnd(overlay))
+      ? withTrackItems(project, top, [...track.items, overlay])
+      : withNewTrackOnTop(project, overlay, nextId);
+  return { project: finish(next, ctx), itemId };
+}
+
+/** The Arrangement editor applies its complete grid as one timeline edit. */
+export function setArrangementSnapshot(
+  project: PostProject,
+  itemId: string,
+  snapshot: ArrangementSnapshot,
+  ctx: EditContext
+): PostProject {
+  const located = findItem(project, itemId);
+  if (located?.item.kind !== "arrangement") return project;
+  const valid = validateArrangementSnapshot(snapshot);
+  if (JSON.stringify(valid) === JSON.stringify(located.item.snapshot))
+    return project;
+  const total = arrangementDurationSeconds(valid);
+  const sourceIn = Math.min(
+    located.item.sourceIn,
+    Math.max(0, total - POST_MIN_ITEM_SECONDS)
+  );
+  const previousTotal = arrangementDurationSeconds(located.item.snapshot);
+  const keptEnd =
+    Math.abs(located.item.sourceOut - previousTotal) < POST_TIME_EPSILON
+      ? total
+      : located.item.sourceOut;
+  const sourceOut = Math.min(
+    total,
+    Math.max(sourceIn + POST_MIN_ITEM_SECONDS, keptEnd)
+  );
+  return finish(
+    replaceItem(project, itemId, {
+      ...located.item,
+      snapshot: valid,
+      sourceIn,
+      sourceOut,
+      duration: (sourceOut - sourceIn) / located.item.speed,
+    }),
+    ctx
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -637,13 +722,13 @@ export function lineUpTunnelHook(
     atIntroEnd
   );
   const before = main.filter(
-    (item) => item.id !== video.id && item.start < video.start - POST_TIME_EPSILON
+    (item) =>
+      item.id !== video.id && item.start < video.start - POST_TIME_EPSILON
   );
   const clear = before.every(
     (item) => itemEnd(item) <= hook.start + POST_TIME_EPSILON
   );
-  const introFor = (cue: number) =>
-    seconds + (cue - atIntroEnd) / video.speed;
+  const introFor = (cue: number) => seconds + (cue - atIntroEnd) / video.speed;
   const fits = (cue: number | null): cue is number => {
     if (cue === null || !clear) return false;
     const intro = introFor(cue);
@@ -726,7 +811,10 @@ function withoutTunnelBackdrop(
             duration: videoPostSeconds({ ...video, sourceIn }),
           };
         }
-        if (item.anchor?.itemId !== video.id || (item.fill && item.id === hook.id))
+        if (
+          item.anchor?.itemId !== video.id ||
+          (item.fill && item.id === hook.id)
+        )
           return item;
         return {
           ...item,
@@ -1679,9 +1767,12 @@ export function trimItem(
   const delta = seconds - item.start;
   let trimmed: PostItem;
 
-  if (item.kind === "video") {
+  if (item.kind === "video" || item.kind === "arrangement") {
     const minSpan = POST_MIN_ITEM_SECONDS * item.speed;
-    const limit = takeLength(project, item.takeId);
+    const limit =
+      item.kind === "video"
+        ? takeLength(project, item.takeId)
+        : arrangementDurationSeconds(item.snapshot);
     if (edge === "end") {
       trimmed = {
         ...item,
@@ -1737,7 +1828,7 @@ export function trimItem(
       trimmed.transitionOut.editorAddedSeconds ??
       trimmed.transitionOut.duration;
     const nextDuration =
-      trimmed.kind === "video"
+      trimmed.kind === "video" || trimmed.kind === "arrangement"
         ? (trimmed.sourceOut - trimmed.sourceIn) / trimmed.speed
         : trimmed.duration;
     const removed =
@@ -2586,7 +2677,7 @@ function splitPieces(
           editorAddedSeconds: 0,
         }
       : transition;
-  if (item.kind === "video") {
+  if (item.kind === "video" || item.kind === "arrangement") {
     const at = item.sourceIn + cut * item.speed;
     return [
       {

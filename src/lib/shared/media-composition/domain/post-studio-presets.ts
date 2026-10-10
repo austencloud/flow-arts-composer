@@ -48,6 +48,7 @@ export type PostStudioRoleKey =
 /** How a layer element is built and how the compositor reads a frame from it. */
 export type PostStudioRenderMode =
   | "external-media"
+  | "arrangement"
   | "sequence-animation"
   | "choreo-card"
   | "tunnel"

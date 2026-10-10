@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { arrangementSnapshotSchema } from "#lib/shared/media-composition/domain/arrangement.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { PROP_LOOKS } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import {
@@ -482,6 +483,24 @@ export const PostVideoItemSchema = z
 
 export type PostVideoItem = z.infer<typeof PostVideoItemSchema>;
 
+/** An editable Arrange grid, sampled on its own beat clock. */
+export const PostArrangementItemSchema = z
+  .object({
+    ...itemBase,
+    kind: z.literal("arrangement"),
+    snapshot: arrangementSnapshotSchema,
+    sourceIn: SecondsSchema,
+    sourceOut: z.number().finite().positive(),
+    speed: z.number().finite().min(POST_MIN_SPEED).max(POST_MAX_SPEED),
+  })
+  .strict()
+  .refine((item) => item.sourceOut > item.sourceIn, {
+    message: "An arrangement must end after it starts",
+    path: ["sourceOut"],
+  });
+
+export type PostArrangementItem = z.infer<typeof PostArrangementItemSchema>;
+
 export const PostImageItemSchema = z
   .object({
     ...itemBase,
@@ -778,6 +797,7 @@ export type PostTitlesItem = z.infer<typeof PostTitlesItemSchema>;
 
 export const PostItemSchema = z.discriminatedUnion("kind", [
   PostVideoItemSchema,
+  PostArrangementItemSchema,
   PostImageItemSchema,
   PostCardItemSchema,
   PostAnimationItemSchema,
@@ -793,6 +813,7 @@ export type PostItemKind = PostItem["kind"];
 /** Kinds the main track holds; anything else lives on an overlay track. */
 export const MAIN_TRACK_KINDS: readonly PostItemKind[] = [
   "video",
+  "arrangement",
   "image",
   "card",
 ];
@@ -978,6 +999,7 @@ export function textBox(placement: PostTextPlacement): PostBox {
 export function defaultBoxFor(kind: PostItemKind): PostBox {
   switch (kind) {
     case "video":
+    case "arrangement":
     case "image":
     case "card":
       return { ...POST_BOX.full };

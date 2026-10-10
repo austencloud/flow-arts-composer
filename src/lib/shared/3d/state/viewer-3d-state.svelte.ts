@@ -29,7 +29,6 @@ import type {
 import {
   Plane,
   PlaneMode,
-  cmToUnits,
   type PropBuild,
 } from "@austencloud/scene-3d";
 import type { CharacterInstanceState } from "./character-instance-state.svelte";
@@ -852,10 +851,7 @@ function buildViewer3DState(
         position: performer.position,
         loadedSequence: performer.loadedSequence,
         handDistance: performer.handDistance,
-        staffHalfLength:
-          (performer.settings.staffLengthCm == null
-            ? userProportionsState.staffLength
-            : cmToUnits(performer.settings.staffLengthCm)) / 2,
+        staffHalfLength: performer.staffLength / 2,
       })),
       stageGroundOffset,
       viewportAspect
