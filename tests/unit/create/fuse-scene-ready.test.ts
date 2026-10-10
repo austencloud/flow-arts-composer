@@ -2,13 +2,24 @@
  * The Fuse preview scene reports ready once, when every fused cell and every
  * one-hand source it shows has drawn: six reports in all. A cell that is
  * still drawing holds the announcement back, a resize neither announces early
- * nor strands it, and a box with no layout announces nothing. Its
- * pictographs are stand-ins, so this checks only the readiness bookkeeping.
+ * nor strands it, and a box with no layout announces nothing. Fuse's path
+ * maker loads only after that report. Its pictographs and maker are
+ * stand-ins, so this checks only the readiness bookkeeping.
  */
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakePictograph } from "./FakeMethodPictograph.svelte";
 import { mountFuseScene } from "./fuse-scene-ready-harness.svelte";
+
+// The next pair never arrives, so the scene keeps the demo's hands.
+const swap = vi.hoisted(() => ({
+  demoFusePair: vi.fn(() => ({})),
+  swapFuseHand: vi.fn(() => new Promise(() => {})),
+}));
+vi.mock(
+  "#lib/features/create/shared/components/method-previews/method-preview-fuse-swap.js",
+  () => swap
+);
 
 vi.mock(
   "#lib/features/create/shared/components/method-previews/MethodPreviewPictograph.svelte",
@@ -32,6 +43,7 @@ let stubbedCreateElement: typeof document.createElement;
 let scene: ReturnType<typeof mountFuseScene> | null = null;
 
 beforeEach(() => {
+  swap.swapFuseHand.mockClear();
   stubbedCreateElement = document.createElement;
   document.createElement = realCreateElement.bind(document);
   host = document.createElement("div");
@@ -97,6 +109,17 @@ describe("Fuse scene readiness", () => {
     for (const report of [...fakePictograph.deferred]) report();
     flushSync();
     expect(onready).toHaveBeenCalledTimes(1);
+  });
+
+  it("makes its next pair only once it has drawn, red first", async () => {
+    fakePictograph.reportBudget = 4;
+    scene = mountFuseScene(host, STRIP, vi.fn());
+    await vi.dynamicImportSettled();
+    expect(swap.swapFuseHand).not.toHaveBeenCalled();
+    for (const report of [...fakePictograph.deferred]) report();
+    flushSync();
+    await vi.waitFor(() => expect(swap.swapFuseHand).toHaveBeenCalledTimes(1));
+    expect(swap.swapFuseHand).toHaveBeenCalledWith(expect.anything(), "right");
   });
 
   it("does not report again when the box resizes afterwards", () => {
