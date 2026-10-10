@@ -41,7 +41,13 @@ import {
   type Stats,
 } from "./sim/run-session";
 
-const SESSION_TEST_TIMEOUT_MS = 60_000;
+// Pure CPU: the real mind on a virtual clock, no I/O. In a three-file run on
+// 2026-10-10 the 1,000-press session took 14.5 s, the 400-press one 6.3 s and
+// the other sessions 2.7 to 10.6 s. Under the full suite's 31 forks the
+// 1,000-press session took 73,185 ms on 2026-10-09 and timed out against the
+// 60 s this constant held: a file there runs five to eight times slower than
+// alone. 120 s is the budget tests/unit/3d-animation gives a loaded machine.
+const SESSION_TEST_TIMEOUT_MS = 120_000;
 
 interface AuditedDecision {
   record: SessionRecord;
