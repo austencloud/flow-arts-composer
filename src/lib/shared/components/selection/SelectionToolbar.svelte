@@ -24,6 +24,7 @@
     dangerIcon?: string;
     onDangerAction?: () => void;
     onSelectAll: () => void;
+    selectAllDisabled?: boolean;
     onExitSelection: () => void;
     showExitAction?: boolean;
     onClearSelection?: () => void;
@@ -35,6 +36,7 @@
   let {
     selectedCount,
     totalCount,
+    selectAllDisabled = false,
     primaryLabel,
     primaryIcon,
     onPrimaryAction,
@@ -95,6 +97,10 @@
       type="button"
       class="toolbar-button select-all-button"
       onclick={allSelected && onClearSelection ? onClearSelection : onSelectAll}
+      disabled={selectAllDisabled}
+      title={selectAllDisabled
+        ? "Wait for saved sequences to finish loading"
+        : undefined}
       aria-label={allSelected && onClearSelection
         ? t("shared_controls_deselect_all")
         : t("shared_controls_select_all")}

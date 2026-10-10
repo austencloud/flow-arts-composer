@@ -9,7 +9,16 @@ interface PendingLoad {
 
 const mocks = vi.hoisted(() => ({
   pending: [] as PendingLoad[],
+  pagePending: [] as Array<{
+    resolve: (page: {
+      sequences: SequenceData[];
+      nextCursor: { sortValue: string; documentId: string };
+      exhausted: boolean;
+    }) => void;
+  }>,
   getAllSequences: vi.fn<() => Promise<SequenceData[]>>(),
+  removedListeners: new Set<(id: string) => void>(),
+  addedListeners: new Set<(sequence: SequenceData) => void>(),
 }));
 
 vi.mock(
@@ -42,6 +51,10 @@ vi.mock("#lib/shared/library/get-library-repository.js", async () => {
     await import("./browse-engine-auth-test-state.svelte");
   return {
     getLibraryRepository: () => ({
+      getSequencePage: () =>
+        new Promise((resolve) => {
+          mocks.pagePending.push({ resolve });
+        }),
       getSequences: () =>
         new Promise<SequenceData[]>((resolve) => {
           mocks.pending.push({
@@ -61,8 +74,15 @@ vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
 }));
 
 vi.mock("#lib/shared/library/library-events.js", () => ({
-  onLibraryMutated: () => () => {},
-  onLibrarySequenceAdded: () => () => {},
+  onLibraryMutated: (listener: (id: string) => void) => {
+    mocks.removedListeners.add(listener);
+    return () => mocks.removedListeners.delete(listener);
+  },
+  onLibrarySequenceAdded: (listener: (sequence: SequenceData) => void) => {
+    mocks.addedListeners.add(listener);
+    return () => mocks.addedListeners.delete(listener);
+  },
+  onLibrarySequenceUpdated: () => () => {},
 }));
 
 vi.mock("#lib/shared/library/services/collection-manager.js", () => ({
@@ -94,11 +114,46 @@ function sequence(id: string): SequenceData {
 describe("BrowseEngine effective identity switching", () => {
   beforeEach(() => {
     mocks.pending = [];
+    mocks.pagePending = [];
     mocks.getAllSequences.mockReset().mockResolvedValue([]);
     localStorage.clear();
     browseEngineAuthTestState.effectiveUserId = "owner";
     browseEngineAuthTestState.isAuthenticated = true;
     browseEngineAuthTestState.isFullAccount = true;
+  });
+
+  it("shows a saved first page while the rest of the library is pending", async () => {
+    const { engine, dispose } = createBrowseEngineForTest({
+      persistKey: null,
+      initialSource: "my-library",
+      progressiveLibrary: true,
+    });
+    const initialLoad = engine.initialize();
+    expect(mocks.pagePending).toHaveLength(1);
+    mocks.pagePending[0]!.resolve({
+      sequences: [sequence("first")],
+      nextCursor: { sortValue: "first", documentId: "first" },
+      exhausted: false,
+    });
+    await initialLoad;
+    await tick();
+    expect(engine.allSequences.map((item) => item.id)).toEqual(["first"]);
+    expect(engine.sectionsReady).toBe(true);
+    expect(engine.isLoading).toBe(false);
+    expect(engine.isLoadingMore).toBe(true);
+    expect(mocks.pagePending).toHaveLength(2);
+    mocks.pagePending[1]!.resolve({
+      sequences: [sequence("second")],
+      nextCursor: { sortValue: "second", documentId: "second" },
+      exhausted: true,
+    });
+    await vi.waitFor(() => expect(engine.isLoadingMore).toBe(false));
+    expect(engine.allSequences.map((item) => item.id)).toEqual([
+      "first",
+      "second",
+    ]);
+    engine.destroy();
+    dispose();
   });
 
   it("reloads for preview and exit without accepting stale account rows", async () => {
@@ -184,6 +239,30 @@ describe("BrowseEngine effective identity switching", () => {
     await engine.initialize();
     expect(engine.allSequences.map((item) => item.id)).toEqual(["my-draft"]);
     expect(mocks.pending).toHaveLength(0);
+    engine.destroy();
+    dispose();
+  });
+
+  it("keeps guest mutation updates with progressive account paging configured", async () => {
+    browseEngineAuthTestState.effectiveUserId = "guest";
+    browseEngineAuthTestState.isFullAccount = false;
+    recordSavedSequenceId("guest", "saved");
+    mocks.getAllSequences.mockResolvedValue([sequence("saved")]);
+    const { engine, dispose } = createBrowseEngineForTest({
+      persistKey: null,
+      initialSource: "my-library",
+      progressiveLibrary: true,
+    });
+    await engine.initialize();
+    await tick();
+    expect(engine.allSequences.map((item) => item.id)).toEqual(["saved"]);
+    for (const listener of mocks.addedListeners) listener(sequence("new-save"));
+    expect(engine.allSequences.map((item) => item.id)).toEqual([
+      "new-save",
+      "saved",
+    ]);
+    for (const listener of mocks.removedListeners) listener("saved");
+    expect(engine.allSequences.map((item) => item.id)).toEqual(["new-save"]);
     engine.destroy();
     dispose();
   });
