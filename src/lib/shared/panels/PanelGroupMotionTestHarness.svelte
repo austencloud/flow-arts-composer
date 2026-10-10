@@ -18,7 +18,10 @@
   <div data-testid="tool">Tool</div>
 {/snippet}
 
-<div style="display: flex; width: 600px; height: 300px;">
+<!-- The app's motion token, so the track really slides here too. -->
+<div
+  style="display: flex; width: 600px; height: 300px; --transition-emphasis: 280ms ease-in-out;"
+>
   <PanelGroup
     direction="horizontal"
     gap={0}
