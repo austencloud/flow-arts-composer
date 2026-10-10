@@ -124,6 +124,10 @@ export interface AppSettings {
   // Workflow Settings
   skipClearConfirmation?: boolean; // Skip confirmation when clearing sequence (undo is available)
   skipLoopConfirmation?: boolean; // Skip confirmation when applying LOOP auto-completion (undo is available)
+  skipRemovePerformerConfirmation?: boolean; // Skip confirmation when removing 3D performers (viewer undo)
+  skipDeleteTrackConfirmation?: boolean; // Skip confirmation when deleting a Compose timeline track (timeline undo)
+  skipClearPostKeyframesConfirmation?: boolean; // Skip confirmation when clearing a post's keyframes (Undo toast)
+  // The list Settings shows lives in settings/confirmations.ts.
 
   // Generator Settings
   blockedStartPlacements?: GridPlacement[]; // Custom blocked positions for sequence generation

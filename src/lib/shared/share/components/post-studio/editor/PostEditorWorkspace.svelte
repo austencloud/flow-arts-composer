@@ -151,6 +151,10 @@
   } from "#lib/shared/media-composition/domain/post-music-edits.js";
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import {
+    shouldConfirm,
+    stopAsking,
+  } from "#lib/shared/settings/confirmations.js";
   import OverflowMenu from "#lib/shared/ui/components/OverflowMenu.svelte";
   import {
     showToast,
@@ -2682,7 +2686,14 @@
   <PostEditorActions
     {exporting}
     locked={showTimingStage || (inHeader && cropMode)}
-    onClearPostKeyframes={() => (confirmClearPost = true)}
+    onClearPostKeyframes={() => {
+      // Clearing shows an Undo toast, so the person may turn this off.
+      if (shouldConfirm("skipClearPostKeyframesConfirmation")) {
+        confirmClearPost = true;
+      } else {
+        clearPostKeys();
+      }
+    }}
     clearableKeyframes={clearablePostKeys}
     onMirror={sequence ? mirrorWholePost : undefined}
     mirrored={editor.project.mirrored ?? false}
@@ -3429,6 +3440,8 @@
       ? ` ${t("post_keyframe_clear_post_locked", { count: lockedPostKeys })}`
       : "")}
   confirmText={t("post_keyframe_remove_all_post_confirm")}
+  showDontAskAgain={true}
+  onDontAskAgainChange={() => stopAsking("skipClearPostKeyframesConfirmation")}
   onConfirm={clearPostKeys}
   onCancel={() => (confirmClearPost = false)}
 />

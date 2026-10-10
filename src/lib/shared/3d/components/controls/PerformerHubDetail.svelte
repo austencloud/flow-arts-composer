@@ -15,6 +15,10 @@
   import CharacterSelectWorkspace from "./character-select/CharacterSelectWorkspace.svelte";
   import { resolveCharacterPreviewPerformer } from "./character-select/character-preview-source";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import {
+    shouldConfirm,
+    stopAsking,
+  } from "#lib/shared/settings/confirmations.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import PerformerSequencePanel from "./PerformerSequencePanel.svelte";
   import PerformerIdentityHeader from "./PerformerIdentityHeader.svelte";
@@ -391,6 +395,15 @@
   }
 
   let removeConfirmOpen = $state(false);
+
+  // Removing is undoable from the viewer, so the person may turn this off.
+  function requestRemovePerformer(): void {
+    if (shouldConfirm("skipRemovePerformerConfirmation")) {
+      removeConfirmOpen = true;
+    } else {
+      removePerformer();
+    }
+  }
   let tabContentRect = $state<DOMRectReadOnly>();
   let tabContentElement = $state<HTMLDivElement>();
 
@@ -434,7 +447,7 @@
     {sequenceWord}
     {sequenceSteps}
     {canRemove}
-    onRemove={() => (removeConfirmOpen = true)}
+    onRemove={requestRemovePerformer}
     emptyHint={emptyScope?.message ?? null}
     onSelectAll={selectAllFromEmptyScope}
     {onSettingChange}
@@ -648,6 +661,8 @@
     ? "Keep performers"
     : "Keep performer"}
   variant="danger"
+  showDontAskAgain={true}
+  onDontAskAgainChange={() => stopAsking("skipRemovePerformerConfirmation")}
   onConfirm={removePerformer}
   onCancel={() => (removeConfirmOpen = false)}
 />
