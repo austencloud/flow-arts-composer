@@ -50,6 +50,15 @@ const LONGEST_URL =
 /** What serialized cards carry now: the code and physical ID only. */
 const SERIALIZED_URL = buildSerializedCardUrl("K7QM2X", "k7Qm2XpR9aBc");
 
+// The first case also waits for the ZXing decoder's WebAssembly to compile,
+// and every case renders an 822 by 1122 front through node-canvas and decodes
+// it up to three times: 1.7 s for the first and 0.2 to 0.3 s for the rest
+// with the cores free (ten-file run, 2026-10-09). Under the full suite's 31
+// forks a file runs five to eight times slower, and on 2026-10-08 one full
+// run blew the 30 s default. Each case gets the 120 s
+// tests/unit/3d-animation gives a loaded machine.
+const SCAN_TIMEOUT_MS = 120_000;
+
 function sequence(stepCount: number): SequenceData {
   return {
     id: `scan-${stepCount}`,
@@ -259,6 +268,7 @@ describe.runIf(nodeCanvasAvailable())("serialized card front QR scan", () => {
           `Card "${cardSequence.word}": its QR code would print with`
         );
       }
-    }
+    },
+    SCAN_TIMEOUT_MS
   );
 });

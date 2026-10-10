@@ -31,6 +31,14 @@ const canToneMap =
   ffmpegHas("-filters", "zscale") &&
   ffmpegHas("-filters", "tonemap");
 
+// Each take below is a one-second clip that ffmpeg encodes with libx264 or
+// libx265 and the import then transcodes again: 0.5 to 1.4 s per test with
+// the cores free (ten-file run, 2026-10-09). ffmpeg spreads an encode across
+// every core, so under the full suite's 31 forks it gets none to itself, and
+// on 2026-10-08 one full run blew the 30 s default. The budget is the 120 s
+// tests/unit/3d-animation gives a loaded machine.
+const ENCODE_TIMEOUT_MS = 120_000;
+
 const SDR = {
   durationSeconds: 1,
   videoCodec: "h264",
@@ -207,7 +215,7 @@ describe("importing a take", () => {
     expect(await fs.readFile(path.join(footage, "opening.mp4"))).toEqual(
       await fs.readFile(source)
     );
-  });
+  }, ENCODE_TIMEOUT_MS);
 
   it.skipIf(!canEncode)(
     "converts an HEVC .mov to H.264 MP4 with its sound, under a free name",
@@ -242,7 +250,8 @@ describe("importing a take", () => {
         "my-take-1-2.mp4",
         "my-take-1.mp4",
       ]);
-    }
+    },
+    ENCODE_TIMEOUT_MS
   );
 
   it.skipIf(!canToneMap)("tone-maps HDR footage to SDR", async () => {
@@ -266,5 +275,5 @@ describe("importing a take", () => {
       transfer: "bt709",
       hdr: false,
     });
-  });
+  }, ENCODE_TIMEOUT_MS);
 });

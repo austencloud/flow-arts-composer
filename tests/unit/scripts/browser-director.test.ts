@@ -4,6 +4,15 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDirector } from "../../../scripts/demo-capture/browser-director.mjs";
 
+// The director steps its pointer and waits for the page's hover on real
+// timers, so these tests take 0.6 to 4.2 s with the cores free (ten-file run,
+// 2026-10-09), and each one makes and removes a folder of frames in its
+// hooks. Under the full suite's 31 forks a file runs five to eight times
+// slower, and on 2026-10-08 one full run timed this file out in those hooks
+// at the 10 s default. Tests get the 120 s tests/unit/3d-animation gives a
+// loaded machine; the folder hooks get 60 s.
+vi.setConfig({ testTimeout: 120_000, hookTimeout: 60_000 });
+
 let root: string;
 beforeEach(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), "director-"));

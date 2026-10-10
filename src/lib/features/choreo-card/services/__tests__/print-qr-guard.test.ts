@@ -44,6 +44,15 @@ const SERIALIZED_URL =
   "https://tka.run/K7QM?bp=staff&rp=staff&pid=k7Qm2XpR9aBc";
 const element = TND_ELEMENTS[0]!;
 
+// The first rendered test also waits for the ZXing decoder's WebAssembly to
+// compile, and each one renders an 822 by 1122 front through node-canvas and
+// decodes it: 1.35 s for that first test and up to 0.14 s for the rest with
+// the cores free (ten-file run, 2026-10-09). Under the full suite's 31 forks a
+// file runs five to eight times slower, and on 2026-10-08 one full run blew
+// the 30 s default. The file's tests get the 120 s tests/unit/3d-animation
+// gives a loaded machine; the planned-size checks never come near it.
+vi.setConfig({ testTimeout: 120_000 });
+
 function sequence(stepCount: number, word: string): SequenceData {
   return {
     id: `guard-${word}`,
