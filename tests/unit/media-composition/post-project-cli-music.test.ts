@@ -11,7 +11,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createFeatureVideoStore,
   type FeatureVideoStore,
@@ -33,6 +33,14 @@ const hasFfmpeg = (() => {
     return false;
   }
 })();
+
+// Every test here starts the command line as its own node process, up to six
+// times over, and most write a WAV with ffmpeg first: 0.2 to 0.9 s per test
+// with the cores free (ten-file run, 2026-10-09). Under the full suite's 31
+// forks each process start waits on every other worker, and on 2026-10-08 one
+// full run blew the 30 s default. The file's tests get the 120 s
+// tests/unit/3d-animation gives a loaded machine.
+vi.setConfig({ testTimeout: 120_000 });
 
 const MUSIC_URL = "/api/dev/feature-videos/promo/media/music/song.wav";
 const TAKE_URL = "/api/dev/feature-videos/promo/media/footage/take.wav";

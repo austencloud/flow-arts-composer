@@ -1,4 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import ts from "typescript";
@@ -148,6 +149,47 @@ const roots = [
   "src/routes/(public)/guide",
 ];
 
+/**
+ * The audited sources that import an i18n module, read through a bounded pool
+ * of concurrent reads. Both scanners only count calls through names imported
+ * from an i18n module, so a file without that import has no keys to find, and
+ * dropping it before parsing cuts the scan to about a sixth of the files.
+ *
+ * Reading the 5,090 candidates one readFileSync at a time cost 2.3 s of the
+ * scan's 5.5 s alone (measured 2026-10-09; parsing the 877 kept files is the
+ * other 3.1 s), and serial reads are what the full suite's disk contention
+ * stretches most, the same hazard tests/unit/public-collection-count-contract
+ * overlaps its census for. The file set and the string check are unchanged.
+ */
+async function auditedSources(): Promise<[string, string][]> {
+  const paths: string[] = [];
+  for (const root of roots) {
+    for (const file of readdirSync(root, { recursive: true }) as string[]) {
+      if (!/\.(svelte|ts)$/.test(file) || /\.(test|spec)\./.test(file)) continue;
+      paths.push(path.join(root, file));
+    }
+  }
+  const hits: [string, string][] = [];
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < paths.length) {
+      const file = paths[cursor++]!;
+      const source = await readFile(file, "utf8");
+      if (source.includes("/i18n/")) hits.push([file, source]);
+    }
+  };
+  await Promise.all(Array.from({ length: 32 }, worker));
+  return hits.sort(([a], [b]) => a.localeCompare(b));
+}
+
+// Alone in a ten-file run the scan took 11.3 s with serial reads and 7.7 s
+// with them overlapped (2026-10-09). In the full 2,566-file run on 31 forks it
+// reached 110 s against the old 90 s budget (2026-10-08): the parse of 877
+// files through the TypeScript and Svelte parsers slows with everything else
+// under that load, so the budget is the 120 s tests/unit/3d-animation gives a
+// loaded machine.
+const SCAN_TIMEOUT_MS = 120_000;
+
 describe("German translation contracts", () => {
   it("ignores documentation examples and recognizes imported translation aliases", () => {
     const script = `
@@ -176,32 +218,22 @@ describe("German translation contracts", () => {
       .toEqual([...expected, "markup_one", "markup_many"].sort());
   });
 
-  it("does not silently fall back to English for literal translation calls in audited surfaces", () => {
+  it("does not silently fall back to English for literal translation calls in audited surfaces", async () => {
     const missing = new Set<string>();
-    for (const root of roots) {
-      for (const file of readdirSync(root, { recursive: true }) as string[]) {
-        if (!/\.(svelte|ts)$/.test(file) || /\.(test|spec)\./.test(file)) continue;
-        const fullPath = path.join(root, file);
-        const source = readFileSync(fullPath, "utf8");
-        // Both scanners only count calls through names imported from an i18n
-        // module, so a file without that import has no keys to find. Skipping
-        // it before parsing cuts the scan to about a sixth of the files, which
-        // keeps this test inside its budget when the full suite loads the CPU.
-        if (!source.includes("/i18n/")) continue;
-        // Literal calls are syntax nodes, so examples in comments and strings
-        // cannot masquerade as UI lookups. Dynamic registries have their own test.
-        const keys = file.endsWith(".svelte")
-          ? svelteCalls(source, fullPath)
-          : typescriptCalls(source, fullPath).keys;
-        for (const key of keys) {
-          if (!english[key] || !german[key] || german[key] === key) {
-            missing.add(`${fullPath}: ${key}`);
-          }
+    for (const [fullPath, source] of await auditedSources()) {
+      // Literal calls are syntax nodes, so examples in comments and strings
+      // cannot masquerade as UI lookups. Dynamic registries have their own test.
+      const keys = fullPath.endsWith(".svelte")
+        ? svelteCalls(source, fullPath)
+        : typescriptCalls(source, fullPath).keys;
+      for (const key of keys) {
+        if (!english[key] || !german[key] || german[key] === key) {
+          missing.add(`${fullPath}: ${key}`);
         }
       }
     }
     expect([...missing]).toEqual([]);
-  }, 90_000);
+  }, SCAN_TIMEOUT_MS);
 
   it("preserves interpolation parameters throughout the German catalog", () => {
     const parameters = (text: string) => [...new Set([...text.matchAll(/\{(\w+)\}/g)].map(m => m[1]))].sort();
