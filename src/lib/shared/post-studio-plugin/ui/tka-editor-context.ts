@@ -12,6 +12,7 @@ import type { SequenceExportOptions } from "$lib/shared/render/domain/models/seq
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import type { PostTimingSession } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
+import type { TimingUi } from "./tka-timing-ui.svelte";
 
 /** What tka's plugin functions need beyond the generic state. */
 export interface TkaEditorFacts {
@@ -20,8 +21,13 @@ export interface TkaEditorFacts {
   isQrImage(imageId: string): boolean;
   /** The plugin tka created, for the kind labels. */
   plugin: VideoEditorPlugin | null;
-  /** Opens the timing mode on the selected clip; set by the scope from Task 15b on. */
-  openBeats?(): void;
+  /**
+   * Opens the timing mode: on the selected clip, or the clip under the
+   * playhead, without a take; on the take's first clip with one.
+   */
+  openBeats?(takeId?: string): void;
+  /** The beat-timing session, for the timing mode's keys. */
+  readonly timing: PostTimingSession;
   /** Opens the save menu for the post's sequence where a media layer was right-clicked. */
   openSaveMenu?(event: MouseEvent): void;
   /** The card options a QR image's poster look follows. */
@@ -70,7 +76,7 @@ export interface TkaScopeChildren {
   readonly inspectorTarget: HTMLElement | null;
 }
 
-/** Design H's context, provided by TkaEditorScope; Task 15b adds its last members. */
+/** Design H's context, provided by TkaEditorScope. */
 export interface TkaEditorContext {
   editor: PostEditorState;
   /** Where each take's LED staffs are, for the Effects tool; the bindings set it. */
@@ -97,6 +103,8 @@ export interface TkaEditorContext {
   openSaveMenu(event: MouseEvent): void;
   /** The beat-timing session. */
   readonly timing: PostTimingSession;
+  /** What the timing mode's toolbar, dock, panel and stage share. */
+  readonly timingUi: TimingUi;
   /** The sequence's saved videos, as the per-sequence store holds them. */
   readonly catalogVideos: readonly CollaborativeVideo[];
   readonly previews: TkaPreviewsHolder;

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
   import { onDestroy, onMount, tick, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
@@ -19,7 +18,6 @@
     POST_TIME_EPSILON,
     findItem,
     itemEnd,
-    mainItemAt,
     type PostBackground,
     type PostCanvasRatio,
     type PostItem,
@@ -53,10 +51,10 @@
     updateMusic,
     type MusicPatch,
   } from "@austencloud/video-editor/core";
-  import { createTkaSurfaces } from "$lib/shared/post-studio-plugin";
   import type {
     CompositionSourceBinding,
     LibraryTake,
+    ToolRunContext,
     VideoEditorPlugin,
   } from "@austencloud/video-editor";
   import type {
@@ -71,7 +69,6 @@
     AudioDownloadStalledError,
     buildMixedAudioTrack,
   } from "@austencloud/video-editor/render";
-  import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -83,15 +80,9 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { PostStudioShareExport } from "../post-studio-share-export";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import PostTimingTap from "../builder/PostTimingTap.svelte";
-  import PostTimingAnimationPreview from "../builder/PostTimingAnimationPreview.svelte";
-  import PostTimingAnimationSettings from "../builder/PostTimingAnimationSettings.svelte";
-  import PostTimingStage from "../builder/PostTimingStage.svelte";
-  import PostTimingTimeline from "../builder/PostTimingTimeline.svelte";
-  import PostTimingPanel from "../builder/PostTimingPanel.svelte";
   import { formatTakeClock } from "./post-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
+  import EditHistoryKeys from "./EditHistoryKeys.svelte";
   import { qrImageForAppearance } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
   import {
     createTabSync,
@@ -128,10 +119,7 @@
   import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
   import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
   import { readVideoFile, videoFileError } from "./post-editor-files";
-  import {
-    readInShotRecoveryPackage,
-    loadPostProjectFonts,
-  } from "$lib/shared/media-composition/services/inshot-recovery-package";
+  import { loadPostProjectFonts } from "$lib/shared/media-composition/services/inshot-recovery-package";
   import {
     createCropSession,
     type CropShapeKind,
@@ -143,10 +131,6 @@
   import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
   import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
   import type { SavedFeatureExport } from "$lib/shared/media-composition/domain/feature-video-export";
-  import {
-    parsePostStudioBackup,
-    serializePostStudioBackup,
-  } from "$lib/shared/media-composition/services/post-project-backup";
   import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
   import PostDraftStatus from "./PostDraftStatus.svelte";
   import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
@@ -288,8 +272,7 @@
     () => editor.isPlaying,
     services.previewCache
   );
-  // The scope's timing session, read here until Task 15b moves the timing
-  // branches out.
+  // The scope's timing session: the pauses below still stop it.
   const session = tka.timing;
 
   let draftSaving = $state(false);
@@ -414,13 +397,10 @@
   }
 
   async function downloadDraft(): Promise<void> {
-    const blob = new Blob([serializePostStudioBackup(editor.snapshot)], {
-      type: "application/json",
-    });
-    const result = await downloadBlobToDisk(
-      blob,
-      `${sequence.id}-mapped.post-studio.json`
-    );
+    const backup = plugin?.ui?.backup;
+    if (!backup) return;
+    const { blob, filename } = backup.serialize(editor);
+    const result = await downloadBlobToDisk(blob, filename);
     if (!result.success)
       draftError =
         "Could not download the backup. Keep this editor open and try again.";
@@ -774,9 +754,11 @@
         )
       : 0
   );
-  /** Tapping beats swaps the post for the take being mapped. */
-  const showTimingStage = $derived(
-    editor.mode === "timing" && !sharing && !previewTarget && !exporting
+  /** A plugin mode (tka: tapping beats) swaps the post for its own screen. */
+  const activeMode = $derived(
+    sharing || previewTarget || exporting
+      ? null
+      : (plugin?.ui?.modes?.find((mode) => mode.id === editor.mode) ?? null)
   );
   const sequenceName = $derived(
     simplifyRepeatedWord(
@@ -801,17 +783,6 @@
       !tka.viewerMoving
   );
 
-  /** The clip Beats opens: the selected video, else the one under the playhead. */
-  const beatsClip = $derived.by((): PostVideoItem | null => {
-    const selected = editor.selectedItem;
-    if (selected?.kind === "video") return selected;
-    const under = mainItemAt(editor.project, editor.previewSeconds);
-    return under?.kind === "video" ? under : null;
-  });
-  const canTapBeats = $derived(
-    beatsClip !== null && Boolean(editor.mediaUrl(beatsClip.takeId))
-  );
-
   // ---- Tools -----------------------------------------------------------------
 
   /** The editor's own width, not the window's: wide enough for a panel
@@ -828,7 +799,7 @@
   });
 
   const shortMappingLayout = $derived(
-    showTimingStage &&
+    activeMode !== null &&
       !inspectorTarget &&
       editorHeight < 28 * remPixels &&
       editorWidth >= LANDSCAPE_WIDE_REM * remPixels &&
@@ -846,23 +817,6 @@
   );
   /** A panel always shows beside the preview or in the viewer's side panel. */
   const panelBeside = $derived(layout !== "phone");
-  let timingSettingsOpen = $state(false);
-  let timingAnimationOpen = $state(false);
-  let timingRatio = $state(9 / 16);
-  let timingAnimationSection: HTMLDivElement | undefined = $state();
-  async function openTimingAnimation(): Promise<void> {
-    timingAnimationOpen = true;
-    if (!panelBeside) {
-      timingSettingsOpen = true;
-      return;
-    }
-    await tick();
-    timingAnimationSection?.scrollIntoView({ block: "nearest" });
-    timingAnimationSection?.focus({ preventScroll: true });
-  }
-  $effect(() => {
-    if (!showTimingStage || panelBeside) timingSettingsOpen = false;
-  });
 
   const selection = $derived.by((): PostToolSelection => {
     const item = editor.selectedItem;
@@ -885,7 +839,7 @@
   const appearanceDockOpen = $derived(
     layout === "phone" &&
       !cropMode &&
-      !showTimingStage &&
+      activeMode === null &&
       shown === "appearance"
   );
   $effect(() => {
@@ -909,7 +863,7 @@
   const cropMode = $derived(
     shown === "crop" &&
       editor.selectedItem?.kind === "video" &&
-      !showTimingStage &&
+      activeMode === null &&
       !sharing &&
       !previewTarget
   );
@@ -1006,7 +960,7 @@
   // Releasing the minimum on Escape would squeeze the preview for that beat.
   const MIN_DOCK_PANEL_REM = 14;
   $effect.pre(() => {
-    const phone = layout === "phone" && !showTimingStage;
+    const phone = layout === "phone" && activeMode === null;
     const cropDock = phone && cropMode;
     const holding = phone && !cropMode && shown !== null && !appearanceDockOpen;
     const size = { width: editorWidth, height: editorHeight };
@@ -1118,39 +1072,21 @@
         return !editor.selectionEditable;
       case "delete":
         return !musicSelected && !editor.selectionEditable;
-      case "beats":
-        return !canTapBeats;
-      default:
-        return false;
+      default: {
+        const tool = plugin?.ui?.tools?.find((entry) => entry.id === id);
+        return tool?.type === "action" && tool.enabled
+          ? !tool.enabled(editor)
+          : false;
+      }
     }
   }
 
   // ---- Actions ---------------------------------------------------------------
 
-  /** Opens beat tapping on a clip's footage, starting at its first frame. */
-  function openBeats(clip: PostVideoItem): void {
-    editor.pause();
-    session.openAt(clip.takeId, clip.sourceIn);
-    editor.mode = "timing";
-  }
-
-  /** From the video list: starts where the take's first clip does. */
-  function openTakeBeats(takeId: string): void {
-    let firstClip: PostVideoItem | null = null;
-    for (const track of editor.project.tracks) {
-      for (const item of track.items) {
-        if (item.kind === "video" && item.takeId === takeId) {
-          if (!firstClip || item.start < firstClip.start) firstClip = item;
-        }
-      }
-    }
-    editor.pause();
-    session.openAt(takeId, firstClip?.sourceIn ?? 0);
-    editor.mode = "timing";
-  }
-
-  function tapBeatsHere(): void {
-    if (beatsClip) openBeats(beatsClip);
+  /** Runs a plugin's action tool; a panel row passes the take it ran for. */
+  function runPluginAction(id: string, context?: ToolRunContext): void {
+    const tool = plugin?.ui?.tools?.find((entry) => entry.id === id);
+    if (tool?.type === "action") tool.run(editor, context);
   }
 
   function pickTool(id: PostToolId): void {
@@ -1178,9 +1114,6 @@
           void focusAfterUpdate({ kind: "tool", id: "split" });
         }
         return;
-      case "beats":
-        tapBeatsHere();
-        return;
       case "duplicate":
         if (editor.duplicateSelected()) {
           void focusAfterUpdate({ kind: "tool", id: "duplicate" });
@@ -1194,6 +1127,8 @@
         }
         if (editor.deleteSelected()) void focusAfterUpdate({ kind: "row" });
         return;
+      default:
+        runPluginAction(id);
     }
   }
 
@@ -1348,38 +1283,23 @@
     const selected = [...(input.files ?? [])];
     input.value = "";
     if (!selected.length) return;
+    const backup = plugin?.ui?.backup;
+    if (!backup) return;
     readingFile = true;
     fileError = "";
     try {
-      const backupFile = selected.find((file) =>
-        file.name.endsWith(".post-studio.json")
-      );
-      const backup = backupFile
-        ? parsePostStudioBackup(await backupFile.text(), sequence.id)
-        : null;
-      if (backup) {
-        const files = new Map(selected.map((file) => [file.name, file]));
-        await loadPostProjectFonts(backup, files);
-        editor.importProject(backup, files);
+      const imported = await backup.importFiles(editor, selected);
+      if (imported) {
+        editor.importProject(imported.project, imported.files);
         activeTool = null;
         return;
       }
-      if (!selected.some((file) => file.name.endsWith(".post-studio.json"))) {
-        const files = new Map(selected.map((file) => [file.name, file]));
-        await loadPostProjectFonts(editor.project, files);
-        if (!editor.relinkProjectFiles(files))
-          throw new Error(
-            "Select the saved post's original media files, or a .post-studio.json recovery file to import a post."
-          );
-        return;
-      }
-      const { project, files } = await readInShotRecoveryPackage(
-        selected,
-        sequence.id,
-        Date.now()
-      );
-      editor.importProject(project, files);
-      activeTool = null;
+      const files = new Map(selected.map((file) => [file.name, file]));
+      await loadPostProjectFonts(editor.project, files);
+      if (!editor.relinkProjectFiles(files))
+        throw new Error(
+          "Select the saved post's original media files, or a .post-studio.json recovery file to import a post."
+        );
     } catch (error) {
       fileError =
         error instanceof Error
@@ -1635,7 +1555,7 @@
       rootElement?.focus({ preventScroll: true });
     }
     if (event.repeat) return;
-    if (showTimingStage) session.togglePlay();
+    if (activeMode) activeMode.keydown?.(event, editor);
     else if (cropMode) toggleCropPlayback();
     else editor.togglePlayback();
   }
@@ -1657,10 +1577,7 @@
    */
   function handleKey(event: KeyboardEvent): void {
     if (!active || exporting) return;
-    if (showTimingStage) {
-      session.handleKey(event);
-      return;
-    }
+    if (activeMode?.keydown?.(event, editor)) return;
     if (event.defaultPrevented || event.altKey || isTyping(event.target)) {
       return;
     }
@@ -1918,9 +1835,9 @@
 
   // Tapping beats swaps the post for the take, and Back to editing swaps it
   // back. Focus follows to the new controls instead of dropping to the page.
-  let shownSurface: "timing" | "edit" | null = null;
+  let shownSurface: string | null = null;
   $effect(() => {
-    const surface = showTimingStage ? "timing" : "edit";
+    const surface = activeMode?.id ?? "edit";
     const changed = shownSurface !== null && shownSurface !== surface;
     shownSurface = surface;
     if (!changed) return;
@@ -1936,8 +1853,7 @@
   });
 
   $effect(() => {
-    if (showTimingStage) untrack(() => editor.pause());
-    else untrack(() => session.pause());
+    if (activeMode) untrack(() => editor.pause());
   });
 
   $effect(() => {
@@ -2109,7 +2025,7 @@
         getLayers: () => editor.frameLayers,
         seek: editor.seek,
         painters: exportPainters(),
-        surfaces: createTkaSurfaces(),
+        surfaces: plugin?.createSurfaces?.() ?? [],
         videoSources,
         originalAudioUrl: audioUrl,
         originalAudioStartSeconds: 0,
@@ -2246,19 +2162,21 @@
 {#snippet postActions(inHeader: boolean)}
   <PostEditorActions
     {exporting}
-    locked={showTimingStage || (inHeader && cropMode)}
+    locked={activeMode !== null || (inHeader && cropMode)}
     onClearPostKeyframes={() => (confirmClearPost = true)}
     clearableKeyframes={clearablePostKeys}
     onMirror={mirrorWholePost}
     mirrored={editor.project.mirrored ?? false}
-    onBackup={() => void downloadDraft()}
-    onRestore={() => recoveryInput?.click()}
+    onBackup={plugin?.ui?.backup ? () => void downloadDraft() : undefined}
+    onRestore={plugin?.ui?.backup ? () => recoveryInput?.click() : undefined}
     onRetry={() => draftAutosave?.retry()}
     canRetry={!!onSaveDraft && !!saveFailure}
     onExport={openExport}
-    onImport={() => {
-      if (!readingFile) recoveryInput?.click();
-    }}
+    onImport={plugin?.ui?.backup
+      ? () => {
+          if (!readingFile) recoveryInput?.click();
+        }
+      : undefined}
     onImportDifferences={editor.project.importSource?.unresolved.length
       ? () => (showImportDifferences = true)
       : undefined}
@@ -2320,21 +2238,14 @@
 {#snippet dock()}
   <div
     class="dock"
-    class:timing={showTimingStage}
+    class:timing={activeMode !== null}
     tabindex="-1"
     bind:this={dockElement}
     inert={sharing || undefined}
   >
-    {#if showTimingStage}
-      <div class="timing-mobile-actions">
-        <PostTimingTap {session} />
-        <PanelButton
-          onclick={() => (timingSettingsOpen = true)}
-          ariaExpanded={timingSettingsOpen}
-        >
-          <i class="fa-solid fa-sliders" aria-hidden="true"></i> Settings
-        </PanelButton>
-      </div>
+    {#if activeMode?.dock}
+      {@const Dock = activeMode.dock}
+      <Dock {editor} {draftStatus} />
     {:else}
       <Crossfade
         key={dockKey}
@@ -2361,7 +2272,7 @@
       {catalogError}
       busy={readingFile}
       onAddDeviceVideo={pickDeviceVideo}
-      onTapBeats={openTakeBeats}
+      onTapBeats={(takeId) => runPluginAction("beats", { takeId })}
     />
   {:else if tool === "add"}
     <PostAddPanel
@@ -2397,18 +2308,10 @@
         ariaLabel={t("post_canvas_background")}
       />
     </div>
-  {:else if tool === "look"}
-    <AnimationPanel
-      layout="sidebar"
-      isExporting={false}
-      isPlaying={editor.isPlaying}
-      onPlaybackToggle={editor.togglePlayback}
-      showTempoControls={false}
-      showEffectsPlayback={false}
-      {selectedPropType}
-      onPropChange={tka.choosePropType}
-      sequence={tka.displaySequence}
-    />
+  {:else if Object.hasOwn(plugin?.ui?.panels ?? {}, tool)}
+    {#each Object.entries(plugin?.ui?.panels ?? {}) as [id, Panel] (id)}
+      {#if tool === id}<Panel {editor} />{/if}
+    {/each}
   {:else if tool === "export"}
     <PostExportPanel
       {editor}
@@ -2422,7 +2325,7 @@
       saveError={saveExportError}
       onRender={() => void renderPost()}
       onCancel={cancelExport}
-      onTapBeats={openTakeBeats}
+      onTapBeats={(takeId) => runPluginAction("beats", { takeId })}
       {onSharePost}
     />
   {:else if tool === "transition" && transitionCut}
@@ -2522,26 +2425,6 @@
   {/if}
 {/snippet}
 
-{#snippet timingPanel()}
-  <div class="timing-panel">
-    <PostTimingPanel
-      {session}
-      showPrimary={panelBeside}
-      bind:animationOpen={timingAnimationOpen}
-    >
-      {#snippet animation()}
-        <div
-          class="timing-animation"
-          tabindex="-1"
-          bind:this={timingAnimationSection}
-        >
-          <PostTimingAnimationSettings {editor} {session} />
-        </div>
-      {/snippet}
-    </PostTimingPanel>
-  </div>
-{/snippet}
-
 <!-- The editor owns Space, S, K, the arrows and Delete, so the viewer's own
      handlers skip it (the app's shortcuts, Shift+P, Ctrl+Z and the rest,
      still reach it); tabindex keeps a click inside it from sending focus back
@@ -2555,7 +2438,7 @@
   data-layout={layout}
   data-short-mapping={shortMappingLayout}
   data-sharing={sharing}
-  data-mode={showTimingStage ? "timing" : cropMode ? "crop" : "edit"}
+  data-mode={activeMode?.id ?? (cropMode ? "crop" : "edit")}
   style:--post-ratio={outputSize.width / outputSize.height}
   style:--crop-view={cropView}
   style:--crop-margin="{CROP_STAGE_MARGIN_PX}px"
@@ -2564,21 +2447,7 @@
   bind:offsetWidth={editorWidth}
   bind:offsetHeight={editorHeight}
 >
-  {#if showTimingStage}
-    <EditHistoryShortcutBridge
-      onUndo={session.undo}
-      onRedo={session.redo}
-      canUndo={session.canUndo}
-      canRedo={session.canRedo}
-    />
-  {:else}
-    <EditHistoryShortcutBridge
-      onUndo={editor.undo}
-      onRedo={editor.redo}
-      canUndo={editor.canUndo}
-      canRedo={editor.canRedo}
-    />
-  {/if}
+  <EditHistoryKeys {editor} active={activeMode === null} />
   <div
     class="layout"
     style:--post-timeline-height="{shownTimelineHeightPx}px"
@@ -2589,50 +2458,20 @@
       ? null
       : `${dockPanelMax}px`}
   >
-    {#if showTimingStage}
-      <div class="timing-toolbar">
-        <PanelButton onclick={session.exit} ariaLabel="Back to editing">
-          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-          <span class="back-label">Back to editing</span><span
-            class="back-short">Back</span
-          >
-        </PanelButton>
-        <label class="take-picker">
-          <span>Take</span>
-          <select
-            aria-label="Take to map"
-            value={session.take?.id ?? ""}
-            onchange={(event) => session.selectTake(event.currentTarget.value)}
-          >
-            {#each session.takes as take (take.id)}<option value={take.id}
-                >{take.label}</option
-              >{/each}
-          </select>
-        </label>
-        <div class="timing-save">{@render draftStatus()}</div>
-      </div>
+    {#if activeMode?.toolbar}
+      {@const Toolbar = activeMode.toolbar}
+      <Toolbar {editor} {draftStatus} />
     {/if}
-    {#if !showTimingStage && !panelBeside}
+    {#if activeMode === null && !panelBeside}
       <div class="top-bar-slot" inert={sharing || undefined}>
         {@render topBar()}
       </div>
     {/if}
 
     <div class="stage-row" bind:this={stageRow}>
-      {#if showTimingStage}
-        <div class="timing-stage" style:--take-ratio={timingRatio}>
-          <PostTimingStage
-            {session}
-            bind:ratio={timingRatio}
-            onOpenAnimation={openTimingAnimation}
-          >
-            {#snippet preview()}<PostTimingAnimationPreview
-                {editor}
-                {session}
-                sequence={tka.displaySequence}
-              />{/snippet}
-          </PostTimingStage>
-        </div>
+      {#if activeMode?.stage}
+        {@const Stage = activeMode.stage}
+        <Stage {editor} />
       {:else}
         <div class="preview-frame">
           <div
@@ -2677,8 +2516,9 @@
           inert={sharing || undefined}
           aria-label={t("post_editor_tools")}
         >
-          {#if showTimingStage}
-            {@render timingPanel()}
+          {#if activeMode?.panel}
+            {@const Panel = activeMode.panel}
+            <Panel {editor} />
           {:else}
             <div class="side-column">
               {@render topBar()}
@@ -2708,16 +2548,12 @@
       {/if}
     </div>
 
-    {#if showTimingStage}
-      <div class="timing-timeline">
-        <PostTimingTimeline
-          {session}
-          squarePainter={tka.strips.painterFor?.("arrows") ?? null}
-        />
-      </div>
+    {#if activeMode?.timeline}
+      {@const Timeline = activeMode.timeline}
+      <Timeline {editor} />
     {/if}
 
-    {#if !showTimingStage}
+    {#if activeMode === null}
       <div class="transport-slot" bind:this={transportSlot}>
         {#if cropMode && crop.item}
           {@const clip = crop.item}
@@ -2766,7 +2602,7 @@
            and the tool row out of sight, still mounted, so they come back
            scrolled where they were. Its own clip timeline stands in for
            them, and Done or Cancel brings them back. -->
-      {#if panelBeside && !showTimingStage && !cropMode}
+      {#if panelBeside && activeMode === null && !cropMode}
         <div class="timeline-resizer">
           <ResizeHandle
             direction="vertical"
@@ -2887,7 +2723,7 @@
       </div>
     {/if}
 
-    {#if !panelBeside && showTimingStage}
+    {#if !panelBeside && activeMode !== null}
       {@render dock()}
     {/if}
   </div>
@@ -2906,7 +2742,7 @@
     class="file-input"
     type="file"
     multiple
-    accept=".json,video/*,image/*,.ttf,.otf"
+    accept={plugin?.ui?.backup?.accept ?? ""}
     onchange={importRecovery}
     tabindex="-1"
     aria-hidden="true"
@@ -2973,34 +2809,6 @@
   onCancel={cancelExport}
   label={t("share_studio_rendering_post")}
 />
-
-{#if showTimingStage && !panelBeside}
-  <Drawer
-    bind:isOpen={timingSettingsOpen}
-    title="Mapping settings"
-    placement="bottom"
-    initialFocusElement={timingAnimationOpen ? timingAnimationSection : null}
-  >
-    <DrawerHeader
-      title="Mapping settings"
-      onClose={() => (timingSettingsOpen = false)}
-    />
-    <div
-      class="timing-drawer-content"
-      data-edit-history-shortcut-scope
-      data-viewer-keys-ignore
-    >
-      <EditHistoryShortcutBridge
-        onUndo={session.undo}
-        onRedo={session.redo}
-        canUndo={session.canUndo}
-        canRedo={session.canRedo}
-      />
-      {@render draftStatus()}
-      {@render timingPanel()}
-    </div>
-  </Drawer>
-{/if}
 
 <style>
   .appearance-drawer-panel {
@@ -3112,12 +2920,6 @@
     width: min(100cqw, calc(100cqh * var(--post-ratio)));
   }
 
-  .timing-stage {
-    flex: 1;
-    min-width: 0;
-    min-height: 0;
-  }
-
   .transport-slot {
     display: grid;
     gap: 0.5rem;
@@ -3196,94 +2998,11 @@
     backdrop-filter: none;
   }
 
-  .timing-panel {
-    display: grid;
-    align-content: start;
-    gap: var(--post-gap);
-    min-width: 0;
-  }
-
-  .timing-toolbar {
-    grid-area: top;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    min-width: 0;
-  }
-  .take-picker {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    min-width: 0;
-    color: var(--theme-text-dim, #aaa);
-    font-size: var(--mapping-text-size, 0.875rem);
-  }
-  .take-picker select {
-    min-width: 0;
-    width: 18rem;
-    max-width: 100%;
-    min-height: 2.75rem;
-    padding: 0.5rem 2rem 0.5rem 0.75rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 0.5rem;
-    color: var(--theme-text);
-    background: var(--theme-panel-bg);
-    font: inherit;
-    text-overflow: ellipsis;
-  }
-  .take-picker select:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-  }
-  .timing-save {
-    margin-left: auto;
-  }
-  .back-short {
-    display: none;
-  }
-  .timing-mobile-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.5rem;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  .timing-drawer-content {
-    padding: 0 1rem 1rem;
-    overflow-y: auto;
-    max-height: 75dvh;
-  }
-  .timing-animation {
-    min-width: 0;
-  }
-  .post-editor[data-mode="timing"][data-layout="wide"] .timing-stage {
-    flex: none;
-    width: min(
-      calc(100cqh * var(--take-ratio)),
-      calc(100cqw - var(--post-panel-width) - 1rem)
-    );
-  }
   .post-editor[data-mode="timing"][data-layout="wide"] .panel-host {
     padding: 0.5rem 1rem;
     background: var(--theme-panel-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: 0.75rem;
-  }
-  .post-editor[data-mode="timing"][data-layout="phone"] .timing-toolbar {
-    gap: 0.5rem;
-  }
-  .post-editor[data-mode="timing"][data-layout="phone"] .take-picker {
-    flex: 1;
-  }
-  .post-editor[data-mode="timing"][data-layout="phone"] .take-picker select {
-    width: 100%;
-  }
-  .post-editor[data-mode="timing"][data-layout="phone"] .take-picker > span,
-  .post-editor[data-mode="timing"][data-layout="phone"] .timing-save,
-  .post-editor[data-mode="timing"][data-layout="phone"] .back-label {
-    display: none;
-  }
-  .post-editor[data-mode="timing"][data-layout="phone"] .back-short {
-    display: inline;
   }
 
   .file-input {
@@ -3336,12 +3055,6 @@
     grid-template-columns: minmax(10rem, 0.8fr) minmax(21rem, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas: "top top" "stage timeline" "stage dock";
-  }
-  .post-editor[data-short-mapping="true"] .timing-timeline {
-    align-self: center;
-  }
-  .post-editor[data-short-mapping="true"] .take-picker {
-    max-width: 26rem;
   }
 
   .top-bar-slot {
@@ -3415,10 +3128,6 @@
     height: 100%;
   }
 
-  .timing-timeline {
-    grid-area: timeline;
-    min-width: 0;
-  }
   .post-editor[data-mode="timing"] {
     user-select: none;
     -webkit-user-select: none;
@@ -3426,9 +3135,6 @@
   .post-editor[data-mode="timing"] :global(input) {
     user-select: text;
     -webkit-user-select: text;
-  }
-  .post-editor[data-mode="timing"][data-layout="phone"] .timing-stage {
-    height: 100%;
   }
 
   @media (max-height: 500px) and (min-width: 601px) {

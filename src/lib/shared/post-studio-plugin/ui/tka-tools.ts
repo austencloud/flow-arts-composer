@@ -9,6 +9,7 @@ import {
   faSliders,
   faTableCellsLarge,
 } from "@austencloud/video-editor/icons";
+import { canTapBeats } from "./tka-beats";
 import { tkaEditorOf } from "./tka-editor-context";
 
 /**
@@ -64,7 +65,7 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     type: "action",
     label: (t) => t("post_editor_beats"),
     icon: faDrum,
-    // Task 15b sets openBeats; until then the workspace handles the beats id itself.
-    run: (editor) => tkaEditorOf(editor)?.openBeats?.(),
+    enabled: (editor) => canTapBeats(editor),
+    run: (editor, context) => tkaEditorOf(editor)?.openBeats?.(context?.takeId),
   },
 ];

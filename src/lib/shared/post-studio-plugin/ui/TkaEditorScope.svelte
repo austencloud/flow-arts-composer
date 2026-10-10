@@ -10,7 +10,10 @@
   import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
   import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
   import { createPostSequenceView } from "$lib/shared/media-composition/services/post-sequence-view.svelte";
-  import type { PostProject } from "@austencloud/video-editor/core";
+  import type {
+    PostProject,
+    PostVideoItem,
+  } from "@austencloud/video-editor/core";
   import {
     DEFAULT_HAND_LABELING,
     type HandLabeling,
@@ -26,6 +29,7 @@
   import { createPostTimingSession } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import { qrPayloadForImage } from "./post-qr-image-appearance";
+  import { beatsClipOf } from "./tka-beats";
   import { tkaEditorServices } from "./tka-host";
   import { createTkaEditorPlugin } from "./tka-editor-plugin";
   import {
@@ -36,6 +40,7 @@
     type TkaScopeChildren,
     type TkaStripsHolder,
   } from "./tka-editor-context";
+  import { createTimingUi } from "./tka-timing-ui.svelte";
   import TkaViewerBridge from "./TkaViewerBridge.svelte";
 
   /**
@@ -170,12 +175,45 @@
     (takeId, url) => previews.resolve?.(takeId, url) ?? url
   );
 
+  /** What the timing mode's toolbar, dock, panel and stage share. */
+  const timingUi = createTimingUi();
+
+  /** Opens beat tapping on a clip's footage, starting at its first frame. */
+  function openBeats(clip: PostVideoItem): void {
+    editor.pause();
+    session.openAt(clip.takeId, clip.sourceIn);
+    editor.mode = "timing";
+  }
+
+  /** From the video list: starts where the take's first clip does. */
+  function openTakeBeats(takeId: string): void {
+    let firstClip: PostVideoItem | null = null;
+    for (const track of editor.project.tracks) {
+      for (const item of track.items) {
+        if (item.kind === "video" && item.takeId === takeId) {
+          if (!firstClip || item.start < firstClip.start) firstClip = item;
+        }
+      }
+    }
+    editor.pause();
+    session.openAt(takeId, firstClip?.sourceIn ?? 0);
+    editor.mode = "timing";
+  }
+
+  function tapBeatsHere(): void {
+    const beatsClip = beatsClipOf(editor);
+    if (beatsClip) openBeats(beatsClip);
+  }
+
   /** The save menu a right click on a media layer opens; mounted once below. */
   let saveMenuHost = $state<VisualSequenceSaveContextMenuHost | undefined>();
   registerTkaEditor(editor, {
     wrapper: editor,
     isQrImage: (id) => qrImageIds[id] === true,
     plugin,
+    openBeats: (takeId) =>
+      takeId === undefined ? tapBeatsHere() : openTakeBeats(takeId),
+    timing: session,
     openSaveMenu: (event) =>
       saveMenuHost?.openContextMenu(event.clientX, event.clientY),
     get cardRenderOptions() {
@@ -268,6 +306,7 @@
     openSaveMenu: (event) =>
       saveMenuHost?.openContextMenu(event.clientX, event.clientY),
     timing: session,
+    timingUi,
     get catalogVideos() {
       return catalogVideos;
     },

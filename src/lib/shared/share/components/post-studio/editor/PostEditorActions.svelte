@@ -17,8 +17,8 @@
     onImportDifferences?: () => void;
     onMirror?: () => void;
     mirrored?: boolean;
-    onBackup: () => void;
-    onRestore: () => void;
+    onBackup?: () => void;
+    onRestore?: () => void;
     onClearPostKeyframes?: () => void;
     clearableKeyframes?: number;
     onRetry?: () => void;
@@ -88,8 +88,24 @@
     ...(canRetry && onRetry
       ? [{ label: "Retry save", icon: "fa-solid fa-rotate", action: onRetry }]
       : []),
-    { label: "Save backup", icon: "fa-solid fa-download", action: onBackup },
-    { label: "Restore backup", icon: "fa-solid fa-upload", action: onRestore },
+    ...(onBackup
+      ? [
+          {
+            label: "Save backup",
+            icon: "fa-solid fa-download",
+            action: onBackup,
+          },
+        ]
+      : []),
+    ...(onRestore
+      ? [
+          {
+            label: "Restore backup",
+            icon: "fa-solid fa-upload",
+            action: onRestore,
+          },
+        ]
+      : []),
   ]);
 </script>
 
