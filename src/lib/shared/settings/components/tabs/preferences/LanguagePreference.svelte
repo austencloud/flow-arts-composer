@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import OverflowMenu from "#lib/shared/ui/components/OverflowMenu.svelte";
+  import SettingsSectionHeader from "../../SettingsSectionHeader.svelte";
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     getBaseLocale,
@@ -64,28 +65,31 @@
 </script>
 
 <section class="language-preference" aria-labelledby="language-heading">
-  <div class="language-row">
-    <div class="language-label">
-      <i class="fas fa-globe" aria-hidden="true"></i>
-      <h2 id="language-heading">{t("settings_language")}</h2>
-    </div>
-    <div class="language-selector">
-      <OverflowMenu
-        items={languageItems}
-        placement="bottom"
-        align="right"
-        triggerPresentation="labelled"
-        ariaLabel={t("settings_choose_language") +
-          ": " +
-          languageNames[currentLanguage]}
-      >
-        {#snippet trigger()}
-          <span>{languageNames[currentLanguage]}</span>
-          <i class="fas fa-chevron-down" aria-hidden="true"></i>
-        {/snippet}
-      </OverflowMenu>
-    </div>
-  </div>
+  <SettingsSectionHeader
+    icon="fas fa-globe"
+    title={t("settings_language")}
+    description={t("tab_desc_settings_language")}
+    headingId="language-heading"
+  >
+    {#snippet action()}
+      <span class="language-selector">
+        <OverflowMenu
+          items={languageItems}
+          placement="bottom"
+          align="right"
+          triggerPresentation="labelled"
+          ariaLabel={t("settings_choose_language") +
+            ": " +
+            languageNames[currentLanguage]}
+        >
+          {#snippet trigger()}
+            <span>{languageNames[currentLanguage]}</span>
+            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+          {/snippet}
+        </OverflowMenu>
+      </span>
+    {/snippet}
+  </SettingsSectionHeader>
   <p class="translation-note">
     {t("settings_translation_note")}
     <LinkChip
@@ -106,44 +110,12 @@
   .language-preference {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-  }
-
-  .language-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    min-height: var(--min-touch-target);
-    padding: 10px 16px;
-    background: var(--theme-card-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: 12px;
-  }
-
-  .language-label {
-    display: flex;
-    align-items: center;
-    gap: 12px;
     min-width: 0;
   }
 
-  .language-label i {
-    color: var(--theme-text-dim);
-    width: 20px;
-    text-align: center;
-  }
-
-  h2 {
-    margin: 0;
-    color: var(--theme-text);
-    font-size: var(--font-size-base);
-    font-weight: 500;
-  }
-
   .language-selector {
-    min-width: 160px;
-    flex-shrink: 0;
+    display: block;
+    min-width: 10rem;
   }
 
   .language-selector :global(.overflow-trigger) {
@@ -157,9 +129,9 @@
 
   .translation-note {
     margin: 0;
-    padding: 0 16px;
+    padding: 0.85em 1.15em 1em;
     color: var(--theme-text-dim);
-    font-size: var(--font-size-sm);
+    font-size: max(0.875rem, var(--font-size-min));
     line-height: 1.5;
   }
 
@@ -175,17 +147,19 @@
     border: 0;
   }
 
-  @media (max-width: 480px) {
-    .language-row {
-      padding: 8px 12px;
+  @container (min-width: 105rem) {
+    .translation-note {
+      padding-inline: 1.35em;
     }
+  }
 
+  @container (max-width: 32rem) {
     .language-selector {
-      min-width: 135px;
+      min-width: 8.5rem;
     }
 
     .translation-note {
-      padding: 0 12px;
+      padding-inline: 0.9rem;
     }
   }
 </style>
