@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  APPROVED_PAIRS,
   DICE_RANGES,
   randomCoolWarmPair,
   type CoolWarmPair,
@@ -31,6 +32,15 @@ const NEUTRALS = new Set(
   )
 );
 const isNeutral = (hex: string) => NEUTRALS.has(hex);
+const pairKey = ({ left, right }: CoolWarmPair) => `${left}|${right}`;
+
+/** The hand-picked pairs shown on one theme. */
+function approvedFor(darkMode: boolean): CoolWarmPair[] {
+  return APPROVED_PAIRS.flatMap(({ dark, light }) => {
+    const shades = darkMode ? dark : light;
+    return shades ? [{ left: shades[0], right: shades[1] }] : [];
+  });
+}
 
 /** Presses the dice again and again, each roll starting from the last. */
 function rollChain(darkMode: boolean, seed = 7) {
@@ -67,17 +77,71 @@ function saturationOf(hex: string): number {
 }
 
 describe.each([
+  ["dark", true, DARK_SURFACE_ANCHOR],
+  ["light", false, "#ffffff"],
+] as const)("the hand-picked pairs on a %s theme", (_, darkMode, surface) => {
+  const pairs = approvedFor(darkMode);
+
+  it("stand out from the page and stay apart for colorblind eyes", () => {
+    expect(pairs.length).toBeGreaterThanOrEqual(10);
+    for (const { left, right } of pairs) {
+      expect(contrastRatio(left, surface)).toBeGreaterThanOrEqual(3);
+      expect(contrastRatio(right, surface)).toBeGreaterThanOrEqual(3);
+      expect(colorVisionDistance(left, right)).toBeGreaterThanOrEqual(0.1);
+      const gap = hueGap(hexToOklch(left).h, hexToOklch(right).h);
+      expect(gap).toBeGreaterThanOrEqual(90);
+    }
+  });
+
+  it("are written in lower case, so a pick matches the swatch it came from", () => {
+    for (const { left, right } of pairs) {
+      expect(left).toMatch(/^#[0-9a-f]{6}$/);
+      expect(right).toMatch(/^#[0-9a-f]{6}$/);
+    }
+  });
+});
+
+describe.each([
   ["dark", true, DARK_SURFACE_ANCHOR, DICE_RANGES.dark],
   ["light", false, "#ffffff", DICE_RANGES.light],
 ] as const)("the dice on a %s theme", (_, darkMode, surface, ranges) => {
   const chain = rollChain(darkMode);
+  const approved = new Set(approvedFor(darkMode).map(pairKey));
+  const picked = chain.filter(({ after }) => approved.has(pairKey(after)));
+  const built = chain.filter(({ after }) => !approved.has(pairKey(after)));
   const colors = chain.flatMap(({ after }) => [after.left, after.right]);
   const colored = chain.filter(
     ({ after }) => !isNeutral(after.left) && !isNeutral(after.right)
   );
+  const builtColored = built.filter(
+    ({ after }) => !isNeutral(after.left) && !isNeutral(after.right)
+  );
+  const builtTints = builtColored.flatMap(({ after }) => [
+    after.left,
+    after.right,
+  ]);
 
-  it("puts a cool color on the left and a warm one on the right", () => {
-    for (const { after } of chain) {
+  it("offers a hand-picked pair about half the time, spread across the list", () => {
+    expect(picked.length).toBeGreaterThan(ROLLS * 0.35);
+    expect(picked.length).toBeLessThan(ROLLS * 0.6);
+    // Over 4,000 rolls every pair comes up; 400 may miss one or two.
+    const seen = new Set(picked.map(({ after }) => pairKey(after)));
+    expect(seen.size).toBeGreaterThanOrEqual(approved.size - 2);
+  });
+
+  it("never offers a dark-only pair on a white page", () => {
+    if (darkMode) return;
+    const darkOnly = new Set(
+      APPROVED_PAIRS.filter((pair) => !pair.light).map(({ dark }) =>
+        pairKey({ left: dark[0], right: dark[1] })
+      )
+    );
+    for (const { after } of chain)
+      expect(darkOnly.has(pairKey(after))).toBe(false);
+  });
+
+  it("builds a cool color for the left and a warm one for the right", () => {
+    for (const { after } of built) {
       if (!isNeutral(after.left))
         expect(inArc(hexToOklch(after.left).h, ranges.cool)).toBe(true);
       if (!isNeutral(after.right))
@@ -106,14 +170,14 @@ describe.each([
     }
   });
 
-  it("still pairs teal with pink, one hand lighter than the other", () => {
-    const tealPink = colored.filter(({ after }) => {
+  it("still builds teal with pink, one hand lighter than the other", () => {
+    const tealPink = builtColored.filter(({ after }) => {
       const [left, right] = [hexToOklch(after.left), hexToOklch(after.right)];
       return (
         left.h >= 160 && left.h <= 220 && (right.h >= 325 || right.h <= 10)
       );
     });
-    expect(tealPink.length).toBeGreaterThan(ROLLS * 0.02);
+    expect(tealPink.length).toBeGreaterThan(ROLLS * 0.01);
     const split = tealPink.filter(
       ({ after }) =>
         Math.abs(hexToOklch(after.left).l - hexToOklch(after.right).l) > 0.08
@@ -134,42 +198,43 @@ describe.each([
     const neutralRolls = chain.filter(
       ({ after }) => isNeutral(after.left) || isNeutral(after.right)
     );
-    expect(neutralRolls.length).toBeGreaterThan(ROLLS * 0.08);
-    expect(neutralRolls.length).toBeLessThan(ROLLS * 0.28);
+    expect(neutralRolls.length).toBeGreaterThan(ROLLS * 0.03);
+    expect(neutralRolls.length).toBeLessThan(ROLLS * 0.16);
     for (const { after } of neutralRolls) {
       expect(isNeutral(after.left) && isNeutral(after.right)).toBe(false);
     }
     expect(neutralRolls.some(({ after }) => isNeutral(after.left))).toBe(true);
     expect(neutralRolls.some(({ after }) => isNeutral(after.right))).toBe(true);
-    const extreme = darkMode ? "#ffffff" : "#000000";
-    expect(colors).toContain(extreme);
   });
 
-  it("gives each hand its own saturation", () => {
-    const mismatched = colored.filter(
+  it("builds bold colors, each hand with its own saturation", () => {
+    // Rounding to whole channel values nudges saturation a little either way.
+    for (const hex of builtTints)
+      expect(saturationOf(hex)).toBeGreaterThanOrEqual(0.66);
+    const mismatched = builtColored.filter(
       ({ after }) =>
-        Math.abs(saturationOf(after.left) - saturationOf(after.right)) > 0.25
+        Math.abs(saturationOf(after.left) - saturationOf(after.right)) > 0.15
     );
-    expect(mismatched.length).toBeGreaterThan(colored.length * 0.1);
+    expect(mismatched.length).toBeGreaterThan(builtColored.length * 0.1);
   });
 
-  it("ranges from soft to vivid, pale to deep, and round each arc", () => {
-    const tinted = colors.filter((hex) => !isNeutral(hex));
-    const shades = tinted.map(hexToOklch);
-    const chromas = shades.map((shade) => shade.c);
-    const lightnesses = shades.map((shade) => shade.l);
-    expect(new Set(tinted).size).toBeGreaterThan(tinted.length * 0.9);
-    expect(Math.min(...chromas)).toBeLessThan(0.07);
-    expect(Math.max(...chromas)).toBeGreaterThan(0.17);
+  it("builds deep blues and violets, pale to deep, round each arc", () => {
+    expect(new Set(builtTints).size).toBeGreaterThan(builtTints.length * 0.9);
+    const lightnesses = builtTints.map((hex) => hexToOklch(hex).l);
     expect(Math.max(...lightnesses) - Math.min(...lightnesses)).toBeGreaterThan(
       0.2
     );
+    const deepBlues = builtTints.filter((hex) => {
+      const { l, c, h } = hexToOklch(hex);
+      return h >= 250 && h <= 300 && c > 0.15 && l < (darkMode ? 0.66 : 0.5);
+    });
+    expect(deepBlues.length).toBeGreaterThan(builtColored.length * 0.05);
     // Every 30-degree stretch of both arcs comes up.
     for (const [arc, hand] of [
       [ranges.cool, "left"],
       [ranges.warm, "right"],
     ] as const) {
-      const hues = colored.map(({ after }) => {
+      const hues = builtColored.map(({ after }) => {
         const hue = hexToOklch(after[hand]).h;
         return hue < arc.from - HUE_TOLERANCE ? hue + 360 : hue;
       });

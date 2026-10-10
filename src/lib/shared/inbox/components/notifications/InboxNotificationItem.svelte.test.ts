@@ -117,7 +117,11 @@ describe("InboxNotificationItem navigation", () => {
     await page.getByRole("button", { name: "River followed you" }).click();
 
     await vi.waitFor(() => {
-      expect(mocks.openCreatorProfile).toHaveBeenCalledWith("river-user");
+      expect(mocks.openCreatorProfile).toHaveBeenCalledWith(
+        "river-user",
+        undefined,
+        "inbox_notification"
+      );
     });
     expect(mocks.closeInbox).toHaveBeenCalledOnce();
     expect(mocks.goto).not.toHaveBeenCalled();
@@ -140,7 +144,11 @@ describe("InboxNotificationItem navigation", () => {
       .click();
 
     await vi.waitFor(() => {
-      expect(mocks.openCreatorProfile).toHaveBeenCalledWith("admin-user");
+      expect(mocks.openCreatorProfile).toHaveBeenCalledWith(
+        "admin-user",
+        undefined,
+        "inbox_notification"
+      );
     });
     expect(mocks.closeInbox).toHaveBeenCalledOnce();
     expect(mocks.goto).not.toHaveBeenCalled();
@@ -220,6 +228,7 @@ describe("InboxNotificationItem navigation", () => {
         ownerDisplayName: "Handsome_banana",
       },
       {
+        source: "inbox_notification",
         returnPath: window.location.pathname,
         returnLabel: "Notifications",
       }

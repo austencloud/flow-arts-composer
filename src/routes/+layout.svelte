@@ -6,6 +6,8 @@
   import { page } from "$app/state";
   import { dev } from "$app/env";
   import MarketingChrome from "#lib/shared/landing/components/MarketingChrome.svelte";
+  import { siteCopyLocale } from "#lib/shared/landing/site-copy.js";
+  import { pinDocumentLanguage } from "#lib/shared/i18n/i18n.svelte.js";
   import ViewCaptureListener from "#lib/shared/review/ViewCaptureListener.svelte";
   import { detectSiteMode, type SiteMode } from "../config/domains";
   import { consumeSkipNextViewTransition } from "#lib/shared/transitions/sequence-drawer-state.svelte.js";
@@ -221,6 +223,17 @@
     return MARKETING_SUBTREES.some(
       (root) => p === root || p.startsWith(root + "/")
     );
+  });
+
+  // Public pages are written in English until their site copy is translated.
+  // Following an Arabic locale there turned English sentences right-to-left:
+  // the home tiles mirrored into their artwork and every full stop and
+  // question mark moved to the front of its line.
+  const isPublicPage = $derived(
+    isMarketing || (page.route.id?.startsWith("/(public)/") ?? false)
+  );
+  $effect(() => {
+    pinDocumentLanguage(isPublicPage ? siteCopyLocale() : null);
   });
 
   $effect(() => {

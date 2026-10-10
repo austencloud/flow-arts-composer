@@ -55,6 +55,20 @@ export function maxChroma(l: number, hue: number): number {
   return chroma;
 }
 
+/**
+ * The most colorful sRGB shade of a hue, its gamut cusp, searched in 0.005
+ * lightness steps. Yellow peaks near lightness 0.97, blue near 0.45.
+ */
+export function gamutCusp(hue: number): { l: number; c: number } {
+  let best = { l: 0.66, c: 0 };
+  for (let i = 0; i <= 134; i += 1) {
+    const l = 0.3 + i * 0.005;
+    const c = maxChroma(l, hue);
+    if (c > best.c) best = { l, c };
+  }
+  return best;
+}
+
 /** Walks chroma down until the color fits sRGB; hue and lightness stay put. */
 export function oklchToHex(l: number, c: number, hue: number): string {
   // Achromatic special case: at c=0, hue is meaningless and floating-point

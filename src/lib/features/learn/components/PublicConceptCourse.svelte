@@ -20,11 +20,20 @@
   const courseName = $derived(tDynamic("learn_public_course_name"));
   const courseDescription = $derived(tDynamic("learn_public_course_description"));
 
-  // Lesson links inside the course move with shallow routing (pushState),
-  // which updates page.url but never page.params. Reading the lesson from the
-  // pathname keeps the title, description and canonical on the lesson that is
-  // actually open instead of the one the page first loaded with.
-  const conceptId = $derived(conceptIdFromPathname(page.url.pathname));
+  // Lesson links inside the course move with shallow routing (pushState and
+  // replaceState). That changes the address bar and page.state, but page.url
+  // and page.params stay on the last real navigation, so reading page.url
+  // would leave the title, description and canonical on the lesson the page
+  // first loaded with. SvelteKit reassigns page.state on every shallow push,
+  // replace and Back/Forward step, so reading it here re-derives the lesson
+  // from the address bar the reader is actually looking at.
+  const shownPathname = $derived.by(() => {
+    const loadedPathname = page.url.pathname;
+    if (!browser) return loadedPathname;
+    void page.state;
+    return window.location.pathname;
+  });
+  const conceptId = $derived(conceptIdFromPathname(shownPathname));
   const concept = $derived(conceptId ? getConceptById(conceptId) : undefined);
 
   // The server-rendered page is what search engines and no-JS readers get, so

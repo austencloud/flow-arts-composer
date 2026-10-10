@@ -1,4 +1,10 @@
-import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import {
+  baseLocale,
+  getLocale,
+  isTranslated,
+  t,
+  type Locale,
+} from "#lib/shared/i18n/i18n.svelte.js";
 import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
 
 // The public navigation and FAQ keep English source copy for their route data
@@ -113,4 +119,13 @@ const keys: Record<string, string> = {
 export function siteCopy(source: string): string {
   const key = keys[source];
   return key ? t(key as TranslationKey) : source;
+}
+
+/**
+ * The language public pages are written in right now: the chosen locale once
+ * it translates the site copy, English until then. The tile titles stand in
+ * for the whole set because the pages ship their translations together.
+ */
+export function siteCopyLocale(): Locale {
+  return isTranslated("site_composer") ? getLocale() : baseLocale;
 }

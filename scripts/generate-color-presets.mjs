@@ -8,7 +8,7 @@
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { maxChroma, oklchToHex } from "../src/lib/shared/ui/oklch.ts";
+import { gamutCusp, oklchToHex } from "../src/lib/shared/ui/oklch.ts";
 
 const HUES = [
   { hue: 25, name: "red" },
@@ -38,13 +38,8 @@ function capitalize(word) {
 // The most saturated sRGB color of a hue: the gamut cusp. Yellow lives near
 // L 0.97, blue near L 0.45, so a fixed lightness cannot hold a real rainbow.
 function cuspHex(hue) {
-  let best = { lightness: 0.66, chroma: 0 };
-  for (let i = 0; i <= 134; i += 1) {
-    const lightness = 0.3 + i * 0.005;
-    const chroma = maxChroma(lightness, hue);
-    if (chroma > best.chroma) best = { lightness, chroma };
-  }
-  return oklchToHex(best.lightness, best.chroma, hue);
+  const cusp = gamutCusp(hue);
+  return oklchToHex(cusp.l, cusp.c, hue);
 }
 
 const presets = [];
