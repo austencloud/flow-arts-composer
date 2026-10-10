@@ -270,15 +270,10 @@ describe("landing shared-element contract", () => {
     );
     expect(guideShell).toContain("{#if ownsStandaloneChrome}");
     expect(guidePage).not.toContain("joinWaitlist");
-    expect(guidePage).toContain('href="/learn/concepts"');
-    // 453be00df6 moved the start action's label into the catalog. It still
-    // names the first topic, and English still reads "Start with {topic}".
-    expect(guidePage).toMatch(
-      /tDynamic\("guide_hub_start_with",\s*\{\s*topic:\s*localizedFirstTopicLabel,?\s*\}\)/
-    );
-    expect(readEnglishMessages().guide_hub_start_with).toBe(
-      "Start with {topic}"
-    );
+    // Lesson first: the primary action opens the first lesson from step one.
+    expect(guidePage).toContain("buildConceptStartPath(firstLessonId)");
+    expect(guidePage).toContain("href={firstLessonHref}");
+    expect(readEnglishMessages().guide_hub_start_lesson).toBeTruthy();
     expect(guideCss).toContain("html:has(.guide-layout):not(:has(.mkt-shell))");
   });
 
