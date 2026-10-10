@@ -30,7 +30,7 @@ describe("Grid topic record", () => {
   });
 
   it("splits the guide's point paragraph without changing a word", () => {
-    const paragraph = english.verified_level1_grid_points
+    const paragraph = en.verified_level1_grid_points
       .replace(/<br\s*\/?>/g, " ")
       .replace(/\s+/g, " ");
     for (const unit of ["centerPoint", "handPoints", "outerPoints"] as const) {
