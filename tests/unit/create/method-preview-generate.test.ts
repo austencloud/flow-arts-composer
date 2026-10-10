@@ -11,6 +11,7 @@ import { DEMO_SEQUENCE } from "#lib/features/create/shared/components/method-pre
 import {
   FIRST_ROLL,
   GENERATE_CLEAR_MS,
+  GENERATE_LOOK_MS,
   GENERATE_READY_WAIT_MS,
   GENERATE_ROLLS_PER_TURN,
   generateCellDelayMs,
@@ -100,8 +101,9 @@ describe("two rolls a turn", () => {
     const wave = Math.max(generateRevealMs(4, 5), generateRevealMs(8, 3));
     const roll =
       SCENE_TAP.considerMs + SCENE_TAP.pressMs + GENERATE_CLEAR_MS + wave;
+    const looks = (GENERATE_ROLLS_PER_TURN - 1) * GENERATE_LOOK_MS;
     expect(GENERATE_ROLLS_PER_TURN).toBe(2);
-    expect(GENERATE_ROLLS_PER_TURN * roll).toBeLessThanOrEqual(
+    expect(GENERATE_ROLLS_PER_TURN * roll + looks).toBeLessThanOrEqual(
       METHOD_PREVIEW_TIMING.turnMs - GENERATE_READY_WAIT_MS
     );
   });
