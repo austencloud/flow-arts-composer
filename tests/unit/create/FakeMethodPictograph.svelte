@@ -12,7 +12,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  let { data, onReady }: { data: unknown; onReady?: () => void } = $props();
+  // arrowOpacity defaults to 1, as MethodPreviewPictograph's does.
+  let {
+    data,
+    arrowOpacity = 1,
+    onReady,
+  }: { data: unknown; arrowOpacity?: number; onReady?: () => void } = $props();
 
   onMount(() => {
     if (fakePictograph.reportBudget <= 0) {
@@ -24,4 +29,8 @@
   });
 </script>
 
-<span class="fake-pictograph" data-has-data={String(data !== null)}></span>
+<span
+  class="fake-pictograph"
+  data-has-data={String(data !== null)}
+  data-arrow-opacity={String(arrowOpacity)}
+></span>

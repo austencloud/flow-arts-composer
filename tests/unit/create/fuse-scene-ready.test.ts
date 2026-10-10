@@ -3,8 +3,9 @@
  * one-hand source it shows has drawn: six reports in all. A cell that is
  * still drawing holds the announcement back, a resize neither announces early
  * nor strands it, and a box with no layout announces nothing. Fuse's path
- * maker loads only after that report. Its pictographs and maker are
- * stand-ins, so this checks only the readiness bookkeeping.
+ * maker loads only after that report. Every cell draws its arrows at full,
+ * the halves included. Its pictographs and maker are stand-ins, so this
+ * checks only that bookkeeping and the arrow opacity each cell is given.
  */
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -66,6 +67,16 @@ describe("Fuse scene readiness", () => {
     expect(host.querySelectorAll(".fused .cell")).toHaveLength(2);
     expect(host.querySelectorAll(".source")).toHaveLength(4);
     expect(onready).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows every half's arrows from the start, as Fuse's source cards do", () => {
+    scene = mountFuseScene(host, STRIP, vi.fn());
+    const opacities = (selector: string) =>
+      [
+        ...host.querySelectorAll<HTMLElement>(`${selector} .fake-pictograph`),
+      ].map((cell) => cell.dataset.arrowOpacity);
+    expect(opacities(".source")).toEqual(["1", "1", "1", "1"]);
+    expect(opacities(".fused .cell")).toEqual(["1", "1"]);
   });
 
   it("marks each source with its key, which a turn finds it by", () => {
