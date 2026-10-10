@@ -14,6 +14,8 @@ export function sequence3DContentSignature(sequence: SequenceData): string {
 
 export interface SequenceRefreshPerformer {
   readonly loadedSequence: SequenceData | null;
+  /** Unmodified catalog score, when the performer projects a grid override. */
+  readonly sourceSequence?: SequenceData | null;
   readonly currentStepIndex: number;
   readonly progress: number;
   readonly isPlaying: boolean;
@@ -39,7 +41,9 @@ export function refreshOpenedPerformers(
   next: SequenceData
 ): void {
   for (const performer of performers) {
-    if (!isOpenedSequence(performer.loadedSequence, previous)) continue;
+    if (
+      !isOpenedSequence(performer.sourceSequence ?? performer.loadedSequence, previous)
+    ) continue;
     const step = performer.currentStepIndex;
     const progress = performer.progress;
     const wasPlaying = performer.isPlaying;

@@ -11,6 +11,7 @@ import type { SceneId } from "#lib/features/lab/tabs/scene-lab/domain/scene-lab-
 import type { CosmicVariant } from "#lib/features/lab/tabs/scene-lab/services/scene-lab-persistence.js";
 import type { PlaneMode } from "@austencloud/scene-3d";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { GridJoin } from "@tka/tka-types";
 import type { CharacterId } from "../domain/character-model";
 
 // Operation Types
@@ -23,6 +24,7 @@ export type SceneUndoOperationType =
   | "spatial-edit"
   | "change-character"
   | "change-sequence"
+  | "change-grid-join"
   | "change-prop"
   | "change-prop-build"
   | "change-staff-length"
@@ -88,6 +90,7 @@ export interface PerformerDomainSnapshot {
     handEffects: { left: EffectType; right: EffectType } | null;
     staffLengthCm: number | null;
     propBuild: Partial<import("@austencloud/scene-3d").PropBuild> | null;
+    gridJoin?: GridJoin | null;
   };
   planes: {
     customLeftPlane: Plane | null;

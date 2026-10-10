@@ -10,6 +10,7 @@
  */
 
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { GridJoin } from "@tka/tka-types";
 import {
   isOpenedSequence,
   refreshOpenedPerformers,
@@ -188,6 +189,8 @@ export interface StoredPerformerSettings {
   effortId: string | null;
   effect: string | null;
   staffLengthCm: number | null;
+  /** Omitted follows the loaded score; null forces one shared grid. */
+  gridJoin?: GridJoin | null;
 }
 
 export interface StoredPerformerSnapshot {
@@ -1234,6 +1237,14 @@ function buildViewer3DState(
     );
   }
 
+  function setGridJoinScoped(join: GridJoin | null | undefined): boolean {
+    return applyScopedPerformerEdit(
+      "change-grid-join",
+      join === undefined ? "Follow sequence grids" : join === null ? "One grid" : "Join grids",
+      (performer) => performer.setGridJoin(join)
+    );
+  }
+
   function setCharacterScoped(modelId: CharacterId): boolean {
     const name =
       CHARACTER_DEFINITIONS.find((definition) => definition.id === modelId)
@@ -1969,6 +1980,7 @@ function buildViewer3DState(
           effortId: p.settings.effortId,
           effect: p.settings.effect,
           staffLengthCm: p.settings.staffLengthCm,
+          gridJoin: p.settings.gridJoin,
         },
       }));
     if (!_performersPersistReady) return;
@@ -2037,6 +2049,7 @@ function buildViewer3DState(
             _restoreVerbatim
           );
           if (settings) {
+            p.setGridJoin(settings.gridJoin);
             if (settings.prop !== null)
               p.setProp(settings.prop as PropType, { equipBuild: false });
             if (settings.effortId !== null)
@@ -2164,6 +2177,7 @@ function buildViewer3DState(
           effortId: p.settings.effortId,
           effect: p.settings.effect,
           staffLengthCm: p.settings.staffLengthCm,
+          gridJoin: p.settings.gridJoin,
         },
       })),
       selectedPerformerIndex: allPerformersSelected()
@@ -2236,6 +2250,7 @@ function buildViewer3DState(
           p.resetEffort();
           p.resetEffects();
           p.setStaffLengthCm(null);
+          p.setGridJoin(snap.settings?.gridJoin);
           if (snap.settings) {
             if (snap.settings.prop !== null) {
               const prop = asPropType(snap.settings.prop);
@@ -2548,6 +2563,7 @@ function buildViewer3DState(
     setHandEffectsScoped,
     setStaffLengthScoped,
     setHandPlaneScoped,
+    setGridJoinScoped,
     loadSequenceScoped,
     clearSequenceScoped,
     resetPropScoped,

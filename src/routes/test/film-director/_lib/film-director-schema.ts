@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Plane, type FormationPreset } from "@austencloud/scene-3d";
 import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+import type { GridJoin } from "@tka/tka-types";
 
 import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
 import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
@@ -991,6 +992,17 @@ const performerSchema = z
     characterId: directiveSchema(characterIdSchema).optional(),
     prop: directiveSchema(propTypeSchema).optional(),
     propBuild: propBuildSchema.optional(),
+    gridJoin: z
+      .union([
+        z
+          .object({
+            toward: z.enum(["n", "ne", "e", "se", "s", "sw", "w", "nw"]),
+            steps: z.union([z.literal(1), z.literal(2)]),
+          })
+          .strict(),
+        z.null(),
+      ])
+      .optional(),
     effect: effectValueSchema.optional(),
     effort: directiveSchema(effortIdSchema).optional(),
     position: position2Schema.optional(),
@@ -1730,6 +1742,7 @@ export interface ResolvedDirectorPerformer {
    * build. Absent when the performer takes the global one unchanged.
    */
   propBuild?: DirectorPropBuild;
+  gridJoin?: GridJoin | null;
   /** The left hand's effect, which is also the whole performer's when no pair was spoken. */
   effect: EffectType;
   /** Gap 26. Present only when the director spoke a hand pair. */

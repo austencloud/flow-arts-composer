@@ -41,6 +41,7 @@
   import ProfileHeroSection from "./profile/ProfileHeroSection.svelte";
   import AuthPrompt from "./profile/AuthPrompt.svelte";
   import ProfilePhotoPicker from "../ProfilePhotoPicker.svelte";
+  import MyPropsCard from "#lib/shared/navigation/components/account/MyPropsCard.svelte";
   import AccountSetupChecklist from "#lib/shared/onboarding/components/account-setup/AccountSetupChecklist.svelte";
   import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
   import {
@@ -56,6 +57,7 @@
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   import type {
     AccountManager,
@@ -490,42 +492,48 @@
   {:else if authState.isFullAccount && authState.user}
     <div class="profile-content">
       {#if showAccountSetup && accountSetupState}
-        <AccountSetupChecklist
-          state={accountSetupState}
-          onTaskAction={handleAccountSetupTask}
-          variant="prompt"
-        />
+        <div class="setup-notice" transition:growFade>
+          <AccountSetupChecklist
+            state={accountSetupState}
+            onTaskAction={handleAccountSetupTask}
+            variant="prompt"
+          />
+        </div>
       {:else if showSetupCompletion}
-        <section class="setup-complete" role="status" aria-live="polite">
-          <span class="setup-complete-icon" aria-hidden="true">
-            <i class="fas fa-check"></i>
-          </span>
-          <span class="setup-complete-copy">
-            <strong>{t("profile_setup_complete")}</strong>
-            <span>{t("profile_setup_saved")}</span>
-          </span>
-          <button
-            type="button"
-            class="dismiss-completion"
-            onclick={() => (showSetupCompletion = false)}
-            aria-label={t("profile_dismiss_setup_confirmation")}
-          >
-            <i class="fas fa-xmark" aria-hidden="true"></i>
-          </button>
-        </section>
+        <div class="setup-notice" transition:growFade>
+          <section class="setup-complete" role="status" aria-live="polite">
+            <span class="setup-complete-icon" aria-hidden="true">
+              <i class="fas fa-check"></i>
+            </span>
+            <span class="setup-complete-copy">
+              <strong>{t("profile_setup_complete")}</strong>
+              <span>{t("profile_setup_saved")}</span>
+            </span>
+            <button
+              type="button"
+              class="dismiss-completion"
+              onclick={() => (showSetupCompletion = false)}
+              aria-label={t("profile_dismiss_setup_confirmation")}
+            >
+              <i class="fas fa-xmark" aria-hidden="true"></i>
+            </button>
+          </section>
+        </div>
       {:else if showAccountSetupUnavailable && accountSetupState}
-        <section class="setup-unavailable" role="status">
-          <span>
-            <strong>{t("profile_setup_status_unavailable")}</strong>
-            {t("profile_account_still_available")}
-          </span>
-          <PanelButton
-            variant="secondary"
-            onclick={() => void accountSetupState.loadForCurrentUser()}
-          >
-            {t("action_retry")}
-          </PanelButton>
-        </section>
+        <div class="setup-notice" transition:growFade>
+          <section class="setup-unavailable" role="status">
+            <span>
+              <strong>{t("profile_setup_status_unavailable")}</strong>
+              {t("profile_account_still_available")}
+            </span>
+            <PanelButton
+              variant="secondary"
+              onclick={() => void accountSetupState.loadForCurrentUser()}
+            >
+              {t("action_retry")}
+            </PanelButton>
+          </section>
+        </div>
       {/if}
 
       <div class="account-workspace">
@@ -538,6 +546,12 @@
             onSignOut={handleSignOut}
             onAvatarClick={handleOpenPhotoPicker}
           />
+          <div class="identity-props">
+            <MyPropsCard
+              propState={setupPropState}
+              onOpenPropEditor={handleOpenPropEditor}
+            />
+          </div>
         </div>
 
         <section
@@ -560,8 +574,6 @@
               onPronounsChanged={(pronouns) => (userPronouns = pronouns)}
               onUsernameChanged={(username) => (userUsername = username)}
               {displayNameEditRequest}
-              propState={setupPropState}
-              onOpenPropEditor={handleOpenPropEditor}
             />
           </div>
         </section>
@@ -578,7 +590,7 @@
               </span>
               <span class="section-action">
                 <PanelButton
-                  variant="secondary"
+                  variant="quiet"
                   onclick={() => (manageSignInMethods = !manageSignInMethods)}
                   ariaLabel={manageSignInMethods
                     ? t("profile_finish_manage_sign_in")
@@ -674,9 +686,14 @@
   .profile-content {
     display: flex;
     flex-direction: column;
-    gap: clamp(0.75em, 1cqi, 1em);
     width: 100%;
     min-width: 0;
+  }
+
+  /* The notice owns the space below it, so dismissing it can ease that space
+     closed with the notice instead of leaving a gap to snap shut afterwards. */
+  .setup-notice {
+    padding-bottom: clamp(0.75em, 1cqi, 1em);
   }
 
   .setup-complete,
@@ -804,12 +821,20 @@
   }
 
   .identity-pane {
+    display: flex;
+    flex-direction: column;
     padding: clamp(1.25em, 2cqi, 2.25em);
     background: linear-gradient(
       155deg,
       color-mix(in srgb, var(--theme-accent) 12%, transparent),
       transparent 58%
     );
+  }
+
+  .identity-props {
+    margin-top: 1.25em;
+    padding-top: 1.25em;
+    border-top: 1px solid var(--theme-stroke);
   }
 
   .workspace-section {
@@ -919,6 +944,7 @@
 
   .preview-banner {
     display: flex;
+    margin-bottom: clamp(0.75em, 1cqi, 1em);
     align-items: center;
     gap: 0.6rem;
     min-height: var(--min-touch-target);
@@ -944,15 +970,19 @@
     color: var(--semantic-warning);
   }
 
+  /* Two columns that share one seam: profile, flow identity and security on
+     the left; personal details and sign-in methods on the right. The middle
+     row is flexible, so the shorter column ends early instead of stretching
+     the personal rows to match the taller one. */
   @container profile-tab (min-width: 48rem) {
     .account-workspace {
       grid-template-columns: minmax(15rem, 0.78fr) minmax(24rem, 1.22fr);
-      min-height: clamp(30em, 56vh, 38em);
+      grid-template-rows: auto 1fr auto;
     }
 
     .identity-pane {
       grid-column: 1;
-      grid-row: 1;
+      grid-row: 1 / span 2;
     }
 
     .personal-section {
@@ -963,22 +993,29 @@
     }
 
     .access-pane {
-      grid-column: 1 / -1;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      display: contents;
     }
 
-    .workspace-group + .workspace-group {
-      border-top: 0;
+    .sign-in-section {
+      grid-column: 2;
+      grid-row: 2 / span 2;
+      border-top: 1px solid var(--theme-stroke);
       border-left: 1px solid var(--theme-stroke);
+    }
+
+    .security-section {
+      grid-column: 1;
+      grid-row: 3;
     }
   }
 
   @container profile-tab (min-width: 75rem) {
     .account-workspace {
       grid-template-columns:
-        minmax(16rem, 0.78fr)
-        minmax(28rem, 1.3fr)
-        minmax(23rem, 1fr);
+        minmax(18rem, 1fr)
+        minmax(26rem, 1.15fr)
+        minmax(22rem, 1fr);
+      grid-template-rows: auto;
       min-height: clamp(30em, 50vh, 42em);
     }
 
@@ -993,6 +1030,7 @@
     }
 
     .access-pane {
+      display: grid;
       grid-column: 3;
       grid-row: 1;
       grid-template-columns: minmax(0, 1fr);
@@ -1001,8 +1039,14 @@
       border-left: 1px solid var(--theme-stroke);
     }
 
-    .workspace-group + .workspace-group {
-      border-top: 1px solid var(--theme-stroke);
+    .sign-in-section,
+    .security-section {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    .sign-in-section {
+      border-top: 0;
       border-left: 0;
     }
   }

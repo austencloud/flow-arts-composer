@@ -93,7 +93,7 @@
 <style>
   .identity-header {
     display: flex;
-    height: 100%;
+    flex: 0 0 auto;
     min-width: 0;
     flex-direction: column;
     align-items: flex-start;
@@ -305,15 +305,6 @@
   .sign-out-btn:focus-visible {
     outline: 3px solid var(--theme-accent-text, var(--theme-accent));
     outline-offset: 2px;
-  }
-
-  @container profile-tab (min-width: 75rem) {
-    .profile-hero {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1.5em;
-      margin-block: auto;
-    }
   }
 
   @container profile-tab (max-width: 32rem) {
