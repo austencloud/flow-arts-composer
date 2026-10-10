@@ -26,6 +26,9 @@
     loadSequence?: () => Promise<SequenceData | null>;
     /** A host-owned sequence bypasses the lazy loader and updates in place. */
     sequence?: SequenceData | null;
+    /** Keep it the same while the host edits its sequence (a transform, a
+     *  turn change) and the player's props glide to their new pose. */
+    transitionKey?: string | null;
     /** Keep the canonical player-and-rail composition visible and interactive. */
     alwaysLive?: boolean;
     /** Host controls rendered in the player frame's unused side rail. */
@@ -57,6 +60,7 @@
     posterUrl = null,
     loadSequence,
     sequence: directSequence = null,
+    transitionKey = null,
     alwaysLive = false,
     controls,
     playbackActive = true,
@@ -346,6 +350,7 @@
           onStatusChange={(status) => (playerLoadState = status)}
           props={{
             sequence,
+            transitionKey,
             leftPropType:
               leftPropType ?? recordedPropConfig?.leftPropType ?? null,
             rightPropType:

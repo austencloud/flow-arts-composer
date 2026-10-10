@@ -227,6 +227,12 @@ export interface RenderFrameParams {
   /** The layout slide running this frame, or null/absent when none is. */
   gridJoinSlide?: GridJoinTweenSample | null;
   /**
+   * True while a transform's pose glide runs (FrameSystem's `PoseGlide`):
+   * `props` hold an in-between pose the sequence never passes through, so
+   * trails and tip capture wait for it to land.
+   */
+  poseGlide?: boolean;
+  /**
    * Pure pose source for the sequence being played, with this frame's grid
    * join applied. The render loop fills slow frames with poses sampled from
    * it. Absent when the engine's orchestrator has no sequence.

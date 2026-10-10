@@ -132,6 +132,7 @@
     sequence,
     displayWord = null,
     sequenceLoadKey = null,
+    transitionKey = null,
     autoPlay = true,
     autoPlayDelay = 300,
     showControls = true,
@@ -197,6 +198,10 @@
     displayWord?: string | null;
     /** Distinguishes a deliberate host reload when selections share an ID. */
     sequenceLoadKey?: string | null;
+    /** Keep it the same across an edit of the shown sequence (a transform,
+     *  a turn change) and the props glide to their new pose instead of
+     *  jumping. Null snaps. */
+    transitionKey?: string | null;
     autoPlay?: boolean;
     /** Delay before autoplay begins after a sequence is ready. Most embeds keep
      *  the settled 300ms default; prewarmed dual-source stages pass 0 because
@@ -1080,6 +1085,7 @@
         letter={currentLetter}
         stepData={currentStepData}
         sequenceData={animationState.sequenceData}
+        {transitionKey}
         word={displayWord ?? animationState.sequenceData?.word ?? sequence.word}
         currentStep={animationState.currentStep}
         isPlaying={canvasPlaying}

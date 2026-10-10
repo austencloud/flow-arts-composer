@@ -112,6 +112,8 @@
     mandalaPathShape?: MandalaPathShape;
     /** Render mandalas with the card PNG's canvas geometry. */
     exportPresentation?: boolean;
+    /** Morph the mandala to a changed sequence instead of redrawing it. */
+    morphMandala?: boolean;
   }
 
   /** Fraction of the cell width the mandala occupies. Tweak for breathing room. */
@@ -163,6 +165,7 @@
     shortOrientation,
     mandalaPathShape: requestedMandalaPathShape,
     exportPresentation = false,
+    morphMandala = false,
   }: Props = $props();
 
   // A joined sequence's full mandala draws each hand's figure on its own
@@ -683,6 +686,7 @@
               pathShape={mandalaPathShape}
               strokeWidth={exportPresentation ? 3 : undefined}
               exportRaster={exportPresentation}
+              morphChanges={morphMandala}
               handOffsets={mandalaHandOffsets}
             />
           </div>
@@ -811,6 +815,7 @@
             pathShape={mandalaPathShape}
             strokeWidth={exportPresentation ? 3 : undefined}
             exportRaster={exportPresentation}
+            morphChanges={morphMandala}
             handOffsets={mandalaHandOffsets}
           />
         </div>

@@ -591,6 +591,7 @@
           <SequenceShowcasePreview
             word={selectedWord}
             sequence={selectedLoop ? playback.sequence : null}
+            transitionKey={selectedLoop ? `timing-${selectedLoop.id}` : null}
             alwaysLive
             playbackActive={playback.playing}
             externalPlaying={playback.playing}
@@ -641,8 +642,11 @@
                       onclick={() => selectCard(card.members)}
                     >
                       <div class="loop-card" aria-hidden="true" inert>
+                        <!-- The view is part of the key: switching between
+                             props and hands redraws rather than gliding. -->
                         <ChoreoCard
                           sequence={card.loop.sequence}
+                          transitionKey={`timing-${card.loop.id}:${showingHands ? "hands" : "props"}`}
                           showMandala={!showingHands}
                           includeStartPlacement={true}
                           startPlacementLayoutOverride="row"

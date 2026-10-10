@@ -18,6 +18,7 @@ function createSync() {
   const resetRunHistory = vi.fn();
   const initializeWithDomainData = vi.fn();
   const clearBuffers = vi.fn();
+  const poseGlide = { start: vi.fn(), stop: vi.fn() };
   const deps = {
     lifecycleManager: {
       animationRenderer: {
@@ -44,6 +45,7 @@ function createSync() {
       calculateMusicalPosition: () => null,
       getSequenceContentHash: (sequence: SequenceData) => sequence.id,
       lastSequenceContentHash: null,
+      poseGlide,
     },
     effectSystem: { trailOverlay: { clearBuffers } },
     getVM: vi.fn(),
@@ -66,6 +68,7 @@ function createSync() {
     resetRunHistory,
     initializeWithDomainData,
     clearBuffers,
+    poseGlide,
   };
 }
 
@@ -78,11 +81,15 @@ function sequence(id: string, startPlacement = "alpha1"): SequenceData {
   } as unknown as SequenceData;
 }
 
-function showing(sequenceData: SequenceData | null): AnimationEngineProps {
+function showing(
+  sequenceData: SequenceData | null,
+  transitionKey?: string | null
+): AnimationEngineProps {
   return {
     leftProp: { centerPathAngle: 0, staffRotationAngle: 0 },
     rightProp: { centerPathAngle: 0, staffRotationAngle: 0 },
     sequenceData,
+    transitionKey,
   };
 }
 
@@ -174,5 +181,32 @@ describe("PlaybackSync runs", () => {
 
     expect(clearBuffers).toHaveBeenCalledTimes(1);
     expect(resetRunHistory).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("PlaybackSync transform glide", () => {
+  // A transform hands the player an edited sequence under the same key. The
+  // player drops its sequence before loading the new one, as it does for any
+  // load, and the props must still glide rather than jump.
+  it("glides when the host keeps its key across an edit", () => {
+    const { sync, poseGlide } = createSync();
+    sync.update(showing(sequence("a"), "loop-1"));
+    expect(poseGlide.start).not.toHaveBeenCalled();
+
+    sync.update(showing(null, "loop-1"));
+    sync.update(showing(sequence("a-mirrored"), "loop-1"));
+
+    expect(poseGlide.start).toHaveBeenCalledTimes(1);
+  });
+
+  it("snaps for a new key or a host without one", () => {
+    const { sync, poseGlide } = createSync();
+    sync.update(showing(sequence("a"), "loop-1"));
+    sync.update(showing(sequence("b"), "loop-2"));
+    sync.update(showing(sequence("c")));
+    sync.update(showing(sequence("d")));
+
+    expect(poseGlide.start).not.toHaveBeenCalled();
+    expect(poseGlide.stop).toHaveBeenCalledTimes(4);
   });
 });

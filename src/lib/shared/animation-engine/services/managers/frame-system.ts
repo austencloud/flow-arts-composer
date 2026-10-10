@@ -39,6 +39,7 @@ import {
   gridJoinHandOffsets,
 } from "#lib/shared/grid-join/grid-join-tween.js";
 import { OrchestratorMotionSampleSource } from "../motion-sub-sampler";
+import { PoseGlide } from "../pose-glide";
 
 export class FrameSystem {
   readonly frameParameterBuilder = new FrameParameterBuilder();
@@ -61,6 +62,12 @@ export class FrameSystem {
    */
   readonly gridJoinTween = new GridJoinTween();
   private gridJoinTweenEnded: (() => void) | null = null;
+  /**
+   * The glide between a sequence and its transform. PlaybackSync starts it
+   * when the host keeps the same `transitionKey` across the change; frames
+   * built while it runs blend the props from where they were drawn.
+   */
+  readonly poseGlide = new PoseGlide();
   /** Pure pose source for slow-frame trail sampling; reads the lifecycle
    *  orchestrator lazily so a sequence switch needs no re-wiring. */
   private readonly motionSampleSource = new OrchestratorMotionSampleSource(
@@ -117,6 +124,11 @@ export class FrameSystem {
     params.mandalaStrokeWidth = props.mandalaStrokeWidthOverride;
     params.mandalaSteps = props.sequenceData?.steps ?? null;
     params.mandalaPathOptions = this.mandalaPathOptions;
+    params.poseGlide = this.poseGlide.apply(
+      params.props,
+      performance.now(),
+      !!props.sequenceData
+    );
     this.applyGridJoin(
       params,
       resolveAnimationGridJoin(
