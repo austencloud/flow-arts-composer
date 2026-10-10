@@ -7,9 +7,11 @@
   let {
     performers,
     onChange,
+    fill = false,
   }: {
     performers: readonly CharacterInstanceState[];
     onChange: (join: GridJoin | null | undefined) => void;
+    fill?: boolean;
   } = $props();
 
   const previewPerformer = $derived(
@@ -47,7 +49,7 @@
   );
 </script>
 
-<div class="performer-grid-panel">
+<div class="performer-grid-panel" class:fill>
   <div class="grid-source">
     <span class="grid-status" aria-live="polite">
       {mixed
@@ -85,6 +87,7 @@
       {join}
       {mixed}
       {onChange}
+      {fill}
       leftPropType={previewPerformer?.effectiveProp}
       rightPropType={previewPerformer?.effectiveProp}
       embedded
@@ -101,7 +104,13 @@
     gap: 14px;
   }
 
+  .performer-grid-panel.fill {
+    flex: 1;
+    min-height: 0;
+  }
+
   .grid-source {
+    flex: none;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -142,6 +151,7 @@
   }
 
   .grid-hint {
+    flex: none;
     margin: 0;
     color: var(--theme-text-dim);
     font-size: var(--font-size-min, 14px);

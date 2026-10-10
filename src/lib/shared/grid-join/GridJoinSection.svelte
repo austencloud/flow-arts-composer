@@ -231,6 +231,7 @@
   }
 
   .embedded .join-page {
+    --art-max: 100cqw;
     padding: 0;
   }
 
@@ -455,7 +456,13 @@
     );
     --art: min(
       var(--art-w),
-      max(5rem, min(14rem, (100cqh - var(--heads)) / 2 - var(--chrome) - 1px))
+      max(
+        5rem,
+        min(
+          var(--art-max, 14rem),
+          (100cqh - var(--heads)) / 2 - var(--chrome) - 1px
+        )
+      )
     );
     grid-template-columns: repeat(
       4,
@@ -478,7 +485,7 @@
         max(
           5rem,
           min(
-            14rem,
+            var(--art-max, 14rem),
             (100cqh - var(--heads) - 2 * var(--tile-gap)) / 4 - var(--chrome) -
               1px
           )

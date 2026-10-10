@@ -121,16 +121,20 @@
         <i class="fas fa-users"></i>
       </div>
       <div class="identity-meta">
-        <span class="performer-name">
-          {isAllMode ? "All performers" : `${selectedCount} performers`}
-        </span>
+        <div class="identity-title">
+          <span class="performer-name">
+            {isAllMode ? "All performers" : `${selectedCount} performers`}
+          </span>
+          {#if isAllMode}
+            <span class="count-badge" style:background-color={performerColor}
+              >{performerCount}</span
+            >
+          {/if}
+        </div>
         <div class="sub-row">
-          <span class="count-badge" style:background-color={performerColor}
-            >{performerCount}</span
-          >
           <span class="all-hint">
             {isAllMode
-              ? `Changes apply to all ${performerCount}`
+              ? "Changes apply to all"
               : "Changes apply to the selected group"}
           </span>
         </div>
@@ -245,12 +249,12 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 58px 10px 14px;
+    padding: 16px 14px;
   }
   .identity {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     min-width: 0;
     flex: 1;
   }
@@ -288,14 +292,14 @@
   .identity-meta {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 6px;
     min-width: 0;
   }
   .performer-name {
     color: var(--theme-text);
     font-size: 18px;
     font-weight: 800;
-    line-height: 1.15;
+    line-height: 1.25;
     letter-spacing: -0.01em;
     white-space: nowrap;
     overflow: hidden;
@@ -344,10 +348,17 @@
   .sub-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    min-width: 0;
+  }
+  .identity-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     min-width: 0;
   }
   .count-badge {
+    flex: none;
     padding: 1px 6px;
     border-radius: 4px;
     color: var(--text-on-accent);
@@ -362,7 +373,7 @@
     font-size: 14px;
   }
   .all-hint {
-    font-style: italic;
+    line-height: 1.4;
   }
   .sequence-chip {
     /* TKAWordGlyph's fallback text uses the same "TKA Letters" font as the
@@ -433,9 +444,6 @@
     outline-offset: 2px;
   }
   @container (max-width: 460px) {
-    .header {
-      padding-right: 52px;
-    }
     .remove-button,
     .select-all-button {
       min-width: 44px;
