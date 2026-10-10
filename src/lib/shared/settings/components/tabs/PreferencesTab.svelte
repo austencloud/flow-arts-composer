@@ -1,8 +1,10 @@
 <!--
   PreferencesTab.svelte - Workflow and Behavior Preferences
 
-  Language, confirmation dialogs, guides and local data, laid out as one
-  workspace panel with the same section bands as the Account tab.
+  Language, confirmation dialogs, shortcuts, guides, version and local data,
+  laid out as one workspace panel with the same section bands as the Account
+  tab. Every item is a full-width row: a switch, or a row that opens a page or
+  replays a guide.
 -->
 <script lang="ts">
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -20,6 +22,11 @@
   import LanguagePreference from "./preferences/LanguagePreference.svelte";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import SettingToggleButton from "../SettingToggleButton.svelte";
+  import SettingActionRow from "../SettingActionRow.svelte";
+  import {
+    SKIPPABLE_CONFIRMATIONS,
+    type SkippableConfirmation,
+  } from "../../confirmations";
   import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import {
@@ -74,27 +81,29 @@
     else void checkForNativeUpdate();
   }
 
-  // Derive toggle state from settings
-  const showClearConfirmation = $derived(
-    !currentSettings?.skipClearConfirmation
-  );
-
-  function handleToggleClearConfirmation() {
+  // A switch reads "ask before…", so it is on while the skip flag is off.
+  function toggleConfirmation(key: SkippableConfirmation) {
     hapticService?.trigger("selection");
-    onSettingUpdate?.({
-      key: "skipClearConfirmation",
-      value: showClearConfirmation, // Toggle: if currently showing, now skip
-    });
+    onSettingUpdate?.({ key, value: !currentSettings?.[key] });
   }
 
-  const showLoopConfirmation = $derived(!currentSettings?.skipLoopConfirmation);
+  // "Version 0.45.0", plus the phone app's downloaded bundle when it has one.
+  const versionLine = $derived(
+    [
+      t("settings_version_number", { version: __APP_VERSION__ }),
+      nativeUpdate.currentVersion
+        ? t("settings_app_update_bundle", {
+            version: nativeUpdate.currentVersion,
+          })
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" · ")
+  );
 
-  function handleToggleLoopConfirmation() {
+  function openSettingsPage(section: "keyboard" | "release-notes") {
     hapticService?.trigger("selection");
-    onSettingUpdate?.({
-      key: "skipLoopConfirmation",
-      value: showLoopConfirmation,
-    });
+    handleSectionChange(section);
   }
 
   async function handleReplayTutorial() {
@@ -130,59 +139,78 @@
         <SettingsSectionHeader
           icon="fas fa-comment-dots"
           title={t("settings_confirmation_dialogs")}
+          description={t("settings_confirmation_dialogs_desc")}
           headingId="confirmations-heading"
         />
-        <div class="toggle-list">
-          <SettingToggleButton
-            label={t("settings_ask_before_clearing")}
-            checked={showClearConfirmation}
-            onToggle={handleToggleClearConfirmation}
-          />
-          <SettingToggleButton
-            label={t("settings_ask_before_loop")}
-            checked={showLoopConfirmation}
-            onToggle={handleToggleLoopConfirmation}
-          />
+        <div class="row-list">
+          {#each SKIPPABLE_CONFIRMATIONS as confirmation (confirmation.key)}
+            <SettingToggleButton
+              label={t(confirmation.label)}
+              checked={!currentSettings?.[confirmation.key]}
+              onToggle={() => toggleConfirmation(confirmation.key)}
+            />
+          {/each}
         </div>
       </section>
     </div>
 
     <div class="workspace-column">
-      <section class="workspace-section" aria-labelledby="keyboard-heading">
-        <SettingsSectionHeader
-          icon="fas fa-keyboard"
-          title={t("tab_settings_keyboard")}
-          description={t("tab_desc_settings_keyboard")}
-          headingId="keyboard-heading"
-        >
-          {#snippet action()}
-            <PanelButton
-              variant="quiet"
-              onclick={() => handleSectionChange("keyboard")}
-              ariaLabel={t("tab_desc_settings_keyboard")}
-            >
-              <i class="fas fa-arrow-right" aria-hidden="true"></i>
-              <span>{t("settings_presets_manage")}</span>
-            </PanelButton>
-          {/snippet}
-        </SettingsSectionHeader>
-      </section>
-
       <section class="workspace-section" aria-labelledby="guides-heading">
         <SettingsSectionHeader
           icon="fas fa-compass"
-          title={t("settings_guides")}
+          title={t("settings_shortcuts_and_guides")}
           headingId="guides-heading"
         />
-        <div class="section-body guide-actions">
-          <PanelButton variant="secondary" onclick={handleReplayTutorial}>
-            <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-            <span>{t("settings_replay_construct_guide")}</span>
-          </PanelButton>
-          <PanelButton variant="secondary" onclick={handleReplayGenerateTour}>
-            <i class="fas fa-circle-question" aria-hidden="true"></i>
-            <span>{t("settings_replay_generate_tour")}</span>
-          </PanelButton>
+        <div class="row-list">
+          <SettingActionRow
+            icon="fas fa-keyboard"
+            label={t("tab_desc_settings_keyboard")}
+            description={t("settings_keyboard_shortcuts_desc")}
+            opensPage
+            onclick={() => openSettingsPage("keyboard")}
+          />
+          <SettingActionRow
+            icon="fas fa-wand-magic-sparkles"
+            label={t("settings_construct_guide")}
+            actionLabel={t("settings_replay")}
+            ariaLabel={t("settings_replay_construct_guide")}
+            onclick={handleReplayTutorial}
+          />
+          <SettingActionRow
+            icon="fas fa-circle-question"
+            label={t("settings_generate_tour")}
+            actionLabel={t("settings_replay")}
+            ariaLabel={t("settings_replay_generate_tour")}
+            onclick={handleReplayGenerateTour}
+          />
+        </div>
+      </section>
+
+      <section class="workspace-section" aria-labelledby="about-heading">
+        <SettingsSectionHeader
+          icon="fas fa-circle-info"
+          title={t("settings_about_app")}
+          headingId="about-heading"
+        />
+        <div class="row-list">
+          <SettingActionRow
+            icon="fas fa-bullhorn"
+            label={t("nav_ui_what_s_new")}
+            description={versionLine}
+            opensPage
+            onclick={() => openSettingsPage("release-notes")}
+          />
+          {#if nativeUpdate.available}
+            <div aria-live="polite">
+              <SettingActionRow
+                icon="fas fa-mobile-screen"
+                label={appUpdateLabel}
+                busy={appUpdateBusy}
+                disabled={appUpdateBusy}
+                onclick={handleAppUpdate}
+              />
+            </div>
+          {/if}
         </div>
       </section>
 
@@ -222,52 +250,13 @@
         {/if}
       </section>
     </div>
-
-    <footer class="version-band">
-      <span class="version-text">
-        <span>v{__APP_VERSION__}</span>
-        {#if nativeUpdate.currentVersion}
-          <span>
-            {t("settings_app_update_bundle", {
-              version: nativeUpdate.currentVersion,
-            })}
-          </span>
-        {/if}
-      </span>
-      <span class="version-actions">
-        <PanelButton
-          variant="quiet"
-          onclick={() => handleSectionChange("release-notes")}
-        >
-          <i class="fas fa-bullhorn" aria-hidden="true"></i>
-          <span>{t("nav_ui_what_s_new")}</span>
-        </PanelButton>
-        {#if nativeUpdate.available}
-          <span class="update-action" aria-live="polite">
-            <PanelButton
-              variant={nativeUpdate.status === "ready" ? "primary" : "quiet"}
-              disabled={appUpdateBusy}
-              ariaBusy={appUpdateBusy}
-              onclick={handleAppUpdate}
-            >
-              <i
-                class={appUpdateBusy
-                  ? "fas fa-circle-notch fa-spin"
-                  : "fas fa-mobile-screen"}
-                aria-hidden="true"
-              ></i>
-              <span>{appUpdateLabel}</span>
-            </PanelButton>
-          </span>
-        {/if}
-      </span>
-    </footer>
   </div>
 </div>
 
 <style>
   /* Matches the Account tab: one panel in the middle of the tab, sections
-     opened by header bands and split by hairlines. */
+     opened by header bands and split by hairlines. Every item is a full-width
+     row, so nothing floats loose inside a section. */
   .preferences-tab {
     container: preferences-tab / inline-size;
     display: grid;
@@ -297,6 +286,7 @@
     max-width: 84rem;
     min-width: 0;
     margin-inline: auto;
+    --settings-row-inline: 1.15em;
     border: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
     --panel-inner-radius: calc(1.25rem - 1px);
     border-radius: 1.25em;
@@ -334,7 +324,7 @@
   }
 
   /* The shorter column's last section fills the leftover height, so the
-     section surface reaches the version band. */
+     section surface reaches the panel's foot. */
   .workspace-section:last-child {
     flex: 1 1 auto;
   }
@@ -355,33 +345,31 @@
     border-top-right-radius: var(--panel-inner-radius);
   }
 
-  .version-band {
+  .workspace-column:last-child > .workspace-section:last-child,
+  .workspace-column:last-child
+    > .workspace-section:last-child
+    > :global(.section-header:last-child) {
     border-bottom-left-radius: var(--panel-inner-radius);
     border-bottom-right-radius: var(--panel-inner-radius);
   }
 
   .section-body {
     min-width: 0;
-    padding: 0.85em 1.15em 1em;
+    padding: 0.85em var(--settings-row-inline) 1em;
   }
 
-  .toggle-list {
+  .row-list {
     display: flex;
     flex-direction: column;
   }
 
-  .toggle-list :global(.setting-toggle) {
-    padding-inline: 1.15em;
+  .row-list :global(.setting-toggle),
+  .row-list :global(.setting-action) {
+    padding-inline: var(--settings-row-inline);
   }
 
-  .toggle-list :global(.setting-toggle + .setting-toggle) {
+  .row-list > :global(* + *) {
     border-top: 1px solid var(--theme-stroke);
-  }
-
-  .guide-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6em;
   }
 
   .disclosure-action :global(.panel-btn) {
@@ -400,39 +388,7 @@
     padding-top: 0.5em;
   }
 
-  .version-band {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6em 1em;
-    padding: 0.75em 1.15em;
-    border-top: 1px solid var(--theme-stroke);
-    color: var(--theme-text-dim);
-    background: color-mix(in srgb, var(--theme-text) 3%, transparent);
-    font-size: max(0.875rem, var(--font-size-min));
-    font-variant-numeric: tabular-nums;
-  }
-
-  .version-text {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25em 0.9em;
-  }
-
-  .version-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em;
-  }
-
-  /* Holds the longest status ("Downloading 100%") so the label can change
-     without pushing What's new. */
-  .update-action :global(.panel-btn) {
-    min-width: 13em;
-  }
-
-  /* Two columns that share one seam, with the version band across the foot. */
+  /* Two columns that share one seam. */
   @container preferences-tab (min-width: 48rem) {
     .preferences-workspace {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -457,19 +413,24 @@
       border-top-right-radius: var(--panel-inner-radius);
     }
 
-    .version-band {
-      grid-column: 1 / -1;
+    .workspace-column:first-child > .workspace-section:last-child,
+    .workspace-column:first-child
+      > .workspace-section:last-child
+      > :global(.section-header:last-child) {
+      border-bottom-left-radius: var(--panel-inner-radius);
+    }
+
+    .workspace-column:last-child > .workspace-section:last-child,
+    .workspace-column:last-child
+      > .workspace-section:last-child
+      > :global(.section-header:last-child) {
+      border-bottom-left-radius: 0;
     }
   }
 
   @container preferences-tab (min-width: 105rem) {
-    .section-body,
-    .version-band {
-      padding-inline: 1.35em;
-    }
-
-    .toggle-list :global(.setting-toggle) {
-      padding-inline: 1.35em;
+    .preferences-workspace {
+      --settings-row-inline: 1.35em;
     }
   }
 
@@ -479,13 +440,8 @@
       padding-inline: 0.65rem;
     }
 
-    .section-body,
-    .version-band {
-      padding-inline: 0.9rem;
-    }
-
-    .toggle-list :global(.setting-toggle) {
-      padding-inline: 0.9rem;
+    .preferences-workspace {
+      --settings-row-inline: 0.9rem;
     }
   }
 

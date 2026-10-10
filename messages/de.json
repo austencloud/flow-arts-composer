@@ -2150,7 +2150,6 @@
   "nav_all_creation_methods": "Alle Erstellungsmethoden",
   "nav_creation_method_description": "Wähle, wie du deine nächste Sequenz erstellen möchtest.",
   "nav_skip_main": "Zum Hauptinhalt springen",
-  "settings_guides": "Anleitungen",
   "settings_replay_construct_guide": "Anleitung zum Konstruieren erneut ansehen",
   "settings_replay_generate_tour": "Tour zu den Generierungsoptionen erneut ansehen",
   "settings_advanced": "Erweitert",
@@ -8822,5 +8821,16 @@
   "settings_app_update_downloading": "Wird geladen: {percent} %",
   "settings_app_update_up_to_date": "Auf dem neuesten Stand",
   "settings_app_update_failed": "Prüfung fehlgeschlagen. Erneut versuchen",
-  "settings_app_update_bundle": "Update {version}"
+  "settings_app_update_bundle": "Update {version}",
+  "settings_confirmation_dialogs_desc": "Jede schützt eine Änderung, die du rückgängig machen kannst. Vor dem Löschen gespeicherter Arbeit wird immer gefragt.",
+  "settings_ask_before_removing_performer": "Vor dem Entfernen eines 3D-Performers fragen",
+  "settings_ask_before_deleting_track": "Vor dem Löschen einer Zeitleistenspur fragen",
+  "settings_ask_before_clearing_post_keyframes": "Vor dem Leeren der Keyframes eines Beitrags fragen",
+  "settings_shortcuts_and_guides": "Tastenkürzel und Anleitungen",
+  "settings_keyboard_shortcuts_desc": "Alle Tastenkürzel ansehen und ändern",
+  "settings_construct_guide": "Construct-Anleitung",
+  "settings_generate_tour": "Tour zu den Generierungsoptionen",
+  "settings_replay": "Erneut ansehen",
+  "settings_about_app": "Über die App",
+  "settings_version_number": "Version {version}"
 }

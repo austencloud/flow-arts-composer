@@ -10,6 +10,10 @@
   import type { TimelineTrack } from "#lib/shared/animation-engine/domain/timeline-types.js";
   import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import {
+    shouldConfirm,
+    stopAsking,
+  } from "#lib/shared/settings/confirmations.js";
 
   interface Props {
     track: TimelineTrack;
@@ -201,7 +205,12 @@
             class="delete-btn"
             onclick={() => {
               showControls = false;
-              showDeleteConfirm = true;
+              // Deleting a track is undoable, so the person may turn this off.
+              if (shouldConfirm("skipDeleteTrackConfirmation")) {
+                showDeleteConfirm = true;
+              } else {
+                getState().removeTrack(track.id);
+              }
             }}
             title={t("compose_ui_delete_track")}
             aria-label={t("compose_ui_delete_track")}
@@ -224,6 +233,8 @@
   cancelText="Cancel"
   variant="danger"
   confirmDelay={track.clips.length > 0 ? 2 : 0}
+  showDontAskAgain={true}
+  onDontAskAgainChange={() => stopAsking("skipDeleteTrackConfirmation")}
   onConfirm={() => {
     getState().removeTrack(track.id);
     showDeleteConfirm = false;
