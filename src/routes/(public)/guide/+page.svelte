@@ -96,8 +96,17 @@
       <header class="intro">
         <span class="kicker">{tDynamic("guide_hub_kicker")}</span>
         <h1>{tDynamic("guide_hub_title")}</h1>
+        <p class="welcome-greeting">{tDynamic("guide_welcome_greeting")}</p>
+        <div class="intro-actions">
+          <a class="primary-action" href={firstLessonHref}>
+            {tDynamic("guide_hub_start_lesson")}
+            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          </a>
+          <a class="secondary-action" href={firstTopicHref}>
+            {tDynamic("guide_hub_read_guide")}
+          </a>
+        </div>
         <div class="welcome">
-          <p class="welcome-greeting">{tDynamic("guide_welcome_greeting")}</p>
           <p>{tDynamic("guide_welcome_what")}</p>
           <p>{tDynamic("guide_welcome_pictographs")}</p>
         </div>
@@ -111,15 +120,6 @@
             </li>
           {/each}
         </ol>
-        <div class="intro-actions">
-          <a class="primary-action" href={firstLessonHref}>
-            {tDynamic("guide_hub_start_lesson")}
-            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-          </a>
-          <a class="secondary-action" href={firstTopicHref}>
-            {tDynamic("guide_hub_read_guide")}
-          </a>
-        </div>
       </header>
 
       <section class="section-index" aria-labelledby="section-index-heading">
@@ -227,9 +227,12 @@
     text-wrap: pretty;
   }
 
-  .welcome .welcome-greeting {
+  .welcome-greeting {
+    margin: 1.4rem 0 0;
     color: var(--guide-text);
+    font-size: clamp(1rem, 1.35vw, 1.18rem);
     font-weight: 650;
+    line-height: 1.65;
   }
 
   .level-path {
@@ -270,11 +273,13 @@
     font-weight: 700;
   }
 
+  /* The way in sits right under the greeting so the first lesson is on
+     the first screen at every size; the welcome text follows it. */
   .intro-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
-    margin-top: 2rem;
+    margin-top: 1rem;
   }
 
   .primary-action,
