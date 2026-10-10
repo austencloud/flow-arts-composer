@@ -210,7 +210,8 @@ across the top, and cells drawn by `ShapeMatrixMandalaArt` from
 cell grows and draws its mandala from start to finish. Each turn is a Surprise
 roll (2026-10-10), as the Matrix's own Surprise button rolls one: the corner
 turns to a different page (another pair of turn bands from the level the
-Matrix opens on) and the light lands on a different crossing. The next page's
+Matrix opens on, less the zero band, whose first flower is a single point and
+reads as an empty tile) and the light lands on a different crossing. The next page's
 paths and tiles paint in the background between turns; a turn whose page is
 not painted yet rolls only a new crossing.
 
