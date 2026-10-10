@@ -15,7 +15,14 @@
    * make that fused step exactly, and the fused cell takes over without a
    * jump. The arrows stay while the fused steps play, and the props travel
    * along them (2026-10-10: arrows that appeared only after the halves met
-   * read as something new arriving). Each pictograph paints its own opaque cell, so
+   * read as something new arriving).
+   *
+   * A hand drawn alone is laid out as one hand (PictographContainer prepares
+   * a visibleHand presentation that way), and the fused letter can lay it out
+   * differently: its arrow on the other side of its point, its prop nudged
+   * off the other hand's. Each half's arrow and prop glide from the one to
+   * the other while the halves slide, so they land where the fused cell
+   * draws them instead of snapping there at the merge. Each pictograph paints its own opaque cell, so
    * the half drawn on top (FuseSource.onTop) keeps only its props and takes
    * its cell backdrop from a ::before that dissolves during the slide: it
    * lands as a floating layer over the other half's cell, and both props
@@ -46,6 +53,7 @@
     fusePreviewFrames,
     fuseSources,
     nextFuseSwap,
+    type FuseSource,
   } from "./method-preview-fuse";
   import type { FusePreviewPair } from "./method-preview-fuse-swap";
   import { waitUntil, type SceneRun } from "./method-preview-run";
@@ -219,6 +227,38 @@
     stageUpcoming();
   }
 
+  /** The layers of one hand that the fused letter can lay out differently. */
+  const GLIDING_LAYERS = ["arrow", "prop"] as const;
+
+  /**
+   * Over the slide, each half's arrow and prop glide from where the hand
+   * alone puts them to where its fused cell draws them. Both pictographs
+   * share one viewBox and the slide lands each half on its cell, so the
+   * fused cell's transforms are the halves' targets as they are.
+   */
+  function glideIntoPlace(
+    halves: { source: FuseSource; piece: HTMLElement }[],
+    fused: HTMLElement
+  ): void {
+    for (const { source, piece } of halves) {
+      const cell = fused.querySelector(`.cell[data-step="${source.step}"]`);
+      for (const layer of GLIDING_LAYERS) {
+        const selector = `.${source.hand}-${layer}-svg`;
+        const from = piece.querySelector(selector);
+        const to = cell?.querySelector(selector);
+        if (!from || !to) continue;
+        const start = getComputedStyle(from).transform;
+        const end = getComputedStyle(to).transform;
+        if (start === end) continue;
+        track(from, [{ transform: start }, { transform: end }], {
+          duration: FUSE_PREVIEW_TIMING.slideMs,
+          easing: EASE,
+          fill: "forwards",
+        });
+      }
+    }
+  }
+
   /** Play one fused step: its props travel from the pose before it. */
   function travel(run: SceneRun, index: number): Promise<boolean> {
     return new Promise((resolve) => {
@@ -323,8 +363,12 @@
     }
     if (!(await run.wait(timing.sourcesInMs))) return;
 
-    // They slide together: the blue and red half of each step land on one cell.
+    // They slide together: the blue and red half of each step land on one
+    // cell, their arrows and props gliding to where the fused letter puts
+    // them. A fused row still drawing a new pair has no targets yet, so its
+    // halves keep their own layout and the merge snaps, as it once did.
     sliding = true;
+    if (drawn(true)) glideIntoPlace(halves, fused);
     const slides: Animation[] = [];
     for (const { source, piece } of halves) {
       const slide = track(
@@ -403,6 +447,7 @@
         {#if cell}
           <div
             class="cell"
+            data-step={index}
             style:left="{cell.x}px"
             style:top="{cell.y}px"
             style:width="{cell.size}px"
