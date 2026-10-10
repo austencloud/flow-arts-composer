@@ -4,7 +4,7 @@
   import { PRE_RELEASE_VERSION } from "#lib/shared/versioning/domain/models/version-models.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { getReactiveLocale } from "#lib/shared/i18n/locale-state.svelte.js";
-  import { releaseSummary } from "./release-summary";
+  import { releaseSummaryParts } from "./release-summary";
 
   const { version, onclick } = $props<{
     version: AppVersion;
@@ -28,7 +28,7 @@
   // Check if pre-release
   const isPreRelease = $derived(version.version === PRE_RELEASE_VERSION);
 
-  const summary = $derived(releaseSummary(version));
+  const summaryParts = $derived(releaseSummaryParts(version));
 
   // Total changes count
   const totalChanges = $derived(
@@ -56,7 +56,13 @@
   </div>
 
   <div class="version-summary">
-    <span class="summary-text">{summary}</span>
+    <span class="summary-text">
+      {#each summaryParts as part, index (index)}
+        <span class="summary-part"
+          >{part}{index < summaryParts.length - 1 ? "," : ""}</span
+        >
+      {/each}
+    </span>
     <span class="total-count">
       {hasChangelog
         ? t("settings_change_count", { count: totalChanges })
@@ -75,22 +81,25 @@
     align-items: center;
     gap: 16px;
     width: 100%;
-    padding: 16px;
-    background: var(--theme-card-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: 12px;
+    min-height: var(--min-touch-target);
+    padding: 0.85rem var(--settings-row-inline, 1.15em);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    color: inherit;
+    font: inherit;
     cursor: pointer;
     text-align: left;
     transition: all var(--duration-normal) ease;
   }
 
   .version-card:hover {
-    background: var(--theme-card-hover-bg);
-    border-color: color-mix(
-      in srgb,
-      var(--theme-accent, var(--theme-accent-strong)) 30%,
-      transparent
-    );
+    background: color-mix(in srgb, var(--theme-text) 4%, transparent);
+  }
+
+  .version-card:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: -3px;
   }
 
   .version-card:active {
@@ -111,7 +120,7 @@
   .version-number {
     font-size: var(--font-size-base);
     font-weight: 700;
-    color: var(--theme-accent);
+    color: var(--theme-accent-text, var(--theme-accent));
   }
 
   .pre-release .version-number {
@@ -126,14 +135,23 @@
 
   .version-summary {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 2px;
   }
 
+  /* Wraps between phrases, never inside "1 fix". */
   .summary-text {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.3em;
     font-size: var(--font-size-sm);
     color: var(--theme-text);
+  }
+
+  .summary-part {
+    white-space: nowrap;
   }
 
   .total-count {
