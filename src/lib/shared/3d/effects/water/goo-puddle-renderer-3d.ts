@@ -8,9 +8,7 @@ import {
 } from "three";
 
 const CAPACITY = 64;
-const SIDES = 32;
-const RINGS = 9;
-const VERTICES = SIDES * RINGS;
+const VERTICES = 288;
 const MAX_VOLUME = 0.025;
 const MAX_IMPACTS = 4;
 const IMPACT_LIFETIME = 2.2;
@@ -50,32 +48,11 @@ export class GooPuddleRenderer3D {
   private readonly material: MeshPhysicalMaterial;
 
   constructor(material: MeshPhysicalMaterial) {
-    const indices = new Uint16Array(CAPACITY * SIDES * (3 + (RINGS - 2) * 6));
-    let cursor = 0;
-    for (let pool = 0; pool < CAPACITY; pool++) {
-      const base = pool * VERTICES;
-      for (let ring = 0; ring < RINGS - 1; ring++) {
-        for (let side = 0; side < SIDES; side++) {
-          const a = base + ring * SIDES + side;
-          const b = base + ring * SIDES + ((side + 1) % SIDES);
-          const outer = a + SIDES;
-          const nextOuter = b + SIDES;
-          if (ring === 0) {
-            indices[cursor++] = a;
-            indices[cursor++] = nextOuter;
-            indices[cursor++] = outer;
-          } else {
-            indices[cursor++] = a;
-            indices[cursor++] = b;
-            indices[cursor++] = outer;
-            indices[cursor++] = b;
-            indices[cursor++] = nextOuter;
-            indices[cursor++] = outer;
-          }
-        }
-      }
-    }
-    this.geometry.setIndex(new BufferAttribute(indices, 1));
+    const indices = new Uint16Array(CAPACITY * VERTICES * 6);
+    this.geometry.setIndex(
+      new BufferAttribute(indices, 1).setUsage(DynamicDrawUsage)
+    );
+    this.geometry.setDrawRange(0, 0);
     this.geometry.setAttribute(
       "position",
       new BufferAttribute(this.positions, 3).setUsage(DynamicDrawUsage)
@@ -139,10 +116,9 @@ export class GooPuddleRenderer3D {
     for (const puddle of this.puddles) {
       if (Math.abs(puddle.floorY - floorY) > 0.01) continue;
       const distance = Math.hypot(puddle.x - x, puddle.z - z);
-      if (
-        distance < (puddle.radius + incomingRadius) * 0.9 &&
-        distance < nearestDistance
-      ) {
+      // Drops inside an existing pool feed it; landings near its rim keep a
+      // lobe of their own so the liquid can spread without moving the old one.
+      if (distance < puddle.radius * 0.85 && distance < nearestDistance) {
         nearest = puddle;
         nearestDistance = distance;
       }
@@ -151,8 +127,6 @@ export class GooPuddleRenderer3D {
       const added = Math.min(volume, MAX_VOLUME - nearest.volume);
       const total = nearest.volume + added;
       if (added > 0) {
-        nearest.x = (nearest.x * nearest.volume + x * added) / total;
-        nearest.z = (nearest.z * nearest.volume + z * added) / total;
         nearest.color.lerp(color, added / total);
         nearest.viscosity += (viscosity - nearest.viscosity) * (added / total);
         nearest.tension += (tension - nearest.tension) * (added / total);
@@ -210,77 +184,184 @@ export class GooPuddleRenderer3D {
         (1 - Math.exp(-(1.8 - 1.45 * puddle.viscosity) * dt));
       if (puddle.idle > 18) this.puddles.splice(i, 1);
     }
-    this.coalesce();
+    const groups = this.connectedGroups();
     if (this.puddles.length === 0) {
       this.mesh.visible = false;
       return;
     }
     this.positions.fill(0);
     this.alphas.fill(0);
-    for (let pool = 0; pool < this.puddles.length; pool++) {
-      const puddle = this.puddles[pool]!;
-      const height = Math.min(
-        0.027,
-        Math.max(0.008, (puddle.volume / (Math.PI * puddle.radius ** 2)) * 1.8)
+    const index = this.geometry.getIndex() as BufferAttribute;
+    const triangles = index.array as Uint16Array;
+    let vertexStart = 0;
+    let indexCount = 0;
+    for (const group of groups) {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minZ = Infinity;
+      let maxZ = -Infinity;
+      for (const puddle of group) {
+        const reach = puddle.radius * 1.12;
+        minX = Math.min(minX, puddle.x - reach);
+        maxX = Math.max(maxX, puddle.x + reach);
+        minZ = Math.min(minZ, puddle.z - reach);
+        maxZ = Math.max(maxZ, puddle.z + reach);
+      }
+      const width = maxX - minX;
+      const depth = maxZ - minZ;
+      const budget = group.length * VERTICES;
+      const columns = Math.min(
+        256,
+        Math.max(8, Math.floor(Math.sqrt((budget * width) / depth)))
       );
-      for (let ring = 0; ring < RINGS; ring++) {
-        const fraction = ring / (RINGS - 1);
-        // The lip curls down to the floor while the center remains gently domed.
-        const dome = Math.sqrt(Math.max(0, 1 - fraction ** 4));
-        const lift = 0.0015 + height * dome * (0.85 + 0.15 * fraction);
-        for (let side = 0; side < SIDES; side++) {
-          const angle = (side * Math.PI * 2) / SIDES;
-          const irregularity =
-            1 +
-            0.055 * Math.sin(angle * 3 + puddle.seed * 1.7) +
-            0.035 * Math.sin(angle * 5 - puddle.seed * 0.9);
-          const radial = puddle.radius * fraction * irregularity;
-          const vx = puddle.x + Math.cos(angle) * radial;
-          const vz = puddle.z + Math.sin(angle) * radial;
-          const vertex = pool * VERTICES + ring * SIDES + side;
+      const rows = Math.max(8, Math.floor(budget / columns));
+      const stepX = width / (columns - 1);
+      const stepZ = depth / (rows - 1);
+      const edgeWidth = Math.max(stepX, stepZ);
+      const averageRadius =
+        group.reduce((sum, puddle) => sum + puddle.radius, 0) / group.length;
+      const binCount = Math.min(
+        columns,
+        Math.max(1, Math.ceil(width / averageRadius))
+      );
+      const bins: Puddle[][] = Array.from({ length: binCount }, () => []);
+      const impactSources = group
+        .filter((puddle) => puddle.impacts.length > 0)
+        .sort(
+          (left, right) =>
+            left.impacts[left.impacts.length - 1]!.age -
+            right.impacts[right.impacts.length - 1]!.age
+        )
+        .slice(0, 4);
+      for (const puddle of group) {
+        const first = Math.max(
+          0,
+          Math.floor(
+            ((puddle.x - puddle.radius * 1.2 - minX) / width) * binCount
+          )
+        );
+        const last = Math.min(
+          binCount - 1,
+          Math.floor(
+            ((puddle.x + puddle.radius * 1.2 - minX) / width) * binCount
+          )
+        );
+        for (let bin = first; bin <= last; bin++) bins[bin]!.push(puddle);
+      }
+      for (let row = 0; row < rows; row++) {
+        const vz = minZ + row * stepZ;
+        for (let column = 0; column < columns; column++) {
+          const vx = minX + column * stepX;
+          const candidates =
+            bins[
+              Math.min(
+                binCount - 1,
+                Math.floor((column / (columns - 1)) * binCount)
+              )
+            ]!;
+          const vertex = vertexStart + row * columns + column;
           const offset = vertex * 3;
+          let field = -Infinity;
+          let lift = 0;
+          let strongest = group[0]!;
+          let strongestField = -Infinity;
+          for (const puddle of candidates) {
+            const localX = vx - puddle.x;
+            const localZ = vz - puddle.z;
+            if (
+              Math.abs(localX) > puddle.radius * 1.2 ||
+              Math.abs(localZ) > puddle.radius * 1.2
+            )
+              continue;
+            const angle = Math.atan2(localZ, localX);
+            const reach =
+              puddle.radius *
+              (1 +
+                0.055 * Math.sin(angle * 3 + puddle.seed * 1.7) +
+                0.035 * Math.sin(angle * 5 - puddle.seed * 0.9));
+            const local = Math.hypot(localX, localZ) / reach;
+            const signed = reach * (1 - local);
+            field =
+              field === -Infinity
+                ? signed
+                : this.smoothMax(
+                    field,
+                    signed,
+                    Math.min(reach, puddle.radius) * 0.12
+                  );
+            const dome = Math.sqrt(Math.max(0, 1 - local ** 4));
+            const height = Math.min(
+              0.027,
+              Math.max(
+                0.008,
+                (puddle.volume / (Math.PI * puddle.radius ** 2)) * 1.8
+              )
+            );
+            const localLift =
+              height * dome * (0.85 + 0.15 * Math.min(1, local));
+            lift = this.smoothMax(lift, localLift, 0.002);
+            if (signed > strongestField) {
+              strongestField = signed;
+              strongest = puddle;
+            }
+          }
           this.positions[offset] = vx;
+          let wave = 0;
+          if (field > 0) {
+            const edgeFade = Math.min(1, field / (averageRadius * 0.125));
+            for (const puddle of impactSources)
+              wave += this.waveHeight(puddle, vx, vz, edgeFade);
+          }
           this.positions[offset + 1] =
-            puddle.floorY +
-            Math.max(0.0015, lift + this.waveHeight(puddle, vx, vz, fraction));
+            group[0]!.floorY +
+            Math.max(
+              0.0015,
+              0.0015 + lift + Math.min(0.012, Math.max(-0.012, wave))
+            );
           this.positions[offset + 2] = vz;
-          this.colors[offset] = puddle.color.r;
-          this.colors[offset + 1] = puddle.color.g;
-          this.colors[offset + 2] = puddle.color.b;
-          const fade = Math.min(1, Math.max(0, (18 - puddle.idle) / 3));
+          this.colors[offset] = strongest.color.r;
+          this.colors[offset + 1] = strongest.color.g;
+          this.colors[offset + 2] = strongest.color.b;
+          const fade = Math.min(1, Math.max(0, (18 - strongest.idle) / 3));
           this.alphas[vertex] =
-            puddle.alpha * fade * (ring === RINGS - 1 ? 0.94 : 1);
-          this.metalnesses[vertex] = puddle.metalness;
+            strongest.alpha *
+            fade *
+            Math.min(1, Math.max(0, field / edgeWidth));
+          this.metalnesses[vertex] = strongest.metalness;
         }
       }
+      for (let row = 0; row < rows - 1; row++) {
+        for (let column = 0; column < columns - 1; column++) {
+          const a = vertexStart + row * columns + column;
+          const b = a + 1;
+          const c = a + columns;
+          const d = c + 1;
+          if (
+            this.alphas[a] === 0 &&
+            this.alphas[b] === 0 &&
+            this.alphas[c] === 0 &&
+            this.alphas[d] === 0
+          )
+            continue;
+          triangles[indexCount++] = a;
+          triangles[indexCount++] = c;
+          triangles[indexCount++] = b;
+          triangles[indexCount++] = b;
+          triangles[indexCount++] = c;
+          triangles[indexCount++] = d;
+        }
+      }
+      vertexStart += columns * rows;
     }
+    this.geometry.setDrawRange(0, indexCount);
+    index.count = indexCount;
+    index.needsUpdate = true;
     this.geometry.getAttribute("position").needsUpdate = true;
     this.geometry.getAttribute("color").needsUpdate = true;
     this.geometry.getAttribute("aAlpha").needsUpdate = true;
     this.geometry.getAttribute("aMetalness").needsUpdate = true;
     this.geometry.computeVertexNormals();
-    const normals = this.geometry.getAttribute("normal") as BufferAttribute;
-    for (let pool = 0; pool < this.puddles.length; pool++) {
-      let nx = 0;
-      let ny = 0;
-      let nz = 0;
-      for (let side = 0; side < SIDES; side++) {
-        const vertex = pool * VERTICES + side;
-        nx += normals.getX(vertex);
-        ny += normals.getY(vertex);
-        nz += normals.getZ(vertex);
-      }
-      const length = Math.hypot(nx, ny, nz) || 1;
-      for (let side = 0; side < SIDES; side++) {
-        normals.setXYZ(
-          pool * VERTICES + side,
-          nx / length,
-          ny / length,
-          nz / length
-        );
-      }
-    }
-    normals.needsUpdate = true;
+    this.geometry.getAttribute("normal").needsUpdate = true;
     this.mesh.visible = true;
   }
 
@@ -311,9 +392,9 @@ export class GooPuddleRenderer3D {
     puddle: Puddle,
     x: number,
     z: number,
-    fraction: number
+    edgeFade: number
   ): number {
-    if (fraction >= 1) return 0;
+    if (edgeFade <= 0) return 0;
     let height = 0;
     for (const impact of puddle.impacts) {
       const distance = Math.hypot(x - impact.x, z - impact.z);
@@ -324,52 +405,39 @@ export class GooPuddleRenderer3D {
       const decay = Math.exp(-(1.4 + 3.4 * puddle.viscosity) * impact.age);
       height += impact.amplitude * Math.cos(phase * Math.PI) * envelope * decay;
     }
-    return (
-      Math.min(0.012, Math.max(-0.012, height)) *
-      Math.min(1, (1 - fraction) * 8)
-    );
+    return Math.min(0.012, Math.max(-0.012, height)) * edgeFade;
   }
 
-  private coalesce(): void {
-    for (let a = 0; a < this.puddles.length; a++) {
-      const first = this.puddles[a]!;
-      for (let b = a + 1; b < this.puddles.length; ) {
-        const second = this.puddles[b]!;
-        if (
-          Math.abs(first.floorY - second.floorY) > 0.01 ||
-          Math.hypot(first.x - second.x, first.z - second.z) >
-            (first.radius + second.radius) * 0.82
-        ) {
-          b++;
-          continue;
+  private smoothMax(a: number, b: number, width: number): number {
+    const overlap = Math.max(0, width - Math.abs(a - b)) / width;
+    return Math.max(a, b) + overlap * overlap * width * 0.25;
+  }
+
+  private connectedGroups(): Puddle[][] {
+    const groups: Puddle[][] = [];
+    const visited = new Uint8Array(this.puddles.length);
+    for (let start = 0; start < this.puddles.length; start++) {
+      if (visited[start]) continue;
+      visited[start] = 1;
+      const group = [this.puddles[start]!];
+      for (let cursor = 0; cursor < group.length; cursor++) {
+        const first = group[cursor]!;
+        for (let index = 0; index < this.puddles.length; index++) {
+          if (visited[index]) continue;
+          const second = this.puddles[index]!;
+          if (
+            Math.abs(first.floorY - second.floorY) > 0.01 ||
+            Math.hypot(first.x - second.x, first.z - second.z) >=
+              (first.radius + second.radius) * 0.98
+          )
+            continue;
+          visited[index] = 1;
+          group.push(second);
         }
-        const combined = first.volume + second.volume;
-        first.x =
-          (first.x * first.volume + second.x * second.volume) / combined;
-        first.z =
-          (first.z * first.volume + second.z * second.volume) / combined;
-        first.color.lerp(second.color, second.volume / combined);
-        first.viscosity +=
-          (second.viscosity - first.viscosity) * (second.volume / combined);
-        first.tension +=
-          (second.tension - first.tension) * (second.volume / combined);
-        first.metalness +=
-          (second.metalness - first.metalness) * (second.volume / combined);
-        first.alpha +=
-          (second.alpha - first.alpha) * (second.volume / combined);
-        first.volume = Math.min(MAX_VOLUME, combined);
-        first.radius = Math.max(
-          first.radius,
-          second.radius,
-          Math.cbrt(first.volume) * 1.25
-        );
-        first.idle = Math.min(first.idle, second.idle);
-        first.impacts = [...first.impacts, ...second.impacts]
-          .sort((left, right) => right.age - left.age)
-          .slice(-MAX_IMPACTS);
-        this.puddles.splice(b, 1);
       }
+      groups.push(group);
     }
+    return groups;
   }
 
   clear(): void {
