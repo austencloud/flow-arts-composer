@@ -2,13 +2,15 @@
  * The Create front door's Tunnel preview: the Tunnel's own Radial formation,
  * the sequence its performer takes when the dice is pressed, and the beats.
  * When no draw came, the sequence turns an eighth, because a quarter turn
- * maps a four-fold ring onto itself and the tunnel would look the same.
+ * maps a four-fold ring onto itself and the tunnel would look the same. The
+ * beats leave the new performer, and then its bloomed ring, time to play.
  */
 import { describe, expect, it } from "vitest";
 import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { getPreset } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import { TUNNEL_REVEAL_DURATION } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-reveal.js";
 import { builtInTunnelPresetRecipe } from "#lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe.js";
 import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 import { DEMO_SEQUENCE } from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
@@ -57,11 +59,23 @@ describe("the performer's next sequence", () => {
 });
 
 describe("Tunnel preview beats", () => {
-  it("leaves the new tunnel at least a second of the turn", () => {
-    const timing = TUNNEL_PREVIEW_TIMING;
-    const tap = SHORTEST_GLIDE_MS + SCENE_TAP.considerMs + SCENE_TAP.pressMs;
-    expect(
-      timing.leadMs + tap + timing.fadeOutMs + timing.fadeInMs
-    ).toBeLessThanOrEqual(METHOD_PREVIEW_TIMING.turnMs - 1000);
+  const timing = TUNNEL_PREVIEW_TIMING;
+  const tap = SHORTEST_GLIDE_MS + SCENE_TAP.considerMs + SCENE_TAP.pressMs;
+  /** From the turn's start until the new performer is back. */
+  const back =
+    timing.leadMs + tap + timing.foldMs + timing.fadeOutMs + timing.fadeInMs;
+
+  it("leaves the new performer at least a second of the turn", () => {
+    expect(back).toBeLessThanOrEqual(METHOD_PREVIEW_TIMING.turnMs - 1000);
+  });
+
+  it("blooms its copies with the viewer's own bloom", () => {
+    expect(timing.bloomMs).toBe(TUNNEL_REVEAL_DURATION);
+  });
+
+  it("leaves the bloomed ring at least half a second of the turn", () => {
+    expect(back + timing.bloomMs).toBeLessThanOrEqual(
+      METHOD_PREVIEW_TIMING.turnMs - 500
+    );
   });
 });

@@ -18,10 +18,24 @@
    * between turns. When that source fails, the performer's sequence turns an
    * eighth instead, so the tunnel still redraws.
    *
+   * Once the dice is pressed, the copies fold back into the one performer,
+   * which dips out over its tile and comes back alone with its new sequence.
+   * Its copies then bloom out around it with the viewer's own bloom
+   * (TunnelArtView's copyReveal), so the turn shows that a tunnel is one
+   * sequence copied around a ring (2026-10-10: the whole tile fading out and
+   * back read as a reload). The tile behind the dip is the canvas's own
+   * background color, so only the performer leaves.
+   *
    * Finished picture: the redrawn tunnel, still. Before the first turn, the
    * demo sequence's tunnel.
    */
   import { onDestroy, tick } from "svelte";
+  import { cubicOut } from "svelte/easing";
+  import { Tween } from "svelte/motion";
+  import {
+    DARK_MODE_BACKGROUND,
+    LIGHT_MODE_BACKGROUND,
+  } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-application-manager.js";
   import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
   import { createAnimationSettingsState } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
@@ -99,8 +113,15 @@
   let root = $state<HTMLElement | null>(null);
   let pose = $state.raw<GhostState | null>(null);
   let canvasReady = $state(false);
-  /** The stage fades out while the performer takes its new sequence. */
+  /** The performer dips out while it takes its new sequence. */
   let stageHidden = $state(false);
+  /** How far the copies have bloomed in around the performer. */
+  const copies = new Tween(1, { easing: cubicOut });
+  /** The background the canvas paints, light or dark as it is drawn. */
+  const canvasBackground = () =>
+    visibility.isDarkMode() ? DARK_MODE_BACKGROUND : LIGHT_MODE_BACKGROUND;
+  /** The canvas's own background, behind the performer while it dips. */
+  let tileColor = $state(canvasBackground());
   /** Show the stage again once the tunnel has built and painted. */
   let revealWhenReady = $state(false);
   let step = $state(1);
@@ -156,6 +177,7 @@
   function settle(): void {
     pose = null;
     if (stageHidden) revealWhenReady = true;
+    void copies.set(1, { duration: 0 });
     nextSequenceDraw.request();
   }
 
@@ -174,7 +196,11 @@
     placeGhost(finger, start.x, start.y);
     const dice = cellCenter(box.dice);
     if (!(await tapAt(finger, run, dice.x, dice.y))) return;
-    // The stage fades out, and the performer takes its new sequence unseen.
+    // The copies fold back into the performer the dice belongs to.
+    void copies.set(0, { duration: timing.foldMs });
+    if (!(await run.wait(timing.foldMs))) return;
+    // It dips out over its tile and takes its new sequence unseen.
+    tileColor = canvasBackground();
     stageHidden = true;
     if (!(await run.wait(timing.fadeOutMs))) return;
     sequence = nextTunnelSequence(sequence, nextSequenceDraw.take());
@@ -188,6 +214,9 @@
     if (run.aborted) return;
     if (!(await run.wait(timing.fadeInMs))) return;
     pose = null;
+    // Its copies bloom out around it.
+    void copies.set(1, { duration: timing.bloomMs });
+    await run.wait(timing.bloomMs);
   }
 
   playSceneTurns(() => ({ playing, turn }), play, {
@@ -211,19 +240,23 @@
       style:top="{layout.stage.y}px"
       style:width="{layout.stage.size}px"
       style:height="{layout.stage.size}px"
+      style:--tile={tileColor}
     >
-      <TunnelArtView
-        decorative
-        trailOverlay={false}
-        {sequence}
-        {controller}
-        animationSettingsState={settings}
-        visibilityManager={visibility}
-        {playing}
-        bind:currentStep={step}
-        stageFit="contain"
-        onCanvasReady={(canvas) => (canvasReady = canvas !== null)}
-      />
+      <div class="art">
+        <TunnelArtView
+          decorative
+          trailOverlay={false}
+          {sequence}
+          {controller}
+          animationSettingsState={settings}
+          visibilityManager={visibility}
+          {playing}
+          bind:currentStep={step}
+          stageFit="contain"
+          copyReveal={copies.current}
+          onCanvasReady={(canvas) => (canvasReady = canvas !== null)}
+        />
+      </div>
     </div>
     <span
       class="dice"
@@ -247,17 +280,25 @@
     height: 100%;
   }
 
-  /* The tunnel's own dark tile, rounded like the tunnel gallery's stage. */
+  /* The tunnel's own dark tile, rounded like the tunnel gallery's stage. Its
+     backdrop is the canvas's background, so the tile stays while the
+     performer dips. */
   .tunnel {
     position: absolute;
     overflow: hidden;
     border-radius: 12%;
-    transition: opacity var(--fade-in, 260ms) ease-out;
+    background: var(--tile);
   }
 
-  .scene[data-stage="hidden"] .tunnel {
+  .art {
+    position: absolute;
+    inset: 0;
+    transition: opacity var(--fade-in, 200ms) ease-out;
+  }
+
+  .scene[data-stage="hidden"] .art {
     opacity: 0;
-    transition: opacity var(--fade-out, 180ms) ease-in;
+    transition: opacity var(--fade-out, 150ms) ease-in;
   }
 
   /* The performer card's dice (TunnelPerformerCard's primary PanelButton):
