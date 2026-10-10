@@ -15,6 +15,7 @@ import {
   resolveSyncedPostSequence,
   saveAccountPostProject,
   saveSyncedPostDraft,
+  cancelPostCloudRetries,
 } from "#lib/features/post/services/post-account-projects.js";
 import {
   loadPostProject,
@@ -243,7 +244,7 @@ describe("account Post writes", () => {
     mocks.transaction.mockRejectedValueOnce(new Error("offline"));
     vi.spyOn(console, "warn").mockImplementation(() => {});
     await expect(
-      saveSyncedPostDraft(project, source(project.sequenceId))
+      saveSyncedPostDraft(project, source(project.sequenceId), "owner")
     ).resolves.toBeNull();
     expect(mocks.set).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(15_000);
@@ -253,12 +254,45 @@ describe("account Post writes", () => {
     );
   });
 
+  it("drops a waiting retry when another account signs in", async () => {
+    vi.useFakeTimers();
+    const project = createEmptyPostProject({ sequenceId: "post-4b", now: 60 });
+    mocks.transaction.mockRejectedValueOnce(new Error("offline"));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await saveSyncedPostDraft(project, source(project.sequenceId), "owner");
+    mocks.auth.currentUser.uid = "someone-else";
+    await vi.advanceTimersByTimeAsync(16_000);
+    expect(mocks.set).not.toHaveBeenCalled();
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels every waiting retry on an account change", async () => {
+    vi.useFakeTimers();
+    const project = createEmptyPostProject({ sequenceId: "post-4c", now: 60 });
+    mocks.transaction.mockRejectedValueOnce(new Error("offline"));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await saveSyncedPostDraft(project, source(project.sequenceId), "owner");
+    cancelPostCloudRetries();
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a save bound to an account that is no longer signed in", async () => {
+    const project = createEmptyPostProject({ sequenceId: "post-4d", now: 60 });
+    mocks.auth.currentUser.uid = "someone-else";
+    await expect(
+      saveSyncedPostDraft(project, source(project.sequenceId), "owner")
+    ).rejects.toThrow("The account changed");
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(mocks.set).not.toHaveBeenCalled();
+  });
+
   it("puts a later edit from elsewhere on this device when saving", async () => {
     const project = createEmptyPostProject({ sequenceId: "post-5", now: 20 });
     await loadAccountPostProject("owner", project.sequenceId);
     const later = savedElsewhere(project.sequenceId, 70);
     await expect(
-      saveSyncedPostDraft(project, source(project.sequenceId))
+      saveSyncedPostDraft(project, source(project.sequenceId), "owner")
     ).resolves.toEqual(later);
     expect(loadPostProject(project.sequenceId)?.updatedAt).toBe(70);
   });
