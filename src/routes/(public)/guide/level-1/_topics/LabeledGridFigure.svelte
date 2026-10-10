@@ -61,6 +61,8 @@
     bottom: 0;
     left: 16.0714%;
     width: 67.8571%;
+    border-radius: 0.75rem;
+    overflow: hidden;
   }
   .callouts {
     position: absolute;
@@ -69,6 +71,8 @@
     height: 100%;
     overflow: visible;
     pointer-events: none;
+    /* Above the pictograph, which paints its own background square. */
+    z-index: 1;
   }
   .callouts line {
     stroke: currentColor;
@@ -77,7 +81,7 @@
   }
   .callouts text {
     fill: currentColor;
-    font-size: 52px;
+    font-size: 60px;
     font-weight: 600;
     font-family: inherit;
   }

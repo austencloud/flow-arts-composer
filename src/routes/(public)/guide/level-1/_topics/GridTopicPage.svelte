@@ -81,6 +81,18 @@
     color: var(--ink, #1a1a1a);
     text-align: left;
   }
+  /* The guide's global .guide-content type rules (centered title, fixed
+     dark-theme colors) would otherwise reach into this page. These keep it
+     on the host's --ink palette in both themes; :where keeps them below the
+     class rules that follow. */
+  .grid-topic :global(:where(p, li, ul)) {
+    color: var(--ink, #1a1a1a);
+    font-weight: 400;
+  }
+  .grid-topic :global(strong) {
+    color: inherit;
+    font-weight: 700;
+  }
   .topic-head {
     display: grid;
     gap: 0.5rem;
@@ -94,8 +106,12 @@
     text-transform: uppercase;
     color: var(--ink-dim, #555);
   }
-  h1 {
+  .grid-topic h1 {
+    grid-column: auto;
     margin: 0;
+    padding: 0;
+    text-align: left;
+    color: var(--ink, #1a1a1a);
     font-size: clamp(2.4rem, 5cqw, 3.6rem);
     font-weight: 750;
     line-height: 1.02;
@@ -166,8 +182,9 @@
     gap: 0.75rem;
     max-width: 44rem;
   }
-  h2 {
+  .grid-topic h2 {
     margin: 0;
+    color: var(--ink, #1a1a1a);
     font-size: clamp(1.4rem, 2.6cqw, 1.9rem);
     font-weight: 700;
   }
@@ -186,7 +203,11 @@
     margin: 0;
     font-weight: 600;
   }
+  /* LinkChip reads the app's theme variables; point them at this page's
+     palette, as the host does for its own title-band chip. */
   .lesson-link {
     margin: 0;
+    --theme-text: var(--ink, #1a1a1a);
+    --theme-accent: #647ff1;
   }
 </style>
