@@ -171,3 +171,20 @@ describe("ChangelogRichText navigation", () => {
     expect(onNavigate).toHaveBeenCalledOnce();
   });
 });
+
+describe("ChangelogRichText bold text", () => {
+  it("renders **bold** runs as strong text without the markers", () => {
+    const { container } = render(ChangelogRichText, {
+      text: "**Stick props.** Choose **Stick** in [Prop settings](/settings/props).",
+    });
+
+    const strong = [...container.querySelectorAll("strong")].map(
+      (element) => element.textContent
+    );
+    expect(strong).toEqual(["Stick props.", "Stick"]);
+    expect(container.textContent).not.toContain("**");
+    expect(container.querySelector("a.entry-link")?.textContent).toBe(
+      "Prop settings"
+    );
+  });
+});
