@@ -13,8 +13,12 @@ import {
 } from "#lib/features/create/shared/components/method-previews/method-preview-compositions.js";
 import { SCENE_TAP } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
 import {
+  nextShapePage,
+  nextShapeSpot,
+  SHAPE_PREVIEW_FIRST_PAGE,
   SHAPE_PREVIEW_TIMING,
   shapeCorner,
+  type ShapePage,
 } from "#lib/features/create/shared/components/method-previews/method-preview-shape.js";
 import { SHAPE_MATRIX_REVEAL } from "#lib/shared/shape-matrix/app/services/shape-matrix-reveal.js";
 import {
@@ -63,6 +67,57 @@ describe("Shape preview corner", () => {
       expect(layout.chosen.row).toBeLessThan(corner.rows.length);
       expect(layout.chosen.column).toBeLessThan(corner.columns.length);
     }
+  });
+});
+
+/** Evenly spread stand-ins for Math.random, so a test sees every pick. */
+function spread(count: number): Array<() => number> {
+  return Array.from(
+    { length: count },
+    (_, index) => () => (index + 0.5) / count
+  );
+}
+
+describe("Shape preview Surprise", () => {
+  const axis = buildShapeMatrixAxis();
+  const board = { rows: 2, columns: 4 };
+  const pageKey = (page: ShapePage) => `${page.left}/${page.right}`;
+
+  it("rolls any other page of the level the Matrix opens on", () => {
+    const pages = new Set(
+      spread(64).map((random) =>
+        pageKey(nextShapePage(SHAPE_PREVIEW_FIRST_PAGE, axis, board, random))
+      )
+    );
+    expect(pages.has(pageKey(SHAPE_PREVIEW_FIRST_PAGE))).toBe(false);
+    // Turn bands 0 to 3 on each hand: sixteen pages, less the one showing.
+    expect(pages.size).toBe(15);
+  });
+
+  it("only rolls pages that fill the corner", () => {
+    for (const random of spread(32)) {
+      const page = nextShapePage(SHAPE_PREVIEW_FIRST_PAGE, axis, board, random);
+      const corner = shapeCorner(axis, board, page);
+      expect(corner.rows).toHaveLength(board.rows);
+      expect(corner.columns).toHaveLength(board.columns);
+    }
+  });
+
+  it("lights any crossing but the one lit last", () => {
+    const last = { row: 0, column: 3 };
+    const spots = new Set(
+      spread(32).map((random) => {
+        const spot = nextShapeSpot(last, board, random);
+        return `${spot.row}:${spot.column}`;
+      })
+    );
+    expect(spots.has("0:3")).toBe(false);
+    expect(spots.size).toBe(7);
+  });
+
+  it("keeps the light where a corner has one crossing", () => {
+    const only = { row: 0, column: 0 };
+    expect(nextShapeSpot(only, { rows: 1, columns: 1 })).toEqual(only);
   });
 });
 

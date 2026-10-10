@@ -2,22 +2,25 @@
   /**
    * ShapeScene
    *
-   * Mirrors: Shape (the Shape Matrix). A Surprise roll rebuilds the matrix
-   * with the Matrix's own reveal (runShapeMatrixGridReveal): the rows land,
-   * then the columns, then the crossings, then the chosen crossing lights
-   * with the two headers that name it. The finger taps that tile, which
-   * grows into the stage as the Matrix's tile-to-hero morph does, and its
-   * mandala draws itself with the guide painter's reveal
-   * (createCellRevealFrame, renderCell's twin). The finished drawing is the
-   * tile's own picture.
+   * Mirrors: Shape (the Shape Matrix). Each turn is a Surprise roll: a new
+   * page of the matrix and a new crossing on it, as the Matrix rolls them
+   * (nextShapePage, nextShapeSpot). The corner rebuilds with the Matrix's
+   * own reveal (runShapeMatrixGridReveal): the rows land, then the columns,
+   * then the crossings, then the chosen crossing lights with the two headers
+   * that name it. The finger taps that tile, which grows into the stage as
+   * the Matrix's tile-to-hero morph does, and its mandala draws itself with
+   * the guide painter's reveal (createCellRevealFrame, renderCell's twin).
+   * The finished drawing is the tile's own picture.
    *
-   * The corner is the page the Matrix opens on (SHAPE_MATRIX_DEFAULT_TURN),
-   * traced with the user's props and painted in their hand colors. The table
-   * keeps the Matrix's class names (rowhead, colhead, cell, sel) because the
-   * reveal finds its targets by them.
+   * The corner starts on the page the Matrix opens on
+   * (SHAPE_MATRIX_DEFAULT_TURN), traced with the user's props and painted in
+   * their hand colors. The next page's paths and tiles paint in the
+   * background, one per task; a turn whose page is not ready yet rolls only
+   * a new crossing. The table keeps the Matrix's class names (rowhead,
+   * colhead, cell, sel) because the reveal finds its targets by them.
    *
-   * Finished picture: the corner with its chosen tile marked, and that
-   * tile's mandala complete on the stage.
+   * Finished picture: the last roll's corner with its chosen tile marked,
+   * and that tile's mandala complete on the stage.
    */
   import { onDestroy, onMount, tick } from "svelte";
   import type { GhostState } from "#lib/shared/attract/services/attract-ghost.svelte.js";
@@ -30,10 +33,7 @@
     type RevealAnimator,
   } from "#lib/shared/shape-matrix/app/services/shape-matrix-reveal.js";
   import ShapeMatrixMandalaArt from "#lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
-  import {
-    flowerKey,
-    type Flower,
-  } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+  import { flowerKey } from "#lib/shared/shape-matrix/domain/flower-signature.js";
   import { propPairFromLegacy } from "#lib/shared/shape-matrix/domain/prop-pair.js";
   import {
     cellArtworkSrc,
@@ -48,6 +48,7 @@
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import {
     cellCenter,
+    type ShapeLayout,
     shapeCellRect,
     shapeLayout,
     shapeStageCovers,
@@ -61,10 +62,34 @@
   } from "./method-preview-run";
   import { playSceneTurns } from "./method-preview-scene-turns.svelte";
   import type { MethodPreviewSceneProps } from "./method-preview-scenes";
-  import { SHAPE_PREVIEW_TIMING, shapeCorner } from "./method-preview-shape";
+  import {
+    nextShapePage,
+    nextShapeSpot,
+    SHAPE_PREVIEW_FIRST_PAGE,
+    SHAPE_PREVIEW_TIMING,
+    shapeCorner,
+    type ShapePage,
+    type ShapeSpot,
+  } from "./method-preview-shape";
 
   /** The Matrix reveal's easing. */
   const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+  /** A page and its lit crossing; no spot yet means the layout's own. */
+  interface ShapeRoll {
+    page: ShapePage;
+    spot: ShapeSpot | null;
+  }
+
+  /** The page the Matrix opens on, lit where the layout puts the light. */
+  const FIRST_ROLL: ShapeRoll = { page: SHAPE_PREVIEW_FIRST_PAGE, spot: null };
+
+  /** The roll's crossing, or the layout's when it falls outside the corner. */
+  function spotIn(box: ShapeLayout, spot: ShapeSpot | null): ShapeSpot {
+    return spot && spot.row < box.rows && spot.column < box.columns
+      ? spot
+      : box.chosen;
+  }
 
   let {
     playing,
@@ -91,22 +116,44 @@
   let stageShown = $state(true);
   /** True while the tapped tile grows into the stage. */
   let growing = $state(false);
+  /** The page and crossing the corner shows. Each turn rolls both. */
+  let shown = $state.raw<ShapeRoll>(FIRST_ROLL);
+  /** The roll the stage draws: the corner's, once the old drawing fades. */
+  let staged = $state.raw<ShapeRoll>(FIRST_ROLL);
 
   const layout = $derived(shapeLayout(shape, width, height));
+  const chosen = $derived(layout ? spotIn(layout, shown.spot) : null);
+  /** Where the stage stands: its own place, or on the tile it draws. */
+  const stageRect = $derived.by(() => {
+    if (!layout) return null;
+    if (layout.grows) return layout.stage;
+    const spot = spotIn(layout, staged.spot);
+    return shapeCellRect(layout, spot.row, spot.column);
+  });
   /** The cells the finished stage sits over, as "row:column". */
   const coveredCells = $derived.by(() => {
     const keys = new Set<string>();
-    if (!layout) return keys;
+    if (!layout || !stageRect) return keys;
+    const box = { ...layout, stage: stageRect };
     for (let row = 0; row < layout.rows; row++) {
       for (let column = 0; column < layout.columns; column++) {
-        if (shapeStageCovers(layout, row, column)) keys.add(`${row}:${column}`);
+        if (shapeStageCovers(box, row, column)) keys.add(`${row}:${column}`);
       }
     }
     return keys;
   });
   const corner = $derived(
-    data && layout ? shapeCorner(data.axis, layout) : null
+    data && layout ? shapeCorner(data.axis, layout, shown.page) : null
   );
+  /** The staged tile's row flower (blue hand) and column flower (red hand). */
+  const stagedPair = $derived.by(() => {
+    if (!data || !layout) return null;
+    const spot = spotIn(layout, staged.spot);
+    const page = shapeCorner(data.axis, layout, staged.page);
+    const left = page.rows[spot.row];
+    const right = page.columns[spot.column];
+    return left && right ? { left, right } : null;
+  });
   // The Matrix's stills follow the user's saved hand colors (ShapeMatrixGrid).
   const painter = $derived(
     shapeMatrixArtworkPainterForColors(getSettings().primaryPropColors)
@@ -119,6 +166,11 @@
 
   let disposed = false;
   let announced = false;
+  /** The page the next roll opens, and whether its tiles have painted. */
+  let upcoming: ShapePage | null = null;
+  let upcomingReady = false;
+  /** Bumped per preparation, so a newer one stops an older one. */
+  let preparation = 0;
   /** True while a turn draws the stage; the finished picture waits. */
   let revealing = false;
   let frame: MandalaGuideRevealFrame | null = null;
@@ -166,29 +218,20 @@
   }
 
   function isChosen(row: number, column: number): boolean {
-    return row === layout?.chosen.row && column === layout?.chosen.column;
-  }
-
-  /** The chosen tile's row flower (blue hand) and column flower (red hand). */
-  function chosenPair(): { left: Flower; right: Flower } | null {
-    const box = layout;
-    if (!corner || !box) return null;
-    const left = corner.rows[box.chosen.row];
-    const right = corner.columns[box.chosen.column];
-    return left && right ? { left, right } : null;
+    return row === chosen?.row && column === chosen?.column;
   }
 
   /**
-   * The stage's reveal frame for the chosen tile. It is made again when the
-   * box, the colors, or the canvas change; its finished paint is the tile's
-   * picture at the stage's size. The colors and size follow live; the props
-   * load once, at mount.
+   * The stage's reveal frame for the staged tile. It is made again when the
+   * box, the roll, the colors, or the canvas change; its finished paint is
+   * the tile's picture at the stage's size. The colors and size follow live;
+   * the props load once, at mount.
    */
   function stageFrame(): MandalaGuideRevealFrame | null {
     const target = canvas;
     const box = layout;
     const matrix = data;
-    const pair = chosenPair();
+    const pair = stagedPair;
     if (!target || !box || !matrix || !pair) return null;
     const colors = getSettings().primaryPropColors ?? undefined;
     const dpr =
@@ -286,10 +329,63 @@
     finished.paint(1);
     announced = true;
     onready();
+    void prepareNextPage();
+  }
+
+  /** The side a header's or tile's artwork measures, as the art does. */
+  function artSide(host: ParentNode, selector: string): number {
+    const art = host.querySelector<HTMLElement>(`${selector} .mandala-art`);
+    return art ? Math.round(Math.min(art.clientWidth, art.clientHeight)) : 0;
+  }
+
+  /**
+   * Roll the next page and paint it ahead, one path or tile per task, at the
+   * sizes the corner's artwork measures now. The rasters land in the
+   * artwork cache, so the swap at the next turn paints nothing.
+   */
+  async function prepareNextPage(): Promise<void> {
+    const box = layout;
+    const matrix = data;
+    const host = table;
+    if (!box || !matrix || !host) return;
+    const current = ++preparation;
+    const next = nextShapePage(shown.page, matrix.axis, box);
+    upcoming = next;
+    upcomingReady = false;
+    const ink = painter;
+    const rowSide = artSide(host, ".rowhead");
+    const columnSide = artSide(host, ".colhead");
+    const cellSide = artSide(host, ".cell");
+    const page = shapeCorner(matrix.axis, box, next);
+    const steps = [
+      ...page.rows.map((flower) => () => matrix.left.get(flowerKey(flower))),
+      ...page.columns.map(
+        (flower) => () => matrix.right.get(flowerKey(flower))
+      ),
+      ...page.rows.map(
+        (flower) => () => headerArtworkSrc(matrix, flower, "left", rowSide, ink)
+      ),
+      ...page.columns.map(
+        (flower) => () =>
+          headerArtworkSrc(matrix, flower, "right", columnSide, ink)
+      ),
+      ...page.rows.flatMap((left) =>
+        page.columns.map(
+          (right) => () => cellArtworkSrc(matrix, left, right, cellSide, ink)
+        )
+      ),
+    ];
+    for (const step of steps) {
+      await yieldToScheduler();
+      if (disposed || current !== preparation) return;
+      step();
+    }
+    upcomingReady = true;
   }
 
   function settle(): void {
     stopTracked();
+    staged = shown;
     revealing = false;
     stageShown = true;
     growing = false;
@@ -335,16 +431,25 @@
     const box = layout;
     const host = table;
     const stageBox = stage;
-    if (!box || !host || !stageBox || !stageFrame()) return;
+    const lit = chosen;
+    if (!box || !host || !stageBox || !lit || !stageFrame()) return;
     revealing = true;
-    const chosenRect = shapeCellRect(box, box.chosen.row, box.chosen.column);
-    const chosen = cellCenter(chosenRect);
+    // The Surprise: a new page once it has painted, and a new crossing.
+    const ready = upcomingReady ? upcoming : null;
+    shown = { page: ready ?? shown.page, spot: nextShapeSpot(lit, box) };
+    if (ready || !upcoming) void prepareNextPage();
+    // The reveal finds the new page's tiles by their classes.
+    await tick();
+    if (run.aborted) return;
+    const spot = spotIn(box, shown.spot);
+    const chosenRect = shapeCellRect(box, spot.row, spot.column);
+    const target = cellCenter(chosenRect);
     const finger = sceneGhost(run, () => root);
     pose = finger.ghost;
     placeGhost(
       finger,
-      Math.max(0, chosen.x - box.cell * 0.6),
-      Math.min(height, chosen.y + box.cell * 0.45)
+      Math.max(0, target.x - box.cell * 0.6),
+      Math.min(height, target.y + box.cell * 0.45)
     );
 
     // The finished stage steps aside while the corner rebuilds, and the tiles
@@ -358,7 +463,9 @@
     runShapeMatrixGridReveal(host, tracker);
 
     if (!(await run.wait(SHAPE_PREVIEW_TIMING.fingerLeavesMs))) return;
-    if (!(await tapAt(finger, run, chosen.x, chosen.y))) return;
+    // The old drawing has faded, so the stage takes the new crossing now.
+    staged = shown;
+    if (!(await tapAt(finger, run, target.x, target.y))) return;
     if (!(await run.wait(SHAPE_PREVIEW_TIMING.growDelayMs))) return;
 
     // The tapped tile grows into the stage and its mandala draws itself. The
@@ -372,7 +479,10 @@
     track(
       stageBox,
       [
-        { opacity: 0, transform: transformOnto(box.stage, chosenRect) },
+        {
+          opacity: 0,
+          transform: transformOnto(stageRect ?? box.stage, chosenRect),
+        },
         { opacity: 1, offset: 0.35 },
         { opacity: 1, transform: "none" },
       ],
@@ -470,16 +580,16 @@
       </tbody>
     </table>
   {/if}
-  {#if layout}
+  {#if stageRect}
     <div
       class="stage"
       bind:this={stage}
       bind:clientWidth={stageWidth}
       bind:clientHeight={stageHeight}
-      style:left="{layout.stage.x}px"
-      style:top="{layout.stage.y}px"
-      style:width="{layout.stage.size}px"
-      style:height="{layout.stage.size}px"
+      style:left="{stageRect.x}px"
+      style:top="{stageRect.y}px"
+      style:width="{stageRect.size}px"
+      style:height="{stageRect.size}px"
     >
       <canvas bind:this={canvas}></canvas>
     </div>
