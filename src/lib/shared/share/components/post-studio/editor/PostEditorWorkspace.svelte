@@ -807,6 +807,7 @@
         renderMode: "painted",
         painter: staffPainterFor(staffItemId),
         status: "ready",
+        bareWhileCropping: true,
       };
     }
     const textItemId = itemIdFromTextRole(role);
@@ -3020,11 +3021,8 @@
               <PostEditorCanvas
                 bind:this={playbackCanvas}
                 {editor}
-                sequence={displaySequence}
                 {bindingFor}
                 {labelFor}
-                {cardRenderOptions}
-                showStripGuide={editor.selectedItem?.kind === "video"}
                 interactive={!exporting && !sharing && !previewTarget}
                 {exporting}
                 {plugin}

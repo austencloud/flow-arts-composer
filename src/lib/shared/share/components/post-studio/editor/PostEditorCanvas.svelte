@@ -1,18 +1,17 @@
 <script lang="ts">
   import { onMount, tick, untrack } from "svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import {
     motionDuration,
     reducedMotion,
   } from "$lib/shared/transitions/motion";
   import { LAYOUT_MOTION_EASING } from "$lib/shared/transitions/layout-flip";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type {
-    CompositionSourceBinding,
-    VideoEditorPlugin,
+  import {
+    useEditorUi,
+    type CompositionSourceBinding,
+    type ItemKindUi,
+    type VideoEditorPlugin,
   } from "@austencloud/video-editor";
   import {
     resolvePresetTimePoint,
@@ -39,9 +38,6 @@
     planMusicAudio,
     planProjectAudio,
     segmentGainAt,
-    STRIP_AREA,
-    stripModeFromRole,
-    POST_STUDIO_ROLE,
     POST_MAX_ZOOM,
     POST_MIN_ZOOM,
     POST_TIME_EPSILON,
@@ -59,7 +55,6 @@
     framingAt,
     updateItemAt,
   } from "@austencloud/video-editor/core";
-  import { itemIdFromStaffEffectRole } from "$lib/shared/post-studio-plugin";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
@@ -129,14 +124,8 @@
    */
   interface Props {
     editor: PostEditorState;
-    sequence: SequenceData;
     bindingFor: (role: string) => CompositionSourceBinding | null;
     labelFor: (item: PostItem) => string;
-    cardRenderOptions?: Partial<SequenceExportOptions> | null;
-    /** The record a scan of the card opens: the source, not a labeled copy. */
-    qrSequence?: SequenceData;
-    /** Outline the strip so prop ends can be framed clear of it. */
-    showStripGuide?: boolean;
     /** Selecting and dragging boxes; off while a render or a share runs. */
     interactive?: boolean;
     exporting?: boolean;
@@ -159,18 +148,17 @@
      */
     onMusicMissing?: (missing: boolean) => void;
     root?: HTMLElement | null;
-    /** The editor plugin; the media layers draw its sublayer. */
+    /**
+     * The editor plugin: the media layers draw its sublayer, a press selects
+     * its kinds' parts and its overlays draw over the frame.
+     */
     plugin: VideoEditorPlugin | null;
   }
 
   let {
     editor,
-    sequence,
     bindingFor,
     labelFor,
-    cardRenderOptions = null,
-    qrSequence,
-    showStripGuide = false,
     interactive = true,
     exporting = false,
     crop = null,
@@ -181,6 +169,9 @@
     root = $bindable(null),
     plugin,
   }: Props = $props();
+
+  /** The editor's services, read while the canvas is created. */
+  const ui = useEditorUi();
 
   type VisualClip = Extract<PresetClip, { kind: "visual" }>;
 
@@ -475,15 +466,6 @@
     };
   }
 
-  const stripGuideVisible = $derived(
-    showStripGuide &&
-      editor.frameLayers.some(
-        (layer) =>
-          stripModeFromRole(layer.sourceRole) !== null ||
-          layer.sourceRole === POST_STUDIO_ROLE.carousel
-      )
-  );
-
   function pct(value: number): string {
     return `${value * 100}%`;
   }
@@ -762,22 +744,31 @@
     };
   }
 
+  /** The editor UI of an item's kind, from the plugin. */
+  function kindUi(item: PostItem): ItemKindUi | undefined {
+    return plugin?.itemKinds.find((d) => d.kind === item.kind)?.ui;
+  }
+
   /**
    * A press on the frame selects what is on top there, ready to drag. While
-   * an animation's opening tunnel plays, that is the tunnel.
+   * a part of that item plays (tka: an animation's opening tunnel), that is
+   * the part.
    */
   function pressFrame(event: PointerEvent): void {
     if (!interactive || event.button !== 0) return;
     const hit = hitTest(event);
     const hitItem = hit ? findItem(editor.project, hit.id)?.item : null;
-    if (
-      hit &&
-      hitItem?.kind === "animation" &&
-      hitItem.tunnelHook?.seconds !== undefined &&
-      editor.previewSeconds <
-        hitItem.start + hitItem.tunnelHook.seconds - POST_TIME_EPSILON
-    )
-      editor.selectTunnel(hit.id);
+    const part = hitItem
+      ? (kindUi(hitItem)?.parts ?? []).find((candidate) => {
+          const span = candidate.span(hitItem);
+          return (
+            span !== null &&
+            span.start <= editor.previewSeconds &&
+            editor.previewSeconds < span.end - POST_TIME_EPSILON
+          );
+        })
+      : undefined;
+    if (hit && part) editor.selectPart(hit.id, part.id);
     else editor.selectedItemId = hit?.id ?? null;
     if (hit && !trackLocked(hit.id)) startDrag(event, hit, "move");
   }
@@ -1355,7 +1346,7 @@
     releaseSourceCapture(active);
   }
   onMount(() =>
-    getKeyboardShortcutManager().addInputSuppressor(
+    ui.services.shortcuts.suppress(
       (event) => sourceDrag !== null && event.key === "Escape"
     )
   );
@@ -2354,7 +2345,7 @@
               <div
                 class="painted"
                 class:crop-bare={cropRegion &&
-                  itemIdFromStaffEffectRole(entry.role) !== null}
+                  binding?.bareWhileCropping === true}
                 style:opacity={layer.opacity}
               >
                 <PostStudioPaintedLayer
@@ -2413,16 +2404,9 @@
         aria-hidden="true"
       ></div>
     {/if}
-    {#if stripGuideVisible && !cropping}
-      <div
-        class="strip-guide"
-        aria-hidden="true"
-        style:left={pct(STRIP_AREA.x)}
-        style:top={pct(STRIP_AREA.y)}
-        style:width={pct(STRIP_AREA.width)}
-        style:height={pct(STRIP_AREA.height)}
-      ></div>
-    {/if}
+    {#each plugin?.ui?.canvasOverlays ?? [] as Overlay}
+      <Overlay {editor} {cropping} />
+    {/each}
   {:else}
     <div class="empty">
       <i class="fa-solid fa-film" aria-hidden="true"></i>
@@ -2726,12 +2710,6 @@
   .layer.parked,
   .painted.crop-bare {
     visibility: hidden;
-  }
-  .strip-guide {
-    position: absolute;
-    z-index: 20000;
-    border: 2px dashed rgb(255 255 255 / 0.7);
-    pointer-events: none;
   }
   .edit-layer {
     position: absolute;

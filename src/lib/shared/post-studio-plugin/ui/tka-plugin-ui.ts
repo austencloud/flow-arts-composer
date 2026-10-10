@@ -7,8 +7,9 @@ import { tkaTimelineJoin } from "./tka-timeline-join";
 import { TKA_TOOLS } from "./tka-tools";
 import TkaItemTools from "./TkaItemTools.svelte";
 import TkaMediaSublayer from "./TkaMediaSublayer.svelte";
+import TkaStripGuide from "./TkaStripGuide.svelte";
 
-/** Tasks 14 to 15b add canvasOverlays, modes, panels and createBindings. */
+/** Tasks 15a and 15b add modes, panels and createBindings. */
 export function createTkaPluginUi(): PluginUi {
   return {
     toolPanel: TkaItemTools,
@@ -26,5 +27,6 @@ export function createTkaPluginUi(): PluginUi {
     // right-clicked. The contract hands the plugin only the event, so it
     // reaches the workspace through the editor tka registered last.
     layerContextMenu: (event) => currentTkaEditor()?.openSaveMenu?.(event),
+    canvasOverlays: [TkaStripGuide],
   };
 }

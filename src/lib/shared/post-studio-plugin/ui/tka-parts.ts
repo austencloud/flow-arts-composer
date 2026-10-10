@@ -6,14 +6,19 @@ import {
 } from "@austencloud/video-editor/core";
 import { faFan } from "@austencloud/video-editor/icons";
 
-/** Where an animation's opening tunnel hands over to the rest of it, if inside it. */
-function tunnelEndOf(item: PostItem, end: number): number | null {
+/**
+ * Where an animation's opening tunnel hands over to the rest of it, cut at
+ * the animation's end as the compile cuts it. A tunnel that fills the whole
+ * animation still holds every moment of it, so a press on the frame selects
+ * the tunnel there; the timeline draws the part only when it ends inside the
+ * block.
+ */
+function tunnelEndOf(item: PostItem): number | null {
   if (item.kind !== "animation" || item.tunnelHook?.seconds === undefined)
     return null;
   const introEnd = item.start + item.tunnelHook.seconds;
-  return introEnd > item.start + POST_TIME_EPSILON &&
-    introEnd < end - POST_TIME_EPSILON
-    ? introEnd
+  return introEnd > item.start + POST_TIME_EPSILON
+    ? Math.min(introEnd, itemEnd(item))
     : null;
 }
 
@@ -25,7 +30,7 @@ function tunnelEndOf(item: PostItem, end: number): number | null {
 export const TUNNEL_PART: ItemPart = {
   id: "tunnel",
   span(item) {
-    const end = tunnelEndOf(item, itemEnd(item));
+    const end = tunnelEndOf(item);
     return end === null ? null : { start: item.start, end };
   },
   label: (t) => t("post_timeline_tunnel"),
