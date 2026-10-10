@@ -11,8 +11,6 @@
   import UsernameEditor from "./UsernameEditor.svelte";
   import InstagramUsernameEditor from "./InstagramUsernameEditor.svelte";
   import PronounsEditor from "./PronounsEditor.svelte";
-  import MyPropsCard from "#lib/shared/navigation/components/account/MyPropsCard.svelte";
-  import type { PropPreferenceState } from "#lib/shared/community/state/prop-preference-state.svelte.js";
 
   interface Props {
     user: User;
@@ -20,8 +18,6 @@
     onPronounsChanged?: (pronouns: string) => void;
     onUsernameChanged?: (username: string) => void;
     displayNameEditRequest?: number;
-    propState: PropPreferenceState | null;
-    onOpenPropEditor: () => void;
   }
 
   let {
@@ -30,8 +26,6 @@
     onPronounsChanged,
     onUsernameChanged,
     displayNameEditRequest = 0,
-    propState,
-    onOpenPropEditor,
   }: Props = $props();
 </script>
 
@@ -55,16 +49,12 @@
   <div class="field-cell">
     <PronounsEditor {user} {hapticService} {onPronounsChanged} />
   </div>
-
-  <div class="field-cell flow-identity-cell">
-    <MyPropsCard {propState} {onOpenPropEditor} />
-  </div>
 </div>
 
 <style>
   .account-settings {
     display: grid;
-    grid-template-rows: repeat(4, minmax(5em, 1fr)) auto;
+    grid-template-rows: repeat(4, minmax(5em, 1fr));
     width: 100%;
     min-height: 0;
   }
@@ -86,7 +76,7 @@
   @container profile-tab (min-width: 105rem) {
     .account-settings {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-rows: repeat(2, minmax(8.5em, auto)) auto;
+      grid-template-rows: repeat(2, minmax(8.5em, auto));
       align-content: center;
       gap: 0.75em;
       padding-block: 0.4em;
@@ -137,11 +127,6 @@
 
     .field-cell :global(.edit-action .panel-btn) {
       min-width: 5.25em;
-    }
-
-    .flow-identity-cell {
-      grid-column: 1 / -1;
-      min-height: 0;
     }
   }
 
