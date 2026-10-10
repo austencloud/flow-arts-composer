@@ -1,6 +1,10 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-import { createVideoEditorState } from "@austencloud/video-editor";
+import {
+  createVideoEditorState,
+  type VideoEditorHost,
+  type VideoEditorState,
+} from "@austencloud/video-editor";
 import type { PostProject } from "@austencloud/video-editor/core";
 import {
   PostProjectSchema,
@@ -71,6 +75,11 @@ export interface PostEditorDeps {
    */
   store?: PostEditorStore;
   now?: () => number;
+  /** The host services the screen adds (toasts, shortcuts, haptics, media library); see tka-host. */
+  services?: Pick<
+    VideoEditorHost<PostTimingEffect>,
+    "notify" | "shortcuts" | "haptics" | "mediaLibrary"
+  >;
 }
 
 /** A pure project edit; returning the same project means nothing changed. */
@@ -80,31 +89,29 @@ export function createPostEditorState(deps: PostEditorDeps) {
   const store = deps.store ?? devicePostEditorStore;
   const now = deps.now ?? (() => Date.now());
   const timing = createPostTimingState({ ...deps, store, now });
-  const core = createVideoEditorState<PostTimingEffect>(
-    {
-      get ownerId() {
-        return postOwnerId();
-      },
-      store: editorStoreOf(store),
-      translate: tkaEditorTranslate,
-      now,
-      dev: import.meta.env.DEV,
-      previewCache: getPreviewVideoCache(),
+  const host: VideoEditorHost<PostTimingEffect> = {
+    get ownerId() {
+      return postOwnerId();
     },
-    tkaPlugin,
-    {
-      subjectId: deps.getSequence().id,
-      ...(deps.initialProject ? { initialProject: deps.initialProject } : {}),
-      // Every catalog take that attaches is looked up here first, so its
-      // older editor's map can seed the timing as the video arrives.
-      libraryTake: (videoId) => {
-        const video = deps.getCatalogVideo?.(videoId) ?? null;
-        if (video) timing.rememberLegacy(video);
-        return video;
-      },
-      extension: timing.extension,
-    }
-  );
+    store: editorStoreOf(store),
+    translate: tkaEditorTranslate,
+    now,
+    dev: import.meta.env.DEV,
+    previewCache: getPreviewVideoCache(),
+    ...deps.services,
+  };
+  const core = createVideoEditorState<PostTimingEffect>(host, tkaPlugin, {
+    subjectId: deps.getSequence().id,
+    ...(deps.initialProject ? { initialProject: deps.initialProject } : {}),
+    // Every catalog take that attaches is looked up here first, so its
+    // older editor's map can seed the timing as the video arrives.
+    libraryTake: (videoId) => {
+      const video = deps.getCatalogVideo?.(videoId) ?? null;
+      if (video) timing.rememberLegacy(video);
+      return video;
+    },
+    extension: timing.extension,
+  });
   timing.selectedTakeId =
     core.takesInUse[0]?.id ?? core.project.takes[0]?.id ?? null;
 
@@ -279,6 +286,9 @@ export function createPostEditorState(deps: PostEditorDeps) {
     get moveBeats() {
       return timing.moveBeats;
     },
+    get subjectId() {
+      return core.subjectId;
+    },
     get project() {
       return core.project;
     },
@@ -324,6 +334,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     get isPlaying() {
       return core.isPlaying;
     },
+    host,
     get mode() {
       return mode;
     },
@@ -394,6 +405,10 @@ export function createPostEditorState(deps: PostEditorDeps) {
     exitTiming(_reason: "done" | "back"): void {
       mode = "edit";
     },
+    persist: core.persist,
+    commit: core.commit,
+    amend: core.amend,
+    editContext: core.editContext,
     edit: core.edit,
     editSetting: core.editSetting,
     beginGesture: core.beginGesture,
@@ -419,12 +434,15 @@ export function createPostEditorState(deps: PostEditorDeps) {
     seedAudio: core.seedAudio,
     addLocalVideo: core.addLocalVideo,
     addCatalogVideo,
+    addLibraryVideo: core.addLibraryVideo,
     appendTakeClip: core.appendTakeClip,
     relinkLocalTake: core.relinkLocalTake,
     relinkProjectFiles: core.relinkProjectFiles,
     attachCatalogTakes,
+    attachLibraryTakes: core.attachLibraryTakes,
     renameTake: core.renameTake,
     adoptSaved: core.adoptSaved,
+    loadSavedMedia: core.loadSavedMedia,
     /** Removes a take and every clip cut from it; the timing state picks the next take to time. */
     removeTake: core.removeTake,
     seek: core.seek,
@@ -440,3 +458,10 @@ export function createPostEditorState(deps: PostEditorDeps) {
 }
 
 export type PostEditorState = ReturnType<typeof createPostEditorState>;
+
+/**
+ * Fails the type gate when the wrapper stops being a package state, member by member and
+ * signature by signature (plan 2A risk R13).
+ */
+type Conforms<T extends VideoEditorState<PostTimingEffect>> = T;
+export type PostEditorStateConforms = Conforms<PostEditorState>;

@@ -127,6 +127,7 @@
     createVideoPreviews,
   } from "@austencloud/video-editor";
   import { getPreviewVideoCache } from "$lib/shared/media-composition/get-preview-video-cache";
+  import { tkaEditorServices } from "$lib/shared/post-studio-plugin/ui/tka-host";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorActions from "./PostEditorActions.svelte";
   import PostSaveButton from "./PostSaveButton.svelte";
@@ -304,6 +305,7 @@
     // A feature video keeps its post, timings and undo history apart from
     // this browser's Post Studio storage.
     store: featureVideo?.store,
+    services: tkaEditorServices(videoLibrary),
   });
 
   onMount(() => {
