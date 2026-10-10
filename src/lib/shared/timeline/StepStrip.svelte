@@ -12,6 +12,12 @@
   cellSize drives read-ahead depth (zoom); compact density fits the same behavior
   into smaller editorial surfaces without changing the established default.
 -->
+<script module lang="ts">
+  // Shared by every rail, so a remounted rail never reuses a glide generation
+  // (see stripGlideKey) that an earlier one remembered poses under.
+  let lastGlideGeneration = 0;
+</script>
+
 <script lang="ts">
   import { untrack, type Snippet } from "svelte";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -24,6 +30,7 @@
     nextLoopOffset,
     cellOpacity,
     cellScale,
+    stripGlideKey,
     stripHeroScale,
   } from "./strip-window";
 
@@ -50,6 +57,7 @@
     staggerCellUpdates = false,
     onCellClick = null,
     renderCell = undefined,
+    transitionKey = null,
   }: {
     /** Prebuilt cells for callers that already own the notation mapping. */
     cells?: NotationCell[] | null;
@@ -107,6 +115,11 @@
     onCellClick?: ((stepNumber: number) => void) | null;
     /** Optional artwork inside each cell; the carousel still owns layout and seeking. */
     renderCell?: Snippet<[NotationCell]>;
+    /** Lasting identity for this rail's pictographs. When set, a cell whose
+     *  step changes in place (a transform or a turn edit) glides its props and
+     *  arrows to the new pose, the same way the workspace does. Null keeps the
+     *  rail drawing each change at once. */
+    transitionKey?: string | null;
   } = $props();
 
   const GAP = $derived(presentation === "strip" ? 3 : 6);
@@ -304,6 +317,8 @@
   let trackOffset = $state(0);
   let animateTrack = $state(false);
   let prevVirtual = -1;
+  // Each rail, and each jump, starts a new glide generation.
+  let glideGeneration = $state(++lastGlideGeneration);
   $effect(() => {
     const idx = virtualActive;
     const focus = focusOffset;
@@ -311,6 +326,9 @@
     // increasing, so the track slides forward through the wrap with no snap.
     const isBackOrInit = prevVirtual === -1 || idx < prevVirtual;
     animateTrack = !isBackOrInit;
+    if (isBackOrInit && prevVirtual !== -1) {
+      glideGeneration = ++lastGlideGeneration;
+    }
     prevVirtual = idx;
     trackOffset = focus - idx * STRIDE;
   });
@@ -413,8 +431,15 @@
               <PictographContainer
                 pictographData={item.cell.data}
                 darkMode={true}
-                disableTransitions={true}
+                disableTransitions={transitionKey === null}
                 disableContentTransitions={true}
+                transitionKey={stripGlideKey({
+                  transitionKey,
+                  leftPropType,
+                  rightPropType,
+                  generation: glideGeneration,
+                  virtualIndex: item.vi,
+                })}
                 leftPropTypeOverride={leftPropType ?? undefined}
                 rightPropTypeOverride={rightPropType ?? undefined}
                 {leftColorOverride}
