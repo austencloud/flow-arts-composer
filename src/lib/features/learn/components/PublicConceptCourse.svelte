@@ -204,6 +204,32 @@
     margin-top: 64px;
   }
 
+  /* Lesson titles use the brand's page-title face, the same wonky Fraunces
+     italic as the guide and the rest of the public site. Each lesson styles
+     its own h1; the doubled class outranks those rules for the public course
+     only, so the app's own Learn tab keeps its type. */
+  .public-course.public-course :global(h1) {
+    font-family: var(--page-title-font, "Fraunces", Georgia, serif);
+    font-style: italic;
+    font-weight: 700;
+    font-variation-settings:
+      "opsz" 144,
+      "wght" 700,
+      "SOFT" 0,
+      "WONK" 1;
+    letter-spacing: -0.01em;
+  }
+
+  /* The fallback below is for search engines and readers without
+     JavaScript. A browser that runs scripts replaces it with the lesson a
+     moment later, so it stays hidden there instead of flashing a different
+     page first. */
+  @media (scripting: enabled) {
+    .course-prerender {
+      visibility: hidden;
+    }
+  }
+
   .course-prerender {
     display: grid;
     width: min(100% - 2rem, 54rem);
