@@ -173,7 +173,9 @@ box offers the start position picker's α and β placements beside the demo's
 γ; each step box offers moves from the option picker's list after the steps
 before it. The finger taps the real one, it grows to fill the box, and the
 other two fade, while the next box shows its choices. The real step's spot
-moves box to box and turn to turn. The other moves are baked from the
+moves box to box and turn to turn, one spot left per box, and the finger
+starts on the first pick, so the last pick lands before the three-second turn
+ends on the largest stages. The other moves are baked from the
 production options pipeline into `method-preview-construct-choices.json`, so
 the front door never loads the pictograph dataset; a test rebuilds them and
 fails on drift.
