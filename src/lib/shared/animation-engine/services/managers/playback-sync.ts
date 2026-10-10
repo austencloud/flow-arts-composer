@@ -125,6 +125,20 @@ export class PlaybackSync {
     return this._lastPropsRef;
   }
 
+  /**
+   * Frame params from the newest props. Hand this to every redraw request
+   * instead of a closure over one update's props: the render loop keeps the
+   * last callback it was given, so a request that resolves after a wait (a
+   * grid or prop texture load) would otherwise draw a frame from a pose that
+   * is already gone. On a player that loads another sequence, that frame is a
+   * jump back to the previous sequence, and the trail records the jump.
+   */
+  private readonly latestFrameParams = () =>
+    this.deps.frameSystem.buildFrameParams(
+      this._lastPropsRef ?? DEFAULT_ENGINE_PROPS,
+      this.deps.buildFrameDeps()
+    );
+
   get prevSequenceDataForDiag(): SequenceData | null {
     return this.prevSequenceData;
   }
@@ -174,7 +188,6 @@ export class PlaybackSync {
       frameSystem,
       effectSystem,
       getCallbacks,
-      buildFrameDeps,
     } = this.deps;
 
     // Keep simple reference for initial render (no copy, just reference)
@@ -195,9 +208,7 @@ export class PlaybackSync {
     if (props.mandalaStrokeWidthOverride !== this._prevMandalaStrokeWidth) {
       this._prevMandalaStrokeWidth = props.mandalaStrokeWidthOverride;
       if (this.state.isInitialized) {
-        lifecycleManager.renderLoop?.triggerRender(() =>
-          frameSystem.buildFrameParams(props, buildFrameDeps())
-        );
+        lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
       }
     }
 
@@ -230,9 +241,7 @@ export class PlaybackSync {
     }
 
     // Handle prop type changes (delegated to PropSystem)
-    const getFrameParamsFn = () =>
-      frameSystem.buildFrameParams(props, buildFrameDeps());
-    propSystem.handlePropTypeChanges(props, getFrameParamsFn);
+    propSystem.handlePropTypeChanges(props, this.latestFrameParams);
 
     // Handle trail settings changes - enforce unilateral constraint before syncing
     if (props.externalTrailSettings !== undefined) {
@@ -388,9 +397,7 @@ export class PlaybackSync {
       lifecycleManager.animationRenderer
         .loadGridTexture(currentGridMode ?? "diamond", currentShowNonRadial)
         .then(() => {
-          lifecycleManager.renderLoop?.triggerRender(() =>
-            frameSystem.buildFrameParams(props, buildFrameDeps())
-          );
+          lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
         });
     }
     this.syncGridJoin();
@@ -404,14 +411,10 @@ export class PlaybackSync {
         lifecycleManager.animationRenderer?.setDarkMode(previewDarkMode);
 
         if (this.state.isInitialized) {
-          lifecycleManager.renderLoop?.triggerRender(() =>
-            frameSystem.buildFrameParams(props, buildFrameDeps())
-          );
+          lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
 
           propSystem.reloadTexturesForDarkMode(() => {
-            lifecycleManager.renderLoop?.triggerRender(() =>
-              frameSystem.buildFrameParams(props, buildFrameDeps())
-            );
+            lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
           });
         }
       }
@@ -442,9 +445,7 @@ export class PlaybackSync {
 
     // Trigger render if initialized
     if (this.state.isInitialized) {
-      lifecycleManager.renderLoop?.triggerRender(() =>
-        frameSystem.buildFrameParams(props, buildFrameDeps())
-      );
+      lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams);
     }
   }
 
@@ -790,9 +791,7 @@ export class PlaybackSync {
     });
 
     lifecycleManager.trailSettingsSync?.initialize(trailCapturer, () =>
-      lifecycleManager.renderLoop?.triggerRender(() =>
-        frameSystem.buildFrameParams(props, this.deps.buildFrameDeps())
-      )
+      lifecycleManager.renderLoop?.triggerRender(this.latestFrameParams)
     );
 
     // CRITICAL: Immediately sync external settings after initializing the sync service
