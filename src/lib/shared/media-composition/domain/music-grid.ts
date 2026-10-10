@@ -1,7 +1,7 @@
 import type {
   PostMusic,
   PostMusicGrid,
-} from "$lib/shared/media-composition/domain/post-music";
+} from "#lib/shared/media-composition/domain/post-music.js";
 
 /**
  * Bars, beats and the post's clock. A grid lives in the music file's own

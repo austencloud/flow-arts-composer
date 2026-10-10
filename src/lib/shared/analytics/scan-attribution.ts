@@ -1,6 +1,6 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { captureEvent } from "./services/posthog";
-import { removeCurrentUrlParams } from "$lib/shared/navigation/services/url-state";
+import { removeCurrentUrlParams } from "#lib/shared/navigation/services/url-state.js";
 
 const SCAN_SOURCE_CODE_KEY = "tka_scan_source_code";
 

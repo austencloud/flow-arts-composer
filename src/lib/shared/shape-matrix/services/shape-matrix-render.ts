@@ -7,8 +7,8 @@
 import type {
   MandalaHandVisibility,
   MandalaPaths,
-} from "$lib/shared/mandala/domain/mandala-types";
-import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
+} from "#lib/shared/mandala/domain/mandala-types.js";
+import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
 import {
   createMandalaGuideRevealFrame,
   mandalaGuideScale,
@@ -17,9 +17,9 @@ import {
   type MandalaGuideImageDependencies,
   type MandalaGuideImageOptions,
   type MandalaGuideRevealFrame,
-} from "$lib/shared/mandala/services/mandala-guide-image";
-import { computeEngineAlignedMandalaScale } from "$lib/shared/mandala/services/mandala-path-preparer";
-import { HERO_TRAIL_PRESET } from "$lib/shared/landing/data/hero-trail-preset";
+} from "#lib/shared/mandala/services/mandala-guide-image.js";
+import { computeEngineAlignedMandalaScale } from "#lib/shared/mandala/services/mandala-path-preparer.js";
+import { HERO_TRAIL_PRESET } from "#lib/shared/landing/data/hero-trail-preset.js";
 
 /**
  * The hand colors every Shape Matrix still uses — the same preset the detail

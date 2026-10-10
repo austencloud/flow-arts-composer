@@ -11,7 +11,7 @@ import {
   createMethodPreviewTurns,
   type MethodPreviewTurnOptions,
   type MethodPreviewTurns,
-} from "$lib/features/create/shared/state/method-preview-turns.svelte";
+} from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 
 const TIMING = {
   turnMs: 100,

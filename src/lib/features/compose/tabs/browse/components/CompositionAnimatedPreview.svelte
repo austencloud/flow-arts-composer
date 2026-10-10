@@ -9,13 +9,13 @@
 <script lang="ts">
 
 	import { onMount, onDestroy } from "svelte";
-	import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-	import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-	import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
-	import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-	import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-	import type { CellConfig, GridLayout } from "$lib/shared/animation-engine/domain/compose-types";
-	import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+	import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+	import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+	import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
+	import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+	import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+	import type { CellConfig, GridLayout } from "#lib/shared/animation-engine/domain/compose-types.js";
+	import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 	const {
 		cells,

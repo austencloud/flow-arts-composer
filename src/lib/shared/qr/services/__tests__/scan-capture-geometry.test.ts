@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	padQrBox,
 	frameBoxToScreenRect,
-} from "$lib/shared/qr/services/scan-capture-geometry";
+} from "#lib/shared/qr/services/scan-capture-geometry.js";
 
 describe("padQrBox", () => {
 	it("adds the quiet-zone pad on every side", () => {

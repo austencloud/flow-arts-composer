@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createKeepAliveController } from "$lib/shared/modules/keep-alive-controller";
+import { createKeepAliveController } from "#lib/shared/modules/keep-alive-controller.js";
 
 describe("keep-alive-controller", () => {
   beforeEach(() => vi.useFakeTimers());

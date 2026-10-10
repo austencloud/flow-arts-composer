@@ -1,4 +1,4 @@
-import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type { LOOPDesignation, SectionDesignation } from "./types";
 
 /**

@@ -6,16 +6,16 @@
  * and font scales from sequence data and composition settings.
  */
 
-import { calculateLayout } from "$lib/shared/render/services/layout-calculator";
+import { calculateLayout } from "#lib/shared/render/services/layout-calculator.js";
 import {
   pickBestFitLayout,
   pickScrollColumns,
   type FitLayout,
   type ResolvedAutoLayout,
-} from "$lib/shared/render/services/container-aware-layout";
-import { getMandalaPlacements } from "$lib/shared/sequence-viewer/services/get-mandala-placements";
-import { simplifyAndTruncate } from "$lib/shared/foundation/utils/word-simplifier";
-import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+} from "#lib/shared/render/services/container-aware-layout.js";
+import { getMandalaPlacements } from "#lib/shared/sequence-viewer/services/get-mandala-placements.js";
+import { simplifyAndTruncate } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
 import {
   HEADER_HEIGHT_DIVISOR,
   FOOTER_HEIGHT_DIVISOR,
@@ -29,7 +29,7 @@ import {
   STEP_NUMBER_FONT_RATIO,
   STEP_NUMBER_FONT_MAX,
 } from "@tka/render-composition";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 export interface ChoreoCardLayoutDeps {
   /** The sequence being displayed */

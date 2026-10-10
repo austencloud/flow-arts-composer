@@ -316,9 +316,8 @@ async function updateUrl(params: URLSearchParams): Promise<void> {
 
   // Navigate without reload
   await goto(newUrl.toString(), {
-    replaceState: true,
-    keepFocus: true,
-    noScroll: true,
+    replace: true,
+    reset: false,
   });
 }
 

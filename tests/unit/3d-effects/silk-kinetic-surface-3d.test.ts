@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { BufferAttribute, Mesh, NormalBlending, Object3D } from "three";
-import { BoundedSourcePath3D } from "$lib/shared/3d/effects/scene-effects/bounded-source-path-3d";
+import { BoundedSourcePath3D } from "#lib/shared/3d/effects/scene-effects/bounded-source-path-3d.js";
 import {
   SILK_CROSS_SECTION_VERTEX_COUNT,
   SilkRibbonGeometry3D,
   resolveSilkAttachmentScale,
   resolveSilkMaterialProfile3D,
-} from "$lib/shared/3d/effects/silk/silk-ribbon-geometry-3d";
+} from "#lib/shared/3d/effects/silk/silk-ribbon-geometry-3d.js";
 import {
   SilkRenderer3D,
   resolveSilkSourceEnergyScale,
   resolveSilkSourceSampleBudget,
-} from "$lib/shared/3d/effects/silk/silk-renderer-3d";
-import type { Silk3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+} from "#lib/shared/3d/effects/silk/silk-renderer-3d.js";
+import type { Silk3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 
 function makeParams(): Silk3DParams {
   return {

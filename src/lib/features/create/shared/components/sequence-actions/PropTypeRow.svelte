@@ -9,15 +9,15 @@
   Compact mode: icon-only prop button (mobile). Full mode: labeled button.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { handLabel } from "./control-labels";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-  import { getPropTypeDisplayInfo } from "$lib/shared/settings/components/tabs/prop-type/prop-type-registry";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/settings/components/tabs/prop-type/prop-type-registry.js";
   import {
     getSettings,
     updateSettings,
-  } from "$lib/shared/application/state/app-state.svelte";
+  } from "#lib/shared/application/state/app-state.svelte.js";
 
   interface Props {
     hand: "left" | "right";

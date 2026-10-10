@@ -14,12 +14,12 @@
  * reads as A, and a raw repeated word never reaches a human.
  */
 
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { betaDetector } from "$lib/shared/pictograph/prop/services/beta-detector";
-import { SequenceAnalyzer } from "$lib/features/create/shared/services/sequence-analyzer";
-import { SequenceFeatureExtractor } from "$lib/features/loop-labeler/services/sequence-feature-extractor";
-import type { SequenceFeatures } from "$lib/features/loop-labeler/domain/models/sequence-features";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { betaDetector } from "#lib/shared/pictograph/prop/services/beta-detector.js";
+import { SequenceAnalyzer } from "#lib/features/create/shared/services/sequence-analyzer.js";
+import { SequenceFeatureExtractor } from "#lib/features/loop-labeler/services/sequence-feature-extractor.js";
+import type { SequenceFeatures } from "#lib/features/loop-labeler/domain/models/sequence-features.js";
 
 import type {
   CandidateUnit,

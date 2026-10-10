@@ -29,7 +29,7 @@ import {
 	onSnapshot,
 	type Unsubscribe,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import type { FirePhysicsParams } from "../domain/types/fire-types";
 import type { PropTipConfig, TipPoint } from "../domain/types/prop-tip-points";
 const LOG_PREFIX = "[FireDefaultsLoader]";

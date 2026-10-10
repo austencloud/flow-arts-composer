@@ -4,12 +4,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // navigator.share existence — desktop Chrome/Edge implement the Web Share API,
 // so capability-only detection pops the OS share sheet on desktop. Mock the
 // detector so each test pins the platform branch under test.
-vi.mock("$lib/shared/mobile/services/platform-detector", () => ({
+vi.mock("#lib/shared/mobile/services/platform-detector.js", () => ({
   detectPlatform: vi.fn(() => "desktop"),
 }));
 
-import { downloadBlob } from "$lib/shared/foundation/services/file-downloader";
-import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
+import { downloadBlob } from "#lib/shared/foundation/services/file-downloader.js";
+import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
 
 function pinPlatform(p: "ios" | "android" | "desktop") {
   vi.mocked(detectPlatform).mockReturnValue(p);

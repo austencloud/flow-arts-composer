@@ -7,8 +7,8 @@
  * Domain: Create module - Edit Panel Automation
  */
 
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   hasStepEditorSelection,
   sequenceHasStepEditorContent,

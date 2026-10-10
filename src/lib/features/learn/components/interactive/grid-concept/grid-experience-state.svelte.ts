@@ -4,7 +4,7 @@
  */
 
 import { getExperiencePersistence } from "../../../state/experience-persistence.svelte";
-import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
 export type GridPhase = "split" | "diamond-labels" | "box-labels" | "merged";
 export type PointTypePhase = "center" | "hand" | "outer";

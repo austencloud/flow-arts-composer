@@ -5,11 +5,11 @@
  * and rotation relationships. Used by option picker and sequence extension.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { RotationRelation } from "./types";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 
 export class PlacementAnalyzer {
 

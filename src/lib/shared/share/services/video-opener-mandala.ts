@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { MandalaPalette } from "$lib/shared/mandala/domain/mandala-types";
-import type { MandalaPathOptions } from "$lib/shared/mandala/services/types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { MandalaPalette } from "#lib/shared/mandala/domain/mandala-types.js";
+import type { MandalaPathOptions } from "#lib/shared/mandala/services/types.js";
 import {
   DARK_MOTION_BLUE_FILL,
   DARK_MOTION_BLUE_STROKE,
@@ -9,11 +9,11 @@ import {
   DARK_MOTION_RED_FILL,
   DARK_MOTION_RED_STROKE,
   MANDALA_STANDARD_TIP_DX,
-} from "$lib/shared/mandala/domain/mandala-constants";
-import { applyMandalaHandColors } from "$lib/shared/mandala/domain/mandala-palette";
-import { calculate } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { renderMandalaToCanvas } from "$lib/shared/mandala/services/mandala-renderer";
-import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+} from "#lib/shared/mandala/domain/mandala-constants.js";
+import { applyMandalaHandColors } from "#lib/shared/mandala/domain/mandala-palette.js";
+import { calculate } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { renderMandalaToCanvas } from "#lib/shared/mandala/services/mandala-renderer.js";
+import { pairTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 
 /** The card back's dark palette: the clip is flattened over black. */
 const OPENER_PALETTE: MandalaPalette = {

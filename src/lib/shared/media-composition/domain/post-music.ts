@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video-url";
+import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video-url.js";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 /**
  * One music file under a whole post; only feature videos have one. It plays

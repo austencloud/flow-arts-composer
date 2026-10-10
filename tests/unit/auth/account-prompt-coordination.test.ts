@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/analytics/auth-events", () => ({
+vi.mock("#lib/shared/analytics/auth-events.js", () => ({
   trackAuthSurfaceOpened: vi.fn(),
 }));
 
@@ -16,8 +16,8 @@ afterEach(() => {
 
 async function load() {
   const { authDrawerState } =
-    await import("$lib/shared/auth/state/auth-drawer-state.svelte");
-  const toasts = await import("$lib/shared/toast/state/toast-state.svelte");
+    await import("#lib/shared/auth/state/auth-drawer-state.svelte.js");
+  const toasts = await import("#lib/shared/toast/state/toast-state.svelte.js");
   return { auth: authDrawerState, ...toasts };
 }
 
@@ -54,7 +54,7 @@ describe("account prompt coordination", () => {
   it("does not repeat or reset a modal for duplicate calls", async () => {
     const { auth } = await load();
     const { trackAuthSurfaceOpened } =
-      await import("$lib/shared/analytics/auth-events");
+      await import("#lib/shared/analytics/auth-events.js");
     vi.mocked(trackAuthSurfaceOpened).mockClear();
     auth.show("signup", "save");
     auth.show("signup", "save");

@@ -7,7 +7,7 @@ import {
   type PostAnimationItem,
   type PostItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   addTake,
   addTitlesItem,
@@ -29,22 +29,22 @@ import {
   updateItem,
   type EditContext,
   type PostItemPatch,
-} from "$lib/shared/media-composition/domain/post-project-edits";
-import { isFeatureVideoMediaUrl } from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
+import { isFeatureVideoMediaUrl } from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   PostTakeSchema,
   takeFileKey,
-} from "$lib/shared/media-composition/domain/post-plan";
-import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-plan.js";
+import { EASING_PRESETS } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   TunnelHookSchema,
   type TunnelHook,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
+} from "#lib/shared/media-composition/domain/tunnel-hook.js";
 import {
   resolvePostTime,
   resolveTrackTime,
   type PostTimeRef,
-} from "$lib/shared/media-composition/domain/music-grid";
+} from "#lib/shared/media-composition/domain/music-grid.js";
 import {
   POST_MUSIC_MIN_SECONDS,
   removeMusic,
@@ -52,18 +52,18 @@ import {
   syncedSourceIn,
   updateMusic,
   type MusicPatch,
-} from "$lib/shared/media-composition/domain/post-music-edits";
+} from "#lib/shared/media-composition/domain/post-music-edits.js";
 import {
   POST_MUSIC_LENGTH_SLACK,
   POST_MUSIC_MAX_BEATS_PER_BAR,
   POST_MUSIC_MAX_GAIN,
   POST_MUSIC_MAX_SECONDS,
   type PostMusic,
-} from "$lib/shared/media-composition/domain/post-music";
+} from "#lib/shared/media-composition/domain/post-music.js";
 import {
   TAKE_MAX_BPM,
   TAKE_MIN_BPM,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 /**
  * Named edits for saved posts, in a form a command line can send. Each op is

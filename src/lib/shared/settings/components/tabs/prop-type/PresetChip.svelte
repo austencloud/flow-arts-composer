@@ -12,10 +12,10 @@
   they follow the current settings.
 -->
 <script lang="ts">
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
   import type { PropPreset } from "../../../domain/app-settings";
   import { presetVersion } from "../../../domain/prop-presets";
   import { previewPair } from "./prop-preview-pair";

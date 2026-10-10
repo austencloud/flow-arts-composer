@@ -5,13 +5,13 @@
  * Ensures orientation chain integrity after transforms.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { updateSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { updateSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { calculateEndOrientation } from "#lib/shared/pictograph/prop/services/orientation-calculator.js";
 
 /**
  * Propagate orientations for one hand through all steps.

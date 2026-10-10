@@ -5,14 +5,14 @@
   Used when replacing an existing sequence in the Construct tab.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { Dialog as DialogPrimitive } from "bits-ui";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { onMount } from "svelte";
   import StepGrid from "../../workspace-panel/sequence-display/components/StepGrid.svelte";
-  import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
+  import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
 
   let {
     isOpen = $bindable(false),

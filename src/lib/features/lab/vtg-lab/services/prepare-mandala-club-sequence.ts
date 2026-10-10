@@ -1,7 +1,7 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export type MandalaPathShape = "arc" | "linear" | "concave";
 

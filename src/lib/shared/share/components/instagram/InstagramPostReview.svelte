@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import InstagramIcon from "$lib/shared/auth/components/icons/InstagramIcon.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { getPostDeliveryContext } from "$lib/shared/share/context/post-delivery-context";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import InstagramIcon from "#lib/shared/auth/components/icons/InstagramIcon.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { getPostDeliveryContext } from "#lib/shared/share/context/post-delivery-context.js";
   import {
     countInstagramCaptionParts,
     evaluateInstagramPublishEligibility,
-  } from "$lib/shared/share/domain/instagram/instagram-post-policy";
-  import { metaErrorMessage } from "$lib/shared/share/services/meta-publish";
+  } from "#lib/shared/share/domain/instagram/instagram-post-policy.js";
+  import { metaErrorMessage } from "#lib/shared/share/services/meta-publish.js";
 
   interface Props {
     previewUrl: string;

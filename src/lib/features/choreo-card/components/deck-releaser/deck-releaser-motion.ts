@@ -1,5 +1,5 @@
 import { flushSync } from "svelte";
-import { ignoreViewTransitionSkip } from "$lib/shared/transitions/named-route-morph-state.svelte";
+import { ignoreViewTransitionSkip } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
 
 export type DeckReleaserMotionKind = "stage" | "source" | "sidebar" | "content";
 export type DeckReleaserMotionDirection = "forward" | "backward";

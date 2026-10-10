@@ -19,8 +19,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
+import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
 import {
   canonicalFreeformSequence,
   canonicalSeamlessSequence,
@@ -28,7 +28,7 @@ import {
   motionDurationTotal,
   withStepDurations,
 } from "./support/clock-harness";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function orchestratorFor(sequence: SequenceData): SequenceAnimationOrchestrator {
   const orchestrator = new SequenceAnimationOrchestrator(

@@ -1,8 +1,8 @@
 <!-- Mounts the Create front door closed, as CreateModule does, and lets a
      test open and close it. -->
 <script lang="ts">
-  import type { Section } from "$lib/shared/navigation/domain/types";
-  import CreateFrontDoor from "$lib/features/create/shared/components/CreateFrontDoor.svelte";
+  import type { Section } from "#lib/shared/navigation/domain/types.js";
+  import CreateFrontDoor from "#lib/features/create/shared/components/CreateFrontDoor.svelte";
 
   let {
     methods,

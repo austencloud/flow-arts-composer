@@ -17,24 +17,24 @@ vi.mock("firebase/firestore", () => ({
   query: vi.fn((reference: unknown) => reference),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 
-vi.mock("$lib/shared/library/data/firestore-paths", () => ({
+vi.mock("#lib/shared/library/data/firestore-paths.js", () => ({
   getPublicSequencePath: vi.fn((id: string) => `publicSequences/${id}`),
   getPublicSequencesPath: vi.fn(() => "publicSequences"),
 }));
 
-vi.mock("$lib/shared/offline/state/network-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/network-status-state.svelte.js", () => ({
   networkStatusState: { isOnline: true },
 }));
 
-import { applyFilter } from "$lib/shared/browse/services/browse-filter";
-import { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { applyFilter } from "#lib/shared/browse/services/browse-filter.js";
+import { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import { resolveRecordedPropConfig } from "#lib/shared/foundation/services/recorded-prop-intent.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 beforeEach(() => {
   vi.clearAllMocks();

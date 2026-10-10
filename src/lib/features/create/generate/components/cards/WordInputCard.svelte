@@ -4,14 +4,14 @@ Empty = random generation. Typed word = spell that word.
 Replaces the old GenerationModeCard (Freeform/Spell toggle).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getGreekSymbol } from "$lib/shared/keyboard/services/greek-key-mapper";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getGreekSymbol } from "#lib/shared/keyboard/services/greek-key-mapper.js";
   import { onMount } from "svelte";
   import CardHeader from "./shared/CardHeader.svelte";
   import {
     uppercasePreservingGreek,
     insertAtCursor,
-  } from "$lib/shared/keyboard/domain/greek-input-helpers";
+  } from "#lib/shared/keyboard/domain/greek-input-helpers.js";
 
   let {
     wordValue = "",

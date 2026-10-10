@@ -29,13 +29,13 @@ import {
   DEFAULT_THRESHOLDS,
   footFloorY,
   localGroundSeries,
-} from "$lib/shared/3d/diagnostics/gait/gait-analysis";
-import { verdictRows } from "$lib/shared/3d/diagnostics/gait/gait-verdicts";
+} from "#lib/shared/3d/diagnostics/gait/gait-analysis.js";
+import { verdictRows } from "#lib/shared/3d/diagnostics/gait/gait-verdicts.js";
 import type {
   FootFrame,
   GaitFrame,
   Vec3,
-} from "$lib/shared/3d/diagnostics/gait/gait-frame";
+} from "#lib/shared/3d/diagnostics/gait/gait-frame.js";
 
 const FPS = 60;
 const DT = 1 / FPS;

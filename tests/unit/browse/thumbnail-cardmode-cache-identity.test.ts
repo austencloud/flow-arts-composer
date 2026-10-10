@@ -18,12 +18,12 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   deriveKey,
   inputUsesDefaults,
   type ThumbnailRenderInput,
-} from "$lib/shared/browse/services/thumbnail-key-deriver";
+} from "#lib/shared/browse/services/thumbnail-key-deriver.js";
 
 const galleryInput: ThumbnailRenderInput = {
   sequenceName: "AB",

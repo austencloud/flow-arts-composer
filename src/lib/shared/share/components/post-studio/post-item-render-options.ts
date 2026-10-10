@@ -3,8 +3,8 @@ import type {
   PostAnimationItem,
   PostMovesItem,
   PostCardItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
 
 /** A card keeps the viewer's current options until its own setting is changed. */
 export function cardOptionsForItem(

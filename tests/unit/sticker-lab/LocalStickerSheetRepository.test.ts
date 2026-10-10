@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { LocalStickerSheetRepository } from "$lib/features/sticker-lab/services/local-sticker-sheet-repository";
+import { LocalStickerSheetRepository } from "#lib/features/sticker-lab/services/local-sticker-sheet-repository.js";
 import {
   createDefaultStickerSheet,
   createDefaultStickerUnit,
   type MandalaPrimitiveRef,
-} from "$lib/features/sticker-lab/domain/sticker-types";
-import { STORAGE_KEY_ACTIVE_SHEET } from "$lib/features/sticker-lab/domain/sticker-constants";
+} from "#lib/features/sticker-lab/domain/sticker-types.js";
+import { STORAGE_KEY_ACTIVE_SHEET } from "#lib/features/sticker-lab/domain/sticker-constants.js";
 
 function mockLocalStorage(): Storage {
   const store = new Map<string, string>();

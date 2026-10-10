@@ -3,9 +3,9 @@ import { effect_root } from "svelte/internal/client";
 import {
   createPanelCoordinationState,
   type PanelCoordinationState,
-} from "$lib/shared/create/state/panel-coordination-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 let cleanup: (() => void) | undefined;
 afterEach(() => cleanup?.());

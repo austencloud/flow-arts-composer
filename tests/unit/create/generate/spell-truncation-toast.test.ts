@@ -12,34 +12,34 @@ const { generateSequenceMock, parseWordMock, recordCreationMock } = vi.hoisted(
     recordCreationMock: vi.fn().mockResolvedValue(undefined),
   })
 );
-vi.mock("$lib/shared/create/services/generation-orchestrator", () => ({
+vi.mock("#lib/shared/create/services/generation-orchestrator.js", () => ({
   generationOrchestrator: { generateSequence: generateSequenceMock },
 }));
 
 vi.mock(
-  "$lib/features/create/spell/get-variation-exploration-orchestrator",
+  "#lib/features/create/spell/get-variation-exploration-orchestrator.js",
   () => ({
     getVariationExplorationOrchestrator: () => ({ parseWord: parseWordMock }),
   })
 );
 
-vi.mock("$lib/shared/gamification/get-prop-unlock-manager", () => ({
+vi.mock("#lib/shared/gamification/get-prop-unlock-manager.js", () => ({
   getPropUnlockManager: () => ({ recordCreation: recordCreationMock }),
 }));
 
 const { mockAuthState } = vi.hoisted(() => ({
   mockAuthState: { isAuthenticated: false, isAnonymous: false, role: "user" },
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: mockAuthState,
 }));
 
-import { createGenerationActionsState } from "$lib/features/create/generate/state/generate-actions.svelte";
-import { createSpellModeState } from "$lib/features/create/generate/state/spell-mode-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { UIGenerationConfig } from "$lib/shared/create/utils/config-mapper";
-import { AUTH_NUDGE_TEXTS } from "$lib/shared/auth/domain/auth-nudge-trigger";
+import { createGenerationActionsState } from "#lib/features/create/generate/state/generate-actions.svelte.js";
+import { createSpellModeState } from "#lib/features/create/generate/state/spell-mode-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { UIGenerationConfig } from "#lib/shared/create/utils/config-mapper.js";
+import { AUTH_NUDGE_TEXTS } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
 
 function makeConfig(
   overrides: Partial<UIGenerationConfig> = {}

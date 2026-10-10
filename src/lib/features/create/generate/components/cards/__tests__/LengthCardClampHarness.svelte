@@ -16,7 +16,7 @@ isolates the second half of the fix: LengthCard must not treat its callback as
 a reactive dependency.
 -->
 <script lang="ts">
-  import { GenerationMode } from "$lib/shared/foundation/domain/models/generation/generate-models";
+  import { GenerationMode } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
   import LengthCard from "../LengthCard.svelte";
 
   let {

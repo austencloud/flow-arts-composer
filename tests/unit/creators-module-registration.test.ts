@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { FEATURES } from "../../src/config/feature-flags";
-import { PRODUCTION_MODULES } from "$lib/shared/environment/environment-features";
-import { MODULE_DEFINITIONS } from "$lib/shared/navigation/config/module-definitions";
+import { PRODUCTION_MODULES } from "#lib/shared/environment/environment-features.js";
+import { MODULE_DEFINITIONS } from "#lib/shared/navigation/config/module-definitions.js";
 import {
   BROWSE_TABS,
   SOCIAL_TABS,
-} from "$lib/shared/navigation/config/tab-definitions";
+} from "#lib/shared/navigation/config/tab-definitions.js";
 
 describe("Creators module registration", () => {
   it("keeps Creators as a top-level tabless destination", () => {

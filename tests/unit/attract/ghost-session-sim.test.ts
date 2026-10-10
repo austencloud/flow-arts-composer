@@ -23,7 +23,7 @@
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-vi.mock("$lib/shared/attract/services/sensors", () => ({
+vi.mock("#lib/shared/attract/services/sensors.js", () => ({
   isVisible: () => true,
   visibleAll: (selector: string) => [
     ...document.querySelectorAll<HTMLElement>(selector),
@@ -32,8 +32,8 @@ vi.mock("$lib/shared/attract/services/sensors", () => ({
   readRoute: () => ({ moduleId: null, tabId: null }),
 }));
 
-import { CONCEPTS } from "$lib/shared/attract/domain/intention";
-import { PLAYBACK_REVISIT_MS } from "$lib/shared/attract/domain/episodic-memory";
+import { CONCEPTS } from "#lib/shared/attract/domain/intention.js";
+import { PLAYBACK_REVISIT_MS } from "#lib/shared/attract/domain/episodic-memory.js";
 import {
   analyze,
   runSession,

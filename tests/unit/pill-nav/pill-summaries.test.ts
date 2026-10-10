@@ -5,7 +5,7 @@ import {
   computePlaybackSummary,
   computeExportSummary,
   type DisplayFlags,
-} from "$lib/shared/animation-panel/pill-nav/pill-summaries";
+} from "#lib/shared/animation-panel/pill-nav/pill-summaries.js";
 
 const allOff: DisplayFlags = {
   tkaGlyph: false,

@@ -1,6 +1,6 @@
 import { prefersReducedMotion } from "../../environments/primitives/motion-preference";
-import { motionDuration } from "$lib/shared/transitions/motion";
-import { DURATION } from "$lib/shared/transitions/transitions";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
+import { DURATION } from "#lib/shared/transitions/transitions.js";
 import { getWorkerEnvironmentCamera } from "../domain/worker-environment-camera";
 import {
   clampWorkerViewport,

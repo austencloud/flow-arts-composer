@@ -6,8 +6,8 @@
 
 import { updateProfile, type User } from "firebase/auth";
 import type { GeneratedAvatarData } from "./types";
-import { getStorageInstance } from "$lib/shared/auth/firebase";
-import { PROP_TYPE_DISPLAY_REGISTRY } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+import { getStorageInstance } from "#lib/shared/auth/firebase.js";
+import { PROP_TYPE_DISPLAY_REGISTRY } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 import { prepareProfilePhoto } from "./profile-photo-image";
 
 /**
@@ -156,7 +156,7 @@ export async function deletePreviousStoredProfilePhoto(
     const reportedError =
       error instanceof Error ? error : new Error(String(error));
     const { reportErrorTelemetry } =
-      await import("$lib/shared/error/services/error-telemetry-reporter");
+      await import("#lib/shared/error/services/error-telemetry-reporter.js");
     await reportErrorTelemetry({
       message: "Old profile photo could not be removed",
       technicalDetails: reportedError.message,

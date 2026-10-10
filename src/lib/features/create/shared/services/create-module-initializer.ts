@@ -14,37 +14,37 @@
  * - Testability (can pass mocks directly to constructor)
  */
 
-import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StartPlacementManager } from "$lib/shared/create/services/start-placement-manager";
-import { createCreateModuleState } from "$lib/features/create/shared/state/create-module-state.svelte";
-import { createConstructTabState } from "$lib/features/create/shared/state/construct-tab-state.svelte";
+import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StartPlacementManager } from "#lib/shared/create/services/start-placement-manager.js";
+import { createCreateModuleState } from "#lib/features/create/shared/state/create-module-state.svelte.js";
+import { createConstructTabState } from "#lib/features/create/shared/state/construct-tab-state.svelte.js";
 // ARCHIVED: createAssemblerTabState import removed (Feb 2026)
-import { createGeneratorTabState } from "$lib/features/create/shared/state/generator-tab-state.svelte";
+import { createGeneratorTabState } from "#lib/features/create/shared/state/generator-tab-state.svelte.js";
 // REMOVED: createSpellTabState - Spell mode unified into Generate tab (Feb 2026)
-import { createAssembleTabState } from "$lib/features/create/shared/state/assemble-tab-state.svelte";
-import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import type { StepOperator } from "$lib/features/create/shared/services/step-operator";
+import { createAssembleTabState } from "#lib/features/create/shared/state/assemble-tab-state.svelte.js";
+import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import type { StepOperator } from "#lib/features/create/shared/services/step-operator.js";
 import type { CreateModuleEffectCoordinator } from "./create-module-effect-coordinator";
 import type { CreateModuleHandlers } from "./create-module-handlers";
-import type { CreateModuleOrchestrator } from "$lib/features/create/shared/services/create-module-orchestrator";
+import type { CreateModuleOrchestrator } from "#lib/features/create/shared/services/create-module-orchestrator.js";
 import type { DeepLinkSequenceHandler } from "./deep-link-sequence-handler";
 import type { NavigationSyncer } from "./navigation-syncer";
-import type { ResponsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import type { SequenceStatsCalculator } from "$lib/features/create/shared/services/sequence-stats-calculator";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { SequenceValidator } from "$lib/features/create/shared/services/sequence-validator";
+import type { ResponsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import type { SequenceStatsCalculator } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { SequenceValidator } from "#lib/features/create/shared/services/sequence-validator.js";
 import { getCreateModuleEventHandler } from "./create-module-event-handler";
-import type { DeepLinker } from "$lib/shared/navigation/services/deep-linker";
+import type { DeepLinker } from "#lib/shared/navigation/services/deep-linker.js";
 import type { ICreateModuleState } from "../types/create-module-types";
 import type { PanelPersister } from "./panel-persister.svelte";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { UndoOperationType } from "./undo-manager";
 import type { UndoMetadata } from "./undo-manager";
-import type { Sharer } from "$lib/shared/share/services/sharer";
+import type { Sharer } from "#lib/shared/share/services/sharer.js";
 import type { ConstructTabState } from "../state/construct-tab-state.svelte";
 import type { GeneratorTabState } from "../state/generator-tab-state.svelte";
 import type { AssembleTabState } from "../state/assemble-tab-state.svelte";

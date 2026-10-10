@@ -10,7 +10,7 @@ import {
   handModeOptionsForContext,
   propModeToEngine,
   type TnDSelection,
-} from "$lib/shared/create/domain/hand-relationship";
+} from "#lib/shared/create/domain/hand-relationship.js";
 
 export interface StartFeasibilityInput {
   variations: readonly PictographData[];

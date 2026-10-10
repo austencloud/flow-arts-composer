@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { createCorpusSession } from "$lib/features/lab/pronunciation-recorder/state/corpus-session-state.svelte";
-import type { SpeechBoundaryHandlers } from "$lib/features/lab/pronunciation-recorder/services/contracts/ISpeechBoundaryDetector";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { createCorpusSession } from "#lib/features/lab/pronunciation-recorder/state/corpus-session-state.svelte.js";
+import type { SpeechBoundaryHandlers } from "#lib/features/lab/pronunciation-recorder/services/contracts/ISpeechBoundaryDetector.js";
 
 const WORDS = [
   [Letter.A, Letter.B],

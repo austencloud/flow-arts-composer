@@ -13,13 +13,13 @@ import Dexie, { type EntityTable } from "dexie";
 import type {
   StoredPerformance,
   StoredCalibrationProfile,
-} from "$lib/shared/train/domain/train-database-models";
-import type { Composition } from "$lib/shared/animation-engine/domain/compose-types";
+} from "#lib/shared/train/domain/train-database-models.js";
+import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
 import type {
   GalleryCacheEntry,
   GalleryCacheMeta,
-} from "$lib/shared/offline/domain/offline-cache-types";
-import type { GeneratedMandalaEntry } from "$lib/shared/mandala/domain/mandala-pool-types";
+} from "#lib/shared/offline/domain/offline-cache-types.js";
+import type { GeneratedMandalaEntry } from "#lib/shared/mandala/domain/mandala-pool-types.js";
 import {
   DATABASE_NAME,
   DATABASE_VERSION,
@@ -28,11 +28,11 @@ import {
 } from "../domain/constants/database_constants";
 import type { UserProject } from "../domain/models/user-project";
 import type { UserWorkData } from "../domain/models/user-work-data";
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+import type { MediaCompositionPreset } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
 import type {
   MessageDraftRecord,
   MessageOutboxRecord,
-} from "$lib/shared/inbox/domain/message-delivery-models";
+} from "#lib/shared/inbox/domain/message-delivery-models.js";
 
 
 /**

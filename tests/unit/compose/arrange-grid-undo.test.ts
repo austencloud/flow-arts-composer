@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arrangeGridState } from "$lib/features/compose/tabs/arrange/state/arrange-grid-state.svelte";
+import { arrangeGridState } from "#lib/features/compose/tabs/arrange/state/arrange-grid-state.svelte.js";
 
 describe("Arrange grid undo", () => {
   it("restores dimensions along with cell spans", () => {

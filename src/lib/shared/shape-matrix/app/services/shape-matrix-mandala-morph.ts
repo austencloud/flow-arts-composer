@@ -30,7 +30,7 @@
  *    full-size picture and the morph is one mandala travelling.
  */
 import { flushSync } from "svelte";
-import { startMorph } from "$lib/shared/transitions/results-morph";
+import { startMorph } from "#lib/shared/transitions/results-morph.js";
 import {
   measureMandalaArt,
   SHAPE_MATRIX_ACTIVE_MANDALA_NAME,

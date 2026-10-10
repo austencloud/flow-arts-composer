@@ -7,8 +7,8 @@
   single-select semantics.
 -->
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { SpinnerMode } from "../domain/models/spinner-models";
 
   let {

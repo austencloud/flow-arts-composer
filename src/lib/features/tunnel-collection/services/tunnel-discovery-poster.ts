@@ -7,7 +7,7 @@ import {
   DISCOVERY_RENDER_SIZE,
   POSTER_MAX_BYTES,
   POSTER_SIZE,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-poster";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-poster.js";
 import { tunnelForPoster } from "../domain/tunnel-poster-look";
 import type { CollectedTunnel } from "../domain/tunnel-collection-types";
 

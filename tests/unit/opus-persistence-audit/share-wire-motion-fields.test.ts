@@ -37,15 +37,15 @@ import {
   decodeSequence,
   encodeSequence,
   verifySequenceRoundTrip,
-} from "$lib/shared/navigation/services/sequence-encoder";
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
 import {
   ensureComposition,
   hydrate,
-} from "$lib/shared/foundation/services/sequence-hydrator";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 import {
   asStoredDocument,

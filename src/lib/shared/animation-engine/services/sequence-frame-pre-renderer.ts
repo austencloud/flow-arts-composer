@@ -11,13 +11,13 @@
  * which is immune to device stutters and provides perfect trail loops.
  */
 
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-import type { IAnimationRenderer as AnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
-import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { getLetterImagePath } from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+import type { IAnimationRenderer as AnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
+import type { TrailSettings } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { getLetterImagePath } from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
 /**
  * Pre-rendered frame data
  */
@@ -135,7 +135,7 @@ export class SequenceFramePreRenderer {
 
     // Import Canvas2DAnimationRenderer class directly
     const { Canvas2DAnimationRenderer } =
-      await import("$lib/shared/animation-engine/services/canvas-2d-animation-renderer");
+      await import("#lib/shared/animation-engine/services/canvas-2d-animation-renderer.js");
     const offscreenRenderer = new Canvas2DAnimationRenderer();
 
     // Initialize with offscreen container

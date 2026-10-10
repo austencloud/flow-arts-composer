@@ -3,10 +3,10 @@ import {
   createTakeTiming,
   takeTimingFromLegacyMarks,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import type { SaveResult } from "$lib/shared/media-composition/services/post-project-store";
-import { legacyPostOwner } from "$lib/shared/media-composition/services/post-project-store";
-import { auth } from "$lib/shared/auth/firebase";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import type { SaveResult } from "#lib/shared/media-composition/services/post-project-store.js";
+import { legacyPostOwner } from "#lib/shared/media-composition/services/post-project-store.js";
+import { auth } from "#lib/shared/auth/firebase.js";
 
 /**
  * Saves each take's timing on this device, keyed by sequence and take.

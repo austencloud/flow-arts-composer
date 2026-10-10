@@ -1,28 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PendingActionQueue } from "$lib/shared/sequence-viewer/services/pending-action-queue";
+import { PendingActionQueue } from "#lib/shared/sequence-viewer/services/pending-action-queue.js";
 
 const auth = vi.hoisted(() => ({
   isAuthenticated: false,
   isAnonymous: false,
   isFullAccount: false,
 }));
-vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("$app/env", () => ({ browser: true }));
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: auth,
 }));
-vi.mock("$lib/shared/auth/services/guest-identity", () => ({
+vi.mock("#lib/shared/auth/services/guest-identity.js", () => ({
   ensureGuestIdentity: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("$lib/shared/navigation/services/url-state", () => ({
+vi.mock("#lib/shared/navigation/services/url-state.js", () => ({
   removeCurrentUrlParams: vi.fn(),
   mutateCurrentUrl: vi.fn(),
 }));
 const pending = new PendingActionQueue();
-vi.mock("$lib/shared/sequence-viewer/get-pending-action-queue", () => ({
+vi.mock("#lib/shared/sequence-viewer/get-pending-action-queue.js", () => ({
   getPendingActionQueue: () => pending,
 }));
-import { createAuthActionQueue } from "$lib/shared/sequence-viewer/components/auth-action-queue.svelte";
-import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
+import { createAuthActionQueue } from "#lib/shared/sequence-viewer/components/auth-action-queue.svelte.js";
+import { ensureGuestIdentity } from "#lib/shared/auth/services/guest-identity.js";
 
 const callbacks = {
   handleSave: vi.fn(),

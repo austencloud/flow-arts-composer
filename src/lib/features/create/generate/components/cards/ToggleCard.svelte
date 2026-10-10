@@ -5,7 +5,7 @@ Perfect for narrow screens and provides immediate visual affordance
 Hides header when card height is below 65px for space optimization
 -->
 <script lang="ts" generics="T">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
   import { createToggleCardState } from "../../state/toggle-card-state.svelte";
   import CardHeader from "./shared/CardHeader.svelte";

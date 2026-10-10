@@ -1,6 +1,6 @@
 import { flushSync, mount } from "svelte";
-import type { PostMusic } from "$lib/shared/media-composition/domain/post-music";
-import PostTimelineMusicLane from "$lib/shared/share/components/post-studio/editor/timeline/PostTimelineMusicLane.svelte";
+import type { PostMusic } from "#lib/shared/media-composition/domain/post-music.js";
+import PostTimelineMusicLane from "#lib/shared/share/components/post-studio/editor/timeline/PostTimelineMusicLane.svelte";
 
 export type LaneCall = [name: string, ...args: unknown[]];
 

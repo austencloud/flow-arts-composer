@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { TND_ELEMENTS } from "$lib/features/choreo-card/domain/tnd-element";
-  import { STICKER_TILE_SIZE_PX, STICKER_DPI } from "$lib/features/sticker-lab/domain/sticker-constants";
+  import { TND_ELEMENTS } from "#lib/features/choreo-card/domain/tnd-element.js";
+  import { STICKER_TILE_SIZE_PX, STICKER_DPI } from "#lib/features/sticker-lab/domain/sticker-constants.js";
   import {
     renderElementStickerSVG,
     type ElementStickerOptions,
@@ -9,7 +9,7 @@
     type StickerRingColor,
   } from "./element-sticker-render";
   import { exportElementStickerPdf, type ElementStickerJob } from "./element-sticker-pdf";
-  import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
+  import { ensureCardFonts } from "#lib/shared/render/services/gelasio-fonts.js";
   import {
     LABEL_TEMPLATE_PRESETS,
     TEMPLATE_C006_STANDARD,

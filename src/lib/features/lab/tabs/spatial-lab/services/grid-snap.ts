@@ -1,7 +1,7 @@
 import type { Vector3 } from "three";
 import type { Plane } from "@austencloud/scene-3d";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getAllGridPositions } from "$lib/shared/3d/services/plane-coordinate-mapper";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { getAllGridPositions } from "#lib/shared/3d/services/plane-coordinate-mapper.js";
 
 const ALL_LOCATIONS: GridLocation[] = [
   GridLocation.NORTH,

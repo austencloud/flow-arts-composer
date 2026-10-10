@@ -1,16 +1,16 @@
 import { z } from "zod";
-import { takeFileKey } from "$lib/shared/media-composition/domain/post-plan";
+import { takeFileKey } from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   PostProjectSchema,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   FEATURE_VIDEO_API,
   FEATURE_VIDEO_SLUG_PATTERN,
   featureVideoMediaUrl,
   isFeatureVideoMediaUrl,
   isFeatureVideoSlug,
-} from "$lib/shared/media-composition/domain/feature-video-url";
+} from "#lib/shared/media-composition/domain/feature-video-url.js";
 
 /** Kept here too, for the callers that already import them from this file. */
 export {

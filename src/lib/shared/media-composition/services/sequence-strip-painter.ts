@@ -1,39 +1,39 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { paintSequenceProgressStrip } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
-import type { PropPosition } from "$lib/shared/pictograph/prop/domain/models/prop-position";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { paintSequenceProgressStrip } from "#lib/shared/animation-engine/services/sequence-progress-renderer.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PreparedPictographData } from "#lib/shared/pictograph/shared/domain/models/prepared-pictograph-data.js";
+import type { PropPosition } from "#lib/shared/pictograph/prop/domain/models/prop-position.js";
 import {
   Canvas2DDirectRenderer,
   type PreparedPropSprite,
-} from "$lib/shared/render/services/canvas-2d-direct-renderer";
-import { drawElementWithTransform } from "$lib/shared/render/services/canvas-2d-transform-helper";
-import type { RenderCanvas } from "$lib/shared/render/services/types";
-import { VIEWBOX_SIZE } from "$lib/shared/render/core/constants/viewbox";
-import { buildNotationCells } from "$lib/shared/timeline/notation-cell";
-import type { NotationCell } from "$lib/shared/timeline/notation-cell";
-import { calculatePictographMotionPositions } from "$lib/shared/pictograph/prop/services/pictograph-motion-positioner";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { MandalaPathPreparer } from "$lib/shared/mandala/services/mandala-path-preparer";
-import { computeEngineAlignedMandalaScale } from "$lib/shared/mandala/services/mandala-path-preparer";
-import type { PreparedMandalaPath } from "$lib/shared/mandala/services/types";
+} from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
+import { drawElementWithTransform } from "#lib/shared/render/services/canvas-2d-transform-helper.js";
+import type { RenderCanvas } from "#lib/shared/render/services/types.js";
+import { VIEWBOX_SIZE } from "#lib/shared/render/core/constants/viewbox.js";
+import { buildNotationCells } from "#lib/shared/timeline/notation-cell.js";
+import type { NotationCell } from "#lib/shared/timeline/notation-cell.js";
+import { calculatePictographMotionPositions } from "#lib/shared/pictograph/prop/services/pictograph-motion-positioner.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { MandalaPathPreparer } from "#lib/shared/mandala/services/mandala-path-preparer.js";
+import { computeEngineAlignedMandalaScale } from "#lib/shared/mandala/services/mandala-path-preparer.js";
+import type { PreparedMandalaPath } from "#lib/shared/mandala/services/types.js";
 import {
   mandalaGridJoinOffsets,
   type MandalaHandOffsets,
-} from "$lib/shared/mandala/services/mandala-grid-join";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-import { BASE_SAMPLES_PER_BEAT } from "$lib/shared/mandala/domain/mandala-constants";
-import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/mandala/services/mandala-grid-join.js";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+import { BASE_SAMPLES_PER_BEAT } from "#lib/shared/mandala/domain/mandala-constants.js";
+import { DEFAULT_TRAIL_SETTINGS } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   sequenceArrowLayers,
   type SequenceFrame,
-} from "$lib/shared/media-composition/domain/sequence-frame";
+} from "#lib/shared/media-composition/domain/sequence-frame.js";
 import {
   mandalaPrefixFraction,
   resolveStripView,
   type StripMode,
-} from "$lib/shared/media-composition/domain/strip-view";
+} from "#lib/shared/media-composition/domain/strip-view.js";
 import {
   nearestCachedSize,
   paintSizeBucket,
@@ -189,7 +189,7 @@ class SequenceStripPainter implements PostStudioLayerPainter {
     const task = (async () => {
       await this.renderer.initialize();
       const { pictographPreparer } =
-        await import("$lib/shared/pictograph/shared/services/pictograph-preparer");
+        await import("#lib/shared/pictograph/shared/services/pictograph-preparer.js");
 
       const prepared: PreparedCell[] = [];
       for (const cell of this.cells) {

@@ -11,15 +11,15 @@
 -->
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import {
     getModuleDefinition,
     isValidModule,
     isValidTabForModule,
-  } from "$lib/shared/navigation/services/navigation-validator";
-  import { openSheet } from "$lib/shared/navigation/services/sheet-router";
-  import { toChangelogSegments } from "$lib/shared/versioning/domain/utils/changelog-rich-text";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  } from "#lib/shared/navigation/services/navigation-validator.js";
+  import { openSheet } from "#lib/shared/navigation/services/sheet-router.js";
+  import { toChangelogSegments } from "#lib/shared/versioning/domain/utils/changelog-rich-text.js";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   let {
     text,

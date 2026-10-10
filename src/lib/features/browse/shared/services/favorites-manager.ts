@@ -5,8 +5,8 @@
  * following the microservices architecture pattern.
  */
 
-import { safeSessionStorageGet, safeSessionStorageSet } from "$lib/shared/foundation/services/storage-manager";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { safeSessionStorageGet, safeSessionStorageSet } from "#lib/shared/foundation/services/storage-manager.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 export class FavoritesManager {
   private readonly CACHE_VERSION = "v2.1"; // ✅ ROBUST: Cache versioning
   private readonly STORAGE_KEY = `tka-${this.CACHE_VERSION}-favorites`;

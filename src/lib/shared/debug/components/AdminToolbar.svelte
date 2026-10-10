@@ -12,28 +12,28 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
+  import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
   import {
     userPreviewState,
     loadUserPreview,
     clearUserPreview,
     initUserPreview,
-  } from "$lib/shared/debug/state/user-preview-state.svelte";
-  import { adminToolbarState } from "$lib/shared/debug/state/admin-toolbar-state.svelte";
-  import { firstRunState } from "$lib/shared/onboarding/state/first-run-state.svelte.ts";
-  import { appEntryState } from "$lib/shared/onboarding/state/app-entry-state.svelte.ts";
-  import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
-  import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
-  import * as cloudThumbnailCacheModule from "$lib/shared/browse/services/cloud-thumbnail-cache";
-  import { getThumbnailLocalCache } from "$lib/shared/browse/get-thumbnail-local-cache";
-  import { getThumbnailRenderOrchestrator } from "$lib/shared/browse/get-thumbnail-render-orchestrator";
-  import { startGalleryWarm, type WarmHandle } from "$lib/shared/browse/services/gallery-thumbnail-warmer";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getQuickAccessPersister } from "$lib/shared/debug/get-quick-access-persister";
-  import { getImageComposer } from "$lib/shared/render/get-image-composer";
+  } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+  import { adminToolbarState } from "#lib/shared/debug/state/admin-toolbar-state.svelte.js";
+  import { firstRunState } from "#lib/shared/onboarding/state/first-run-state.svelte.ts";
+  import { appEntryState } from "#lib/shared/onboarding/state/app-entry-state.svelte.ts";
+  import { handleModuleChange } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
+  import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
+  import * as cloudThumbnailCacheModule from "#lib/shared/browse/services/cloud-thumbnail-cache.js";
+  import { getThumbnailLocalCache } from "#lib/shared/browse/get-thumbnail-local-cache.js";
+  import { getThumbnailRenderOrchestrator } from "#lib/shared/browse/get-thumbnail-render-orchestrator.js";
+  import { startGalleryWarm, type WarmHandle } from "#lib/shared/browse/services/gallery-thumbnail-warmer.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getQuickAccessPersister } from "#lib/shared/debug/get-quick-access-persister.js";
+  import { getImageComposer } from "#lib/shared/render/get-image-composer.js";
   import type { QuickAccessPersister } from "../services/quick-access-persister";
 import type { QuickAccessUser } from "../services/types";
-  import { tikaPictographCache } from "$lib/shared/tika/services/tika-pictograph-cache";
+  import { tikaPictographCache } from "#lib/shared/tika/services/tika-pictograph-cache.js";
   import AdminToolbarDesktop from "./AdminToolbarDesktop.svelte";
   import AdminToolbarMobile from "./AdminToolbarMobile.svelte";
 
@@ -367,12 +367,12 @@ import type { QuickAccessUser } from "../services/types";
    * happened was a takeover that parked it.
    */
   let ghostActive = $state(false);
-  let presenter: typeof import("$lib/shared/attract/state/presentation-state.svelte").presentationState | null =
+  let presenter: typeof import("#lib/shared/attract/state/presentation-state.svelte.js").presentationState | null =
     null;
 
   async function toggleGhost() {
     presenter ??= (
-      await import("$lib/shared/attract/state/presentation-state.svelte")
+      await import("#lib/shared/attract/state/presentation-state.svelte.js")
     ).presentationState;
     if (presenter.armed) {
       presenter.deactivate();
@@ -390,7 +390,7 @@ import type { QuickAccessUser } from "../services/types";
 
   onMount(async () => {
     presenter = (
-      await import("$lib/shared/attract/state/presentation-state.svelte")
+      await import("#lib/shared/attract/state/presentation-state.svelte.js")
     ).presentationState;
     ghostActive = presenter.armed;
   });

@@ -24,15 +24,15 @@
  *      `pipelineVersion` into their baselines and refuse cross-version compares.
  */
 import pixelmatch from "pixelmatch";
-import { Canvas2DDirectRenderer } from "$lib/shared/render/services/canvas-2d-direct-renderer";
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import { Canvas2DDirectRenderer } from "#lib/shared/render/services/canvas-2d-direct-renderer.js";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { hydrate } from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 export const PARITY_SIZE = 224;
 

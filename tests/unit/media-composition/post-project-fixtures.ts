@@ -5,8 +5,8 @@ import {
   type PostProject,
   type PostTrack,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
 
 /** Builders for post-project tests. Every field has a plain default. */
 

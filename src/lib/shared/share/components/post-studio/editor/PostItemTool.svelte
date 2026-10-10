@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     POST_BOX,
     POST_CANVAS_RATIOS,
@@ -29,8 +29,8 @@
     type PostItem,
     type PostMovesMode,
     type PostTextSize,
-  } from "$lib/shared/media-composition/domain/post-project";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+  } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
   import {
     setItemFill,
     setTrackFlag,
@@ -45,12 +45,12 @@
     updateItem,
     updateItemAt,
     type PostItemPatch,
-  } from "$lib/shared/media-composition/domain/post-project-edits";
+  } from "#lib/shared/media-composition/domain/post-project-edits.js";
   import {
     applyLook,
     lookOf,
     type PostLook,
-  } from "$lib/shared/media-composition/domain/post-project-looks";
+  } from "#lib/shared/media-composition/domain/post-project-looks.js";
   import {
     boxAt,
     channelValueAt,
@@ -60,28 +60,28 @@
     isAnimated,
     opacityAt,
     type PostEasingPresetId,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
+  } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
   import {
     POST_DEFAULT_EDGE_BORDER,
     POST_EDGE_COLOR_HEX,
     edgeOf,
-  } from "$lib/shared/media-composition/domain/post-clip-edge";
+  } from "#lib/shared/media-composition/domain/post-clip-edge.js";
   import type {
     PostEdit,
     PostEditorState,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
-  import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
+  } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import TypeableValue from "#lib/shared/ui/components/TypeableValue.svelte";
+  import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
   import {
     formatPostSpeed,
     formatTakeClock,
     parseClock,
   } from "../builder/post-builder-format";
   import { easingPresetLabel, itemDisplayLabel } from "./post-editor-labels";
-  import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
+  import ChipPopoverOption from "#lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "./PostCurveEditor.svelte";
   import { boxTurn, typeBox, type BoxField } from "./post-box-drag";
   import { keepsShape, keptBox, shownBox } from "./post-item-rect";
@@ -97,25 +97,25 @@
   import {
     postOutputSize,
     ratioValue,
-  } from "$lib/shared/media-composition/domain/post-canvas";
-  import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
+  } from "#lib/shared/media-composition/domain/post-canvas.js";
+  import type { StaffTipAnalysis } from "#lib/shared/media-composition/state/staff-tip-analysis.svelte.js";
   import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
   import PostNativeTextTool from "./PostNativeTextTool.svelte";
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
   import { sourceCropAtRatio, sourceFillBox } from "./post-source-crop";
   import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
-  import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
+  import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "#lib/shared/mandala/domain/mandala-overlay-types.js";
   import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
   import PostSequenceActionsTool from "./PostSequenceActionsTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
   import {
     TUNNEL_BACKDROP_MAX_ZOOM,
     type TunnelBackdropFrame,
-  } from "$lib/shared/media-composition/domain/tunnel-hook";
+  } from "#lib/shared/media-composition/domain/tunnel-hook.js";
   import {
     autoGradeVideo,
     type PostVideoColorGrade,
-  } from "$lib/shared/media-composition/domain/post-video-color-grade";
+  } from "#lib/shared/media-composition/domain/post-video-color-grade.js";
 
   /**
    * The body of one tool for the selected item. An amount is a slider, a

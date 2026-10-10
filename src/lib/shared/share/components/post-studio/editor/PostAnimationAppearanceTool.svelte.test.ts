@@ -1,15 +1,15 @@
 import { render } from "vitest-browser-svelte";
 import { page, userEvent } from "vitest/browser";
 import { expect, it, vi } from "vitest";
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
-import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
 
 it("saves a plain staff in one edit without changing the account's props or artwork", async () => {

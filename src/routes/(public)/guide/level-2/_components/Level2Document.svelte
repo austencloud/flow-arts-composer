@@ -10,8 +10,8 @@
    * placeholder. Back matter is parked per the rebuild tracker.
    */
   import type { Snippet, Component } from "svelte";
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import GuideCover from "../../level-1/_components/GuideCover.svelte";
   import PagePlaceholder from "../../level-1/_components/PagePlaceholder.svelte";
   import type { GuidePageMeta } from "../../level-1/_data/guide-manifest";

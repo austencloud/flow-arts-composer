@@ -9,8 +9,8 @@
  * A scheduled Cloud Function cleans up orphaned files after 30 minutes.
  */
 
-import { getStorageInstance } from "$lib/shared/auth/firebase";
-import type { StagedUploadHandle, StagedProgressCallback } from "$lib/shared/feedback/domain/feedback-contract-types";
+import { getStorageInstance } from "#lib/shared/auth/firebase.js";
+import type { StagedUploadHandle, StagedProgressCallback } from "#lib/shared/feedback/domain/feedback-contract-types.js";
 import type { UploadTask } from 'firebase/storage';
 
 export function stageImage(

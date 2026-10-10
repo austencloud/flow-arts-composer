@@ -1,7 +1,7 @@
 import {
   getServiceAccountAuthorizer,
   type ServiceAccountAuthorizer,
-} from "$lib/server/google/service-account-authorizer";
+} from "#lib/server/google/service-account-authorizer.js";
 
 const IDENTITY_TOOLKIT_HOST = "https://identitytoolkit.googleapis.com/v1";
 const IDENTITY_TOOLKIT_SCOPE =

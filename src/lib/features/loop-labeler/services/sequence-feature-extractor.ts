@@ -4,8 +4,8 @@
  * Extracts analyzable features from sequences for rule-based tagging.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { Step } from "@tka/tka-types";
 import type { SequenceAnalyzer } from "../../create/shared/services/sequence-analyzer";
 import type { StrictLoopType } from "../../create/shared/services/sequence-analyzer";
@@ -18,11 +18,11 @@ import { createDefaultSequenceFeatures } from "../domain/models/sequence-feature
 import {
   GridPlacementGroup,
   type GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export class SequenceFeatureExtractor {
   constructor(private readonly SequenceAnalyzer: SequenceAnalyzer) {}

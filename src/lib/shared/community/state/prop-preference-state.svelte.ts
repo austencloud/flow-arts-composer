@@ -1,4 +1,4 @@
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   loadPropPreferences,
   savePropPreferences,

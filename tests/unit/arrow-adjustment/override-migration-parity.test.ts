@@ -107,7 +107,7 @@ async function loadEngine(): Promise<
 
   // Firestore / auth chain pulled in transitively by the real domain helpers
   // (parseSpecialOverrideKey lives in SpecialArrowPlacement which imports firestore).
-  vi.doMock("$lib/shared/auth/state/authState.svelte", () => ({
+  vi.doMock("#lib/shared/auth/state/authState.svelte", () => ({
     authState: { effectiveUserId: null, user: { email: "admin@test" } },
   }));
   vi.doMock("firebase/firestore", () => ({
@@ -117,7 +117,7 @@ async function loadEngine(): Promise<
 
   // 3 fixture variation-arrows: A left, B right, C left.
   vi.doMock(
-    "$lib/features/admin/override-migration/services/variation-enumerator",
+    "#lib/features/admin/override-migration/services/variation-enumerator.js",
     () => ({
       enumerateVariationArrows: vi.fn(async () => [
         {
@@ -147,7 +147,7 @@ async function loadEngine(): Promise<
 
   // Canonical key: stable per-letter so parseSpecialOverrideKey round-trips.
   vi.doMock(
-    "$lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key",
+    "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-key.js",
     () => ({
       computeSpecialOverrideKey: vi.fn(
         (pd: { letter: string }, _m: unknown, color: string) =>
@@ -157,14 +157,14 @@ async function loadEngine(): Promise<
   );
 
   vi.doMock(
-    "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator",
+    "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator.js",
     () => ({
       arrowLocationCalculator: { calculateLocation: vi.fn(() => "n") },
     })
   );
 
   vi.doMock(
-    "$lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton",
+    "#lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton.js",
     () => ({
       setGlobalReadDisabled: (v: boolean) => setGlobalReadDisabledSpy(v),
       isGlobalReadDisabled: vi.fn(() => false),
@@ -174,7 +174,7 @@ async function loadEngine(): Promise<
   // A + B report global; C reports default (skipped). Verify-pass values come
   // from baseAdjustmentByLetter so a single letter can be forced to mismatch.
   vi.doMock(
-    "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator",
+    "#lib/shared/pictograph/arrow/positioning/calculation/services/arrow-adjustment-calculator.js",
     () => ({
       arrowAdjustmentCalculator: {
         getDiagnostics: vi.fn(async (pd: { letter: string }) => {
@@ -195,7 +195,7 @@ async function loadEngine(): Promise<
   );
 
   vi.doMock(
-    "$lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton",
+    "#lib/shared/pictograph/arrow/positioning/special-override/services/special-override-singleton.js",
     () => ({
       getSpecialOverrideRepository: () => repoSpies,
     })

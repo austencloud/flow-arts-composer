@@ -1,12 +1,12 @@
-import type { Catalog } from "$lib/features/choreo-card/domain/models/Catalog";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { getCachedCatalogs, loadCatalogs, loadCatalogSequencesPage } from "$lib/features/choreo-card/services/catalog-loader";
+import type { Catalog } from "#lib/features/choreo-card/domain/models/Catalog.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { getCachedCatalogs, loadCatalogs, loadCatalogSequencesPage } from "#lib/features/choreo-card/services/catalog-loader.js";
 import { QuizAnswerFormat, QuizQuestionFormat, QuizType } from "../domain/enums/quiz-enums";
 import type { QuizAnswerOption, QuizQuestionData } from "../domain/models/quiz-models";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { shapeKey } from "$lib/shared/mandala/services/mandala-fingerprint";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { shapeKey } from "#lib/shared/mandala/services/mandala-fingerprint.js";
 
 let sequencePool: SequenceData[] = [];
 let isInitialized = false;

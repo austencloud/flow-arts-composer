@@ -13,9 +13,9 @@ import {
   onSnapshot,
   serverTimestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { getPersonalMuseumDocPath } from "$lib/shared/library/data/firestore-paths";
-import { getEffectiveUserId } from "$lib/shared/auth/state/auth-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { getPersonalMuseumDocPath } from "#lib/shared/library/data/firestore-paths.js";
+import { getEffectiveUserId } from "#lib/shared/auth/state/auth-state.svelte.js";
 import {
   emptyPersonalMuseumDoc,
   type PersonalMuseumDoc,

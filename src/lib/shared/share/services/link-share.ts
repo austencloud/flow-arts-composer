@@ -11,7 +11,7 @@
  * WebViews, and documents served without a secure context).
  */
 
-import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
+import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
 
 export interface LinkShare {
   /** The address to hand on. */

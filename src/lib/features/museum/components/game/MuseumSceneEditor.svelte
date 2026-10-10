@@ -22,22 +22,22 @@
     resolveCamera,
     resolveRenderer,
   } from "../resolve-threlte-scene";
-  import { createMetadataSceneObjectAdapter } from "$lib/shared/3d/scene-composer/metadata-scene-object-adapter";
+  import { createMetadataSceneObjectAdapter } from "#lib/shared/3d/scene-composer/metadata-scene-object-adapter.js";
   import type {
     ComposerPlacement,
     SceneObjectHandle,
-  } from "$lib/shared/3d/scene-composer/types";
+  } from "#lib/shared/3d/scene-composer/types.js";
   import {
     CommandStack,
     type Command,
-  } from "$lib/shared/history/command-stack.svelte";
+  } from "#lib/shared/history/command-stack.svelte.js";
 
   const _tempVec2 = new Vector3();
   const _worldPos = new Vector3();
   import { onMount, onDestroy } from "svelte";
   import { museum3dEditorState } from "../../state/museum-3d-editor-state.svelte";
   import { museumEditorOverrides } from "../../state/museum-editor-overrides";
-  import { isEditableKeyboardTarget } from "$lib/shared/keyboard/domain/shortcut-target-resolution";
+  import { isEditableKeyboardTarget } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
 
   interface Props {
     /** Called after any editor drag/undo/redo so the parent can sync grid data */

@@ -8,7 +8,7 @@
  */
 
 import type { SpecialArrowPlacementRepository } from "./special-arrow-placement-repository";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { setSpecialOverrideResolver } from "../../placement/services/override-resolvers";
 
 const logger = createComponentLogger("SpecialOverrideSingleton");

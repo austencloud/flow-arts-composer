@@ -1,8 +1,8 @@
 <script lang="ts">
-  import MyPropsDrawer from "$lib/shared/navigation/components/account/MyPropsDrawer.svelte";
-  import type { PropPreferenceState } from "$lib/shared/community/state/prop-preference-state.svelte";
-  import type { CatdogCombo } from "$lib/shared/community/services/types";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import MyPropsDrawer from "#lib/shared/navigation/components/account/MyPropsDrawer.svelte";
+  import type { PropPreferenceState } from "#lib/shared/community/state/prop-preference-state.svelte.js";
+  import type { CatdogCombo } from "#lib/shared/community/services/types.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   let isOpen = $state(true);
   let selectedProps = $state<PropType[]>([

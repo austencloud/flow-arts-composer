@@ -13,7 +13,7 @@
  * the rails — lives in earth-root-terrace-sightlines.test.ts.
  */
 import { describe, it, expect } from "vitest";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 import {
   BED_Y,
   DOOR_Y,
@@ -27,17 +27,17 @@ import {
   earthRootTerraceSpawnOffset,
   earthRootTerraceStationOffsets,
   ribbonElevationAt,
-} from "$lib/features/museum/data/earth-root-terrace-terrain";
-import { buildFirstFireProcessionBay } from "$lib/features/museum/data/first-fire-procession-terrain";
+} from "#lib/features/museum/data/earth-root-terrace-terrain.js";
+import { buildFirstFireProcessionBay } from "#lib/features/museum/data/first-fire-procession-terrain.js";
 import {
   buildDrownedGalleryLayout,
   inRectClosed,
   TILE_METRES,
   type WorldRect,
-} from "$lib/features/museum/data/drowned-gallery-terrain";
-import { SOLID_TYPES } from "$lib/features/museum/services/museum-physics-provider";
-import { bucketMuseumTilesByRoom } from "$lib/features/museum/services/museum-geometry-builder";
-import { tileKey } from "$lib/features/museum/domain/museum-grid-types";
+} from "#lib/features/museum/data/drowned-gallery-terrain.js";
+import { SOLID_TYPES } from "#lib/features/museum/services/museum-physics-provider.js";
+import { bucketMuseumTilesByRoom } from "#lib/features/museum/services/museum-geometry-builder.js";
+import { tileKey } from "#lib/features/museum/domain/museum-grid-types.js";
 
 const TILE = TILE_METRES;
 

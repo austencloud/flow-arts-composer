@@ -4,8 +4,8 @@
   import type { HTMLButtonAttributes } from "svelte/elements";
   import type { BackgroundType } from "@austencloud/backgrounds";
   import { getCardMetadata } from "@austencloud/backgrounds/card";
-  import { ANIMATED_BACKGROUNDS } from "$lib/shared/settings/utils/public-page-backgrounds";
-  import { marketingBackground } from "$lib/shared/landing/state/marketing-background-state.svelte";
+  import { ANIMATED_BACKGROUNDS } from "#lib/shared/settings/utils/public-page-backgrounds.js";
+  import { marketingBackground } from "#lib/shared/landing/state/marketing-background-state.svelte.js";
 
   let open = $state(false);
   const active = $derived(marketingBackground.type);

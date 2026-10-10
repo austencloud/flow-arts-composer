@@ -5,14 +5,14 @@
  * pro, anti, static, dash, and float motions.
  */
 
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PI } from "$lib/shared/foundation/domain/math-constants";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { RotationDirection } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PI } from "#lib/shared/foundation/domain/math-constants.js";
 import {
   mapOrientationToAngle,
   normalizeAnglePositive,
   normalizeAngleSigned,
-} from "$lib/shared/animation-engine/services/angle-calculator";
+} from "#lib/shared/animation-engine/services/angle-calculator.js";
 
 export function calculateProIsolationStaffAngle(
   centerPathAngle: number,

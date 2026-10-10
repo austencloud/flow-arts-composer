@@ -14,7 +14,7 @@ import type {
 	MeditationSessionStatus,
 } from "../domain/meditation-types";
 import { getPatternCycleTime } from "../domain/meditation-types";
-import { createScreenWakeLockManager } from "$lib/shared/device/services/screen-wake-lock-manager";
+import { createScreenWakeLockManager } from "#lib/shared/device/services/screen-wake-lock-manager.js";
 
 const PHASE_ORDER: BreathPhase[] = ["inhale", "hold-in", "exhale", "hold-out"];
 

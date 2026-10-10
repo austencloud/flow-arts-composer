@@ -8,12 +8,12 @@
  * Domain: QR - Compositional Encoding
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   LOOPType,
   Period as EnginePeriod,

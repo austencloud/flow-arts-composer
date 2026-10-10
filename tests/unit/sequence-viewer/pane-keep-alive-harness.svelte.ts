@@ -1,7 +1,7 @@
 import {
   createPaneKeepAlive,
   type PaneKeepAlive,
-} from "$lib/shared/sequence-viewer/components/pane-keep-alive.svelte";
+} from "#lib/shared/sequence-viewer/components/pane-keep-alive.svelte.js";
 
 /**
  * Runs createPaneKeepAlive inside a fresh effect root (the factory registers a

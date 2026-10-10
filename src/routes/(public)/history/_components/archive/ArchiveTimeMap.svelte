@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { pressSpring } from "$lib/actions/press-spring";
-	import { growFade } from "$lib/shared/transitions/motion";
+	import { pressSpring } from "#lib/actions/press-spring.js";
+	import { growFade } from "#lib/shared/transitions/motion.js";
 	import {
 		ARCHIVE_CLUSTERS,
 		ARCHIVE_LANES,

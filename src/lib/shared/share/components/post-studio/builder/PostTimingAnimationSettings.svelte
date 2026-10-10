@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import PostAnimationAppearanceTool from "../editor/PostAnimationAppearanceTool.svelte";
   import {
     mappingPreviewAppearance,

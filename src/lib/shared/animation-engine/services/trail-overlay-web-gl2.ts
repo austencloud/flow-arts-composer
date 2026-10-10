@@ -23,9 +23,9 @@ import type {
 } from "./ITrailOverlayCanvas";
 import type { TrailPoint } from "../domain/types/trail-types";
 import { TrackingMode } from "../domain/types/trail-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type { MotionSubSampleLayer } from "./motion-sub-sampler";
-import { calculateTrailSourceEndpoint } from "$lib/shared/animation-engine/services/prop-position-calculator";
+import { calculateTrailSourceEndpoint } from "#lib/shared/animation-engine/services/prop-position-calculator.js";
 import {
   resolveTrailPointConfig,
   trailTipEnds,
@@ -33,33 +33,33 @@ import {
   type TrailPointConfig,
 } from "../domain/types/trail-point-types";
 import { recordTunnelFormationTrailCaptures } from "./tunnel-formation-trail-telemetry";
-import { Canvas2DVisibilityFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-visibility-fade-manager";
+import { Canvas2DVisibilityFadeManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-visibility-fade-manager.js";
 import { resolveEffect } from "../domain/types/tip-effect-types";
 
-import type { RenderBackend } from "$lib/shared/render-graph/domain/backend";
-import type { FrameGraph } from "$lib/shared/render-graph/domain/frame-graph";
+import type { RenderBackend } from "#lib/shared/render-graph/domain/backend.js";
+import type { FrameGraph } from "#lib/shared/render-graph/domain/frame-graph.js";
 import type {
   TrailPassPayload,
   TrailTipState,
-} from "$lib/shared/render-graph/domain/trail-pass";
-import { Z_ORDER } from "$lib/shared/render-graph/domain/render-pass";
-import { createBackend } from "$lib/shared/render-graph/services/backend-factory";
+} from "#lib/shared/render-graph/domain/trail-pass.js";
+import { Z_ORDER } from "#lib/shared/render-graph/domain/render-pass.js";
+import { createBackend } from "#lib/shared/render-graph/services/backend-factory.js";
 import {
   MIN_TAIL_WIDTH_RATIO,
   FADE_EXPONENT,
-} from "$lib/shared/render-graph/math/trail-mesh";
-import { computeEffectScale } from "$lib/shared/effects/renderers/scale";
+} from "#lib/shared/render-graph/math/trail-mesh.js";
+import { computeEffectScale } from "#lib/shared/effects/renderers/scale.js";
 import {
   advanceTail,
   computeVisiblePath,
   createTailState,
   type TailState,
-} from "$lib/shared/animation-engine/domain/tail-recession";
+} from "#lib/shared/animation-engine/domain/tail-recession.js";
 import {
   spotlightFactor,
   tunnelPropColor,
   tunnelPerformerPair,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 
 /**
  * Minimum ring capacity. Actual capacity is `max(RING_BUFFER_MIN, tailLength + RING_BUFFER_HEADROOM)`
@@ -1354,8 +1354,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
 // of the trails branch cast back via the kind:"trails" path.
 import type { EffectPlugin } from "./effects/effect-plugin";
 import type { EffectRendererLike } from "./effects/effect-renderer";
-import type { TrailsIntent } from "$lib/shared/effects/domain/effects-config";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import type { TrailsIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import { TrailOverlayCanvas } from "./trail-overlay-canvas";
 import { AdaptiveTrailOverlay } from "./adaptive-trail-overlay";
 

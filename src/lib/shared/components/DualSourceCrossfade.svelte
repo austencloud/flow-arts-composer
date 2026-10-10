@@ -14,8 +14,8 @@
 -->
 <script lang="ts">
   import { untrack, type Snippet } from "svelte";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION, STAGGER } from "$lib/shared/transitions/transitions";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION, STAGGER } from "#lib/shared/transitions/transitions.js";
 
   type DualSource = "first" | "second";
   type CrossfadeProfile = "standard" | "soft-dissolve";

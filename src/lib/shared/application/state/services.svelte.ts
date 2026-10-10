@@ -1,4 +1,4 @@
-import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
+import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
 import { getAnimationVisibilityManager } from "../../animation-engine/state/animation-visibility-state.svelte";
 
 const hmrData = import.meta.hot?.data as

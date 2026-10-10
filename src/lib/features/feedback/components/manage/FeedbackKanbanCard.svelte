@@ -1,15 +1,15 @@
 <!-- FeedbackKanbanCard - Compact card for Kanban board -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { FeedbackItem } from "$lib/shared/feedback/domain/models/feedback-models";
+  import type { FeedbackItem } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import {
     TYPE_CONFIG,
     PRIORITY_CONFIG,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
-  import { generateAvatarUrl } from "$lib/shared/foundation/utils/avatar-generator";
-  import type { ClaimHealth } from "$lib/shared/feedback/domain/feedback-contract-types";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import { generateAvatarUrl } from "#lib/shared/foundation/utils/avatar-generator.js";
+  import type { ClaimHealth } from "#lib/shared/feedback/domain/feedback-contract-types.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
 
   const {
     item,

@@ -8,7 +8,7 @@ import type { PictographData } from "../../../pictograph/shared/domain/models/pi
 import type { MotionData } from "../../../pictograph/shared/domain/models/motion-data";
 import type { GridMode } from "../../../pictograph/grid/domain/enums/grid-enums";
 import type { Letter } from "../../domain/models/letter";
-import type { CodexLetterMappingRepo } from "$lib/shared/learn/services/codex-letter-mapping-repo";
+import type { CodexLetterMappingRepo } from "#lib/shared/learn/services/codex-letter-mapping-repo.js";
 
 // CSV data models have been moved to domain/models/core/csv-handling/CsvModels.ts
 // Import them from $domain instead

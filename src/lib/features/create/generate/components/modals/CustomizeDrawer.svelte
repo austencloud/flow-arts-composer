@@ -5,7 +5,7 @@
   Follows DurationRhythmSheet pattern: portal + Drawer always in DOM.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import CustomizeExpandedOverlay from "../cards/CustomizeExpandedOverlay.svelte";
   import type { CustomizeOverlayProps } from "../../../shared/state/panel-coordination-state.svelte";
   import GenerationSettingsDrawer from "./GenerationSettingsDrawer.svelte";

@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     compressWord,
     parseWordNotation,
     simplifyAndTruncate,
-  } from "$lib/shared/foundation/utils/word-simplifier";
-  import WordActionMenu from "$lib/shared/choreo-card/components/WordActionMenu.svelte";
-  import type { LetterSource } from "$lib/shared/create/domain/spell-models";
+  } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import WordActionMenu from "#lib/shared/choreo-card/components/WordActionMenu.svelte";
+  import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import { practiceAnimationStyle } from "../../../state/practice-animation-style.svelte";
-  import { getGlyphCache } from "$lib/shared/render/get-glyph-cache";
+  import { getGlyphCache } from "#lib/shared/render/get-glyph-cache.js";
   import {
     isDashLetter,
     getBaseLetter,
-  } from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
-  import { browser } from "$app/environment";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
+  import { browser } from "$app/env";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
 
   const cache = browser ? getGlyphCache() : null;
 

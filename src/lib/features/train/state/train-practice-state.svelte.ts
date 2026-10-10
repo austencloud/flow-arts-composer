@@ -6,8 +6,8 @@
  */
 
 import { PracticeMode } from "../domain/enums/train-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 const MAX_RECENT_SEQUENCES = 3;
 

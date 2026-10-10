@@ -1,10 +1,10 @@
-import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import type { ViewerPropHand } from "./viewer-prop-visibility-state.svelte";
 import type {
   ScanAnalyticsValue,
   ScanExportStage,
-} from "$lib/shared/analytics/scan-analytics";
+} from "#lib/shared/analytics/scan-analytics.js";
 import type {
   ViewerControlEventOptions,
   ViewerControlValue,
@@ -61,14 +61,14 @@ interface ViewerShellInteractionInputs {
 interface ViewerShellInteractionDependencies {
   navigate: (href: string) => void | Promise<void>;
   openExternalHref: (href: string) => void;
-  captureScanAction: typeof import("$lib/shared/analytics/scan-analytics").captureScanAction;
-  captureScanExport: typeof import("$lib/shared/analytics/scan-analytics").captureScanExport;
-  captureScanPlaybackChanged: typeof import("$lib/shared/analytics/scan-analytics").captureScanPlaybackChanged;
-  captureScanPracticeChanged: typeof import("$lib/shared/analytics/scan-analytics").captureScanPracticeChanged;
-  captureScanSettingChanged: typeof import("$lib/shared/analytics/scan-analytics").captureScanSettingChanged;
-  captureScanViewChanged: typeof import("$lib/shared/analytics/scan-analytics").captureScanViewChanged;
-  endScanViewerSession: typeof import("$lib/shared/analytics/scan-analytics").endScanViewerSession;
-  registerScanSessionCleanup: typeof import("$lib/shared/analytics/scan-analytics").registerScanSessionCleanup;
+  captureScanAction: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanAction;
+  captureScanExport: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanExport;
+  captureScanPlaybackChanged: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanPlaybackChanged;
+  captureScanPracticeChanged: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanPracticeChanged;
+  captureScanSettingChanged: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanSettingChanged;
+  captureScanViewChanged: typeof import("#lib/shared/analytics/scan-analytics.js").captureScanViewChanged;
+  endScanViewerSession: typeof import("#lib/shared/analytics/scan-analytics.js").endScanViewerSession;
+  registerScanSessionCleanup: typeof import("#lib/shared/analytics/scan-analytics.js").registerScanSessionCleanup;
 }
 
 export function createViewerShellInteractionState(

@@ -5,17 +5,17 @@
   import { onMount } from "svelte";
   import { WebGLRenderer } from "three";
   import { BackgroundType } from "@austencloud/backgrounds";
-  import Environment3D from "$lib/shared/3d/environments/components/Environment3D.svelte";
-  import EnvironmentReviewCamera from "$lib/shared/3d/environments/review/EnvironmentReviewCamera.svelte";
-  import { createSceneFeatureState } from "$lib/shared/3d/scene-features/state/scene-feature-state.svelte";
-  import { setSceneFeatureContext } from "$lib/shared/3d/scene-features/context/scene-feature-context";
-  import { createEnvironmentTransitionVisualState } from "$lib/shared/3d/environments/state/environment-transition-visual-state.svelte";
-  import { setEnvironmentTransitionVisualContext } from "$lib/shared/3d/environments/context/environment-transition-visual-context";
+  import Environment3D from "#lib/shared/3d/environments/components/Environment3D.svelte";
+  import EnvironmentReviewCamera from "#lib/shared/3d/environments/review/EnvironmentReviewCamera.svelte";
+  import { createSceneFeatureState } from "#lib/shared/3d/scene-features/state/scene-feature-state.svelte.js";
+  import { setSceneFeatureContext } from "#lib/shared/3d/scene-features/context/scene-feature-context.js";
+  import { createEnvironmentTransitionVisualState } from "#lib/shared/3d/environments/state/environment-transition-visual-state.svelte.js";
+  import { setEnvironmentTransitionVisualContext } from "#lib/shared/3d/environments/context/environment-transition-visual-context.js";
   import SceneProbe from "../rainbow-scene/SceneProbe.svelte";
   let sceneSample = $state("");
   import HarnessToneMapping from "./HarnessToneMapping.svelte";
   import WinterCompositionPlan from "./WinterCompositionPlan.svelte";
-  import WinterFireCourtGraybox from "$lib/shared/3d/environments/scenes/winter/graybox/WinterFireCourtGraybox.svelte";
+  import WinterFireCourtGraybox from "#lib/shared/3d/environments/scenes/winter/graybox/WinterFireCourtGraybox.svelte";
 
   const sceneFeatureState = createSceneFeatureState();
   setSceneFeatureContext(sceneFeatureState);

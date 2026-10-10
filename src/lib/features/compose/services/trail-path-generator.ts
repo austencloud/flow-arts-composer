@@ -13,12 +13,12 @@
  * 4. Connect all sampled points = smooth trail path
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
 import {
   calculatePropEndpoints,
   type PropEndpointConfig,
-} from "$lib/shared/animation-engine/services/prop-position-calculator";
+} from "#lib/shared/animation-engine/services/prop-position-calculator.js";
 
 /**
  * A single point in a trail

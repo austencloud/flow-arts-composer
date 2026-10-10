@@ -10,7 +10,7 @@
   import {
     Character3D,
     type CharacterId,
-  } from "$lib/shared/3d/domain/character-model";
+  } from "#lib/shared/3d/domain/character-model.js";
 
   export interface FireCourtFriendPlacement {
     id: string;

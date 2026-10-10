@@ -4,13 +4,13 @@ Displays a selectable button for a single LOOP transformation type
 Shows description in Quick Apply mode, compact in Build Combo mode
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     loopComponentDescription,
     loopComponentLabel,
   } from "../loop-component-presentation";
-  import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import type { LOOPComponentInfo } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+  import FontAwesomeIcon from "#lib/shared/foundation/ui/FontAwesomeIcon.svelte";
+  import type { LOOPComponentInfo } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
   import type { Snippet } from "svelte";
 
   let {

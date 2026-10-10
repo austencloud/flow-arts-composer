@@ -17,7 +17,7 @@
   } from "three";
   import { onMount, onDestroy } from "svelte";
   import type { ComposerEditorState } from "./composer-editor-state.svelte";
-  import type { Command } from "$lib/shared/history/command-stack.svelte";
+  import type { Command } from "#lib/shared/history/command-stack.svelte.js";
   import type {
     ComposerPlacement,
     SceneComposerPlugin,
@@ -25,7 +25,7 @@
     SceneObjectHandle,
   } from "./types";
   import { validateComposerPlacement } from "./validate-composer-placement";
-  import { isEditableKeyboardTarget } from "$lib/shared/keyboard/domain/shortcut-target-resolution";
+  import { isEditableKeyboardTarget } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
 
   interface Props {
     editorState: ComposerEditorState;

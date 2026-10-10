@@ -1,9 +1,9 @@
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import type { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
-import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
+import type { MandalaPathShape } from "#lib/shared/mandala/domain/mandala-types.js";
 
 export interface SequenceExportOptions {
   includeStartPlacement: boolean;

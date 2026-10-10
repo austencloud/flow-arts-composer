@@ -15,9 +15,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, it, expect } from "vitest";
 import { resolveFullArrowAssetPath } from "@tka/render-core";
-import { HALF_ASSET_TURNS } from "$lib/shared/pictograph/arrow/rendering/services/half-asset-manifest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { propArtworkStem } from "$lib/shared/pictograph/prop/domain/prop-look";
+import { HALF_ASSET_TURNS } from "#lib/shared/pictograph/arrow/rendering/services/half-asset-manifest.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { propArtworkStem } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 import { REPO_ROOT } from "./svg-corpus";
 
 const exists = (assetPath: string) =>

@@ -6,9 +6,9 @@
   Renders as a step chart since positions are discrete.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { HandTimeline } from "../domain/models";
-  import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
   interface Props {
     timeline: HandTimeline;

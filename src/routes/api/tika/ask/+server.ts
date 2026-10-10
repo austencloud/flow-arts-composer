@@ -15,16 +15,16 @@
 
 import type { RequestHandler } from "@sveltejs/kit";
 import { streamText, tool, convertToModelMessages, type UIMessage, jsonSchema, stepCountIs } from "ai";
-import { env } from "$env/dynamic/private";
-import { requireFirebaseUser } from "$lib/server/auth/requireFirebaseUser";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { buildSystemPrompt } from "$lib/features/tika/ai/system-prompts";
+import * as env from "$app/env/private";
+import { requireFirebaseUser } from "#lib/server/auth/requireFirebaseUser.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { buildSystemPrompt } from "#lib/features/tika/ai/system-prompts.js";
 import {
   DEFAULT_TIKA_MODEL,
   getTikaModelDefinition,
-} from "$lib/features/tika/domain/tika-model-catalog";
-import type { MasteryContext } from "$lib/features/learn/domain/quiz-history-types";
+} from "#lib/features/tika/domain/tika-model-catalog.js";
+import type { MasteryContext } from "#lib/features/learn/domain/quiz-history-types.js";
 import {
   deriveUserOverlay,
   getTypeComparison,
@@ -53,13 +53,13 @@ import {
   filterTypeList,
   filterComparison,
   filterQuiz,
-} from "$lib/features/tika/validation/output-filter";
-import { getTikaServerContainer } from "$lib/features/tika/services/server/tika-server-container";
-import { findCapabilities } from "$lib/features/tika/services/tika-capability-lookup";
+} from "#lib/features/tika/validation/output-filter.js";
+import { getTikaServerContainer } from "#lib/features/tika/services/server/tika-server-container.js";
+import { findCapabilities } from "#lib/features/tika/services/tika-capability-lookup.js";
 import {
   validateResponse,
   formatValidationReport,
-} from "$lib/features/tika/validation/tika-response-validator";
+} from "#lib/features/tika/validation/tika-response-validator.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Container & Services

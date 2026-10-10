@@ -6,34 +6,34 @@
   control lives in WorkspaceShareControl.
 -->
 <script lang="ts">
-  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, onMount, untrack } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { getSharer } from "$lib/shared/share/get-sharer";
-  import { DEFAULT_SHARE_OPTIONS } from "$lib/shared/share/domain/models/share-options";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { getSharer } from "#lib/shared/share/get-sharer.js";
+  import { DEFAULT_SHARE_OPTIONS } from "#lib/shared/share/domain/models/share-options.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
   import {
     canNativeShareFile,
     downloadBlobToDisk,
     shareBlobNatively,
     supportsNativeFileShare,
     type NativeFileShareResult,
-  } from "$lib/shared/foundation/services/file-downloader";
-  import { hashString } from "$lib/shared/foundation/services/content-hasher";
-  import { shareTarget } from "$lib/shared/mobile/share-action.svelte";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
-  import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-  import { getShortCodeShareMessage } from "$lib/shared/qr/domain/short-code-error";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { logShareAction } from "$lib/shared/analytics/services/posthog-activity-logger";
-  import { captureEvent } from "$lib/shared/analytics/services/posthog";
+  } from "#lib/shared/foundation/services/file-downloader.js";
+  import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
+  import { shareTarget } from "#lib/shared/mobile/share-action.svelte.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
+  import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+  import { getShortCodeShareMessage } from "#lib/shared/qr/domain/short-code-error.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { logShareAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
+  import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
   import {
     buildSequenceSharePayload,
     openSendSequenceSheet,
-  } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  } from "#lib/shared/inbox/state/send-sequence-state.svelte.js";
   import {
     createWorkspaceShareReadiness,
     shouldPrewarmWorkspaceShareCard,

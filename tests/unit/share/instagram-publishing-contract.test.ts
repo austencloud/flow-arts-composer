@@ -2,21 +2,21 @@ import { describe, expect, it } from "vitest";
 import {
   InstagramCapabilitySnapshotSchema,
   type InstagramCapabilitySnapshot,
-} from "$lib/shared/share/domain/instagram/instagram-capability-schema";
+} from "#lib/shared/share/domain/instagram/instagram-capability-schema.js";
 import {
   PostDeliveryDraftSchema,
   type InstagramPublishOptions,
   type PostDeliveryDraft,
-} from "$lib/shared/share/domain/instagram/instagram-post-draft-schema";
+} from "#lib/shared/share/domain/instagram/instagram-post-draft-schema.js";
 import {
   canTransitionInstagramPublication,
   InstagramPublicationRecordSchema,
-} from "$lib/shared/share/domain/instagram/instagram-publication-schema";
-import { PostRecipeSchema } from "$lib/shared/share/domain/instagram/post-recipe-schema";
+} from "#lib/shared/share/domain/instagram/instagram-publication-schema.js";
+import { PostRecipeSchema } from "#lib/shared/share/domain/instagram/post-recipe-schema.js";
 import {
   countInstagramCaptionParts,
   evaluateInstagramPublishEligibility,
-} from "$lib/shared/share/domain/instagram/instagram-post-policy";
+} from "#lib/shared/share/domain/instagram/instagram-post-policy.js";
 import { buildInstagramCapabilitySnapshot } from "../../../firebase-functions/src/share/instagramCapabilities";
 
 function timestamp(ms: number): { toMillis(): number } {

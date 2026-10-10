@@ -4,7 +4,7 @@
  * Firestore-based service for managing sequences in a user's library.
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 import { mergeSavedOverStored } from "./library-sequence-merge";
 import {
   collection,
@@ -30,88 +30,88 @@ import {
 import {
   getAuthInstance,
   getFirestoreInstance,
-} from "$lib/shared/auth/firebase";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { isPreviewReadOnly } from "$lib/shared/debug/state/user-preview-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
-import { PUBLIC_PROFILE_VERSION } from "$lib/shared/community/domain/models/public-profile-contract";
+} from "#lib/shared/auth/firebase.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { isPreviewReadOnly } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
+import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
 import {
   hydrate,
   ensureComposition,
-} from "$lib/shared/foundation/services/sequence-hydrator";
-import { deriveWordStatus } from "$lib/shared/foundation/services/word-deriver";
-import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+} from "#lib/shared/foundation/services/sequence-hydrator.js";
+import { deriveWordStatus } from "#lib/shared/foundation/services/word-deriver.js";
+import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 import {
   firestoreGet,
   firestoreGetDetailed,
   firestoreList,
   stripUndefined,
-} from "$lib/shared/firestore";
+} from "#lib/shared/firestore/index.js";
 import {
   LibrarySequenceDocSchema,
   UserProfileDocSchema,
-} from "$lib/shared/library/domain/library-schemas";
-import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
-import { detectOrientationCycle } from "$lib/shared/create/services/orientation-cycle-detector";
-import type { IPublicIndexSyncer as PublicIndexSyncer } from "$lib/shared/library/services/IPublicIndexSyncer";
-import type { ConflictResolver } from "$lib/shared/offline/services/conflict-resolver";
+} from "#lib/shared/library/domain/library-schemas.js";
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
+import { detectOrientationCycle } from "#lib/shared/create/services/orientation-cycle-detector.js";
+import type { IPublicIndexSyncer as PublicIndexSyncer } from "#lib/shared/library/services/IPublicIndexSyncer.js";
+import type { ConflictResolver } from "#lib/shared/offline/services/conflict-resolver.js";
 import {
   computeHash,
   CONTENT_HASH_VERSION,
   HASH_VERSION_V1,
-} from "$lib/shared/library/services/sequence-content-hasher";
-import { decideFork } from "$lib/shared/library/services/fork-decision";
-import { getTagMigrator } from "$lib/shared/library/get-tag-migrator";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/library/services/sequence-content-hasher.js";
+import { decideFork } from "#lib/shared/library/services/fork-decision.js";
+import { getTagMigrator } from "#lib/shared/library/get-tag-migrator.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   LibraryStats,
   LibraryQueryOptions,
   LibraryPageCursor,
   LibrarySequencePage,
-} from "$lib/shared/library/domain/library-contract-types";
+} from "#lib/shared/library/domain/library-contract-types.js";
 import type {
   LibrarySequence,
   SequenceVisibility,
-} from "$lib/shared/library/domain/models/library-sequence";
-import { createLibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
+} from "#lib/shared/library/domain/models/library-sequence.js";
+import { createLibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
 import {
   getUserCollectionPath,
   getUserSequencesPath,
   getUserSequencePath,
-} from "$lib/shared/library/data/firestore-paths";
+} from "#lib/shared/library/data/firestore-paths.js";
 import {
   notifyLibraryMutated,
   notifyLibrarySequenceAdded,
   notifyLibrarySequenceUpdated,
-} from "$lib/shared/library/library-events";
-import { removeSavedSequenceIds } from "$lib/shared/library/services/saved-sequence-ledger";
+} from "#lib/shared/library/library-events.js";
+import { removeSavedSequenceIds } from "#lib/shared/library/services/saved-sequence-ledger.js";
 import {
   captureEvent,
   captureException,
-} from "$lib/shared/analytics/services/posthog";
-import { logSequenceAction } from "$lib/shared/analytics/services/posthog-activity-logger";
+} from "#lib/shared/analytics/services/posthog.js";
+import { logSequenceAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
 import {
   isSequenceDeletionIntended,
   markSequenceLocalDeletionComplete,
   runSequencePermanentDeletion,
   runSequencePersistenceMutation,
-} from "$lib/shared/library/services/sequence-persistence-coordinator";
+} from "#lib/shared/library/services/sequence-persistence-coordinator.js";
 import {
   LibraryRecycleBin,
   type RestoreSequenceResult,
-} from "$lib/shared/library/services/library-recycle-bin";
+} from "#lib/shared/library/services/library-recycle-bin.js";
 import {
   LibraryBatchOperations,
   type BatchSequenceResult,
-} from "$lib/shared/library/services/library-batch-operations";
-import { LibraryError } from "$lib/shared/library/domain/library-error";
+} from "#lib/shared/library/services/library-batch-operations.js";
+import { LibraryError } from "#lib/shared/library/domain/library-error.js";
 import {
   isEmptySequence,
   meetsCommunityMinimum,
   MIN_COMMUNITY_STEPS,
   withCanonicalStepCount,
-} from "$lib/shared/library/domain/sequence-min-length";
+} from "#lib/shared/library/domain/sequence-min-length.js";
 
 export function matchesLibraryTagIds(
   sequence: Pick<LibrarySequence, "tagIds" | "sequenceTags">,
@@ -1738,7 +1738,7 @@ export class LibraryRepository {
     try {
       if (typeof window !== "undefined") {
         const { deleteSequences: deleteLocalSequences } =
-          await import("$lib/shared/persistence/services/dexie-persistence-service");
+          await import("#lib/shared/persistence/services/dexie-persistence-service.js");
         await deleteLocalSequences(uniqueIds);
       }
       removeSavedSequenceIds(userId, uniqueIds);

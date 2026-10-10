@@ -2,8 +2,8 @@
 QuizPictographCard - Question pictograph display
 -->
 <script lang="ts">
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   let {
     pictograph,

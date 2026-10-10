@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
   import type {
     CatalogTakeSource,
     PostEditorState,
-  } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { formatPostClock } from "../builder/post-builder-format";
   import { readVideoFile, videoFileError } from "./post-editor-files";
 

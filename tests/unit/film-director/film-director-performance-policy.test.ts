@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { QualityTier } from "$lib/shared/3d/effects/types";
+import { QualityTier } from "#lib/shared/3d/effects/types.js";
 import {
   resolveDirectorPerformerPoolSize,
   resolveFilmDirectorEffectQualityTier,

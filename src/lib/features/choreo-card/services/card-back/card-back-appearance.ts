@@ -1,7 +1,7 @@
-import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
 
 export interface CardBackAppearance {
   leftPropType: PropType;

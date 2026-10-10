@@ -1,4 +1,4 @@
-import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
 
 /** One footer line: `${lead} [swatch] ${rest}`. The swatch is drawn, not said. */
 export interface HandLegend {

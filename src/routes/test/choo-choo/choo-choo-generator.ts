@@ -11,25 +11,25 @@
  * - Half Choo Choo: 2 steps (half orbit S→W→N)
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { IMotionQueryHandler } from "#lib/shared/foundation/services/data/data-contracts.js";
 
 // Orbit path for floating prop (cardinal directions clockwise)
 const CLOCKWISE_ORBIT: GridLocation[] = [

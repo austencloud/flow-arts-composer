@@ -1,5 +1,5 @@
 <script lang="ts" generics="T extends string">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import BaseCard from "./BaseCard.svelte";
 
   type ChoiceOption = {

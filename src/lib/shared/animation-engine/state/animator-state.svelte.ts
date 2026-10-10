@@ -15,7 +15,7 @@
 
 import type { AnimationVisibilityState } from "../services/animation-visibility-synchronizer";
 import type { PreRenderProgress } from "../services/sequence-frame-pre-renderer";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type { TrailSettings } from "../domain/types/trail-types";
 import { loadTrailSettings } from "../utils/animation-panel-persistence";
 import {

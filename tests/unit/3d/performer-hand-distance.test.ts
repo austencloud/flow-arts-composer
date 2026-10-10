@@ -10,21 +10,21 @@ import {
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { MotionConfig3D } from "$lib/shared/3d/domain/models/motion-data-3d";
-import { GRID_RADIUS_3D } from "$lib/shared/3d/domain/constants/plane-transforms";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { MotionConfig3D } from "#lib/shared/3d/domain/models/motion-data-3d.js";
+import { GRID_RADIUS_3D } from "#lib/shared/3d/domain/constants/plane-transforms.js";
 import {
   fixedHandDistance,
   largestHandDistance,
   type HandDistance,
-} from "$lib/shared/3d/domain/performer-hand-distance";
-import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
+} from "#lib/shared/3d/domain/performer-hand-distance.js";
+import { calculatePropState } from "#lib/shared/3d/services/prop-state-interpolator.js";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
   type CharacterInstanceState,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 import { propContinuityCorpus } from "../../tools/prop-continuity-corpus";
 
 function wallMotion(

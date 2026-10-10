@@ -16,9 +16,9 @@
   import SequenceShowcase from "../level-1/_components/SequenceShowcase.svelte";
   import { stripToSequence } from "../level-1/_data/guide-sequence-adapter";
   import { SHIFT_DEMOS } from "../level-1/_data/content/staff-motions.content";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
   const PATH = "/guide/prospin-and-inspin";
 

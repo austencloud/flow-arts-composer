@@ -8,9 +8,9 @@
  */
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { QRCodeGenerator } from "$lib/shared/qr/services/qr-code-generator";
-import type { TkaQrDetector } from "$lib/shared/qr/services/tka-qr-detector";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { QRCodeGenerator } from "#lib/shared/qr/services/qr-code-generator.js";
+import type { TkaQrDetector } from "#lib/shared/qr/services/tka-qr-detector.js";
 import {
   createNodeCanvas,
   createNodeQrDetector,
@@ -33,7 +33,7 @@ import { getSerializedQrPlacement } from "../serialized-card-front";
 import type { CardPair, PrintRenderOptions } from "../types";
 
 // Exporters use the production detector; route it to the Node decoder.
-vi.mock("$lib/shared/qr/services/tka-qr-detector", async () => {
+vi.mock("#lib/shared/qr/services/tka-qr-detector.js", async () => {
   const { createNodeQrDetector } =
     await import("../../../../../../tests/helpers/node-print-qr");
   return { createTkaQrDetector: () => createNodeQrDetector() };

@@ -1,12 +1,12 @@
 <!-- StartTile.svelte - Reusable start placement tile for all grid modes -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { BuildModeId } from "#lib/shared/foundation/ui/ui-types.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
   import StepCell from "./StepCell.svelte";
 
   let {

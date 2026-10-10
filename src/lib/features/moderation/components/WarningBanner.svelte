@@ -1,10 +1,10 @@
 <script lang="ts">
   import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
-  import { getFirestoreInstance } from '$lib/shared/auth/firebase';
-  import { authState, getEffectiveUserId } from '$lib/shared/auth/state/auth-state.svelte';
+  import { getFirestoreInstance } from '#lib/shared/auth/firebase.js';
+  import { authState, getEffectiveUserId } from '#lib/shared/auth/state/auth-state.svelte.js';
   import { acknowledgeWarning } from '../services/warning-acknowledger';
-  import { t } from '$lib/shared/i18n/i18n.svelte';
-  import { toast } from '$lib/shared/toast/state/toast-state.svelte';
+  import { t } from '#lib/shared/i18n/i18n.svelte.js';
+  import { toast } from '#lib/shared/toast/state/toast-state.svelte.js';
 
   let isAcknowledging = $state(false);
   let hasActiveWarning = $state(false);

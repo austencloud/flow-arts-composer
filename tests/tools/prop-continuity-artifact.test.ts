@@ -19,12 +19,12 @@ import { PlaneMode } from "@austencloud/scene-3d";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
-} from "$lib/shared/3d/state/character-instance-state.svelte";
+} from "#lib/shared/3d/state/character-instance-state.svelte.js";
 import {
   sweepPropContinuity,
   type PropPoseScoreSource,
-} from "$lib/shared/3d/diagnostics/prop-continuity-sweep";
-import type { ContinuityFinding } from "$lib/shared/3d/diagnostics/prop-continuity-audit";
+} from "#lib/shared/3d/diagnostics/prop-continuity-sweep.js";
+import type { ContinuityFinding } from "#lib/shared/3d/diagnostics/prop-continuity-audit.js";
 
 import { propContinuityCorpus, type CorpusEntry } from "./prop-continuity-corpus";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { WorkerRetainedSceneCache } from "$lib/shared/3d/worker-renderer/services/worker-retained-scene-cache";
+import { WorkerRetainedSceneCache } from "#lib/shared/3d/worker-renderer/services/worker-retained-scene-cache.js";
 
 function retainedScene(
   environment: string,

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { PostSourceGeometry } from "$lib/shared/media-composition/domain/post-project";
+import type { PostSourceGeometry } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   dragSourceGeometry,
   scaleSourceGeometry,
-} from "$lib/shared/share/components/post-studio/editor/post-source-geometry";
+} from "#lib/shared/share/components/post-studio/editor/post-source-geometry.js";
 
 const start: PostSourceGeometry = {
   x: -0.1,

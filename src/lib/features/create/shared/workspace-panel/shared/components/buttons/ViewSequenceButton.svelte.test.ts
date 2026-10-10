@@ -2,7 +2,7 @@ import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 

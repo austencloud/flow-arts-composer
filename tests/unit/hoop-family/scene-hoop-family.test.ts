@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   findScenePropFamily,
   isScenePhysicalProp,
   SCENE_PROP_TYPES,
-} from "$lib/shared/3d/domain/scene-prop-catalog";
+} from "#lib/shared/3d/domain/scene-prop-catalog.js";
 
 describe("hoop family in the 3D studio", () => {
   it("offers Mini Hoop and Triangle under one Hoop tile", () => {

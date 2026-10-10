@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { loadCatalogs } from "$lib/features/choreo-card/services/catalog-loader";
-  import type { Catalog } from "$lib/features/choreo-card/domain/models/Catalog";
-  import { parseTurnPattern } from "$lib/features/choreo-card/domain/turn-pattern-parser";
-  import { TND_FAMILY_KEYS, TND_FAMILY_LABELS } from "$lib/features/choreo-card/state/catalog-browse-types";
-  import { TND_BY_FAMILY, type TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
+  import { loadCatalogs } from "#lib/features/choreo-card/services/catalog-loader.js";
+  import type { Catalog } from "#lib/features/choreo-card/domain/models/Catalog.js";
+  import { parseTurnPattern } from "#lib/features/choreo-card/domain/turn-pattern-parser.js";
+  import { TND_FAMILY_KEYS, TND_FAMILY_LABELS } from "#lib/features/choreo-card/state/catalog-browse-types.js";
+  import { TND_BY_FAMILY, type TnDElement } from "#lib/features/choreo-card/domain/tnd-element.js";
 
   interface CatalogEntry {
     catalog: Catalog;

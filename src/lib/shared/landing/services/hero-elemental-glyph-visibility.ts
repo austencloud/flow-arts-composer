@@ -1,5 +1,5 @@
 import { untrack } from "svelte";
-import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
 type ElementalGlyphVisibilityManager = Pick<
   AnimationVisibilityStateManager,

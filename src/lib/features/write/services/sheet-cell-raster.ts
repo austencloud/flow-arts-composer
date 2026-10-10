@@ -2,8 +2,8 @@
  * Raster identity and join stamping for choreo sheet cells, shared by the
  * preview and the PDF so both draw the same pictures.
  */
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { gridJoinCellResolver, gridJoinKey, isGridJoin } from "@tka/render-core";
 import type { SheetCell } from "./sheet-row-planner";
 

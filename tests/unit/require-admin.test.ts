@@ -4,14 +4,14 @@ const mocks = vi.hoisted(() => ({
   requireFirebaseUser: vi.fn(),
   getUser: vi.fn(),
 }));
-vi.mock("$lib/server/auth/requireFirebaseUser", () => ({
+vi.mock("#lib/server/auth/requireFirebaseUser.js", () => ({
   requireFirebaseUser: mocks.requireFirebaseUser,
 }));
-vi.mock("$lib/server/auth/firebase-auth-rest", () => ({
+vi.mock("#lib/server/auth/firebase-auth-rest.js", () => ({
   getFirebaseAuthRest: () => ({ getUser: mocks.getUser }),
 }));
 
-import { requireAdmin } from "$lib/server/auth/requireAdmin";
+import { requireAdmin } from "#lib/server/auth/requireAdmin.js";
 
 const event = {} as never;
 

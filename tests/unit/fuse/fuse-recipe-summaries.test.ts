@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { createFuseRule } from "$lib/features/fuse/domain/fuse-rule";
+import { createFuseRule } from "#lib/features/fuse/domain/fuse-rule.js";
 import {
   buildFuseRecipeSummaries,
   type FuseRecipeSummaryInput,
-} from "$lib/features/fuse/domain/fuse-recipe-summaries";
+} from "#lib/features/fuse/domain/fuse-recipe-summaries.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 function recipe(
   overrides: Partial<FuseRecipeSummaryInput> = {}

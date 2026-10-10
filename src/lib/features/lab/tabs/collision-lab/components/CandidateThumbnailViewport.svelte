@@ -20,24 +20,24 @@
 
   import { T } from "@threlte/core";
   import { Group } from "three";
-  import Scene3D from "$lib/shared/3d/components/Scene3D.svelte";
+  import Scene3D from "#lib/shared/3d/components/Scene3D.svelte";
   import { Avatar3D } from "@austencloud/scene-3d";
   import { Prop3D } from "@austencloud/scene-3d";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     gridLocationToPosition3D,
     calculatePropRotation,
-  } from "$lib/shared/3d/services/plane-coordinate-mapper";
-  import { mapOrientationToAngle } from "$lib/shared/3d/services/orientation-mapper";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+  } from "#lib/shared/3d/services/plane-coordinate-mapper.js";
+  import { mapOrientationToAngle } from "#lib/shared/3d/services/orientation-mapper.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
   import { BackgroundType } from "@austencloud/backgrounds";
   import { STAGE } from "@austencloud/scene-3d";
   import type { PropState3D } from "@austencloud/scene-3d";
   import { Plane } from "@austencloud/scene-3d";
   import type { DiamondPosition, HandOrientation, StancePose } from "../domain/types";
-  import { toScenePropType } from "$lib/shared/3d/domain/scene-prop-type";
+  import { toScenePropType } from "#lib/shared/3d/domain/scene-prop-type.js";
 
   interface Props {
     stance: StancePose;

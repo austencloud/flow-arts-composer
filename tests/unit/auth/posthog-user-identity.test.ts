@@ -3,9 +3,9 @@ import type { User } from "firebase/auth";
 
 const identifyUser = vi.hoisted(() => vi.fn());
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({ identifyUser }));
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({ identifyUser }));
 
-import { identifyFirebaseUserToPostHog } from "$lib/shared/auth/services/posthog-user-identity";
+import { identifyFirebaseUserToPostHog } from "#lib/shared/auth/services/posthog-user-identity.js";
 
 beforeEach(() => {
   identifyUser.mockClear();

@@ -7,7 +7,7 @@
  * Follows the BrowseThumbnailCache pattern exactly for consistency.
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import type { PictographCacheStats } from "./types";
 
 const DB_NAME = "pictograph-svg-cache";

@@ -4,10 +4,10 @@
   Header bar for playback overlay with mode info, actions, and close button.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { ComposeMode } from "../../../shared/state/compose-module-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import ShareButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ShareButton.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import ShareButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ShareButton.svelte";
 
   let {
     currentMode,

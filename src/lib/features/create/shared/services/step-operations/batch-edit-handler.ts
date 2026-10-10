@@ -8,11 +8,11 @@ import type {
   BatchEditChanges,
 } from "../../types/create-module-types";
 import { UndoOperationType } from "../undo-manager";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import {
   withLoopCertificateCleared,
   invalidateLoopDisplayCache,
-} from "$lib/shared/create/services/loop-certificate";
+} from "#lib/shared/create/services/loop-certificate.js";
 
 const logger = createComponentLogger("BatchEdit");
 

@@ -16,18 +16,18 @@
   import { page } from "$app/state";
   import SequenceHeroDemo from "./SequenceHeroDemo.svelte";
   import { siteCopy } from "../site-copy";
-  import { createHeroAct } from "$lib/shared/landing/data/hero-act.svelte";
-  import { FALLBACK_DEMO } from "$lib/shared/landing/data/per-visit-demo";
-  import { isConstrainedConnection } from "$lib/shared/platform/network-conditions";
-  import { runAfterNamedRouteMorphIdle } from "$lib/shared/transitions/named-route-morph-state.svelte";
+  import { createHeroAct } from "#lib/shared/landing/data/hero-act.svelte.js";
+  import { FALLBACK_DEMO } from "#lib/shared/landing/data/per-visit-demo.js";
+  import { isConstrainedConnection } from "#lib/shared/platform/network-conditions.js";
+  import { runAfterNamedRouteMorphIdle } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
   import {
     HERO_TRAIL_PRESET,
     HERO_TIP_EFFECT_MAP,
-  } from "$lib/shared/landing/data/hero-trail-preset";
+  } from "#lib/shared/landing/data/hero-trail-preset.js";
   import {
     trackCtaClick,
     trackDemoInteraction,
-  } from "$lib/shared/analytics/landing-events";
+  } from "#lib/shared/analytics/landing-events.js";
 
   const heroAct = createHeroAct({ initialSequence: FALLBACK_DEMO });
 

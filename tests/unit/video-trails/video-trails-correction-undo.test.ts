@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createVideoTrailsState } from "$lib/features/video/video-trails/state/video-trails-state.svelte";
-import * as corrector from "$lib/features/video/video-trails/services/detection-corrector";
-import type { EndpointCorrection } from "$lib/features/video/video-trails/domain/types";
+import { createVideoTrailsState } from "#lib/features/video/video-trails/state/video-trails-state.svelte.js";
+import * as corrector from "#lib/features/video/video-trails/services/detection-corrector.js";
+import type { EndpointCorrection } from "#lib/features/video/video-trails/domain/types.js";
 import {
   historyForSource,
   recordGuidedPlacement,
   undoGuidedPlacement,
-} from "$lib/features/video/video-trails/views/guided-placement-undo";
+} from "#lib/features/video/video-trails/views/guided-placement-undo.js";
 
 function createState() {
   type StateArgs = Parameters<typeof createVideoTrailsState>;

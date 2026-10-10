@@ -11,17 +11,20 @@ const mocks = vi.hoisted(() => ({
   } as Record<string, string>,
 }));
 
-vi.mock("$env/dynamic/private", () => ({ env: mocks.postHogEnv }));
-vi.mock("$lib/server/auth/requireAdmin", () => ({
+vi.mock("$app/env/private", async () => {
+  const { envModule } = await import("#test-helpers/env-module.js");
+  return envModule(mocks.postHogEnv);
+});
+vi.mock("#lib/server/auth/requireAdmin.js", () => ({
   requireAdmin: mocks.requireAdmin,
 }));
-vi.mock("$lib/server/security/withRateLimit", () => ({
+vi.mock("#lib/server/security/withRateLimit.js", () => ({
   withRateLimit: mocks.withRateLimit,
 }));
-vi.mock("$lib/server/security/rate-limiter", () => ({
+vi.mock("#lib/server/security/rate-limiter.js", () => ({
   RATE_LIMITS: { ADMIN: {} },
 }));
-vi.mock("$lib/server/security/audit-logger", () => ({
+vi.mock("#lib/server/security/audit-logger.js", () => ({
   logAdminAction: mocks.logAdminAction,
 }));
 

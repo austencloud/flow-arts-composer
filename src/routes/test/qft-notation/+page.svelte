@@ -9,17 +9,17 @@
    * Design: docs/superpowers/specs/2026-07-26-qft-notation-toy-design.md
    * Sources: docs/reference/archive/qft-notation/README.md
    */
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     buildIncrements,
     buildPendulum,
     type Convention,
     type QftKnobs,
     type Spin
-  } from "$lib/shared/notation/qft/qft-model";
-  import { nameFor } from "$lib/shared/notation/qft/qft-naming";
-  import QftStage from "$lib/shared/notation/qft/components/QftStage.svelte";
-  import QftTable from "$lib/shared/notation/qft/components/QftTable.svelte";
+  } from "#lib/shared/notation/qft/qft-model.js";
+  import { nameFor } from "#lib/shared/notation/qft/qft-naming.js";
+  import QftStage from "#lib/shared/notation/qft/components/QftStage.svelte";
+  import QftTable from "#lib/shared/notation/qft/components/QftTable.svelte";
 
   type Mode = "rotational" | "pendulum";
 

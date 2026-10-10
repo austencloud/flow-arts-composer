@@ -62,7 +62,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { Vector3 } from "three";
 import { getClipFootprint } from "@austencloud/scene-3d";
 
-import type { GaitFrame } from "$lib/shared/3d/diagnostics/gait/gait-frame";
+import type { GaitFrame } from "#lib/shared/3d/diagnostics/gait/gait-frame.js";
 import {
   avatar,
   avatarAssetsPresent,

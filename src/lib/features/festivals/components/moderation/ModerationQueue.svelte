@@ -1,5 +1,5 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
   import { onMount } from "svelte";
   import { getPending, approve, reject } from "../../services/festival-submission-reviewer";
   import { getFestivalContext } from "../../context/festival-context";

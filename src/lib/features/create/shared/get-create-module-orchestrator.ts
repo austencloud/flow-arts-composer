@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { CreateModuleOrchestrator } from './services/create-module-orchestrator';
 
 let instance: CreateModuleOrchestrator | null = null;

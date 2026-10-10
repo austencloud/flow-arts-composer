@@ -1,4 +1,4 @@
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 /**
  * Toggle one allowed placement while keeping the picker usable. The final

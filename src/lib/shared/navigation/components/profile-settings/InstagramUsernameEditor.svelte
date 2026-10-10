@@ -5,7 +5,7 @@
   Simpler than UsernameEditor - no availability checking needed.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import type { User } from "firebase/auth";
   import { authState } from "../../../auth/state/auth-state.svelte";
@@ -13,7 +13,7 @@
   import { doc, getDoc } from "firebase/firestore";
   import { getFirestoreInstance } from "../../../auth/firebase";
   import { onMount, tick } from "svelte";
-  import InstagramIcon from "$lib/shared/auth/components/icons/InstagramIcon.svelte";
+  import InstagramIcon from "#lib/shared/auth/components/icons/InstagramIcon.svelte";
   import AccountValueRow from "./AccountValueRow.svelte";
 
   interface Props {

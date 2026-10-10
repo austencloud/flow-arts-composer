@@ -8,19 +8,19 @@
   turn-pattern-manager.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import PatternStripEditor from "$lib/shared/create/components/pattern-strip/PatternStripEditor.svelte";
+  import PatternStripEditor from "#lib/shared/create/components/pattern-strip/PatternStripEditor.svelte";
   import type {
     StripBinding,
     StripValue,
-  } from "$lib/shared/create/components/pattern-strip/pattern-strip-types";
-  import { PER_HAND_RHYTHMS } from "$lib/shared/create/domain/rhythm/rhythm-catalog";
-  import { stampPerHand } from "$lib/shared/create/domain/rhythm/rhythm-mask";
+  } from "#lib/shared/create/components/pattern-strip/pattern-strip-types.js";
+  import { PER_HAND_RHYTHMS } from "#lib/shared/create/domain/rhythm/rhythm-catalog.js";
+  import { stampPerHand } from "#lib/shared/create/domain/rhythm/rhythm-mask.js";
   import { stripToTurnPattern } from "../../domain/pattern-strip-apply";
-  import type { TurnValue } from "$lib/shared/create/domain/turn-pattern-data";
-  import * as turnPatternManager from "$lib/shared/create/services/turn-pattern-manager";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { TurnValue } from "#lib/shared/create/domain/turn-pattern-data.js";
+  import * as turnPatternManager from "#lib/shared/create/services/turn-pattern-manager.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   interface Props {
     sequence: SequenceData | null;

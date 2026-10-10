@@ -11,7 +11,7 @@ import { afterEach, describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { isFirstScanRouteVisit } from "$lib/shared/qr/utils/scan-detection";
+import { isFirstScanRouteVisit } from "#lib/shared/qr/utils/scan-detection.js";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -164,7 +164,7 @@ describe("SequenceViewerShell host contract", () => {
 
   it("registers the library repository before the standalone viewer mounts", () => {
     expect(sequenceRouteSource).toContain(
-      'from "$lib/shared/composition-root/register-library-repository"'
+      'from "#lib/shared/composition-root/register-library-repository.js"'
     );
     expect(sequenceRouteSource).toContain(
       "if (browser) registerLibraryRepository();"
@@ -199,7 +199,7 @@ describe("SequenceViewerShell host contract", () => {
 
   it("uses one shared Share control and keeps Send inside it", () => {
     expect(viewerHeaderSource).toContain(
-      'from "$lib/shared/share/components/ShareActionMenu.svelte"'
+      'from "#lib/shared/share/components/ShareActionMenu.svelte"'
     );
     expect(viewerHeaderSource).toContain('testId="viewer-share-button"');
     expect(viewerHeaderSource).toContain("containDesktopMenu={true}");
@@ -323,7 +323,7 @@ describe("SequenceViewerShell host contract", () => {
 
   it("keeps /q as an attribution ingress instead of a viewer host", () => {
     expect(scanSource).toContain("buildScanSequenceDestination");
-    expect(scanSource).toContain("replaceState: true");
+    expect(scanSource).toContain("replace: true");
     expect(scanSource).not.toContain("SequenceViewerShell.svelte");
     expect(scanSource).not.toContain("SequenceViewerOrchestrator.svelte");
   });

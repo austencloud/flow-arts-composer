@@ -20,7 +20,7 @@ import {
   Vector3,
   type Material,
 } from "three";
-import type { ImportedTerrainDataV2 } from "$lib/shared/3d/procedural-engine/generation/real-terrain-zone";
+import type { ImportedTerrainDataV2 } from "#lib/shared/3d/procedural-engine/generation/real-terrain-zone.js";
 import type {
   FlowFestRuntimePoint,
   FlowFestRuntimeSegment,

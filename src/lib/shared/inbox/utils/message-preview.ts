@@ -1,5 +1,5 @@
-import { t } from "$lib/shared/i18n/i18n.svelte";
-import type { MessageAttachment, ReplyPreview } from "$lib/shared/messaging/domain/models/message-models";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { MessageAttachment, ReplyPreview } from "#lib/shared/messaging/domain/models/message-models.js";
 
 // Presentation only: persisted previews must remain independent of sender locale.
 export function getMessagePreviewText(content: string, attachments?: readonly MessageAttachment[]): string {

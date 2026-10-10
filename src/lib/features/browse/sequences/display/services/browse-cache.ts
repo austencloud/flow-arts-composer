@@ -5,7 +5,7 @@
  * Prevents redundant loading and metadata extraction operations.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 export class BrowseCache {
   private cachedSequences: SequenceData[] | null = null;
 

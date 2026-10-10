@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
 	import type { SyncSession } from '../../domain/models/connect-models';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 
 	interface Props {
 		session: SyncSession;

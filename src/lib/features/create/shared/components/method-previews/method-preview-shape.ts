@@ -3,12 +3,12 @@
  * shows and the scene's beats around the Matrix's own reveal. Pure, so tests
  * check them without drawing.
  */
-import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
-import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
+import type { Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 import {
   matrixFiltersForTurns,
   SHAPE_MATRIX_DEFAULT_TURN,
-} from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+} from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
 import type { ShapeLayout } from "./method-preview-compositions";
 
 /**

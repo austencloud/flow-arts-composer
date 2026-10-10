@@ -28,8 +28,8 @@
    */
   import { tick } from "svelte";
   import { page } from "$app/state";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     bodyPagesByGroup,
     GROUP_TITLES,

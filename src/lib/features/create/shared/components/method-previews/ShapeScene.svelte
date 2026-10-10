@@ -20,31 +20,31 @@
    * tile's mandala complete on the stage.
    */
   import { onDestroy, onMount, tick } from "svelte";
-  import type { GhostState } from "$lib/shared/attract/services/attract-ghost.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { yieldToScheduler } from "$lib/shared/foundation/utils/background-scheduling";
-  import type { MandalaGuideRevealFrame } from "$lib/shared/mandala/services/mandala-guide-image";
+  import type { GhostState } from "#lib/shared/attract/services/attract-ghost.svelte.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { yieldToScheduler } from "#lib/shared/foundation/utils/background-scheduling.js";
+  import type { MandalaGuideRevealFrame } from "#lib/shared/mandala/services/mandala-guide-image.js";
   import {
     runShapeMatrixGridReveal,
     SHAPE_MATRIX_REVEAL_CHOSEN_CLASS,
     type RevealAnimator,
-  } from "$lib/shared/shape-matrix/app/services/shape-matrix-reveal";
-  import ShapeMatrixMandalaArt from "$lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
+  } from "#lib/shared/shape-matrix/app/services/shape-matrix-reveal.js";
+  import ShapeMatrixMandalaArt from "#lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
   import {
     flowerKey,
     type Flower,
-  } from "$lib/shared/shape-matrix/domain/flower-signature";
-  import { propPairFromLegacy } from "$lib/shared/shape-matrix/domain/prop-pair";
+  } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+  import { propPairFromLegacy } from "#lib/shared/shape-matrix/domain/prop-pair.js";
   import {
     cellArtworkSrc,
     headerArtworkSrc,
     shapeMatrixArtworkPainterForColors,
-  } from "$lib/shared/shape-matrix/services/shape-matrix-artwork";
+  } from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
   import {
     loadShapeMatrix,
     type ShapeMatrixData,
-  } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-  import { createCellRevealFrame } from "$lib/shared/shape-matrix/services/shape-matrix-render";
+  } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+  import { createCellRevealFrame } from "#lib/shared/shape-matrix/services/shape-matrix-render.js";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import {
     cellCenter,

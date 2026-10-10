@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { CanvasLifecycleManager } from "$lib/shared/animation-engine/services/canvas-lifecycle-manager";
+import { CanvasLifecycleManager } from "#lib/shared/animation-engine/services/canvas-lifecycle-manager.js";
 
 // CanvasLifecycleManager creates its collaborators internally during
 // initialize(); there are no public setters (the old set*() API was removed in

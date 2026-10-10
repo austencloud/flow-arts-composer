@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { sceneLoadingPlaybackTransition } from "$lib/shared/3d/domain/scene-loading-playback";
-import { toggleTunnelPlayback } from "$lib/shared/sequence-viewer/domain/tunnel-playback";
+import { sceneLoadingPlaybackTransition } from "#lib/shared/3d/domain/scene-loading-playback.js";
+import { toggleTunnelPlayback } from "#lib/shared/sequence-viewer/domain/tunnel-playback.js";
 
 describe("viewer playback correctness", () => {
   it("uses the same tunnel state and callback for canvas and sidebar toggles", () => {

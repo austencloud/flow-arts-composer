@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { SoloPropSaveOrchestrator } from "$lib/features/library/services/solo-prop-save-orchestrator";
-import { createSoloProp } from "$lib/shared/foundation/services/solo-prop-factory";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { SoloPropSaveOrchestrator } from "#lib/features/library/services/solo-prop-save-orchestrator.js";
+import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factory.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 function makeSoloProp() {
   return createSoloProp(

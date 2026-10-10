@@ -20,7 +20,7 @@
   import CodexFlow from "./CodexFlow.svelte";
   import CodexInspector from "./CodexInspector.svelte";
   import type { CodexLetterInfo } from "./codex-letters";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   let {
     onSelect,

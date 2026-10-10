@@ -1,5 +1,5 @@
 import { flushSync, mount } from "svelte";
-import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
+import ValueSlider from "#lib/shared/ui/components/ValueSlider.svelte";
 
 /**
  * A zoom-like slider on 50..400 whose owner keeps its value at `floor` or

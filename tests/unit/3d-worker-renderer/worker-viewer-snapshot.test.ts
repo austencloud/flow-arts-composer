@@ -1,19 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
-import { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
-import type { SceneEffectTipSource3D } from "$lib/shared/3d/effects/scene-effects/scene-effect-source-3d";
-import type { CharacterInstanceState } from "$lib/shared/3d/state/character-instance-state.svelte";
-import type { WorkerPerformerSnapshot } from "$lib/shared/3d/worker-renderer/domain/worker-renderer-protocol";
+import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
+import type { SceneEffectTipSource3D } from "#lib/shared/3d/effects/scene-effects/scene-effect-source-3d.js";
+import type { CharacterInstanceState } from "#lib/shared/3d/state/character-instance-state.svelte.js";
+import type { WorkerPerformerSnapshot } from "#lib/shared/3d/worker-renderer/domain/worker-renderer-protocol.js";
 import {
   createWorkerViewerSnapshot,
   type WorkerViewerSnapshotInput,
-} from "$lib/shared/3d/worker-renderer/services/worker-viewer-snapshot";
+} from "#lib/shared/3d/worker-renderer/services/worker-viewer-snapshot.js";
 
 const mocks = vi.hoisted(() => ({
   createWorkerPerformerSnapshot: vi.fn(),
 }));
 
 vi.mock(
-  "$lib/shared/3d/worker-renderer/services/worker-performer-snapshot",
+  "#lib/shared/3d/worker-renderer/services/worker-performer-snapshot.js",
   () => ({
     supportsWorkerPerformer: (options: {
       leftPropType: string;

@@ -4,19 +4,19 @@
   Modern chip-based form with solid gradients and vibrant colors.
 -->
 <script lang="ts">
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     createAnnouncement,
     updateAnnouncement,
-  } from "$lib/features/admin/services/announcement-manager";
+  } from "#lib/features/admin/services/announcement-manager.js";
   import type {
     Announcement,
     AnnouncementSeverity,
     AnnouncementAudience,
   } from "../../domain/models/announcement-models";
-  import UserSearchInput from "$lib/shared/user-search/UserSearchInput.svelte";
-  import type { UserSearchResult } from "$lib/shared/user-search/services/types";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import UserSearchInput from "#lib/shared/user-search/UserSearchInput.svelte";
+  import type { UserSearchResult } from "#lib/shared/user-search/services/types.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     announcement?: Announcement | null;

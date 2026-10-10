@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { PromoVideoExporter } from './services/promo-video-exporter';
 
 let instance: PromoVideoExporter | null = null;

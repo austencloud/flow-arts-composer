@@ -6,8 +6,8 @@
   of the screen. The provider limits it to once per account.
 -->
 <script lang="ts">
-  import { getFCMTokenManager } from "$lib/shared/push/get-fcm-token-manager";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { getFCMTokenManager } from "#lib/shared/push/get-fcm-token-manager.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   interface Props {
     userId: string;

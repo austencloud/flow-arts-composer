@@ -2,14 +2,14 @@
   import { useTask } from "@threlte/core";
   import { type PropState3D, type PropType } from "@austencloud/scene-3d";
   import { untrack } from "svelte";
-  import type { Ghost3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+  import type { Ghost3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
   import {
     GhostPoseHistory,
     selectGhostAgeStratifiedSamples,
     shouldResetGhostHistoryAtStepBoundary,
     type GhostPoseSample,
-  } from "$lib/shared/effects/renderers/ghost-pose-history";
-  import { resolveGhostHistoryCapacity } from "$lib/shared/effects/domain/ghost-parameters";
+  } from "#lib/shared/effects/renderers/ghost-pose-history.js";
+  import { resolveGhostHistoryCapacity } from "#lib/shared/effects/domain/ghost-parameters.js";
   import { resolveRigLocalPropCenter3D } from "../tip-position-bridge-3d";
   import { type QualityTier } from "../types";
   import { resolveGhostPoolSize } from "./ghost-chrono-frost-3d";

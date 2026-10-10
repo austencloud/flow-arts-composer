@@ -1,17 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   buildLevelOneSpaceFromCsv,
   isLevelOneOrientation,
-} from "$lib/features/movement-map/domain/level-one-space";
-import { buildCoverageReport } from "$lib/features/movement-map/domain/annotation-coverage";
+} from "#lib/features/movement-map/domain/level-one-space.js";
+import { buildCoverageReport } from "#lib/features/movement-map/domain/annotation-coverage.js";
 import {
   signatureKey,
   nearestPhaseAnchor,
   type MovementAnnotation,
-} from "$lib/features/movement-map/domain/movement-annotation";
+} from "#lib/features/movement-map/domain/movement-annotation.js";
 
 function loadCsv(name: string): string {
   return readFileSync(

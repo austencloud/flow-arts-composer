@@ -2,13 +2,13 @@
   import { onMount } from "svelte";
   import { Canvas, T } from "@threlte/core";
   import { WebGLRenderer } from "three";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import EffectControlStack from "$lib/shared/effects/components/EffectControlStack.svelte";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { EFFECT_PREVIEW_TARGET_COUNTS } from "$lib/shared/effects/domain/effect-preview-loop-policy";
-  import type { GeneratedSequenceInfo } from "$lib/features/landing/domain/models/spinner-models";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import EffectControlStack from "#lib/shared/effects/components/EffectControlStack.svelte";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { EFFECT_PREVIEW_TARGET_COUNTS } from "#lib/shared/effects/domain/effect-preview-loop-policy.js";
+  import type { GeneratedSequenceInfo } from "#lib/features/landing/domain/models/spinner-models.js";
   import EffectGridScene from "../effect-grid/EffectGridScene.svelte";
   import {
     GHOST_REVIEW_PRESETS,

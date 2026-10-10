@@ -3,19 +3,19 @@ import {
   computeHash,
   HASH_VERSION_V1,
   HASH_VERSION_V2,
-} from "$lib/shared/library/services/sequence-content-hasher";
+} from "#lib/shared/library/services/sequence-content-hasher.js";
 import {
   createSequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation, GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 function makeStep(overrides: Partial<StepData> = {}): StepData {
   const base: StepData = {

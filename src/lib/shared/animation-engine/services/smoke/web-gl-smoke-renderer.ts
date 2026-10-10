@@ -1,7 +1,7 @@
-import type { Smoke2DParams } from "$lib/shared/effects/translators/canvas2d-types";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
-import { emitterId } from "$lib/shared/effects/renderers/emitter-tip";
-import { computeEffectScale } from "$lib/shared/effects/renderers/scale";
+import type { Smoke2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
+import { emitterId } from "#lib/shared/effects/renderers/emitter-tip.js";
+import { computeEffectScale } from "#lib/shared/effects/renderers/scale.js";
 import {
   FLUID_PROGRAM_DEFINITIONS,
   WebGLFluidSolver2D,

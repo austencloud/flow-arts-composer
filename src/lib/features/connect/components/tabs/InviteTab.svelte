@@ -7,10 +7,10 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { connectState } from '../../state/connect-state.svelte';
-	import ProgressRing from '$lib/shared/components/loading/ProgressRing.svelte';
+	import ProgressRing from '#lib/shared/components/loading/ProgressRing.svelte';
 	import type { UserSearchResult, Invite } from '../../domain/models/connect-models';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
-	import { toast } from '$lib/shared/toast/state/toast-state.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
+	import { toast } from '#lib/shared/toast/state/toast-state.svelte.js';
 
 	// Local state
 	let searchQuery = $state('');

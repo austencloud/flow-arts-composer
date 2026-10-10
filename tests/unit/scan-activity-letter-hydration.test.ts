@@ -20,10 +20,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { decodeSequenceFromQR } from "$lib/shared/navigation/services/sequence-encoder";
-import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
-import { generatePlacementKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import { decodeSequenceFromQR } from "#lib/shared/navigation/services/sequence-encoder.js";
+import { hydrateSequence } from "#lib/shared/navigation/services/sequence-hydrator.js";
+import { generatePlacementKey } from "#lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 // The live payload on shortcode O263 ("IIII") — the card in the bug report.
 const O263_ENCODED =

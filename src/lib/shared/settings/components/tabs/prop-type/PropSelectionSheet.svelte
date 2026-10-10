@@ -8,19 +8,19 @@
   Parent controls which prop is selected and handles the selection callback.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy } from "svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import BentoPropGrid from "./BentoPropGrid.svelte";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
   import CatDogToggle from "./CatDogToggle.svelte";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
   let {
     isOpen = $bindable(false),

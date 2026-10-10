@@ -2,9 +2,9 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { createDefaultEmberConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/ember-scene-config";
-import { getCanonicalPerformerStageBounds } from "$lib/shared/3d/environments/domain/performer-stage-bounds";
-import { isEmberGroundDetailSurface } from "$lib/shared/3d/environments/scenes/ember/ember-ground-detail";
+import { createDefaultEmberConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/ember-scene-config.js";
+import { getCanonicalPerformerStageBounds } from "#lib/shared/3d/environments/domain/performer-stage-bounds.js";
+import { isEmberGroundDetailSurface } from "#lib/shared/3d/environments/scenes/ember/ember-ground-detail.js";
 import {
   EMBER_APRON_RIM_INSET,
   EMBER_APRON_RIM_TUCK,
@@ -15,13 +15,13 @@ import {
   distanceToEmberLavaCorridorEdge,
   emberLavaCorridorHalfWidth,
   sampleEmberTerrainHeight,
-} from "$lib/shared/3d/environments/scenes/ember/ember-surface-ecology";
-import { createEmberSurfacePlateGeometry } from "$lib/shared/3d/environments/scenes/ember/ember-surface-plate-geometry";
+} from "#lib/shared/3d/environments/scenes/ember/ember-surface-ecology.js";
+import { createEmberSurfacePlateGeometry } from "#lib/shared/3d/environments/scenes/ember/ember-surface-plate-geometry.js";
 import {
   LAVA_RIVER_BANK_MARGIN_FRACTION,
   createLavaRiverStripGeometry,
-} from "$lib/shared/3d/environments/scenes/ember/lava-river-geometry";
-import volcanicWorldR7 from "$lib/shared/3d/environments/domain/models/scene-configs/ember-volcanic-world-r7.json";
+} from "#lib/shared/3d/environments/scenes/ember/lava-river-geometry.js";
+import volcanicWorldR7 from "#lib/shared/3d/environments/domain/models/scene-configs/ember-volcanic-world-r7.json";
 import {
   DEFAULT_VIEWER_FRONT_STAGE_CAMERA_Z_SIGN,
   DEFAULT_VIEWER_FRONT_STAGE_FACING_ANGLE,
@@ -30,11 +30,11 @@ import {
   getViewerFrontStageCameraZ,
   getViewerFrontStageFacingAngle,
   resolveViewerFormationFacingAngle,
-} from "$lib/shared/3d/domain/viewer-formation-facing";
+} from "#lib/shared/3d/domain/viewer-formation-facing.js";
 import {
   SCENE_ENVIRONMENTS,
   SceneEnvironmentId,
-} from "$lib/shared/3d/environments/domain/scene-environment";
+} from "#lib/shared/3d/environments/domain/scene-environment.js";
 import { createFormationFromPreset } from "@austencloud/scene-3d";
 import { MeshStandardMaterial } from "three";
 

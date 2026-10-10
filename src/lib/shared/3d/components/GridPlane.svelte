@@ -2,8 +2,8 @@
   import { T } from "@threlte/core";
   import { HTML } from "@threlte/extras";
   import { Plane } from "@austencloud/scene-3d";
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
   import {
     getPlaneRotation,
     planeAngleToWorldPosition,

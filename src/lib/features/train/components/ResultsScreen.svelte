@@ -5,8 +5,8 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
 
   interface Props {
     totalSteps: number;

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   fitLoopRhythmToLength,
   gateRhythm,
-} from "$lib/shared/create/services/loop-rhythm-gating";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/create/services/loop-rhythm-gating.js";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 
 const C = LOOPComponent;
 

@@ -1,26 +1,26 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { ViewerPlaybackState } from "../domain/viewer-prop-groups";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import type { TunnelViewController } from "./tunnel-view-controller.svelte";
-  import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import type { ContextMenuEntry } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import {
     animationSettings,
     type AnimationSettingsState,
-  } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import {
     getAnimationVisibilityManager,
     type AnimationVisibilityStateManager,
     type GridMode as GridVisibilityMode,
-  } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
+  } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { foldTrailIntentIntoSettings } from "#lib/shared/effects/translators/canvas2d-translator.js";
   import {
     toggleTunnelPlayback,
     type TunnelPlaybackSource,

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { SILK_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/silk-presets";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { EFFECT_CONTROLS } from "$lib/shared/effects/domain/effect-control-manifest";
+import { SILK_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/silk-presets.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { EFFECT_CONTROLS } from "#lib/shared/effects/domain/effect-control-manifest.js";
 import {
   clampSilkIntensity,
   SILK_INTENSITY_DEFAULT,
   SILK_INTENSITY_MAX,
-} from "$lib/shared/effects/domain/effects-config";
-import { migrateEffectsConfig } from "$lib/shared/effects/domain/migrations";
+} from "#lib/shared/effects/domain/effects-config.js";
+import { migrateEffectsConfig } from "#lib/shared/effects/domain/migrations.js";
 
 describe("Silk intensity range", () => {
   it("ships at 50% with 65% as the shared control maximum", () => {

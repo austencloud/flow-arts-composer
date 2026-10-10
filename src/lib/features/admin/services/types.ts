@@ -2,7 +2,7 @@
  * Co-exported types from retired interface contracts.
  */
 
-import type { PresenceLocation } from "$lib/shared/presence/domain/models/presence-models";
+import type { PresenceLocation } from "#lib/shared/presence/domain/models/presence-models.js";
 
 
 export type AuditActionType =

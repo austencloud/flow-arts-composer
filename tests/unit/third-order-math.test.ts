@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import {
   mapThirdOrderChildStep,
   resolveThirdOrderGridPose,
   THIRD_ORDER_CHILD_SCALE,
   wrapThirdOrderBeat,
-} from "$lib/features/toys/tabs/third-order/domain/third-order-math";
+} from "#lib/features/toys/tabs/third-order/domain/third-order-math.js";
 import {
   sampleThirdOrderFlowerPose,
   thirdOrderFlowerClosureCycles,
@@ -13,11 +13,11 @@ import {
   thirdOrderFlowerTotalBeats,
   thirdOrderRatioToSpinRatio,
   traceThirdOrderFlowerPath,
-} from "$lib/features/toys/tabs/third-order/domain/third-order-flower-path";
+} from "#lib/features/toys/tabs/third-order/domain/third-order-flower-path.js";
 import {
   THIRD_ORDER_FLOWER_RATIOS,
   type ThirdOrderCarrierPathDraft,
-} from "$lib/features/toys/tabs/third-order/domain/third-order-composition";
+} from "#lib/features/toys/tabs/third-order/domain/third-order-composition.js";
 
 const EAST: PropState = { centerPathAngle: 0, staffRotationAngle: 0 };
 

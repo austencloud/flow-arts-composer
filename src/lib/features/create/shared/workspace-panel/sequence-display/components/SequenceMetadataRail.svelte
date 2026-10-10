@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
-  import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
-  import { analyzeDifficulty } from "$lib/shared/browse/services/sequence-difficulty-calculator";
-  import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
+  import LOOPIconStrip from "#lib/shared/components/LOOPIconStrip.svelte";
+  import { analyzeDifficulty } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
+  import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type {
     LOOPType,
     Period,
-  } from "$lib/shared/foundation/domain/models/generation/circular-models";
-  import type { LoopDisplay } from "$lib/shared/loop-labeler/get-loop-display-resolver";
+  } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+  import type { LoopDisplay } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
 
   let {
     sequence = null,

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import { formatPostClock } from "../builder/post-builder-format";
 
   /**

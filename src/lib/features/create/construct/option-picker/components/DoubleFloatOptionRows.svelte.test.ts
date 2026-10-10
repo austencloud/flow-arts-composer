@@ -1,14 +1,14 @@
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { describe, expect, it, vi } from "vitest";
-import { expectNoA11yViolations } from "$test-helpers/component-a11y";
+import { expectNoA11yViolations } from "#test-helpers/component-a11y.js";
 import {
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import { buildDoubleFloatOptionRows } from "../services/double-float-option-groups";
 
 vi.mock("./OptionCard.svelte", async () => ({

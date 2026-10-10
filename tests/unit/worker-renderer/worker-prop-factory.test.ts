@@ -19,8 +19,8 @@ import {
   type WorkerPropFactoryOptions,
   type WorkerPropModelLoader,
   type WorkerPropVisual,
-} from "$lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory";
-import { resolveWorkerPropModel } from "$lib/shared/3d/worker-renderer/worlds/props/worker-gltf-props";
+} from "#lib/shared/3d/worker-renderer/worlds/props/worker-prop-factory.js";
+import { resolveWorkerPropModel } from "#lib/shared/3d/worker-renderer/worlds/props/worker-gltf-props.js";
 
 const BUILD: PropBuild = {
   finish: "fire",

@@ -1,16 +1,16 @@
 import { renderHeader } from "@tka/render-composition";
-import { CAPTION_STROKE_WIDTH_FRACTION } from "$lib/shared/media-composition/domain/caption-layout";
-import { sampleEasing } from "$lib/shared/media-composition/domain/post-project-keyframes";
+import { CAPTION_STROKE_WIDTH_FRACTION } from "#lib/shared/media-composition/domain/caption-layout.js";
+import { sampleEasing } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   tunnelTitlesLook,
   type TunnelTitlesPlan,
-} from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/tunnel-titles.js";
 import type {
   PaintFrame,
   PaintRect,
   PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
-import { textRenderer } from "$lib/shared/render/services/text-renderer";
+} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+import { textRenderer } from "#lib/shared/render/services/text-renderer.js";
 
 /** Same ink as a caption, so the opening reads as one family with the post's words. */
 const FILL_COLOR = "#ffffff";

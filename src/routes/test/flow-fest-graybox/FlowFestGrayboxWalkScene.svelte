@@ -7,7 +7,7 @@
     CameraCollisionProbe,
     PhysicsProvider,
   } from "@austencloud/camera-3d";
-  import type { FlowFestProductionCollisionSet } from "$lib/features/flow-fest-sim/domain/flow-fest-simulation-contract";
+  import type { FlowFestProductionCollisionSet } from "#lib/features/flow-fest-sim/domain/flow-fest-simulation-contract.js";
   import {
     FLOW_FEST_EUC_CONFIG,
     createFlowFestElectricUnicycleDynamics,
@@ -17,19 +17,19 @@
     type FlowFestElectricUnicycleInput,
     type FlowFestElectricUnicycleTerrainAttitude,
     type FlowFestStandardGamepadSample,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-electric-unicycle.js";
   import {
     FLOW_FEST_EUC_CONTACT_THRESHOLDS,
     FLOW_FEST_EUC_PEDAL_SEPARATION_METERS,
     FLOW_FEST_EUC_PEDAL_SURFACE_HEIGHT_METERS,
     type FlowFestEucMountedPoseDiagnostic,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose";
-  import { FlowFestElectricUnicycleDrive } from "$lib/features/flow-fest-sim/services/flow-fest-electric-unicycle-drive";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-euc-mounted-pose.js";
+  import { FlowFestElectricUnicycleDrive } from "#lib/features/flow-fest-sim/services/flow-fest-electric-unicycle-drive.js";
   import {
     FLOW_FEST_CAR_EDGE_MESSAGE,
     FlowFestCarDrive,
     type FlowFestCarDriveFrame,
-  } from "$lib/features/flow-fest-sim/services/flow-fest-car-drive";
+  } from "#lib/features/flow-fest-sim/services/flow-fest-car-drive.js";
   import {
     FLOW_FEST_CAR_CONFIG,
     createFlowFestCarDynamics,
@@ -38,17 +38,17 @@
     flowFestCarSpec,
     type FlowFestCarDynamics,
     type FlowFestCarSpec,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-car";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-car.js";
   import {
     FLOW_FEST_GROUND_VEHICLE_IDLE_INPUT,
     type FlowFestGroundVehicleInput,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-ground-vehicle";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-ground-vehicle.js";
   import {
     mobilityCarDynamicsFromSnapshot,
     mobilityDynamicsFromSnapshot,
     type FlowFestMobilityRuntimeUpdate,
     type FlowFestMobilitySnapshot,
-  } from "$lib/features/flow-fest-sim/state/flow-fest-mobility-state.svelte";
+  } from "#lib/features/flow-fest-sim/state/flow-fest-mobility-state.svelte.js";
   import {
     Euler,
     Mesh,
@@ -63,7 +63,7 @@
     loadGeospatialEvidenceLayers,
     loadGeospatialTerrain,
     parseGeospatialTerrainManifest,
-  } from "$lib/shared/3d/procedural-engine/generation/geospatial-terrain";
+  } from "#lib/shared/3d/procedural-engine/generation/geospatial-terrain.js";
   import { buildFlowFestEntranceGradedTerrain } from "../flow-fest-sim/flow-fest-entrance-terrain";
   import {
     FLOW_FEST_CAMP_PLAN_BOUNDS,
@@ -80,17 +80,17 @@
     initPhysicsWorld,
     removeRigidBody,
     stepPhysics,
-  } from "$lib/shared/3d/physics/rapier-world";
+  } from "#lib/shared/3d/physics/rapier-world.js";
   import {
     createPlayerController,
     disposePlayerController,
-  } from "$lib/shared/3d/physics/player-controller";
-  import { createRapierPhysicsProvider } from "$lib/shared/3d/physics/rapier-physics-provider";
+  } from "#lib/shared/3d/physics/player-controller.js";
+  import { createRapierPhysicsProvider } from "#lib/shared/3d/physics/rapier-physics-provider.js";
   import type {
     PhysicsWorldState,
     PhysicsBodyComponent,
     PlayerControllerState,
-  } from "$lib/shared/3d/physics/types";
+  } from "#lib/shared/3d/physics/types.js";
   import {
     buildFlowFestTerrainHost,
     buildFlowFestChunkSeamTraversal,
@@ -119,7 +119,7 @@
   import FlowFestDrivenCar from "../flow-fest-sim/FlowFestDrivenCar.svelte";
   import { FLOW_FEST_WORLD_STEP_TASK } from "../flow-fest-sim/flow-fest-frame-tasks";
   import FlowFestOnFootPlayer from "./FlowFestOnFootPlayer.svelte";
-  import { type CharacterId } from "$lib/shared/3d/domain/character-model";
+  import { type CharacterId } from "#lib/shared/3d/domain/character-model.js";
 
   interface Props {
     resetToken: number;

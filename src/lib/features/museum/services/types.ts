@@ -8,7 +8,7 @@ import type {
   ExhibitDefinition,
   MuseumFurnitureRole,
 } from "../domain/museum-grid-types";
-import type { RoomDefinition } from "$lib/shared/3d/indoor/domain/room-types";
+import type { RoomDefinition } from "#lib/shared/3d/indoor/domain/room-types.js";
 
 
 export interface DesignViolation {

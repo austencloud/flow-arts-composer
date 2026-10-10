@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { SheetSize } from "../domain/sticker-types";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   interface Props {
     value: SheetSize;

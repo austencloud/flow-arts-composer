@@ -3,8 +3,8 @@
  * box resizes a live scene.
  */
 import { flushSync, mount, unmount } from "svelte";
-import GenerateScene from "$lib/features/create/shared/components/method-previews/GenerateScene.svelte";
-import type { MethodPreviewShape } from "$lib/features/create/shared/components/method-previews/method-preview-layout";
+import GenerateScene from "#lib/features/create/shared/components/method-previews/GenerateScene.svelte";
+import type { MethodPreviewShape } from "#lib/features/create/shared/components/method-previews/method-preview-layout.js";
 
 export function mountGenerateScene(
   target: HTMLElement,

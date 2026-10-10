@@ -9,9 +9,9 @@
  * Detects when two sequences are equivalent despite transforms.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { SequenceCanonicalizer } from "./sequence-canonicalizer";
-import { findWordUnitsRotationOffset } from "$lib/shared/foundation/utils/word-notation";
+import { findWordUnitsRotationOffset } from "#lib/shared/foundation/utils/word-notation.js";
 
 /**
  * Result of equivalence comparison
@@ -72,8 +72,8 @@ interface LocalMotionSignature {
 import type { StepSignatureGenerator } from "./step-signature-generator";
 import type { SpatialTransformDetector } from "./spatial-transform-detector";
 import type { MotionSignature, StepSignature } from "../domain/models/signatures";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 
 export class SequenceEquivalenceDetector {
   constructor(

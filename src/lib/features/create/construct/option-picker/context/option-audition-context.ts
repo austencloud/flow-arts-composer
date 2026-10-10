@@ -1,5 +1,5 @@
 import { getContext, setContext } from "svelte";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 export interface OptionAuditionContext {
   /**

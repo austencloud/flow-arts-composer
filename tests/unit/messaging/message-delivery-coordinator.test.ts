@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Messenger } from "$lib/shared/messaging/services/messenger";
-import type { IMessageImageSender } from "$lib/shared/messaging/services/contracts/IMessageImageSender";
-import type { ShortCodeManager } from "$lib/shared/qr/services/short-code-manager";
-import type { MessageOutboxRecord } from "$lib/shared/inbox/domain/message-delivery-models";
-import { MessageDeliveryCoordinator } from "$lib/shared/inbox/services/implementations/MessageDeliveryCoordinator";
+import type { Messenger } from "#lib/shared/messaging/services/messenger.js";
+import type { IMessageImageSender } from "#lib/shared/messaging/services/contracts/IMessageImageSender.js";
+import type { ShortCodeManager } from "#lib/shared/qr/services/short-code-manager.js";
+import type { MessageOutboxRecord } from "#lib/shared/inbox/domain/message-delivery-models.js";
+import { MessageDeliveryCoordinator } from "#lib/shared/inbox/services/implementations/MessageDeliveryCoordinator.js";
 
 function textItem(
   overrides: Partial<MessageOutboxRecord> = {}

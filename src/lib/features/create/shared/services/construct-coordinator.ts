@@ -7,7 +7,7 @@
  * FIXED: Added proper state synchronization to resolve start placement selection getting stuck
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { Step } from "@tka/tka-types";
 
 

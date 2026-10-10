@@ -3,10 +3,10 @@
   means the visible artifact and its eventual PNG consume one option snapshot.
 -->
 <script lang="ts">
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+  import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
 
   interface Props {
     sequence: SequenceData;

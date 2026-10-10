@@ -22,10 +22,10 @@
    * </AdminTwoPanelLayout>
    */
 
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
   import { onMount } from "svelte";
   import type { Snippet } from "svelte";
-  import type { DeviceDetector } from '$lib/shared/device/services/device-detector'
+  import type { DeviceDetector } from '#lib/shared/device/services/device-detector.js'
   import type { ResponsiveSettings } from "../../device/domain/models/device-models";
   import { desktopSidebarState } from "../../layout/desktop-sidebar-state.svelte";
   import { ADMIN_SPACING } from "../styles/admin-theme";

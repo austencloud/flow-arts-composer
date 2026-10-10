@@ -13,29 +13,29 @@ const persister = vi.hoisted(() => ({
   listener: null as ((settings: RemoteSettings) => void) | null,
 }));
 
-vi.mock("$app/environment", () => ({ browser: true }));
-vi.mock("$lib/shared/auth/loaded-auth", () => ({ loadedAuth: auth }));
-vi.mock("$lib/shared/settings/get-settings-persister", () => ({
+vi.mock("$app/env", () => ({ browser: true }));
+vi.mock("#lib/shared/auth/loaded-auth.js", () => ({ loadedAuth: auth }));
+vi.mock("#lib/shared/settings/get-settings-persister.js", () => ({
   getSettingsPersister: () => persister,
 }));
-vi.mock("$lib/shared/3d/undo/get-scene-undo-manager", () => ({
+vi.mock("#lib/shared/3d/undo/get-scene-undo-manager.js", () => ({
   getSceneUndoManager: () => ({
     registerDomain: () => {},
     captureState: () => {},
     commitState: () => {},
   }),
 }));
-vi.mock("$lib/shared/settings/utils/background-preloader", () => ({
+vi.mock("#lib/shared/settings/utils/background-preloader.js", () => ({
   updateBodyBackground: () => {},
 }));
-vi.mock("$lib/shared/theme/services/theme-service", () => ({
+vi.mock("#lib/shared/theme/services/theme-service.js", () => ({
   updateTheme: () => {},
 }));
-vi.mock("$lib/shared/settings/utils/background-theme-calculator", () => ({
+vi.mock("#lib/shared/settings/utils/background-theme-calculator.js", () => ({
   applyThemeForBackground: () => {},
 }));
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: () => ({
       isDarkMode: () => false,
@@ -46,10 +46,10 @@ vi.mock(
 // Setting changes import the analytics logger without awaiting it; left real,
 // posthog-js can still be loading when the worker closes ("Closing rpc while
 // fetch was pending" failed CI on 2026-10-08 with every test green).
-vi.mock("$lib/shared/analytics/services/posthog-activity-logger", () => ({
+vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logSettingChange: vi.fn(async () => {}),
 }));
-vi.mock("$lib/shared/utils/debug-logger", () => ({
+vi.mock("#lib/shared/utils/debug-logger.js", () => ({
   createComponentLogger: () => ({
     info: () => {},
     success: () => {},
@@ -64,7 +64,7 @@ const LEGACY_QUEUE_KEY = "tka-settings-offline-queue";
 async function loadSettingsService() {
   vi.resetModules();
   const module =
-    await import("$lib/shared/settings/state/settings-state.svelte");
+    await import("#lib/shared/settings/state/settings-state.svelte.js");
   return module.settingsService;
 }
 

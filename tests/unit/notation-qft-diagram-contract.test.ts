@@ -4,7 +4,7 @@ import {
   norm,
   pointAt,
   PROP_LENGTH,
-} from "$lib/shared/notation/qft/qft-model";
+} from "#lib/shared/notation/qft/qft-model.js";
 
 /**
  * This contract used to read pixel coordinates out of a static SVG on

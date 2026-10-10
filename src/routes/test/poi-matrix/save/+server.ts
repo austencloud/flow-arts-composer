@@ -4,8 +4,8 @@
  * as ordinary working-tree changes. 404s outside `vite dev`.
  */
 
-import { dev } from "$app/environment";
-import { error, json } from "@sveltejs/kit";
+import { dev } from "$app/env";
+import { error } from "@sveltejs/kit";
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import type { RequestHandler } from "./$types";
@@ -31,5 +31,5 @@ export const POST: RequestHandler = async ({ request }) => {
 	} catch (cause) {
 		error(500, cause instanceof Error ? cause.message : String(cause));
 	}
-	return json({ ok: true, count: Object.keys(body.verdicts).length });
+	return Response.json({ ok: true, count: Object.keys(body.verdicts).length });
 };

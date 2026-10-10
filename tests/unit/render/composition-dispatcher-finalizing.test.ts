@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CompositionDispatcher } from "$lib/shared/render/services/composition-dispatcher";
-import type { CompositionProgressCallback } from "$lib/shared/render/services/types";
+import { CompositionDispatcher } from "#lib/shared/render/services/composition-dispatcher.js";
+import type { CompositionProgressCallback } from "#lib/shared/render/services/types.js";
 
 type WorkerMessage = {
   type: string;

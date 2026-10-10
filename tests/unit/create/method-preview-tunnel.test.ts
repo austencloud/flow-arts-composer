@@ -5,19 +5,19 @@
  * maps a four-fold ring onto itself and the tunnel would look the same.
  */
 import { describe, expect, it } from "vitest";
-import { rotateSequenceGeometry } from "$lib/shared/create/services/sequence-derived-fields";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getPreset } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-import { builtInTunnelPresetRecipe } from "$lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe";
-import { METHOD_PREVIEW_TIMING } from "$lib/features/create/shared/state/method-preview-turns.svelte";
-import { DEMO_SEQUENCE } from "$lib/features/create/shared/components/method-previews/method-preview-demo";
-import { SCENE_TAP } from "$lib/features/create/shared/components/method-previews/method-preview-run";
+import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getPreset } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+import { builtInTunnelPresetRecipe } from "#lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe.js";
+import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
+import { DEMO_SEQUENCE } from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
+import { SCENE_TAP } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
 import {
   TUNNEL_PREVIEW_PRESET,
   TUNNEL_PREVIEW_TIMING,
   nextTunnelSequence,
-} from "$lib/features/create/shared/components/method-previews/method-preview-tunnel";
+} from "#lib/features/create/shared/components/method-previews/method-preview-tunnel.js";
 
 /** The attract ghost's shortest glide (attract-ghost.svelte.ts). */
 const SHORTEST_GLIDE_MS = 300;

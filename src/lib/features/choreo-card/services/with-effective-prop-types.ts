@@ -4,9 +4,9 @@
 // bake applies prop types from render options (leftPropType ?? settings), so
 // the editor must edit against those same prop types or a fan/club card would
 // edit the "staff" key and show no change on re-bake. Pure; never mutates input.
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export function withEffectivePropTypes(
   step: StepData,

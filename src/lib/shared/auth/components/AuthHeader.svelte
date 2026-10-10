@@ -4,7 +4,7 @@
   Header with dynamic title/subtitle based on auth mode and close button
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   // Props
   let { mode = "signin", onClose } = $props<{

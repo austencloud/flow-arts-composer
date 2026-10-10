@@ -2,26 +2,26 @@
   import type { PageData } from "./$types";
   import { untrack } from "svelte";
   import { Popover } from "bits-ui";
-  import { browser } from "$app/environment";
-  import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
-  import Seo from "$lib/shared/components/Seo.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import TurnNotationControls from "$lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
-  import type { MatrixLabelMode } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  import { browser } from "$app/env";
+  import { TIMING_DIRECTION_MODES } from "#lib/features/learn/components/interactive/foundations/pictograph-foundation-content.js";
+  import Seo from "#lib/shared/components/Seo.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
+  import type { MatrixLabelMode } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import {
     turnValuesForLevel,
     type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
-  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
-  import SequenceShowcasePreview from "$lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { flyFade, reducedMotion } from "$lib/shared/transitions/motion";
+  } from "#lib/shared/create/services/level-turn-values.js";
+  import TransportControls from "#lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import SequenceShowcasePreview from "#lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { flyFade, reducedMotion } from "#lib/shared/transitions/motion.js";
   import { getTimingDirectionState } from "../_state/timing-direction-state.svelte";
   import TimingDirectionModeCard from "../_components/TimingDirectionModeCard.svelte";
   import {

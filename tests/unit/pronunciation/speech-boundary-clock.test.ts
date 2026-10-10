@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { SampleRing } from "$lib/features/lab/pronunciation-recorder/domain/sample-ring";
-import { createCorpusSession } from "$lib/features/lab/pronunciation-recorder/state/corpus-session-state.svelte";
-import type { SpeechBoundaryHandlers } from "$lib/features/lab/pronunciation-recorder/services/contracts/ISpeechBoundaryDetector";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { SampleRing } from "#lib/features/lab/pronunciation-recorder/domain/sample-ring.js";
+import { createCorpusSession } from "#lib/features/lab/pronunciation-recorder/state/corpus-session-state.svelte.js";
+import type { SpeechBoundaryHandlers } from "#lib/features/lab/pronunciation-recorder/services/contracts/ISpeechBoundaryDetector.js";
 
 /**
  * The detector and the ring have to be on one timeline.
@@ -164,7 +164,7 @@ describe("SileroBoundaryDetector", () => {
       },
     }));
     return import(
-      "$lib/features/lab/pronunciation-recorder/services/implementations/SileroBoundaryDetector"
+      "#lib/features/lab/pronunciation-recorder/services/implementations/SileroBoundaryDetector.js"
     );
   }
 

@@ -6,9 +6,9 @@ import {
   MIN_LIGHTNING_INTERVAL_SECONDS,
   sampleVolcanicLightning,
   volcanicLightningCell,
-} from "$lib/shared/3d/environments/scenes/ember/volcanic-lightning";
-import { getEmberAtmosphereLook } from "$lib/shared/3d/environments/domain/models/scene-configs/ember-atmosphere-looks";
-import { EMBER_ATMOSPHERE_LOOK_IDS } from "$lib/shared/3d/environments/domain/models/scene-configs/ember-atmosphere-looks";
+} from "#lib/shared/3d/environments/scenes/ember/volcanic-lightning.js";
+import { getEmberAtmosphereLook } from "#lib/shared/3d/environments/domain/models/scene-configs/ember-atmosphere-looks.js";
+import { EMBER_ATMOSPHERE_LOOK_IDS } from "#lib/shared/3d/environments/domain/models/scene-configs/ember-atmosphere-looks.js";
 
 const FRAME = 1 / 60;
 

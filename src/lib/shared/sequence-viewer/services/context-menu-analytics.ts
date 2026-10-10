@@ -1,7 +1,7 @@
 import type {
   ContextMenuEntry,
   ContextMenuItem,
-} from "$lib/shared/components/context-menu/context-menu-types";
+} from "#lib/shared/components/context-menu/context-menu-types.js";
 
 export type ContextMenuAnalyticsValue = string | number | boolean | null;
 export type ContextMenuAnalyticsSink = (

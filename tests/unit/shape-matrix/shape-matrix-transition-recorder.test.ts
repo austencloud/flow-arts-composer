@@ -3,7 +3,7 @@ import {
   MISSED_VSYNC_THRESHOLD_MS,
   ShapeMatrixTransitionRecorder,
   summarizeShapeMatrixTransition,
-} from "$lib/shared/shape-matrix/debug/shape-matrix-transition-recorder";
+} from "#lib/shared/shape-matrix/debug/shape-matrix-transition-recorder.js";
 
 describe("shape matrix transition instrumentation", () => {
   it("separates startup, fade, and missed-frame timing", () => {

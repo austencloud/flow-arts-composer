@@ -6,7 +6,7 @@
 import {
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
 import {
   normalizeAngleSigned,

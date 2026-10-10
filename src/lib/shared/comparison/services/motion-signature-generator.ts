@@ -5,15 +5,15 @@
  * The signature captures the geometric essence independent of grid position.
  */
 
-import type { MotionWithView } from "$lib/shared/pictograph/shared/domain/models/motion-view";
+import type { MotionWithView } from "#lib/shared/pictograph/shared/domain/models/motion-view.js";
 import type {
   MotionSignature,
   MotionComparisonResult,
   LocationDelta,
   OrientationTransition,
 } from "../domain/models/signatures";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandPath, MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandPath, MotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 /**
  * Scoring weights for motion similarity calculation.

@@ -24,11 +24,11 @@ import type {
 } from "./ITrailOverlayCanvas";
 import type { TrailPoint, TrailSettings } from "../domain/types/trail-types";
 import { TrackingMode } from "../domain/types/trail-types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type { MotionSubSampleLayer } from "./motion-sub-sampler";
-import { Canvas2DTrailRenderer } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer";
-import { Canvas2DVisibilityFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-visibility-fade-manager";
-import { calculateTrailSourceEndpoint } from "$lib/shared/animation-engine/services/prop-position-calculator";
+import { Canvas2DTrailRenderer } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer.js";
+import { Canvas2DVisibilityFadeManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-visibility-fade-manager.js";
+import { calculateTrailSourceEndpoint } from "#lib/shared/animation-engine/services/prop-position-calculator.js";
 import {
   resolveTrailPointConfig,
   trailTipEnds,

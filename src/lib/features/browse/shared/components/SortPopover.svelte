@@ -8,7 +8,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { BrowseSortMethod } from "../domain/enums/browse-enums";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface SortOption {
     id: BrowseSortMethod;

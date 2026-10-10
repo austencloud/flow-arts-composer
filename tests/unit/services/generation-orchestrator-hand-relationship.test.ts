@@ -16,15 +16,15 @@ vi.mock("@tka/sequence-engine/generation", async (importOriginal) => {
   return { ...actual, SequenceBuilder };
 });
 
-import { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
+import { GenerationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
 import {
   GenerationMode,
   DifficultyLevel,
   type GenerationOptions,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import { ConstraintType } from "@tka/sequence-engine/generation";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 function baseOptions(overrides: Partial<GenerationOptions>): GenerationOptions {
   return {

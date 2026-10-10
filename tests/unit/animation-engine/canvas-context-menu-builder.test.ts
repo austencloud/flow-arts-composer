@@ -8,17 +8,17 @@
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { buildCanvasContextMenuItems } from "$lib/shared/animation-engine/components/canvas-context-menu/canvas-context-menu-builder";
-import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { buildCanvasContextMenuItems } from "#lib/shared/animation-engine/components/canvas-context-menu/canvas-context-menu-builder.js";
+import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+import { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import type { GridJoin } from "@tka/tka-types";
-import { createGridJoinController } from "$lib/shared/grid-join/grid-join-controller";
-import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import { createGridJoinController } from "#lib/shared/grid-join/grid-join-controller.js";
+import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import {
   isMenuItem,
   type ContextMenuEntry,
   type ContextMenuItem,
-} from "$lib/shared/components/context-menu/context-menu-types";
+} from "#lib/shared/components/context-menu/context-menu-types.js";
 
 function submenu(
   items: ContextMenuEntry[],

@@ -13,18 +13,18 @@ import {
 	normalizeAnglePositive,
 	normalizeAngleSigned,
 	mapOrientationToAngle,
-} from "$lib/shared/animation-engine/services/angle-calculator";
+} from "#lib/shared/animation-engine/services/angle-calculator.js";
 import {
 	LOCATION_ANGLES,
 	PI,
-} from "$lib/shared/foundation/domain/math-constants";
+} from "#lib/shared/foundation/domain/math-constants.js";
 import {
   HandSide,
   Orientation,
   type HandSide as HandSideValue,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { RADIAL_CYCLE } from "$lib/shared/render/core/calculations/orientation-angle";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { RADIAL_CYCLE } from "#lib/shared/render/core/calculations/orientation-angle.js";
 import { handArcDirection } from "@tka/sequence-engine/analysis";
 import {
 	BASE_SAMPLES_PER_BEAT,

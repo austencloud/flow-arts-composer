@@ -1,13 +1,13 @@
-import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { getFirestoreRest } from "$lib/server/firestore/firestore-rest";
-import { readPhysicalCardProps } from "$lib/server/physical-cards/physical-card-props";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
+import { getFirestoreRest } from "#lib/server/firestore/firestore-rest.js";
+import { readPhysicalCardProps } from "#lib/server/physical-cards/physical-card-props.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
 import {
   isPhysicalCardId,
   isShortCode,
-} from "$lib/shared/qr/domain/physical-card";
+} from "#lib/shared/qr/domain/physical-card.js";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 /**
  * GET /api/physical-cards/props?code={code}&pid={id}
@@ -24,7 +24,7 @@ import {
 const CORS_HEADERS = { "Access-Control-Allow-Origin": "*" } as const;
 
 function failure(error: string, code: string, status: number): Response {
-  return json(
+  return Response.json(
     { error, code },
     { status, headers: { ...CORS_HEADERS, "Cache-Control": "no-store" } }
   );
@@ -42,14 +42,14 @@ export const GET: RequestHandler = async (event) => {
 
   try {
     const props = await readPhysicalCardProps(
-      getFirestoreRest(event.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON),
+      getFirestoreRest(workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON),
       shortCode,
       physicalCardId
     );
     if (!props) {
       return failure("No props recorded for this card", "no_card_props", 404);
     }
-    return json(
+    return Response.json(
       {
         leftPropType: props.leftPropType ?? null,
         rightPropType: props.rightPropType ?? null,

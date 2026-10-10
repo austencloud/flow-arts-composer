@@ -14,13 +14,13 @@
 
   import { fade } from "svelte/transition";
   import type { IToolPanelMethods } from "../types/create-module-types";
-  import type { LetterSource } from "$lib/shared/create/domain/spell-models";
+  import type { LetterSource } from "#lib/shared/create/domain/spell-models.js";
   import WorkspacePanel from "../workspace-panel/core/WorkspacePanel.svelte";
   import WorkspaceSequenceHeader from "../workspace-panel/sequence-display/components/WorkspaceSequenceHeader.svelte";
   import { getCreateModuleContext } from "../context/create-module-context";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import DualSourceCrossfade from "#lib/shared/components/DualSourceCrossfade.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import { onDestroy, untrack } from "svelte";
 
   const ctx = getCreateModuleContext();

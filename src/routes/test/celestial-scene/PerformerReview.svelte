@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { SceneEnvironmentId } from "$lib/shared/3d/environments/domain/scene-environment";
-  import Viewer3DCanvas from "$lib/shared/3d/components/Viewer3DCanvas.svelte";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import demo from "$lib/shared/landing/data/demo-sequence.json";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { SceneEnvironmentId } from "#lib/shared/3d/environments/domain/scene-environment.js";
+  import Viewer3DCanvas from "#lib/shared/3d/components/Viewer3DCanvas.svelte";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import demo from "#lib/shared/landing/data/demo-sequence.json";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   let { worker = false } = $props<{ worker?: boolean }>();
   const sequence = demo as unknown as SequenceData;

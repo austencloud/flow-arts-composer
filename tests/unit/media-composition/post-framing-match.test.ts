@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { PostVideoItem } from "$lib/shared/media-composition/domain/post-project";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+import type { PostVideoItem } from "#lib/shared/media-composition/domain/post-project.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
 import { NOW, project, take, video } from "./post-project-fixtures";
 
 const BAND = {

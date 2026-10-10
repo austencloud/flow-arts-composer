@@ -21,7 +21,7 @@ import {
   resolvePerformerDragPosition,
   resolveTouchIntent,
   snapStagePositionToEightDirections,
-} from "$lib/shared/3d/components/performer-interaction/performer-pointer-interaction.svelte";
+} from "#lib/shared/3d/components/performer-interaction/performer-pointer-interaction.svelte.js";
 
 function expectPositionCloseTo(
   actual: { x: number; z: number },

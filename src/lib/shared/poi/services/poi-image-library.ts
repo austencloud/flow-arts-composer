@@ -9,11 +9,11 @@
  */
 
 import type { PoiImageLibraryEntry } from "../domain/poi-image-library-entry";
-import { getEffectiveUserId } from "$lib/shared/auth/state/auth-state.svelte";
+import { getEffectiveUserId } from "#lib/shared/auth/state/auth-state.svelte.js";
 import {
   getStorageInstance,
   getFirestoreInstance,
-} from "$lib/shared/auth/firebase";
+} from "#lib/shared/auth/firebase.js";
 
 export async function upload(
   file: File,

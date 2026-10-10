@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { POST_STUDIO_PRESETS } from "$lib/shared/media-composition/domain/post-studio-presets";
-import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "$lib/shared/media-composition/services/post-studio-dom-capture";
+import { POST_STUDIO_PRESETS } from "#lib/shared/media-composition/domain/post-studio-presets.js";
+import { POST_STUDIO_DOM_CAPTURE_OPTIONS } from "#lib/shared/media-composition/services/post-studio-dom-capture.js";
 import {
   resolveFrameLayerGeometry,
   renderPostStudioFrame,
   waitForPictographMotion,
   type RenderPostStudioFrameInput,
-} from "$lib/shared/media-composition/services/post-studio-frame-compositor";
-import { compilePostProject } from "$lib/shared/media-composition/domain/post-project-compiler";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
+} from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
+import { compilePostProject } from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
 import {
   NOW,
   card,
@@ -18,7 +18,7 @@ import {
   text,
   video,
 } from "./post-project-fixtures";
-import { createTextItemPainter } from "$lib/shared/media-composition/services/text-item-painter";
+import { createTextItemPainter } from "#lib/shared/media-composition/services/text-item-painter.js";
 
 const { captureMotion } = vi.hoisted(() => ({ captureMotion: vi.fn() }));
 vi.mock("modern-screenshot", () => ({ domToCanvas: captureMotion }));

@@ -13,7 +13,7 @@ import {
 	serverTimestamp,
 	type DatabaseReference
 } from 'firebase/database';
-import { getDatabaseInstance, getAuthSync } from '$lib/shared/auth/firebase';
+import { getDatabaseInstance, getAuthSync } from '#lib/shared/auth/firebase.js';
 import type { SyncRoom } from '../domain/models/lan-sync-models';
 import { localSyncSessionId } from '../domain/models/lan-sync-models';
 

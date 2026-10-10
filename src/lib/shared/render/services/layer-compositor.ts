@@ -1,7 +1,7 @@
 import type { LayerType, LayerRenderOptions, LayerVisibility, LayerRenderResult, CompositionResult, LayerCacheStats, RenderCanvas, RenderContext2D } from "./types";
 import type { PreparedPictographData } from "../../pictograph/shared/domain/models/prepared-pictograph-data";
 import { isVisibleMotion } from "../../pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import { deriveBaseLayerKey, deriveTKALayerKey, deriveReversalLayerKey } from "./layer-key-deriver";
 import { turnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { Letter } from "../../foundation/domain/models/letter";
@@ -20,7 +20,7 @@ import {
 } from "../../pictograph/tka-glyph/utils/turn-tuple-parser";
 import { calculateTurnPositions, getTurnsColumnRightExtent } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
 import { isDashLetter } from "../../pictograph/tka-glyph/utils/letter-image-getter";
-import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
+import { isSkewedFrameBeat } from "#lib/shared/foundation/services/skewed-frame.js";
 import { calculateReversalPositions } from "../core";
 import type { Canvas2DDirectRenderer } from './canvas-2d-direct-renderer';
 import {

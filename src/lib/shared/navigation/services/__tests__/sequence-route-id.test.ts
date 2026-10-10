@@ -8,15 +8,15 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   decodeSequenceFromQR,
   decodeSequenceWithCompression,
   generateSequenceRoutePath,
   parseSequenceRouteId,
 } from "../sequence-encoder";
-import { buildScanSequenceDestination } from "$lib/shared/qr/services/scan-sequence-handoff";
+import { buildScanSequenceDestination } from "#lib/shared/qr/services/scan-sequence-handoff.js";
 
 /**
  * Captured from shortcode records in production (see

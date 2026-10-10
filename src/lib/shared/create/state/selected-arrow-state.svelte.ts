@@ -5,9 +5,9 @@
  * Uses Svelte 5 runes for reactivity across components.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 interface SelectedArrow {
   motionData: MotionData;

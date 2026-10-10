@@ -53,16 +53,16 @@ import {
   type PostTextSize,
   type PostTrack,
   type PostVideoItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
 import {
   clampShapeRatio,
   postCanvasOf,
-} from "$lib/shared/media-composition/domain/post-canvas";
+} from "#lib/shared/media-composition/domain/post-canvas.js";
 import {
   edgeOf,
   mergeEdge,
-} from "$lib/shared/media-composition/domain/post-clip-edge";
+} from "#lib/shared/media-composition/domain/post-clip-edge.js";
 import {
   framingAt,
   channelValueAt,
@@ -71,8 +71,8 @@ import {
   isAnimated,
   shiftKeyframes,
   writeChannelValue,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   rerecordedTakeTiming,
   resolveTakeTiming,
@@ -80,14 +80,14 @@ import {
   takePassStartsAround,
   takeTimingMoveBeats,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   DEFAULT_TUNNEL_HOOK,
   DEFAULT_TUNNEL_HOOK_SECONDS,
   type TunnelBackdropFrame,
   type TunnelHook,
-} from "$lib/shared/media-composition/domain/tunnel-hook";
-import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/tunnel-hook.js";
+import { openingTitlesSpan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 
 /**
  * The timeline's edits. Each one is pure: it takes the project and returns

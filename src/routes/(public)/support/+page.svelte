@@ -16,7 +16,7 @@
    * route-only (the modal never receives the redirect).
    */
   import { page } from "$app/state";
-  import SupportContent from "$lib/shared/support/components/SupportContent.svelte";
+  import SupportContent from "#lib/shared/support/components/SupportContent.svelte";
 
   // Stripe returns here on success/cancel.
   const justDonated = $derived(page.url.searchParams.get("donated") === "1");

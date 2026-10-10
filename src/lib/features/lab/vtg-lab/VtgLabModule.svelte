@@ -8,7 +8,7 @@
 	 * - Rosetta: Side-by-side terminology comparison between the two systems
 	 */
 
-	import { browser } from "$app/environment";
+	import { browser } from "$app/env";
 	import type { VtgLabTab } from "./domain/vtg-lab-types";
 	import RotationStyleExplorer from "./components/RotationStyleExplorer.svelte";
 	import RosettaPanel from "./components/RosettaPanel.svelte";

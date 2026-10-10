@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
 	deriveFrameMath,
 	type MandalaFrameSpec,
-} from "$lib/shared/mandala/services/mandala-frame-renderer";
+} from "#lib/shared/mandala/services/mandala-frame-renderer.js";
 
 function spec(overrides: Partial<MandalaFrameSpec> = {}): MandalaFrameSpec {
 	return {

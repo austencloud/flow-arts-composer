@@ -6,7 +6,7 @@ import {
   musicPreviewTarget,
   musicSoundsAt,
   shouldSeekMusic,
-} from "$lib/shared/media-composition/services/music-preview-sync";
+} from "#lib/shared/media-composition/services/music-preview-sync.js";
 
 // The file plays from its 5 s at the post's 2 s, through its 35 s.
 const placed = { startSeconds: 2, sourceInSeconds: 5, sourceOutSeconds: 35 };

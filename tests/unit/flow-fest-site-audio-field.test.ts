@@ -18,21 +18,21 @@ import {
   type FlowFestAudioSourceCharacter,
   type FlowFestAudioSourceClass,
   type FlowFestAudioTier,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-audio-field";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-audio-field.js";
 import {
   FLOW_FEST_WALLA_CONTRACT,
   flowFestWallaOccupancy,
   flowFestWallaOnsetsPerSecond,
   flowFestWallaWindowIndexAt,
   scheduleFlowFestWallaWindow,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-audio-walla";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-audio-walla.js";
 import {
   computeFlowFestSiteAudioBedFilters,
   computeFlowFestSiteAudioMix,
   type FlowFestSiteAudioLayout,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-site-audio";
-import { FLOW_FEST_FIRE_JAM_CONTRACT } from "$lib/features/flow-fest-sim/domain/flow-fest-fire-jam";
-import { FlowFestFireJamSoundscape } from "$lib/features/flow-fest-sim/services/implementations/FlowFestFireJamSoundscape";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-site-audio.js";
+import { FLOW_FEST_FIRE_JAM_CONTRACT } from "#lib/features/flow-fest-sim/domain/flow-fest-fire-jam.js";
+import { FlowFestFireJamSoundscape } from "#lib/features/flow-fest-sim/services/implementations/FlowFestFireJamSoundscape.js";
 import { createFlowFestCampPlan } from "../../src/routes/test/flow-fest-sim/flow-fest-camp-plan";
 import {
   parseFlowFestRuntimeContract,

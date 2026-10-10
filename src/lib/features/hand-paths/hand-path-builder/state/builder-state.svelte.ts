@@ -12,8 +12,8 @@
  *   Concatenated: ["n", "ne", "s"] → "NNeS"
  */
 
-import { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { handPathToName } from "$lib/shared/foundation/services/hand-path-namer";
+import { GridLocation, GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { handPathToName } from "#lib/shared/foundation/services/hand-path-namer.js";
 
 export type BuilderPhase = "left" | "right" | "complete";
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
-  import { simplifyAndTruncate } from "$lib/shared/foundation/utils/word-simplifier";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import { simplifyAndTruncate } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { scale } from "svelte/transition";
   import { backOut, cubicOut } from "svelte/easing";
 

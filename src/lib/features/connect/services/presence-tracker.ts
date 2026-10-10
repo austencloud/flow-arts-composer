@@ -19,7 +19,7 @@ import {
 	getDatabaseInstance,
 	getAuthSync,
 	createHMRSafeDatabaseListener
-} from '$lib/shared/auth/firebase';
+} from '#lib/shared/auth/firebase.js';
 import type { UserPresence, PresenceFirebaseData } from '../domain/models/connect-models';
 import { PRESENCE_CONFIG, FIREBASE_PATHS } from '../domain/models/connect-constants';
 

@@ -1,21 +1,21 @@
-import { deriveSteps } from "$lib/shared/foundation/services/step-deriver";
+import { deriveSteps } from "#lib/shared/foundation/services/step-deriver.js";
 import {
   extractLeftSoloProp,
   extractRightSoloProp,
   extractStepPairings,
 } from "./sequence-decomposer";
 import type { SequenceData } from "../domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { calculateHandpathDirection } from "$lib/shared/pictograph/arrow/positioning/calculation/services/handpath-direction-calculator";
-import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-import { ensureStepPlacement } from "$lib/shared/pictograph/shared/services/motion-placement";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { calculateHandpathDirection } from "#lib/shared/pictograph/arrow/positioning/calculation/services/handpath-direction-calculator.js";
+import { reversalDetector } from "#lib/shared/create/services/reversal-detector.js";
+import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+import { ensureStepPlacement } from "#lib/shared/pictograph/shared/services/motion-placement.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
 
 // Legacy sequences saved before SoloPropStepData carried prefloatMotionType

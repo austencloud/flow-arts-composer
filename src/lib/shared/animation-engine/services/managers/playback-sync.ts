@@ -36,10 +36,10 @@ import type {
   AnimationEngineProps,
   AnimationEngineCallbacks,
 } from "../animation-engine.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { TrailSettings } from "../../domain/types/trail-types";
 import { DEFAULT_CANVAS_SIZE } from "../canvas-resizer.svelte";
 import {
@@ -49,8 +49,8 @@ import {
 import {
   GRID_JOIN_TWEEN_MS,
   gridJoinHandOffsets,
-} from "$lib/shared/grid-join/grid-join-tween";
-import { motionDuration } from "$lib/shared/transitions/motion";
+} from "#lib/shared/grid-join/grid-join-tween.js";
+import { motionDuration } from "#lib/shared/transitions/motion.js";
 
 /** Default props sentinel used when lastPropsRef is null */
 const DEFAULT_ENGINE_PROPS: AnimationEngineProps = {
@@ -69,7 +69,7 @@ export interface PlaybackSyncDeps {
   setCanvasSize: (s: number) => void;
   buildFrameDeps: () => {
     effectsConfigState:
-      | import("$lib/shared/effects/state/effects-config-state.svelte").EffectsConfigState
+      | import("#lib/shared/effects/state/effects-config-state.svelte.js").EffectsConfigState
       | null;
     effectRendererManager: import("../effect-renderer-manager").EffectRendererManager;
     getVM: () => AnimationVisibilityStateManager;

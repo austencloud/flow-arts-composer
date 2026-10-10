@@ -5,24 +5,26 @@ const PREFIX = "projects/test-project/databases/(default)/documents/";
 
 const mocks = vi.hoisted(() => ({ firestore: null as unknown }));
 
-vi.mock("$lib/server/security/withRateLimit", () => ({
+vi.mock("#lib/server/security/withRateLimit.js", () => ({
   withRateLimit: async () => null,
 }));
-vi.mock("$lib/server/security/rate-limiter", () => ({
+vi.mock("#lib/server/security/rate-limiter.js", () => ({
   RATE_LIMITS: { GENERAL: {}, CARD_SCAN: {} },
 }));
-vi.mock("$lib/server/auth/getOptionalFirebaseUser", () => ({
+vi.mock("#lib/server/auth/getOptionalFirebaseUser.js", () => ({
   getOptionalFirebaseUser: async () => null,
 }));
-vi.mock("$lib/server/firestore/firestore-rest", async () => {
+vi.mock("#lib/server/firestore/firestore-rest.js", async () => {
   const actual = await vi.importActual<
     typeof import("../../../src/lib/server/firestore/firestore-rest")
   >("../../../src/lib/server/firestore/firestore-rest");
   return { ...actual, getFirestoreRest: () => mocks.firestore };
 });
 // The browser client posts anonymously in these tests.
-vi.mock("$lib/shared/auth/firebase", () => ({ auth: { currentUser: null } }));
-vi.mock("$lib/shared/auth/services/authed-fetch", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
+  auth: { currentUser: null },
+}));
+vi.mock("#lib/shared/auth/services/authed-fetch.js", () => ({
   authedFetch: vi.fn(),
 }));
 
@@ -42,6 +44,7 @@ import {
   POST,
 } from "../../../src/routes/api/physical-cards/scan/+server";
 import worker from "../../../cloudflare/workers/shortcode-redirect.js";
+import { setWorkerEnv, withCf } from "#test-helpers/worker-env.js";
 
 /**
  * Just enough of Firestore's commit semantics to exercise the endpoint's
@@ -170,18 +173,15 @@ function scanEvent(body: unknown) {
       body: typeof body === "string" ? body : JSON.stringify(body),
     }
   );
+  setWorkerEnv({ FIREBASE_SERVICE_ACCOUNT_JSON: "service-account-json" });
   return {
-    request,
+    request: withCf(request, {
+      country: "US",
+      city: "Chicago",
+      latitude: "41.85",
+      longitude: "-87.65",
+    }),
     url: new URL(request.url),
-    platform: {
-      env: { FIREBASE_SERVICE_ACCOUNT_JSON: "service-account-json" },
-      cf: {
-        country: "US",
-        city: "Chicago",
-        latitude: "41.85",
-        longitude: "-87.65",
-      },
-    },
     getClientAddress: () => "203.0.113.7",
   } as never;
 }
@@ -485,13 +485,10 @@ describe("serialized card URL opened in the installed Android app", () => {
   });
 
   function endpointEvent(request: Request) {
+    setWorkerEnv({ FIREBASE_SERVICE_ACCOUNT_JSON: "service-account-json" });
     return {
-      request,
+      request: withCf(request, { country: "US", city: "Chicago" }),
       url: new URL(request.url),
-      platform: {
-        env: { FIREBASE_SERVICE_ACCOUNT_JSON: "service-account-json" },
-        cf: { country: "US", city: "Chicago" },
-      },
       getClientAddress: () => "203.0.113.7",
     } as never;
   }

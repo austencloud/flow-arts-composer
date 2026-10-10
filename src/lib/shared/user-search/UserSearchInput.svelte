@@ -9,9 +9,9 @@
   avatar row, and the wording of the empty state.
 -->
 <script lang="ts">
-  import AsyncSuggestionCombobox from "$lib/shared/ui/components/AsyncSuggestionCombobox.svelte";
+  import AsyncSuggestionCombobox from "#lib/shared/ui/components/AsyncSuggestionCombobox.svelte";
   import { searchUsers as searchUsersService } from "./services/user-searcher";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import type { UserSearchResult } from "./services/types";
 
   type UserResult = UserSearchResult;

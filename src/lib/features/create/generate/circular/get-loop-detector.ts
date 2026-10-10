@@ -1,5 +1,5 @@
-import { browser } from '$app/environment';
-import type { ILOOPDetector } from '$lib/shared/create/services/ILOOPDetector';
+import { browser } from '$app/env';
+import type { ILOOPDetector } from '#lib/shared/create/services/ILOOPDetector.js';
 import { LOOPDetector } from './services/loop-detector';
 
 let instance: ILOOPDetector | null = null;

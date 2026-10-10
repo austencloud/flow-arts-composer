@@ -1,6 +1,6 @@
 <script lang="ts">
 
-import { getPoiSequenceValidator } from "$lib/features/levels/poi-lab/get-poi-sequence-validator";
+import { getPoiSequenceValidator } from "#lib/features/levels/poi-lab/get-poi-sequence-validator.js";
   /**
    * Browser Tab - Browse community sequences with poi validation
    *
@@ -11,13 +11,13 @@ import { getPoiSequenceValidator } from "$lib/features/levels/poi-lab/get-poi-se
    */
 
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { PoiValidationResult } from "../domain/poi-models";
-  import ChoreoCardThumbnail from "$lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import ChoreoCardThumbnail from "#lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 
   // State
   let allSequences: SequenceData[] = $state([]);

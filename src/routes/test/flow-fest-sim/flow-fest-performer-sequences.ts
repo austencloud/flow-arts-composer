@@ -14,15 +14,15 @@
 import {
   EFFECT_PREVIEW_TARGET_COUNTS,
   isEffectPreviewLoop,
-} from "$lib/shared/effects/domain/effect-preview-loop-policy";
+} from "#lib/shared/effects/domain/effect-preview-loop-policy.js";
 import {
   GGGG_CW,
   GHGH,
   HHHH_CCW,
-} from "$lib/shared/combination/domain/demo-fixtures";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { FlowFestFestivalPersonRole } from "$lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam";
+} from "#lib/shared/combination/domain/demo-fixtures.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { FlowFestFestivalPersonRole } from "#lib/features/flow-fest-sim/domain/flow-fest-living-fire-jam.js";
 
 export type FlowFestPerformerRole = Exclude<
   FlowFestFestivalPersonRole,
@@ -108,11 +108,11 @@ function defaultGenerator(): () => Promise<SequenceData | null> {
       { getGenerationOrchestrator },
       { orientationCycleExtender },
     ] = await Promise.all([
-      import("$lib/features/landing/services/infinite-sequence-generator"),
-      import("$lib/features/landing/services/spinner-metrics-repository"),
-      import("$lib/features/create/generate/shared/get-generation-orchestrator"),
+      import("#lib/features/landing/services/infinite-sequence-generator.js"),
+      import("#lib/features/landing/services/spinner-metrics-repository.js"),
+      import("#lib/features/create/generate/shared/get-generation-orchestrator.js"),
       import(
-        "$lib/features/create/generate/circular/services/orientation-cycle-extender"
+        "#lib/features/create/generate/circular/services/orientation-cycle-extender.js"
       ),
     ]);
     const generator = new InfiniteSequenceGenerator(

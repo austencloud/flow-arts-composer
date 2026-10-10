@@ -7,7 +7,9 @@ const LIB = path.join(ROOT, "src", "lib");
 
 function resolve(spec, fromFile) {
   let base;
-  if (spec.startsWith("$lib/")) base = path.join(LIB, spec.slice(5));
+  // #lib imports name the emitted .js file; the source beside it is .ts.
+  if (spec.startsWith("#lib/"))
+    base = path.join(LIB, spec.slice(5).replace(/\.js$/, ""));
   else if (spec.startsWith("./") || spec.startsWith("../"))
     base = path.resolve(path.dirname(fromFile), spec);
   else return null;

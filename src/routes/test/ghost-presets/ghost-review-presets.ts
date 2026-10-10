@@ -1,6 +1,6 @@
-import type { EffectPreset } from "$lib/shared/animation-engine/components/effects-panel/presets/types";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import type { GhostIntent } from "$lib/shared/effects/domain/effects-config";
+import type { EffectPreset } from "#lib/shared/animation-engine/components/effects-panel/presets/types.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import type { GhostIntent } from "#lib/shared/effects/domain/effects-config.js";
 
 export type GhostPresetSource = "production" | "study";
 export type GhostPresetVerdict = "favorite" | "pass";

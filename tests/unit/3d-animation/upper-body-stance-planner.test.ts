@@ -3,7 +3,7 @@ import {
   MAX_STANCE_YAW_RAD,
   planUpperBodyStance,
   planUpperBodyStanceYaw,
-} from "$lib/shared/3d/collision/upper-body-stance-planner";
+} from "#lib/shared/3d/collision/upper-body-stance-planner.js";
 
 const GRID_DEPTH = 0.3;
 const LANE = 0.16;

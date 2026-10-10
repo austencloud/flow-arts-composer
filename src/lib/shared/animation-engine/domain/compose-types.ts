@@ -5,15 +5,15 @@
  * the mode-first approach with a layout-first cell-based system.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   type TrailSettings,
   DEFAULT_TRAIL_SETTINGS,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import type {
   TipEffectMap,
   TipEffortMap,
-} from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+} from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 
 // Grid Layout
 

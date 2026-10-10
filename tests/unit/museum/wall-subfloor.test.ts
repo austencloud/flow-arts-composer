@@ -8,9 +8,9 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { buildMuseumGrid } from "$lib/features/museum/services/museum-grid-builder";
-import { bucketMuseumTiles, TILE_SIZE } from "$lib/features/museum/services/museum-geometry-builder";
-import { MUSEUM_ROOMS, MUSEUM_EDGES, GRID_CONFIG } from "$lib/features/museum/data/museum-room-graph";
+import { buildMuseumGrid } from "#lib/features/museum/services/museum-grid-builder.js";
+import { bucketMuseumTiles, TILE_SIZE } from "#lib/features/museum/services/museum-geometry-builder.js";
+import { MUSEUM_ROOMS, MUSEUM_EDGES, GRID_CONFIG } from "#lib/features/museum/data/museum-room-graph.js";
 
 const key = (p: { x: number; z: number }) => `${p.x.toFixed(3)},${p.z.toFixed(3)}`;
 

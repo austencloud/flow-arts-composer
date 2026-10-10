@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSequencePreviewCoordinator } from "$lib/shared/inbox/state/sequence-preview-coordinator.svelte";
+import { createSequencePreviewCoordinator } from "#lib/shared/inbox/state/sequence-preview-coordinator.svelte.js";
 
 function setup() {
   const availableIds = new Set(["older", "latest"]);

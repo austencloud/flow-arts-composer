@@ -5,10 +5,10 @@
  * user identification, and offline event queuing.
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { captureWhenReady } from "./posthog";
-import { consumeSwUpdateReloadMarker } from "$lib/shared/offline/services/sw-update-manager";
-import { takeChunkRecoveryReloadForSession } from "$lib/shared/offline/services/chunk-recovery-marker";
+import { consumeSwUpdateReloadMarker } from "#lib/shared/offline/services/sw-update-manager.js";
+import { takeChunkRecoveryReloadForSession } from "#lib/shared/offline/services/chunk-recovery-marker.js";
 import type { ActivityQueryOptions } from "./types";
 import type {
   ActivityEvent,

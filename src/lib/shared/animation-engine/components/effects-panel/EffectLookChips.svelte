@@ -1,8 +1,8 @@
 <script lang="ts">
   import { effectUiLabel } from "./effect-ui-label";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { EffectPresetGroup } from "./presets/types";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
   /**
    * The compact presentation of "choose a Look for this effect".

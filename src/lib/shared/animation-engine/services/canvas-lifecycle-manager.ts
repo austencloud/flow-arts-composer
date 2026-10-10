@@ -1,23 +1,23 @@
 import type { GridJoin } from "@tka/tka-types";
 import type { CanvasResizer } from "./canvas-resizer.svelte";
-import type { IAnimationRenderLoop } from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
+import type { IAnimationRenderLoop } from "#lib/shared/animation-engine/services/IAnimationRenderLoop.js";
 import type { EffectRendererManager } from "./effect-renderer-manager";
 import type { TrailCapturer } from "./trail-capturer";
 import type { AnimatorCanvasInitializer } from "./animator-canvas-initializer";
-import type { IAnimationPrecomputer } from "$lib/shared/animation-engine/services/IAnimationPrecomputer";
+import type { IAnimationPrecomputer } from "#lib/shared/animation-engine/services/IAnimationPrecomputer.js";
 import type { AnimationVisibilitySynchronizer } from "./animation-visibility-synchronizer";
 import type { GlyphTransitionController } from "./glyph-transition-controller.svelte";
 import type { SequenceCache } from "./sequence-cache.svelte";
 import type { TrailSettingsSynchronizer } from "./trail-settings-synchronizer.svelte";
 import type { PropTypeChanger } from "./prop-type-changer.svelte";
-import type { IGlyphTextureLoader } from "$lib/shared/animation-engine/services/IGlyphTextureLoader";
-import type { IPropTextureLoader } from "$lib/shared/animation-engine/services/IPropTextureLoader";
-import type { IAnimationRenderer as AnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
-import type { ISVGGenerator as SVGGenerator } from "$lib/shared/animation-engine/services/ISVGGenerator";
-import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
+import type { IGlyphTextureLoader } from "#lib/shared/animation-engine/services/IGlyphTextureLoader.js";
+import type { IPropTextureLoader } from "#lib/shared/animation-engine/services/IPropTextureLoader.js";
+import type { IAnimationRenderer as AnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
+import type { ISVGGenerator as SVGGenerator } from "#lib/shared/animation-engine/services/ISVGGenerator.js";
+import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
 import type { SequenceAnimationOrchestrator } from "./sequence-animation-orchestrator";
 import type { AnimationVisibilityStateManager } from "../state/animation-visibility-state.svelte";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import type { PropSystem } from "./managers/prop-system";
 import type { PropPipeline } from "./prop-pipeline";
 import type { PropTypeManager } from "./prop-type-manager";
@@ -27,7 +27,7 @@ import type {
   AnimationEngineCallbacks,
 } from "./animation-engine.svelte";
 import type { AnimatorState } from "../state/animator-state.svelte";
-import type { RenderFrameParams } from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
+import type { RenderFrameParams } from "#lib/shared/animation-engine/services/IAnimationRenderLoop.js";
 import { loadAnimatorServices as loadServices } from "./animator-loader";
 import { TrailCapturer as TrailCapturerImpl } from "./trail-capturer";
 import { SequenceAnimationOrchestrator as SAO } from "./sequence-animation-orchestrator";
@@ -44,8 +44,8 @@ import { AnimationVisibilitySynchronizer as VisibilitySync } from "./animation-v
 import type { AnimationVisibilityState } from "./animation-visibility-synchronizer";
 import { FireTipTracker } from "./fire-tip-tracker";
 import { LedSampler } from "./led-sampler";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { MandalaOverlayCanvas } from "$lib/shared/mandala/services/mandala-overlay-canvas";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { MandalaOverlayCanvas } from "#lib/shared/mandala/services/mandala-overlay-canvas.js";
 import { squareFrame } from "../domain/types/canvas-frame";
 
 /**

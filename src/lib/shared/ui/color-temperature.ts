@@ -7,7 +7,7 @@
 import {
   DARK_SURFACE_ANCHOR,
   contrastRatio,
-} from "$lib/shared/settings/utils/background-theme-calculator";
+} from "#lib/shared/settings/utils/background-theme-calculator.js";
 import {
   COLOR_PRESETS,
   COLOR_PRESET_COLUMNS,

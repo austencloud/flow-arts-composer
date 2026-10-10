@@ -8,7 +8,7 @@ LOOPComponentGrid.svelte - Layout for LOOP component selection buttons
   import {
     LOOP_COMPONENTS,
     LOOPComponent,
-  } from "$lib/features/create/generate/shared/domain/constants/loop-components";
+  } from "#lib/features/create/generate/shared/domain/constants/loop-components.js";
   import type { Snippet } from "svelte";
   import LOOPComponentButton from "./LOOPComponentButton.svelte";
 

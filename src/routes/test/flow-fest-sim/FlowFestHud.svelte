@@ -1,19 +1,19 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import type { FlowFestMobilityRuntimeUpdate } from "$lib/features/flow-fest-sim/state/flow-fest-mobility-state.svelte";
-  import { FLOW_FEST_GAMEPLAY_WALK_SPEED_METERS_PER_SECOND } from "$lib/features/flow-fest-sim/domain/flow-fest-simulation-contract";
-  import { flowFestCarSpec } from "$lib/features/flow-fest-sim/domain/flow-fest-car";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import type { FlowFestMobilityRuntimeUpdate } from "#lib/features/flow-fest-sim/state/flow-fest-mobility-state.svelte.js";
+  import { FLOW_FEST_GAMEPLAY_WALK_SPEED_METERS_PER_SECOND } from "#lib/features/flow-fest-sim/domain/flow-fest-simulation-contract.js";
+  import { flowFestCarSpec } from "#lib/features/flow-fest-sim/domain/flow-fest-car.js";
   import {
     flowFestGroundVehicleSpeedKilometresPerHour,
     flowFestGroundVehicleSpeedMilesPerHour,
-  } from "$lib/features/flow-fest-sim/domain/flow-fest-ground-vehicle";
+  } from "#lib/features/flow-fest-sim/domain/flow-fest-ground-vehicle.js";
   import type {
     FlowFestObjective,
     FlowFestProgressState,
-  } from "$lib/features/flow-fest-sim/state/flow-fest-progress";
+  } from "#lib/features/flow-fest-sim/state/flow-fest-progress.js";
   import type {
     FlowFestBranchId,
     FlowFestRuntimeContract,

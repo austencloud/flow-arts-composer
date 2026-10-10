@@ -8,7 +8,7 @@
 <script lang="ts">
   import { renderInfoCardFront, renderInfoCardBack } from "../../services/info-card-canvas-renderer";
   import { CARD_SIZES, type CardSizeId } from "../../domain/card-sizes";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 
   interface Props {
     face: "front" | "back";

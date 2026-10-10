@@ -24,7 +24,7 @@
  *     startOrientation per hand) rather than silently dropping it.
  */
 
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   SIMPLE_PATTERNS,
   getCompatiblePatterns,
@@ -32,20 +32,20 @@ import {
 import { resolvePattern, type ResolvedReversalPattern } from "../domain/reversal-transform";
 import { transformSequence } from "./reversal-transform-apply";
 import type { CsvEdge } from "./pictograph-letter-lookup";
-import { applyPattern } from "$lib/shared/create/services/turn-pattern-apply";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { updateSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { applyPattern } from "#lib/shared/create/services/turn-pattern-apply.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { updateSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   TurnPattern,
   TurnPatternEntry,
   TurnValue,
-} from "$lib/shared/create/domain/turn-pattern-data";
+} from "#lib/shared/create/domain/turn-pattern-data.js";
 import type { CardVariation } from "../domain/models/DeckRelease";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
-import { rotateSequenceGeometry } from "$lib/shared/create/services/sequence-derived-fields";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { recalculateAllOrientations } from "#lib/shared/create/services/orientation-propagation.js";
+import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
 import {
   resolveStartOrientation,
   placementFamilyOf,

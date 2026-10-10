@@ -11,7 +11,7 @@
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * Deep Link Sequence Service Contract
@@ -24,9 +24,9 @@ export interface DeepLinkLoadResult {
   /** Source of the loaded sequence */
   source?: "deepLink" | "pendingEdit";
 }
-import type { DeepLinker } from "$lib/shared/navigation/services/deep-linker";
-import { deriveLettersForSequence } from "$lib/shared/navigation/services/letter-deriver";
-import { derivePositionsForSequence } from "$lib/shared/navigation/services/position-deriver";
+import type { DeepLinker } from "#lib/shared/navigation/services/deep-linker.js";
+import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
+import { derivePositionsForSequence } from "#lib/shared/navigation/services/position-deriver.js";
 
 const PENDING_EDIT_KEY = "tka-pending-edit-sequence";
 

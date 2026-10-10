@@ -5,13 +5,13 @@ import {
   POST_SHAPE_RATIO_MIN,
   wrapDegrees,
   type PostFraming,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   calculateMediaFit,
   resolvePanOffset,
   turnOf,
   turnedExtent,
-} from "$lib/shared/media-composition/services/media-fit";
+} from "#lib/shared/media-composition/services/media-fit.js";
 
 /**
  * The crop screen's geometry: where the stage shows the whole picture and the

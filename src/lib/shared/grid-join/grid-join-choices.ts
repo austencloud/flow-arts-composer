@@ -8,7 +8,7 @@
  * The right-click submenu and the viewer's Grid join section both read these,
  * so the two always offer the same choices with the same names.
  */
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { GridJoin } from "@tka/tka-types";
 import {
   GRID_JOIN_DIRECTIONS,

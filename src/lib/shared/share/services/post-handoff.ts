@@ -23,10 +23,10 @@ import {
   sanitizeFilename,
   shareBlobNatively,
   supportsNativeFileShare,
-} from "$lib/shared/foundation/services/file-downloader";
-import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+} from "#lib/shared/foundation/services/file-downloader.js";
+import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 export type ShareArtifact = "card" | "video";
 

@@ -1,5 +1,5 @@
-import type { TargetHand } from '$lib/shared/animation-engine/domain/compose-types';
-import type { PillId } from '$lib/shared/animation-panel/pill-nav/pill-types';
+import type { TargetHand } from '#lib/shared/animation-engine/domain/compose-types.js';
+import type { PillId } from '#lib/shared/animation-panel/pill-nav/pill-types.js';
 
 export type ScopeLevel = 'grid' | 'cell' | 'layer' | 'hand' | 'tip';
 

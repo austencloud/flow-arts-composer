@@ -41,9 +41,9 @@ import {
   type LOOPComponentId,
   type LoopReflectionAxis,
 } from "@tka/render-composition";
-import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
+import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
 import { getCardBackThemeVisuals } from "../../components/card-back/card-back-theme-visuals";
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import { rasterizeComponent } from "./rasterize-node";
 
 // ── Render scale (matches card-back-layout.ts / CardBack.svelte) ───────────

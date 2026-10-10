@@ -9,17 +9,17 @@
   IS the setting, but preferences need context.
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { AppSettings } from "../../domain/app-settings";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import { onMount } from "svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { appEntryState } from "$lib/shared/onboarding/state/app-entry-state.svelte.ts";
-  import { generateTourState } from "$lib/shared/onboarding/state/generate-tour-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { appEntryState } from "#lib/shared/onboarding/state/app-entry-state.svelte.ts";
+  import { generateTourState } from "#lib/shared/onboarding/state/generate-tour-state.svelte.js";
   import {
     handleModuleChange,
     handleSectionChange,
-  } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
+  } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import OfflineLocalDataSection from "./preferences/OfflineLocalDataSection.svelte";
   import LanguagePreference from "./preferences/LanguagePreference.svelte";
   import { Collapsible } from "bits-ui";
@@ -27,7 +27,7 @@
     applyNativeUpdate,
     checkForNativeUpdate,
     nativeUpdate,
-  } from "$lib/shared/offline/services/native-update.svelte";
+  } from "#lib/shared/offline/services/native-update.svelte.js";
 
   let { currentSettings, onSettingUpdate } = $props<{
     currentSettings: AppSettings;

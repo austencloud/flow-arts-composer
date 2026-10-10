@@ -5,7 +5,7 @@
  * export. It does not claim that a printer produced exactly one piece of paper:
  * reprinting the same downloaded file necessarily reproduces the same ID.
  */
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const PHYSICAL_CARD_ALPHABET =
   "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";

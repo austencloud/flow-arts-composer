@@ -1,5 +1,5 @@
-import { browser } from "$app/environment";
-import { sceneAudioState } from "$lib/shared/3d/state/scene-audio-state.svelte";
+import { browser } from "$app/env";
+import { sceneAudioState } from "#lib/shared/3d/state/scene-audio-state.svelte.js";
 
 const POP_SECONDS = 0.11;
 const POP_LEVEL = 0.24;

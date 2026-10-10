@@ -5,11 +5,11 @@ Main panel for the Record tab.
 Combines video feed with playback controls for practicing sequences.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { onDestroy, onMount } from "svelte";
-  import { Metronome } from "$lib/shared/audio/metronome";
+  import { Metronome } from "#lib/shared/audio/metronome.js";
   import { createRecordTabState } from "../state/record-tab-state.svelte";
   import RecordControls from "./RecordControls.svelte";
   import VideoFeedPanel from "./VideoFeedPanel.svelte";

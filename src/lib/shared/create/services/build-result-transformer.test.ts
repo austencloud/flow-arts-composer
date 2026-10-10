@@ -23,12 +23,12 @@ import {
 } from "@tka/tka-types";
 import type { Motion } from "@tka/tka-types";
 import type { BuildResult } from "@tka/sequence-engine/generation";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   DifficultyLevel,
   type GenerationOptions,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import { sequenceMetadataManager } from "./sequence-metadata-manager";
 import { reversalDetector } from "./reversal-detector";
 import { BuildResultTransformer } from "./build-result-transformer";

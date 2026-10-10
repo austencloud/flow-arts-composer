@@ -16,7 +16,7 @@
  */
 import { compositeMandalaOverlap } from "./mandala-overlap-compositor";
 import { mixColors } from "../domain/mandala-palette";
-import { resolveViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+import { resolveViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
 import type { PreparedMandalaPath } from "./types";
 import type { MandalaHandOffsets } from "./mandala-grid-join";
 

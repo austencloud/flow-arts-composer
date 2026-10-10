@@ -5,7 +5,7 @@ import {
   migratePersistedBrowseNavigation,
   normalizeBrowsePrimary,
   resolveBrowsePathname,
-} from "$lib/shared/browse/navigation/browse-route-resolver";
+} from "#lib/shared/browse/navigation/browse-route-resolver.js";
 
 describe("Browse route resolver", () => {
   it.each([

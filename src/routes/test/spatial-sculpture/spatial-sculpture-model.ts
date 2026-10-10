@@ -2,7 +2,7 @@ import { Plane } from "@austencloud/scene-3d";
 import {
   GridLocation,
   type GridLocation as GridLocationValue,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export const PRIMARY_PLANES = [Plane.WALL, Plane.WHEEL, Plane.FLOOR] as const;
 

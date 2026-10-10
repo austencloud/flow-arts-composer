@@ -1,6 +1,6 @@
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { PublicSequenceIndex } from "#lib/shared/foundation/domain/models/public-sequence-index.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /** Converts a PublicSequenceIndex doc into a SequenceData for gallery display. */
 export type GallerySequenceConverter = (data: PublicSequenceIndex, id: string) => SequenceData;

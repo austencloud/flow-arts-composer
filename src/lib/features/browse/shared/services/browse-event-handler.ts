@@ -5,19 +5,19 @@
  * following the service-based architecture pattern.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { BrowseEventHandlerParams } from "./types";
-import { sequencePanelManager } from "$lib/shared/browse/state/sequence-panel-state.svelte";
-import { browseScrollState } from "$lib/shared/browse/state/browse-scroll-state.svelte";
-import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
+import { sequencePanelManager } from "#lib/shared/browse/state/sequence-panel-state.svelte.js";
+import { browseScrollState } from "#lib/shared/browse/state/browse-scroll-state.svelte.js";
+import type { PublicSequencesLoader } from "#lib/shared/browse/services/public-sequences-loader.js";
 import { handleModuleChange } from "../../../../shared/navigation-coordinator/navigation-coordinator.svelte";
 import { openSequenceViewer } from "../../../../shared/sequence-viewer/services/sequence-viewer-navigator";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { authDrawerState } from "#lib/shared/auth/state/auth-drawer-state.svelte.js";
 import { resolveBrowseInitialViewerMode } from "./performance-browse-intent";
-import { trackPerformancePlaybackIntent } from "$lib/shared/analytics/browse-events";
+import { trackPerformancePlaybackIntent } from "#lib/shared/analytics/browse-events.js";
 
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
 export class BrowseEventHandler {
   private params: BrowseEventHandlerParams | null = null;
 

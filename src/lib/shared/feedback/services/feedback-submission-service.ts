@@ -13,21 +13,21 @@ import {
 import {
   getFirestoreInstance,
   getStorageInstance,
-} from "$lib/shared/auth/firebase";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/auth/firebase.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 import type {
   FeedbackFormData,
   FeedbackProgressCallback,
   FeedbackStatus,
-} from "$lib/shared/feedback/domain/models/feedback-models";
-import type { MessageAttachment } from "$lib/shared/messaging/domain/models/message-models";
-import { conversationService } from "$lib/shared/messaging/services/conversation-manager";
-import { messagingService } from "$lib/shared/messaging/services/messenger";
-import { captureDeviceContext } from "$lib/shared/feedback/utils/device-context-capturer";
-import { trackFeedbackSubmitted } from "$lib/shared/analytics/feedback-events";
+} from "#lib/shared/feedback/domain/models/feedback-models.js";
+import type { MessageAttachment } from "#lib/shared/messaging/domain/models/message-models.js";
+import { conversationService } from "#lib/shared/messaging/services/conversation-manager.js";
+import { messagingService } from "#lib/shared/messaging/services/messenger.js";
+import { captureDeviceContext } from "#lib/shared/feedback/utils/device-context-capturer.js";
+import { trackFeedbackSubmitted } from "#lib/shared/analytics/feedback-events.js";
 
 // Account that receives the feedback DM thread. This is a Firebase Auth UID, not
 // a credential — it ships in the client bundle, and that's fine: all access is

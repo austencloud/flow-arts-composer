@@ -16,11 +16,11 @@
  *   haven't been derived.
  */
 
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 /** Treat invisible placeholders like the old absent hand. */
 function visibleOrUndefined(m: MotionData | undefined): MotionData | undefined {

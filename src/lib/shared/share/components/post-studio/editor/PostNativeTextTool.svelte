@@ -2,10 +2,10 @@
   import type {
     PostTextAnimation,
     PostTextStyle,
-  } from "$lib/shared/media-composition/domain/post-project";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  } from "#lib/shared/media-composition/domain/post-project.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import TypeableValue from "#lib/shared/ui/components/TypeableValue.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
 
   interface Props {
     style: PostTextStyle;

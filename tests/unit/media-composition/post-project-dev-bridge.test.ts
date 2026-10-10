@@ -3,17 +3,17 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
-import { startPostProjectDevBridge } from "$lib/shared/media-composition/services/post-project-dev-client";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createPostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+import { loadPostProject } from "#lib/shared/media-composition/services/post-project-store.js";
+import { startPostProjectDevBridge } from "#lib/shared/media-composition/services/post-project-dev-client.js";
 import {
   fingerprint,
   heartbeatPostProject,
   postProjectEditStatus,
   queuePostProjectEdit,
   readPostProjectSession,
-} from "$lib/server/post-project-dev-bridge";
+} from "#lib/server/post-project-dev-bridge.js";
 
 const sequence = {
   id: "bridge-sequence",

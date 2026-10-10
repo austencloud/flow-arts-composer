@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	REFLECTIVE_POOL_DEFAULTS,
 	ReflectivePoolShader,
-} from "$lib/shared/3d/environments/primitives/reflective-pool-shader";
+} from "#lib/shared/3d/environments/primitives/reflective-pool-shader.js";
 
 describe("reflective pool amplitude ramp", () => {
 	it("defaults to a uniform surface, so existing pools are unchanged", () => {

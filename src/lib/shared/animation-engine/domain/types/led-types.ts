@@ -5,11 +5,11 @@
  * mode: a device (capsule or pixel staff), a strip pattern that loops on its
  * own clock, and a look (glow, persistence, bloom, brightness).
  *
- * Pattern data itself is owned by `$lib/shared/poi/domain` — the same
+ * Pattern data itself is owned by `#lib/shared/poi/domain` — the same
  * `StripPattern` currency the Poi Lab authors and uploads to hardware.
  */
 
-import type { PatternParams, RGBColor } from "$lib/shared/poi/domain/strip-pattern";
+import type { PatternParams, RGBColor } from "#lib/shared/poi/domain/strip-pattern.js";
 import {
   DEFAULT_GLARE_WEIGHT,
   DEFAULT_LED_SHUTTER,

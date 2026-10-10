@@ -5,8 +5,8 @@
   Extracted from AccountSettingsSection for single responsibility.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { checkUsernameAvailability } from "$lib/shared/auth/services/username-validator";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { checkUsernameAvailability } from "#lib/shared/auth/services/username-validator.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import type { User } from "firebase/auth";
   import { authState } from "../../../auth/state/auth-state.svelte";

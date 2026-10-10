@@ -27,7 +27,7 @@ import {
   signInWithEmailLink,
 } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
-import { writeUrl } from "$lib/shared/navigation/services/url-state";
+import { writeUrl } from "#lib/shared/navigation/services/url-state.js";
 import {
   auth,
   configureAuthPersistence,
@@ -238,7 +238,7 @@ export async function completeEmailLinkSignIn(): Promise<EmailLinkCompletionResu
         // notification (createOrUpdateUserDocument skips it for anon users,
         // and the linked uid's doc already exists so it won't re-fire there).
         const { notifyUpgradeSignup } =
-          await import("$lib/shared/auth/services/anonymous-upgrade");
+          await import("#lib/shared/auth/services/anonymous-upgrade.js");
         await notifyUpgradeSignup(result.user);
       } catch (linkErr) {
         const code = (linkErr as { code?: string })?.code;
@@ -249,9 +249,9 @@ export async function completeEmailLinkSignIn(): Promise<EmailLinkCompletionResu
           // Email already belongs to a permanent account: sign into it and
           // offer to import the anon's drafts.
           const { upgradeMagicLinkCollision } =
-            await import("$lib/shared/auth/services/anonymous-upgrade");
+            await import("#lib/shared/auth/services/anonymous-upgrade.js");
           const { promptAnonymousImport } =
-            await import("$lib/shared/auth/state/anonymous-import-prompt.svelte");
+            await import("#lib/shared/auth/state/anonymous-import-prompt.svelte.js");
           const { drafts, destinationUid } = await upgradeMagicLinkCollision(
             anonUid,
             savedEmail,
@@ -288,7 +288,7 @@ export async function completeEmailLinkSignIn(): Promise<EmailLinkCompletionResu
     const { recordLastAuthMethod } = await import("./last-auth-method.svelte");
     recordLastAuthMethod("magic-link");
     const { trackAuthProviderResult } =
-      await import("$lib/shared/analytics/auth-events");
+      await import("#lib/shared/analytics/auth-events.js");
     trackAuthProviderResult("magic_link", "completed");
 
     // A magic link already proved ownership of the email address. Do not put a
@@ -298,7 +298,7 @@ export async function completeEmailLinkSignIn(): Promise<EmailLinkCompletionResu
     if (signedInUserId) {
       try {
         const { firstRunState } =
-          await import("$lib/shared/onboarding/state/first-run-state.svelte");
+          await import("#lib/shared/onboarding/state/first-run-state.svelte.js");
         firstRunState.markSkipped(signedInUserId);
       } catch (error) {
         console.warn("[email-link] Could not persist setup skip:", error);
@@ -327,7 +327,7 @@ export async function completeEmailLinkSignIn(): Promise<EmailLinkCompletionResu
   } catch (err: unknown) {
     const e = err as { code?: string; message?: string };
     const { trackAuthProviderResult } =
-      await import("$lib/shared/analytics/auth-events");
+      await import("#lib/shared/analytics/auth-events.js");
     trackAuthProviderResult("magic_link", "failed", e.code ?? "unknown");
     if (
       e?.code === "functions/failed-precondition" ||

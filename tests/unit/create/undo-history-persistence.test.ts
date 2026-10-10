@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
@@ -10,7 +10,7 @@ vi.mock("$app/environment", () => ({
 }));
 
 const { UndoManager, UndoOperationType } =
-  await import("$lib/features/create/shared/services/undo-manager");
+  await import("#lib/features/create/shared/services/undo-manager.js");
 
 const UNDO_KEY = "tka_build_undo_history";
 

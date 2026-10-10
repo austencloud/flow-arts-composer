@@ -4,7 +4,7 @@ import {
   registerCurve,
   getContactAt,
   type ContactCurveData,
-} from "$lib/shared/3d/services/contact-curve-cache";
+} from "#lib/shared/3d/services/contact-curve-cache.js";
 
 const testCurve: ContactCurveData = {
   clipName: "test-clip",

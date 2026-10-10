@@ -4,20 +4,20 @@ import {
   drawPetalSilhouette,
   resolvePetalOpacity,
   resolvePetalSize,
-} from "$lib/shared/effects/domain/petal-palettes";
-import { getPetalAtlasFrame } from "$lib/shared/3d/effects/petals/petal-texture-atlas";
-import { PetalPoolRenderer3D } from "$lib/shared/3d/effects/petals/petal-pool-renderer-3d";
+} from "#lib/shared/effects/domain/petal-palettes.js";
+import { getPetalAtlasFrame } from "#lib/shared/3d/effects/petals/petal-texture-atlas.js";
+import { PetalPoolRenderer3D } from "#lib/shared/3d/effects/petals/petal-pool-renderer-3d.js";
 import {
   NEUTRAL_PETAL_ENVIRONMENT_PROFILE,
   resolveEmberWorldSpan,
   resolvePetalEnvironmentProfile,
   resolvePetalWorldSize,
-} from "$lib/shared/3d/effects/petals/petal-world-art-direction";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { resolvePetals2D } from "$lib/shared/effects/translators/canvas2d-translator";
-import { resolvePetals3D } from "$lib/shared/effects/translators/webgl3d-translator";
-import { Petals2DRenderer } from "$lib/shared/effects/renderers/petals-2d-renderer";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+} from "#lib/shared/3d/effects/petals/petal-world-art-direction.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { resolvePetals2D } from "#lib/shared/effects/translators/canvas2d-translator.js";
+import { resolvePetals3D } from "#lib/shared/effects/translators/webgl3d-translator.js";
+import { Petals2DRenderer } from "#lib/shared/effects/renderers/petals-2d-renderer.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 import { Object3D } from "three";
 import { BackgroundType } from "@austencloud/backgrounds";
 

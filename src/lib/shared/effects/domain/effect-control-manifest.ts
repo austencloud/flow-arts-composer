@@ -16,9 +16,9 @@
  * Spec: docs/superpowers/specs/shipped/2026-06-21-effect-control-consolidation-design.md
  */
 
-import type { EffectId } from "$lib/shared/effects/state/effects-config-state.svelte";
-import { SILK_INTENSITY_MAX } from "$lib/shared/effects/domain/effects-config";
-import { getBilateralEndLabels } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
+import type { EffectId } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import { SILK_INTENSITY_MAX } from "#lib/shared/effects/domain/effects-config.js";
+import { getBilateralEndLabels } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
 
 export type ControlType =
   | "slider"

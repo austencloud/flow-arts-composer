@@ -10,7 +10,7 @@
 -->
 <script lang="ts">
 	import type { DisplayPreference } from '../../domain/models/connect-models';
-	import SegmentedControl from '$lib/shared/ui/components/SegmentedControl.svelte';
+	import SegmentedControl from '#lib/shared/ui/components/SegmentedControl.svelte';
 
 	interface Props {
 		value: DisplayPreference;

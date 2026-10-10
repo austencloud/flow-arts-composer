@@ -1,10 +1,10 @@
 <script lang="ts">
-  import ChoreoCard from "$lib/features/choreo-card/components/ChoreoCard.svelte";
-  import CardInspectModal from "$lib/features/choreo-card/components/CardInspectModal.svelte";
+  import ChoreoCard from "#lib/features/choreo-card/components/ChoreoCard.svelte";
+  import CardInspectModal from "#lib/features/choreo-card/components/CardInspectModal.svelte";
   import { resolveVariationSequence, bakeVariationFront, type StyleVariation, type LabGridMode, type StartOriPair } from "../services/resolve-rotation-style-matrices";
-  import { portal } from "$lib/features/create/generate/components/modals/portal";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { portal } from "#lib/features/create/generate/components/modals/portal.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   interface Props {
     variations: StyleVariation[];

@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
-  import { portal } from "$lib/features/create/generate/components/modals/portal";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
-  import SettingsDrillRow from "$lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
-  import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
+  import { portal } from "#lib/features/create/generate/components/modals/portal.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
+  import SettingsDrillRow from "#lib/shared/ui/components/settings-drill/SettingsDrillRow.svelte";
+  import { responsiveLayoutManager } from "#lib/shared/create/services/responsive-layout-manager.js";
   import {
     appearanceControlsFit,
     type AppearanceScrollViewport,

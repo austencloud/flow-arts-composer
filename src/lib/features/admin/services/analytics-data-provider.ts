@@ -10,10 +10,10 @@
  * - ContentQueryAnalyzer: Top sequences and content queries
  */
 
-import { getFirestoreInstance, getAuthSync } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance, getAuthSync } from "#lib/shared/auth/firebase.js";
 import type { UserMetricsAnalyzer } from "./user-metrics-analyzer";
 import type { EventActivityAnalyzer } from "./event-activity-analyzer";
-import { getTopSequences } from "$lib/features/admin/services/content-query-analyzer";
+import { getTopSequences } from "#lib/features/admin/services/content-query-analyzer.js";
 import type { SummaryMetrics, UserActivityPoint, ContentStatistics, TopSequenceData, AnalyticsTimeRange, EventTypeBreakdown, ModuleUsageData, RecentActivityEvent } from "./types";
 
 /**

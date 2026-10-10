@@ -6,7 +6,7 @@
  */
 
 import type { MotionConfig3D } from "../domain/models/motion-data-3d";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   Plane,
   propFinishState,
@@ -35,11 +35,11 @@ import {
   DEFAULT_CHARACTER_ID,
   type CharacterId,
 } from "../domain/character-model";
-import { applyEffort } from "$lib/shared/effort/domain/effort-easing-unified";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-import type { EffortTimeline } from "$lib/shared/effort/domain/effort-timeline-types";
-import { findPhraseAtBeat } from "$lib/shared/effort/domain/effort-timeline-types";
-import { interpolatePhrase } from "$lib/shared/phrase-effort-lab/services/phrase-interpolator";
+import { applyEffort } from "#lib/shared/effort/domain/effort-easing-unified.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+import type { EffortTimeline } from "#lib/shared/effort/domain/effort-timeline-types.js";
+import { findPhraseAtBeat } from "#lib/shared/effort/domain/effort-timeline-types.js";
+import { interpolatePhrase } from "#lib/shared/phrase-effort-lab/services/phrase-interpolator.js";
 import {
   makeDefaultPerformerSettings,
   makeStandaloneDefaults,
@@ -47,8 +47,8 @@ import {
   type DefaultPerformerSettings,
   type OverrideState,
 } from "./performer-settings-types";
-import type { EffectType } from "$lib/shared/effects/domain/effects-config";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { getSceneUndoManager } from "../undo/get-scene-undo-manager";
 import { buildForEffect } from "../domain/build-for-effect";
 import { findScenePropFamily } from "../domain/scene-prop-catalog";

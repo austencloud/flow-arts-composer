@@ -6,9 +6,9 @@
   Add Layer and Paste buttons below the list.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { GridCell } from "../../../state/arrange-grid-state.svelte";
-  import type { TunnelLayerConfig } from "$lib/shared/animation-engine/domain/compose-types";
+  import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
 
   const MAX_LAYERS = 4;
 

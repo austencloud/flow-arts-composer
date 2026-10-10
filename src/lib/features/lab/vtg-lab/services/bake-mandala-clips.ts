@@ -1,12 +1,12 @@
-import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import { createAnimationPlaybackController } from "$lib/features/compose/services/animation-playback-controller-factory";
-import { getVideoExportOrchestrator } from "$lib/shared/animation-engine/get-video-export-orchestrator";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import { createAnimationPlaybackController } from "#lib/features/compose/services/animation-playback-controller-factory.js";
+import { getVideoExportOrchestrator } from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import { prepareMandalaClubSequence, type MandalaPathShape } from "./prepare-mandala-club-sequence";
 import { buildMandalaOverlayDraw } from "./render-mandala-overlay-layer";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 
 export interface BakeJob {
   /** Output filename, e.g. "iso-0_5-arc.mp4". */
@@ -70,7 +70,7 @@ export async function bakeMandalaClips(
   // On a bare /test/ route an auto-bake can start before that fires, so import it
   // explicitly here (idempotent, module-cached) to guarantee the factory + the
   // tip-point override provider are registered before the first export.
-  await import("$lib/shared/composition-root/deferred-registrations");
+  await import("#lib/shared/composition-root/deferred-registrations.js");
 
   configureGlobalVisibility(effort);
 

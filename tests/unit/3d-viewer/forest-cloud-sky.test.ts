@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createForestAtmosphereAnchor } from "$lib/shared/3d/environments/scenes/forest/forest-atmosphere-profile";
+import { createForestAtmosphereAnchor } from "#lib/shared/3d/environments/scenes/forest/forest-atmosphere-profile.js";
 
 describe("Forest cloud sky", () => {
   it("adapts the canonical Celestial 2D cloud system", () => {

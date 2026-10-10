@@ -1,4 +1,4 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import { normalizeLegacySequence } from "@tka/tka-types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {

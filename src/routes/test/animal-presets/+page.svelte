@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Canvas, T } from "@threlte/core";
   import { WebGLRenderer } from "three";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { ANIMAL_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/animal-presets";
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { ANIMAL_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/animal-presets.js";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import AnimalPresetScene from "./AnimalPresetScene.svelte";
 
   let showProps = $state(true);

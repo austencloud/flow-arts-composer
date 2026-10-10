@@ -1,15 +1,15 @@
 <!-- One directly editable VTG ratio. Theory composes one for each axis so
      neither half of the grid is hidden behind an Apply-to mode. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { spinRatioKey, type SpinRatio } from "@vtg/domain";
   import {
     theoryRatioFromParts,
     theoryRatioLabel,
     THEORY_RATIO_MAX_PART,
-  } from "$lib/shared/shape-matrix/domain/theory-ratio";
+  } from "#lib/shared/shape-matrix/domain/theory-ratio.js";
   import { localizedTheoryRatioSpokenLabel } from "../../domain/shape-matrix-display";
-  import { growFade } from "$lib/shared/transitions/motion";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
 
   interface Props {

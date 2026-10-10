@@ -7,12 +7,12 @@
  * drawing staff instead, without touching the user's saved choice.
  */
 import { describe, expect, it } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   foldUntraceableProp,
   foldUntraceablePropPair,
-} from "$lib/shared/shape-matrix/domain/prop-pair";
-import { shapeMatrixTipPoint } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
+} from "#lib/shared/shape-matrix/domain/prop-pair.js";
+import { shapeMatrixTipPoint } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
 
 describe("foldUntraceableProp", () => {
   it("agrees with shapeMatrixTipPoint (the fact build() throws on) for every prop type", () => {

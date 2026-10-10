@@ -3,9 +3,9 @@ import {
   loadDraft,
   loadDraftMeta,
   persistDraft,
-} from "$lib/features/write/state/choreo-sheet-state.svelte";
-import { parseChoreoSheet } from "$lib/features/write/services/choreo-sheet-repository";
-import { createEmptyChoreoSheet } from "$lib/features/write/domain/types/choreo-sheet";
+} from "#lib/features/write/state/choreo-sheet-state.svelte.js";
+import { parseChoreoSheet } from "#lib/features/write/services/choreo-sheet-repository.js";
+import { createEmptyChoreoSheet } from "#lib/features/write/domain/types/choreo-sheet.js";
 
 /**
  * The choreo-sheet builder auto-saves a draft to localStorage and restores it on

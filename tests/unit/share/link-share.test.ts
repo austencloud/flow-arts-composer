@@ -4,11 +4,11 @@ const { detectPlatform } = vi.hoisted(() => ({
   detectPlatform: vi.fn(() => "desktop" as string),
 }));
 
-vi.mock("$lib/shared/mobile/services/platform-detector", () => ({
+vi.mock("#lib/shared/mobile/services/platform-detector.js", () => ({
   detectPlatform,
 }));
 
-import { shareOrCopyLink } from "$lib/shared/share/services/link-share";
+import { shareOrCopyLink } from "#lib/shared/share/services/link-share.js";
 
 const LINK = { url: "https://tkaflowarts.com/shape-engine?level=3" };
 

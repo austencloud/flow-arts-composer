@@ -1,11 +1,10 @@
-import { json } from "@sveltejs/kit";
 import type { RequestEvent, RequestHandler } from "./$types";
-import { getOptionalFirebaseUser } from "$lib/server/auth/getOptionalFirebaseUser";
-import { createScanEventId } from "$lib/server/physical-cards/scan-event-identity";
+import { getOptionalFirebaseUser } from "#lib/server/auth/getOptionalFirebaseUser.js";
+import { createScanEventId } from "#lib/server/physical-cards/scan-event-identity.js";
 import {
   scanPreflightResponse,
   withScanCors,
-} from "$lib/server/physical-cards/scan-cors";
+} from "#lib/server/physical-cards/scan-cors.js";
 import {
   FirestoreRestError,
   getFirestoreRest,
@@ -16,15 +15,16 @@ import {
   toFirestoreFields,
   type FirestoreDocument,
   type FirestoreWrite,
-} from "$lib/server/firestore/firestore-rest";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { parseCloudflareGeo } from "$lib/shared/presence/domain/models/presence-models";
+} from "#lib/server/firestore/firestore-rest.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { parseCloudflareGeo } from "#lib/shared/presence/domain/models/presence-models.js";
 import {
   PHYSICAL_CARD_SCHEMA_VERSION,
   validateCardScanIngestRequest,
   type CardScanIngestResponse,
-} from "$lib/shared/qr/domain/physical-card";
+} from "#lib/shared/qr/domain/physical-card.js";
+import { requestCf, workerEnv } from "#lib/server/cloudflare/worker-env.js";
 
 const SHORTCODE_MASK = [
   "deckId",
@@ -121,7 +121,7 @@ function isAlreadyRecorded(error: unknown): boolean {
 }
 
 function invalidCard(message: string, code: string, status = 400): Response {
-  return json({ error: message, code }, { status });
+  return Response.json({ error: message, code }, { status });
 }
 
 // The installed app posts from its own origin; see scan-cors.ts.
@@ -163,7 +163,7 @@ async function ingestScan(event: RequestEvent): Promise<Response> {
 
   try {
     const firestore = getFirestoreRest(
-      event.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
+      workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
     );
     const shortCodeDocument = await firestore.getDocument(
       `shortcodes/${request.shortCode}`,
@@ -224,8 +224,7 @@ async function ingestScan(event: RequestEvent): Promise<Response> {
       }
     }
 
-    const cf = (event.platform as { cf?: Record<string, unknown> } | undefined)
-      ?.cf;
+    const cf = requestCf(event.request);
     // Scan provenance trusts only Cloudflare's request metadata. Visitor
     // headers are excluded because a direct caller can forge them.
     const parsedGeo = cf ? parseCloudflareGeo(new Headers(), cf) : null;
@@ -319,7 +318,7 @@ async function ingestScan(event: RequestEvent): Promise<Response> {
           duplicate: true,
           scanKind,
         };
-        return json(duplicateResponse);
+        return Response.json(duplicateResponse);
       }
       throw error;
     }
@@ -329,10 +328,10 @@ async function ingestScan(event: RequestEvent): Promise<Response> {
       duplicate: false,
       scanKind,
     };
-    return json(response, { status: 201 });
+    return Response.json(response, { status: 201 });
   } catch (error) {
     console.error("[physical-card-scan] ingest failed:", error);
-    return json(
+    return Response.json(
       {
         error: "The scan could not be recorded",
         code: "scan_ingest_failed",

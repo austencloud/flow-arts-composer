@@ -1,17 +1,17 @@
-import type { BuilderStep } from "$lib/features/assemble-lab/state/assemble-state.svelte";
-import { stepToMotion } from "$lib/features/assemble-lab/services/builder-step-converter";
+import type { BuilderStep } from "#lib/features/assemble-lab/state/assemble-state.svelte.js";
+import { stepToMotion } from "#lib/features/assemble-lab/services/builder-step-converter.js";
 import {
   turnValuesForLevel,
   type TurnValue,
-} from "$lib/shared/create/services/level-turn-values";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { SoloPropStepData } from "$lib/shared/foundation/domain/models/solo-prop-step-data";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
-import { createSoloProp } from "$lib/shared/foundation/services/solo-prop-factory";
-import { soloPropToSequence } from "$lib/shared/foundation/services/solo-prop-sequence-adapter";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/create/services/level-turn-values.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { SoloPropStepData } from "#lib/shared/foundation/domain/models/solo-prop-step-data.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
+import { createSoloProp } from "#lib/shared/foundation/services/solo-prop-factory.js";
+import { soloPropToSequence } from "#lib/shared/foundation/services/solo-prop-sequence-adapter.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
 
 export type BuiltFusePathFailure =

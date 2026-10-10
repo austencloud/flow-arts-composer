@@ -24,13 +24,13 @@ import {
   loadLeaderboard,
   loadUserStats,
   loadFullSequenceData,
-} from "$lib/features/arena/services/arena-repository";
-import { computeUpdate, displayRating } from "$lib/features/arena/services/rating-calculator";
-import { selectMatchup } from "$lib/features/arena/services/matchup-selector";
+} from "#lib/features/arena/services/arena-repository.js";
+import { computeUpdate, displayRating } from "#lib/features/arena/services/rating-calculator.js";
+import { selectMatchup } from "#lib/features/arena/services/matchup-selector.js";
 import {
   trackArenaMatchupSkipped,
   trackArenaVoteCompleted,
-} from "$lib/features/arena/analytics/arena-events";
+} from "#lib/features/arena/analytics/arena-events.js";
 
 export class ArenaOrchestrator {
   private userId = "";

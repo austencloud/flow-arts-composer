@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Popover } from "bits-ui";
-  import BpmChips from "$lib/shared/animation-engine/components/controls/BpmChips.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
-  import { getSequenceDisplayName } from "$lib/shared/foundation/services/word-deriver";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+  import BpmChips from "#lib/shared/animation-engine/components/controls/BpmChips.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
+  import { getSequenceDisplayName } from "#lib/shared/foundation/services/word-deriver.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
   import { getFuseContext } from "../context/fuse-context";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
   import FuseAnimationPreview from "./FuseAnimationPreview.svelte";

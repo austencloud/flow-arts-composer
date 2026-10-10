@@ -25,14 +25,14 @@
  * `word` is Austen's roster display NAME (his two/four-letter naming
  * convention for a base, e.g. "GG", "DJ", "WΣYΘ") — NOT a rendering
  * instruction. Any user-visible rendering of a sequence word routes through
- * `simplifyRepeatedWord` (`$lib/shared/foundation/utils/word-simplifier.ts`,
+ * `simplifyRepeatedWord` (`#lib/shared/foundation/utils/word-simplifier.ts`,
  * per `simplified-word-display.md`); `word` here is roster identity, and
  * display simplification (e.g. a realized "GGGGGGGG" -> "G") is that
  * utility's job, not this registry's.
  */
 
-import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { GridPlacementGroup } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type { LetterEdge } from "../services/letter-calculus";
 
 const A = GridPlacementGroup.ALPHA;

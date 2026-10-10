@@ -12,8 +12,8 @@ import type {
   TrailOverlayRenderParams,
 } from "../ITrailOverlayCanvas";
 import type { MotionSampleSource } from "../motion-sub-sampler";
-import type { RenderActivityGate } from "$lib/shared/render-gating/render-activity-gate";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { RenderActivityGate } from "#lib/shared/render-gating/render-activity-gate.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import { DEFAULT_TRAIL_SETTINGS } from "../../domain/types/trail-types";
 
 /**

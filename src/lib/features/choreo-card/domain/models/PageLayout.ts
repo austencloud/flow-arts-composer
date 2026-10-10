@@ -5,7 +5,7 @@
  * paper sizes, margins, grid calculations, and print specifications.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   OptimizationGoal,
   PageOrientation,

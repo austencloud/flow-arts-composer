@@ -16,8 +16,8 @@ import {
   orderBy,
   Timestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import type { Announcement } from "../domain/models/announcement-models";
 
 const ANNOUNCEMENTS_COLLECTION = "announcements";

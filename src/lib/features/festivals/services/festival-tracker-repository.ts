@@ -7,7 +7,7 @@
  * Path: userFestivalTracking/{userId}/tracked/{festivalId}
  */
 
-import { firestoreGet, firestoreList, firestoreSet, firestoreDelete } from "$lib/shared/firestore";
+import { firestoreGet, firestoreList, firestoreSet, firestoreDelete } from "#lib/shared/firestore/index.js";
 import { UserFestivalTrackerSchema } from "../domain/models/festival-tracker-schemas";
 import type { UserFestivalTracker } from "../domain/models/festival-tracker";
 import {

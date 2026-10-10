@@ -10,8 +10,8 @@
     ReviewStatus,
     FilterOption,
   } from "../domain/models/review-models";
-  import FontAwesomeIcon from "$lib/shared/foundation/ui/FontAwesomeIcon.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import FontAwesomeIcon from "#lib/shared/foundation/ui/FontAwesomeIcon.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import type { Snippet } from "svelte";
 
   interface Props<T extends BaseSequenceEntry> {

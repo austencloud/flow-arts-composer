@@ -14,15 +14,15 @@ vi.mock("../../../auth/state/auth-drawer-state.svelte", () => ({
   authDrawerState: { show: mocks.show },
 }));
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: () => undefined }),
 }));
 
-vi.mock("$lib/shared/onboarding/context/account-setup-context", () => ({
+vi.mock("#lib/shared/onboarding/context/account-setup-context.js", () => ({
   tryGetAccountSetupContext: () => null,
 }));
 
-vi.mock("$lib/shared/i18n/i18n.svelte.js", async () => {
+vi.mock("#lib/shared/i18n/i18n.svelte.js", async () => {
   const english: Record<string, string> = (
     await import("../../../../../../messages/en.json")
   ).default;

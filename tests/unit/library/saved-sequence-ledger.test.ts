@@ -7,7 +7,7 @@ import {
   recordSavedSequenceId,
   getSavedSequenceIds,
   removeSavedSequenceIds,
-} from "$lib/shared/library/services/saved-sequence-ledger";
+} from "#lib/shared/library/services/saved-sequence-ledger.js";
 
 beforeEach(() => localStorage.clear());
 

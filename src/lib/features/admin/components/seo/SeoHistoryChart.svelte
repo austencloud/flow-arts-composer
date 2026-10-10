@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SeoHistoryPoint } from "$lib/features/admin/domain/models/seo-dashboard-model";
+  import type { SeoHistoryPoint } from "#lib/features/admin/domain/models/seo-dashboard-model.js";
   import {
     formatDate,
     formatInteger,

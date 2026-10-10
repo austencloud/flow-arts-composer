@@ -66,19 +66,19 @@ import {
   DEFAULT_TUNNEL_VIEW_STATE,
   loadTunnelViewState,
   type TunnelViewState,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-view-state";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-view-state.js";
 import {
   cloneTunnelConfig,
   type TunnelConfig,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
 import {
   resolveTunnelPropColorState,
   type TunnelPropColorState,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 import {
   cloneTunnelPresetRecipe,
   type TunnelPresetRecipe,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-preset-recipe.js";
 
 /** Only the primitive-config fields that differ from the default. */
 export type TnConfigPatch = Partial<TunnelConfig>;

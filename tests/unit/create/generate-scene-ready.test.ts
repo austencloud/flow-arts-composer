@@ -10,14 +10,14 @@ import { fakePictograph } from "./FakeMethodPictograph.svelte";
 import { mountGenerateScene } from "./generate-scene-ready-harness.svelte";
 
 vi.mock(
-  "$lib/features/create/shared/components/method-previews/MethodPreviewPictograph.svelte",
+  "#lib/features/create/shared/components/method-previews/MethodPreviewPictograph.svelte",
   async () => ({
     default: (await import("./FakeMethodPictograph.svelte")).default,
   })
 );
 
 const drawMatrixRealization = vi.hoisted(() => vi.fn(async () => null));
-vi.mock("$lib/shared/landing/data/shape-matrix-hero-pool", () => ({
+vi.mock("#lib/shared/landing/data/shape-matrix-hero-pool.js", () => ({
   drawMatrixRealization,
 }));
 

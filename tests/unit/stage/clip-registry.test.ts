@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeBlendWeights,
   computeTimeScale,
-} from "$lib/features/stage/locomotion/clip-registry";
+} from "#lib/features/stage/locomotion/clip-registry.js";
 
 describe("clip-registry", () => {
   describe("computeBlendWeights", () => {

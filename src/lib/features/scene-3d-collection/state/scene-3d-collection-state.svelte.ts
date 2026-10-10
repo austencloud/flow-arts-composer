@@ -1,6 +1,6 @@
-import { CollectionState } from "$lib/shared/collections/collection-state.svelte";
-import { createFirebaseCollectionRepository } from "$lib/shared/collections/firebase-collection-repository";
-import { LocalCollectionRepository } from "$lib/shared/collections/local-collection-repository";
+import { CollectionState } from "#lib/shared/collections/collection-state.svelte.js";
+import { createFirebaseCollectionRepository } from "#lib/shared/collections/firebase-collection-repository.js";
+import { LocalCollectionRepository } from "#lib/shared/collections/local-collection-repository.js";
 import {
   Collected3DSceneSchema,
   SCENE_3D_COLLECTION_STORAGE_KEY,

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { fitTapsToGrid } from "$lib/shared/media-composition/domain/tap-fit";
+import { fitTapsToGrid } from "#lib/shared/media-composition/domain/tap-fit.js";
 import {
   judgeTimingFit,
   suggestBpmFromTaps,
-} from "$lib/shared/media-composition/domain/timing-verdict";
+} from "#lib/shared/media-composition/domain/timing-verdict.js";
 
 const SIXTEEN = Array.from({ length: 16 }, () => 1);
 

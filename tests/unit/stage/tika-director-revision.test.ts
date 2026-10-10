@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { describeCastForDirectorRevision } from "$lib/features/stage/domain/tika-director-revision";
-import type { PerformerDomainSnapshot } from "$lib/shared/3d/undo/scene-undo-types";
+import { describeCastForDirectorRevision } from "#lib/features/stage/domain/tika-director-revision.js";
+import type { PerformerDomainSnapshot } from "#lib/shared/3d/undo/scene-undo-types.js";
 
 function snapshot(
   overrides: Partial<PerformerDomainSnapshot> = {}

@@ -1,8 +1,8 @@
 <script lang="ts" generics="T extends string">
   import type { Snippet } from "svelte";
   import { fade, fly } from "svelte/transition";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import IconRailNav from "../pill-nav/IconRailNav.svelte";
 
   interface RailPill {

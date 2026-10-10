@@ -5,19 +5,19 @@
   Standard layout for larger screens (non-wizard mode).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { avatarGradientLabel } from "$lib/shared/settings/domain/avatar-gradient-labels";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { avatarGradientLabel } from "#lib/shared/settings/domain/avatar-gradient-labels.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     PROP_TYPE_DISPLAY_REGISTRY,
     VARIANT_PROP_TYPES,
-  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
   import {
     ALL_GRADIENTS,
     COLOR_FAMILIES,
     type GradientOption,
-  } from "$lib/shared/settings/domain/avatar-gradients";
-  import type { PropOption } from "$lib/shared/settings/domain/photo-picker-types";
+  } from "#lib/shared/settings/domain/avatar-gradients.js";
+  import type { PropOption } from "#lib/shared/settings/domain/photo-picker-types.js";
   import { localizedPropName } from "../tabs/prop-type/localized-prop-name";
 
   interface Props {

@@ -33,8 +33,8 @@
     Mesh,
     Object3D,
   } from "three";
-  import GltfAsset from "$lib/shared/3d/environments/primitives/GltfAsset.svelte";
-  import ReflectivePool from "$lib/shared/3d/environments/primitives/ReflectivePool.svelte";
+  import GltfAsset from "#lib/shared/3d/environments/primitives/GltfAsset.svelte";
+  import ReflectivePool from "#lib/shared/3d/environments/primitives/ReflectivePool.svelte";
   import PedestalMesh from "../graybox/PedestalMesh.svelte";
   import ConsoleMesh from "../graybox/ConsoleMesh.svelte";
   import MuseumPerformerStation3D from "./MuseumPerformerStation3D.svelte";
@@ -79,9 +79,9 @@
   import {
     createSequenceData,
     type SequenceData,
-  } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   interface Props {
     grid: MuseumGrid;

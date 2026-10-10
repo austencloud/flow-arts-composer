@@ -1,13 +1,13 @@
 import { render } from "vitest-browser-svelte";
 import { page, userEvent } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import { normalizePropPatch } from "$lib/shared/settings/domain/prop-pair-rule";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import { normalizePropPatch } from "#lib/shared/settings/domain/prop-pair-rule.js";
 import {
   withPickVersion,
   type PickVersionFields,
-} from "$lib/shared/settings/domain/prop-version-rule";
+} from "#lib/shared/settings/domain/prop-version-rule.js";
 import BentoPropGrid from "./BentoPropGrid.svelte";
 
 const CLUB_PICKER_PROPS = [

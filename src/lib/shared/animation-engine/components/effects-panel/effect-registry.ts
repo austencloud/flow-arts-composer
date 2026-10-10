@@ -9,7 +9,7 @@ import type { Component } from "svelte";
 import type { EffectPresetGroup } from "./presets/types";
 import type { PrimaryParamSpec } from "./effect-primary-param";
 import { PRIMARY_PARAMS } from "./effect-primary-param";
-import { resilientLazyImport } from "$lib/shared/hmr-helper";
+import { resilientLazyImport } from "#lib/shared/hmr-helper.js";
 import { TRAIL_PRESET_GROUP } from "./presets/trail-presets";
 import { FIRE_PRESET_GROUP } from "./presets/fire-presets";
 import { LED_PRESET_GROUP } from "./presets/led-presets";
@@ -39,7 +39,7 @@ import {
   EFFECT_LABELS,
   EFFECT_ICONS,
   type EffectMeta,
-} from "$lib/shared/effects/domain/effect-meta";
+} from "#lib/shared/effects/domain/effect-meta.js";
 
 export {
   EFFECTS,

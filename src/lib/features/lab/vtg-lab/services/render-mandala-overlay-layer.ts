@@ -1,10 +1,10 @@
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { renderMandalaToCanvas } from "$lib/shared/mandala/services/mandala-renderer";
-import { engineAlignScale } from "$lib/shared/mandala/services/engine-align";
-import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import type { MandalaPathOptions } from "$lib/shared/mandala/services/types";
-import type { MandalaPalette } from "$lib/shared/mandala/domain/mandala-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { renderMandalaToCanvas } from "#lib/shared/mandala/services/mandala-renderer.js";
+import { engineAlignScale } from "#lib/shared/mandala/services/engine-align.js";
+import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import type { MandalaPathOptions } from "#lib/shared/mandala/services/types.js";
+import type { MandalaPalette } from "#lib/shared/mandala/domain/mandala-types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { MandalaPathShape } from "./prepare-mandala-club-sequence";
 import {
   DARK_MOTION_BLUE_STROKE,
@@ -13,7 +13,7 @@ import {
   DARK_MOTION_RED_FILL,
   DARK_MOTION_PURPLE_STROKE,
   DARK_MOTION_PURPLE_FILL,
-} from "$lib/shared/mandala/domain/mandala-constants";
+} from "#lib/shared/mandala/domain/mandala-constants.js";
 
 const DARK_PALETTE: MandalaPalette = {
   leftStroke: DARK_MOTION_BLUE_STROKE,

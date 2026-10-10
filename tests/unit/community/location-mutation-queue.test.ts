@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   createLocationMutationQueue,
   type MutationOutcome,
-} from "$lib/features/community/domain/location-mutation-queue";
+} from "#lib/features/community/domain/location-mutation-queue.js";
 
 /**
  * A promise whose settlement the test controls, so orderings that never occur

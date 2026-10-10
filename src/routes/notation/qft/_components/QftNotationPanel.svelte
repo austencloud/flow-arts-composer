@@ -1,5 +1,5 @@
 <script lang="ts">
-  import QftTable from "$lib/shared/notation/qft/components/QftTable.svelte";
+  import QftTable from "#lib/shared/notation/qft/components/QftTable.svelte";
   import { getQftAppContext } from "../_context/qft-app-context";
 
   const state = getQftAppContext();

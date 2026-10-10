@@ -14,8 +14,8 @@ Design variants supported:
 - labeled: Shows beat numbers/letters
 -->
 <script lang="ts">
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { safeSlide } from "$lib/shared/utils/transitions";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { safeSlide } from "#lib/shared/utils/transitions.js";
   import { cubicOut } from "svelte/easing";
 
   let {

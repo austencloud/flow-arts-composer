@@ -1,8 +1,8 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   loadStaticSequence,
   selectStaticSequence,
-} from "$lib/shared/foundation/services/static-sequence-catalog";
+} from "#lib/shared/foundation/services/static-sequence-catalog.js";
 
 export const CONTACT_PROOF_SEQUENCE_ID = "tnd-quarter-opp-mpmp";
 export const CONTACT_PROOF_SEQUENCE_URL = "/data/hero/tnd-base-words.json";

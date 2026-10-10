@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * Front + back of a real Choreo Card for the marketing page.
    * Front = baked print render (Firebase Storage URL from the admin cover
@@ -11,30 +11,30 @@
    * cards stay pristine until the reader asks about a part.
    */
   import { onMount, tick, untrack } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import BackJobPreview from "$lib/features/choreo-card/components/card-back/BackJobPreview.svelte";
-  import { deriveCardBackData } from "$lib/features/choreo-card/components/card-back/card-back-data";
-  import { getCardBackThemeVisuals } from "$lib/features/choreo-card/components/card-back/card-back-theme-visuals";
-  import { computeCardBackLayout } from "$lib/features/choreo-card/services/card-back/card-back-layout";
-  import type { Placement } from "$lib/features/choreo-card/services/card-back/back-job";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import BackJobPreview from "#lib/features/choreo-card/components/card-back/BackJobPreview.svelte";
+  import { deriveCardBackData } from "#lib/features/choreo-card/components/card-back/card-back-data.js";
+  import { getCardBackThemeVisuals } from "#lib/features/choreo-card/components/card-back/card-back-theme-visuals.js";
+  import { computeCardBackLayout } from "#lib/features/choreo-card/services/card-back/card-back-layout.js";
+  import type { Placement } from "#lib/features/choreo-card/services/card-back/back-job.js";
   import {
     DEFAULT_SHOP_PROP,
     SHOP_BACK_THEME,
   } from "../domain/shop-prop-options";
   import { computeFrontRegions } from "../services/card-front-regions";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuState,
     ContextMenuEntry,
-  } from "$lib/shared/components/context-menu/context-menu-types";
-  import { composeMenu } from "$lib/shared/components/context-menu/compose-menu";
-  import { buildCardMenuSection } from "$lib/shared/choreo-card/services/card-menu-section";
-  import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
-  import SkeletonLoader from "$lib/shared/foundation/ui/SkeletonLoader.svelte";
-  import ArtifactRegionSpotlight from "$lib/shared/components/ArtifactRegionSpotlight.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { CARD_SIZES } from "$lib/features/choreo-card/domain/card-sizes";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import { composeMenu } from "#lib/shared/components/context-menu/compose-menu.js";
+  import { buildCardMenuSection } from "#lib/shared/choreo-card/services/card-menu-section.js";
+  import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
+  import SkeletonLoader from "#lib/shared/foundation/ui/SkeletonLoader.svelte";
+  import ArtifactRegionSpotlight from "#lib/shared/components/ArtifactRegionSpotlight.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { CARD_SIZES } from "#lib/features/choreo-card/domain/card-sizes.js";
 
   let {
     highlight = null,
@@ -129,7 +129,7 @@
           const { renderCoverFront } =
             await import("../services/cover-front-renderer");
           const { PropType } =
-            await import("$lib/shared/pictograph/prop/domain/enums/prop-type");
+            await import("#lib/shared/pictograph/prop/domain/enums/prop-type.js");
           front = await renderCoverFront(
             { sequence: seq },
             { deckName: "Choreo Cards", propType: PropType.STAFF }
@@ -244,11 +244,11 @@
     try {
       const [{ generationOrchestrator }, gen, circ, grid, prop, renderMod] =
         await Promise.all([
-          import("$lib/shared/create/services/generation-orchestrator"),
-          import("$lib/shared/foundation/domain/models/generation/generate-models"),
-          import("$lib/shared/foundation/domain/models/generation/circular-models"),
-          import("$lib/shared/pictograph/grid/domain/enums/grid-enums"),
-          import("$lib/shared/pictograph/prop/domain/enums/prop-type"),
+          import("#lib/shared/create/services/generation-orchestrator.js"),
+          import("#lib/shared/foundation/domain/models/generation/generate-models.js"),
+          import("#lib/shared/foundation/domain/models/generation/circular-models.js"),
+          import("#lib/shared/pictograph/grid/domain/enums/grid-enums.js"),
+          import("#lib/shared/pictograph/prop/domain/enums/prop-type.js"),
           import("../services/cover-front-renderer"),
         ]);
 

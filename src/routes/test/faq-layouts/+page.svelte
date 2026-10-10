@@ -5,7 +5,7 @@
    * resizing the viewport: ≤600 phone (full-width doors) · desktop reading
    * column · ≥2200 4K scale-up.
    */
-  import FaqInterview from "$lib/shared/landing/components/FaqInterview.svelte";
+  import FaqInterview from "#lib/shared/landing/components/FaqInterview.svelte";
 </script>
 
 <svelte:head>

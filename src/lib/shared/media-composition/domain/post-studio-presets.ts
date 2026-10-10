@@ -3,8 +3,8 @@ import {
   type MediaCompositionPreset,
   type PresetClip,
   type PresetSourceRole,
-} from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
 
 const OUTPUT = {
   width: 1080,

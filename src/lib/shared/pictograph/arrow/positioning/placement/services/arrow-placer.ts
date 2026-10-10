@@ -8,8 +8,8 @@
 import type { MotionType } from "../../../../shared/domain/enums/pictograph-enums";
 import { placementAssetRoot, PlacementFrame } from "../domain/placement-frame";
 import { GridMode } from "../../../../grid/domain/enums/grid-enums";
-import { jsonCache } from "$lib/shared/pictograph/shared/services/simple-json-cache";
-import type { SimpleJsonCache } from "$lib/shared/pictograph/shared/services/simple-json-cache";
+import { jsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
+import type { SimpleJsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
 import type {
   GridPlacementData,
   JsonPlacementData,

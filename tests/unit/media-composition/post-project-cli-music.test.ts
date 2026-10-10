@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createFeatureVideoStore,
   type FeatureVideoStore,
-} from "$lib/server/feature-video-store";
+} from "#lib/server/feature-video-store.js";
 import { cameraTake, clickTrack, wav } from "./feature-video-audio-fixtures";
 import { suggestMusicGain } from "../../../scripts/feature-video/loudness.mjs";
 import { toolPath } from "../../../scripts/feature-video/media-import.mjs";

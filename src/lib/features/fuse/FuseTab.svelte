@@ -8,11 +8,11 @@
    * is no result phase here.
    */
 
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { onDestroy } from "svelte";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { deriveLettersForSequence } from "$lib/shared/navigation/services/letter-deriver";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+  import { deriveLettersForSequence } from "#lib/shared/navigation/services/letter-deriver.js";
   import { createFuseState } from "./state/fuse-state.svelte";
   import { setFuseContext } from "./context/fuse-context";
   import { generateSoloLoop } from "./services/solo-loop-generator";

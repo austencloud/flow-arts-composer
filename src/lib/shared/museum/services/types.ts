@@ -2,7 +2,7 @@
  * Co-exported types from retired interface contracts.
  */
 
-import type { ExhibitSlot } from "$lib/shared/museum/domain/museum-types";
+import type { ExhibitSlot } from "#lib/shared/museum/domain/museum-types.js";
 
 
 export interface InteractionTarget {

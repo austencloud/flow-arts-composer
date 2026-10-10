@@ -9,19 +9,19 @@
 -->
 <script lang="ts">
 
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import { onMount, onDestroy } from "svelte";
   import type { GridCell } from "../../state/arrange-grid-state.svelte";
-  import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
-  import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import type { AdditionalLayerProps } from "$lib/shared/animation-engine/services/trail-capturer";
-  import type { FireOverlayConfig } from "$lib/shared/animation-engine/domain/types/fire-types";
-  import { DEFAULT_CHARCOAL_PARAMS } from "$lib/shared/animation-engine/domain/types/charcoal-spark-types";
-  import type { LedOverlayConfig } from "$lib/shared/animation-engine/domain/types/led-types";
+  import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
+  import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import type { AdditionalLayerProps } from "#lib/shared/animation-engine/services/trail-capturer.js";
+  import type { FireOverlayConfig } from "#lib/shared/animation-engine/domain/types/fire-types.js";
+  import { DEFAULT_CHARCOAL_PARAMS } from "#lib/shared/animation-engine/domain/types/charcoal-spark-types.js";
+  import type { LedOverlayConfig } from "#lib/shared/animation-engine/domain/types/led-types.js";
 
   let {
     cell,

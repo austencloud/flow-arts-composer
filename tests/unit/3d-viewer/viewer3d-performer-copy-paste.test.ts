@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createViewer3DStateForTest } from "./viewer3d-test-helpers.svelte";
-import { FALG } from "$lib/shared/combination/domain/demo-fixtures";
+import { FALG } from "#lib/shared/combination/domain/demo-fixtures.js";
 import { Plane } from "@austencloud/scene-3d";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const dispose: Array<() => void> = [];
 function makeViewer() {

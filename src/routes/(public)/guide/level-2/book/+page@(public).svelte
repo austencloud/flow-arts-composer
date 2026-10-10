@@ -10,7 +10,7 @@
   deltas on those pages (content parity is what's being proofed).
 -->
 <script lang="ts">
-  import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
   import "../../level-1/_styles/guide.css";
   import "../../level-1/_styles/guide-print.css";

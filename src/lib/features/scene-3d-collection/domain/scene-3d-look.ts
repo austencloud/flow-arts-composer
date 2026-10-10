@@ -9,7 +9,7 @@ import {
 import type {
   Viewer3DPersistConfig,
   ViewerNavMode,
-} from "$lib/shared/3d/state/viewer-3d-state.svelte";
+} from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
 
 /**
  * Group-filtered mapping from a saved scene's snapshot to the viewer's

@@ -13,7 +13,7 @@
  * - No conflicting position constraints
  */
 
-import type { GridLocation, GridMode } from "$lib/shared/render/core/types";
+import type { GridLocation, GridMode } from "#lib/shared/render/core/types.js";
 import type {
   Vec2,
   GridPlacement,

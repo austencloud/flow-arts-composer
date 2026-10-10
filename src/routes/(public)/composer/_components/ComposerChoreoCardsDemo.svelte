@@ -15,10 +15,10 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import DeckFanCover from "$lib/features/store/components/DeckFanCover.svelte";
-  import CardAnatomyModal from "$lib/features/store/components/CardAnatomyModal.svelte";
+  import DeckFanCover from "#lib/features/store/components/DeckFanCover.svelte";
+  import CardAnatomyModal from "#lib/features/store/components/CardAnatomyModal.svelte";
   import FanSkeleton from "./FanSkeleton.svelte";
-  import type { CoverCard } from "$lib/features/store/domain/models/product";
+  import type { CoverCard } from "#lib/features/store/domain/models/product.js";
 
   let cards = $state<CoverCard[]>([]);
   let failed = $state(false);
@@ -37,7 +37,7 @@
     const load = async () => {
       try {
         const { loadActiveProducts } = await import(
-          "$lib/features/store/services/product-loader"
+          "#lib/features/store/services/product-loader.js"
         );
         const products = await loadActiveProducts();
         // One cover per LOOP flavor — a varied hand, same selection as the
@@ -52,7 +52,7 @@
         // subtree) now, while idle — the first card click then opens the
         // modal with zero chunk fetches. The front image is already in HTTP
         // cache because the fan itself displays it.
-        void import("$lib/features/store/components/CardAnatomy.svelte");
+        void import("#lib/features/store/components/CardAnatomy.svelte");
       } catch (err) {
         console.error("[ComposerChoreoCardsDemo] card fan load failed:", err);
         failed = true;

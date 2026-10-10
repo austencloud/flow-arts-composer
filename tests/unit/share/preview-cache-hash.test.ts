@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("$app/environment", () => ({ browser: false }));
+vi.mock("$app/env", () => ({ browser: false }));
 
-import { hashSequenceForPreview } from "$lib/shared/share/services/preview-cache";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { hashSequenceForPreview } from "#lib/shared/share/services/preview-cache.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 function seq(partial: Partial<SequenceData> = {}): SequenceData {
   return {

@@ -9,20 +9,20 @@
  * pure domain services (detectOverlaps, mapToTopology, enumerator) are called directly.
  */
 
-import type { GridTopology, PointRef } from "$lib/shared/multi-grid/domain/models/grid-topology";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domain/models/prepared-pictograph-data";
+import type { GridTopology, PointRef } from "#lib/shared/multi-grid/domain/models/grid-topology.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PreparedPictographData } from "#lib/shared/pictograph/shared/domain/models/prepared-pictograph-data.js";
 // The shared letter-query-handler types its grid-mode param with the wider
 // grid-enums GridMode (6 values); we reference it here so the dep contract
 // matches the real handler signature without a call-site cast.
-import type { GridMode as PictographGridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PrepareOptions } from "$lib/shared/pictograph/shared/services/types";
-import type { PlacementPair } from "$lib/shared/multi-grid/services/types";
-import type { ConjoinedGridMode, PropPlacement, JunctionOverlap } from "$lib/shared/conjoined-grid/domain/types";
-import { TOPOLOGY_PRESETS, type TopologyPreset } from "$lib/shared/multi-grid/domain/constants/topology-presets";
+import type { GridMode as PictographGridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PrepareOptions } from "#lib/shared/pictograph/shared/services/types.js";
+import type { PlacementPair } from "#lib/shared/multi-grid/services/types.js";
+import type { ConjoinedGridMode, PropPlacement, JunctionOverlap } from "#lib/shared/conjoined-grid/domain/types.js";
+import { TOPOLOGY_PRESETS, type TopologyPreset } from "#lib/shared/multi-grid/domain/constants/topology-presets.js";
 import { detectOverlaps } from "../services/junction-overlap-detector";
 import { mapToTopology } from "../services/pictograph-topology-mapper";
-import { enumeratePlacementPairs } from "$lib/shared/multi-grid/services/topology-position-enumerator";
+import { enumeratePlacementPairs } from "#lib/shared/multi-grid/services/topology-position-enumerator.js";
 
 // Dependency contract - only the methods we actually call
 

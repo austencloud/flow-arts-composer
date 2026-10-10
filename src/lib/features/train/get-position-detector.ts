@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import { MediaPipeDetector } from './services/media-pipe-detector';
 import { getHandLandmarker } from './get-hand-landmarker';

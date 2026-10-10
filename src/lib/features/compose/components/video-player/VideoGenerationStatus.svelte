@@ -5,9 +5,9 @@
   Shows current phase, percentage, frame count, and allows cancellation.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import type { VideoRenderProgress } from "$lib/shared/animation-engine/services/video-pre-renderer";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import type { VideoRenderProgress } from "#lib/shared/animation-engine/services/video-pre-renderer.js";
   let {
     progress,
     onCancel,

@@ -1,7 +1,7 @@
-import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
-import type { ClipTransform } from "$lib/shared/media-composition/domain/media-layout-schema";
-import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
-import { turnedExtent } from "$lib/shared/media-composition/services/media-fit";
+import type { MediaCompositionPreset } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
+import type { ClipTransform } from "#lib/shared/media-composition/domain/media-layout-schema.js";
+import type { EvaluatedFrameLayer } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import { turnedExtent } from "#lib/shared/media-composition/services/media-fit.js";
 
 /**
  * The blurred background: the post's main clip on screen, filling the frame

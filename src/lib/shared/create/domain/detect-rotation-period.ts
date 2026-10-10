@@ -1,9 +1,9 @@
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { GridPlacement, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import { QUARTER_PLACEMENT_MAP_CW, QUARTER_PLACEMENT_MAP_CCW } from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { GridPlacement, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import { QUARTER_PLACEMENT_MAP_CW, QUARTER_PLACEMENT_MAP_CCW } from "#lib/shared/foundation/domain/models/generation/circular-placement-maps.js";
 
 const periodCache = new Map<string, number>();
 

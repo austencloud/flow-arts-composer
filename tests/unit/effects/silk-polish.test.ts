@@ -4,10 +4,10 @@ import {
   resolveSilk2DMaximumLength,
   resolveSilk2DSampleSpacing,
   smoothSilk2DPath,
-} from "$lib/shared/effects/renderers/silk-2d-renderer";
-import { resolveCentripetalBezierSegment } from "$lib/shared/effects/renderers/ribbon-trace";
-import type { Silk2DParams } from "$lib/shared/effects/translators/canvas2d-types";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+} from "#lib/shared/effects/renderers/silk-2d-renderer.js";
+import { resolveCentripetalBezierSegment } from "#lib/shared/effects/renderers/ribbon-trace.js";
+import type { Silk2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 
 const PARAMS: Silk2DParams = {
   intensity: 0.5,

@@ -1,4 +1,4 @@
-import type { StripPattern, StripFrame } from "$lib/shared/poi/domain/strip-pattern";
+import type { StripPattern, StripFrame } from "#lib/shared/poi/domain/strip-pattern.js";
 
 /**
  * Converts raster images into StripPattern data.

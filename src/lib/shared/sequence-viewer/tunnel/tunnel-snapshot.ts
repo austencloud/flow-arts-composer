@@ -1,25 +1,25 @@
 import { z } from "zod";
 import type { TunnelConfig } from "./tunnel-config";
 import type { TunnelViewState } from "./tunnel-view-state";
-import type { EffectsConfig } from "$lib/shared/effects/domain/effects-config";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import type { EffectsConfig } from "#lib/shared/effects/domain/effects-config.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import {
   normalizeLegacyTrailSettings,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
 import type { TunnelPresetRecipe } from "./tunnel-preset-recipe";
 import type { TunnelComposition, TunnelSaveTarget } from "./tunnel-composition";
 import {
   resolveTunnelPropColorState,
   type TunnelPropColorState,
 } from "./tunnel-prop-colors";
-import { safeClone } from "$lib/shared/foundation/utils/safe-clone";
+import { safeClone } from "#lib/shared/foundation/utils/safe-clone.js";
 import {
   normalizePropLook,
   PROP_LOOKS,
   type PropLook,
-} from "$lib/shared/pictograph/prop/domain/prop-look";
+} from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
 export const SNAPSHOT_VERSION = 3;
 
@@ -219,9 +219,9 @@ export const TunnelSnapshotSchema = RawTunnelSnapshotSchema.transform(
 );
 
 import type { TunnelViewController } from "./tunnel-view-controller.svelte";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import type { AnimationSettingsState } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import type { AnimationSettingsState } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
 
 /** Everything capture/apply needs, passed in by the caller (no ambient store
  *  access) so the module is testable in isolation. */

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import { page } from "$app/state";
   import LearnTab from "../LearnTab.svelte";
   import { getConceptById } from "../domain/concepts";
@@ -12,9 +12,9 @@
     CONCEPT_LIST_PATH,
     conceptIdFromPathname,
   } from "../domain/concept-routes";
-  import Seo from "$lib/shared/components/Seo.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
   import { LANDING_DOMAIN } from "../../../../config/domains";
-  import { getLocale, t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getLocale, t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "../domain/localized-concept";
 
   const courseName = $derived(tDynamic("learn_public_course_name"));

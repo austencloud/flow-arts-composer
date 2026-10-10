@@ -1,4 +1,4 @@
-import type { VideoCache } from "$lib/shared/video/services/video-cache";
+import type { VideoCache } from "#lib/shared/video/services/video-cache.js";
 import type { SequenceMatcher } from "../services/sequence-matcher";
 import type * as videoCuratorPersisterModule from "../services/video-curator-persister";
 import type {

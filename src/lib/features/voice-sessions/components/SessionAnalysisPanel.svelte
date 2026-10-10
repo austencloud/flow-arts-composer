@@ -6,11 +6,11 @@
   candidates, latency stats, and success rate trends.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type * as VoiceSessionRepositoryModule from "$lib/shared/voice-sessions/services/voice-session-repository";
-  import type * as VoiceSessionAnalyzerModule from "$lib/features/voice-sessions/services/voice-session-analyzer";
-  import type { SessionAnalysis } from "$lib/features/voice-sessions/services/types";
-  import type { VoiceSession, ResolutionTier } from "$lib/shared/voice-control/domain/voice-session-types";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type * as VoiceSessionRepositoryModule from "#lib/shared/voice-sessions/services/voice-session-repository.js";
+  import type * as VoiceSessionAnalyzerModule from "#lib/features/voice-sessions/services/voice-session-analyzer.js";
+  import type { SessionAnalysis } from "#lib/features/voice-sessions/services/types.js";
+  import type { VoiceSession, ResolutionTier } from "#lib/shared/voice-control/domain/voice-session-types.js";
 
   let {
     repository,

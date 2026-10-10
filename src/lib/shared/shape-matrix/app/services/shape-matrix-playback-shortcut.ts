@@ -8,8 +8,8 @@
  * stand aside for a text field or an open dialog — a bare `window` keydown of
  * our own would do none of that and would fire under the About modal.
  */
-import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 /**
  * Register Space for one detail view. Returns the unregister function, so an

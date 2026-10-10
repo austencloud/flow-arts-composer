@@ -1,5 +1,5 @@
 /**
- * `$app/environment` for the audit suite.
+ * `$app/env` for the audit suite.
  *
  * `browser: false` is the real server condition. `dev: true` is what a running
  * `vite dev` server reports, which is the only condition under which the

@@ -15,20 +15,20 @@
    * it's in frame.
    */
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import { browser } from "$app/env";
+  import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import GuideStepStrip from "./GuideStepStrip.svelte";
   import GuidePictograph from "./GuidePictograph.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { describePictograph } from "$lib/shared/pictograph/shared/domain/utils/pictograph-description";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { describePictograph } from "#lib/shared/pictograph/shared/domain/utils/pictograph-description.js";
   import { stripToSequence } from "../_data/guide-sequence-adapter";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { guideTurnDisplayWord } from "../_data/guide-turn-display-word";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import type { PictographRender, PoolEntry } from "../_data/guide-content-blocks";
   import type { Snippet } from "svelte";
 

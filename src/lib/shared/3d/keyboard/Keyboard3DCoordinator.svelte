@@ -8,8 +8,8 @@
    */
 
   import { onMount } from "svelte";
-  import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
-  import { openShortcutSettings } from "$lib/shared/keyboard/open-shortcut-settings";
+  import { getKeyboardShortcutManager } from "#lib/shared/keyboard/get-keyboard-shortcut-manager.js";
+  import { openShortcutSettings } from "#lib/shared/keyboard/open-shortcut-settings.js";
   import {
     createViewer3DShortcuts,
     getNextSpeedUp,

@@ -1,6 +1,6 @@
 import { flushSync, mount, unmount } from "svelte";
-import StepCell from "$lib/features/create/shared/workspace-panel/sequence-display/components/StepCell.svelte";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+import StepCell from "#lib/features/create/shared/workspace-panel/sequence-display/components/StepCell.svelte";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 
 /**
  * A row of real step cells inside a focus scope, the way WorkspaceGrid lays

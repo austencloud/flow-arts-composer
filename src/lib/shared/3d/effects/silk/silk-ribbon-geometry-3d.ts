@@ -1,5 +1,5 @@
 import { BufferAttribute, BufferGeometry, DynamicDrawUsage } from "three";
-import type { Silk3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Silk3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 import { setRgbFromHex, type MutableRgb } from "../instancing/particle-color";
 import type { BoundedSourcePath3D } from "../scene-effects/bounded-source-path-3d";
 

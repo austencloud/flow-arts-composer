@@ -1,66 +1,66 @@
 <script lang="ts">
   import { onMount, tick, untrack } from "svelte";
-  import { SequenceViewerVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-visibility-state.svelte";
-  import { setViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
+  import { SequenceViewerVisibilityState } from "#lib/shared/sequence-viewer/state/viewer-visibility-state.svelte.js";
+  import { setViewerVisibilityContext } from "#lib/shared/sequence-viewer/context/viewer-visibility-context.js";
   import {
     flyFade,
     growFade,
     motionDuration,
     reducedMotion,
-  } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
-  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { createLayoutMotion } from "#lib/shared/transitions/layout-flip.js";
+  import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
   import { getGuideChromeContext } from "../../_components/guide-chrome-context";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import MotionPathTransitionStage from "./MotionPathTransitionStage.svelte";
-  import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
-  import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
-  import { setAnimationScopeContext } from "$lib/shared/animation-engine/state/animation-scope-context";
-  import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import UnifiedTimeline from "$lib/shared/timeline/UnifiedTimeline.svelte";
-  import { createAnimatorPlaybackAdapter } from "$lib/shared/timeline/adapters/animator-playback-adapter.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import TurnNotationControls from "$lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
-  import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
-  import ElementChipRow from "$lib/shared/shape-matrix/components/ElementChipRow.svelte";
-  import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
+  import SequenceMandala from "#lib/shared/mandala/components/SequenceMandala.svelte";
+  import PathShapePanel from "#lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
+  import { setAnimationVisibilityContext } from "#lib/shared/animation-engine/state/animation-visibility-context.js";
+  import { setAnimationScopeContext } from "#lib/shared/animation-engine/state/animation-scope-context.js";
+  import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import AnimationPanel from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import UnifiedTimeline from "#lib/shared/timeline/UnifiedTimeline.svelte";
+  import { createAnimatorPlaybackAdapter } from "#lib/shared/timeline/adapters/animator-playback-adapter.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PillId } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import TurnNotationControls from "#lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
+  import ShapeMatrixGrid from "#lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
+  import ElementChipRow from "#lib/shared/shape-matrix/components/ElementChipRow.svelte";
+  import { applyFilter } from "#lib/shared/shape-matrix/domain/filter-flower-axis.js";
   import {
     matrixFiltersForTurns,
     type MatrixLabelMode,
-  } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  } from "#lib/shared/shape-matrix/domain/matrix-turn-band.js";
   import {
     flowerKey,
     flowerPetals,
     type Flower,
-  } from "$lib/shared/shape-matrix/domain/flower-signature";
-  import { pairAtTurns } from "$lib/shared/shape-matrix/domain/flower-at-turn";
-  import { buildModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
+  } from "#lib/shared/shape-matrix/domain/flower-signature.js";
+  import { pairAtTurns } from "#lib/shared/shape-matrix/domain/flower-at-turn.js";
+  import { buildModeRealization } from "#lib/shared/shape-matrix/services/build-mode-realizations.js";
   import {
     loadShapeMatrix,
     shapeMatrixTipPoint,
     type ShapeMatrixData,
-  } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-  import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+  import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     createMotionPathExplorerState,
     type ExplorerSource,
   } from "../_data/motion-path-explorer-state.svelte";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import { initializeAppServices } from "$lib/shared/application/state/services.svelte";
-  import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
-  import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import { initializeAppServices } from "#lib/shared/application/state/services.svelte.js";
+  import type { TurnValue } from "#lib/shared/create/services/level-turn-values.js";
+  import type { MandalaPathShape } from "#lib/shared/mandala/domain/mandala-types.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   const explorer = createMotionPathExplorerState();
   const matrixTipDx = $derived(shapeMatrixTipPoint(explorer.propType)?.dx);
@@ -804,7 +804,7 @@
 </section>
 
 {#if pickerOpen}
-  {#await import("$lib/shared/components/sequence-picker/SequencePickerModal.svelte")}
+  {#await import("#lib/shared/components/sequence-picker/SequencePickerModal.svelte")}
     <p role="status">{tDynamic("guide_paths_loading_picker")}</p>
   {:then { default: SequencePickerModal }}
     <SequencePickerModal

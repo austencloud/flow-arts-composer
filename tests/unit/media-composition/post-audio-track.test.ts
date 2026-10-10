@@ -3,7 +3,7 @@ import {
   AUDIO_DOWNLOAD_STALL_MS,
   AudioDownloadStalledError,
   buildMixedAudioTrack,
-} from "$lib/shared/media-composition/services/post-audio-track";
+} from "#lib/shared/media-composition/services/post-audio-track.js";
 
 const SAMPLE_RATE = 8_000;
 const FILE_BYTES = 1_000;

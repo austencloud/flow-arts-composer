@@ -1,22 +1,22 @@
 import { describe, it, expect, vi } from "vitest";
 import { findPreviousRotationDirection, updateStepTurns } from "./turns-handler";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   HandSide,
   MotionType,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { ICreateModuleState } from "../../types/create-module-types";
 
 vi.mock(
-  "$lib/shared/pictograph/prop/services/orientation-calculator",
+  "#lib/shared/pictograph/prop/services/orientation-calculator.js",
   () => ({
     calculateEndOrientation: () => "in",
   })
 );
 
-vi.mock("$lib/shared/create/services/reversal-detector", () => ({
+vi.mock("#lib/shared/create/services/reversal-detector.js", () => ({
   reversalDetector: {
     processReversals: (seq: unknown) => seq,
   },

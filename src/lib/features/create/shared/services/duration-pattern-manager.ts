@@ -19,9 +19,9 @@ import {
   serverTimestamp,
   type Timestamp,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type {
   DurationPattern,
   DurationPatternCreateData,
@@ -42,7 +42,7 @@ export interface DurationPatternApplyResult {
   /** Warnings about edge cases encountered */
   readonly warnings?: readonly string[];
 }
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 
 const logger = createComponentLogger("DurationPatternManager");
 

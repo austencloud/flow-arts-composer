@@ -5,8 +5,8 @@
   Each cell can contain a sequence with a specific rotation offset.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import CanvasControls from "../components/CanvasControls.svelte";
 
   type GridIndex = 0 | 1 | 2 | 3;
@@ -29,9 +29,9 @@
     isPlaying?: boolean;
     speed?: number;
     shouldLoop?: boolean;
-    playbackMode?: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").PlaybackMode;
+    playbackMode?: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").PlaybackMode;
     stepPlaybackPauseMs?: number;
-    stepPlaybackStepSize?: import("$lib/shared/animation-engine/state/animation-panel-state.svelte").StepPlaybackStepSize;
+    stepPlaybackStepSize?: import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js").StepPlaybackStepSize;
     onSelectCell: (index: GridIndex) => void;
     onRemoveCell: (index: GridIndex) => void;
     onOpenSettings: (canvasId: string) => void;

@@ -13,42 +13,42 @@
   state owners under shared/choreo-card.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   // Note: transition/animation imports (fade, fly, scale, flip, cubicOut) moved to
   // extracted sub-components (CardHeader, CardFooter, CardGridLayout, CellRenderer).
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
   import type { ViewerCustomColorPair } from "../domain/viewer-custom-colors";
   import type { PreviewCellRenderOptions } from "../services/preview-cell-renderer";
   import type { ViewerPaneBox } from "./viewer-panel-layout";
   import { onDestroy, tick } from "svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { authState as AuthStateModule } from "$lib/shared/auth/state/auth-state.svelte";
-  import { hasSavedFirebaseUser } from "$lib/shared/auth/services/saved-firebase-user";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
-  import type { ContextMenuState } from "$lib/shared/components/context-menu/context-menu-types";
-  import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { authState as AuthStateModule } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { hasSavedFirebaseUser } from "#lib/shared/auth/services/saved-firebase-user.js";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
+  import type { ContextMenuState } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
   import { resolveInfoCellDisplay } from "../services/info-cell-display";
-  import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
-  import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { createStartPlacementFromBeatStart } from "#lib/shared/create/services/sequence-transforms.js";
+  import { getVisibilityStateManager } from "#lib/shared/pictograph/shared/state/visibility-state.svelte.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
-  import { getScanCardCloudPolicy } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
-  import { CANONICAL_CARD_VISIBILITY } from "$lib/shared/render/services/cloud-cell-key";
-  import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-  import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+  import { getScanCardCloudPolicy } from "#lib/shared/sequence-viewer/scan-card-cloud-context.js";
+  import { CANONICAL_CARD_VISIBILITY } from "#lib/shared/render/services/cloud-cell-key.js";
+  import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+  import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import type { HandLabeling } from "#lib/shared/video-collaboration/domain/hand-labeling.js";
   import { handLegendFor } from "../services/hand-legend";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
 
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import {
     getStepColumnsForLayout,
     pickBestFitLayout,
     type ResolvedAutoLayout,
-  } from "$lib/shared/render/services/container-aware-layout";
+  } from "#lib/shared/render/services/container-aware-layout.js";
 
   // Extracted sub-components
   import CardHeader, { HEADER_MOTION_MS } from "./CardHeader.svelte";
@@ -56,31 +56,31 @@
   import CardGridLayout from "./CardGridLayout.svelte";
 
   // Extracted modules
-  import { buildRenderOptions } from "$lib/shared/choreo-card/services/choreo-card-cell-pipeline";
+  import { buildRenderOptions } from "#lib/shared/choreo-card/services/choreo-card-cell-pipeline.js";
   import {
     formatSoloTurns,
     shortOrientation,
     formatDuration,
-  } from "$lib/shared/choreo-card/services/choreo-card-label-format";
-  import { createChoreoCardLayoutState } from "$lib/shared/choreo-card/state/choreo-card-layout-state.svelte";
+  } from "#lib/shared/choreo-card/services/choreo-card-label-format.js";
+  import { createChoreoCardLayoutState } from "#lib/shared/choreo-card/state/choreo-card-layout-state.svelte.js";
   import {
     createChoreoCardSizingState,
     getContainedCardHeight,
-  } from "$lib/shared/choreo-card/state/choreo-card-sizing-state.svelte";
+  } from "#lib/shared/choreo-card/state/choreo-card-sizing-state.svelte.js";
   import {
     createChoreoCardQrState,
     lazyChoreoCardQrServices,
-  } from "$lib/shared/choreo-card/state/choreo-card-qr-state.svelte";
-  import { createChoreoCardDisplayState } from "$lib/shared/choreo-card/state/choreo-card-display-state.svelte";
-  import { createChoreoCardRenderLifecycle } from "$lib/shared/choreo-card/state/choreo-card-render-lifecycle.svelte";
-  import { createCrossfaderState } from "$lib/shared/choreo-card/state/crossfader-state.svelte";
+  } from "#lib/shared/choreo-card/state/choreo-card-qr-state.svelte.js";
+  import { createChoreoCardDisplayState } from "#lib/shared/choreo-card/state/choreo-card-display-state.svelte.js";
+  import { createChoreoCardRenderLifecycle } from "#lib/shared/choreo-card/state/choreo-card-render-lifecycle.svelte.js";
+  import { createCrossfaderState } from "#lib/shared/choreo-card/state/crossfader-state.svelte.js";
   import {
     createChoreoCardRenderEngine,
     type ChoreoCardRenderModel,
-  } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
-  import { composeMenu } from "$lib/shared/components/context-menu/compose-menu";
-  import { buildCardMenuSection } from "$lib/shared/choreo-card/services/card-menu-section";
-  import { buildPictographContextMenuItems } from "$lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder";
+  } from "#lib/shared/choreo-card/services/choreo-card-render-engine.js";
+  import { composeMenu } from "#lib/shared/components/context-menu/compose-menu.js";
+  import { buildCardMenuSection } from "#lib/shared/choreo-card/services/card-menu-section.js";
+  import { buildPictographContextMenuItems } from "#lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder.js";
 
   // Eagerly initialize the singleton so its constructor (which mutates $state)
   // runs in the script block, not inside a $derived expression.
@@ -111,7 +111,7 @@
     /** Render as hand path visualization (HAND props, float arrows, no TKA) */
     handPathMode?: boolean;
     /** Browse view mode for solo prop/hand filtering */
-    browseViewMode?: import("$lib/shared/browse/domain/browse-view-mode").BrowseViewMode;
+    browseViewMode?: import("#lib/shared/browse/domain/browse-view-mode.js").BrowseViewMode;
     // Settings
     darkMode?: boolean;
     /** Optional physical-card frame painted behind the canonical card content. */
@@ -282,7 +282,7 @@
           noSavedSession = true;
           return;
         }
-        const mod = await import("$lib/shared/auth/state/auth-state.svelte");
+        const mod = await import("#lib/shared/auth/state/auth-state.svelte.js");
         authApi = mod.authState;
         // Idempotent; app-mode boot has normally already run it.
         await mod.authState.initialize();
@@ -1022,7 +1022,7 @@
   function getMotionSoloMotion(
     cellIndex: number
   ):
-    | import("$lib/shared/pictograph/shared/domain/models/motion-data").MotionData
+    | import("#lib/shared/pictograph/shared/domain/models/motion-data.js").MotionData
     | undefined {
     const hand = isMotionSoloMode
       ? showLeftMotion

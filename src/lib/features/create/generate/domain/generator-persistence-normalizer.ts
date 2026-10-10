@@ -6,7 +6,7 @@ import {
 import {
   LEGACY_HAND_RELATIONSHIP_MODES,
   isTnDSelection,
-} from "$lib/shared/create/domain/hand-relationship";
+} from "#lib/shared/create/domain/hand-relationship.js";
 
 type UnknownRecord = Record<string, unknown>;
 

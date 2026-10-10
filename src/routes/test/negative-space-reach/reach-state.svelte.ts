@@ -12,11 +12,11 @@
  * this page used to be — nothing needs the coalesced-write/local-mirror
  * treatment `phase` used to get. That machinery is gone with it.
  */
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { page } from "$app/state";
 
-import type { CharacterId } from "$lib/shared/3d/domain/character-model";
-import { writeUrl } from "$lib/shared/navigation/services/url-state";
+import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
+import { writeUrl } from "#lib/shared/navigation/services/url-state.js";
 
 import { DEFAULT_LAB_CHARACTER_ID, isLabCharacterId } from "../_lab-kit/lab-characters";
 

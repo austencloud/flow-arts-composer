@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Canvas } from "@threlte/core";
   import { AgXToneMapping, PCFSoftShadowMap } from "three";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
-  import { buildEarthRootObservatoryPlanForGrid } from "$lib/features/museum/data/earth-root-observatory-plan";
-  import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
+  import { buildEarthRootObservatoryPlanForGrid } from "#lib/features/museum/data/earth-root-observatory-plan.js";
+  import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import EarthRootObservatoryWalkScene from "./EarthRootObservatoryWalkScene.svelte";
 
   const cave = buildVulcanCaveFloorPlan();

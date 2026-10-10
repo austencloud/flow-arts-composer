@@ -1,42 +1,42 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import { getViewerStudioSurfaces } from "../context/viewer-studio-surfaces-context";
   import {
     reparentToInspector,
     type ReparentOptions,
   } from "./reparent-to-inspector";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import CameraPreview from "$lib/shared/train/components/CameraPreview.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import CameraPreview from "#lib/shared/train/components/CameraPreview.svelte";
   import type { ViewerMotionSurfaceProps } from "./viewer-split-pane-types";
-  import SceneControlWorkspace from "$lib/shared/3d/components/controls/SceneControlWorkspace.svelte";
-  import type { SceneControlLayout } from "$lib/shared/3d/domain/scene-control-layout";
-  import ContactViewerRequired from "$lib/shared/3d/components/ContactViewerRequired.svelte";
-  import ScenePreparationSurface from "$lib/shared/3d/scene-features/components/ScenePreparationSurface.svelte";
-  import { sceneNeedsContactViewer } from "$lib/shared/3d/domain/prop-motion-discipline";
-  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
-  import Viewer3DRailHint from "$lib/shared/3d/components/onboarding/Viewer3DRailHint.svelte";
-  import { warmSelectedSceneAssets } from "$lib/shared/3d/scene-boot/scene-prefetch";
+  import SceneControlWorkspace from "#lib/shared/3d/components/controls/SceneControlWorkspace.svelte";
+  import type { SceneControlLayout } from "#lib/shared/3d/domain/scene-control-layout.js";
+  import ContactViewerRequired from "#lib/shared/3d/components/ContactViewerRequired.svelte";
+  import ScenePreparationSurface from "#lib/shared/3d/scene-features/components/ScenePreparationSurface.svelte";
+  import { sceneNeedsContactViewer } from "#lib/shared/3d/domain/prop-motion-discipline.js";
+  import VisualSequenceSaveContextMenuHost from "#lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
+  import Viewer3DRailHint from "#lib/shared/3d/components/onboarding/Viewer3DRailHint.svelte";
+  import { warmSelectedSceneAssets } from "#lib/shared/3d/scene-boot/scene-prefetch.js";
   import {
     isViewer3DIntroReplayRequested,
     shouldShowViewer3DIntro,
-  } from "$lib/shared/onboarding/state/viewer3d-intro-state";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/onboarding/state/viewer3d-intro-state.js";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { Tween } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
   import { getViewerTunnelStageContext } from "../context/viewer-tunnel-stage-context";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import type { TipEffectMap } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import {
     resolveTunnelGridOpacity,
     resolveTunnelLayerOpacity,
     tunnelLayerPoseDifference,
     TUNNEL_REVEAL_DURATION,
   } from "../tunnel/tunnel-layer-reveal";
-  import type { AdditionalLayerTextureStatus } from "$lib/shared/animation-engine/services/animation-engine.svelte";
+  import type { AdditionalLayerTextureStatus } from "#lib/shared/animation-engine/services/animation-engine.svelte.js";
 
   let {
     side,
@@ -132,7 +132,7 @@
   const shouldRender3D = $derived(side === "left" ? is3DMounted : is3DActive);
 
   const loadViewer3DCanvas = () =>
-    import("$lib/shared/3d/components/Viewer3DCanvas.svelte");
+    import("#lib/shared/3d/components/Viewer3DCanvas.svelte");
 
   // 3D is one click away from here, and its models are the slowest thing in the
   // app to arrive. Pull them into the browser cache while it is idle so the

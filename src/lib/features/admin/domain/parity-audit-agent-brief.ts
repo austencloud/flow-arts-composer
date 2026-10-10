@@ -1,4 +1,4 @@
-import type { ParityAuditNotification } from "$lib/shared/feedback/domain/models/notification-models";
+import type { ParityAuditNotification } from "#lib/shared/feedback/domain/models/notification-models.js";
 
 const PARITY_REPAIR_SPEC =
   "docs/superpowers/specs/active/2026-07-25-sequence-public-parity-repair-design.md";

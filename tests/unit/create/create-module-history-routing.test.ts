@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createCreateModuleState } from "$lib/features/create/shared/state/create-module-state.svelte";
-import { UndoOperationType } from "$lib/features/create/shared/services/undo-manager";
-import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
+import { createCreateModuleState } from "#lib/features/create/shared/state/create-module-state.svelte.js";
+import { UndoOperationType } from "#lib/features/create/shared/services/undo-manager.js";
+import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
 
 describe("Create history routing", () => {
   afterEach(() => {

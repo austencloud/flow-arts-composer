@@ -15,20 +15,20 @@ import {
   writeBatch,
   getDoc,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { firestoreList } from "$lib/shared/firestore";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { firestoreList } from "#lib/shared/firestore/index.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 import type {
   AppVersion,
   VersionFeedbackItem,
   FeedbackSummary,
   ChangelogEntry,
-} from "$lib/shared/feedback/domain/models/version-models";
-import { PRE_RELEASE_VERSION } from "$lib/shared/feedback/domain/models/version-models";
-import type { FeedbackItem } from "$lib/shared/feedback/domain/models/feedback-models";
-import { isFeedbackType } from "$lib/shared/feedback/domain/models/feedback-models";
-import { AppVersionSchema, FeedbackItemSchema } from "$lib/shared/feedback/domain/models/feedback-schemas";
+} from "#lib/shared/feedback/domain/models/version-models.js";
+import { PRE_RELEASE_VERSION } from "#lib/shared/feedback/domain/models/version-models.js";
+import type { FeedbackItem } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import { isFeedbackType } from "#lib/shared/feedback/domain/models/feedback-models.js";
+import { AppVersionSchema, FeedbackItemSchema } from "#lib/shared/feedback/domain/models/feedback-schemas.js";
 
 const VERSIONS_COLLECTION = "versions";
 const FEEDBACK_COLLECTION = "feedback";

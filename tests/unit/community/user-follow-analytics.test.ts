@@ -39,40 +39,46 @@ vi.mock("firebase/firestore", () => ({
   startAfter: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({ id: "firestore" })),
 }));
 
-vi.mock("$lib/shared/community/domain/models/public-profile-contract", () => ({
-  PUBLIC_PROFILE_VERSION: 1,
-}));
+vi.mock(
+  "#lib/shared/community/domain/models/public-profile-contract.js",
+  () => ({
+    PUBLIC_PROFILE_VERSION: 1,
+  })
+);
 
-vi.mock("$lib/shared/firestore", () => ({
+vi.mock("#lib/shared/firestore/index.js", () => ({
   firestoreGet: vi.fn(),
   firestoreList: vi.fn(),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: h.toastError },
 }));
 
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: h.trackWrite,
 }));
 
-vi.mock("$lib/shared/community/domain/models/user-firestore-schemas", () => ({
-  UserFirestoreDataSchema: {},
-  FollowDocSchema: {},
-}));
+vi.mock(
+  "#lib/shared/community/domain/models/user-firestore-schemas.js",
+  () => ({
+    UserFirestoreDataSchema: {},
+    FollowDocSchema: {},
+  })
+);
 
-vi.mock("$lib/shared/analytics/social-events", () => ({
+vi.mock("#lib/shared/analytics/social-events.js", () => ({
   trackUserFollowChanged: h.trackUserFollowChanged,
 }));
 
 import {
   followUser,
   unfollowUser,
-} from "$lib/shared/community/services/user-repository";
+} from "#lib/shared/community/services/user-repository.js";
 
 describe("user follow analytics completion boundary", () => {
   beforeEach(() => {

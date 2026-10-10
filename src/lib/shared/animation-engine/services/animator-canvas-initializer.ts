@@ -4,7 +4,7 @@
  * Orchestrates the complex async initialization sequence for AnimatorCanvas.
  */
 
-import type { IAnimationRenderer as AnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
+import type { IAnimationRenderer as AnimationRenderer } from "#lib/shared/animation-engine/services/IAnimationRenderer.js";
 import { loadAnimationRenderer } from "./animator-loader";
 import { DEFAULT_CANVAS_SIZE } from "./canvas-resizer.svelte";
 import type {

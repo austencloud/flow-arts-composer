@@ -42,7 +42,7 @@
 import {
   Timestamp,
 } from "firebase/firestore";
-import { firestoreSet, firestoreList } from "$lib/shared/firestore";
+import { firestoreSet, firestoreList } from "#lib/shared/firestore/index.js";
 import type {
   NotificationType,
   FeedbackNotification,
@@ -51,10 +51,10 @@ import type {
   MessageNotification,
   SystemNotification,
   ModerationNotification,
-} from "$lib/shared/feedback/domain/models/notification-models";
-import { getPreferenceKeyForType } from "$lib/shared/feedback/domain/models/notification-models";
+} from "#lib/shared/feedback/domain/models/notification-models.js";
+import { getPreferenceKeyForType } from "#lib/shared/feedback/domain/models/notification-models.js";
 import { getPreferences } from "./notification-preferences-manager";
-import { UserNotificationSchema } from "$lib/shared/feedback/domain/models/feedback-schemas";
+import { UserNotificationSchema } from "#lib/shared/feedback/domain/models/feedback-schemas.js";
 
 const USERS_COLLECTION = "users";
 const NOTIFICATIONS_SUBCOLLECTION = "notifications";

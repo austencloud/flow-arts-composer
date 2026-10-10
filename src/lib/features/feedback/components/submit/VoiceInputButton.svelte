@@ -1,8 +1,8 @@
 <!-- VoiceInputButton - MediaRecorder-based voice capture for feedback -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { VoiceRecordingResult } from "$lib/shared/feedback/domain/feedback-contract-types";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { VoiceRecordingResult } from "#lib/shared/feedback/domain/feedback-contract-types.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 import type { VoiceRecorder } from "../../services/voice-recorder";
 
   const {

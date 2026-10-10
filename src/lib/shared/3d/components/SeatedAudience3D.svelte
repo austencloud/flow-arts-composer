@@ -24,7 +24,7 @@
     SEATED_AUDIENCE_ANIMATION_URLS,
     SEATED_AUDIENCE_CHARACTER_URLS,
   } from "../config/seated-audience-assets";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 
   interface Props {
     count?: number;

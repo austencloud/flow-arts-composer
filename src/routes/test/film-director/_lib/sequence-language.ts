@@ -20,22 +20,22 @@ import {
   GenerationMode,
   type GenerationOptions,
   type LOOPType,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   Letter,
   normalizeLetter,
-} from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/foundation/domain/models/letter.js";
 import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   getGridLocationsFromPlacement,
   getGridPlacementFromLocations,
-} from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { getTurnPool, type TurnLanes } from "@tka/sequence-engine/generation";
 
 // Catalogs

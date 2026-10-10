@@ -5,9 +5,9 @@
   The workspace decides whether it is an icon button or a labeled pill.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
 
   // Props

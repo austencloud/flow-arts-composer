@@ -1,15 +1,15 @@
-import { error, json, type RequestHandler } from "@sveltejs/kit";
-import { authorizeLoopback, readJsonBody } from "$lib/server/dev-loopback";
+import { error, type RequestHandler } from "@sveltejs/kit";
+import { authorizeLoopback, readJsonBody } from "#lib/server/dev-loopback.js";
 import {
   featureVideoFailure,
   featureVideos,
-} from "$lib/server/feature-video-store";
+} from "#lib/server/feature-video-store.js";
 
 /** Dev only: the feature videos on this computer, and new ones. */
 export const GET: RequestHandler = async ({ request, getClientAddress }) => {
   authorizeLoopback(request, getClientAddress);
   try {
-    return json(await featureVideos().list());
+    return Response.json(await featureVideos().list());
   } catch (cause) {
     featureVideoFailure(cause);
   }
@@ -35,7 +35,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
       sequenceId: input.sequenceId,
       ...(typeof input.canvas === "string" ? { canvas: input.canvas } : {}),
     });
-    return json(created, { status: 201 });
+    return Response.json(created, { status: 201 });
   } catch (cause) {
     featureVideoFailure(cause);
   }

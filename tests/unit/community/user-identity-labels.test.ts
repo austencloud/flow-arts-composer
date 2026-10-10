@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getUserIdentityLabels } from "$lib/shared/community/domain/user-identity-labels";
+import { getUserIdentityLabels } from "#lib/shared/community/domain/user-identity-labels.js";
 
 describe("getUserIdentityLabels", () => {
   it("leads with the chosen community name and keeps the unique handle", () => {

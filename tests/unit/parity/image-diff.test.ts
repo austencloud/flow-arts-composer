@@ -3,7 +3,7 @@ import {
   AA_TOLERANCE,
   diffBuffers,
   bodyDiffBuffers,
-} from "$lib/shared/parity/image-diff";
+} from "#lib/shared/parity/image-diff.js";
 
 /** Build a w×h solid-color RGBA buffer. */
 function solid(w: number, h: number, r: number, g: number, b: number, a = 255): Uint8ClampedArray {

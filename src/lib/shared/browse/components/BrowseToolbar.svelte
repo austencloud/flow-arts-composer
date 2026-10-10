@@ -9,24 +9,24 @@
   4. Result count (right-aligned, tabular-nums)
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizeFilterChip } from "./localize-filter-chip";
   import { onMount, onDestroy } from "svelte";
   import type { BrowseEngine } from "../engine/types";
-  import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-  import ExpandableSearchBar from "$lib/shared/browse/components/ExpandableSearchBar.svelte";
-  import LevelFilterChip from "$lib/shared/browse/components/filter-chips/LevelFilterChip.svelte";
-  import FavoritesFilterChip from "$lib/shared/browse/components/filter-chips/FavoritesFilterChip.svelte";
-  import LengthFilterChip from "$lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
-  import LOOPFilterChip from "$lib/shared/browse/components/filter-chips/LOOPFilterChip.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+  import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+  import ExpandableSearchBar from "#lib/shared/browse/components/ExpandableSearchBar.svelte";
+  import LevelFilterChip from "#lib/shared/browse/components/filter-chips/LevelFilterChip.svelte";
+  import FavoritesFilterChip from "#lib/shared/browse/components/filter-chips/FavoritesFilterChip.svelte";
+  import LengthFilterChip from "#lib/shared/browse/components/filter-chips/LengthFilterChip.svelte";
+  import LOOPFilterChip from "#lib/shared/browse/components/filter-chips/LOOPFilterChip.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
   import type { SequenceSource } from "../engine/types";
   // Every mutation below changes the visible result set. Routed through the one
   // morph seam so the grid rearranges instead of blinking wherever a host has
   // declared a live results grid (the gallery split pane today); inert
   // everywhere else — see shared/transitions/results-morph.
-  import { withResultsMorph } from "$lib/shared/transitions/results-morph";
+  import { withResultsMorph } from "#lib/shared/transitions/results-morph.js";
 
   interface Props {
     engine: BrowseEngine;

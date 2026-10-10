@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { tick } from "svelte";
-import type { ResolvedTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
+import type { ResolvedTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
 import { createPostTimingSessionHarness } from "./post-timing-session-harness.svelte";
 
 const resolved = {

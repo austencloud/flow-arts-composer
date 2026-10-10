@@ -20,14 +20,14 @@
 
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { CountBucket } from "$lib/shared/combination/domain/closure-types";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { CountBucket } from "#lib/shared/combination/domain/closure-types.js";
 import {
   findLOOPCombinations,
   type LOOPCombinatorReport,
-} from "$lib/shared/combination/services/loop-combinator";
-import { admissibleClosures } from "$lib/shared/combination/services/loop-closure";
-import { loadCombinationSteps } from "$lib/shared/combination/services/unit-search";
+} from "#lib/shared/combination/services/loop-combinator.js";
+import { admissibleClosures } from "#lib/shared/combination/services/loop-closure.js";
+import { loadCombinationSteps } from "#lib/shared/combination/services/unit-search.js";
 
 import {
   A_G_COUNT_BUCKET_PROFILE,

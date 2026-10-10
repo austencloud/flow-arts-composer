@@ -1,17 +1,17 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
-  import AdminActionButton from "$lib/shared/admin/components/AdminActionButton.svelte";
-  import TkaLabel from "$lib/shared/components/TkaLabel.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { formatTimeAgo } from "$lib/shared/i18n/i18n-formatters";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
+  import AdminActionButton from "#lib/shared/admin/components/AdminActionButton.svelte";
+  import TkaLabel from "#lib/shared/components/TkaLabel.svelte";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { formatTimeAgo } from "#lib/shared/i18n/i18n-formatters.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import {
     scanPropConfigForPreview,
     sequenceForScanPreview,
     type CodeEntry,
     type ScanEventRow,
-  } from "$lib/features/choreo-card/state/scan-activity-state.svelte";
+  } from "#lib/features/choreo-card/state/scan-activity-state.svelte.js";
 
   interface Props {
     code: string;

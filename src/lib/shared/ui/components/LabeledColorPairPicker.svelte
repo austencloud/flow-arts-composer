@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { Snippet } from "svelte";
   import ColorPicker from "svelte-awesome-color-picker";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { COLOR_PRESETS } from "../color-presets";
   import { COOL_PRESETS, WARM_PRESETS } from "../color-temperature";
   import BareWrapper from "./color-picker/BareWrapper.svelte";

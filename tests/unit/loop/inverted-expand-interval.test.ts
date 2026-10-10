@@ -37,9 +37,9 @@ import {
   expanderMultiplier,
   parseLoopComponents,
   resolveLoopConfig,
-} from "$lib/shared/create/services/loop-type-utils";
-import { gateRhythm } from "$lib/shared/create/services/loop-rhythm-gating";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/create/services/loop-type-utils.js";
+import { gateRhythm } from "#lib/shared/create/services/loop-rhythm-gating.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");

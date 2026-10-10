@@ -1,6 +1,6 @@
 <script lang="ts">
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import { getFuseContext } from "../context/fuse-context";
 
   let {

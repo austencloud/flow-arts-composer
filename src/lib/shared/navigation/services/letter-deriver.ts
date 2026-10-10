@@ -8,13 +8,13 @@
  * Domain: Navigation - Letter Derivation
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import { normalizeLetter } from "$lib/shared/foundation/domain/models/letter";
-import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
-import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import { normalizeLetter } from "#lib/shared/foundation/domain/models/letter.js";
+import { getSequenceMotionProfile } from "#lib/shared/foundation/services/sequence-motion-profile.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
+import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
 import { deriveGridMode } from "../../pictograph/grid/services/grid-mode-deriver";
 
 export async function deriveLettersForSequence(

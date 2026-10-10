@@ -20,12 +20,12 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import type {
   IVideoExportOrchestrator,
   VideoExportProgress,
-} from "$lib/shared/compose/domain/video-export-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/compose/domain/video-export-types.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ExportSettings } from "../../domain/models/export-settings";
 import type { AnimationExportDependencies } from "../types";
 
-vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
+vi.mock("#lib/shared/share/state/image-composition-state.svelte.js", () => ({
   getImageCompositionManager: () => ({
     getSettings: () => ({
       darkMode: true,
@@ -40,7 +40,7 @@ vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
 }));
 
 vi.mock(
-  "$lib/shared/animation-panel/state/export-options-state.svelte",
+  "#lib/shared/animation-panel/state/export-options-state.svelte.js",
   () => ({
     getExportOptionsState: () => ({
       getVideoOptions: () => ({
@@ -56,7 +56,7 @@ vi.mock(
   })
 );
 
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: { settings: { propType: "staff" } },
 }));
 
@@ -64,7 +64,7 @@ vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
 // seconds of real waiting. Every assertion here is about run identity, not that
 // pause; the pause itself stays exercised by the product path.
 vi.mock(
-  "$lib/shared/animation-engine/domain/constants/timing",
+  "#lib/shared/animation-engine/domain/constants/timing.js",
   async (original) => ({
     ...((await original()) as Record<string, unknown>),
     VIDEO_EXPORT_SUCCESS_DELAY_MS: 0,
@@ -72,7 +72,7 @@ vi.mock(
 );
 
 const shareBlobNatively = vi.fn();
-vi.mock("$lib/shared/foundation/services/file-downloader", () => ({
+vi.mock("#lib/shared/foundation/services/file-downloader.js", () => ({
   shareBlobNatively: (...args: unknown[]) => shareBlobNatively(...args),
 }));
 

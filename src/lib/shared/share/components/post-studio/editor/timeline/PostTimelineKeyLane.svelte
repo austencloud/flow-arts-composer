@@ -5,15 +5,15 @@
     type PostEasing,
     type PostItem,
     type PostKeyframeChannel,
-  } from "$lib/shared/media-composition/domain/post-project";
+  } from "#lib/shared/media-composition/domain/post-project.js";
   import {
     channelKeyframeSeconds,
     channelSegments,
     channelValueAt,
     easingControlPoints,
     easingPresetOf,
-  } from "$lib/shared/media-composition/domain/post-project-keyframes";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { formatPostClock } from "../../builder/post-builder-format";
   import {
     channelLabel,

@@ -1,12 +1,12 @@
 import {
   PostProjectSchema,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   TakeTimingSchema,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 
 const PROJECT_PREFIX = "tka:post-studio:project:v2:";
 const TIMING_PREFIX = "tka:post-studio:take-timing:v1:";

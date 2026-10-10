@@ -12,6 +12,7 @@
    */
   import { page } from "$app/state";
   import { afterNavigate, preloadData } from "$app/navigation";
+  import { isShallowGoto } from "#lib/shared/navigation/services/url-state.js";
   import { LAUNCHPAD_TILES } from "./launchpad/launchpad-tiles";
   import { onMount, type Component } from "svelte";
   import RobustAvatar from "../../components/avatar/RobustAvatar.svelte";
@@ -25,10 +26,10 @@
     startAuthState,
     type AuthStateApi,
   } from "../../auth/services/deferred-sign-in";
-  import { trackCtaClick } from "$lib/shared/analytics/landing-events";
-  import { analyticsRoute } from "$lib/shared/analytics/analytics-context";
-  import type { AuthCta } from "$lib/shared/analytics/auth-events";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { trackCtaClick } from "#lib/shared/analytics/landing-events.js";
+  import { analyticsRoute } from "#lib/shared/analytics/analytics-context.js";
+  import type { AuthCta } from "#lib/shared/analytics/auth-events.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { siteCopy } from "../site-copy";
 
   let scrolled = $state(false);
@@ -117,7 +118,7 @@
 
   async function openSignIn(cta: AuthCta) {
     const { trackAuthModalOpened } =
-      await import("$lib/shared/analytics/auth-events");
+      await import("#lib/shared/analytics/auth-events.js");
     trackAuthModalOpened(analyticsRoute(), cta);
     accountOpen = false;
     mobileOpen = false;
@@ -144,7 +145,7 @@
   $effect(() => {
     if (authModalOpen && authApi?.isFullAccount) {
       authModalOpen = false;
-      void import("$lib/shared/auth/services/auth-analytics-bridge")
+      void import("#lib/shared/auth/services/auth-analytics-bridge.js")
         .then(({ clearAuthSubmissionBridge }) => clearAuthSubmissionBridge())
         .catch((error) =>
           console.warn("[SiteHeader] Auth analytics cleanup failed:", error)
@@ -335,7 +336,8 @@
   // the page you left flash back before the transition. Holding the overlay up
   // through navigation lets it stay covering the old page and fade away onto
   // the NEW one — straight from the menu into the destination.
-  afterNavigate(() => {
+  afterNavigate((navigation) => {
+    if (isShallowGoto(navigation)) return;
     mobileOpen = false;
     accountOpen = false;
     desktopOpenGroup = null;

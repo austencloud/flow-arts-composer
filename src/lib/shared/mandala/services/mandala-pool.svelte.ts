@@ -6,9 +6,9 @@
  * - Tops up during idle, dropping the oldest beyond the cap.
  * - Generation is fully client-side (GenerationOrchestrator), no network.
  */
-import { db } from "$lib/shared/persistence/database/tka-database";
-import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
+import { generationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { GeneratedMandalaEntry } from "../domain/mandala-pool-types";
 import {
 	buildLoaderRecipe,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FireTipTracker } from "../fire-tip-tracker";
 import type { FireTipTrackerConfig } from "../fire-tip-tracker";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type { MotionSubSample } from "../motion-sub-sampler";
 
 /**

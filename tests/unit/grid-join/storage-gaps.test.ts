@@ -4,12 +4,12 @@
  * the cloud draft write, and the Create "already loaded" check.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ClaudeCodeCopier } from "$lib/shared/browse/services/claude-code-copier";
-import type { SequenceDetailLoader } from "$lib/shared/browse/services/sequence-detail-loader";
-import { toMinimalJson } from "$lib/features/create/shared/services/sequence-json-exporter";
-import { mergeSavedOverStored } from "$lib/shared/library/services/library-sequence-merge";
-import { areSequencesEqual } from "$lib/features/create/shared/utils/sequence-comparison";
-import { checkTransfer } from "$lib/features/create/shared/services/sequence-transfer-handler";
+import { ClaudeCodeCopier } from "#lib/shared/browse/services/claude-code-copier.js";
+import type { SequenceDetailLoader } from "#lib/shared/browse/services/sequence-detail-loader.js";
+import { toMinimalJson } from "#lib/features/create/shared/services/sequence-json-exporter.js";
+import { mergeSavedOverStored } from "#lib/shared/library/services/library-sequence-merge.js";
+import { areSequencesEqual } from "#lib/features/create/shared/utils/sequence-comparison.js";
+import { checkTransfer } from "#lib/features/create/shared/services/sequence-transfer-handler.js";
 import {
   buildJoinFixture,
   JOIN_EAST_ONE,
@@ -33,16 +33,16 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: vi.fn(() => "__timestamp__"),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
   getAuthSync: vi.fn(() => mocks.auth),
 }));
 
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: vi.fn((operation: () => Promise<unknown>) => operation()),
 }));
 
-vi.mock("$lib/shared/persistence/database/tka-database", () => ({
+vi.mock("#lib/shared/persistence/database/tka-database.js", () => ({
   db: {
     userWork: {
       where: vi.fn(() => ({
@@ -53,7 +53,7 @@ vi.mock("$lib/shared/persistence/database/tka-database", () => ({
   },
 }));
 
-import { Autosaver } from "$lib/features/create/shared/services/autosaver";
+import { Autosaver } from "#lib/features/create/shared/services/autosaver.js";
 
 const loaded = {
   needsFullLoad: () => false,

@@ -9,7 +9,7 @@
    * means "the timeline's unit").
    */
 
-  import type { TimeSeconds } from "$lib/shared/animation-engine/domain/timeline-types";
+  import type { TimeSeconds } from "#lib/shared/animation-engine/domain/timeline-types.js";
 
   interface Props {
     duration: TimeSeconds;

@@ -4,15 +4,15 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   FeatureExportError,
   saveFeatureExport,
-} from "$lib/server/feature-video-exports";
-import { featureVideos } from "$lib/server/feature-video-store";
+} from "#lib/server/feature-video-exports.js";
+import { featureVideos } from "#lib/server/feature-video-store.js";
 import {
   FEATURE_EXPORT_NAME_RULE,
   defaultFeatureExportName,
   featureVideoExportUrl,
   isFeatureExportName,
   isSavedFeatureExport,
-} from "$lib/shared/media-composition/domain/feature-video-export";
+} from "#lib/shared/media-composition/domain/feature-video-export.js";
 import { POST as exportRoute } from "../../../src/routes/api/dev/feature-videos/[slug]/exports/+server";
 import {
   routeEvent,

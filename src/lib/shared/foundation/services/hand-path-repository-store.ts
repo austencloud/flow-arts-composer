@@ -1,12 +1,12 @@
 import { doc, getDoc, setDoc, arrayUnion } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
 import {
   firestoreGet,
   firestoreList,
   firestoreDelete,
   requireAuth,
   type WhereClause,
-} from "$lib/shared/firestore";
+} from "#lib/shared/firestore/index.js";
 import { HandPathDataSchema } from "../domain/models/hand-path-schemas";
 import type { HandPathData } from "../domain/models/hand-path-data";
 import type { HandPathFilters } from "./types";

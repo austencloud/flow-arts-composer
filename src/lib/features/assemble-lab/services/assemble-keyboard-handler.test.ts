@@ -4,7 +4,7 @@ import {
   handleAssembleKeyDown,
   type KeyboardContext,
 } from "./assemble-keyboard-handler";
-import { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation, GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 function makeEvent(code: string): KeyboardEvent {
   return new KeyboardEvent("keydown", { code });

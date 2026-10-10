@@ -1,13 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { AnimationPanelState } from "../../state/animation-panel-state.svelte";
 import type { AnimationLoop } from "../animation-loop";
 import type { SequenceAnimationOrchestrator } from "../sequence-animation-orchestrator";
 import { AnimationPlaybackController } from "../animation-playback-controller";
 
-vi.mock("$lib/shared/foundation/services/sequence-loopability-checker", () => ({
-  isSeamlesslyLoopable: () => true,
-}));
+vi.mock(
+  "#lib/shared/foundation/services/sequence-loopability-checker.js",
+  () => ({
+    isSeamlesslyLoopable: () => true,
+  })
+);
 
 function sequence(id: string): SequenceData {
   return {

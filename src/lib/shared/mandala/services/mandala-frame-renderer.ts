@@ -10,7 +10,7 @@
 import { calculate as calculateMandalaGeometry } from "./mandala-geometry-calculator";
 import { renderMandalaSVG, renderMandalaToCanvas } from "./mandala-renderer";
 import { getMandalaPathOptions } from "./mandala-path-options";
-import { pairTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+import { pairTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
 import { DEFAULT_OVERLAP_CONFIG } from "../domain/mandala-types";
 import { mandalaJoinReach, type MandalaHandOffsets } from "./mandala-grid-join";
 import type {

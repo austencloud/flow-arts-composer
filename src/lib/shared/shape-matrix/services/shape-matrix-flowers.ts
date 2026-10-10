@@ -1,16 +1,16 @@
 import type {
   MandalaPaths,
   MandalaPathShape,
-} from "$lib/shared/mandala/domain/mandala-types";
-import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
-import { getMandalaPathOptions } from "$lib/shared/mandala/services/mandala-path-options";
-import { applySequencePathPreview } from "$lib/shared/sequence-viewer/services/sequence-path-policy";
+} from "#lib/shared/mandala/domain/mandala-types.js";
+import { calculate as calculateMandalaGeometry } from "#lib/shared/mandala/services/mandala-geometry-calculator.js";
+import { getMandalaPathOptions } from "#lib/shared/mandala/services/mandala-path-options.js";
+import { applySequencePathPreview } from "#lib/shared/sequence-viewer/services/sequence-path-policy.js";
 import {
   getTipPoints,
   type TipPoint,
-} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { getDefaultTrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+import { getDefaultTrailPointConfig } from "#lib/shared/animation-engine/domain/types/trail-point-types.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   asPropPair,
   foldUntraceablePropPair,
@@ -19,8 +19,8 @@ import {
   type ShapeMatrixTipPair,
 } from "../domain/prop-pair";
 import { resolveRotationStyleArchetypes } from "./rotation-style-archetypes";
-import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { buildFlowerSequence } from "$lib/features/lab/vtg-lab/services/build-flower-sequence";
+import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { buildFlowerSequence } from "#lib/features/lab/vtg-lab/services/build-flower-sequence.js";
 import {
   buildShapeMatrixAxis,
   flowerKey,

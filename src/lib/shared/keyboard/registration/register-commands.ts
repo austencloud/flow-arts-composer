@@ -5,7 +5,7 @@
  * catalog or utility module.
  */
 
-import type { CommandPalette } from "$lib/shared/keyboard/services/command-palette";
+import type { CommandPalette } from "#lib/shared/keyboard/services/command-palette.js";
 import type { createKeyboardShortcutState } from "../state/keyboard-shortcut-state.svelte";
 import {
   getAccessibleSectionsForModule,
@@ -22,7 +22,7 @@ import {
   type EditHistoryAction,
 } from "../domain/edit-history-shortcut-target";
 import { openShortcutSettings } from "../open-shortcut-settings";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
 function getCommandIcon(icon: string | undefined): string {
   return icon?.match(/\bfa-[a-z0-9-]+\b/i)?.[0] ?? "fa-circle";

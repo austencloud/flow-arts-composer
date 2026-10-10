@@ -7,7 +7,7 @@ import {
   HOOP_FAMILY_GLYPH_CROPS,
   HOOP_FAMILY_REACH_M,
   TRIANGLE_STATIONS_M,
-} from "$lib/shared/pictograph/prop/domain/hoop-family-geometry.generated";
+} from "#lib/shared/pictograph/prop/domain/hoop-family-geometry.generated.js";
 
 function viewBox(path: string): [number, number] {
   const svg = readFileSync(path, "utf8");

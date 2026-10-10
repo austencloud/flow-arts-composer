@@ -1,12 +1,9 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": "..",
     "paths": {
-      "$lib/*": ["src/lib/*"],
-      "$lib": ["src/lib"],
-      "$app/*": ["scripts/mocks/$app/*"],
-      "file-saver": ["scripts/mocks/file-saver"]
+      "$app/*": ["./mocks/$app/*"],
+      "file-saver": ["./mocks/file-saver"]
     }
   },
   "include": ["*.ts", "mocks/**/*"]

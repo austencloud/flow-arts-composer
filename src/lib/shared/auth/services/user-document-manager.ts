@@ -18,14 +18,14 @@ import { formatUsername } from "../domain/models/username-validation";
 import { isActivityStale } from "../domain/activity-refresh";
 import { retryAuthenticatedFirestoreOperation } from "./retry-authenticated-firestore-operation";
 
-import { generateAvatarUrl } from "$lib/shared/foundation/utils/avatar-generator";
-import { PUBLIC_PROFILE_VERSION } from "$lib/shared/community/domain/models/public-profile-contract";
+import { generateAvatarUrl } from "#lib/shared/foundation/utils/avatar-generator.js";
+import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
 import {
   captureWhenReady,
   getCurrentPostHogSessionId,
-} from "$lib/shared/analytics/services/posthog";
-import { reportErrorTelemetry } from "$lib/shared/error/services/error-telemetry-reporter";
-import { refreshPublicSequenceOwnerProfile } from "$lib/shared/library/services/public-sequence-persister";
+} from "#lib/shared/analytics/services/posthog.js";
+import { reportErrorTelemetry } from "#lib/shared/error/services/error-telemetry-reporter.js";
+import { refreshPublicSequenceOwnerProfile } from "#lib/shared/library/services/public-sequence-persister.js";
 
 /**
  * Capitalize each word in a name (e.g., "brendan freaney" -> "Brendan Freaney")

@@ -6,12 +6,12 @@
  * absolute-target apply (`applyReversalMatrix`) with its `solveHandFlips` solver.
  * Split out of `reversal-seed-service.ts` so the deck variation engine and the
  * firebase-free landing hero pool can import these without pulling the Firestore
- * seeder (and its `$lib/shared/auth/firebase` side effects) into their bundle.
+ * seeder (and its `#lib/shared/auth/firebase.js` side effects) into their bundle.
  *
  * `reversal-seed-service.ts` re-exports everything here for backward compatibility.
  */
 
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import { lookupLetter, type CsvEdge } from "./pictograph-letter-lookup";
 import {
   getReversalFlagsForBeat,
@@ -19,11 +19,11 @@ import {
   cumulativeParities,
   type ResolvedReversalPattern,
 } from "../domain/reversal-transform";
-import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { updateSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { recalculateAllOrientations } from "#lib/shared/create/services/orientation-propagation.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { updateSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 /** A plain, mutable working copy of a single motion during transform. */
 export interface MutableMotion {

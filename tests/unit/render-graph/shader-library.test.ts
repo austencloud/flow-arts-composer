@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ShaderLibrary } from "$lib/shared/render-graph/services/shader-library";
+import { ShaderLibrary } from "#lib/shared/render-graph/services/shader-library.js";
 
 const COMPLETION_STATUS_KHR = 0x91b1;
 const LINK_STATUS = 0x8b82;

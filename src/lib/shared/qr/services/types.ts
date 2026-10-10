@@ -1,6 +1,6 @@
-import type { AuthoredHand } from "$lib/shared/foundation/domain/models/authored-hand";
-import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
-import type { CardExportTrace } from "$lib/shared/render/services/card-export-trace";
+import type { AuthoredHand } from "#lib/shared/foundation/domain/models/authored-hand.js";
+import type { SoloPropData } from "#lib/shared/foundation/domain/models/solo-prop-data.js";
+import type { CardExportTrace } from "#lib/shared/render/services/card-export-trace.js";
 
 export const LOOP_TYPE_TAGS: Record<string, string> = {
   rotated: "sr",
@@ -232,7 +232,7 @@ export interface CreateShortCodeResult {
 export interface ImportResolution {
   /** Fully hydrated sequence. When docBacked, its id is a Firestore sequence
    *  doc id a collection can reference directly. */
-  sequence: import("$lib/shared/foundation/domain/models/sequence-data").SequenceData;
+  sequence: import("#lib/shared/foundation/domain/models/sequence-data.js").SequenceData;
   /** True when a referenceable doc backs this card (own or public). False =
    *  self-contained data only; the caller must import a copy before filing. */
   docBacked: boolean;

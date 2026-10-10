@@ -11,18 +11,17 @@
  */
 
 import type { RequestHandler } from "@sveltejs/kit";
-import { json } from "@sveltejs/kit";
-import { env } from "$env/dynamic/private";
-import { getAdminDb } from "$lib/server/firebaseAdmin";
+
+import * as env from "$app/env/private";
+import { getAdminDb } from "#lib/server/firebaseAdmin.js";
 import admin from "firebase-admin";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
 import {
 	isFeedbackType,
 	type FeedbackType,
 	type FeedbackPriority,
-} from "$lib/shared/feedback/domain/models/feedback-models";
-
+} from "#lib/shared/feedback/domain/models/feedback-models.js";
 
 const COLLECTION = "feedback";
 const MAX_TITLE_LENGTH = 120;
@@ -54,7 +53,7 @@ function isValidPriority(value: string): value is FeedbackPriority {
 
 /** @deprecated Migrated to POST with x-api-key header. */
 export const GET: RequestHandler = async () => {
-	return json(
+	return Response.json(
 		{
 			ok: false,
 			error:
@@ -71,7 +70,7 @@ export const POST: RequestHandler = async (event) => {
 	// 1. Auth: validate API key from header (not query params)
 	const FEEDBACK_INGEST_KEY = env.FEEDBACK_INGEST_KEY;
 	if (!FEEDBACK_INGEST_KEY) {
-		return json(
+		return Response.json(
 			{ ok: false, error: "Ingest endpoint not configured" },
 			{ status: 500 },
 		);
@@ -79,7 +78,7 @@ export const POST: RequestHandler = async (event) => {
 
 	const apiKey = event.request.headers.get("x-api-key");
 	if (!apiKey || apiKey !== FEEDBACK_INGEST_KEY) {
-		return json(
+		return Response.json(
 			{ ok: false, error: "Invalid or missing API key" },
 			{ status: 401 },
 		);
@@ -94,7 +93,7 @@ export const POST: RequestHandler = async (event) => {
 	try {
 		body = (await event.request.json()) as Record<string, unknown>;
 	} catch {
-		return json(
+		return Response.json(
 			{ ok: false, error: "Invalid JSON body" },
 			{ status: 400 },
 		);
@@ -115,14 +114,14 @@ export const POST: RequestHandler = async (event) => {
 		typeof body.agent === "string" ? body.agent : "claude-chat";
 
 	if (!rawTitle) {
-		return json(
+		return Response.json(
 			{ ok: false, error: "Missing required field: title" },
 			{ status: 400 },
 		);
 	}
 
 	if (!rawDescription) {
-		return json(
+		return Response.json(
 			{ ok: false, error: "Missing required field: description" },
 			{ status: 400 },
 		);
@@ -132,14 +131,14 @@ export const POST: RequestHandler = async (event) => {
 	const description = sanitize(rawDescription, MAX_DESCRIPTION_LENGTH);
 
 	if (!title) {
-		return json(
+		return Response.json(
 			{ ok: false, error: "Title is empty after sanitization" },
 			{ status: 400 },
 		);
 	}
 
 	if (!description) {
-		return json(
+		return Response.json(
 			{ ok: false, error: "Description is empty after sanitization" },
 			{ status: 400 },
 		);
@@ -189,10 +188,10 @@ export const POST: RequestHandler = async (event) => {
 
 		const docRef = await db.collection(COLLECTION).add(docData);
 
-		return json({ ok: true, id: docRef.id, title }, { status: 201 });
+		return Response.json({ ok: true, id: docRef.id, title }, { status: 201 });
 	} catch (err) {
 		console.error("[feedback-ingest] Firestore write failed:", err);
-		return json(
+		return Response.json(
 			{ ok: false, error: "Internal server error" },
 			{ status: 500 },
 		);

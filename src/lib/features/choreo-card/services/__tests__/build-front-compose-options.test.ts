@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { buildFrontComposeOptions } from "../build-front-compose-options";
 import type { PrintRenderOptions } from "../types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 const SEQ: SequenceData = {
   id: "seq-1",

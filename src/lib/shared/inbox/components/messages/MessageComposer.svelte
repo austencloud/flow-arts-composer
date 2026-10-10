@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   /**
    * MessageComposer
    *
@@ -7,24 +7,24 @@
    * Supports reply mode, edit mode, and typing indicators.
    */
 
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount, untrack } from "svelte";
   import { messagingService } from "../../../messaging/services/messenger";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { inboxState } from "../../state/inbox-state.svelte";
   import ReplyPreview from "./ReplyPreview.svelte";
   import MessageAttachmentPicker from "./MessageAttachmentPicker.svelte";
   import type { PendingMessageAttachment } from "../../domain/pending-message-attachment";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { buildSequenceSharePayload } from "../../domain/build-sequence-share-payload";
-  import { buildReplyPreview } from "$lib/shared/messaging/domain/message-preview";
+  import { buildReplyPreview } from "#lib/shared/messaging/domain/message-preview.js";
   import type {
     Message,
     ReplyPreview as MessageReplyPreview,
-  } from "$lib/shared/messaging/domain/models/message-models";
+  } from "#lib/shared/messaging/domain/models/message-models.js";
   import { getMessageDeliveryContext } from "../../context/message-delivery-context";
   import { restoreMessageAttachment } from "../../domain/message-delivery-models";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 
   interface Props {
     conversationId: string;

@@ -1,15 +1,15 @@
 <script lang="ts">
-  import GenerationStylePanel from "$lib/shared/create/components/GenerationStylePanel.svelte";
-  import { DEFAULT_GENERATION_STYLE } from "$lib/shared/create/domain/generation-style";
-  import { startOrientationsForLevel } from "$lib/features/create/generate/domain/level-orientation-policy";
+  import GenerationStylePanel from "#lib/shared/create/components/GenerationStylePanel.svelte";
+  import { DEFAULT_GENERATION_STYLE } from "#lib/shared/create/domain/generation-style.js";
+  import { startOrientationsForLevel } from "#lib/features/create/generate/domain/level-orientation-policy.js";
   import {
     GridLocation,
     GridMode,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import {
     Orientation,
     type Orientation as OrientationValue,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import { getFuseContext } from "../context/fuse-context";
   import type { SoloLoopTraversalDirection } from "../services/solo-loop-generator";
   import FuseRecipeChoiceField from "./FuseRecipeChoiceField.svelte";

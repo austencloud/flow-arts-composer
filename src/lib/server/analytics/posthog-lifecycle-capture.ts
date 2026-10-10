@@ -1,5 +1,5 @@
 import { PostHog } from "posthog-node";
-import type { LifecycleEventEnvelope } from "$lib/shared/analytics/domain/lifecycle-event";
+import type { LifecycleEventEnvelope } from "#lib/shared/analytics/domain/lifecycle-event.js";
 
 const POSTHOG_INGESTION_HOST = "https://us.i.posthog.com";
 

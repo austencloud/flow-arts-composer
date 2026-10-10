@@ -1,7 +1,7 @@
-import { getEffectiveProp } from "$lib/shared/community/domain/get-effective-prop";
-import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-import { normalizeProfileSkills } from "$lib/shared/community/domain/profile-prop-catalog";
-import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
+import { getEffectiveProp } from "#lib/shared/community/domain/get-effective-prop.js";
+import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+import { normalizeProfileSkills } from "#lib/shared/community/domain/profile-prop-catalog.js";
+import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
 
 /**
  * Match the public details shown on creator cards, including prop labels.

@@ -12,16 +12,16 @@
  * Other options are session-specific and stored in localStorage.
  */
 
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   GridMode,
   type GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
-import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
 import { clampStartOrientationToLevel } from "../domain/level-orientation-policy";
 import {
   detectPresetFromBlocked,

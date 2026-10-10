@@ -24,11 +24,11 @@ import type { PropSystem } from "./prop-system";
 import type { AnimationEngineProps } from "../animation-engine.svelte";
 import type { RenderFrameParams } from "../IAnimationRenderLoop";
 import type { TrailSettings } from "../../domain/types/trail-types";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import type { EffectRendererManager } from "../effect-renderer-manager";
-import type { MandalaPathOptions } from "$lib/shared/mandala/services/types";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+import type { MandalaPathOptions } from "#lib/shared/mandala/services/types.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import type { GridJoin } from "@tka/tka-types";
 import {
   resolveAnimationGridJoin,
@@ -37,7 +37,7 @@ import {
 import {
   GridJoinTween,
   gridJoinHandOffsets,
-} from "$lib/shared/grid-join/grid-join-tween";
+} from "#lib/shared/grid-join/grid-join-tween.js";
 import { OrchestratorMotionSampleSource } from "../motion-sub-sampler";
 
 export class FrameSystem {
@@ -88,7 +88,7 @@ export class FrameSystem {
     buildDeps: {
       effectsConfigState: EffectsConfigState | null;
       effectRendererManager: EffectRendererManager;
-      getVM: () => import("$lib/shared/animation-engine/state/animation-visibility-state.svelte").AnimationVisibilityStateManager;
+      getVM: () => import("#lib/shared/animation-engine/state/animation-visibility-state.svelte.js").AnimationVisibilityStateManager;
     }
   ): RenderFrameParams {
     const params = this.frameParameterBuilder.getFrameParams(

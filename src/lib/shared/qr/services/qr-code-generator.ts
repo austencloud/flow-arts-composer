@@ -17,7 +17,7 @@ import {
 
 // The style owner lives in the shared package so the MCP card paints the same QR.
 export { PLAY_GREEN, playIconDataUrl } from "@tka/render-composition";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ShortCodeManager } from "./short-code-manager";
 import type {
   QRCodeOptions,
@@ -34,7 +34,7 @@ import {
   warmSequenceCells,
   type WarmOptions,
   type WarmSequenceCellsResult,
-} from "$lib/shared/render/services/warm-sequence-cells";
+} from "#lib/shared/render/services/warm-sequence-cells.js";
 import { resolveScanPropConfig } from "./scan-prop-resolver";
 import { PreparedQrCache, type PreparedQrStore } from "./prepared-qr-cache";
 

@@ -4,8 +4,8 @@
   Test page for VideoRecordDrawer component.
 -->
 <script lang="ts">
-  import VideoRecordDrawer from "$lib/shared/video-record/components/VideoRecordDrawer.svelte";
-  import type { RecordingResult } from "$lib/shared/video-record/services/types";
+  import VideoRecordDrawer from "#lib/shared/video-record/components/VideoRecordDrawer.svelte";
+  import type { RecordingResult } from "#lib/shared/video-record/services/types.js";
   let showDrawer = $state(false);
   let lastRecording = $state<RecordingResult | null>(null);
 

@@ -1,4 +1,4 @@
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 import type { DirectorSceneInput } from "../_lib/film-director-schema";
 

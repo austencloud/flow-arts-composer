@@ -1,9 +1,9 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
 import {
   isVisibleMotion,
   type MotionData,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import { Plane } from "@austencloud/scene-3d";
 import { gridLocationToPosition3D } from "./plane-coordinate-mapper";
 

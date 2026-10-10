@@ -5,7 +5,7 @@ import {
   isGridJoin,
   type GridJoinSpec,
 } from "@tka/render-core";
-import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
+import { LOCATION_ANGLES } from "#lib/shared/foundation/domain/math-constants.js";
 import { planeAngleToWorldPosition } from "../domain/constants/plane-transforms";
 import {
   DEFAULT_HAND_DISTANCE,

@@ -11,14 +11,14 @@
  * - Room streaming: tick loop pauses when not visible, resumes on return
  */
 
-import { createVillageState, type VillageState } from "$lib/features/village/state/village-state.svelte";
-import { createVillageVisualState, type VillageVisualState } from "$lib/features/village/state/village-visual-state.svelte";
+import { createVillageState, type VillageState } from "#lib/features/village/state/village-state.svelte.js";
+import { createVillageVisualState, type VillageVisualState } from "#lib/features/village/state/village-visual-state.svelte.js";
 import { MUSEUM_EXHIBIT_SEQUENCES } from "../data/museum-exhibit-sequences";
 import { getAvatarModelPath } from "@austencloud/scene-3d";
 import {
 	createSequenceData,
 	type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 // propInterpolator / sequenceConverter are now module-level functions
 

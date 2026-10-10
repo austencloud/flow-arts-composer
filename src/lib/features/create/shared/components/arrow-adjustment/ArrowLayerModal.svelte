@@ -6,27 +6,27 @@
   with deliberate Save/Delete/Cancel actions (no auto-save).
 -->
 <script lang="ts">
-  import { getArrowAdjustmentOrchestrator } from "$lib/features/create/shared/get-arrow-adjustment-orchestrator";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import { getArrowAdjustmentOrchestrator } from "#lib/features/create/shared/get-arrow-adjustment-orchestrator.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import type { AdjustmentTargetKey } from "../../services/arrow-adjustment-orchestrator";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
   import LayerTabBar from "./LayerTabBar.svelte";
-  import { getGlobalAdjustmentRepository } from "$lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton";
-  import { globalAdjustmentVersion } from "$lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+  import { getGlobalAdjustmentRepository } from "#lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton.js";
+  import { globalAdjustmentVersion } from "#lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
   import type { ArrowAdjustmentOrchestrator } from "../../services/arrow-adjustment-orchestrator";
   import type { SelectedArrowContext } from "../../services/arrow-adjustment-orchestrator";
-  import type { GlobalAdjustmentKey } from "$lib/shared/pictograph/arrow/positioning/global/domain/global-arrow-adjustment";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { isEditableKeyboardTarget } from "$lib/shared/keyboard/domain/shortcut-target-resolution";
+  import type { GlobalAdjustmentKey } from "#lib/shared/pictograph/arrow/positioning/global/domain/global-arrow-adjustment.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { isEditableKeyboardTarget } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
   import {
     HandSide,
     type HandSide as HandSideValue,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   const logger = createComponentLogger("ArrowLayerModal");
 

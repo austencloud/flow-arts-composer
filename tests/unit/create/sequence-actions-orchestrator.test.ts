@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { UndoOperationType } from "$lib/features/create/shared/services/undo-manager";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { UndoOperationType } from "#lib/features/create/shared/services/undo-manager.js";
 import {
   createSequenceActionsOrchestrator,
   type SequenceActionsOrchestratorDeps,
-} from "$lib/features/create/shared/services/sequence-actions-orchestrator";
+} from "#lib/features/create/shared/services/sequence-actions-orchestrator.js";
 
 const sequence = { id: "sequence-1", steps: [] } as unknown as SequenceData;
 const updatedSequence = {

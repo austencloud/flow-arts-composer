@@ -5,7 +5,7 @@
   and the blue/red grid locations. Provides a textual summary of the sequence.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { DetectedBeat } from "../domain/models";
 
   interface Props {

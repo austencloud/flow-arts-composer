@@ -16,24 +16,24 @@
     - Layer 3 (Combination Override): Edge cases where blue+red prop combo needs special handling
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getArrowAdjustmentOrchestrator } from "$lib/features/create/shared/get-arrow-adjustment-orchestrator";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getArrowAdjustmentOrchestrator } from "#lib/features/create/shared/get-arrow-adjustment-orchestrator.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import type { ArrowAdjustmentOrchestrator } from "../../services/arrow-adjustment-orchestrator";
   import type { AdjustmentTargetKey } from "../../services/arrow-adjustment-orchestrator";
-  import { selectedArrowState } from "$lib/shared/create/state/selected-arrow-state.svelte";
+  import { selectedArrowState } from "#lib/shared/create/state/selected-arrow-state.svelte.js";
   import { onMount } from "svelte";
-  import { getGlobalAdjustmentRepository } from "$lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton";
-  import { globalAdjustmentVersion } from "$lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte";
-  import { arrowAdjustmentUndoStack } from "$lib/shared/pictograph/arrow/positioning/global/state/arrow-adjustment-undo-stack";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-  import { rotationOverrideManager } from "$lib/shared/pictograph/arrow/positioning/placement/services/rotation-override-manager";
-  import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { isEditableKeyboardTarget } from "$lib/shared/keyboard/domain/shortcut-target-resolution";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { getGlobalAdjustmentRepository } from "#lib/shared/pictograph/arrow/positioning/global/services/global-adjustment-singleton.js";
+  import { globalAdjustmentVersion } from "#lib/shared/pictograph/arrow/positioning/global/state/global-adjustment-version.svelte.js";
+  import { arrowAdjustmentUndoStack } from "#lib/shared/pictograph/arrow/positioning/global/state/arrow-adjustment-undo-stack.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+  import { rotationOverrideManager } from "#lib/shared/pictograph/arrow/positioning/placement/services/rotation-override-manager.js";
+  import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { isEditableKeyboardTarget } from "#lib/shared/keyboard/domain/shortcut-target-resolution.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   const logger = createComponentLogger("ArrowAdjustmentPanel");
 

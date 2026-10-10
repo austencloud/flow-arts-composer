@@ -7,17 +7,17 @@
   config/pwa-install-instructions.ts.
 -->
 <script lang="ts">
-  import { detectPlatformAndBrowser } from "$lib/shared/mobile/services/platform-detector";
+  import { detectPlatformAndBrowser } from "#lib/shared/mobile/services/platform-detector.js";
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
-  import { replaceState } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import type { Platform, Browser } from "../config/pwa-install-instructions";
   import {
     getInstallInstructions,
     resolveInstallVariant,
   } from "../config/pwa-install-instructions";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
 
   let {
     showGuide = $bindable(false),
@@ -66,7 +66,7 @@
     selectedPill = value;
     const url = new URL(page.url);
     url.searchParams.set("install", value);
-    replaceState(url, page.state);
+    void goto(url, { shallow: true, replace: true, state: page.state });
   }
 
   function handleClose() {
@@ -74,7 +74,7 @@
     if (page.url.searchParams.has("install")) {
       const url = new URL(page.url);
       url.searchParams.delete("install");
-      replaceState(url, page.state);
+      void goto(url, { shallow: true, replace: true, state: page.state });
     }
   }
 </script>

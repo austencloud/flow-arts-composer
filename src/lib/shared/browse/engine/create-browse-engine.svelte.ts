@@ -10,7 +10,7 @@
  * Calls existing singleton services internally.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   BrowseEngine,
   BrowseEngineConfig,
@@ -20,59 +20,59 @@ import type {
   SectionGroupBy,
 } from "./types";
 
-import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
-import { resolvePersistedFilterType } from "$lib/shared/browse/services/legacy-filter-type-aliases";
-import { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
+import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
+import { resolvePersistedFilterType } from "#lib/shared/browse/services/legacy-filter-type-aliases.js";
+import { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
 import {
   DEFAULT_BROWSE_VIEW_MODE,
   normalizeBrowseViewMode,
   type BrowseViewMode,
-} from "$lib/shared/browse/domain/browse-view-mode";
+} from "#lib/shared/browse/domain/browse-view-mode.js";
 import type {
   SectionConfig,
   SequenceSection,
-} from "$lib/shared/browse/domain/models/browse-models";
+} from "#lib/shared/browse/domain/models/browse-models.js";
 
-import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-import { detectRotationPeriod } from "$lib/shared/create/domain/detect-rotation-period";
-import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-import { networkStatusState } from "$lib/shared/offline/state/network-status-state.svelte";
+import { LOOPComponent } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import type { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+import { detectRotationPeriod } from "#lib/shared/create/domain/detect-rotation-period.js";
+import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+import { networkStatusState } from "#lib/shared/offline/state/network-status-state.svelte.js";
 import {
   applyFilter as applyBrowseFilter,
   getSequenceMaxTurn,
-} from "$lib/shared/browse/services/browse-filter";
+} from "#lib/shared/browse/services/browse-filter.js";
 import {
   applyFilters as applyMultiFilters,
   getFilteredCount as getMultiFilteredCount,
   OR_STACKING_TYPES,
   CONNECTIVE_STACKING_TYPES,
   type FilterConnective,
-} from "$lib/shared/browse/services/multi-filter";
-import { sortSequences as browseSortSequences } from "$lib/shared/browse/services/browse-sorter";
-import { withLibraryBrowseDate } from "$lib/shared/browse/services/browse-date";
-import { organizeSections as organizeBrowseSections } from "$lib/shared/browse/services/browse-section-manager";
-import { toggleFavorite as doToggleFavorite } from "$lib/shared/library/services/collection-manager";
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-import { getSavedSequenceIds } from "$lib/shared/library/services/saved-sequence-ledger";
+} from "#lib/shared/browse/services/multi-filter.js";
+import { sortSequences as browseSortSequences } from "#lib/shared/browse/services/browse-sorter.js";
+import { withLibraryBrowseDate } from "#lib/shared/browse/services/browse-date.js";
+import { organizeSections as organizeBrowseSections } from "#lib/shared/browse/services/browse-section-manager.js";
+import { toggleFavorite as doToggleFavorite } from "#lib/shared/library/services/collection-manager.js";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+import { getSavedSequenceIds } from "#lib/shared/library/services/saved-sequence-ledger.js";
 
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { isPreviewReadOnly } from "$lib/shared/debug/state/user-preview-state.svelte";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { isPreviewReadOnly } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
 import {
   onLibraryMutated,
   onLibrarySequenceAdded,
-} from "$lib/shared/library/library-events";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/library/library-events.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import {
   MIN_COLUMNS as MIN_COLUMNS_DEFAULT,
   getMaxColumnsForWidth,
   getDefaultColumnsForWidth,
   getWidthBucketKey,
   clampColumnsToWidth,
-} from "$lib/shared/browse/services/grid-column-breakpoints";
+} from "#lib/shared/browse/services/grid-column-breakpoints.js";
 
 // Helpers
 
@@ -717,7 +717,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
         const savedIds = new Set(getSavedSequenceIds(requestedUserId));
         const rows = savedIds.size
           ? await (
-              await import("$lib/shared/persistence/services/dexie-persistence-service")
+              await import("#lib/shared/persistence/services/dexie-persistence-service.js")
             ).getAllSequences()
           : [];
         const local = deduplicateById(

@@ -8,18 +8,18 @@ import {
   createTerminalStepPlan,
   sampleDestinationWalkPlan,
   type DestinationWalkPlan,
-} from "$lib/shared/3d/locomotion/destination-walk-plan";
+} from "#lib/shared/3d/locomotion/destination-walk-plan.js";
 import {
   createGaitTimingPlan,
   sampleGaitTimingPlan,
   type GaitTimingPlan,
-} from "$lib/shared/3d/locomotion/gait-timing-plan";
+} from "#lib/shared/3d/locomotion/gait-timing-plan.js";
 import {
   chooseAutomaticExactSteps,
   exactStepRange,
   isExactStepCountSupported,
   type ExactStepRange,
-} from "$lib/shared/3d/locomotion/straight-travel-constraints";
+} from "#lib/shared/3d/locomotion/straight-travel-constraints.js";
 
 import { applyStageEasing, stageToWorld } from "./stage-performance-sampler";
 import type {

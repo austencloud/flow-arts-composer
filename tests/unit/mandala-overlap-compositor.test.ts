@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PURPLE_STROKE } from "$lib/shared/mandala/domain/mandala-constants";
-import { compositeMandalaOverlap } from "$lib/shared/mandala/services/mandala-overlap-compositor";
+import { PURPLE_STROKE } from "#lib/shared/mandala/domain/mandala-constants.js";
+import { compositeMandalaOverlap } from "#lib/shared/mandala/services/mandala-overlap-compositor.js";
 
 describe("mandala overlap compositor", () => {
   it("intersects the hand masks and paints the shared pixels purple", () => {

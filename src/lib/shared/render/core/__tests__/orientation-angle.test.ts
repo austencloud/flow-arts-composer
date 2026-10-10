@@ -3,8 +3,8 @@ import {
   orientationToStaffAngle,
   staffAngleToOrientation,
   RADIAL_CYCLE,
-} from "$lib/shared/render/core/calculations/orientation-angle";
-import type { Orientation } from "$lib/shared/render/core/types";
+} from "#lib/shared/render/core/calculations/orientation-angle.js";
+import type { Orientation } from "#lib/shared/render/core/types.js";
 
 const PI = Math.PI;
 const QUARTER = PI / 4;

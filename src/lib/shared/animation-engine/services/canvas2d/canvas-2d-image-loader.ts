@@ -3,8 +3,8 @@ import {
   generateRightPropSvg,
   generatePropSvg,
   generateGridSvg,
-} from "$lib/shared/animation-engine/services/svg-generator";
-import { hashString } from "$lib/shared/foundation/services/content-hasher";
+} from "#lib/shared/animation-engine/services/svg-generator.js";
+import { hashString } from "#lib/shared/foundation/services/content-hasher.js";
 import type { GridJoin } from "@tka/tka-types";
 import {
   animationGridJoinKey,
@@ -13,8 +13,8 @@ import {
   joinedGridPaintKey,
   type JoinedGridPaint,
 } from "../animation-grid-join";
-import { getSvgImageCache } from "$lib/shared/render/services/svg-image-cache";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+import { getSvgImageCache } from "#lib/shared/render/services/svg-image-cache.js";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 
 /**
  * Canvas2D Image Loader
@@ -91,7 +91,7 @@ async function singleGridSvg(
   showNonRadialPoints: boolean
 ): Promise<string> {
   const { GridMode } =
-    await import("$lib/shared/pictograph/grid/domain/enums/grid-enums");
+    await import("#lib/shared/pictograph/grid/domain/enums/grid-enums.js");
   // "8point" needs special handling since "8POINT" isn't a valid enum key
   const gridModeEnum =
     gridMode === "8point"

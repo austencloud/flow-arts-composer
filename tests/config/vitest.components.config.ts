@@ -1,4 +1,5 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { svelteOptions } from "../../src/config/svelte-options.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { playwright } from "@vitest/browser-playwright";
@@ -11,7 +12,7 @@ const projectRoot = path.resolve(
 );
 
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [svelte(svelteOptions)],
 
   // The locale loader's template import prevents Vite's dependency scanner
   // from completing in CI. List the browser suite's runtime dependencies so
@@ -53,10 +54,17 @@ export default defineConfig({
   resolve: {
     conditions: ["browser"],
     alias: {
-      $lib: path.resolve(projectRoot, "src/lib"),
       $shared: path.resolve(projectRoot, "src/lib/shared"),
-      "$test-helpers": path.resolve(projectRoot, "tests/helpers"),
-      "$app/environment": path.resolve(
+      // Listed before `$app/env`, which would otherwise match these as a prefix.
+      "$app/env/public": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-public.ts"
+      ),
+      "$app/env/private": path.resolve(
+        projectRoot,
+        "tests/setup/stubs/app-env-private.ts"
+      ),
+      "$app/env": path.resolve(
         projectRoot,
         "tests/setup/stubs/app-environment.ts"
       ),
@@ -65,18 +73,6 @@ export default defineConfig({
         "tests/setup/stubs/app-navigation.ts"
       ),
       "$app/state": path.resolve(projectRoot, "tests/setup/stubs/app-state.ts"),
-      "$app/stores": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/app-stores.ts"
-      ),
-      "$env/dynamic/public": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/env-dynamic-public.ts"
-      ),
-      "$env/static/public": path.resolve(
-        projectRoot,
-        "tests/setup/stubs/env-static-public.ts"
-      ),
       // As in vitest.config.ts: node_modules/@tka/render-core links to the
       // primary checkout, so resolve this checkout's source instead.
       "@tka/render-core": path.resolve(

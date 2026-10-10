@@ -11,14 +11,14 @@
 <script lang="ts">
   import { getContext } from "svelte";
   import type { ExportPanelState } from "../../state/export-panel-state.svelte";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
   import { onMount, onDestroy } from "svelte";
-  import CardFooterEditor from "$lib/shared/share/components/CardFooterEditor.svelte";
+  import CardFooterEditor from "#lib/shared/share/components/CardFooterEditor.svelte";
   import {
     cardPresentationFromFooterSettings,
     resolveCardFooter,
     type CardPresentation,
-  } from "$lib/shared/share/domain/models/card-presentation";
+  } from "#lib/shared/share/domain/models/card-presentation.js";
 
   // Try to get export panel context (may not exist if used standalone)
   const EXPORT_PANEL_STATE_KEY = Symbol.for("ExportPanelState");

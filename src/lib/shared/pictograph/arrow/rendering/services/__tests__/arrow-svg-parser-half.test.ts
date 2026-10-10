@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { parseArrowSvg } from "$lib/shared/pictograph/arrow/rendering/services/arrow-svg-parser";
+import { parseArrowSvg } from "#lib/shared/pictograph/arrow/rendering/services/arrow-svg-parser.js";
 
 const ASSETS = ["pro", "anti", "dash", "static"].map(
   (mt) => `static/images/arrows/${mt}_half/from_radial/${mt}_half.svg`

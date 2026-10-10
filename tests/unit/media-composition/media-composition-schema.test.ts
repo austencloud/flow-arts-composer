@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MediaCompositionProjectSchema } from "$lib/shared/media-composition/domain/media-composition-schema";
-import { MediaCompositionPresetSchema } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
+import { MediaCompositionProjectSchema } from "#lib/shared/media-composition/domain/media-composition-schema.js";
+import { MediaCompositionPresetSchema } from "#lib/shared/media-composition/domain/media-composition-preset-schema.js";
 
 const sequenceRef = {
   sequenceId: "sequence-a",

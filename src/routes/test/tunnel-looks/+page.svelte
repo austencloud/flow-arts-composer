@@ -14,12 +14,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import LookCell from "./LookCell.svelte";
-  import { DEFAULT_CONFIG, speedFill, type TunnelConfig } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
-  import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { DEFAULT_CONFIG, speedFill, type TunnelConfig } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
+  import { generationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   const cfg = (over: Partial<TunnelConfig>): TunnelConfig => ({ ...DEFAULT_CONFIG, ...over });
 

@@ -3,15 +3,15 @@
  * Under reduced motion no turn ever plays, so nothing is fetched.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createNextSequenceDraw } from "$lib/features/create/shared/components/method-previews/method-preview-next-sequence";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createNextSequenceDraw } from "#lib/features/create/shared/components/method-previews/method-preview-next-sequence.js";
 
 const SEQUENCE = { id: "drawn", steps: [{}] } as unknown as SequenceData;
 
 const drawMatrixRealization = vi.hoisted(() =>
   vi.fn(async (): Promise<{ sequence: SequenceData } | null> => null)
 );
-vi.mock("$lib/shared/landing/data/shape-matrix-hero-pool", () => ({
+vi.mock("#lib/shared/landing/data/shape-matrix-hero-pool.js", () => ({
   drawMatrixRealization,
 }));
 

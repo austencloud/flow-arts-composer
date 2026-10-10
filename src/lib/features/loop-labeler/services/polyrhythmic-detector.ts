@@ -1,8 +1,8 @@
 import {
   analyzeZoneCoverage,
   type ZoneCoverageAnalysis,
-} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/foundation/domain/models/generation/circular-placement-maps.js";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export interface StepProperties {
   step: number;

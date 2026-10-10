@@ -6,20 +6,20 @@
     FeedbackType,
     FeedbackStatus,
     FeedbackPriority,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import {
     STATUS_CONFIG,
     TYPE_CONFIG,
     PRIORITY_CONFIG,
-  } from "$lib/shared/feedback/domain/models/feedback-models";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  } from "#lib/shared/feedback/domain/models/feedback-models.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
   import FeedbackEditDrawer from "./FeedbackEditDrawer.svelte";
   import FeedbackReplyPanel from "./FeedbackReplyPanel.svelte";
-  import MediaSpotlight from "$lib/components/media/spotlight/MediaSpotlight.svelte";
+  import MediaSpotlight from "#lib/components/media/spotlight/MediaSpotlight.svelte";
   import StatusTimeline from "./StatusTimeline.svelte";
-  import { useUserPreview } from "$lib/shared/debug/context/user-preview-context";
-  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-  import { getLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { useUserPreview } from "#lib/shared/debug/context/user-preview-context.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { getLocale, t } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     feedbackPriorityLabel,
     feedbackStatusLabel,

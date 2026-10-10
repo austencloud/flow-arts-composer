@@ -17,9 +17,9 @@
     CombinationResult,
     VariantDescriptor,
     WalkBlock,
-  } from "$lib/shared/combination/domain/types";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  } from "#lib/shared/combination/domain/types.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
 
   interface Props {
     result: CombinationResult;

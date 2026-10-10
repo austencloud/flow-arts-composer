@@ -3,13 +3,13 @@ import {
   FLOW_FEST_FIRE_JAM_CONTRACT,
   computeFlowFestFireJamAudioMix,
   observeFlowFestFireJam,
-} from "$lib/features/flow-fest-sim/domain/flow-fest-fire-jam";
+} from "#lib/features/flow-fest-sim/domain/flow-fest-fire-jam.js";
 import {
   advanceFlowFestProgress,
   createFlowFestGate4ReviewProgress,
   restoreFlowFestProgress,
-} from "$lib/features/flow-fest-sim/state/flow-fest-progress";
-import { FlowFestFireJamSoundscape } from "$lib/features/flow-fest-sim/services/implementations/FlowFestFireJamSoundscape";
+} from "#lib/features/flow-fest-sim/state/flow-fest-progress.js";
+import { FlowFestFireJamSoundscape } from "#lib/features/flow-fest-sim/services/implementations/FlowFestFireJamSoundscape.js";
 
 const FINGERPRINT = "gate4-contract";
 const LAYOUT = {

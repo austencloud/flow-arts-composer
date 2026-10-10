@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { createHandPath } from "$lib/shared/foundation/services/hand-path-factory";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { createHandPath } from "#lib/shared/foundation/services/hand-path-factory.js";
 
 const query = vi.hoisted(() => vi.fn());
 
-vi.mock("$lib/features/browse/shared/get-browse-data-source", () => ({
+vi.mock("#lib/features/browse/shared/get-browse-data-source.js", () => ({
   getBrowseDataSource: () => ({ query }),
 }));
 
-import { loadSoloLibrarySequences } from "$lib/features/browse/shared/services/solo-library-sequence-loader";
+import { loadSoloLibrarySequences } from "#lib/features/browse/shared/services/solo-library-sequence-loader.js";
 
 describe("loadSoloLibrarySequences", () => {
   it("skips hand paths that cannot produce a visible step", async () => {

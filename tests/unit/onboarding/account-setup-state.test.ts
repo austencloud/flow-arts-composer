@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createAccountSetupState } from "$lib/shared/onboarding/state/account-setup-state.svelte";
-import { createDefaultAccountSetupProgress } from "$lib/shared/onboarding/domain/account-setup-progress";
-import type { OnboardingStatus } from "$lib/shared/onboarding/services/types";
+import { createAccountSetupState } from "#lib/shared/onboarding/state/account-setup-state.svelte.js";
+import { createDefaultAccountSetupProgress } from "#lib/shared/onboarding/domain/account-setup-progress.js";
+import type { OnboardingStatus } from "#lib/shared/onboarding/services/types.js";
 
 function createStatus(
   accountSetup = createDefaultAccountSetupProgress()

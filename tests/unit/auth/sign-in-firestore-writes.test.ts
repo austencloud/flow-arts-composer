@@ -99,36 +99,36 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: vi.fn(() => "SERVER_TIME"),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({ name: "firestore" })),
 }));
 
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: h.authState,
 }));
 
-vi.mock("$lib/shared/foundation/services/device-id", () => ({
+vi.mock("#lib/shared/foundation/services/device-id.js", () => ({
   getDeviceId: vi.fn(() => "device-1"),
 }));
 
-vi.mock("$lib/shared/auth/services/profile-picture-manager", () => ({
+vi.mock("#lib/shared/auth/services/profile-picture-manager.js", () => ({
   getProviderIds: vi.fn(() => ({ googleId: null, facebookId: null })),
 }));
 
-vi.mock("$lib/shared/foundation/utils/avatar-generator", () => ({
+vi.mock("#lib/shared/foundation/utils/avatar-generator.js", () => ({
   generateAvatarUrl: vi.fn(() => "generated-avatar"),
 }));
 
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady: vi.fn(),
   getCurrentPostHogSessionId: h.getCurrentPostHogSessionId,
 }));
 
-vi.mock("$lib/shared/error/services/error-telemetry-reporter", () => ({
+vi.mock("#lib/shared/error/services/error-telemetry-reporter.js", () => ({
   reportErrorTelemetry: h.reportErrorTelemetry,
 }));
 
-vi.mock("$lib/shared/library/services/public-sequence-persister", () => ({
+vi.mock("#lib/shared/library/services/public-sequence-persister.js", () => ({
   refreshPublicSequenceOwnerProfile: vi.fn(async () => ({
     scanned: 0,
     updated: 0,
@@ -137,10 +137,10 @@ vi.mock("$lib/shared/library/services/public-sequence-persister", () => ({
   })),
 }));
 
-import { claimUsername } from "$lib/shared/auth/services/username-validator";
-import { UserDocumentManager } from "$lib/shared/auth/services/user-document-manager";
-import { linkDeviceToUser } from "$lib/shared/auth/services/device-id-service";
-import { OnboardingPersister } from "$lib/shared/onboarding/services/onboarding-persister";
+import { claimUsername } from "#lib/shared/auth/services/username-validator.js";
+import { UserDocumentManager } from "#lib/shared/auth/services/user-document-manager.js";
+import { linkDeviceToUser } from "#lib/shared/auth/services/device-id-service.js";
+import { OnboardingPersister } from "#lib/shared/onboarding/services/onboarding-persister.js";
 
 const UID = "user-1";
 const PHOTO = "https://photos.example/matty.png";

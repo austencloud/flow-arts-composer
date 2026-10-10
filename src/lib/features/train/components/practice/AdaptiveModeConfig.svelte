@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
   import type { AdaptiveConfig } from "../../state/train-practice-state.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     config: AdaptiveConfig;

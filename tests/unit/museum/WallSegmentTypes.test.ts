@@ -3,11 +3,11 @@ import {
 	computeSegmentWidth,
 	computeWallLength,
 	computeRoomDimensions,
-} from "$lib/features/museum/domain/wall-segment-types";
+} from "#lib/features/museum/domain/wall-segment-types.js";
 import type {
 	WallSegment,
 	WallDefinition,
-} from "$lib/features/museum/domain/wall-segment-types";
+} from "#lib/features/museum/domain/wall-segment-types.js";
 
 describe("computeSegmentWidth", () => {
 	it("returns door width from segment", () => {

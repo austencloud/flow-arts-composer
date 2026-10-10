@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { migrateLegacyDisplayNameFromSettings } from "$lib/shared/onboarding/services/legacy-display-name-migrator";
+import { migrateLegacyDisplayNameFromSettings } from "#lib/shared/onboarding/services/legacy-display-name-migrator.js";
 
 describe("legacy display-name migration", () => {
   it("copies a remote legacy name into an empty Firebase Auth profile", async () => {

@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import type { SpinStyle } from "@vtg/domain";
 
 export const THIRD_ORDER_COMPOSITION_VERSION = 2 as const;

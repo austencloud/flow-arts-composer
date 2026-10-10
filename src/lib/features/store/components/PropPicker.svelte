@@ -5,7 +5,7 @@
   shop offering (shop-prop-options), not the full app prop taxonomy.
 -->
 <script lang="ts">
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import {
     SHOP_PROP_OPTIONS,
     shopPropImage,

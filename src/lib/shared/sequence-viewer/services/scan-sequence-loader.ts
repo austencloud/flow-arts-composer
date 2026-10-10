@@ -1,8 +1,8 @@
-import { compressWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { compressWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import {
   getBaseLetter,
   isDashLetter,
-} from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
+} from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
 
 /** Base glyphs required to paint the scan loader's rendered word. */
 export function getScanLoaderBaseLetters(word: string): string[] {

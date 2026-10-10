@@ -1,5 +1,5 @@
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { EffortTimeline } from "$lib/shared/effort/domain/effort-timeline-types";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { EffortTimeline } from "#lib/shared/effort/domain/effort-timeline-types.js";
 import type { PresentationIntent } from "./presentation-intent";
 
 export interface CreatorIntent {

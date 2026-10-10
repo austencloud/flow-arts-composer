@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     holdBackground,
     releaseBackground,
-  } from "$lib/shared/background/shared/state/background-hold.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { TranslationKey } from "$lib/shared/i18n/i18n-types";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import { tryGetAccountSetupContext } from "$lib/shared/onboarding/context/account-setup-context";
-  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  } from "#lib/shared/background/shared/state/background-hold.svelte.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
+  import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { BackgroundType } from "@austencloud/backgrounds";
   import {
     BACKGROUND_CARD_REGISTRY,

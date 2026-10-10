@@ -3,7 +3,7 @@ LetterChip.svelte - Letter selection chip with 50px touch target
 Supports include (green) and exclude (red) modes
 -->
 <script lang="ts">
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
   let {
     letter,

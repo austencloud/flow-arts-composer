@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { tilePeriod } from "$lib/shared/create/domain/rhythm/rhythm-mask";
-import { resolvePattern } from "$lib/features/choreo-card/domain/reversal-transform";
+import { tilePeriod } from "#lib/shared/create/domain/rhythm/rhythm-mask.js";
+import { resolvePattern } from "#lib/features/choreo-card/domain/reversal-transform.js";
 
 /**
  * Verifies the create-side reversal glue: a 2-lane boolean strip (left=blue,

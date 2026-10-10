@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { GAME_REGISTRY } from "$lib/features/learn/play/domain/game-registry";
+import { GAME_REGISTRY } from "#lib/features/learn/play/domain/game-registry.js";
 
 describe("game curriculum classification", () => {
   it("keeps every game out of TKA levels until an editorial review classifies it", () => {

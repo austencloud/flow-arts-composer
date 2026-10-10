@@ -21,19 +21,19 @@ const auth = vi.hoisted(() => ({
 
 // The real auth state restores the session through Firebase. What matters
 // here is whether, and when, a page asks it to start.
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { initialize: auth.initialize },
 }));
 
 // The full Shape Engine app is irrelevant to sign-in and far too heavy to mount.
-vi.mock("$lib/shared/shape-matrix/app/ShapeMatrixApp.svelte", () => ({
+vi.mock("#lib/shared/shape-matrix/app/ShapeMatrixApp.svelte", () => ({
   default: () => {},
 }));
 
 const { hasSavedFirebaseUser, signInWhenIdle } =
-  await import("$lib/shared/auth/services/deferred-sign-in");
+  await import("#lib/shared/auth/services/deferred-sign-in.js");
 const { default: SiteHeader } =
-  await import("$lib/shared/landing/components/SiteHeader.svelte");
+  await import("#lib/shared/landing/components/SiteHeader.svelte");
 const { default: ShapeEnginePage } =
   await import("../../../src/routes/(public)/shape-engine/+page.svelte");
 const { default: SequenceViewerRoute } =

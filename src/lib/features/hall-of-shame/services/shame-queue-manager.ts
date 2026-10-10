@@ -19,7 +19,7 @@ import {
 	serverTimestamp,
 	getCountFromServer
 } from 'firebase/firestore';
-import { getFirestoreInstance } from '$lib/shared/auth/firebase';
+import { getFirestoreInstance } from '#lib/shared/auth/firebase.js';
 import type { HallOfShameEntry, ShameCategory } from '../domain/models/hall-of-shame-models';
 
 const REPORT_THRESHOLD = 5;

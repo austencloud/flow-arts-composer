@@ -1,11 +1,11 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { DeckReleaseCard } from "../../domain/models/DeckRelease";
 import {
   getTnDElementByIconPath,
   TND_ELEMENTS,
   type TnDElement,
 } from "../../domain/tnd-element";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 
 const ICON_UPGRADES: Record<string, string> = {
   "/images/elements/sun-v2.png": "/images/elements/sun-v4.png",

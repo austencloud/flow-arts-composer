@@ -1,4 +1,4 @@
-import type { Message } from "$lib/shared/messaging/domain/models/message-models";
+import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
 import {
   describeMessageDeliveryFailure,
   isMessageDeliveryCancelled,

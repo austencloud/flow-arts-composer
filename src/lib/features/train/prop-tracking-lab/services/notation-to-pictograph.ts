@@ -1,13 +1,13 @@
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { StaffMotionNotation } from "../domain/notation-3d";
 
 /** Lowercase notation location -> GridLocation enum value. */

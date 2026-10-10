@@ -17,7 +17,7 @@ import { networkStatusState } from "./network-status-state.svelte";
 // stores. It only talks to Firestore while writes are pending, so it loads
 // Firebase then, keeping it off those pages' first download.
 async function loadFirestore() {
-	const { getFirestoreInstance } = await import("$lib/shared/auth/firebase");
+	const { getFirestoreInstance } = await import("#lib/shared/auth/firebase.js");
 	return getFirestoreInstance();
 }
 

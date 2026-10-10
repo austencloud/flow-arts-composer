@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { registerEscapeShortcut } from "$lib/shared/keyboard/registration/register-escape-shortcut";
-import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
-import { EscapeLayerManager } from "$lib/shared/keyboard/services/implementations/EscapeLayerManager";
+import { registerEscapeShortcut } from "#lib/shared/keyboard/registration/register-escape-shortcut.js";
+import { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
+import { EscapeLayerManager } from "#lib/shared/keyboard/services/implementations/EscapeLayerManager.js";
 
 function makeVisible(element: HTMLElement): void {
   Object.defineProperty(element, "getClientRects", {

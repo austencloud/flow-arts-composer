@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { FishEventSystem } from "$lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-events";
+import { FishEventSystem } from "#lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/fish-events.js";
 import { Vector3 } from "three";
 
 function makeTraits(fishCount: number): Float32Array {

@@ -3,7 +3,7 @@
   import { onMount, untrack } from "svelte";
   import type { WebGLRenderer } from "three";
   import { userProportionsState } from "@austencloud/scene-3d";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import type { CosmicVariant } from "../domain/enums/environment-enums";
   import {
     createDefaultCosmicAuroraConfig,

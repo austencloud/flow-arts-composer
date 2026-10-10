@@ -27,16 +27,16 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: () => mockServerTimestamp(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
 
 let mockIsAdmin = true;
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   getEffectiveUserId: () => "test-uid",
 }));
 
-import { registerLoadedAuthState } from "$lib/shared/auth/state/loaded-auth-state.svelte";
+import { registerLoadedAuthState } from "#lib/shared/auth/state/loaded-auth-state.svelte.js";
 import {
   canEditGuide,
   loadOverrides,

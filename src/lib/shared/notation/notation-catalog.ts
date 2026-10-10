@@ -1,4 +1,4 @@
-import { ORIGINAL_SHAPE_MATRIX_URL } from "$lib/shared/shape-matrix/app/shape-engine-identity";
+import { ORIGINAL_SHAPE_MATRIX_URL } from "#lib/shared/shape-matrix/app/shape-engine-identity.js";
 
 /**
  * The /notation catalog — a chronological record of systems for writing flow

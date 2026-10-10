@@ -3,8 +3,8 @@
  * box resizes a live scene.
  */
 import { flushSync, mount, unmount } from "svelte";
-import ConstructScene from "$lib/features/create/shared/components/method-previews/ConstructScene.svelte";
-import type { MethodPreviewShape } from "$lib/features/create/shared/components/method-previews/method-preview-layout";
+import ConstructScene from "#lib/features/create/shared/components/method-previews/ConstructScene.svelte";
+import type { MethodPreviewShape } from "#lib/features/create/shared/components/method-previews/method-preview-layout.js";
 
 export function mountConstructScene(
   target: HTMLElement,

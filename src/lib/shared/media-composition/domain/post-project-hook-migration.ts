@@ -10,8 +10,8 @@ import {
   type PostItemKeyframes,
   type PostProject,
   type PostTitlesItem,
-} from "$lib/shared/media-composition/domain/post-project";
-import { openingTitlesSpan } from "$lib/shared/media-composition/domain/tunnel-titles";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { openingTitlesSpan } from "#lib/shared/media-composition/domain/tunnel-titles.js";
 
 /**
  * Posts saved before the opening tunnel was part of the animation held it as a

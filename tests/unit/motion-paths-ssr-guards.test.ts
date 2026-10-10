@@ -66,14 +66,14 @@ describe("motion paths SSR guards", () => {
     ) => Promise<string | null>;
     const context = {
       resolve: async (source: string) => ({
-        id: `E:/tka-platform/src/lib/${source.replace("$lib/", "")}`,
+        id: `E:/tka-platform/src/lib/${source.replace("#lib/", "")}`,
       }),
     };
     const importer = `${ROUTE_DIR}/_components/MotionPathExplanation.svelte`;
 
     for (const source of [
-      "$lib/features/learn/components/interactive/LessonStageControls.svelte",
-      "$lib/features/learn/components/interactive/ExperienceProgressIndicator.svelte",
+      "#lib/features/learn/components/interactive/LessonStageControls.svelte",
+      "#lib/features/learn/components/interactive/ExperienceProgressIndicator.svelte",
     ]) {
       await expect(
         resolveId.call(context, source, importer, { ssr: true })

@@ -2,14 +2,14 @@ import { describe, it, expect } from "vitest";
 import {
   createCommunityMapState,
   type AuthIdentity,
-} from "$lib/features/community/state/community-map-state.svelte";
-import type { CanonicalCity } from "$lib/features/community/domain/canonical-city";
-import type { CommunityMapPort } from "$lib/features/community/services/community-map-port";
+} from "#lib/features/community/state/community-map-state.svelte.js";
+import type { CanonicalCity } from "#lib/features/community/domain/canonical-city.js";
+import type { CommunityMapPort } from "#lib/features/community/services/community-map-port.js";
 import type {
   OwnLocationResult,
   UserLocation,
   UserLocationWithProfile,
-} from "$lib/features/community/domain/models/user-location";
+} from "#lib/features/community/domain/models/user-location.js";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

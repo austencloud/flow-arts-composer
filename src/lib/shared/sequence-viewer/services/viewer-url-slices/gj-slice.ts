@@ -16,7 +16,7 @@
  */
 import type { GridJoin } from "@tka/tka-types";
 import { isGridJoin } from "@tka/render-core";
-import { gridJoinsEqual } from "$lib/shared/grid-join/grid-join-controller";
+import { gridJoinsEqual } from "#lib/shared/grid-join/grid-join-controller.js";
 
 export type GjSlicePayload = GridJoin | { off: true };
 

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { ClaudeCodeCopier } from "$lib/shared/browse/services/claude-code-copier";
-import type { SequenceDetailLoader } from "$lib/shared/browse/services/sequence-detail-loader";
+import { ClaudeCodeCopier } from "#lib/shared/browse/services/claude-code-copier.js";
+import type { SequenceDetailLoader } from "#lib/shared/browse/services/sequence-detail-loader.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 
 const loadedDetail = {
   needsFullLoad: () => false,

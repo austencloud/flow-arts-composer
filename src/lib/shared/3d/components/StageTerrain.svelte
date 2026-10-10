@@ -16,12 +16,12 @@
 
   import { onMount, onDestroy } from "svelte";
   import { useThrelte } from "@threlte/core";
-  import { ChunkManager, type ChunkState } from "$lib/shared/3d/procedural-engine/core/chunk-manager";
-  import { VegetationManager } from "$lib/shared/3d/procedural-engine/rendering/instanced-vegetation";
-  import { AtmosphereManager } from "$lib/shared/3d/procedural-engine/rendering/atmosphere";
-  import { SeededNoise } from "$lib/shared/3d/procedural-engine/generation/seed-generator";
-  import { TerrainPhysicsManager } from "$lib/shared/3d/physics/terrain-collider";
-  import type { PhysicsWorldState } from "$lib/shared/3d/physics/types";
+  import { ChunkManager, type ChunkState } from "#lib/shared/3d/procedural-engine/core/chunk-manager.js";
+  import { VegetationManager } from "#lib/shared/3d/procedural-engine/rendering/instanced-vegetation.js";
+  import { AtmosphereManager } from "#lib/shared/3d/procedural-engine/rendering/atmosphere.js";
+  import { SeededNoise } from "#lib/shared/3d/procedural-engine/generation/seed-generator.js";
+  import { TerrainPhysicsManager } from "#lib/shared/3d/physics/terrain-collider.js";
+  import type { PhysicsWorldState } from "#lib/shared/3d/physics/types.js";
   import {
     BufferGeometry,
     BufferAttribute,

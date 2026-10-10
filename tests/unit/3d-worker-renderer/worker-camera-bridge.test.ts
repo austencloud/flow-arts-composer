@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   toViewerCameraSnapshot,
   toWorkerCameraSnapshot,
-} from "$lib/shared/3d/worker-renderer/domain/worker-camera-bridge";
+} from "#lib/shared/3d/worker-renderer/domain/worker-camera-bridge.js";
 
 describe("worker camera bridge", () => {
   const fallback = {

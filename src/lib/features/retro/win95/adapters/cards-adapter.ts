@@ -8,11 +8,11 @@
  * Domain: Retro CARDS App
  */
 
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
 
 import type { RetroPictographData } from "../../shared/domain/pictograph-types";
 import {

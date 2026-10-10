@@ -13,11 +13,11 @@
  * devices/browsers don't see the wizard again.
  */
 
-import { logOnboardingFirstRunCompleted } from "$lib/shared/analytics/services/onboarding-events";
+import { logOnboardingFirstRunCompleted } from "#lib/shared/analytics/services/onboarding-events.js";
 import {
   safeLocalStorageSetItem,
   removeLocalStorageItem,
-} from "$lib/shared/foundation/services/storage-manager";
+} from "#lib/shared/foundation/services/storage-manager.js";
 
 const FIRST_RUN_COMPLETED_KEY = "tka-first-run-completed";
 const FIRST_RUN_COMPLETED_AT_KEY = "tka-first-run-completed-at";
@@ -231,10 +231,10 @@ function createFirstRunState() {
 
       try {
         const { getFirestoreInstance } =
-          await import("$lib/shared/auth/firebase");
+          await import("#lib/shared/auth/firebase.js");
         const { doc, getDoc } = await import("firebase/firestore");
         const { authState } =
-          await import("$lib/shared/auth/state/auth-state.svelte");
+          await import("#lib/shared/auth/state/auth-state.svelte.js");
 
         const userId = authState.effectiveUserId;
         if (!userId) {
@@ -318,11 +318,11 @@ function createFirstRunState() {
 
       try {
         const { getFirestoreInstance } =
-          await import("$lib/shared/auth/firebase");
+          await import("#lib/shared/auth/firebase.js");
         const { doc, setDoc, serverTimestamp } =
           await import("firebase/firestore");
         const { authState } =
-          await import("$lib/shared/auth/state/auth-state.svelte");
+          await import("#lib/shared/auth/state/auth-state.svelte.js");
 
         const userId = userIdOverride || authState.effectiveUserId;
         if (!userId) return;

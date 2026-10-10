@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import manifests from "../../data/festival-sampler-manifests.json";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
-  import { formatLOOPTypeForDisplay } from "$lib/shared/create/services/loop-type-utils";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { downloadBlobToDisk } from "#lib/shared/foundation/services/file-downloader.js";
+  import { formatLOOPTypeForDisplay } from "#lib/shared/create/services/loop-type-utils.js";
   import {
     applyFestivalSamplerTurnAssignment,
     loadFestivalSamplerBaseSequence,

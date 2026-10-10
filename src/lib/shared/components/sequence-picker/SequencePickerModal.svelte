@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { createBrowseEngine } from "$lib/shared/browse/engine/create-browse-engine.svelte";
-  import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
-  import FilterWorkspace from "$lib/features/browse/gallery-home/FilterWorkspace.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { hydrateSequence as hydrateSequenceData } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
-  import { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { createBrowseEngine } from "#lib/shared/browse/engine/create-browse-engine.svelte.js";
+  import BrowsePanel from "#lib/shared/browse/components/BrowsePanel.svelte";
+  import FilterWorkspace from "#lib/features/browse/gallery-home/FilterWorkspace.svelte";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { hydrateSequence as hydrateSequenceData } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
+  import { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
   import { onDestroy } from "svelte";
-  import type { SequenceSource } from "$lib/shared/browse/engine/types";
+  import type { SequenceSource } from "#lib/shared/browse/engine/types.js";
 
   interface Props {
     open: boolean;

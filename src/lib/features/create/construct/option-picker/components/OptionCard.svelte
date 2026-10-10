@@ -5,11 +5,11 @@ Single responsibility: Render one pictograph option as a clickable card.
 Receives pre-calculated data, just renders it.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { PreparedPictographData } from "$lib/shared/pictograph/option/prepared-pictograph-data";
-  import { getLetterBorderColors } from "$lib/shared/pictograph/shared/utils/letter-border-utils";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PreparedPictographData } from "#lib/shared/pictograph/option/prepared-pictograph-data.js";
+  import { getLetterBorderColors } from "#lib/shared/pictograph/shared/utils/letter-border-utils.js";
   import OptionCardContent from "./OptionCardContent.svelte";
-  import PictographContextMenuHost from "$lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
+  import PictographContextMenuHost from "#lib/shared/pictograph/shared/components/context-menu/PictographContextMenuHost.svelte";
   import { tryGetOptionAuditionContext } from "../context/option-audition-context";
   import { createHoldToAuditionAttachment } from "../services/hold-to-audition";
 

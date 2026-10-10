@@ -29,15 +29,15 @@
     MotionType,
     RotationDirection,
     Orientation,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { createSelfLoadedRigBinding } from "$lib/features/stage/locomotion/motion-matching/self-loaded-rig-binding";
-  import { MmLocomotionController } from "$lib/features/stage/locomotion/motion-matching/mm-locomotion-controller";
-  import type { RigBinding } from "$lib/features/stage/locomotion/motion-matching/rig-binding";
-  import type { MotionConfig3D } from "$lib/shared/3d/domain/models/motion-data-3d";
-  import type { DodgePlan, DodgeKnob, DodgeSide } from "$lib/features/stage/locomotion/dodge/dodge-types";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { createSelfLoadedRigBinding } from "#lib/features/stage/locomotion/motion-matching/self-loaded-rig-binding.js";
+  import { MmLocomotionController } from "#lib/features/stage/locomotion/motion-matching/mm-locomotion-controller.js";
+  import type { RigBinding } from "#lib/features/stage/locomotion/motion-matching/rig-binding.js";
+  import type { MotionConfig3D } from "#lib/shared/3d/domain/models/motion-data-3d.js";
+  import type { DodgePlan, DodgeKnob, DodgeSide } from "#lib/features/stage/locomotion/dodge/dodge-types.js";
   import DodgeDriver from "./DodgeDriver.svelte";
 
   // Letter A, variation 3 (alpha1 -> alpha3), from the Flow Arts Knowledge MCP:

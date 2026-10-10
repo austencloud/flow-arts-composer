@@ -1,21 +1,21 @@
 import { Plane } from "@austencloud/scene-3d";
 import type { PerspectiveCamera } from "three";
 
-import { getRegistration } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-import { getSceneUndoManager } from "$lib/shared/3d/undo/get-scene-undo-manager";
+import { getRegistration } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+import { getSceneUndoManager } from "#lib/shared/3d/undo/get-scene-undo-manager.js";
 import type {
   Viewer3DState,
   Viewer3DStateSeed,
-} from "$lib/shared/3d/state/viewer-3d-state.svelte";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+} from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import type {
   EffectsConfig,
   EffectType,
-} from "$lib/shared/effects/domain/effects-config";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/effects/domain/effects-config.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 import type { DirectorBlockingFrame } from "./director-blocking-track";
 import type { DirectorCameraFrame } from "./director-camera-track";

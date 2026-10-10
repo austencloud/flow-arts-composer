@@ -14,12 +14,12 @@
     CAMERA_DEFAULTS,
   } from "@austencloud/camera-3d";
   import type { AvatarState } from "@austencloud/camera-3d";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     createMuseumPhysicsProvider,
     MuseumPhysicsProvider,
   } from "../../services/museum-physics-provider";
-  import { cameraPreferences } from "$lib/shared/3d/camera/camera-preferences.svelte";
+  import { cameraPreferences } from "#lib/shared/3d/camera/camera-preferences.svelte.js";
   import MuseumFurniture from "./MuseumFurniture.svelte";
   import MuseumPerformerStation3D from "./MuseumPerformerStation3D.svelte";
   import VulcanCaveScenicLayer from "./VulcanCaveScenicLayer.svelte";
@@ -48,11 +48,11 @@
   import MuseumVillageEmbed from "./MuseumVillageEmbed.svelte";
   import { preloadVillageAvatarModels } from "../../services/museum-village-manager";
   import MuseumTorch3D from "./MuseumTorch3D.svelte";
-  import GltfAsset from "$lib/shared/3d/environments/primitives/GltfAsset.svelte";
-  import FallingParticles from "$lib/shared/3d/environments/primitives/FallingParticles.svelte";
-  import SceneEffectsCoordinator3D from "$lib/shared/3d/effects/scene-effects/SceneEffectsCoordinator3D.svelte";
-  import { SceneEffectsManager3D } from "$lib/shared/3d/effects/scene-effects/scene-effects-manager-3d";
-  import { setSceneEffectsContext } from "$lib/shared/3d/effects/scene-effects/scene-effects-context";
+  import GltfAsset from "#lib/shared/3d/environments/primitives/GltfAsset.svelte";
+  import FallingParticles from "#lib/shared/3d/environments/primitives/FallingParticles.svelte";
+  import SceneEffectsCoordinator3D from "#lib/shared/3d/effects/scene-effects/SceneEffectsCoordinator3D.svelte";
+  import { SceneEffectsManager3D } from "#lib/shared/3d/effects/scene-effects/scene-effects-manager-3d.js";
+  import { setSceneEffectsContext } from "#lib/shared/3d/effects/scene-effects/scene-effects-context.js";
 
   const sceneEffectsManager = setSceneEffectsContext(
     new SceneEffectsManager3D()
@@ -95,7 +95,7 @@
     type RoomLightSlot,
   } from "../../services/museum-room-light-pool";
   import { MuseumAtmosphere } from "../../services/museum-atmosphere";
-  import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
+  import OrbitControls from "#lib/shared/3d/components/OrbitControls.svelte";
   import { museum3dEditorState } from "../../state/museum-3d-editor-state.svelte";
   import { museumEditorOverrides } from "../../state/museum-editor-overrides";
   import { generateCanvas as generatePlaqueCanvas } from "../../services/plaque-texture-generator";
@@ -437,7 +437,7 @@
     origin?: { x: number; y: number; z: number },
     direction?: { x: number; y: number; z: number },
     maxDistance = 100
-  ): import("$lib/shared/3d/debug/game-bridge-types").RaycastResult {
+  ): import("#lib/shared/3d/debug/game-bridge-types.js").RaycastResult {
     const scene = resolveScene(threlteCtx);
     if (!scene) return { hit: false };
 
@@ -1120,7 +1120,7 @@
     if (typeof window === "undefined" || !import.meta.env.DEV) return;
     if (gameBridgeInitialized) return;
 
-    import("$lib/shared/3d/debug/game-bridge").then(
+    import("#lib/shared/3d/debug/game-bridge.js").then(
       async ({
         initGameBridge,
         isGameBridgeEnabled,
@@ -1213,7 +1213,7 @@
     );
 
     return () => {
-      import("$lib/shared/3d/debug/game-bridge").then(
+      import("#lib/shared/3d/debug/game-bridge.js").then(
         ({ destroyGameBridge }) => {
           destroyGameBridge();
         }

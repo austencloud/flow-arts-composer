@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { authorizeLoopback, readJsonBody } from "$lib/server/dev-loopback";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
+import { authorizeLoopback, readJsonBody } from "#lib/server/dev-loopback.js";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
 import { POST as postProjectRoute } from "../../../src/routes/api/dev/post-project/+server";
 import {
   routeEvent,
@@ -10,7 +10,7 @@ import {
 } from "./feature-video-test-helpers";
 
 afterEach(() => {
-  vi.doUnmock("$app/environment");
+  vi.doUnmock("$app/env");
   vi.resetModules();
 });
 
@@ -48,14 +48,14 @@ describe("authorizeLoopback", () => {
 
   it("answers 404 when the server is not a dev server", async () => {
     vi.resetModules();
-    vi.doMock("$app/environment", () => ({
+    vi.doMock("$app/env", () => ({
       dev: false,
       browser: false,
       building: false,
       version: "test",
     }));
     const { authorizeLoopback: guard } =
-      await import("$lib/server/dev-loopback");
+      await import("#lib/server/dev-loopback.js");
     const { request, getClientAddress } = routeEvent(PATH);
     expect(await thrownStatus(() => guard(request, getClientAddress))).toBe(
       404

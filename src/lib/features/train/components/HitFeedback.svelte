@@ -4,7 +4,7 @@
   Shows combo counter, score feedback, and animations for successful hits.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
   interface Props {
     combo: number;

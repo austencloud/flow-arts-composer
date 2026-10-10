@@ -1,11 +1,11 @@
 import { getPrintCardRenderer } from "../getPrintCardRenderer";
 import { renderSignupCardPair } from "./PrintCardRenderer";
 import type { CardPair } from "./types";
-import { getImageComposer } from "$lib/shared/render/get-image-composer";
-import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-import { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
-import { configureShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { getImageComposer } from "#lib/shared/render/get-image-composer.js";
+import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
+import { getQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
+import { configureShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import uniquePackManifests from "../data/festival-sampler-manifests.json";
 import {
   FESTIVAL_SHEET_CARD_COUNT,

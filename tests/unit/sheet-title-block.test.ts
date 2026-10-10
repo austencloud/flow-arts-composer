@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatSheetRunningTimestamp,
   formatSheetTitleBlock,
-} from "$lib/features/write/domain/sheet-title-block";
+} from "#lib/features/write/domain/sheet-title-block.js";
 
 describe("formatSheetTitleBlock", () => {
   it("formats complete title lines", () => {

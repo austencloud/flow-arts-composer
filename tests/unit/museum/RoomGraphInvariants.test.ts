@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   MUSEUM_ROOMS,
   MUSEUM_EDGES,
-} from "$lib/features/museum/data/museum-room-graph";
-import type { RoomNode, RoomEdge } from "$lib/features/museum/domain/layout-types";
+} from "#lib/features/museum/data/museum-room-graph.js";
+import type { RoomNode, RoomEdge } from "#lib/features/museum/domain/layout-types.js";
 
 // Build lookup maps once
 const roomById = new Map(MUSEUM_ROOMS.map((r) => [r.id, r]));

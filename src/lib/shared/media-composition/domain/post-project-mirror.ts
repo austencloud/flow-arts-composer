@@ -5,11 +5,11 @@ import {
   type PostKeyframe,
   type PostProject,
   type PostSourceGeometry,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   finish,
   type EditContext,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 
 const reverse = (value: number): number => (value === 0 ? 0 : -value);
 

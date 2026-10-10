@@ -1,4 +1,4 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /** Where the page's one sequence came from. The hero's draws, a Construct
  * build, and a Generate or tunnel draw all write the same slot. */

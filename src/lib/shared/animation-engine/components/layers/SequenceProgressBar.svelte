@@ -25,12 +25,12 @@ Design:
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
-  import { motionDuration } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import { motionDuration } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import TransportControls from "../controls/TransportControls.svelte";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
-  import { sequenceFrameAt } from "$lib/shared/media-composition/domain/sequence-frame";
-  import { sequenceProgressStripHeightCss } from "$lib/shared/animation-engine/services/sequence-progress-renderer";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
+  import { sequenceFrameAt } from "#lib/shared/media-composition/domain/sequence-frame.js";
+  import { sequenceProgressStripHeightCss } from "#lib/shared/animation-engine/services/sequence-progress-renderer.js";
 
   const stripHeight = sequenceProgressStripHeightCss();
 

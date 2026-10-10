@@ -6,8 +6,8 @@
  * state, so no query surface lives here.
  */
 
-import { browser } from "$app/environment";
-import { getPostHogInstance } from "$lib/shared/analytics/services/posthog";
+import { browser } from "$app/env";
+import { getPostHogInstance } from "#lib/shared/analytics/services/posthog.js";
 
 export class PostHogAnalyticsProvider {
   /**

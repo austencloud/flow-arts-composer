@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
 
 const NonEmptyIdSchema = z.string().trim().min(1);
 

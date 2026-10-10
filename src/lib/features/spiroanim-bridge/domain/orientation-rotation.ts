@@ -29,12 +29,12 @@ import {
   type ParsedCellKey,
   type SpiroAnimOrientation,
 } from "./cell-key";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   getGridLocationsFromPlacement,
   getGridPlacementFromLocations,
-} from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+} from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
 
 /** The orientation the whole transcription corpus was captured at. */
 export const TRANSCRIPTION_BASELINE_ORIENTATION: SpiroAnimOrientation = -90;

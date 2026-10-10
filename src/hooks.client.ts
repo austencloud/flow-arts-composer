@@ -1,21 +1,21 @@
 /**
  * Client-side hooks
  */
-import type { ClientInit, HandleClientError } from "@sveltejs/kit";
-import { browser, dev } from "$app/environment";
+import type { ClientInit, HandleClientError } from "@sveltejs/kit/hooks";
+import { browser, dev } from "$app/env";
 import { Capacitor } from "@capacitor/core";
-import { isRunningAsStandalone } from "$lib/shared/mobile/services/platform-detector";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-import { prepareSwBeforeStart } from "$lib/shared/offline/services/sw-update-manager";
+import { isRunningAsStandalone } from "#lib/shared/mobile/services/platform-detector.js";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import { prepareSwBeforeStart } from "#lib/shared/offline/services/sw-update-manager.js";
 import {
   installViteReloadTracers,
   printReloadBreadcrumb,
   recordReloadReason,
-} from "$lib/shared/dev/reload-breadcrumb";
+} from "#lib/shared/dev/reload-breadcrumb.js";
 import {
   markChunkRecoveryReload,
   printChunkRecoveryReloadBreadcrumb,
-} from "$lib/shared/offline/services/chunk-recovery-marker";
+} from "#lib/shared/offline/services/chunk-recovery-marker.js";
 
 // Dev: explain the previous automatic reload (if any) before the boot noise
 // starts, and arm the tracers for Vite's own full-reload/ws-disconnect reloads.
@@ -26,7 +26,7 @@ if (browser && dev) {
 }
 
 if (typeof window !== "undefined" && "Capacitor" in window) {
-  import("$lib/shared/offline/services/native-update.svelte")
+  import("#lib/shared/offline/services/native-update.svelte.js")
     .then(({ startNativeUpdates }) => startNativeUpdates())
     .catch(() => {});
 }
@@ -47,7 +47,7 @@ if (browser) {
 
 // Always expose cache benchmark utility globally (in both dev and prod for testing)
 if (browser) {
-  import("$lib/shared/render/utils/cache-benchmark")
+  import("#lib/shared/render/utils/cache-benchmark.js")
     .then((module) => {
       // Explicitly expose on window
       (
@@ -253,7 +253,7 @@ if (browser && !dev) {
       return;
     }
 
-    import("$lib/shared/error/services/error-telemetry-reporter")
+    import("#lib/shared/error/services/error-telemetry-reporter.js")
       .then(({ reportErrorTelemetry }) => {
         reportErrorTelemetry(
           {
@@ -278,11 +278,15 @@ if (browser && !dev) {
   });
 }
 
-// SvelteKit routes unexpected load/navigation errors here — they never reach
+// SvelteKit routes load/navigation errors here — they never reach
 // window.onerror, so PostHog's auto-capture misses them without this hook.
-export const handleError: HandleClientError = ({ error, message, status }) => {
+// Errors thrown with `error(...)` arrive too; those are expected, not reported.
+export const handleError: HandleClientError = ({ kind, error }) => {
+  if (kind === "app") return;
+  const status = kind === "framework" ? error.status : 500;
+  const message = kind === "framework" ? error.message : "Internal Error";
   if (browser && !dev) {
-    import("$lib/shared/error/services/error-telemetry-reporter")
+    import("#lib/shared/error/services/error-telemetry-reporter.js")
       .then(({ reportErrorTelemetry }) => {
         reportErrorTelemetry({
           message: `Client error: ${message.slice(0, 200)}`,
@@ -301,7 +305,6 @@ export const handleError: HandleClientError = ({ error, message, status }) => {
       })
       .catch(() => {});
   }
-  return { message };
 };
 
 // Production: register the minimal hand-written service worker

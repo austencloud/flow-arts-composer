@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import TempoControl from "$lib/shared/animation-panel/components/TempoControl.svelte";
-  import PlaybackModeToggle from "$lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
-  import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
-  import type { PlaybackMode } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import TempoControl from "#lib/shared/animation-panel/components/TempoControl.svelte";
+  import PlaybackModeToggle from "#lib/shared/animation-engine/components/controls/PlaybackModeToggle.svelte";
+  import PathShapePanel from "#lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
+  import type { PlaybackMode } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import { reportArtSetting } from "./art-setting-change";
   import type {
     ArtSettingChangeHandler,

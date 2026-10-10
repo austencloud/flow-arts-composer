@@ -1,20 +1,20 @@
 import { render } from "vitest-browser-svelte";
 import { flushSync } from "svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createPlaceholderMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { createEmptyPostProject } from "$lib/shared/media-composition/domain/post-project";
-import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
-import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-import { createViewerUrlSession } from "$lib/shared/sequence-viewer/services/viewer-url-session";
-import { encodeViewerStateParams } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
-import { createViewerStudioSurfaces } from "$lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createPlaceholderMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { createEmptyPostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import { loadPostProject } from "#lib/shared/media-composition/services/post-project-store.js";
+import { settingsService } from "#lib/shared/settings/state/settings-state.svelte.js";
+import { createViewerUrlSession } from "#lib/shared/sequence-viewer/services/viewer-url-session.js";
+import { encodeViewerStateParams } from "#lib/shared/sequence-viewer/services/viewer-url-state-codec.js";
+import { createViewerStudioSurfaces } from "#lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte.js";
 import PostStudioTestHarness from "./PostStudioTestHarness.svelte";
 
-vi.mock("$app/environment", () => ({
+vi.mock("$app/env", () => ({
   browser: true,
   dev: true,
   building: false,
@@ -24,10 +24,10 @@ vi.mock("$app/environment", () => ({
 // The studio looks up the sequence's saved performances on mount. That read
 // is a Firestore query; here the sequence simply has none.
 vi.mock(
-  "$lib/shared/video-collaboration/services/collaborative-video-manager",
+  "#lib/shared/video-collaboration/services/collaborative-video-manager.js",
   async (importOriginal) => ({
     ...(await importOriginal<
-      typeof import("$lib/shared/video-collaboration/services/collaborative-video-manager")
+      typeof import("#lib/shared/video-collaboration/services/collaborative-video-manager.js")
     >()),
     getVideosForSequence: async () => [],
   })
@@ -37,7 +37,7 @@ vi.mock(
 // test server does not serve. The prop under test lives in the studio itself.
 vi.mock("./editor/PostEditorCanvas.svelte", async () => ({
   default: (
-    await import("$lib/shared/sequence-viewer/components/__test-stubs__/SequenceViewerDrawerHostChildStub.svelte")
+    await import("#lib/shared/sequence-viewer/components/__test-stubs__/SequenceViewerDrawerHostChildStub.svelte")
   ).default,
 }));
 

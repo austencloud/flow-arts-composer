@@ -10,8 +10,8 @@
  * (src/lib/shared/effects/domain/EffectsConfig.ts).
  */
 
-import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-import { SILK_INTENSITY_MAX } from "$lib/shared/effects/domain/effects-config";
+import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import { SILK_INTENSITY_MAX } from "#lib/shared/effects/domain/effects-config.js";
 
 export interface PrimaryParamSpec {
   readonly label: string;

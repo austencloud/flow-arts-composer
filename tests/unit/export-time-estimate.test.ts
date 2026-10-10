@@ -9,7 +9,7 @@ import {
   formatExportDuration,
   formatExportTimeEstimate,
   recordExportThroughput,
-} from "$lib/shared/animation-panel/state/export-timing-tracker";
+} from "#lib/shared/animation-panel/state/export-timing-tracker.js";
 
 describe("export time estimate", () => {
   beforeEach(() => {

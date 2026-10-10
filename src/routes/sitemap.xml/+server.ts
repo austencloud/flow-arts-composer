@@ -2,8 +2,9 @@ import { LANDING_DOMAIN } from "../../config/domains";
 import { GUIDE_BODY_PAGES } from "../(public)/guide/level-1/_data/guide-manifest";
 import { LEVEL2_TOPIC_PAGES } from "../(public)/guide/level-2/_data/level2-topic-routes";
 import { TIMING_DIRECTION_ARTICLE_SLUGS } from "../(public)/timing-and-direction/_data/timing-direction-articles";
-import { getAvailableConcepts } from "$lib/features/learn/domain/concept-experience-registry";
-import { getFirestoreRest } from "$lib/server/firestore/firestore-rest";
+import { getAvailableConcepts } from "#lib/features/learn/domain/concept-experience-registry.js";
+import { workerEnv } from "#lib/server/cloudflare/worker-env.js";
+import { getFirestoreRest } from "#lib/server/firestore/firestore-rest.js";
 import {
   emptySequenceMeta,
   isSafeFirestoreDocumentId,
@@ -140,7 +141,7 @@ const learnConceptsEntries = getAvailableConcepts().map((concept) => ({
  * codes are minted lazily by client interaction and are not guaranteed to
  * exist for a freshly released deck).
  *
- * Firestore REST with the request's `event.platform.env` credential, not the
+ * Firestore REST with the Worker's own credential binding, not the
  * admin SDK: production had FIREBASE_SERVICE_ACCOUNT_JSON configured, yet the
  * admin-SDK version of this took 8-9 s per uncached request and listed zero
  * cards (2026-09-23). Capped at 200 ids, a fixed number of requests however
@@ -199,13 +200,9 @@ async function getCuratedSequenceUrls(
   }
 }
 
-export const GET: RequestHandler = async (event) => {
-  // Optional chaining starts at `event` itself, not just `.platform`: an
-  // existing unit test (tests/unit/seo-indexing-controls.test.ts) calls this
-  // handler with no arguments at all to check the static entries, same as it
-  // did before this handler read anything off the request event.
+export const GET: RequestHandler = async () => {
   const curatedUrls = await getCuratedSequenceUrls(
-    event?.platform?.env?.FIREBASE_SERVICE_ACCOUNT_JSON
+    workerEnv()?.FIREBASE_SERVICE_ACCOUNT_JSON
   );
 
   const allEntries: SitemapEntry[] = [

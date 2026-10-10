@@ -1,9 +1,9 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { onMount } from "svelte";
-  import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import CopyForAIButton from "#lib/shared/foundation/ui/CopyForAIButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import SmartCollectionReviewFrame from "./_components/SmartCollectionReviewFrame.svelte";
   import SequenceActionsReviewPage from "../sequence-actions/+page.svelte";
 

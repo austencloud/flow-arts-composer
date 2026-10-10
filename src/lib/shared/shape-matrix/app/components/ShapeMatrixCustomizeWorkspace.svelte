@@ -28,14 +28,14 @@
   screen while the dock is; the compact settings sheet and the canonical prop
   sheet take over there. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { tick } from "svelte";
-  import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import type { PillId } from "$lib/shared/animation-panel/pill-nav/pill-types";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
-  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
-  import { flyFade } from "$lib/shared/transitions/motion";
+  import AnimationPanel from "#lib/shared/animation-panel/components/AnimationPanel.svelte";
+  import type { PillId } from "#lib/shared/animation-panel/pill-nav/pill-types.js";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { CANVAS2D_HOSTED_EFFECTS } from "#lib/shared/effects/services/canvas2d-effect-host.js";
+  import { getEscapeLayerManager } from "#lib/shared/keyboard/get-escape-layer-manager.js";
+  import { flyFade } from "#lib/shared/transitions/motion.js";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import {

@@ -6,13 +6,13 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { getAnimationPlaybackController } from "#lib/shared/animation-engine/get-animation-playback-controller.js";
 
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-  import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+  import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+  import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
   import {
     generateChooChoo,
     generateChooChooVariations,

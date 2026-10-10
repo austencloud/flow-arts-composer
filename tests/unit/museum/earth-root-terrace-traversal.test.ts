@@ -16,13 +16,13 @@
  * terrain.blockedAt, with a BFS detour only around a real obstruction).
  */
 import { describe, it, expect, beforeAll } from "vitest";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 import {
   MuseumPhysicsProvider,
   SOLID_TYPES,
-} from "$lib/features/museum/services/museum-physics-provider";
-import { tileKey } from "$lib/features/museum/domain/museum-grid-types";
-import { TILE_METRES, inRectClosed } from "$lib/features/museum/data/drowned-gallery-terrain";
+} from "#lib/features/museum/services/museum-physics-provider.js";
+import { tileKey } from "#lib/features/museum/domain/museum-grid-types.js";
+import { TILE_METRES, inRectClosed } from "#lib/features/museum/data/drowned-gallery-terrain.js";
 import {
   BED_Y,
   DOOR_Y,
@@ -30,7 +30,7 @@ import {
   LANDING_Y,
   OVERLOOK_Y,
   buildEarthRootTerraceLayout,
-} from "$lib/features/museum/data/earth-root-terrace-terrain";
+} from "#lib/features/museum/data/earth-root-terrace-terrain.js";
 
 const TILE = TILE_METRES;
 const STANDING_Y = 0.85;

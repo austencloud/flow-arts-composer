@@ -14,7 +14,7 @@
 -->
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import type { EffectPointEditorState } from "../state/effect-point-editor-state.svelte";
   import TrailPointAssignmentSection from "./TrailPointAssignmentSection.svelte";
 

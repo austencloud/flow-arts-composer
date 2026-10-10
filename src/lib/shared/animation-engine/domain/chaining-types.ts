@@ -5,8 +5,8 @@
  * needs from landing-feature services, avoiding shared/ → features/ imports.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { EndState } from "$lib/shared/landing/domain/types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { EndState } from "#lib/shared/landing/domain/types.js";
 
 export type SourceMode = "pick" | "library" | "infinite";
 

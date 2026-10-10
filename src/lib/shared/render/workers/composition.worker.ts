@@ -3,7 +3,7 @@
 // Instantiated by CompositionDispatcher as a pool of N workers.
 //
 // Transitive-import strategy:
-//   ImageComposer (and its deps) pull in Svelte stores and $app/environment
+//   ImageComposer (and its deps) pull in Svelte stores and $app/env
 //   at module level. We dynamic-import the entire pipeline so failures are
 //   caught at init time and the dispatcher falls back to the main thread.
 
@@ -21,7 +21,7 @@ import type { TextRenderer } from '../services/text-renderer';
 // Worker-safe cache stubs
 // The worker performs fresh renders every time — caching is handled by the
 // main-thread ThumbnailRenderOrchestrator. These stubs satisfy the
-// ImageComposer constructor without pulling in IndexedDB ($app/environment)
+// ImageComposer constructor without pulling in IndexedDB ($app/env)
 // or HTMLImageElement (PictographMemoryCache).
 
 /** No-op blob cache — worker renders are not persisted to IndexedDB. */
@@ -104,7 +104,7 @@ async function handleInit(
     import("../services/canvas-2d-direct-renderer"),
     import("../services/layer-compositor"),
     import("../services/pictograph-key-hasher"),
-    import("$lib/shared/composition-root/worker-loop-display-resolver"),
+    import("#lib/shared/composition-root/worker-loop-display-resolver.js"),
   ]);
 
   registerWorkerLoopDisplayResolver();
@@ -231,7 +231,7 @@ async function handleCompose(
     // frame module builds an OffscreenCanvas in worker scope (createRenderCanvas).
     if (effectiveOptions.frontCardFrame) {
       const { wrapContentInCardFrame } = await import(
-        "$lib/features/choreo-card/services/card-front-frame"
+        "#lib/features/choreo-card/services/card-front-frame.js"
       );
       canvas = wrapContentInCardFrame(
         canvas as CanvasImageSource,
@@ -291,7 +291,7 @@ self.onmessage = (event: MessageEvent<CompositionWorkerInMessage>) => {
       (async () => {
         try {
           const { paintBackJob } = await import(
-            "$lib/features/choreo-card/services/card-back/card-back-raster"
+            "#lib/features/choreo-card/services/card-back/card-back-raster.js"
           );
           const job = {
             width: 64,

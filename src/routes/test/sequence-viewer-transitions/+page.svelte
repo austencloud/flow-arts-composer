@@ -1,10 +1,10 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { replaceState } from "$app/navigation";
+  import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { fits3DViewport } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { fits3DViewport } from "#lib/shared/3d/capabilities/viewport-3d-gate.svelte.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import SequenceViewerTransitionReviewFrame from "./_components/SequenceViewerTransitionReviewFrame.svelte";
   import RailPropGlyphReview from "./_components/RailPropGlyphReview.svelte";
   import TransitionGeometryTrace from "./_components/TransitionGeometryTrace.svelte";
@@ -327,7 +327,7 @@
     review.selectGate(gateId);
     const url = new URL(page.url);
     url.searchParams.set("gate", gateId);
-    replaceState(url, page.state);
+    goto(url, { shallow: true, replace: true, state: page.state });
     frameMetrics = null;
     lastTrace = null;
     pendingReplay = null;

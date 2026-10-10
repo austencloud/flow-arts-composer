@@ -14,13 +14,13 @@
  * before any card is issued.
  */
 import { describe, expect, it } from "vitest";
-import { getMaxSteps } from "$lib/shared/auth/domain/access-tier";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { getMaxSteps } from "#lib/shared/auth/domain/access-tier.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   PHYSICAL_CARD_ID_LENGTH,
   buildSerializedCardUrl,
   isShortCode,
-} from "$lib/shared/qr/domain/physical-card";
+} from "#lib/shared/qr/domain/physical-card.js";
 import { CARD_SIZES, type CardSizeId } from "../../domain/card-sizes";
 import { TND_ELEMENTS } from "../../domain/tnd-element";
 import { calculatePhysicalCardLayout } from "../physical-card-layout-calculator";

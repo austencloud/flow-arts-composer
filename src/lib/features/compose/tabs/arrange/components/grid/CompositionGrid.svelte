@@ -16,7 +16,7 @@
     arrangeGridState,
     type GridCell,
   } from "../../state/arrange-grid-state.svelte";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
 
   interface GridBoundsInfo {
     minRow: number;

@@ -9,11 +9,11 @@
 import type {
   ContextMenuEntry,
   ContextMenuItem,
-} from "$lib/shared/components/context-menu/context-menu-types";
+} from "#lib/shared/components/context-menu/context-menu-types.js";
 import type { VisibilityStateManager } from "../../state/visibility-state.svelte";
 import { HandSide } from "../../domain/enums/pictograph-enums";
-import type { GridJoinController } from "$lib/shared/grid-join/grid-join-controller";
-import { buildGridJoinMenuItem } from "$lib/shared/grid-join/grid-join-menu";
+import type { GridJoinController } from "#lib/shared/grid-join/grid-join-controller.js";
+import { buildGridJoinMenuItem } from "#lib/shared/grid-join/grid-join-menu.js";
 
 interface PictographContextMenuDeps {
   visibilityManager: VisibilityStateManager;

@@ -5,7 +5,7 @@
    * Shows mutual follow badge and timestamps for the relationship.
    */
 
-  import type { MutualFollowInfo } from "$lib/shared/community/services/types";
+  import type { MutualFollowInfo } from "#lib/shared/community/services/types.js";
 
   interface Props {
     mutualFollow: MutualFollowInfo;

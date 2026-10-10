@@ -4,14 +4,14 @@
  * effects, so every setting has to be read before the first await.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { normalizeFanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import type { PropRenderData } from "$lib/shared/pictograph/prop/domain/models/prop-render-data";
-import { applyHandColorOverride } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
-import { normalizePropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import { normalizeTriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { normalizeFanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import type { PropRenderData } from "#lib/shared/pictograph/prop/domain/models/prop-render-data.js";
+import { applyHandColorOverride } from "#lib/shared/pictograph/prop/domain/prop-preview-color.js";
+import { normalizePropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import { normalizeTriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
 import {
   loadBuilderPropArt,
   type BuilderPropSettings,
@@ -19,7 +19,7 @@ import {
 
 const { loadPropSvg } = vi.hoisted(() => ({ loadPropSvg: vi.fn() }));
 
-vi.mock("$lib/shared/pictograph/prop/services/prop-svg-loader", () => ({
+vi.mock("#lib/shared/pictograph/prop/services/prop-svg-loader.js", () => ({
   propSvgLoader: { loadPropSvg },
 }));
 

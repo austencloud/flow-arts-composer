@@ -1,15 +1,15 @@
 <script lang="ts">
   import { Canvas } from "@threlte/core";
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import { createViewerCameraPlayerState } from "@austencloud/camera-3d";
-  import Viewer3DCamera from "$lib/shared/3d/components/Viewer3DCamera.svelte";
-  import ForestScene from "$lib/shared/3d/environments/scenes/ForestScene.svelte";
-  import CovenHub from "$lib/features/coven-hub/components/CovenHub.svelte";
-  import CovenSequencePicker from "$lib/features/coven-hub/components/CovenSequencePicker.svelte";
-  import { createCovenHubState } from "$lib/features/coven-hub/state/coven-hub-state.svelte";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
+  import Viewer3DCamera from "#lib/shared/3d/components/Viewer3DCamera.svelte";
+  import ForestScene from "#lib/shared/3d/environments/scenes/ForestScene.svelte";
+  import CovenHub from "#lib/features/coven-hub/components/CovenHub.svelte";
+  import CovenSequencePicker from "#lib/features/coven-hub/components/CovenSequencePicker.svelte";
+  import { createCovenHubState } from "#lib/features/coven-hub/state/coven-hub-state.svelte.js";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
 
   const hub = createCovenHubState();
 
@@ -32,7 +32,7 @@
   // fall back to the sequence persisted from the last visit. Either way the
   // page owns hydration (the state only persists the id, not the full data).
   $effect(() => {
-    const id = $page.url.searchParams.get("seq") ?? hub.lastSequenceId;
+    const id = page.url.searchParams.get("seq") ?? hub.lastSequenceId;
     if (!id) return;
     getBrowseLoader()
       .loadFullSequenceData(id, id)

@@ -12,7 +12,7 @@
  * based on whether the player is at standing height.
  */
 
-import type { PhysicsProvider, Vector3 } from "$lib/shared/3d/camera/types";
+import type { PhysicsProvider, Vector3 } from "#lib/shared/3d/camera/types.js";
 import type { MuseumGrid, MuseumTerrainProgram } from "../domain/museum-grid-types";
 import { getFurnitureObjectByRole } from "../domain/placeable-object-registry";
 

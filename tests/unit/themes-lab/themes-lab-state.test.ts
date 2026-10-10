@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PRIDE_BACKGROUND_TYPE } from "$lib/shared/settings/domain/background-type-migration";
+import { PRIDE_BACKGROUND_TYPE } from "#lib/shared/settings/domain/background-type-migration.js";
 
 // Mock localStorage
 const mockStorage = new Map<string, string>();
@@ -11,7 +11,7 @@ vi.stubGlobal("localStorage", {
 
 // Mock settingsService
 const mockUpdateSetting = vi.fn().mockResolvedValue(undefined);
-vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
+vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
   settingsService: {
     settings: { backgroundType: "ocean" },
     updateSetting: (...args: unknown[]) => mockUpdateSetting(...args),
@@ -21,7 +21,7 @@ vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
 // Mock scene-lab-state (avoid Svelte rune compilation issues in test)
 const mockSetSceneId = vi.fn();
 vi.mock(
-  "$lib/features/lab/tabs/scene-lab/state/scene-lab-state.svelte",
+  "#lib/features/lab/tabs/scene-lab/state/scene-lab-state.svelte.js",
   () => ({
     createSceneLabState: () => ({
       sceneId: "ocean",
@@ -46,23 +46,26 @@ vi.mock(
 );
 
 // Mock composer-editor-state
-vi.mock("$lib/shared/3d/scene-composer/composer-editor-state.svelte", () => ({
-  createComposerEditorState: () => ({
-    active: false,
-    mode: "browse",
-    selectedObject: null,
-    gizmoMode: "translate",
-    activeCatalogItem: null,
-    ghostValid: false,
-    placements: [],
-    dirty: false,
-    setActive: vi.fn(),
-    toggle: vi.fn(),
-    commands: { push: vi.fn(), undo: vi.fn(), redo: vi.fn() },
-  }),
-}));
+vi.mock(
+  "#lib/shared/3d/scene-composer/composer-editor-state.svelte.js",
+  () => ({
+    createComposerEditorState: () => ({
+      active: false,
+      mode: "browse",
+      selectedObject: null,
+      gizmoMode: "translate",
+      activeCatalogItem: null,
+      ghostValid: false,
+      placements: [],
+      dirty: false,
+      setActive: vi.fn(),
+      toggle: vi.fn(),
+      commands: { push: vi.fn(), undo: vi.fn(), redo: vi.fn() },
+    }),
+  })
+);
 
-import { createThemesLabState } from "$lib/features/themes-lab/state/themes-lab-state.svelte";
+import { createThemesLabState } from "#lib/features/themes-lab/state/themes-lab-state.svelte.js";
 
 describe("createThemesLabState", () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { ExperienceViewMode } from "../../../domain/types";
   import TimingDirectionExperience from "./TimingDirectionExperience.svelte";
   import { GAMMA_MODES } from "./pictograph-foundation-content";

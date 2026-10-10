@@ -4,9 +4,9 @@ import {
   MotionType,
   RotationDirection,
   Orientation,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { MotionConfig3D } from "$lib/shared/3d/domain/models/motion-data-3d";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { MotionConfig3D } from "#lib/shared/3d/domain/models/motion-data-3d.js";
 import { planDodge } from "./dodge-orchestrator";
 import { DEFAULT_DODGE_KNOB } from "./dodge-types";
 

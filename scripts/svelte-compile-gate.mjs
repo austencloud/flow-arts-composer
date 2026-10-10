@@ -12,7 +12,7 @@
  *
  * Usage:  node scripts/svelte-compile-gate.mjs [base]   (default base: main)
  * Run it from the repository root after `.svelte-kit` exists; TypeScript
- * preprocessing reads tsconfig.json, which extends .svelte-kit/tsconfig.json.
+ * preprocessing reads tsconfig.json, which extends $app/tsconfig.
  */
 
 import { execFileSync } from "node:child_process";
@@ -33,13 +33,14 @@ export function changedSvelteFiles(base, cwd = process.cwd()) {
 }
 
 async function loadSvelteConfig(cwd) {
-  const path = join(cwd, "svelte.config.js");
+  const path = join(cwd, "src", "config", "svelte-options.js");
   if (!existsSync(path)) return {};
-  return (await import(pathToFileURL(path).href)).default ?? {};
+  return (await import(pathToFileURL(path).href)).svelteOptions ?? {};
 }
 
 /**
- * Preprocess and compile each file with the svelte.config.js found in cwd.
+ * Preprocess and compile each file with the project's Svelte options
+ * (src/config/svelte-options.js, shared with vite.config.ts) found in cwd.
  * Returns one { file, errors, warnings } entry per file; each diagnostic is
  * { code, message, line?, column? } with 1-based positions in the original.
  */

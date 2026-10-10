@@ -3,8 +3,8 @@ import {
   POST_MIN_ITEM_SECONDS,
   mainItemAt,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import type { NewOverlaySpec } from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import type { NewOverlaySpec } from "#lib/shared/media-composition/domain/post-project-edits.js";
 
 /**
  * Where the Add tool puts a new item. Videos join the end of the main track;

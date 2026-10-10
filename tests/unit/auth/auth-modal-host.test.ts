@@ -15,16 +15,16 @@ const modal = vi.hoisted(() => ({
   renders: [] as Array<Record<string, unknown>>,
 }));
 
-vi.mock("$lib/shared/auth/components/AuthModal.svelte", () => ({
+vi.mock("#lib/shared/auth/components/AuthModal.svelte", () => ({
   default: (_anchor: unknown, props: Record<string, unknown>) => {
     modal.renders.push(props);
   },
 }));
 
 const { authDrawerState } =
-  await import("$lib/shared/auth/state/auth-drawer-state.svelte");
+  await import("#lib/shared/auth/state/auth-drawer-state.svelte.js");
 const { default: AuthModalHost } =
-  await import("$lib/shared/auth/components/AuthModalHost.svelte");
+  await import("#lib/shared/auth/components/AuthModalHost.svelte");
 
 // vitest-setup.ts swaps document.createElement for canvas stubs that are not
 // DOM nodes. Mounting a component needs jsdom's own, from document's prototype.

@@ -7,9 +7,9 @@
    * - Select from available character models
    */
 
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { type CharacterId } from "$lib/shared/3d/domain/character-model";
-  import { DEPLOYED_CHARACTER_DEFINITIONS } from "$lib/shared/3d/config/deployed-characters";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { type CharacterId } from "#lib/shared/3d/domain/character-model.js";
+  import { DEPLOYED_CHARACTER_DEFINITIONS } from "#lib/shared/3d/config/deployed-characters.js";
 
   interface Props {
     /** Whether the character is visible */

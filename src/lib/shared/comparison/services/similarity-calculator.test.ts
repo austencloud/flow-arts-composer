@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { SimilarityCalculator } from "./similarity-calculator";
 import type { StepSignatureGenerator } from "./step-signature-generator";
 import type { SequenceAligner } from "./sequence-aligner";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 // computeQuickScore's circular-word branch never reaches the step-signature
 // generator or aligner, so both constructor deps are unused stubs here.

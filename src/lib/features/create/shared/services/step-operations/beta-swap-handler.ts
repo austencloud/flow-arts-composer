@@ -4,9 +4,9 @@
  * side of the beta offset when both hands end at the same grid location.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { ICreateModuleState } from "../../types/create-module-types";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { getStepDataFromState, START_PLACEMENT_BEAT_NUMBER } from "./step-data-helpers";
 
 const logger = createComponentLogger("BetaSwapHandler");

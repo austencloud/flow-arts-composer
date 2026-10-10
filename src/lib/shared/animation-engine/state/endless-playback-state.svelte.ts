@@ -1,24 +1,24 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type {
   SourceMode,
   PlaybackHistoryEntry,
   IEndlessSpinnerOrchestrator,
   IInfiniteSequenceGenerator,
-} from "$lib/shared/animation-engine/domain/chaining-types";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { CopyResult } from "$lib/shared/browse/services/claude-code-copier";
-import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-import { SequenceChainingOrchestrator } from "$lib/shared/animation-engine/services/sequence-chaining-orchestrator";
+} from "#lib/shared/animation-engine/domain/chaining-types.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { CopyResult } from "#lib/shared/browse/services/claude-code-copier.js";
+import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
+import { SequenceChainingOrchestrator } from "#lib/shared/animation-engine/services/sequence-chaining-orchestrator.js";
 import {
   createAnimationPanelState,
   type AnimationPanelState,
-} from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-import { getClaudeCodeCopier } from "$lib/shared/browse/get-claude-code-copier";
-import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+} from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
+import { getClaudeCodeCopier } from "#lib/shared/browse/get-claude-code-copier.js";
+import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 
 export interface EndlessPlaybackConfig {
   modes: SourceMode[];

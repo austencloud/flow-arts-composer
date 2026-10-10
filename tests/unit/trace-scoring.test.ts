@@ -9,25 +9,25 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type {
   TraceBeat,
   TraceMetrics,
   TraceSample,
   TraceSegment,
-} from "$lib/features/learn/play/games/trace-paths/domain/trace-types";
+} from "#lib/features/learn/play/games/trace-paths/domain/trace-types.js";
 import {
   DEFAULT_TRACE_SCORING_CONFIG,
   scoreTraceRound,
-} from "$lib/features/learn/play/games/trace-paths/services/score-trace-round";
+} from "#lib/features/learn/play/games/trace-paths/services/score-trace-round.js";
 import {
   createTraceEvaluator,
   type TraceRoundGeometry,
-} from "$lib/features/learn/play/games/trace-paths/services/trace-evaluator";
+} from "#lib/features/learn/play/games/trace-paths/services/trace-evaluator.js";
 import {
   arcLengthResample,
   sampleSegmentPath,
-} from "$lib/features/learn/play/games/trace-paths/services/trace-path-sampler";
+} from "#lib/features/learn/play/games/trace-paths/services/trace-path-sampler.js";
 
 const N = GridLocation.NORTH;
 const E = GridLocation.EAST;

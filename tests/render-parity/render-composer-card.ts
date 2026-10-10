@@ -1,14 +1,14 @@
-import { wrapContentInCardFrame } from "$lib/features/choreo-card/services/card-front-frame";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { getImageComposer } from "$lib/shared/render/get-image-composer";
-import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-import { createRenderCanvas } from "$lib/shared/render/services/create-render-canvas";
+import { wrapContentInCardFrame } from "#lib/features/choreo-card/services/card-front-frame.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { getImageComposer } from "#lib/shared/render/get-image-composer.js";
+import type { SequenceExportOptions } from "#lib/shared/render/domain/models/sequence-export-options.js";
+import { createRenderCanvas } from "#lib/shared/render/services/create-render-canvas.js";
 import type { CardParityCase } from "./card-parity-cases";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { registerLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
-import { getUrlQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { registerLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+import { resolveLoopDisplay } from "#lib/features/loop-labeler/services/loop-display-resolver.js";
+import { getUrlQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
 import type { PropLOOPSpecWire } from "@tka/sequence-engine/loop";
 import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
 

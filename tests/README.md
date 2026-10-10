@@ -100,7 +100,7 @@ npm run test:seo:debug     # Run SEO tests in debug mode
 - **Config File**: `vitest.config.ts`
 - **Setup File**: `tests/setup/vitest-setup.ts`
 - **Environment**: jsdom
-- **Aliases**: `$lib` and `$app` for imports
+- **Aliases**: `#lib` and `$app` for imports
 
 ### Playwright Config
 
@@ -116,7 +116,7 @@ Use the configured aliases for clean imports:
 
 ```typescript
 // ✅ Good - Use aliases
-import { MyService } from "$lib/services/MyService";
+import { MyService } from "#lib/services/MyService";
 import { MyComponent } from "$components/MyComponent.svelte";
 
 // ❌ Avoid - Relative paths
@@ -170,7 +170,7 @@ Tests were moved from these locations:
 - Root-level test files → Appropriate category directories
 - `src/lib/test/setup.ts` → `tests/setup/vitest-setup.ts`
 
-All import paths have been updated to use `$lib` and `$app` aliases for consistency.
+All import paths have been updated to use `#lib` and `$app` aliases for consistency.
 
 ## 📊 Test Value Analysis
 

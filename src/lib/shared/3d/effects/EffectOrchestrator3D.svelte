@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getQualityTierDetector } from "$lib/shared/3d/effects/quality/get-quality-tier-detector";
+  import { getQualityTierDetector } from "#lib/shared/3d/effects/quality/get-quality-tier-detector.js";
   import { tryGetAdaptiveQualityContext } from "../context/adaptive-quality-context";
   /**
    * Central coordinator that reads TipEffectMap assignments and routes each
@@ -45,13 +45,13 @@
     PovStripRenderer3D,
     shutterToPovPersistence,
   } from "./poi/pov-strip-renderer-3d";
-  import type { StripPattern } from "$lib/shared/poi/domain/strip-pattern";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  import type { StripPattern } from "#lib/shared/poi/domain/strip-pattern.js";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import {
     resolveEffect,
     type TipEffectMap,
     type EffectType,
-  } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
+  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import { type QualityTier, type TipPositionData3D } from "./types";
   import {
     PROP_COLORS,
@@ -61,10 +61,10 @@
     type PropState3D,
     type PropBuild,
   } from "@austencloud/scene-3d";
-  import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import { resolveTrailColors } from "$lib/shared/animation-engine/domain/resolve-trail-colors";
-  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { resolveTrailColors } from "#lib/shared/animation-engine/domain/resolve-trail-colors.js";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import {
     resolveTrails3D,
     resolveLed3D,
@@ -80,11 +80,11 @@
     resolveAnimal3D,
     resolvePulse3D,
     resolveBloom3D,
-  } from "$lib/shared/effects/translators/webgl3d-translator";
-  import { LedPatternMaterializer } from "$lib/shared/animation-engine/services/led/led-pattern-materializer";
-  import { patternFrameIndex } from "$lib/shared/animation-engine/services/led-sampler";
-  import { getPixel } from "$lib/shared/poi/domain/strip-pattern";
-  import { ledBrightnessToFloat } from "$lib/shared/animation-engine/domain/types/led-types";
+  } from "#lib/shared/effects/translators/webgl3d-translator.js";
+  import { LedPatternMaterializer } from "#lib/shared/animation-engine/services/led/led-pattern-materializer.js";
+  import { patternFrameIndex } from "#lib/shared/animation-engine/services/led-sampler.js";
+  import { getPixel } from "#lib/shared/poi/domain/strip-pattern.js";
+  import { ledBrightnessToFloat } from "#lib/shared/animation-engine/domain/types/led-types.js";
   import { getSceneEffectsContext } from "./scene-effects/scene-effects-context";
   import type { SceneEffectsManager3D } from "./scene-effects/scene-effects-manager-3d";
   import type {

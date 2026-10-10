@@ -12,7 +12,7 @@
     backgroundBuilderState,
     type BackgroundBuilderTab,
   } from "./state/background-builder-state.svelte";
-  import { applyThemeForBackground } from "$lib/shared/settings/utils/background-theme-calculator";
+  import { applyThemeForBackground } from "#lib/shared/settings/utils/background-theme-calculator.js";
   import { BackgroundType } from "@austencloud/backgrounds";
 
   interface Tab {

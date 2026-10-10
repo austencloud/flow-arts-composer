@@ -33,25 +33,25 @@ const TRANSITION_MAPPING = {
   fade: {
     replacement: "fadeStandard or fadeEmphasis",
     import:
-      "import { fadeStandard, fadeEmphasis } from '$lib/shared/transitions/transitions'",
+      "import { fadeStandard, fadeEmphasis } from '#lib/shared/transitions/transitions.js'",
     notes: "fadeStandard for quick fades, fadeEmphasis for important content",
   },
   fly: {
     replacement: "flyUp, flyDown, flyLeft, or flyRight",
     import:
-      "import { flyUp, flyDown, flyLeft, flyRight } from '$lib/shared/transitions/transitions'",
+      "import { flyUp, flyDown, flyLeft, flyRight } from '#lib/shared/transitions/transitions.js'",
     notes:
       "Choose based on direction; uses consistent DURATION and SLIDE_DISTANCE",
   },
   slide: {
     replacement: "flyUp or flyDown with custom params",
-    import: "import { flyUp } from '$lib/shared/transitions/transitions'",
+    import: "import { flyUp } from '#lib/shared/transitions/transitions.js'",
     notes: "slide can be replaced with fly using appropriate y values",
   },
   scale: {
     replacement: "scalePop or scaleSpring",
     import:
-      "import { scalePop, scaleSpring } from '$lib/shared/transitions/transitions'",
+      "import { scalePop, scaleSpring } from '#lib/shared/transitions/transitions.js'",
     notes: "scalePop for modals/cards, scaleSpring for bouncy interactions",
   },
   blur: {
@@ -148,7 +148,7 @@ function analyzeFile(filePath) {
 
   // Check if file also imports from centralized transitions
   const usesCentralized = content.includes(
-    "$lib/shared/transitions/transitions"
+    "#lib/shared/transitions/transitions.js"
   );
 
   return {
@@ -276,7 +276,7 @@ function main() {
   console.log(`
 1. Replace imports:
    - import { fade } from 'svelte/transition'
-   + import { fadeStandard } from '$lib/shared/transitions/transitions'
+   + import { fadeStandard } from '#lib/shared/transitions/transitions.js'
 
 2. Update usage:
    - <div in:fade={{ duration: 200 }}>
@@ -286,7 +286,7 @@ function main() {
    <div in:fadeStandard={{ duration: DURATION.emphasis }}>
 
 4. Import duration constants if needed:
-   import { DURATION, fadeStandard } from '$lib/shared/transitions/transitions'
+   import { DURATION, fadeStandard } from '#lib/shared/transitions/transitions.js'
 `);
 }
 

@@ -4,11 +4,11 @@ import {
   POST_QR_URL_RULE,
   findItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   applyPostProjectOps,
   type PostProjectOp,
-} from "$lib/shared/media-composition/domain/post-project-ops";
+} from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { NOW, card, project, video } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };

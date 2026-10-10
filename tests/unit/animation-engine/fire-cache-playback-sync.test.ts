@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   hasFireCachePlaybackDiscontinuity,
   isConfirmedFireCacheLoop,
-} from "$lib/shared/animation-engine/services/animation-render-loop";
+} from "#lib/shared/animation-engine/services/animation-render-loop.js";
 
 describe("fire frame-cache playback synchronization", () => {
   it("accepts only a known end-to-start transition as a cache boundary", () => {

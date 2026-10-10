@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createRateTracker } from "$lib/features/lab/pronunciation-recorder/domain/read-plausibility";
+import { createRateTracker } from "#lib/features/lab/pronunciation-recorder/domain/read-plausibility.js";
 
 describe("createRateTracker", () => {
   it("passes any plausible pace until it has seen enough reads to have a rate", () => {

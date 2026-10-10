@@ -7,16 +7,16 @@ import {
   isFeatureVideoMediaUrl,
   isFeatureVideoSlug,
   rehomeFeatureMediaUrls,
-} from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   takeFileKey,
   type PostTake,
-} from "$lib/shared/media-composition/domain/post-plan";
+} from "#lib/shared/media-composition/domain/post-plan.js";
 import {
   createEmptyPostProject,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { createTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { createTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
 
 const NOW = 1_780_000_000_000;
 const SEQUENCE = "DCK\u03a8-";

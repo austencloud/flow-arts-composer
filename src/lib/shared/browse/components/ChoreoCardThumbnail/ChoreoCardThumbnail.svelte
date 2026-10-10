@@ -17,38 +17,38 @@ Variation support:
 
 -->
 <script lang="ts">
-  import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
+  import { resolveViewingProps } from "#lib/shared/foundation/services/prop-viewing.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import ContextMenu from "#lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
     ContextMenuState,
-  } from "$lib/shared/components/context-menu/context-menu-types";
-  import { buildCardMenuSection } from "$lib/shared/choreo-card/services/card-menu-section";
-  import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  } from "#lib/shared/components/context-menu/context-menu-types.js";
+  import { buildCardMenuSection } from "#lib/shared/choreo-card/services/card-menu-section.js";
+  import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { onDestroy, tick, untrack } from "svelte";
   import SheetMorphOverlay from "./SheetMorphOverlay.svelte";
   import {
     computeSheetRegionMap,
     type SheetRegionMap,
-  } from "$lib/shared/browse/services/sheet-region-map";
-  import { galleryStepCount } from "$lib/shared/browse/services/gallery-render-input";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { claimViewTransitionName } from "$lib/shared/transitions/view-transition-name-registry";
-  import { ignoreViewTransitionSkip } from "$lib/shared/transitions/named-route-morph-state.svelte";
-  import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
+  } from "#lib/shared/browse/services/sheet-region-map.js";
+  import { galleryStepCount } from "#lib/shared/browse/services/gallery-render-input.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { claimViewTransitionName } from "#lib/shared/transitions/view-transition-name-registry.js";
+  import { ignoreViewTransitionSkip } from "#lib/shared/transitions/named-route-morph-state.svelte.js";
+  import PropAwareThumbnail from "#lib/shared/browse/components/PropAwareThumbnail.svelte";
   import VariationPill from "./VariationPill.svelte";
   import PreviewPlayChip from "./PreviewPlayChip.svelte";
   import SyncStatusBadge from "./SyncStatusBadge.svelte";
-  import type { authState as AuthStateModule } from "$lib/shared/auth/state/auth-state.svelte";
-  import { notifyLibraryMutated } from "$lib/shared/library/library-events";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import { cardHoverPreview } from "$lib/shared/browse/state/card-hover-preview-state.svelte";
-  import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
-  import { t, tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { authState as AuthStateModule } from "#lib/shared/auth/state/auth-state.svelte.js";
+  import { notifyLibraryMutated } from "#lib/shared/library/library-events.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import { cardHoverPreview } from "#lib/shared/browse/state/card-hover-preview-state.svelte.js";
+  import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+  import { t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let thumbnailRef = $state<ReturnType<typeof PropAwareThumbnail> | null>(null);
 
@@ -468,11 +468,11 @@ Variation support:
     try {
       if (isOwner || isPersonalLibrary) {
         const { getLibraryRepository } =
-          await import("$lib/shared/library/get-library-repository");
+          await import("#lib/shared/library/get-library-repository.js");
         await getLibraryRepository().deleteSequence(seq.id);
       } else {
         const { adminDeleteSequence } =
-          await import("$lib/shared/library/services/admin-sequence-actions");
+          await import("#lib/shared/library/services/admin-sequence-actions.js");
         const res = await adminDeleteSequence(seq.ownerId ?? "", seq.id);
         // The callable resolves even when it deleted nothing; treat that as a
         // failure so we don't show success + drop the card for a no-op delete.
@@ -495,8 +495,8 @@ Variation support:
     const seq = displayedSequence;
     closeContextMenu();
     void Promise.all([
-      import("$lib/shared/inbox/state/send-sequence-state.svelte"),
-      import("$lib/shared/share/get-sharer"),
+      import("#lib/shared/inbox/state/send-sequence-state.svelte.js"),
+      import("#lib/shared/share/get-sharer.js"),
     ]).then(([{ openSendSequenceSheetWithCard }, { getSharer }]) =>
       openSendSequenceSheetWithCard(seq, (target) =>
         getSharer().getCardImageBlob(target, { darkMode: true })
@@ -535,7 +535,7 @@ Variation support:
         icon: "fa-folder-plus",
         action() {
           closeContextMenu();
-          void import("$lib/features/library/state/collection-picker-state.svelte").then(
+          void import("#lib/features/library/state/collection-picker-state.svelte.js").then(
             ({ openCollectionPicker }) =>
               openCollectionPicker({
                 sequenceId: seq.id,
@@ -586,7 +586,7 @@ Variation support:
   let authApi = $state<typeof AuthStateModule | null>(null);
   function loadAuthForMenu(): void {
     if (authApi) return;
-    import("$lib/shared/auth/state/auth-state.svelte")
+    import("#lib/shared/auth/state/auth-state.svelte.js")
       .then((module) => (authApi = module.authState))
       .catch((error) =>
         console.warn("[ChoreoCardThumbnail] Could not load auth state:", error)
@@ -685,7 +685,7 @@ Variation support:
     />
 
     {#if previewActive}
-      {#await import("$lib/shared/browse/components/hover-preview/CardHoverPreviewLayer.svelte") then mod}
+      {#await import("#lib/shared/browse/components/hover-preview/CardHoverPreviewLayer.svelte") then mod}
         <mod.default
           sequence={displayedSequence}
           {collectionPropType}

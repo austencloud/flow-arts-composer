@@ -2,9 +2,9 @@
  * The Generate preview's rolls and wave (GenerateScene.svelte). Pure, so
  * tests check them without drawing.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { DEFAULT_ANIMATION_TIMING } from "$lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { DEFAULT_ANIMATION_TIMING } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models.js";
 import { DEMO_SEQUENCE, DEMO_STEP_START } from "./method-preview-demo";
 import { slotWaveBand } from "./method-preview-layout";
 

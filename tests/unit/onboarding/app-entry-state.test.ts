@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // in a unit run. The state module dynamic-imports the first two; with a
 // missing doc + no effectiveUserId, syncToCloud is a no-op and syncFromCloud
 // just resolves the gate. Mirrors tests/unit/onboarding/generate-tour-state.test.ts.
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 
@@ -39,7 +39,7 @@ const { mockAuthState } = vi.hoisted(() => ({
     },
   },
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: mockAuthState,
 }));
 
@@ -49,7 +49,7 @@ vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
 const { flags } = vi.hoisted(() => ({
   flags: { AUTO_TOURS_ENABLED: false, CREATE_TUTORIAL_ENABLED: true },
 }));
-vi.mock("$lib/shared/onboarding/domain/onboarding-flags", () => ({
+vi.mock("#lib/shared/onboarding/domain/onboarding-flags.js", () => ({
   get AUTO_TOURS_ENABLED() {
     return flags.AUTO_TOURS_ENABLED;
   },
@@ -61,7 +61,7 @@ vi.mock("$lib/shared/onboarding/domain/onboarding-flags", () => ({
 const { captureEventSpy } = vi.hoisted(() => ({
   captureEventSpy: vi.fn(),
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureWhenReady: captureEventSpy,
 }));
 
@@ -71,7 +71,7 @@ const { markAppCompletedSpy, markAppSkippedSpy, stageAppTerminalStateSpy } =
     markAppSkippedSpy: vi.fn(async () => {}),
     stageAppTerminalStateSpy: vi.fn(async () => {}),
   }));
-vi.mock("$lib/shared/onboarding/get-onboarding-persister", () => ({
+vi.mock("#lib/shared/onboarding/get-onboarding-persister.js", () => ({
   getOnboardingPersister: () => ({
     markAppCompleted: markAppCompletedSpy,
     markAppSkipped: markAppSkippedSpy,
@@ -80,14 +80,14 @@ vi.mock("$lib/shared/onboarding/get-onboarding-persister", () => ({
 }));
 
 type AppEntry =
-  typeof import("$lib/shared/onboarding/state/app-entry-state.svelte").appEntryState;
+  typeof import("#lib/shared/onboarding/state/app-entry-state.svelte.js").appEntryState;
 
 /** Re-import the singleton with a clean module + localStorage each time so we
  *  can exercise its construction-time seed derivation. */
 async function freshState(): Promise<AppEntry> {
   vi.resetModules();
   const mod =
-    await import("$lib/shared/onboarding/state/app-entry-state.svelte");
+    await import("#lib/shared/onboarding/state/app-entry-state.svelte.js");
   return mod.appEntryState;
 }
 

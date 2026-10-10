@@ -2,48 +2,48 @@
      viewer. Rendering stays asynchronous, and fixed preview/status geometry
      prevents state changes from moving the sheet. -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, untrack, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import ShareSheetFrame from "./ShareSheetFrame.svelte";
   import {
     getExportOptionsState,
     type VideoFps,
     type VideoResolution,
     type VideoQuality,
-  } from "$lib/shared/animation-panel/state/export-options-state.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import InstagramIcon from "$lib/shared/auth/components/icons/InstagramIcon.svelte";
-  import FacebookIcon from "$lib/shared/auth/components/icons/FacebookIcon.svelte";
-  import InstagramPostReview from "$lib/shared/share/components/instagram/InstagramPostReview.svelte";
-  import { createPostDeliveryState } from "$lib/shared/share/state/post-delivery-state.svelte";
-  import { setPostDeliveryContext } from "$lib/shared/share/context/post-delivery-context";
-  import { hasDecodableAudioTrack } from "$lib/shared/media-composition/services/media-audio-inspector";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-  import { getVideoUploader } from "$lib/shared/share/get-video-uploader";
-  import { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
-  import { getShortCodeManager } from "$lib/shared/qr/get-short-code-manager";
-  import { getCaptionPresetManager } from "$lib/shared/share/state/caption-presets.svelte";
-  import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
-  import LiveExportCard from "$lib/shared/share/components/LiveExportCard.svelte";
-  import { isCardLayoutAutomatic } from "$lib/shared/share/services/card-render-options";
-  import { createPostShareDraftState } from "$lib/shared/share/state/post-share-draft-state.svelte";
-  import ExportImagePanel from "$lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import InstagramIcon from "#lib/shared/auth/components/icons/InstagramIcon.svelte";
+  import FacebookIcon from "#lib/shared/auth/components/icons/FacebookIcon.svelte";
+  import InstagramPostReview from "#lib/shared/share/components/instagram/InstagramPostReview.svelte";
+  import { createPostDeliveryState } from "#lib/shared/share/state/post-delivery-state.svelte.js";
+  import { setPostDeliveryContext } from "#lib/shared/share/context/post-delivery-context.js";
+  import { hasDecodableAudioTrack } from "#lib/shared/media-composition/services/media-audio-inspector.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { ResolvedAutoLayout } from "#lib/shared/render/services/container-aware-layout.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+  import { getVideoUploader } from "#lib/shared/share/get-video-uploader.js";
+  import { getQRCodeGenerator } from "#lib/shared/qr/get-qr-code-generator.js";
+  import { getShortCodeManager } from "#lib/shared/qr/get-short-code-manager.js";
+  import { getCaptionPresetManager } from "#lib/shared/share/state/caption-presets.svelte.js";
+  import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
+  import LiveExportCard from "#lib/shared/share/components/LiveExportCard.svelte";
+  import { isCardLayoutAutomatic } from "#lib/shared/share/services/card-render-options.js";
+  import { createPostShareDraftState } from "#lib/shared/share/state/post-share-draft-state.svelte.js";
+  import ExportImagePanel from "#lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     cardPresentationFromFooterSettings,
     type CardPresentation,
-  } from "$lib/shared/share/domain/models/card-presentation";
-  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { VIEWER_STATE_PARAM_NAMES } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
+  } from "#lib/shared/share/domain/models/card-presentation.js";
+  import { getImageCompositionManager } from "#lib/shared/share/state/image-composition-state.svelte.js";
+  import { VIEWER_STATE_PARAM_NAMES } from "#lib/shared/sequence-viewer/services/viewer-url-state-codec.js";
   import {
     buildArtifactFilename,
     buildPostLink,
@@ -58,21 +58,21 @@
     type HandoffDestinationId,
     type HandoffResult,
     type ShareArtifact,
-  } from "$lib/shared/share/services/post-handoff";
-  import { getUser } from "$lib/shared/auth/state/auth-state.svelte";
+  } from "#lib/shared/share/services/post-handoff.js";
+  import { getUser } from "#lib/shared/auth/state/auth-state.svelte.js";
   import {
     planFileRequest,
     pendingVideoDownloadOutcome,
     videoDownloadSettingsKey,
-  } from "$lib/shared/share/domain/video-download-intent";
-  import { pendingCardDownloadOutcome } from "$lib/shared/share/domain/card-download-intent";
+  } from "#lib/shared/share/domain/video-download-intent.js";
+  import { pendingCardDownloadOutcome } from "#lib/shared/share/domain/card-download-intent.js";
   import {
     VIDEO_OPENER_OPTIONS,
     openerAddsHold,
     openerCoverOffsetMs,
     type VideoOpener,
     type VideoRenderRequest,
-  } from "$lib/shared/share/domain/video-opener";
+  } from "#lib/shared/share/domain/video-opener.js";
   import {
     connectMetaAccount,
     disconnectMetaAccount,
@@ -85,7 +85,7 @@
     MetaPublishClientError,
     type MetaPublishStatus,
     type MetaPublishTarget,
-  } from "$lib/shared/share/services/meta-publish";
+  } from "#lib/shared/share/services/meta-publish.js";
 
   interface Props {
     isOpen: boolean;

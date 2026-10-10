@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import ContactLabPrototype from "$lib/features/contact-lab/components/ContactLabPrototype.svelte";
+  import ContactLabPrototype from "#lib/features/contact-lab/components/ContactLabPrototype.svelte";
   import {
     buildContactPalmspinProfile,
     type ContactPalmspinProfile,
     type ContactTranslationIssue,
-  } from "$lib/features/contact-lab/domain/contact-motion-profile";
-  import { loadContactProofSequence } from "$lib/features/contact-lab/domain/contact-proof-sequence";
-  import { getErrorHandler } from "$lib/shared/application/get-error-handler";
+  } from "#lib/features/contact-lab/domain/contact-motion-profile.js";
+  import { loadContactProofSequence } from "#lib/features/contact-lab/domain/contact-proof-sequence.js";
+  import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
 
   let profile = $state<ContactPalmspinProfile | null>(null);
   let translationIssues = $state<readonly ContactTranslationIssue[]>([]);

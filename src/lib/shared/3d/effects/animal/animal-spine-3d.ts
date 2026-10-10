@@ -1,4 +1,4 @@
-import type { AnimalIntent } from "$lib/shared/effects/domain/effects-config";
+import type { AnimalIntent } from "#lib/shared/effects/domain/effects-config.js";
 
 const EPSILON = 1e-8;
 const MOTION_SPEED_START = 0.08;

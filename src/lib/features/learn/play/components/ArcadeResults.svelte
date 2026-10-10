@@ -13,12 +13,12 @@ heavier 400ms beat on the last one → best line → stats → actions.
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { Spring } from "svelte/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
-  import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
-  import { analyzeErrors } from "$lib/features/learn/services/gap-detector";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { reducedMotion } from "#lib/shared/transitions/motion.js";
+  import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";
+  import { analyzeErrors } from "#lib/features/learn/services/gap-detector.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type {
     ArcadeSessionResult,
     GameProgress,

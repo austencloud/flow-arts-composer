@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   isMetaOAuthProxyPath,
   proxyMetaOAuthRequest,
-} from "$lib/server/auth/meta-oauth-proxy";
+} from "#lib/server/auth/meta-oauth-proxy.js";
 
 const FUNCTION_ORIGIN =
   "https://us-central1-the-kinetic-alphabet.cloudfunctions.net";

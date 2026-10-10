@@ -11,8 +11,8 @@
  * behaviour, and nothing here edits production code.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
 import { fakeEvent, hashForIndex } from "./helpers/fake-request-event";
 
 const CALLER_IP = "198.51.100.44";
@@ -105,7 +105,7 @@ describe("in-memory bucket registry growth", () => {
   it("retains one entry per distinct path seen inside the cleanup interval", async () => {
     vi.resetModules();
     const { checkRateLimit } =
-      await import("$lib/server/security/rate-limiter");
+      await import("#lib/server/security/rate-limiter.js");
 
     // checkRateLimit's Map is private, so measure the observable consequence:
     // every distinct identifier is still allowed on its first call, which is

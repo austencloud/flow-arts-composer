@@ -25,7 +25,7 @@
  * LaunchpadTile's own LazyMount branches.
  */
 
-import type { LaunchpadTileDef } from "$lib/shared/landing/components/launchpad/launchpad-tiles";
+import type { LaunchpadTileDef } from "#lib/shared/landing/components/launchpad/launchpad-tiles.js";
 
 /** The five /composer wing-band colors (see (public)/composer/+page.svelte). */
 const WING = {

@@ -6,7 +6,7 @@
  * tag panel (context menu) positioning, and long-press detection.
  */
 
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 import type { ScreenshotTagController } from "../../../services/screenshot-tag-controller";
 import type { GalleryItem } from "../../../services/types";
 import type { MediaTag, TagColor } from "@austencloud/media-tagging-types";

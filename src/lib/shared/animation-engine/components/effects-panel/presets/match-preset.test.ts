@@ -15,7 +15,7 @@ import {
 } from "./match-preset";
 import { BLOOM_PRESET_GROUP, BLOOM_PRESETS } from "./bloom-presets";
 import { BUBBLES_PRESET_GROUP } from "./bubbles-presets";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 const SUPERNOVA = BLOOM_PRESETS.find((p) => p.id === "bloom-supernova")!;
 const COMET = BLOOM_PRESETS.find((p) => p.id === "bloom-comet")!;

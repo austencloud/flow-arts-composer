@@ -10,8 +10,8 @@
  * (straight on a diamond grid, diagonal on a box grid): a join along any other
  * line never lands one grid's points on the other's.
  */
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import type { ContextMenuItem } from "$lib/shared/components/context-menu/context-menu-types";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { ContextMenuItem } from "#lib/shared/components/context-menu/context-menu-types.js";
 import type { GridJoin } from "@tka/tka-types";
 import type { GridJoinController } from "./grid-join-controller";
 import {

@@ -5,8 +5,8 @@
   Scoped to /shop; never mounted in app-wide chrome.
 -->
 <script lang="ts">
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import DrawerHeader from "$lib/shared/foundation/ui/DrawerHeader.svelte";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import DrawerHeader from "#lib/shared/foundation/ui/DrawerHeader.svelte";
   import type { ShopCart } from "../state/shop-cart.svelte";
   import { getCartCheckoutCreator } from "../get-cart-checkout-creator";
   import { trackCheckoutStarted } from "../analytics/shop-funnel";

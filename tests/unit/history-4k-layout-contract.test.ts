@@ -11,7 +11,7 @@ describe("notation 4K layout lab artifacts", () => {
       "src/routes/test/notation-4k/_components/NotationRosetta.svelte"
     );
     expect(source).toContain(
-      'import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte"'
+      'import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte"'
     );
     expect(source).toContain("<PictographContainer");
     expect(source).toContain('aria-label="A two by two grid');
@@ -33,10 +33,10 @@ describe("notation 4K layout lab artifacts", () => {
       "src/routes/test/notation-4k/_components/NotationSequenceStage.svelte"
     );
     expect(source).toContain(
-      'import SequenceHeroDemo from "$lib/shared/landing/components/SequenceHeroDemo.svelte"'
+      'import SequenceHeroDemo from "#lib/shared/landing/components/SequenceHeroDemo.svelte"'
     );
     expect(source).toContain(
-      'import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte"'
+      'import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte"'
     );
     expect(source.match(/<SequenceHeroDemo\b/g)).toHaveLength(1);
     expect(source).toContain("{#each sequence.steps as step, index (step.id)}");
@@ -60,10 +60,10 @@ describe("notation 4K layout lab artifacts", () => {
   it("uses native chrome and controls without duplicating the study", () => {
     const source = read("src/routes/test/notation-4k/+page.svelte");
     expect(source).toContain(
-      'import MarketingChrome from "$lib/shared/landing/components/MarketingChrome.svelte"'
+      'import MarketingChrome from "#lib/shared/landing/components/MarketingChrome.svelte"'
     );
     expect(source).toContain(
-      'import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte"'
+      'import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte"'
     );
     expect(source.match(/<NotationLayoutStudy\b/g)).toHaveLength(1);
     expect(source).toContain('let layoutMode = $state<LayoutMode>("atlas")');

@@ -10,7 +10,7 @@ import {
   getFirestoreInstance,
   getStorageInstance,
   getAuthSync,
-} from "$lib/shared/auth/firebase";
+} from "#lib/shared/auth/firebase.js";
 
 function getUserId(): string {
   const auth = getAuthSync();

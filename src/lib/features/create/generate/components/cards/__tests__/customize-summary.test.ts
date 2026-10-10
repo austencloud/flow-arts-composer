@@ -10,10 +10,10 @@ import {
 import {
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { StartEndOptions } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
 import {
   ALL_DIAMOND_PLACEMENTS,
   CLASSIC_DIAMOND_PLACEMENTS,

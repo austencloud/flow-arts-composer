@@ -1,4 +1,4 @@
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import type { INavigationVisitPersister } from "./services/contracts/INavigationVisitPersister";
 import { NavigationVisitPersister } from "./services/implementations/NavigationVisitPersister";
 

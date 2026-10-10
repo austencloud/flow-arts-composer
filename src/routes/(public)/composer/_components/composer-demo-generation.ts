@@ -1,14 +1,14 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /** Both public demos draw from the same prepared 16-step LOOP recipe. */
 export async function generateComposerDemoSequence(): Promise<SequenceData> {
   const [{ generationOrchestrator }, models, circular, grid, prop] =
     await Promise.all([
-      import("$lib/shared/create/services/generation-orchestrator"),
-      import("$lib/shared/foundation/domain/models/generation/generate-models"),
-      import("$lib/shared/foundation/domain/models/generation/circular-models"),
-      import("$lib/shared/pictograph/grid/domain/enums/grid-enums"),
-      import("$lib/shared/pictograph/prop/domain/enums/prop-type"),
+      import("#lib/shared/create/services/generation-orchestrator.js"),
+      import("#lib/shared/foundation/domain/models/generation/generate-models.js"),
+      import("#lib/shared/foundation/domain/models/generation/circular-models.js"),
+      import("#lib/shared/pictograph/grid/domain/enums/grid-enums.js"),
+      import("#lib/shared/pictograph/prop/domain/enums/prop-type.js"),
     ]);
   const sequence = await generationOrchestrator.generateSequence({
     mode: models.GenerationMode.CIRCULAR,

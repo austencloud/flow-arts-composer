@@ -1,7 +1,7 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import Seo from "$lib/shared/components/Seo.svelte";
-  import "$lib/shared/landing/styles/public-editorial.css";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import Seo from "#lib/shared/components/Seo.svelte";
+  import "#lib/shared/landing/styles/public-editorial.css";
 
   const TITLE = "Poi Notation | Can The Kinetic Alphabet Write Poi?";
   const DESCRIPTION =

@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-render-hydrator";
-import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
-import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
-import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+import { hydrateSequence } from "#lib/features/choreo-card/services/sequence-render-hydrator.js";
+import { TnDMode } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
+import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import {
   adjustModeLoop,
   adjustModeLoops,
@@ -19,7 +19,7 @@ const records = JSON.parse(
   readFileSync("static/data/hero/tnd-base-words.json", "utf8")
 );
 const sequences = records.map(hydrateSequence);
-vi.mock("$lib/features/browse/gallery-home/canonical-tnd-pool", () => ({
+vi.mock("#lib/features/browse/gallery-home/canonical-tnd-pool.js", () => ({
   loadCanonicalTnDBaseSequences: async () => sequences,
 }));
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { FeedbackUploadProgress } from "$lib/shared/feedback/domain/models/feedback-models";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { FeedbackUploadProgress } from "#lib/shared/feedback/domain/models/feedback-models.js";
 
   const { isSubmitting, disabled, uploadProgress = null } = $props<{
     isSubmitting: boolean;

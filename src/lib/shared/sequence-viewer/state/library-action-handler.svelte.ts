@@ -1,34 +1,34 @@
 import {
   captureActivePropConfig,
   type ResolvedPropConfig,
-} from "$lib/shared/foundation/services/recorded-prop-intent";
+} from "#lib/shared/foundation/services/recorded-prop-intent.js";
 import {
   isFavorite as checkIsFavorite,
   toggleFavorite as doToggleFavorite,
-} from "$lib/shared/library/services/collection-manager";
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-import { getVisualSequenceSaveCoordinator } from "$lib/shared/library/get-visual-sequence-save-coordinator";
-import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
-import type { LibrarySequence } from "$lib/shared/library/domain/models/library-sequence";
-import { computeHash } from "$lib/shared/library/services/sequence-content-hasher";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+} from "#lib/shared/library/services/collection-manager.js";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+import { getVisualSequenceSaveCoordinator } from "#lib/shared/library/get-visual-sequence-save-coordinator.js";
+import type { LibraryRepository } from "#lib/shared/library/services/library-repository.js";
+import type { LibrarySequence } from "#lib/shared/library/domain/models/library-sequence.js";
+import { computeHash } from "#lib/shared/library/services/sequence-content-hasher.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
 import {
   normalizeCardPresentation,
   type CardPresentation,
-} from "$lib/shared/share/domain/models/card-presentation";
+} from "#lib/shared/share/domain/models/card-presentation.js";
 import {
   capturePresentation,
   resolvePresentation,
   summarizePresentation,
   type PresentationSource,
   type PresentationSummary,
-} from "$lib/shared/foundation/services/presentation-intent";
-import type { PresentationIntent } from "$lib/shared/foundation/domain/models/presentation-intent";
+} from "#lib/shared/foundation/services/presentation-intent.js";
+import type { PresentationIntent } from "#lib/shared/foundation/domain/models/presentation-intent.js";
 
 export interface LibraryActionHandlerDeps {
   getSequence: () => SequenceData | null;

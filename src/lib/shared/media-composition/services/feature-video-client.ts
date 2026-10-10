@@ -3,24 +3,24 @@ import {
   FeatureVideoFileSchema,
   type FeatureVideoFile,
   type FeatureVideoSummary,
-} from "$lib/shared/media-composition/domain/feature-video";
+} from "#lib/shared/media-composition/domain/feature-video.js";
 import {
   featureVideoExportUrl,
   isSavedFeatureExport,
   type SavedFeatureExport,
-} from "$lib/shared/media-composition/domain/feature-video-export";
+} from "#lib/shared/media-composition/domain/feature-video-export.js";
 import {
   PostProjectSchema,
   createEmptyPostProject,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   createTakeTiming,
   type TakeTiming,
-} from "$lib/shared/media-composition/domain/take-timing";
-import { createPostEditorHistoryStorage } from "$lib/shared/media-composition/services/post-editor-history-store";
-import type { PostEditorStore } from "$lib/shared/media-composition/services/post-editor-store";
-import { deepEqual } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
+} from "#lib/shared/media-composition/domain/take-timing.js";
+import { createPostEditorHistoryStorage } from "#lib/shared/media-composition/services/post-editor-history-store.js";
+import type { PostEditorStore } from "#lib/shared/media-composition/services/post-editor-store.js";
+import { deepEqual } from "#lib/shared/sequence-viewer/services/viewer-url-state-codec.js";
 
 /**
  * The Post page's side of a feature video: list and load them from the dev

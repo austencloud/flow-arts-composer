@@ -1,9 +1,9 @@
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
-import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
-import { takeDisplayLabel } from "$lib/shared/media-composition/domain/post-take-labels";
+import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
+import { takeRole } from "#lib/shared/media-composition/domain/post-plan-compiler.js";
+import { takeDisplayLabel } from "#lib/shared/media-composition/domain/post-take-labels.js";
 import {
   POST_FRAME_RATE,
   POST_MIN_ITEM_SECONDS,
@@ -16,7 +16,7 @@ import {
   type PostAnimationItem,
   type PostItem,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   addOverlayItem,
   addTitlesItem,
@@ -36,16 +36,16 @@ import {
   trimItem,
   type EditContext,
   type NewOverlaySpec,
-} from "$lib/shared/media-composition/domain/post-project-edits";
+} from "#lib/shared/media-composition/domain/post-project-edits.js";
 import {
   applyTutorialTemplate,
   applyTutorialPreset,
   type TutorialLabels,
-} from "$lib/shared/media-composition/domain/post-project-looks";
+} from "#lib/shared/media-composition/domain/post-project-looks.js";
 import {
   compilePostProject,
   type CompiledPostProject,
-} from "$lib/shared/media-composition/domain/post-project-compiler";
+} from "#lib/shared/media-composition/domain/post-project-compiler.js";
 import {
   confirmTakeTiming,
   resolveTakeTiming,
@@ -57,7 +57,7 @@ import {
   type ResolvedTakeTiming,
   type TakeTiming,
   type TakeTimingStatus,
-} from "$lib/shared/media-composition/domain/take-timing";
+} from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   evaluatePresetLayers,
   evaluateRegionRects,
@@ -65,23 +65,23 @@ import {
   type EvaluatedFrameLayer,
   type RegionRect,
   type TakeClock,
-} from "$lib/shared/media-composition/services/frame-evaluator";
+} from "#lib/shared/media-composition/services/frame-evaluator.js";
 import {
   projectDraftRecord,
   resolvePostStudioDraft,
-} from "$lib/shared/media-composition/services/post-project-backup";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { bridgeLockedChange } from "$lib/shared/media-composition/domain/post-project-bridge-guard";
+} from "#lib/shared/media-composition/services/post-project-backup.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
+import { bridgeLockedChange } from "#lib/shared/media-composition/domain/post-project-bridge-guard.js";
 import {
   catalogTakeKey,
   localTakeKey,
-} from "$lib/shared/media-composition/services/take-timing-store";
-import type { PostTimingEffect } from "$lib/shared/media-composition/services/post-editor-history-store";
+} from "#lib/shared/media-composition/services/take-timing-store.js";
+import type { PostTimingEffect } from "#lib/shared/media-composition/services/post-editor-history-store.js";
 import {
   devicePostEditorStore,
   type PostEditorStore,
-} from "$lib/shared/media-composition/services/post-editor-store";
-import { deepEqual } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
+} from "#lib/shared/media-composition/services/post-editor-store.js";
+import { deepEqual } from "#lib/shared/sequence-viewer/services/viewer-url-state-codec.js";
 
 /**
  * The timeline editor's working state: the project with its undo history,

@@ -1,16 +1,16 @@
 import type {
   PostAnimationItem,
   PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   itemEnd,
   mainItems,
   POST_TIME_EPSILON,
   timingVideoAt,
-} from "$lib/shared/media-composition/domain/post-project";
-import type { ResolvedTakeTiming } from "$lib/shared/media-composition/domain/take-timing";
-import type { TakeTiming } from "$lib/shared/media-composition/domain/take-timing";
-import { postSecondsOfKeyframe } from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import type { ResolvedTakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
+import type { TakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
+import { postSecondsOfKeyframe } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 
 export interface LayerTimingPart {
   clipId: string;

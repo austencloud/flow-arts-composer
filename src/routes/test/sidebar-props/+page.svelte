@@ -1,23 +1,23 @@
 <script lang="ts">
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
-  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
-  import LabeledColorPairPicker from "$lib/shared/ui/components/LabeledColorPairPicker.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
+  import PropCompositionPreview from "#lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import LabeledColorPairPicker from "#lib/shared/ui/components/LabeledColorPairPicker.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     DEFAULT_FAN_APPEARANCE,
     fanBuildPreviewOptions,
     isFanPropType,
     type FanAppearance,
-  } from "$lib/shared/pictograph/prop/domain/fan-appearance";
+  } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
   import {
     getAllPropTypes,
     getBasePropType,
     getPropTypeDisplayInfo,
     isPropActive,
-  } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { isBuugengFamilyProp } from "$lib/shared/pictograph/prop/domain/enums/prop-classification";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { isBuugengFamilyProp } from "#lib/shared/pictograph/prop/domain/enums/prop-classification.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
   let look = $state<PropLook>("pictograph");
   let chirality = $state("normal");

@@ -19,9 +19,12 @@ Usage:
 -->
 
 <script lang="ts">
-  import { motionDuration, opaqueFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import {
+    motionDuration,
+    opaqueFade,
+  } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import type { PreparedPictographData } from "../domain/models/prepared-pictograph-data";
   import {
     isVisibleMotion,
@@ -39,7 +42,7 @@ Usage:
   import TurnsColumn from "../../tka-glyph/components/TurnsColumn.svelte";
   import DirectionDot from "../../tka-glyph/components/DirectionDot.svelte";
   import SkewBraces from "../../tka-glyph/components/SkewBraces.svelte";
-  import { isSkewedFrameBeat } from "$lib/shared/foundation/services/skewed-frame";
+  import { isSkewedFrameBeat } from "#lib/shared/foundation/services/skewed-frame.js";
   import { parseTurnsTuple } from "../../tka-glyph/utils/turn-tuple-parser";
   import { getTurnsColumnRightExtent } from "../../tka-glyph/utils/turn-position-calculator";
   import ReversalIndicators from "./ReversalIndicators.svelte";
@@ -49,9 +52,9 @@ Usage:
   import DurationGlyph from "./DurationGlyph.svelte";
   import PathShapeGlyph from "./PathShapeGlyph.svelte";
   import { describePictograph } from "../domain/utils/pictograph-description";
-  import { deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
+  import { deriveGridMode } from "#lib/shared/pictograph/grid/services/grid-mode-deriver.js";
   import { turnsTupleGenerator } from "../../arrow/positioning/placement/services/turns-tuple-generator";
-  import type { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
+  import type { TurnsTupleGenerator } from "#lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator.js";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import {
     calculateHandColorKeyLayout,
@@ -67,16 +70,16 @@ Usage:
   import {
     followJoinSlide,
     joinSlideDrawingKey,
-  } from "$lib/shared/grid-join/join-slide.svelte";
-  import { gridJoinLayerAlphas } from "$lib/shared/grid-join/grid-join-tween";
-  import { getJoinedActiveHandPoints } from "$lib/shared/render/services/layer-key-deriver";
+  } from "#lib/shared/grid-join/join-slide.svelte.js";
+  import { gridJoinLayerAlphas } from "#lib/shared/grid-join/grid-join-tween.js";
+  import { getJoinedActiveHandPoints } from "#lib/shared/render/services/layer-key-deriver.js";
   import {
     type ElementalType,
     HandSide,
     type HandSide as HandSideValue,
   } from "../domain/enums/pictograph-enums";
   import { deriveTnDFromPictograph } from "../domain/utils/tnd-deriver";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { elementalDisplayLabel } from "./elemental-display-label";
 
   // Props - all explicit, no global state dependencies

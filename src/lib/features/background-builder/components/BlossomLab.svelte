@@ -10,7 +10,7 @@
   import type {
     BlossomDensityPreset,
     BlossomWindPreset,
-  } from "$lib/shared/background-builder/domain/lab-settings-types";
+  } from "#lib/shared/background-builder/domain/lab-settings-types.js";
 
   // Background system
   let backgroundSystem: BlossomBackgroundSystem | null = $state(null);

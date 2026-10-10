@@ -1,25 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandSide,
   MotionType,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 const imageCacheMocks = vi.hoisted(() => ({
   getImageFromUrl: vi.fn(),
 }));
 
-vi.mock("$lib/shared/render/services/svg-image-cache", () => ({
+vi.mock("#lib/shared/render/services/svg-image-cache.js", () => ({
   getSvgImageCache: () => imageCacheMocks,
 }));
 
-import { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/export-glyph-prerenderer";
+import { ExportGlyphPrerenderer } from "#lib/shared/animation-engine/services/export-glyph-prerenderer.js";
 
 function createStep(letter: typeof Letter.A | typeof Letter.W): StepData {
   return {

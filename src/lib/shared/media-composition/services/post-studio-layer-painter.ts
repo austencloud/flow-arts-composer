@@ -1,5 +1,5 @@
-import type { SequenceFrame } from "$lib/shared/media-composition/domain/sequence-frame";
-import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+import type { SequenceFrame } from "#lib/shared/media-composition/domain/sequence-frame.js";
+import type { EvaluatedFrameLayer } from "#lib/shared/media-composition/services/frame-evaluator.js";
 
 /**
  * A painted layer is a source that is a pure function of the evaluated frame:

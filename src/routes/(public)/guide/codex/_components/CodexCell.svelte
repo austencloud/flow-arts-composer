@@ -16,13 +16,13 @@
    */
   import GuidePictograph from "../../level-1/_components/GuidePictograph.svelte";
   import CodexTransitionGlyph from "./CodexTransitionGlyph.svelte";
-  import PictographTypeFrame from "$lib/shared/pictograph/shared/components/PictographTypeFrame.svelte";
-  import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
-  import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PictographTypeFrame from "#lib/shared/pictograph/shared/components/PictographTypeFrame.svelte";
+  import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
+  import { getSequenceSelection } from "#lib/shared/selection/sequence-selection.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { codexData, type CodexCellDef } from "../_data/codex-groups";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
   let {
     cell,

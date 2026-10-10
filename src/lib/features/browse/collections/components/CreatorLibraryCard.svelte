@@ -8,13 +8,13 @@ Displays:
 - "View Profile" link to full profile
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     CreatorLibraryData,
     CreatorContentTab,
   } from "../state/collections-browse-state.svelte";
 
-  import { isGoogleAvatarUrl } from "$lib/shared/foundation/utils/google-avatar";
+  import { isGoogleAvatarUrl } from "#lib/shared/foundation/utils/google-avatar.js";
 
   const {
     data,

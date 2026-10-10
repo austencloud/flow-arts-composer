@@ -1,10 +1,10 @@
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { VariationConstraints } from "../domain/models/spell-models";
-import type { ConstraintSet } from "$lib/shared/sequence-engine/constraints/types";
+import type { ConstraintSet } from "#lib/shared/sequence-engine/constraints/types.js";
 import type { LetterSource } from "../domain/models/spell-models";
-import type { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import type { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import type { SpellPreferences } from "../domain/models/spell-models";
 
 /**

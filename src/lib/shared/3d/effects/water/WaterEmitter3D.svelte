@@ -14,7 +14,7 @@
 
   import { T, useTask } from "@threlte/core";
   import { Vector3, Quaternion } from "three";
-  import type { Goo3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+  import type { Goo3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 
   interface Props {
     /** World-space position of this tip. null = hidden. */

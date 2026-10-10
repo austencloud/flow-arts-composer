@@ -17,7 +17,7 @@
  * x = east, y = up, z = south, so NEGATIVE z is north. The orthophoto is
  * 2048x2048 at 0.5 m/px with its top-left at world (-512, -512).
  *
- * This module holds shapes and point tests only. It must stay free of `$lib`
+ * This module holds shapes and point tests only. It must stay free of `#lib`
  * imports so scripts and tests can load it outside the SvelteKit graph.
  */
 

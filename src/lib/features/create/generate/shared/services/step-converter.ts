@@ -2,21 +2,21 @@
  * Step Converter — converts PictographData to StepData and StartPlacementData.
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+import { createStartPlacementData } from "#lib/shared/foundation/domain/factories/create-start-placement-data.js";
 
 /**
  * Convert PictographData to StepData.

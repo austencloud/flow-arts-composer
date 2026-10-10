@@ -1,4 +1,4 @@
-import type { ViewportManager } from '$lib/shared/device/services/viewport-manager.svelte'
+import type { ViewportManager } from '#lib/shared/device/services/viewport-manager.svelte.js'
 /**
  * Responsive Layout Service Implementation
  *
@@ -8,9 +8,9 @@ import type { ViewportManager } from '$lib/shared/device/services/viewport-manag
  * Domain: Create module - Sequence Construction Interface
  */
 
-import type { DeviceDetector } from '$lib/shared/device/services/device-detector'
-import { BREAKPOINTS } from "$lib/shared/device/domain/constants/device-constants";
-import type { LayoutConfiguration } from "$lib/shared/create/services/layout-types";
+import type { DeviceDetector } from '#lib/shared/device/services/device-detector.js'
+import { BREAKPOINTS } from "#lib/shared/device/domain/constants/device-constants.js";
+import type { LayoutConfiguration } from "#lib/shared/create/services/layout-types.js";
 
 export class ResponsiveLayoutManager {
   private layoutChangeCallbacks: Set<(config: LayoutConfiguration) => void> =
@@ -149,8 +149,8 @@ export class ResponsiveLayoutManager {
   }
 }
 
-import { deviceDetector } from "$lib/shared/device/services/device-detector";
-import { viewportManager } from "$lib/shared/device/services/viewport-manager.svelte";
+import { deviceDetector } from "#lib/shared/device/services/device-detector.js";
+import { viewportManager } from "#lib/shared/device/services/viewport-manager.svelte.js";
 
 export const responsiveLayoutManager = new ResponsiveLayoutManager(
   deviceDetector,

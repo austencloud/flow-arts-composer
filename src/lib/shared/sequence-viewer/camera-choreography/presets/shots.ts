@@ -8,14 +8,14 @@
  */
 
 import { Vector3 } from "three";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { joinedPerformerExtent } from "$lib/shared/3d/camera/viewer-camera-framing";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { joinedPerformerExtent } from "#lib/shared/3d/camera/viewer-camera-framing.js";
 import {
   DEFAULT_PERFORMER_HAND_DISTANCE,
   largestHandDistance,
   type PerformerHandDistance,
-} from "$lib/shared/3d/domain/performer-hand-distance";
-import { resolveGridJoin3D } from "$lib/shared/3d/services/grid-join-3d";
+} from "#lib/shared/3d/domain/performer-hand-distance.js";
+import { resolveGridJoin3D } from "#lib/shared/3d/services/grid-join-3d.js";
 
 export type Plane3 = "wall" | "wheel" | "floor";
 

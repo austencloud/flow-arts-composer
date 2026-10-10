@@ -37,22 +37,22 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
 ================================================================================
 -->
 <script lang="ts">
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
   import type { FireOverlayConfig } from "../domain/types/fire-types";
   import type { LedOverlayConfig } from "../domain/types/led-types";
   import type { TrailSettings } from "../domain/types/trail-types";
   import type { TipEffectMap } from "../domain/types/tip-effect-types";
   import type { AnimationVisibilityStateManager } from "../state/animation-visibility-state.svelte";
   import CanvasSurface from "./CanvasSurface.svelte";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import { untrack } from "svelte";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
 
   let {
     leftProp,

@@ -43,24 +43,24 @@
    *   QS = same-spin, 90°-out-of-phase loop (red leads blue by one point).
    *   swap = alternates QO/QS each count and closes back to Start.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
-  import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
-  import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import SelectionHit from "#lib/shared/selection/SelectionHit.svelte";
+  import { getSequenceSelection } from "#lib/shared/selection/sequence-selection.svelte.js";
+  import PlacementGlyph from "#lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
   import {
     MotionType,
     HandSide,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import {
     GridMode,
     GridLocation,
     GridPlacement,
-  } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
+  } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
   import {
     guideEdit,
     ptDrag,

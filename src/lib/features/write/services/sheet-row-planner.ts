@@ -14,10 +14,10 @@
  *
  * Preview and PDF both consume this output, so layout is identical in both.
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { GridJoin } from "@tka/tka-types";
-import { sequenceGridJoin } from "$lib/shared/grid-join/sequence-grid-join";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import { sequenceGridJoin } from "#lib/shared/grid-join/sequence-grid-join.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import type { ChoreoSheetLayout } from "../domain/types/choreo-sheet";
 import {
   getSheetPageLayout,

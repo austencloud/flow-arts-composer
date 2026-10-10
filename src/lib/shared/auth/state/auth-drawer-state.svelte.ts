@@ -1,5 +1,5 @@
 import type { AuthNudgeTrigger } from "../domain/auth-nudge-trigger";
-import { trackAuthSurfaceOpened } from "$lib/shared/analytics/auth-events";
+import { trackAuthSurfaceOpened } from "#lib/shared/analytics/auth-events.js";
 import { createGuestEncoreState } from "./guest-encore-state.svelte";
 
 const guestEncore = createGuestEncoreState(() =>
@@ -9,7 +9,7 @@ import {
   showToast,
   removeToast,
   type ShowToastOptions,
-} from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/toast/state/toast-state.svelte.js";
 
 // Save and collection actions share one optional invitation. Retain the old
 // library key so people who already saw it are not asked again after an update.

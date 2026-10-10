@@ -1,4 +1,4 @@
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 // Maps each GridLocation value to its compact abbreviation.
 // Cardinals are uppercase; intercardinals are title-case so "NE" (North→East)

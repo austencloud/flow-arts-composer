@@ -2,11 +2,11 @@ import {
   PostProjectSchema,
   createEmptyPostProject,
   type PostProject,
-} from "$lib/shared/media-composition/domain/post-project";
-import { normalizeProject } from "$lib/shared/media-composition/domain/post-project-normalize";
-import { migratePostPlan } from "$lib/shared/media-composition/domain/post-project-migration";
-import { loadPostPlan } from "$lib/shared/media-composition/services/post-plan-store";
-import { auth } from "$lib/shared/auth/firebase";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { normalizeProject } from "#lib/shared/media-composition/domain/post-project-normalize.js";
+import { migratePostPlan } from "#lib/shared/media-composition/domain/post-project-migration.js";
+import { loadPostPlan } from "#lib/shared/media-composition/services/post-plan-store.js";
+import { auth } from "#lib/shared/auth/firebase.js";
 
 /**
  * Saves a sequence's v2 project on this device, beside its v1 plan (kept

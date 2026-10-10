@@ -5,13 +5,13 @@
   surface. Click grows it into TnDPanel through the card morph.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
   import { onMount, getContext } from "svelte";
-  import type { PanelCoordinationState } from "$lib/shared/create/state/panel-coordination-state.svelte";
-  import type { TnDSelection } from "$lib/shared/create/domain/hand-relationship";
-  import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+  import type { PanelCoordinationState } from "#lib/shared/create/state/panel-coordination-state.svelte.js";
+  import type { TnDSelection } from "#lib/shared/create/domain/hand-relationship.js";
+  import type { VtgMode } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
   import CardHeader from "./shared/CardHeader.svelte";
   import { morphGenerateCard } from "../../shared/services/generate-card-morph";
   import { buildTnDCardDisplay } from "./tnd-card-display";

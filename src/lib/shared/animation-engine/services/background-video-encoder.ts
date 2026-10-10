@@ -37,8 +37,8 @@ export interface BackgroundExportConfig {
 import type {
   ExportWorkerMessage,
   ExportWorkerResponse,
-} from "$lib/shared/animation-engine/workers/video-export.worker";
-import type { CapturedFrame } from "$lib/shared/video-export/domain/captured-frame";
+} from "#lib/shared/animation-engine/workers/video-export.worker.js";
+import type { CapturedFrame } from "#lib/shared/video-export/domain/captured-frame.js";
 
 export class BackgroundVideoEncoder {
   private worker: Worker | null = null;

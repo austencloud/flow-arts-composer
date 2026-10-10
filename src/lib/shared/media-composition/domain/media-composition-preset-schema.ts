@@ -5,16 +5,16 @@ import {
   LayoutRegionSchema,
   OutputFormatSchema,
   PublishTargetOverridesSchema,
-} from "$lib/shared/media-composition/domain/media-layout-schema";
+} from "#lib/shared/media-composition/domain/media-layout-schema.js";
 import {
   MediaSourceKindSchema,
   SEQUENCE_DERIVED_SOURCE_KINDS,
   type MediaSourceKind,
-} from "$lib/shared/media-composition/domain/media-source-schema";
+} from "#lib/shared/media-composition/domain/media-source-schema.js";
 import {
   PLAYBACK_MAX_BPM,
   PLAYBACK_MIN_BPM,
-} from "$lib/shared/animation-engine/domain/constants/timing";
+} from "#lib/shared/animation-engine/domain/constants/timing.js";
 
 const NonEmptyIdSchema = z.string().trim().min(1);
 const TimestampSchema = z.number().finite().int().nonnegative();

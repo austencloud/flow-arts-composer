@@ -9,9 +9,9 @@
   gate contract test.
 -->
 <script lang="ts">
-  import "$lib/shared/landing/styles/public-editorial.css";
-  import { dev } from "$app/environment";
-  import UnderConstruction from "$lib/shared/landing/components/UnderConstruction.svelte";
+  import "#lib/shared/landing/styles/public-editorial.css";
+  import { dev } from "$app/env";
+  import UnderConstruction from "#lib/shared/landing/components/UnderConstruction.svelte";
   import KineticAtlasDraft from "./_components/KineticAtlasDraft.svelte";
   import type { PageData } from "./$types";
 

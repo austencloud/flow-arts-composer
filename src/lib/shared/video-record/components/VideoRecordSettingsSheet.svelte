@@ -11,7 +11,7 @@
     ReferenceViewType,
     GridSettings,
   } from "../state/video-record-settings.svelte";
-  import SimpleTrailControls from "$lib/shared/animation-engine/components/trail/SimpleTrailControls.svelte";
+  import SimpleTrailControls from "#lib/shared/animation-engine/components/trail/SimpleTrailControls.svelte";
 
   let {
     isOpen = false,

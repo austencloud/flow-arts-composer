@@ -14,7 +14,7 @@ import {
   EnvironmentTransitionCompositor,
   PROTECTED_PERFORMER_LAYER,
   protectPerformerTree,
-} from "$lib/shared/3d/environments/rendering/environment-transition-compositor";
+} from "#lib/shared/3d/environments/rendering/environment-transition-compositor.js";
 
 describe("environment transition compositor", () => {
   it("holds the complete outgoing frame through interrupted loads and releases it after reveal", () => {

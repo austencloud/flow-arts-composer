@@ -6,8 +6,8 @@
   - Mobile: Slides from bottom as a sheet
 -->
 <script lang="ts">
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { animationShortcutRegistrar } from "../services/animation-shortcut-registrar";
   const ANIMATION_SHORTCUTS = animationShortcutRegistrar.shortcuts;
 

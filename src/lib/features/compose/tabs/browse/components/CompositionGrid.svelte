@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
 
-import { calculateCardSizes } from "$lib/features/compose/tabs/browse/services/composition-layout-calculator";
+import { calculateCardSizes } from "#lib/features/compose/tabs/browse/services/composition-layout-calculator.js";
   import type { CompositionBrowseItem } from "../state/composition-browse-state.svelte";
 	import type { CardSize } from "../services/types";
 	import CompositionCard from "./CompositionCard.svelte";

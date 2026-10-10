@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 /**
  * buildVisualSequenceSaveMenuItem's direct-call branch (no onSaveToLibrary
@@ -17,15 +17,15 @@ const { showToast, getVisualSequenceSaveCoordinator } = vi.hoisted(() => ({
   getVisualSequenceSaveCoordinator: vi.fn(),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   showToast,
 }));
 
-vi.mock("$lib/shared/library/get-visual-sequence-save-coordinator", () => ({
+vi.mock("#lib/shared/library/get-visual-sequence-save-coordinator.js", () => ({
   getVisualSequenceSaveCoordinator,
 }));
 
-import { buildVisualSequenceSaveMenuItem } from "$lib/shared/library/services/visual-sequence-save-menu-item";
+import { buildVisualSequenceSaveMenuItem } from "#lib/shared/library/services/visual-sequence-save-menu-item.js";
 
 const SEQUENCE = {
   id: "seq-1",

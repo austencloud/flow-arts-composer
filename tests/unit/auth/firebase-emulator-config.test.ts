@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveFirebaseEmulatorConfig } from "$lib/shared/auth/firebase-emulator-config";
+import { resolveFirebaseEmulatorConfig } from "#lib/shared/auth/firebase-emulator-config.js";
 
 describe("resolveFirebaseEmulatorConfig", () => {
   it("cannot enable emulators outside development", () => {

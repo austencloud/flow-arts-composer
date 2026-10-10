@@ -7,7 +7,7 @@
   wiring steps.
 -->
 <script lang="ts">
-  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
+  import PanelState from "#lib/shared/components/panel/PanelState.svelte";
 
   import {
     coverageCellHref,
@@ -16,7 +16,7 @@
     type CoverageStatus,
   } from "./coverage-matrix-contract";
   import { labCharacterName, labPropLabel } from "./lab-catalog";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   interface Props {
     matrix: CoverageMatrix | null;

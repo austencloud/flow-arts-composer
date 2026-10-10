@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { resolvePerformerHubEmptyScope } from "$lib/shared/3d/components/controls/performer-hub-empty-scope";
-import type { PerformerHubTab } from "$lib/shared/3d/components/controls/performer-hub-types";
+import { resolvePerformerHubEmptyScope } from "#lib/shared/3d/components/controls/performer-hub-empty-scope.js";
+import type { PerformerHubTab } from "#lib/shared/3d/components/controls/performer-hub-types.js";
 
 const hubSource = readFileSync(
   resolve("src/lib/shared/3d/components/controls/PerformerHubDetail.svelte"),

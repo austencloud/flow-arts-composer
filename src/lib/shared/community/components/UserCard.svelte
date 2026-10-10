@@ -5,8 +5,8 @@
    * Features avatar color extraction, role badge (admin only), follow button, and stats.
    */
 
-  import type { UserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import { ROLE_DISPLAY } from "$lib/shared/auth/domain/models/user-role";
+  import type { UserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import { ROLE_DISPLAY } from "#lib/shared/auth/domain/models/user-role.js";
   import FollowButton from "./FollowButton.svelte";
 
   interface Props {

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import GridSvg from "#lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   type Mode = "diamond" | "box" | "merged";
   type ModeOption = { mode: Mode; label: string; ariaLabel: string };

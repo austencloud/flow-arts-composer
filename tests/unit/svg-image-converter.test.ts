@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { withRootSvgSize } from "$lib/shared/foundation/services/svg-image-converter";
+import { withRootSvgSize } from "#lib/shared/foundation/services/svg-image-converter.js";
 
 // The glyph composite draws a dash letter's dash as an inner <rect>. Sizing
 // the image once stripped every width/height in the string, which left that

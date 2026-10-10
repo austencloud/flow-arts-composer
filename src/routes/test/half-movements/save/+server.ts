@@ -8,8 +8,8 @@
  * pipeline's segment branch reads — so a harness nudge IS canon on the next
  * app load. Zero totals delete their key. 404s outside `vite dev`.
  */
-import { dev } from "$app/environment";
-import { json, error } from "@sveltejs/kit";
+import { dev } from "$app/env";
+import { error } from "@sveltejs/kit";
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { RequestHandler } from "./$types";
@@ -70,5 +70,5 @@ export const POST: RequestHandler = async ({ request }) => {
     written.push(`${mt}: ${Object.keys(turnsMap).join(", ")}`);
   }
 
-  return json({ ok: true, written });
+  return Response.json({ ok: true, written });
 };

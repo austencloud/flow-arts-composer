@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+  import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import {
     semanticToCharcoalParams,
     type CharcoalSparkParams,
-  } from "$lib/shared/animation-engine/domain/types/charcoal-spark-types";
+  } from "#lib/shared/animation-engine/domain/types/charcoal-spark-types.js";
   import type { EffectPreset } from "../presets/types";
 
   interface Props {

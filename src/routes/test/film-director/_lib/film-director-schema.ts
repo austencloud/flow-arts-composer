@@ -1,22 +1,22 @@
 import { z } from "zod";
 import { Plane, type FormationPreset } from "@austencloud/scene-3d";
-import type { CharacterId } from "$lib/shared/3d/domain/character-model";
+import type { CharacterId } from "#lib/shared/3d/domain/character-model.js";
 
-import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
-import type { EffectType } from "$lib/shared/effects/domain/effects-config";
-import type { EffortId } from "$lib/shared/effort/domain/effort-types";
+import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
+import type { EffectType } from "#lib/shared/effects/domain/effects-config.js";
+import type { EffortId } from "#lib/shared/effort/domain/effort-types.js";
 import {
   isSceneEnvironmentId,
   type SceneEnvironmentId,
-} from "$lib/shared/3d/environments/domain/scene-environment";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+} from "#lib/shared/3d/environments/domain/scene-environment.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   CAMERA_CHANNEL_IDS,
   type CameraChannelId,
 } from "./director-camera-channels";
-import { directiveSchema } from "$lib/features/film-director/domain/directives";
+import { directiveSchema } from "#lib/features/film-director/domain/directives.js";
 import { normalizeFilmDirectorInput } from "./normalize-film-director-input";
 import type { ResolvedDirectorBlockingKeyframe } from "./blocking-language";
 import {

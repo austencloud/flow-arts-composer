@@ -1,19 +1,19 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import ChoreoCardThumbnail from "$lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
-  import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import ChoreoCardThumbnail from "#lib/shared/browse/components/ChoreoCardThumbnail/ChoreoCardThumbnail.svelte";
+  import { getBrowseLoader } from "#lib/shared/browse/get-browse-loader.js";
   import {
     getSettings,
     updateSettings,
-  } from "$lib/shared/application/state/app-state.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
-  import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/application/state/app-state.svelte.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { registerLoopDetector } from "#lib/shared/create/get-loop-detector.js";
+  import { loopDetector } from "#lib/features/create/generate/circular/services/loop-detector.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
   const mobile = new MediaQuery("(max-width: 640px)");
   const propTypes = [
@@ -80,7 +80,7 @@
   // The data provider reaches the local sequence store and its Firebase sync,
   // so it loads with a hover or a click, never with the glide.
   const loadDataProvider = () =>
-    import("$lib/shared/sequence-viewer/services/sequence-data-provider");
+    import("#lib/shared/sequence-viewer/services/sequence-data-provider.js");
 
   function prefetch(sequence: SequenceData): void {
     void loadDataProvider().then((provider) => provider.prefetch(sequence));

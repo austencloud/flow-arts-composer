@@ -1,4 +1,4 @@
-import type { ConversationPreview } from "$lib/shared/messaging/domain/models/conversation-models";
+import type { ConversationPreview } from "#lib/shared/messaging/domain/models/conversation-models.js";
 
 /**
  * The system share sheet displays roughly four Direct Share targets. Pushing

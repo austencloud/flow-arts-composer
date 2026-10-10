@@ -1,5 +1,5 @@
-import { browser } from '$app/environment';
-import { CameraManager } from '$lib/shared/train/services/camera-manager';
+import { browser } from '$app/env';
+import { CameraManager } from '#lib/shared/train/services/camera-manager.js';
 
 let instance: CameraManager | null = null;
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SeoDashboardSnapshot } from "$lib/features/admin/domain/models/seo-dashboard-model";
+  import type { SeoDashboardSnapshot } from "#lib/features/admin/domain/models/seo-dashboard-model.js";
   import {
     formatDate,
     formatInteger,

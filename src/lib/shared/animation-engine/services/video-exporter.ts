@@ -21,9 +21,9 @@ export interface VideoExportOptions {
   /** Auto-download when complete. Default: true */
   autoDownload?: boolean;
 }
-import { VIDEO_EXPORT_FPS } from "$lib/shared/animation-engine/domain/constants/timing";
-import type { WebCodecsVideoEncoder } from "$lib/shared/animation-engine/services/web-codecs-video-encoder";
-import type { WasmVideoEncoder } from "$lib/shared/animation-engine/services/wasm-video-encoder";
+import { VIDEO_EXPORT_FPS } from "#lib/shared/animation-engine/domain/constants/timing.js";
+import type { WebCodecsVideoEncoder } from "#lib/shared/animation-engine/services/web-codecs-video-encoder.js";
+import type { WasmVideoEncoder } from "#lib/shared/animation-engine/services/wasm-video-encoder.js";
 
 export class VideoExporter {
   private isCurrentlyExporting = false;
@@ -71,7 +71,7 @@ export class VideoExporter {
     try {
       if (this.hasWebCodecs()) {
         const { WebCodecsVideoEncoder } = await import(
-          "$lib/shared/animation-engine/services/web-codecs-video-encoder"
+          "#lib/shared/animation-engine/services/web-codecs-video-encoder.js"
         );
         this.activeEncoder = new WebCodecsVideoEncoder({
           width,
@@ -81,7 +81,7 @@ export class VideoExporter {
         });
       } else {
         const { WasmVideoEncoder } = await import(
-          "$lib/shared/animation-engine/services/wasm-video-encoder"
+          "#lib/shared/animation-engine/services/wasm-video-encoder.js"
         );
         this.activeEncoder = new WasmVideoEncoder({
           width,

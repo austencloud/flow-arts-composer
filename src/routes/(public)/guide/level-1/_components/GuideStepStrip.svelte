@@ -21,9 +21,9 @@
    */
   import GuidePictograph from "./GuidePictograph.svelte";
   import { isStartBox } from "../_data/guide-sequence-adapter";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import type { PictographRender } from "../_data/guide-content-blocks";
   import type { Snippet } from "svelte";
 

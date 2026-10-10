@@ -1,5 +1,5 @@
-import { CollectionState } from "$lib/shared/collections/collection-state.svelte";
-import { LocalCollectionRepository } from "$lib/shared/collections/local-collection-repository";
+import { CollectionState } from "#lib/shared/collections/collection-state.svelte.js";
+import { LocalCollectionRepository } from "#lib/shared/collections/local-collection-repository.js";
 import {
   TUNNEL_COLLECTION_STORAGE_KEY,
   TUNNEL_COLLECTION_SCHEMA_VERSION,

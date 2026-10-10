@@ -12,22 +12,22 @@ const errorHandler = vi.hoisted(() => ({
   showUserError: vi.fn(),
 }));
 
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => errorHandler,
 }));
 
-vi.mock("$lib/server/auth/firebase-auth-handler-proxy", () => ({
+vi.mock("#lib/server/auth/firebase-auth-handler-proxy.js", () => ({
   isFirebaseAuthHandlerPath: () => false,
   proxyFirebaseAuthHandler: vi.fn(),
 }));
 
-vi.mock("$lib/server/auth/meta-oauth-proxy", () => ({
+vi.mock("#lib/server/auth/meta-oauth-proxy.js", () => ({
   isMetaOAuthProxyPath: () => false,
   proxyMetaOAuthRequest: vi.fn(),
 }));
 
 import { handle } from "../../src/hooks.server";
-import { CameraManager } from "$lib/shared/train/services/camera-manager";
+import { CameraManager } from "#lib/shared/train/services/camera-manager.js";
 
 const originalMediaDevices = Object.getOwnPropertyDescriptor(
   navigator,

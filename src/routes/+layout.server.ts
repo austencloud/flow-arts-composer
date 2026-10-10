@@ -1,8 +1,9 @@
 import type { LayoutServerLoad } from "./$types";
-import { parseCloudflareGeo } from "$lib/shared/presence/domain/models/presence-models";
+import { parseCloudflareGeo } from "#lib/shared/presence/domain/models/presence-models.js";
+import { requestCf } from "#lib/server/cloudflare/worker-env.js";
 
-export const load: LayoutServerLoad = ({ request, platform }) => {
-  const cf = (platform as { cf?: Record<string, unknown> } | undefined)?.cf;
+export const load: LayoutServerLoad = ({ request }) => {
+  const cf = requestCf(request);
   return {
     geo: parseCloudflareGeo(request.headers, cf),
     // The one trustworthy reduced-data signal, and the only one available

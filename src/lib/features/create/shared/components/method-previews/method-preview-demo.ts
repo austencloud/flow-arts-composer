@@ -4,10 +4,10 @@
  * Imported directly; per-visit-demo.ts pulls in a worker client. No
  * Firestore and no workers (spec: Scenes).
  */
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import demoJson from "$lib/shared/landing/data/demo-sequence.json";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import demoJson from "#lib/shared/landing/data/demo-sequence.json";
 
 export const DEMO_SEQUENCE = demoJson as unknown as SequenceData;
 

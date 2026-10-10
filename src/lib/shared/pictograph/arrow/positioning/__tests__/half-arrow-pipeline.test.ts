@@ -1,17 +1,17 @@
 import { describe, it, expect, vi } from "vitest";
-import { calculateArrowPoint } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator";
-import { calculateSegmentRotation } from "$lib/shared/pictograph/arrow/positioning/calculation/services/segment-rotation";
-import { calculateOrientationAt } from "$lib/shared/animation-engine/services/orientation-at";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { calculateArrowPoint } from "#lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator.js";
+import { calculateSegmentRotation } from "#lib/shared/pictograph/arrow/positioning/calculation/services/segment-rotation.js";
+import { calculateOrientationAt } from "#lib/shared/animation-engine/services/orientation-at.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-// Routes are not under `$lib` — relative import. This __tests__ dir sits at
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+// Routes are not under `#lib` — relative import. This __tests__ dir sits at
 // src/lib/shared/pictograph/arrow/positioning/__tests__ — 6 path segments below
 // src/ (lib/shared/pictograph/arrow/positioning/__tests__), so 6 "../" reaches
 // src/, then descend into routes/.
@@ -20,7 +20,7 @@ import {
   type HalfwayMotion,
 } from "../../../../../../routes/(public)/guide/level-2/_data/halfway-pose";
 
-vi.mock("$lib/shared/net/asset-fetch", () => ({
+vi.mock("#lib/shared/net/asset-fetch.js", () => ({
   assetFetch: vi.fn(async () =>
     new Response("{}", {
       status: 200,

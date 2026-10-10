@@ -9,7 +9,7 @@ import {
   completeLOOPExtension,
   getLOOPSpecExpansionMultiplier,
 } from "@tka/sequence-engine/loop";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
 import {
   buildSeed,

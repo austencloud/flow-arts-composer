@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SampledCurlGrid2D } from "$lib/shared/3d/effects/smoke/smoke-curl-field";
+import { SampledCurlGrid2D } from "#lib/shared/3d/effects/smoke/smoke-curl-field.js";
 
 describe("SampledCurlGrid2D allocation-free sampling", () => {
   it("writes the same field sample into a stable caller-owned object", () => {

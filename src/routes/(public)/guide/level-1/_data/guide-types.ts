@@ -1,4 +1,4 @@
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
 export interface GuideChapterData {
   pictographs: Record<string, PictographData>;

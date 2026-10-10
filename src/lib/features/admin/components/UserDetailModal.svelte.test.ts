@@ -14,16 +14,16 @@ const mocks = vi.hoisted(() => ({
   getSessionReplayAccess: vi.fn(),
 }));
 
-vi.mock("$lib/shared/community/services/user-repository", () => ({
+vi.mock("#lib/shared/community/services/user-repository.js", () => ({
   getUserProfile: mocks.getUserProfile,
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   auth: { currentUser: { getIdToken: mocks.getIdToken } },
 }));
-vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+vi.mock("#lib/shared/auth/state/auth-state.svelte.js", () => ({
   authState: { isAdmin: true, user: { uid: "admin" } },
 }));
-vi.mock("$lib/features/admin/get-post-hog-user-analytics", () => ({
+vi.mock("#lib/features/admin/get-post-hog-user-analytics.js", () => ({
   getPostHogUserAnalytics: () => mocks,
 }));
 

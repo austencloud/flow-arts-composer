@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultForestFireflyConfig } from "$lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config";
+import { createDefaultForestFireflyConfig } from "#lib/shared/3d/environments/domain/models/scene-configs/forest-scene-config.js";
 import {
   FOREST_ATMOSPHERE_ANCHOR_IDS,
   createForestAtmosphereAnchor,
   createForestAtmosphereAnchors,
   isForestAtmosphereAnchorId,
-} from "$lib/shared/3d/environments/scenes/forest/forest-atmosphere-profile";
+} from "#lib/shared/3d/environments/scenes/forest/forest-atmosphere-profile.js";
 
 describe("Forest registered atmosphere anchors", () => {
   it("keeps the five anchors in chronological review order", () => {

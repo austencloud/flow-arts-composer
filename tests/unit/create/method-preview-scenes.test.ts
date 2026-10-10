@@ -3,8 +3,8 @@
  * scene belongs to a real Create method.
  */
 import { describe, expect, it } from "vitest";
-import { CREATE_TABS } from "$lib/shared/navigation/config/tab-definitions";
-import { METHOD_PREVIEW_SCENES } from "$lib/features/create/shared/components/method-previews/method-preview-scenes";
+import { CREATE_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
+import { METHOD_PREVIEW_SCENES } from "#lib/features/create/shared/components/method-previews/method-preview-scenes.js";
 
 describe("method preview scene registry", () => {
   it("has a scene for every Create method, and only those", () => {

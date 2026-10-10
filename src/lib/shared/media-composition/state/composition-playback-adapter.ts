@@ -1,7 +1,7 @@
 import type {
   PlaybackMode,
   UnifiedPlaybackContext,
-} from "$lib/shared/timeline/unified-playback-context";
+} from "#lib/shared/timeline/unified-playback-context.js";
 import type { MediaCompositionState } from "./media-composition-state.svelte";
 
 /**

@@ -35,9 +35,9 @@
 
 import { tick } from "svelte";
 import { Vector2 } from "three";
-import type { BackgroundVideoEncoder } from "$lib/shared/animation-engine/services/background-video-encoder";
-import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
-import type { CameraKeyframeBuffer } from "$lib/shared/video-export/domain/camera-keyframe";
+import type { BackgroundVideoEncoder } from "#lib/shared/animation-engine/services/background-video-encoder.js";
+import type { VideoExportProgress } from "#lib/shared/compose/domain/video-export-types.js";
+import type { CameraKeyframeBuffer } from "#lib/shared/video-export/domain/camera-keyframe.js";
 
 export interface Offline3DExportOptions {
   fps: number;
@@ -116,10 +116,10 @@ export interface Offline3DExportDependencies {
 import {
   getExportDimensions,
   calculateBitrate,
-} from "$lib/shared/animation-engine/domain/video-export-calculations";
-import type { CanvasFrameCapturer } from "$lib/shared/video-export/services/canvas-frame-capturer";
-import { interpolateKeyframes } from "$lib/shared/video-export/services/camera-keyframe-interpolator";
-import { ExportDiagnostics } from "$lib/shared/video-export/domain/export-diagnostics";
+} from "#lib/shared/animation-engine/domain/video-export-calculations.js";
+import type { CanvasFrameCapturer } from "#lib/shared/video-export/services/canvas-frame-capturer.js";
+import { interpolateKeyframes } from "#lib/shared/video-export/services/camera-keyframe-interpolator.js";
+import { ExportDiagnostics } from "#lib/shared/video-export/domain/export-diagnostics.js";
 
 const KEYFRAME_INTERVAL = 30;
 const FALLBACK_ASPECT_RATIO = 16 / 9;

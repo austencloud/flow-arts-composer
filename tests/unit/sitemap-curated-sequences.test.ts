@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   getFirestoreRest: vi.fn(),
 }));
 
-vi.mock("$lib/server/firestore/firestore-rest", async () => {
+vi.mock("#lib/server/firestore/firestore-rest.js", async () => {
   const actual = await vi.importActual<
     typeof import("../../src/lib/server/firestore/firestore-rest")
   >("../../src/lib/server/firestore/firestore-rest");
@@ -21,6 +21,7 @@ vi.mock("$lib/server/firestore/firestore-rest", async () => {
 });
 
 import { GET } from "../../src/routes/sitemap.xml/+server";
+import { setWorkerEnv } from "#test-helpers/worker-env.js";
 
 const CATALOG_ID = "l1-tnd-motions";
 
@@ -45,12 +46,9 @@ function catalogDoc(word: string, author: string | null = "TKA System") {
   };
 }
 
-function event(platformCredential?: string) {
-  return {
-    platform: platformCredential
-      ? { env: { FIREBASE_SERVICE_ACCOUNT_JSON: platformCredential } }
-      : undefined,
-  } as never;
+function event(credential?: string) {
+  setWorkerEnv(credential ? { FIREBASE_SERVICE_ACCOUNT_JSON: credential } : {});
+  return {} as never;
 }
 
 describe("sitemap.xml curated sequence URLs", () => {

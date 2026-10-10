@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { migrateEffectsConfig } from "$lib/shared/effects/domain/migrations";
-import { EFFECTS_CONFIG_VERSION } from "$lib/shared/effects/domain/effects-config";
+import { migrateEffectsConfig } from "#lib/shared/effects/domain/migrations.js";
+import { EFFECTS_CONFIG_VERSION } from "#lib/shared/effects/domain/effects-config.js";
 
 describe("animal migration (v30 serpent-split + v31 id rename)", () => {
   it("moves a serpent silk config into animal and resets silk to ribbon", () => {

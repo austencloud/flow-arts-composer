@@ -2,7 +2,7 @@ import {
   applyColorToSvg,
   getMotionColor,
   SELECTIVE_COLOR_PROP_TYPES,
-} from "$lib/shared/utils/svg-color-utils";
+} from "#lib/shared/utils/svg-color-utils.js";
 import type { HandSide } from "../../shared/domain/enums/pictograph-enums";
 
 /**

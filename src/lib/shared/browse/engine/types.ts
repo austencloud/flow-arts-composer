@@ -12,13 +12,13 @@
  * - `persistKey` controls localStorage persistence (null = ephemeral)
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { BrowseFilterType } from "$lib/shared/persistence/domain/enums/filtering-enums";
-import type { BrowseFilterValue } from "$lib/shared/persistence/domain/types/filtering-types";
-import type { BrowseSortMethod } from "$lib/shared/browse/domain/enums/browse-enums";
-import type { SequenceSection } from "$lib/shared/browse/domain/models/browse-models";
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
-import type { FilterConnective } from "$lib/shared/browse/services/multi-filter";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { BrowseFilterType } from "#lib/shared/persistence/domain/enums/filtering-enums.js";
+import type { BrowseFilterValue } from "#lib/shared/persistence/domain/types/filtering-types.js";
+import type { BrowseSortMethod } from "#lib/shared/browse/domain/enums/browse-enums.js";
+import type { SequenceSection } from "#lib/shared/browse/domain/models/browse-models.js";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
+import type { FilterConnective } from "#lib/shared/browse/services/multi-filter.js";
 
 // Sequence Source
 

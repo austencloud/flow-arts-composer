@@ -5,11 +5,11 @@
 -->
 <script lang="ts">
 
-import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { stripWordNotation } from "$lib/shared/foundation/utils/word-notation";
+import { getLibraryRepository } from "#lib/shared/library/get-library-repository.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import Drawer from "#lib/shared/foundation/ui/Drawer.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { stripWordNotation } from "#lib/shared/foundation/utils/word-notation.js";
 
   interface Props {
     show?: boolean;

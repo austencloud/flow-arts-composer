@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { BLOOM_PRESETS } from "$lib/shared/animation-engine/components/effects-panel/presets/bloom-presets";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { BLOOM_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/bloom-presets.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   Bloom2DRenderer,
   type BloomTipInput,
-} from "$lib/shared/effects/renderers/bloom-2d-renderer";
-import type { Bloom2DParams } from "$lib/shared/effects/translators/canvas2d-types";
+} from "#lib/shared/effects/renderers/bloom-2d-renderer.js";
+import type { Bloom2DParams } from "#lib/shared/effects/translators/canvas2d-types.js";
 
 function makeContext(withCanvas = false) {
   const radial: number[][] = [];

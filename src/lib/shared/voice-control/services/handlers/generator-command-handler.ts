@@ -6,9 +6,9 @@ import type {
 import {
   getGeneratorVoiceRef,
   type GeneratorVoiceRef,
-} from "$lib/shared/create/state/generator-voice-ref.svelte";
-import type { GeneratorHelpId } from "$lib/shared/create/domain/generator-help-content";
-import type { UIGenerationConfig } from "$lib/shared/create/utils/config-mapper";
+} from "#lib/shared/create/state/generator-voice-ref.svelte.js";
+import type { GeneratorHelpId } from "#lib/shared/create/domain/generator-help-content.js";
+import type { UIGenerationConfig } from "#lib/shared/create/utils/config-mapper.js";
 import type { IVoiceCommandHandler } from "../types";
 
 // Parameter metadata for validation

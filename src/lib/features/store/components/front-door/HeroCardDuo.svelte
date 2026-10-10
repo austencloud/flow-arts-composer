@@ -4,16 +4,16 @@
   import type { HeroCoverEntry } from "./front-door-catalog";
   import type { CoverCard } from "../../domain/models/product";
   import ShopEntryArt from "../ShopEntryArt.svelte";
-  import BackJobPreview from "$lib/features/choreo-card/components/card-back/BackJobPreview.svelte";
+  import BackJobPreview from "#lib/features/choreo-card/components/card-back/BackJobPreview.svelte";
   import HeroPhone from "./HeroPhone.svelte";
-  import ActionButton from "$lib/shared/components/selection/ActionButton.svelte";
+  import ActionButton from "#lib/shared/components/selection/ActionButton.svelte";
   import { createHeroScanTimeline } from "./hero-scan-timeline.svelte";
   import { computeFrontQrCellRect } from "../../services/card-front-regions";
   import {
     DEFAULT_SHOP_PROP,
     SHOP_BACK_THEME,
   } from "../../domain/shop-prop-options";
-  import { hydrateSequence } from "$lib/features/choreo-card/services/catalog-loader";
+  import { hydrateSequence } from "#lib/features/choreo-card/services/catalog-loader.js";
   import { resolveHeroScanCode } from "./hero-scan-code";
   import { resolvePhysicalCoverLayout } from "../../services/cover-front-renderer";
 

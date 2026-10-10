@@ -1,7 +1,7 @@
 import {
   calculateMediaFit,
   turnedExtent,
-} from "$lib/shared/media-composition/services/media-fit";
+} from "#lib/shared/media-composition/services/media-fit.js";
 
 /**
  * The picture-pan math for dragging, wheel-zooming and pinching a video's

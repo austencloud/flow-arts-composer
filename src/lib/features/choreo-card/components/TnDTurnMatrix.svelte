@@ -2,7 +2,7 @@
   import type { Catalog } from "../domain/models/Catalog";
   import type { TnDTurnPatternOption } from "../services/deck-composer";
   import { parseTurnPattern } from "../domain/turn-pattern-parser";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import TurnMatrixGrid from "./TurnMatrixGrid.svelte";
 
   interface Props {

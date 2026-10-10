@@ -6,7 +6,7 @@
  * Now also manages Firebase RTDB broadcasting for discovery.
  */
 
-import type { PeerConnectionManager } from '$lib/shared/lan-sync/services/peer-connection-manager'
+import type { PeerConnectionManager } from '#lib/shared/lan-sync/services/peer-connection-manager.js'
 import type { SyncRoomBroadcaster } from './sync-room-broadcaster';
 import type {
 	SyncedPlaybackState,

@@ -1,5 +1,5 @@
-import type { FirstFireBlenderContract } from "$lib/features/museum/data/first-fire-blender-contract";
-import type { FirstFireShrineId } from "$lib/features/museum/data/first-fire-procession-plan";
+import type { FirstFireBlenderContract } from "#lib/features/museum/data/first-fire-blender-contract.js";
+import type { FirstFireShrineId } from "#lib/features/museum/data/first-fire-procession-plan.js";
 import {
   completeFirstFireGrowth,
   completedFirstFireShrines,
@@ -8,7 +8,7 @@ import {
   reachFirstFireOrbitZone,
   type FirstFireProcessionPhase,
   type FirstFireProcessionState,
-} from "$lib/features/museum/data/first-fire-procession-state";
+} from "#lib/features/museum/data/first-fire-procession-state.js";
 
 export const FIRST_FIRE_NEUTRAL_BLACKOUT_MS = 2200;
 const ENTRY_PROXIMITY_METRES = 1.65;

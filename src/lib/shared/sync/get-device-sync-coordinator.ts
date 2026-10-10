@@ -1,5 +1,5 @@
 import { DeviceSyncCoordinator } from './services/device-sync-coordinator';
-import { getPeerConnectionManager } from '$lib/shared/lan-sync/get-peer-connection-manager';
+import { getPeerConnectionManager } from '#lib/shared/lan-sync/get-peer-connection-manager.js';
 import { getSequenceLocalCache } from './get-sequence-local-cache';
 import { getAdaptiveHeartbeat } from './get-adaptive-heartbeat';
 import { getMessageBatcher } from './get-message-batcher';

@@ -14,9 +14,9 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
 
 <script lang="ts">
   import { GridMode, GridLocation } from "../domain/enums/grid-enums";
-  import { svgPreloader } from "$lib/shared/pictograph/shared/services/svg-preloader";
+  import { svgPreloader } from "#lib/shared/pictograph/shared/services/svg-preloader.js";
   import { getGridRotationDirection } from "../state/grid-rotation-state.svelte";
-  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
+  import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
 
   let {
     gridMode = GridMode.DIAMOND,

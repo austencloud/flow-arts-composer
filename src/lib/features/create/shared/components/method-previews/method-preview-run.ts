@@ -11,7 +11,7 @@
 import {
   createAttractGhost,
   type AttractGhost,
-} from "$lib/shared/attract/services/attract-ghost.svelte";
+} from "#lib/shared/attract/services/attract-ghost.svelte.js";
 
 export interface SceneRun {
   /** True once the turn ended. A timeline checks it before each step. */

@@ -8,23 +8,23 @@
   (the SSR-fragile SegmentedControl stays out).
 -->
 <script lang="ts">
-  import { browser } from "$app/environment";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import ShapeMatrixMandalaArt from "$lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import { browser } from "$app/env";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import ShapeMatrixMandalaArt from "#lib/shared/shape-matrix/components/ShapeMatrixMandalaArt.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     flowerKey,
     flowerLabel,
     type Flower,
-  } from "$lib/shared/shape-matrix/domain/flower-signature";
+  } from "#lib/shared/shape-matrix/domain/flower-signature.js";
   import {
     loadShapeMatrix,
     type ShapeMatrixData,
-  } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-  import { headerArtworkSrc } from "$lib/shared/shape-matrix/services/shape-matrix-artwork";
-  import { propTipEnds } from "$lib/shared/pictograph/prop/domain/prop-tip-ends";
+  } from "#lib/shared/shape-matrix/services/shape-matrix-flowers.js";
+  import { headerArtworkSrc } from "#lib/shared/shape-matrix/services/shape-matrix-artwork.js";
+  import { propTipEnds } from "#lib/shared/pictograph/prop/domain/prop-tip-ends.js";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import {
     buildFuseFlowerPath,
     FUSE_FLOWER_PATHS,

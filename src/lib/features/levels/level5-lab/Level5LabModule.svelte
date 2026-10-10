@@ -7,10 +7,10 @@
    * per-card orientation controls.
    */
 
-  import { GridMode, type GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { GridMode, type GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
   import type { PlacementGroup, PlacementSection, CardOrientations } from "./domain/level5-lab-types";
   import {
     TAU_DIAMOND_PLACEMENTS,

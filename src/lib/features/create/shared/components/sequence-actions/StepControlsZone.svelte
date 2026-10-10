@@ -12,22 +12,22 @@
   handled by the top zone (StepEditorPanel).
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { handLabel } from "./control-labels";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
   import MobileHandSelector from "./MobileHandSelector.svelte";
   import PropControlPair from "./PropControlPair.svelte";
   import PropTurnsControl from "./PropTurnsControl.svelte";
   import PropTypeRow from "./PropTypeRow.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { TargetHand } from "$lib/shared/create/domain/panel-types";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { TargetHand } from "#lib/shared/create/domain/panel-types.js";
   import {
     HandSide,
     MotionType,
     RotationDirection,
-  } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PathShapeValue } from "../../services/step-operations/path-shape-handler";
   import {
     aggregateTurns,

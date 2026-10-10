@@ -11,7 +11,7 @@
    * touching nav or companion (see docs/superpowers/specs/2026-07-07-guide-reader-design.md).
    */
   import { onMount, flushSync, tick } from "svelte";
-  import { writeUrl } from "$lib/shared/navigation/services/url-state";
+  import { writeUrl } from "#lib/shared/navigation/services/url-state.js";
   import "../_styles/guide.css";
   import "../_styles/guide-print.css";
   import {
@@ -29,10 +29,10 @@
   import {
     SequenceSelection,
     setSequenceSelection,
-  } from "$lib/shared/selection/sequence-selection.svelte";
-  import "$lib/shared/selection/selection.css";
+  } from "#lib/shared/selection/sequence-selection.svelte.js";
+  import "#lib/shared/selection/selection.css";
   import { stripToSequence } from "../_data/guide-sequence-adapter";
-  import { ensureMotionData } from "$lib/shared/sequence-viewer/services/sequence-motion-loader";
+  import { ensureMotionData } from "#lib/shared/sequence-viewer/services/sequence-motion-loader.js";
   import { loadOverrides } from "../_data/guide-overrides.svelte";
   import type { GuidePageMeta } from "../_data/guide-manifest";
   import {
@@ -41,7 +41,7 @@
     slugForIndex,
     slugFromPath,
   } from "../_data/guide-page-links";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import {
     consumeGuideScanIntent,
     fireCodexCell,
@@ -49,13 +49,13 @@
   import {
     suppressBackground,
     releaseBackground,
-  } from "$lib/shared/background/shared/state/background-suppression.svelte";
+  } from "#lib/shared/background/shared/state/background-suppression.svelte.js";
   import {
     LEVEL1_READER_CONFIG,
     type GuideReaderConfig,
   } from "../_data/guide-reader-config";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import {
     guideFramePrefs,
     setGuideFrame,

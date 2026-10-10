@@ -14,8 +14,8 @@
  * (skeletons until the snapshot lands).
  */
 
-import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-import type { FollowedCollection } from "$lib/features/library/state/followed-collections-state.svelte";
+import type { LibraryCollection } from "#lib/shared/library/domain/models/collection.js";
+import type { FollowedCollection } from "#lib/features/library/state/followed-collections-state.svelte.js";
 
 const OWN_PREFIX = "tka:collections-mirror:own:";
 const FOLLOWED_PREFIX = "tka:collections-mirror:followed:";

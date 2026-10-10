@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { SNAPSHOT_VERSION } from "$lib/shared/sequence-viewer/tunnel/tunnel-snapshot";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
-import { DEFAULT_CONFIG } from "$lib/shared/sequence-viewer/tunnel/tunnel-config";
+import { SNAPSHOT_VERSION } from "#lib/shared/sequence-viewer/tunnel/tunnel-snapshot.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import { DEFAULT_TRAIL_SETTINGS } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import { DEFAULT_CONFIG } from "#lib/shared/sequence-viewer/tunnel/tunnel-config.js";
 import {
   TunnelCompositionSchema,
   createDerivedTunnelPerformer,
   createIndependentTunnelPerformer,
   createTunnelComposition,
-} from "$lib/shared/sequence-viewer/tunnel/tunnel-composition";
-import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+} from "#lib/shared/sequence-viewer/tunnel/tunnel-composition.js";
+import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { CollectedTunnel } from "../tunnel-collection-types";
 import { createTunnelRevision } from "../tunnel-revision";
 import {
@@ -18,7 +18,7 @@ import {
   sanitizeTunnelComposition,
   tunnelPublicPayload,
 } from "../tunnel-public-revision";
-import type { PublicArtifactEnvelope } from "$lib/shared/artifact-revisions/domain/public-artifact";
+import type { PublicArtifactEnvelope } from "#lib/shared/artifact-revisions/domain/public-artifact.js";
 
 const snapshot: CollectedTunnel["snapshot"] = {
   version: SNAPSHOT_VERSION,

@@ -5,19 +5,19 @@
  * Manages reactive state and workbench animation updates.
  */
 
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import type { SequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
-import { setPendingGenerationAnimation } from "$lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte";
-import { clearArrowPositionCache } from "$lib/shared/pictograph/arrow/rendering/arrow-position-cache";
-import { clearPropPositionCache } from "$lib/shared/pictograph/prop/prop-position-cache";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveWordFromBeats } from "$lib/shared/foundation/services/word-deriver";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import type { SequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
+import { setPendingGenerationAnimation } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
+import { clearArrowPositionCache } from "#lib/shared/pictograph/arrow/rendering/arrow-position-cache.js";
+import { clearPropPositionCache } from "#lib/shared/pictograph/prop/prop-position-cache.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { deriveWordFromBeats } from "#lib/shared/foundation/services/word-deriver.js";
 import type { GenerationOptions } from "../shared/domain/models/generate-models";
 import { GenerationMode } from "../shared/domain/models/generate-models";
-import type { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-import { captureGenerationErrorContext } from "$lib/shared/create/utils/generation-error-context";
-import { GenerationRequestError } from "$lib/shared/create/domain/generation-request-error";
+import type { GenerationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+import { generationOrchestrator } from "#lib/shared/create/services/generation-orchestrator.js";
+import { captureGenerationErrorContext } from "#lib/shared/create/utils/generation-error-context.js";
+import { GenerationRequestError } from "#lib/shared/create/domain/generation-request-error.js";
 import {
   levelToDifficulty,
   uiConfigToGenerationOptions,
@@ -26,44 +26,44 @@ import {
 import {
   getTemplateById,
   templateToPattern,
-} from "$lib/features/create/shared/domain/templates/duration-templates";
+} from "#lib/features/create/shared/domain/templates/duration-templates.js";
 import type { SpellModeState } from "./spell-mode-state.svelte";
 import type { UndoMetadata } from "../../shared/services/undo-manager";
 import type { UndoOperationType } from "../../shared/services/undo-manager";
 import { UndoOperationType as UndoOp } from "../../shared/services/undo-manager";
 import type { VariationExplorationOrchestrator } from "../../spell/services/variation-exploration-orchestrator";
-import * as spellServiceLoaderModule from "$lib/features/create/spell/services/spell-service-loader";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { sequenceExtender } from "$lib/features/create/shared/services/sequence-extender";
+import * as spellServiceLoaderModule from "#lib/features/create/spell/services/spell-service-loader.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { sequenceExtender } from "#lib/features/create/shared/services/sequence-extender.js";
 import {
   LOOPType,
   Period,
   periodToNumber,
-} from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { loopViabilityService } from "$lib/features/create/generate/shared/services/loop-viability-service";
+} from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { loopViabilityService } from "#lib/features/create/generate/shared/services/loop-viability-service.js";
 import {
   guestLoopGate,
   type GuestLoopLockKind,
-} from "$lib/shared/create/services/loop-guest-gate";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/create/services/loop-guest-gate.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import {
   resolveAccessTier,
   getMaxSteps,
-} from "$lib/shared/auth/domain/access-tier";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { AUTH_NUDGE_TEXTS } from "$lib/shared/auth/domain/auth-nudge-trigger";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/auth/domain/access-tier.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { AUTH_NUDGE_TEXTS } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import {
   ConstraintType,
   type ConstraintReport,
 } from "@tka/sequence-engine/generation";
-import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
-import { logSequenceAction } from "$lib/shared/analytics/services/posthog-activity-logger";
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { isPremiumOrAbove } from "#lib/shared/auth/domain/models/user-role.js";
+import { logSequenceAction } from "#lib/shared/analytics/services/posthog-activity-logger.js";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
-import { applyPattern as dpApplyPattern } from "$lib/features/create/shared/services/duration-pattern-manager";
-import { getVariationExplorationOrchestrator } from "$lib/features/create/spell/get-variation-exploration-orchestrator";
-import { getPropUnlockManager } from "$lib/shared/gamification/get-prop-unlock-manager";
+import { applyPattern as dpApplyPattern } from "#lib/features/create/shared/services/duration-pattern-manager.js";
+import { getVariationExplorationOrchestrator } from "#lib/features/create/spell/get-variation-exploration-orchestrator.js";
+import { getPropUnlockManager } from "#lib/shared/gamification/get-prop-unlock-manager.js";
 
 export interface GenerationAnimationTarget {
   clear(): void;

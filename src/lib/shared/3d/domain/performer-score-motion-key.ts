@@ -2,7 +2,7 @@ import type { PlaneMode } from "@austencloud/scene-3d";
 import {
   getAnimationVisibilityManager,
   type AnimationPathPolicy,
-} from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+} from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
 
 /**

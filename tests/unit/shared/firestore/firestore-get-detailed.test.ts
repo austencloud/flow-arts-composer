@@ -19,15 +19,15 @@ vi.mock("firebase/firestore", () => ({
   serverTimestamp: vi.fn(),
 }));
 
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn(async () => ({})),
 }));
 
-vi.mock("$lib/shared/offline/state/sync-status-state.svelte", () => ({
+vi.mock("#lib/shared/offline/state/sync-status-state.svelte.js", () => ({
   trackWrite: vi.fn(),
 }));
 
-vi.mock("$lib/shared/error/services/error-telemetry-reporter", () => ({
+vi.mock("#lib/shared/error/services/error-telemetry-reporter.js", () => ({
   reportErrorTelemetry: vi.fn(),
 }));
 

@@ -2,8 +2,8 @@ import {
   getFirestoreInstance,
   getAuthInstance,
   getAuthSync,
-} from "$lib/shared/auth/firebase";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/auth/firebase.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 import {
   collection,
   doc,
@@ -35,7 +35,7 @@ import {
 } from "../domain/collaborative-video";
 import { isHandLabeling, type HandLabeling } from "../domain/hand-labeling";
 import type { UserVideoLibrary } from "./types";
-import { isArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
+import { isArtifactRevisionRef } from "#lib/shared/artifact-revisions/domain/artifact-revision.js";
 
 const VIDEOS_COLLECTION = "videos";
 

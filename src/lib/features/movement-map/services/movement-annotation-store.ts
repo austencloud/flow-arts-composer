@@ -16,7 +16,7 @@
  */
 
 import Dexie, { type Table } from "dexie";
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import type { MovementAnnotation } from "../domain/movement-annotation";
 
 const DB_NAME = "tka-movement-map";

@@ -34,10 +34,10 @@ describe("Fuse sequence actions contract", () => {
     );
 
     expect(popover).toContain(
-      'import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte"'
+      'import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte"'
     );
     expect(createPanel).toContain(
-      'import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte"'
+      'import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte"'
     );
     expect(popover).toContain("<SequenceTransformActions");
     expect(popover).toContain("rotationDegrees={45}");
@@ -103,7 +103,7 @@ describe("Fuse sequence actions contract", () => {
     );
 
     expect(card).toContain(
-      'import ChoreoCardContextMenuHost from "$lib/shared/sequence-viewer/components/choreo-card-context-menu/ChoreoCardContextMenuHost.svelte"'
+      'import ChoreoCardContextMenuHost from "#lib/shared/sequence-viewer/components/choreo-card-context-menu/ChoreoCardContextMenuHost.svelte"'
     );
     expect(card).toContain("oncontextmenu={openCardContextMenu}");
     expect(card).toContain("<ChoreoCardContextMenuHost");

@@ -13,12 +13,12 @@ vi.mock("$app/navigation", () => ({
   goto: navigation.goto,
 }));
 
-vi.mock("$lib/shared/navigation/services/sheet-router", () => ({
+vi.mock("#lib/shared/navigation/services/sheet-router.js", () => ({
   openSheet: navigation.openSheet,
 }));
 
 vi.mock(
-  "$lib/shared/navigation-coordinator/navigation-coordinator.svelte",
+  "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js",
   () => ({
     handleModuleChange: navigation.handleModuleChange,
   })

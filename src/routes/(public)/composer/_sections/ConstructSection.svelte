@@ -30,52 +30,52 @@
   with a real build in progress. Marketing-demo surface, not shipping chrome.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy, tick, type Snippet } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { createSimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { pictographDataToStepData } from "$lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion";
-  import { calculateGridLayout } from "$lib/shared/create/utils/grid-calculations";
-  import WorkspaceGrid from "$lib/features/create/shared/workspace-panel/sequence-display/components/WorkspaceGrid.svelte";
-  import StepGrid from "$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte";
-  import { createStepGridDisplayState } from "$lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte";
-  import { createScrollState } from "$lib/features/create/shared/workspace-panel/sequence-display/state/scroll-state.svelte";
+  import { createSimplifiedStartPlacementState } from "#lib/shared/create/state/start-placement-state.svelte.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { createSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import { pictographDataToStepData } from "#lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion.js";
+  import { calculateGridLayout } from "#lib/shared/create/utils/grid-calculations.js";
+  import WorkspaceGrid from "#lib/features/create/shared/workspace-panel/sequence-display/components/WorkspaceGrid.svelte";
+  import StepGrid from "#lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte";
+  import { createStepGridDisplayState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/step-grid-display-state.svelte.js";
+  import { createScrollState } from "#lib/features/create/shared/workspace-panel/sequence-display/state/scroll-state.svelte.js";
   import ComposerWordRow from "../_components/ComposerWordRow.svelte";
-  import ViewSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ViewSequenceButton.svelte";
-  import HorizontalTransportRow from "$lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
-  import ClearSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import UndoGlyph from "$lib/features/create/shared/workspace-panel/shared/components/buttons/UndoGlyph.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import ViewSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ViewSequenceButton.svelte";
+  import HorizontalTransportRow from "#lib/shared/sequence-viewer/components/HorizontalTransportRow.svelte";
+  import ClearSequenceButton from "#lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import UndoGlyph from "#lib/features/create/shared/workspace-panel/shared/components/buttons/UndoGlyph.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     motionDuration,
     reducedMotion,
-  } from "$lib/shared/transitions/motion";
-  import { focusFirstOrContainer } from "$lib/shared/foundation/ui/modal/helpers/focus-restore";
+  } from "#lib/shared/transitions/motion.js";
+  import { focusFirstOrContainer } from "#lib/shared/foundation/ui/modal/helpers/focus-restore.js";
   import { slide } from "svelte/transition";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import type { AnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller.js";
   import {
     HERO_TIP_EFFECT_MAP,
     HERO_TRAIL_PRESET,
-  } from "$lib/shared/landing/data/hero-trail-preset";
-  import GhostPointer from "$lib/shared/attract/components/GhostPointer.svelte";
+  } from "#lib/shared/landing/data/hero-trail-preset.js";
+  import GhostPointer from "#lib/shared/attract/components/GhostPointer.svelte";
   import {
     createConstructAttractAct,
     type ConstructAttractAct,
   } from "./construct-attract-act.svelte";
   import { isVisitorOwnedConstructSequence } from "../_components/composer-sequence-ownership";
-  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
+  import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
 
   type ConstructPresentationMode = "full" | "guided-build" | "continuous";
 
@@ -672,7 +672,7 @@
 {/snippet}
 
 {#snippet player(sequence: SequenceData)}
-  {#await import("$lib/shared/sequence-viewer/components/AnimationPlayer.svelte") then mod}
+  {#await import("#lib/shared/sequence-viewer/components/AnimationPlayer.svelte") then mod}
     <div class="play-pane">
       <div class="player-frame" data-demo-stage>
         <mod.default
@@ -990,7 +990,7 @@
         <!-- PICKER / PLAYER: the real primitives; phase swap lives HERE only. -->
         <div class="picker-pane" bind:this={pickerPaneEl}>
           {#if phase === "pick-start"}
-            {#await import("$lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte") then mod}
+            {#await import("#lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte") then mod}
               <mod.default
                 {startPlacementState}
                 embedded
@@ -1001,7 +1001,7 @@
               />
             {/await}
           {:else if phase === "add-step"}
-            {#await import("$lib/features/create/construct/option-picker/components/OptionPicker.svelte") then mod}
+            {#await import("#lib/features/create/construct/option-picker/components/OptionPicker.svelte") then mod}
               <!-- The FULL option set: every letter family, sectioned into the
                real swipe layout (embla pages + arrows), with the picker's own
                All/Continuous filter pill. The old Type-1-only training wheels

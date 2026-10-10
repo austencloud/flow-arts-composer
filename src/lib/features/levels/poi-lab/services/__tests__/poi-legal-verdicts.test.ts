@@ -1,6 +1,6 @@
 import { beforeEach, describe, it, expect } from "vitest";
 import { createPoiLegalVerdicts, pairKey } from "../poi-legal-verdicts.svelte";
-import { flowerKey, type Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+import { flowerKey, type Flower } from "#lib/shared/shape-matrix/domain/flower-signature.js";
 
 // Box-grid flowers: absent from the seeded data file, so these tests stay
 // independent of whatever diamond verdicts are committed.

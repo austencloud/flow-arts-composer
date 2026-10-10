@@ -284,7 +284,7 @@ export class MuseumGeometryStreamer {
 
     if (!this.firstRoomActivated) {
       this.firstRoomActivated = true;
-      void import("$lib/shared/analytics/boot-profiler").then(
+      void import("#lib/shared/analytics/boot-profiler.js").then(
         ({ bootProfiler }) => bootProfiler.signalReady("museum")
       );
     }

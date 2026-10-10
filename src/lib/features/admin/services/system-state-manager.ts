@@ -6,8 +6,11 @@
  */
 
 import { collection, getDocs, Timestamp } from "firebase/firestore";
-import { getFirestoreInstance, getAuthSync } from "$lib/shared/auth/firebase";
-import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
+import {
+  getFirestoreInstance,
+  getAuthSync,
+} from "#lib/shared/auth/firebase.js";
+import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
 import type {
   SystemState,
   CachedUserMetadata,
@@ -230,7 +233,7 @@ export class SystemStateManager {
         null,
       lastLocation:
         (privateData["lastLocation"] as
-          | import("$lib/shared/presence/domain/models/presence-models").PresenceLocation
+          | import("#lib/shared/presence/domain/models/presence-models.js").PresenceLocation
           | undefined) ?? null,
     };
   }

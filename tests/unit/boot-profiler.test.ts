@@ -17,7 +17,7 @@ import {
   recordBootFeatureReady,
   startBootProfile,
   stopBootProfile,
-} from "$lib/shared/3d/scene-boot/boot-profiler";
+} from "#lib/shared/3d/scene-boot/boot-profiler.js";
 
 describe("boot profiler gating", () => {
   afterEach(() => {

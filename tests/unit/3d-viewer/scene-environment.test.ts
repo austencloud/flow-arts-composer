@@ -7,7 +7,7 @@ import {
   getSceneEnvironmentRendererKey,
   normalizeSceneEnvironmentId,
   sceneEnvironmentIdForBackground,
-} from "$lib/shared/3d/environments/domain/scene-environment";
+} from "#lib/shared/3d/environments/domain/scene-environment.js";
 
 describe("3D scene environment identity", () => {
   it("normalizes saved environment ids without consulting app settings", () => {

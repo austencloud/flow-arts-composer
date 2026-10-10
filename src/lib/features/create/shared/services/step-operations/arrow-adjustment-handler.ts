@@ -3,11 +3,11 @@
  * Persists manual arrow position adjustments to the sequence state.
  */
 
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import { createStartPlacementData } from "#lib/shared/create/factories/create-start-placement-data.js";
 import type { ICreateModuleState } from "../../types/create-module-types";
-import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import type { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { getStepDataFromState, START_PLACEMENT_BEAT_NUMBER } from "./step-data-helpers";
 import { UndoOperationType } from "../undo-manager";
 

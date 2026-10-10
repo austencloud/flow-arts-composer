@@ -7,11 +7,11 @@
   GenerationSettingsOverlay, the same as Customize.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
-  import SkeletonLoader from "$lib/shared/foundation/ui/SkeletonLoader.svelte";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import SkeletonLoader from "#lib/shared/foundation/ui/SkeletonLoader.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import GenerationSettingsOverlay from "../cards/GenerationSettingsOverlay.svelte";
   import SavedSetupRow from "./SavedSetupRow.svelte";
   import type { FavoriteState } from "../../state/favorite-state.svelte";

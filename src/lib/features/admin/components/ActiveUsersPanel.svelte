@@ -1,21 +1,21 @@
 <!-- ActiveUsersPanel.svelte - Admin view of all users with activity-based presence -->
 <script lang="ts">
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { onMount, onDestroy } from "svelte";
-  import { getUserActivityTracker } from "$lib/features/admin/get-user-activity-tracker";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { getUserActivityTracker } from "#lib/features/admin/get-user-activity-tracker.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-  import type { UserPresenceWithId } from "$lib/shared/presence/domain/models/presence-models";
+  import type { UserPresenceWithId } from "#lib/shared/presence/domain/models/presence-models.js";
   import UserPresenceCard from "./active-users/UserPresenceCard.svelte";
   import UserDetailModal from "./UserDetailModal.svelte";
-  import PanelGrid from "$lib/shared/components/panel/PanelGrid.svelte";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "$lib/shared/maps/google-maps-api-key";
-  import GlobalUserMap from "$lib/features/community/components/GlobalUserMap.svelte";
-  import { buildUserPins } from "$lib/features/admin/services/user-pins";
+  import PanelGrid from "#lib/shared/components/panel/PanelGrid.svelte";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from "#lib/shared/maps/google-maps-api-key.js";
+  import GlobalUserMap from "#lib/features/community/components/GlobalUserMap.svelte";
+  import { buildUserPins } from "#lib/features/admin/services/user-pins.js";
   import type { UserActivityTracker } from "../services/user-activity-tracker";
   import { page } from "$app/state";
-  import { removeCurrentUrlParams } from "$lib/shared/navigation/services/url-state";
+  import { removeCurrentUrlParams } from "#lib/shared/navigation/services/url-state.js";
   import {
     ADMIN_SESSION_TARGET_PARAM,
     ADMIN_USER_TARGET_PARAM,

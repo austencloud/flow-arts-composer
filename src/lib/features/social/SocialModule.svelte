@@ -4,12 +4,12 @@
 -->
 <script lang="ts">
   import type { Component } from "svelte";
-  import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-  import { SOCIAL_TABS } from "$lib/shared/navigation/config/tab-definitions";
+  import { navigationState } from "#lib/shared/navigation/state/navigation-state.svelte.js";
+  import { SOCIAL_TABS } from "#lib/shared/navigation/config/tab-definitions.js";
 
   const tabComponents: Record<string, () => Promise<{ default: Component }>> = {
-    community: () => import("$lib/features/community/Community.svelte"),
-    connect: () => import("$lib/features/connect/ConnectModule.svelte"),
+    community: () => import("#lib/features/community/Community.svelte"),
+    connect: () => import("#lib/features/connect/ConnectModule.svelte"),
   };
 
   const activeTab = $derived(navigationState.activeTab || SOCIAL_TABS[0]?.id || "community");

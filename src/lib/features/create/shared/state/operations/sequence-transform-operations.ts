@@ -12,15 +12,15 @@
  * RESPONSIBILITY: Transform operations coordinator, orchestrates state + services
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { updateSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { SequenceStatsCalculator } from "$lib/features/create/shared/services/sequence-stats-calculator";
-import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { SequenceValidator } from "$lib/features/create/shared/services/sequence-validator";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { updateSequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { SequenceStatsCalculator } from "#lib/features/create/shared/services/sequence-stats-calculator.js";
+import type { SequenceTransformer } from "#lib/features/create/shared/services/sequence-transforms/sequence-transformer.js";
+import type { SequenceValidator } from "#lib/features/create/shared/services/sequence-validator.js";
 import type { SequenceCoreState } from "../core/sequence-core-state.svelte";
 import type { SequenceSelectionState } from "../selection/sequence-selection-state.svelte";
-import type { ValidationResult } from "$lib/shared/validation/validation-result";
+import type { ValidationResult } from "#lib/shared/validation/validation-result.js";
 import type { TargetHand } from "../panel-coordination-state.svelte";
 
 export interface TransformOperationsConfig {

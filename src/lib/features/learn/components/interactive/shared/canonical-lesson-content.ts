@@ -1,9 +1,9 @@
-import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { Letter as TkaLetter } from "$lib/shared/foundation/domain/models/letter";
-import { LetterType } from "$lib/shared/foundation/domain/models/letter-type";
-import { LETTER_TYPE_COLORS } from "$lib/shared/pictograph/shared/domain/constants/pictograph-constants";
-import type { HandMotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { HandMotionType as HandPath } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+import { Letter as TkaLetter } from "#lib/shared/foundation/domain/models/letter.js";
+import { LetterType } from "#lib/shared/foundation/domain/models/letter-type.js";
+import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
+import type { HandMotionType } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { HandMotionType as HandPath } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export interface HandMotionLessonItem {
   id: Extract<HandMotionType, "shift" | "dash" | "static">;

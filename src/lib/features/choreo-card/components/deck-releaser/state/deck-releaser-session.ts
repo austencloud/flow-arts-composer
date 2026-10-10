@@ -8,7 +8,7 @@ import type {
   VariationConfig,
 } from "../../../services/deck-variation";
 import type { ResolvedReversalPattern } from "../../../domain/reversal-transform";
-import type { SmartFilterSpec } from "$lib/shared/library/domain/models/collection";
+import type { SmartFilterSpec } from "#lib/shared/library/domain/models/collection.js";
 
 const STORAGE_KEY = "deckReleaser.session";
 

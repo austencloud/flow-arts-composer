@@ -193,7 +193,7 @@ const SCAN_TIMEOUT_MS = 120_000;
 describe("German translation contracts", () => {
   it("ignores documentation examples and recognizes imported translation aliases", () => {
     const script = `
-      import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";
+      import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";
       /** Example only: t("invalid_key") */
       const label = translate("real_key");
       const quoted = 't("also_invalid")';
@@ -205,7 +205,7 @@ describe("German translation contracts", () => {
 
   it("collects static ternary branches and plain template keys without treating conditions as keys", () => {
     const script = [
-      'import { t as translate } from "$lib/shared/i18n/i18n.svelte.js";',
+      'import { t as translate } from "#lib/shared/i18n/i18n.svelte.js";',
       'const one = translate(count === "comparison_only" ? "key_one" : "key_many");',
       'const two = translate(`plain_template`);',
       'const three = translate(flag ? `first_branch` : nested ? "second_branch" : `third_branch`);',

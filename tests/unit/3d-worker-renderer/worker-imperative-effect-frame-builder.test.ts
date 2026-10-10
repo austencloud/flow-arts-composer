@@ -6,23 +6,23 @@ import {
   propFinishState,
   type PropState3D,
 } from "@austencloud/scene-3d";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import {
   resolveLed3D,
   resolveGoo3D,
   resolveSparkles3D,
   resolveTrails3D,
-} from "$lib/shared/effects/translators/webgl3d-translator";
+} from "#lib/shared/effects/translators/webgl3d-translator.js";
 import {
   WorkerImperativeEffectFrameBuilder,
   type WorkerImperativeEffectFrameInput,
-} from "$lib/shared/3d/worker-renderer/effects/worker-imperative-effect-frame-builder";
+} from "#lib/shared/3d/worker-renderer/effects/worker-imperative-effect-frame-builder.js";
 import {
   WORKER_IMPERATIVE_EFFECTS,
   WORKER_POOLED_EFFECTS,
   WORKER_UNSUPPORTED_EFFECTS,
   isWorkerEffectExact,
-} from "$lib/shared/3d/worker-renderer/effects/worker-effect-support";
+} from "#lib/shared/3d/worker-renderer/effects/worker-effect-support.js";
 
 function prop(x = 0): PropState3D {
   return {

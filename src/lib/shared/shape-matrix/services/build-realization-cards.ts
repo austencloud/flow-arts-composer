@@ -1,11 +1,11 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SVGPathData } from "$lib/shared/mandala/domain/mandala-types";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SVGPathData } from "#lib/shared/mandala/domain/mandala-types.js";
 import type { ShapeMatrixTipPair } from "../domain/prop-pair";
-import { loadDiamondEdges } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
-import { TND_BY_FAMILY } from "$lib/features/choreo-card/domain/tnd-element";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { loadDiamondEdges } from "#lib/features/choreo-card/services/pictograph-letter-lookup.js";
+import { TND_BY_FAMILY } from "#lib/features/choreo-card/domain/tnd-element.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 // prettier-ignore
-import { bakeVariationFront, bakeVariationBack } from "$lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices";
+import { bakeVariationFront, bakeVariationBack } from "#lib/features/lab/vtg-lab/services/resolve-rotation-style-matrices.js";
 import { loadBaseIndex, resolveBase } from "./build-realization-sequence";
 import { verifyAndCorrect } from "./verify-realization-parity";
 import {

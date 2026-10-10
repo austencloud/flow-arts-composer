@@ -2,11 +2,11 @@
  * SequenceData adapter for the sequence engine's orientation-cycle closure.
  */
 
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import {
   closeSequenceOrientationCycle,
   getSequenceOrientationCycleCount,
-} from "$lib/shared/create/services/sequence-orientation-cycle";
+} from "#lib/shared/create/services/sequence-orientation-cycle.js";
 
 export class OrientationCycleExtender {
   /**

@@ -1,17 +1,17 @@
 import type {
   PostBox,
   PostItem,
-} from "$lib/shared/media-composition/domain/post-project";
+} from "#lib/shared/media-composition/domain/post-project.js";
 import {
   boxAt,
   isAnimated,
-} from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import {
   clipBox,
   postOutputSize,
   spotAround,
-} from "$lib/shared/media-composition/domain/post-canvas";
-import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
+} from "#lib/shared/media-composition/domain/post-canvas.js";
+import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
 
 /**
  * Where an item shows on the frame, and the box it keeps when that moves:

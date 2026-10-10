@@ -6,16 +6,16 @@
  */
 
 import type { GridJoin } from "@tka/tka-types";
-import type { RenderedPropTransform } from "$lib/shared/animation-engine/domain/types/fire-types";
-import type { RenderedPropSprite } from "$lib/shared/animation-engine/domain/types/rendered-prop-sprite";
-import type { RenderSceneParams } from "$lib/shared/animation-engine/domain/types/animation-render-types";
-import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+import type { RenderedPropTransform } from "#lib/shared/animation-engine/domain/types/fire-types.js";
+import type { RenderedPropSprite } from "#lib/shared/animation-engine/domain/types/rendered-prop-sprite.js";
+import type { RenderSceneParams } from "#lib/shared/animation-engine/domain/types/animation-render-types.js";
+import type { TunnelPropColorPair } from "#lib/shared/sequence-viewer/tunnel/tunnel-prop-colors.js";
 
 export type {
   AdditionalLayerRenderData,
   AnimationVisibilitySettings,
   RenderSceneParams,
-} from "$lib/shared/animation-engine/domain/types/animation-render-types";
+} from "#lib/shared/animation-engine/domain/types/animation-render-types.js";
 
 export interface IAnimationRenderer {
   /**

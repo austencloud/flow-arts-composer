@@ -7,11 +7,11 @@
 import {
 	GenerationMode,
 	DifficultyLevel,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { LOOPType, Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
+import { LOOPType, Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import type { GenerationOptions } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import type { MandalaPresetId, UndulationEasing } from "./mandala-types";
 
 /** Even lengths read as fuller mandalas; one is picked at random per draw. */

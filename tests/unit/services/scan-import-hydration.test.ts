@@ -20,25 +20,25 @@ import { describe, expect, it } from "vitest";
 import {
   encodeSequence,
   decodeSequence,
-} from "$lib/shared/navigation/services/sequence-encoder";
+} from "#lib/shared/navigation/services/sequence-encoder.js";
 import {
   ensureComposition,
   hydrate,
-} from "$lib/shared/foundation/services/sequence-hydrator";
+} from "#lib/shared/foundation/services/sequence-hydrator.js";
 import {
   createSequenceData,
   type SequenceData,
-} from "$lib/shared/foundation/domain/models/sequence-data";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+} from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 import {
   MotionType,
   RotationDirection,
   Orientation,
   HandSide,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 function makeStep(
   stepNumber: number,
@@ -185,7 +185,7 @@ describe("scan-import save/read round-trip (decoded blob → library copy → vi
     // steps at all. (Import lives at the bottom so the module's transitive
     // firebase deps only load in the test that needs them.)
     const { mapDocToSequence } = await import(
-      "$lib/shared/library/services/collection-firestore-mapper"
+      "#lib/shared/library/services/collection-firestore-mapper.js"
     );
 
     const decoded = decodeSequence(encodeSequence(buildSourceSequence()));
@@ -210,7 +210,7 @@ describe("scan-import save/read round-trip (decoded blob → library copy → vi
     // raw Firestore Timestamp there crashed every live thumbnail render in a
     // collection (cards stuck on the word placeholder).
     const { mapDocToSequence } = await import(
-      "$lib/shared/library/services/collection-firestore-mapper"
+      "#lib/shared/library/services/collection-firestore-mapper.js"
     );
 
     const fakeTimestamp = { toDate: () => new Date("2024-03-01T00:00:00Z") };

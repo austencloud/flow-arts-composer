@@ -10,20 +10,20 @@
   - Shows empty state when no clip at playhead
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
 
-  import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
+  import { getSequenceAnimationOrchestrator } from "#lib/shared/animation-engine/get-sequence-animation-orchestrator.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
   import { onMount, onDestroy, untrack } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
   import { getTimelinePlayer } from "../services/timeline-playback-service";
-  import type { TimelineClip } from "$lib/shared/animation-engine/domain/timeline-types";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { StartPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-  import { startPlacementDeriver as startPlacementDeriverSingleton } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
+  import type { TimelineClip } from "#lib/shared/animation-engine/domain/timeline-types.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import type { StartPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+  import { startPlacementDeriver as startPlacementDeriverSingleton } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
 
   interface Props {
     /** Current playhead position in seconds */

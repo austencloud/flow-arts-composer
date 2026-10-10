@@ -2,7 +2,7 @@
 StaffLegend - Legend showing left/right staff position and thumb orientation
 -->
 <script lang="ts">
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     LEFT_STAFF_COLOR,
     RIGHT_STAFF_COLOR,

@@ -11,12 +11,12 @@
   settings and offers undo.
 -->
 <script lang="ts">
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-  import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
+  import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+  import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
   import type { PropPreset } from "../../../domain/app-settings";
   import {
     presetLabel,

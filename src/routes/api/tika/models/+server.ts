@@ -1,9 +1,9 @@
 import type { RequestHandler } from "@sveltejs/kit";
-import { env } from "$env/dynamic/private";
-import { requireFirebaseUser } from "$lib/server/auth/requireFirebaseUser";
-import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
-import { withRateLimit } from "$lib/server/security/withRateLimit";
-import { getConfiguredTikaModels } from "$lib/features/tika/domain/tika-model-catalog";
+import * as env from "$app/env/private";
+import { requireFirebaseUser } from "#lib/server/auth/requireFirebaseUser.js";
+import { RATE_LIMITS } from "#lib/server/security/rate-limiter.js";
+import { withRateLimit } from "#lib/server/security/withRateLimit.js";
+import { getConfiguredTikaModels } from "#lib/features/tika/domain/tika-model-catalog.js";
 
 export const GET: RequestHandler = async (event) => {
   const caller = await requireFirebaseUser(event);

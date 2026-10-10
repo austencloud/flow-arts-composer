@@ -8,7 +8,7 @@ const analytics = vi.hoisted(() => ({
   failed: vi.fn(),
 }));
 
-vi.mock("$lib/shared/keyboard/keyboard-shortcut-analytics", () => ({
+vi.mock("#lib/shared/keyboard/keyboard-shortcut-analytics.js", () => ({
   logKeyboardShortcutExecuted: analytics.executed,
   logKeyboardShortcutFailed: analytics.failed,
 }));

@@ -4,7 +4,7 @@ const getVideosForSequence = vi.fn();
 const updateHandLabeling = vi.fn();
 
 vi.mock(
-  "$lib/shared/video-collaboration/services/collaborative-video-manager",
+  "#lib/shared/video-collaboration/services/collaborative-video-manager.js",
   () => ({
     getVideosForSequence: (id: string) => getVideosForSequence(id),
     deleteVideo: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock(
 );
 
 const { getSequenceVideosStore, resetSequenceVideoStores } = await import(
-  "$lib/shared/video-collaboration/state/sequence-videos-store.svelte"
+  "#lib/shared/video-collaboration/state/sequence-videos-store.svelte.js"
 );
 
 describe("sequence videos store", () => {

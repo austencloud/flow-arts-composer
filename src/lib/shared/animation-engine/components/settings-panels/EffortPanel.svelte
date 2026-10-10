@@ -2,8 +2,8 @@
   import {
     EFFORTS,
     type EffortId,
-  } from "$lib/shared/effort/domain/effort-types";
-  import { sampleEffortCurve } from "$lib/shared/effort/domain/effort-easing-unified";
+  } from "#lib/shared/effort/domain/effort-types.js";
+  import { sampleEffortCurve } from "#lib/shared/effort/domain/effort-easing-unified.js";
 
   // Each effort's timing curve: time through the beat across, how far the
   // move has got up. Steep is fast, flat is slow. All eight share one

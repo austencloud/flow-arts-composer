@@ -3,12 +3,12 @@ LevelCard.svelte - Unified difficulty level selection card
 Uses shared StepperCard for consistent styling with Generate module
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import StepperCard from "$lib/shared/components/stepper-card/StepperCard.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import StepperCard from "#lib/shared/components/stepper-card/StepperCard.svelte";
   import {
     type DifficultyLevel,
     DIFFICULTY_LEVELS,
-  } from "$lib/shared/domain/models/sequence-parameters";
+  } from "#lib/shared/domain/models/sequence-parameters.js";
 
   let {
     value = null,

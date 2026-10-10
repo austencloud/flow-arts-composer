@@ -4,23 +4,23 @@
  * beats sit on the Matrix's own Surprise reveal and must fit in one turn.
  */
 import { describe, expect, it } from "vitest";
-import { METHOD_PREVIEW_TIMING } from "$lib/features/create/shared/state/method-preview-turns.svelte";
+import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 import {
   shapeCellRect,
   shapeLayout,
   shapeStageCovers,
   transformOnto,
-} from "$lib/features/create/shared/components/method-previews/method-preview-compositions";
-import { SCENE_TAP } from "$lib/features/create/shared/components/method-previews/method-preview-run";
+} from "#lib/features/create/shared/components/method-previews/method-preview-compositions.js";
+import { SCENE_TAP } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
 import {
   SHAPE_PREVIEW_TIMING,
   shapeCorner,
-} from "$lib/features/create/shared/components/method-previews/method-preview-shape";
-import { SHAPE_MATRIX_REVEAL } from "$lib/shared/shape-matrix/app/services/shape-matrix-reveal";
+} from "#lib/features/create/shared/components/method-previews/method-preview-shape.js";
+import { SHAPE_MATRIX_REVEAL } from "#lib/shared/shape-matrix/app/services/shape-matrix-reveal.js";
 import {
   buildShapeMatrixAxis,
   flowerKey,
-} from "$lib/shared/shape-matrix/domain/flower-signature";
+} from "#lib/shared/shape-matrix/domain/flower-signature.js";
 
 /** The attract ghost's shortest glide (glide() in attract-ghost.svelte.ts). */
 const MIN_GLIDE_MS = 300;

@@ -6,8 +6,8 @@
  * existing Orientation enum) and supports only beta/gamma placements.
  */
 
-import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 /** Triangle orientation: which direction the apex points */
 export type TriGridMode = "upright" | "inverted" | "left" | "right";

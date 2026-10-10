@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Canvas } from "@threlte/core";
-  import CanvasLifecycle from "$lib/shared/3d/components/CanvasLifecycle.svelte";
+  import CanvasLifecycle from "#lib/shared/3d/components/CanvasLifecycle.svelte";
   import ContactScene from "./ContactScene.svelte";
 
   interface Props {

@@ -24,10 +24,10 @@ import {
   type Unsubscribe,
   type WriteBatch,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
 import type { OnboardingStatus } from "./types";
-import { compareVersions } from "$lib/shared/versioning/domain/models/version-models";
+import { compareVersions } from "#lib/shared/versioning/domain/models/version-models.js";
 import {
   ACCOUNT_SETUP_PROGRESS_KEY,
   ONBOARDING_COMPLETED_KEY,
@@ -45,7 +45,7 @@ import {
 import {
   safeLocalStorageSetItem,
   removeLocalStorageItem,
-} from "$lib/shared/foundation/services/storage-manager";
+} from "#lib/shared/foundation/services/storage-manager.js";
 
 const LAST_SEEN_VERSION_KEY = "tka-last-seen-version";
 

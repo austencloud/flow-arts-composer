@@ -9,20 +9,20 @@ import type {
 import type { TextRenderer } from "./text-renderer";
 import type { QRCodeGenerator } from "../../qr/services/qr-code-generator";
 import { calculateLayout } from "./layout-calculator";
-import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
 import { drawSmartCellBorders } from "./cell-border-renderer";
-import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
-import { tryGetLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
-import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { parseLoopComponents } from "#lib/shared/create/services/loop-type-utils.js";
+import { tryGetLoopDisplayResolver } from "#lib/shared/loop-labeler/get-loop-display-resolver.js";
+import { Period } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import {
   RESERVED_ORIENTATION_PRIMITIVES,
   LOOPComponent,
-} from "$lib/shared/foundation/domain/models/generation/generate-models";
+} from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import {
   calculateCardSurface,
   CARD_FRONT_INDICATOR_SIZE_SCALE,
 } from "@tka/render-composition";
-import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
+import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "#lib/shared/browse/services/sequence-difficulty-calculator.js";
 // TEMP assembly profiler — header/footer/border phase timing for the cold-deck profiler.
 
 const DECK_HEADER_BG = "rgba(245, 245, 245, 0.98)";

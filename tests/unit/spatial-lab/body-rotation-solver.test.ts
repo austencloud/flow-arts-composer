@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeTargetRotation,
   stepRotation,
-} from "$lib/features/lab/tabs/spatial-lab/services/body-rotation-solver";
+} from "#lib/features/lab/tabs/spatial-lab/services/body-rotation-solver.js";
 
 describe("computeTargetRotation", () => {
   const body = { x: 300, y: 330 };

@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import ConceptLevelMap from "$lib/features/learn/components/ConceptLevelMap.svelte";
+  import ConceptLevelMap from "#lib/features/learn/components/ConceptLevelMap.svelte";
   import {
     getConceptPlace,
     type LearnConceptPlace,
-  } from "$lib/features/learn/domain/concept-place-registry";
+  } from "#lib/features/learn/domain/concept-place-registry.js";
   import {
     readConceptPlaceId,
     writeConceptPlaceId,
-  } from "$lib/features/learn/domain/concept-place-routes";
-  import { buildConceptPath } from "$lib/features/learn/domain/concept-routes";
-  import type { LearnConcept } from "$lib/features/learn/domain/types";
-  import { mutateCurrentUrl } from "$lib/shared/navigation/services/url-state";
+  } from "#lib/features/learn/domain/concept-place-routes.js";
+  import { buildConceptPath } from "#lib/features/learn/domain/concept-routes.js";
+  import type { LearnConcept } from "#lib/features/learn/domain/types.js";
+  import { mutateCurrentUrl } from "#lib/shared/navigation/services/url-state.js";
 
   let {
     totalTerms,

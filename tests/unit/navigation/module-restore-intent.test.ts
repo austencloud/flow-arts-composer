@@ -35,13 +35,13 @@ const harness = vi.hoisted(() => {
   };
 });
 
-vi.mock("$app/environment", () => ({ browser: false }));
+vi.mock("$app/env", () => ({ browser: false }));
 vi.mock("$app/navigation", () => ({ replaceState: vi.fn() }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn() },
 }));
 vi.mock(
-  "$lib/shared/auth/services/post-hog-feature-flag-service.svelte",
+  "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js",
   () => ({
     featureFlagService: {
       canAccessModule: () => true,
@@ -52,29 +52,32 @@ vi.mock(
     },
   })
 );
-vi.mock("$lib/shared/navigation/state/navigation-state.svelte", () => ({
+vi.mock("#lib/shared/navigation/state/navigation-state.svelte.js", () => ({
   navigationState: {
     activeTab: "construct",
     setActiveTab: vi.fn(),
     setCurrentModule: harness.setCurrentModule,
   },
 }));
-vi.mock("$lib/shared/navigation/config/module-definitions", () => ({
+vi.mock("#lib/shared/navigation/config/module-definitions.js", () => ({
   normalizeModuleId: (module: string) => module,
 }));
-vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => ({
-  saveActiveTab: harness.persistSaveActiveTab,
-  getActiveTab: harness.persistGetActiveTab,
-  initialize: harness.persistInitialize,
-}));
-vi.mock("$lib/shared/application/state/ui/ui-state.svelte", () => ({
+vi.mock(
+  "#lib/shared/persistence/services/dexie-persistence-service.js",
+  () => ({
+    saveActiveTab: harness.persistSaveActiveTab,
+    getActiveTab: harness.persistGetActiveTab,
+    initialize: harness.persistInitialize,
+  })
+);
+vi.mock("#lib/shared/application/state/ui/ui-state.svelte.js", () => ({
   getActiveModule: () => harness.activeModule,
   setActiveModule: harness.setActiveModule,
   setIsTransitioning: harness.setIsTransitioning,
 }));
 
 async function loadModuleState() {
-  return import("$lib/shared/application/state/ui/module-state");
+  return import("#lib/shared/application/state/ui/module-state.js");
 }
 
 async function waitForRestoreRead(): Promise<void> {

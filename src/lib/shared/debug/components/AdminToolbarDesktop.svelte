@@ -11,11 +11,11 @@
 -->
 <script lang="ts">
   import { slide, fly } from "svelte/transition";
-  import UserSearchInput from "$lib/shared/user-search/UserSearchInput.svelte";
-  import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
+  import UserSearchInput from "#lib/shared/user-search/UserSearchInput.svelte";
+  import RobustAvatar from "#lib/shared/components/avatar/RobustAvatar.svelte";
   import type { QuickAccessUser } from "../services/types";
   import type { PreviewUserProfile } from "../state/user-preview-state.svelte";
-  import type { UserRole } from "$lib/shared/auth/domain/models/user-role";
+  import type { UserRole } from "#lib/shared/auth/domain/models/user-role.js";
 
   const ROLE_CONFIG: { role: UserRole; label: string; icon: string; color: string }[] = [
     { role: "admin", label: "Admin", icon: "fas fa-crown", color: "#ffd700" },

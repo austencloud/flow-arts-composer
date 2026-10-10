@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createSequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
-import { createUndoController } from "$lib/features/create/shared/state/create-module/undo-controller.svelte";
+import { createSequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
+import { createUndoController } from "#lib/features/create/shared/state/create-module/undo-controller.svelte.js";
 import {
   UndoManager,
   UndoOperationType,
-} from "$lib/features/create/shared/services/undo-manager";
-import { createSequence as createSequenceData } from "$lib/shared/create/services/sequence-domain-manager";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import type { SequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+} from "#lib/features/create/shared/services/undo-manager.js";
+import { createSequence as createSequenceData } from "#lib/shared/create/services/sequence-domain-manager.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import type { SequenceRepository } from "#lib/shared/create/services/sequence-repository.js";
+import type { SequenceState } from "#lib/features/create/shared/state/sequence-state-orchestrator.svelte.js";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
 
 function makeSequence(name: string, length = 2) {
   const sequence = createSequenceData({

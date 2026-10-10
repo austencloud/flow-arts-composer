@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { proceduralKitProvider } from "$lib/features/museum/services/kit-piece-provider";
-import type { ResolvedWalls } from "$lib/features/museum/domain/museum-kit-types";
+import { proceduralKitProvider } from "#lib/features/museum/services/kit-piece-provider.js";
+import type { ResolvedWalls } from "#lib/features/museum/domain/museum-kit-types.js";
 
 describe("proceduralKitProvider", () => {
   it("emits one wall group spanning each run length", () => {

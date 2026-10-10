@@ -1,7 +1,7 @@
 import type {
   MotionCompositionFrame,
   MotionCompositionV3,
-} from "$lib/shared/motion-composition/domain/motion-composition-types";
+} from "#lib/shared/motion-composition/domain/motion-composition-types.js";
 import type {
   WorldCameraSample,
   WorldTrajectoryLayer3D,

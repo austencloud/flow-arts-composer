@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { copyTextToClipboard } from "$lib/shared/share/services/link-share";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { copyTextToClipboard } from "#lib/shared/share/services/link-share.js";
+  import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
   interface Props {
     /** Function that returns the text to copy (can be async) */

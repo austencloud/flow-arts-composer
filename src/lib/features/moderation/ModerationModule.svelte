@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { authState } from '$lib/shared/auth/state/auth-state.svelte';
+	import { authState } from '#lib/shared/auth/state/auth-state.svelte.js';
 	import ReportsDashboard from './components/ReportsDashboard.svelte';
-	import { t } from '$lib/shared/i18n/i18n.svelte';
+	import { t } from '#lib/shared/i18n/i18n.svelte.js';
 </script>
 
 {#if authState.isAdmin}

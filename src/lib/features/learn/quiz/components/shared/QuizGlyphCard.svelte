@@ -2,12 +2,12 @@
 QuizGlyphCard - Displays TKA glyph with smooth crossfade transitions between letters
 -->
 <script lang="ts">
-  import TKAGlyph from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+  import TKAGlyph from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
   import {
     preloadLetterDimensions,
     getLetterDimensions,
-  } from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
-  import { isDashLetter } from "$lib/shared/pictograph/tka-glyph/utils/letter-image-getter";
+  } from "#lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
+  import { isDashLetter } from "#lib/shared/pictograph/tka-glyph/utils/letter-image-getter.js";
   import { onMount } from "svelte";
 
   let { letter }: { letter: string } = $props();

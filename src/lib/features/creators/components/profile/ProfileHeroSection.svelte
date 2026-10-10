@@ -20,22 +20,22 @@
   column of gaps, which is a worse empty state than the one being replaced.
 -->
 <script lang="ts">
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import { fade } from "svelte/transition";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import type { EnhancedUserProfile } from "$lib/shared/community/domain/models/enhanced-user-profile";
-  import AvatarImage from "$lib/shared/browse/components/AvatarImage.svelte";
-  import { reportModalState } from "$lib/features/moderation/state/report-modal-state.svelte";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
-  import { getEffectiveProp } from "$lib/shared/community/domain/get-effective-prop";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { EnhancedUserProfile } from "#lib/shared/community/domain/models/enhanced-user-profile.js";
+  import AvatarImage from "#lib/shared/browse/components/AvatarImage.svelte";
+  import { reportModalState } from "#lib/features/moderation/state/report-modal-state.svelte.js";
+  import { getPropTypeDisplayInfo } from "#lib/shared/pictograph/prop/domain/prop-type-display-registry.js";
+  import { getEffectiveProp } from "#lib/shared/community/domain/get-effective-prop.js";
   import {
     normalizeProfileSkill,
     normalizeProfileSkills,
-  } from "$lib/shared/community/domain/profile-prop-catalog";
+  } from "#lib/shared/community/domain/profile-prop-catalog.js";
   import {
     joinedLabel,
     activeLabel,
-  } from "$lib/features/creators/domain/profile-tenure";
+  } from "#lib/features/creators/domain/profile-tenure.js";
 
   let {
     userProfile,

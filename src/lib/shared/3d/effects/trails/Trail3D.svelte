@@ -9,7 +9,7 @@
     LightHandle,
   } from "../lighting/dynamic-light-manager";
   import type { QualityTier } from "../types";
-  import { Canvas2DVisibilityFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-visibility-fade-manager";
+  import { Canvas2DVisibilityFadeManager } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-visibility-fade-manager.js";
   import type { SceneEffectsManager3D } from "../scene-effects/scene-effects-manager-3d";
 
   const TRAIL_FADE_IN_MS = 300;

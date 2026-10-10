@@ -1,5 +1,5 @@
-import { captureEvent } from "$lib/shared/analytics/services/posthog";
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import type { LetterTypeGroupKey } from "../option-picker/services/section-title-formatter";
 
 export type StartPlacementPath = "presets" | "build";

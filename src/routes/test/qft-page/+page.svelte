@@ -7,7 +7,7 @@
    * the move.
    */
   import QftUnit from "./_components/QftUnit.svelte";
-  import LinkChip from "$lib/shared/ui/components/LinkChip.svelte";
+  import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   const SOURCES = [
     {

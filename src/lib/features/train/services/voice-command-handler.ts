@@ -5,7 +5,7 @@
  * Primarily for Step-by-Step mode advancement.
  */
 
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 // Augment Window interface for webkit prefixed SpeechRecognition
 interface WindowWithSpeechRecognition extends Window {
   SpeechRecognition?: new () => SpeechRecognition;

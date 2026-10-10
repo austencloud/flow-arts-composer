@@ -1,4 +1,4 @@
-import type { Animal3DParams } from "$lib/shared/effects/translators/webgl3d-types";
+import type { Animal3DParams } from "#lib/shared/effects/translators/webgl3d-types.js";
 import {
   ANIMAL_TONGUE,
   type AnimalInstanceWriter3D,

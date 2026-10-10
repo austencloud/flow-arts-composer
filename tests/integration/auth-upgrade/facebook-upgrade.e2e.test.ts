@@ -31,7 +31,7 @@ import {
   clearPendingLink,
   consumePendingLinkForUser,
   stashPendingLink,
-} from "$lib/shared/auth/services/pending-credential-link";
+} from "#lib/shared/auth/services/pending-credential-link.js";
 
 const EMULATOR_HOST = "http://127.0.0.1:9099";
 const PROJECT_ID = "the-kinetic-alphabet";

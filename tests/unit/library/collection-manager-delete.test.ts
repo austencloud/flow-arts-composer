@@ -104,16 +104,16 @@ vi.mock("firebase/firestore", () => ({
     value,
   })),
 }));
-vi.mock("$lib/shared/auth/firebase", () => ({
+vi.mock("#lib/shared/auth/firebase.js", () => ({
   getFirestoreInstance: vi.fn().mockResolvedValue({}),
 }));
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toast: { error: vi.fn() },
 }));
-vi.mock("$lib/shared/analytics/services/posthog", () => ({
+vi.mock("#lib/shared/analytics/services/posthog.js", () => ({
   captureEvent: vi.fn(),
 }));
-vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => {
+vi.mock("#lib/shared/library/services/collection-firestore-mapper.js", () => {
   class CollectionError extends Error {
     constructor(
       message: string,
@@ -155,7 +155,7 @@ vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => {
   };
 });
 
-import { deleteCollection } from "$lib/shared/library/services/collection-manager";
+import { deleteCollection } from "#lib/shared/library/services/collection-manager.js";
 
 const COLLECTION_PATH = "users/user-1/collections/collection-1";
 

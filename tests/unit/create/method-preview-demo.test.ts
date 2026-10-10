@@ -6,13 +6,13 @@ import {
   CONSTRUCT_MAX_SLOTS,
   fuseLayout,
   generateLayout,
-} from "$lib/features/create/shared/components/method-previews/method-preview-compositions";
+} from "#lib/features/create/shared/components/method-previews/method-preview-compositions.js";
 import {
   DEMO_SEQUENCE,
   DEMO_STEP_START,
   openingSteps,
   startPictograph,
-} from "$lib/features/create/shared/components/method-previews/method-preview-demo";
+} from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
 
 describe("method preview demo data", () => {
   it("reads the start placement and the opening steps", () => {

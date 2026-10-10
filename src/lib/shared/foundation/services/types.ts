@@ -27,7 +27,7 @@ export interface DownloadResult {
 import type {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export interface HandPathFilters {
   readonly startLocation?: GridLocation;
@@ -53,7 +53,7 @@ export interface SEOLinkOptions {
   seoMode?: boolean;
 }
 
-import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export interface SoloPropFilters {
   readonly startLocation?: GridLocation;
@@ -66,7 +66,7 @@ export interface SoloPropFilters {
   readonly limit?: number;
 }
 
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export interface ViewerPreferences {
   readonly leftPropType: PropType;

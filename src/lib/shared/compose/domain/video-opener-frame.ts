@@ -1,4 +1,4 @@
-import { fitOpenerImage } from "$lib/shared/share/domain/video-opener";
+import { fitOpenerImage } from "#lib/shared/share/domain/video-opener.js";
 
 export type VideoOpenerImage =
   | HTMLImageElement

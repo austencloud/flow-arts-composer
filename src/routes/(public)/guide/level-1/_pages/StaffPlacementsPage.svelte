@@ -20,14 +20,14 @@
    * columns x 107.5/228.1/348.6/469.2, rows y 271.8/405.8/535.6, rules at
    * y 257.4/389.7/521.3 spanning x 33→570.
    */
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-  import { MotionType, HandSide, Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { createMotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+  import { MotionType, HandSide, Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+  import { GridMode, GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { getGridPlacementFromLocations } from "#lib/shared/pictograph/grid/services/grid-placement-deriver.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
   import { pt, ptDrag, editText, guideEdit, registerEditSource } from "../_data/guide-edit.svelte";
 
   const S = 816 / 612; // pt → px (4/3)

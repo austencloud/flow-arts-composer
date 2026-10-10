@@ -6,7 +6,7 @@ import type {
 } from "../domain/village-types";
 import type * as PersonalityGeneratorModule from "../services/personality-generator";
 import { VILLAGE_PROP_TYPES, EFFECT_AFFINITIES } from "../domain/village-constants";
-import { DEPLOYED_CHARACTER_IDS } from "$lib/shared/3d/config/deployed-characters";
+import { DEPLOYED_CHARACTER_IDS } from "#lib/shared/3d/config/deployed-characters.js";
 
 // Only assign avatars whose GLB is actually deployed. The chXX Mixamo models
 // aren't on R2 yet and 404 (see deployed-characters.ts), so picking one floods the

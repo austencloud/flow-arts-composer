@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { fromImageData, fromDiscImage, fromStripImage } from "$lib/features/poi/services/image-pattern-loader";
-import { getPixel } from "$lib/shared/poi/domain/strip-pattern";
+import { fromImageData, fromDiscImage, fromStripImage } from "#lib/features/poi/services/image-pattern-loader.js";
+import { getPixel } from "#lib/shared/poi/domain/strip-pattern.js";
 
 // Polyfill ImageData for Node environment
 if (typeof globalThis.ImageData === "undefined") {

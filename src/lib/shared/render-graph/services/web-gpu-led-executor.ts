@@ -31,7 +31,7 @@ import {
   streakDensity,
   subStepCount,
   type LedShutter,
-} from "$lib/shared/animation-engine/domain/led-photometry";
+} from "#lib/shared/animation-engine/domain/led-photometry.js";
 
 const MAX_LEDS = 400;
 const BLOOM_MIP_COUNT = 5;

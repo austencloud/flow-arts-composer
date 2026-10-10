@@ -1,30 +1,30 @@
 <!-- FeedbackForm - Streamlined feedback form orchestrator -->
 <script lang="ts">
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import { onMount } from "svelte";
-  import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
-  import type { VoiceRecordingResult } from "$lib/shared/feedback/domain/feedback-contract-types";
-  import { getVoiceRecorder } from "$lib/features/feedback/get-voice-recorder";
-  import * as transcriptionClient from "$lib/features/feedback/services/transcription-client";
-  import { getFormDraftPersister } from "$lib/features/feedback/get-form-draft-persister";
-  import { getFeedbackTypeResolver } from "$lib/features/feedback/get-feedback-type-resolver";
-  import { getAudioAnalyzer } from "$lib/features/feedback/get-audio-analyzer";
+  import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
+  import type { VoiceRecordingResult } from "#lib/shared/feedback/domain/feedback-contract-types.js";
+  import { getVoiceRecorder } from "#lib/features/feedback/get-voice-recorder.js";
+  import * as transcriptionClient from "#lib/features/feedback/services/transcription-client.js";
+  import { getFormDraftPersister } from "#lib/features/feedback/get-form-draft-persister.js";
+  import { getFeedbackTypeResolver } from "#lib/features/feedback/get-feedback-type-resolver.js";
+  import { getAudioAnalyzer } from "#lib/features/feedback/get-audio-analyzer.js";
   import type { FeedbackSubmitState } from "../../state/feedback-submit-state.svelte";
-  import { TYPE_CONFIG } from "$lib/shared/feedback/domain/models/feedback-models";
+  import { TYPE_CONFIG } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import { feedbackTypePlaceholder } from "../../domain/feedback-display-labels";
-  import type { FeedbackType } from "$lib/shared/feedback/domain/models/feedback-models";
+  import type { FeedbackType } from "#lib/shared/feedback/domain/models/feedback-models.js";
   import SuccessState from "./SuccessState.svelte";
   import TypeSelector from "./TypeSelector.svelte";
   import EncouragementHint from "./EncouragementHint.svelte";
   import FeedbackTextarea from "./FeedbackTextarea.svelte";
   import SubmitButton from "./SubmitButton.svelte";
   import Toast from "./Toast.svelte";
-  import MobileInputToolbar from "$lib/shared/components/MobileInputToolbar.svelte";
+  import MobileInputToolbar from "#lib/shared/components/MobileInputToolbar.svelte";
   import VoiceInputButton from "./VoiceInputButton.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { detectPlatform } from "#lib/shared/mobile/services/platform-detector.js";
 
   // Props
   const {

@@ -1,7 +1,7 @@
-import { getErrorHandler } from "$lib/shared/application/get-error-handler";
-import { authedFetch } from "$lib/shared/auth/services/authed-fetch";
-import { isWeb } from "$lib/shared/platform/services/platform-detector";
-import { dev } from "$app/environment";
+import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
+import { authedFetch } from "#lib/shared/auth/services/authed-fetch.js";
+import { isWeb } from "#lib/shared/platform/services/platform-detector.js";
+import { dev } from "$app/env";
 import {
   getUploadUrl,
   startMultipart,
@@ -10,8 +10,8 @@ import {
   listParts,
   deleteByPrefix,
 } from "./r2-presigner";
-import { getAuthSync } from "$lib/shared/auth/firebase";
-import type { ErrorHandler } from "$lib/shared/application/services/error-handler";
+import { getAuthSync } from "#lib/shared/auth/firebase.js";
+import type { ErrorHandler } from "#lib/shared/application/services/error-handler.js";
 import type {
   VideoUploadResult,
   UploadOptions,

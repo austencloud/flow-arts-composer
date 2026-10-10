@@ -5,9 +5,9 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from "firebase/firestore";
-import { getFirestoreInstance } from "$lib/shared/auth/firebase";
-import { firestoreList, firestoreSet } from "$lib/shared/firestore";
-import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
+import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
+import { firestoreList, firestoreSet } from "#lib/shared/firestore/index.js";
+import { isPermissionDeniedError } from "#lib/shared/auth/utils/is-permission-denied-error.js";
 import {
   SpecialArrowPlacementSchema,
   generateSpecialOverrideKey,
@@ -15,7 +15,7 @@ import {
   type SpecialArrowPlacementInput,
   type SpecialSuppressionInput,
 } from "../domain/special-arrow-placement";
-import { createComponentLogger } from "$lib/shared/utils/debug-logger";
+import { createComponentLogger } from "#lib/shared/utils/debug-logger.js";
 import { normalizePlacementFrame } from "../../placement/domain/placement-frame";
 
 const logger = createComponentLogger("SpecialArrowPlacementPersister");

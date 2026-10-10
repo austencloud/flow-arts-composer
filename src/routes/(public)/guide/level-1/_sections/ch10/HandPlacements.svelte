@@ -2,7 +2,7 @@
   import GuideSection from "../../_components/GuideSection.svelte";
   import GuidePictographGrid from "../../_components/GuidePictographGrid.svelte";
   import { getGuideData } from "../../_data/guide-data-context";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
   const data = getGuideData();
 

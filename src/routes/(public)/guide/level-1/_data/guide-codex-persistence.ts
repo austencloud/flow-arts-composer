@@ -6,7 +6,7 @@
 // Kept separate from the $state factory (guide-codex-state.svelte.ts) so it's
 // unit-testable without a Svelte runtime.
 
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 
 export const GUIDE_CODEX_STORAGE_KEY = "guide-codex-view-prefs";
 const GUIDE_CODEX_PREFS_VERSION = 4;

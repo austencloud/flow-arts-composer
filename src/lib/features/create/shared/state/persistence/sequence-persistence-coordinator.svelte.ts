@@ -9,11 +9,11 @@
  * RESPONSIBILITY: Persistence coordination, observes state changes
  */
 
-import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
-import { captureEvent } from "$lib/shared/analytics/services/posthog";
-import type { ActiveCreateModule } from "$lib/shared/foundation/ui/ui-types";
+import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { SequencePersister } from "#lib/features/create/shared/services/sequence-persister.js";
+import { captureEvent } from "#lib/shared/analytics/services/posthog.js";
+import type { ActiveCreateModule } from "#lib/shared/foundation/ui/ui-types.js";
 
 export interface PersistenceState {
   currentSequence: SequenceData | null;

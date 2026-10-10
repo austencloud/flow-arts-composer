@@ -1,6 +1,6 @@
-import type { RegionEdge } from "$lib/shared/media-composition/domain/media-layout-schema";
-import type { PixelRect } from "$lib/shared/media-composition/services/media-fit";
-import { traceRoundedRect } from "$lib/shared/render/utils/trace-rounded-rect";
+import type { RegionEdge } from "#lib/shared/media-composition/domain/media-layout-schema.js";
+import type { PixelRect } from "#lib/shared/media-composition/services/media-fit.js";
+import { traceRoundedRect } from "#lib/shared/render/utils/trace-rounded-rect.js";
 
 /**
  * A region's rounded corners, border and drop shadow, measured once for the

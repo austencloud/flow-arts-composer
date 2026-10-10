@@ -1,8 +1,8 @@
-import type { DraftSaveStatus } from "$lib/shared/feedback/domain/feedback-contract-types";
+import type { DraftSaveStatus } from "#lib/shared/feedback/domain/feedback-contract-types.js";
 import type {
   FeedbackFormData,
   FeedbackDraft,
-} from "$lib/shared/feedback/domain/models/feedback-models";
+} from "#lib/shared/feedback/domain/models/feedback-models.js";
 import {
   saveDraft as saveToStorage,
   loadDraft as loadFromStorage,

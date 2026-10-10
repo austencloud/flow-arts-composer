@@ -1,22 +1,22 @@
-import type { PostProject } from "$lib/shared/media-composition/domain/post-project";
-import type { TakeTiming } from "$lib/shared/media-composition/domain/take-timing";
+import type { PostProject } from "#lib/shared/media-composition/domain/post-project.js";
+import type { TakeTiming } from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   loadPostEditorHistory,
   savePostEditorHistory,
   type PostEditorHistory,
   type RestoredPostEditorHistory,
-} from "$lib/shared/media-composition/services/post-editor-history-store";
+} from "#lib/shared/media-composition/services/post-editor-history-store.js";
 import {
   backupPostProjectBeforeImport,
   openPostProject,
   savePostProject,
   type SaveResult,
-} from "$lib/shared/media-composition/services/post-project-store";
+} from "#lib/shared/media-composition/services/post-project-store.js";
 import {
   loadTakeTiming,
   openTakeTiming,
   saveTakeTiming,
-} from "$lib/shared/media-composition/services/take-timing-store";
+} from "#lib/shared/media-composition/services/take-timing-store.js";
 
 /**
  * Where the Post editor keeps a post, each take's timing and the undo

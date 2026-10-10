@@ -6,8 +6,8 @@
  * videos, images, and text in configurable grid layouts.
  */
 
-import type { Composition } from "$lib/shared/animation-engine/domain/compose-types";
-import { db } from "$lib/shared/persistence/database/tka-database";
+import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
+import { db } from "#lib/shared/persistence/database/tka-database.js";
 
 /**
  * Options for querying compositions

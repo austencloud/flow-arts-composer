@@ -3,9 +3,9 @@
   Used in both the assemble flow and the orientation explainer.
 -->
 <script lang="ts">
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
 
   let {
     gridMode,

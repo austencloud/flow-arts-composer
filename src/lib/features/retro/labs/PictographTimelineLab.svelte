@@ -12,19 +12,19 @@
 -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { PixelRenderer } from "$lib/features/retro/win95/services/pixel-renderer";
-  import { XPRenderer } from "$lib/features/retro/winxp/services/xp-renderer";
-  import { SvgToBrailleConverter } from "$lib/features/retro/dos/services/svg-to-braille-converter";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { PixelRenderer } from "#lib/features/retro/win95/services/pixel-renderer.js";
+  import { XPRenderer } from "#lib/features/retro/winxp/services/xp-renderer.js";
+  import { SvgToBrailleConverter } from "#lib/features/retro/dos/services/svg-to-braille-converter.js";
   import AsciiRawPreview from "./AsciiRawPreview.svelte";
-  import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-  import type { RetroPictographData, RetroHandData } from "$lib/features/retro/shared/domain/pictograph-types";
-  import { HandSide, MotionType, Orientation, RotationDirection, GridLocation } from "$lib/features/retro/shared/domain/pictograph-types";
-  import { getCanvas2DRenderer } from "$lib/shared/render/get-canvas-2d-renderer";
-  import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-  import "$lib/features/retro/dos/styles/dos-terminal.css";
+  import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import type { RetroPictographData, RetroHandData } from "#lib/features/retro/shared/domain/pictograph-types.js";
+  import { HandSide, MotionType, Orientation, RotationDirection, GridLocation } from "#lib/features/retro/shared/domain/pictograph-types.js";
+  import { getCanvas2DRenderer } from "#lib/shared/render/get-canvas-2d-renderer.js";
+  import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+  import "#lib/features/retro/dos/styles/dos-terminal.css";
 
   const pixelRenderer = new PixelRenderer(pictographPreparer);
   const xpRenderer = new XPRenderer(pictographPreparer);

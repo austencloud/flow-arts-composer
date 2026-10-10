@@ -4,7 +4,7 @@ import {
   createEmptyAnnotations,
   DEFAULT_SHEET_LAYOUT,
   createEmptyChoreoSheet,
-} from "$lib/features/write/domain/types/choreo-sheet";
+} from "#lib/features/write/domain/types/choreo-sheet.js";
 
 describe("choreo-sheet annotations model", () => {
   it("bandKey composes rosterIndex + sequenceId + rowInSequence", () => {
@@ -37,7 +37,7 @@ describe("choreo-sheet annotations model", () => {
   });
 });
 
-import { createChoreoSheetState } from "$lib/features/write/state/choreo-sheet-state.svelte";
+import { createChoreoSheetState } from "#lib/features/write/state/choreo-sheet-state.svelte.js";
 
 function makeState() {
   return createChoreoSheetState({
@@ -88,7 +88,7 @@ describe("annotation editing on the state factory", () => {
   });
 });
 
-import { parseChoreoSheet } from "$lib/features/write/services/choreo-sheet-repository";
+import { parseChoreoSheet } from "#lib/features/write/services/choreo-sheet-repository.js";
 
 describe("choreo-sheet persistence back-compat", () => {
   it("hydrates a pre-annotation sheet to flow mode with empty annotations", () => {

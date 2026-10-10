@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { loopViabilityService } from './services/loop-viability-service';
 
 export function getLoopViabilityService(): typeof loopViabilityService {

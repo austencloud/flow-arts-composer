@@ -1,4 +1,4 @@
-import type { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridLocation, GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export interface HandPathData {
   readonly id: string;

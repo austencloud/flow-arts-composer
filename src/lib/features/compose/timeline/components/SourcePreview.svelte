@@ -11,20 +11,20 @@
   - Quick add to timeline button
 -->
 <script lang="ts">
-  import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
-  import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { getSequenceAnimationOrchestrator } from "#lib/shared/animation-engine/get-sequence-animation-orchestrator.js";
+  import ProgressRing from "#lib/shared/components/loading/ProgressRing.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, onDestroy, untrack } from "svelte";
-  import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
-  import { animationSettings } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
-  import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { StartPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-  import { startPlacementDeriver as startPlacementDeriverSingleton } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+  import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";
+  import { animationSettings } from "#lib/shared/animation-engine/state/animation-settings-state.svelte.js";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import type { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
+  import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
+  import type { StartPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+  import { startPlacementDeriver as startPlacementDeriverSingleton } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
 
   interface Props {
     /** Sequence to preview (from library) */

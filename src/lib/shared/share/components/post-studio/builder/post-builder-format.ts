@@ -1,4 +1,4 @@
-import { normalizeTyped } from "$lib/shared/ui/typed-number";
+import { normalizeTyped } from "#lib/shared/ui/typed-number.js";
 
 /** m:ss.s, the clock the transport and the act fields read in. */
 export function formatPostClock(seconds: number): string {

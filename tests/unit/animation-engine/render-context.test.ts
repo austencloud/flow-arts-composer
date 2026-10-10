@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { LiveRenderContext } from "$lib/shared/animation-engine/services/render-context";
+import { LiveRenderContext } from "#lib/shared/animation-engine/services/render-context.js";
 
 function makeDeps(overrides: Record<string, any> = {}) {
   return {

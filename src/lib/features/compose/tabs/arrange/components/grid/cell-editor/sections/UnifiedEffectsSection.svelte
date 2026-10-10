@@ -7,15 +7,15 @@
     tap row to target it, ONE grid below targets that row
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type {
     TipEffectMap,
     EffectType,
-  } from "$lib/shared/animation-engine/domain/types/tip-effect-types";
-  import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-  import { getTipLabel } from "$lib/shared/animation-engine/domain/tip-label";
-  import type { CellEffect } from "$lib/shared/animation-engine/domain/compose-types";
-  import { EFFECTS } from "$lib/shared/animation-engine/components/effects-panel/effect-registry";
+  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+  import { getTipLabel } from "#lib/shared/animation-engine/domain/tip-label.js";
+  import type { CellEffect } from "#lib/shared/animation-engine/domain/compose-types.js";
+  import { EFFECTS } from "#lib/shared/animation-engine/components/effects-panel/effect-registry.js";
 
   const SHIPPED_CELL_EFFECTS = new Set<string>([
     "none",
@@ -27,7 +27,7 @@
   function asCellEffect(e: EffectType): CellEffect {
     return SHIPPED_CELL_EFFECTS.has(e) ? (e as CellEffect) : "none";
   }
-  import { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
+  import { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 
   type Scope = "cell" | "hand" | "tip";
 

@@ -1,5 +1,5 @@
-import { detectPlatformAndBrowser } from "$lib/shared/mobile/services/platform-detector";
-import type { Browser, Platform } from "$lib/shared/mobile/services/types";
+import { detectPlatformAndBrowser } from "#lib/shared/mobile/services/platform-detector.js";
+import type { Browser, Platform } from "#lib/shared/mobile/services/types.js";
 
 export interface IndexedDbPersistenceEnvironment {
   browser: Browser;

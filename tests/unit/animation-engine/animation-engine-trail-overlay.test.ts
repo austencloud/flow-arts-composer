@@ -6,37 +6,37 @@
 import { describe, it, expect, vi } from "vitest";
 
 // ── Block transitive imports that crash in jsdom (protobuf/Firebase) ──────────
-vi.mock("$lib/shared/di", () => ({ container: {} }));
+vi.mock("#lib/shared/di", () => ({ container: {} }));
 vi.mock(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte",
+  "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js",
   () => ({
     getAnimationVisibilityManager: vi.fn(),
   })
 );
-vi.mock("$lib/features/compose/utils/animation-panel-persistence", () => ({
+vi.mock("#lib/features/compose/utils/animation-panel-persistence", () => ({
   loadTrailSettings: vi.fn(() => ({})),
 }));
 vi.mock(
-  "$lib/features/compose/services/implementations/Canvas2DAnimationRenderer",
+  "#lib/features/compose/services/implementations/Canvas2DAnimationRenderer",
   () => ({ Canvas2DAnimationRenderer: class {} })
 );
-vi.mock("$lib/shared/animation-engine/services/animator-loader", () => ({
+vi.mock("#lib/shared/animation-engine/services/animator-loader.js", () => ({
   loadAnimatorServices: vi.fn(),
 }));
 vi.mock("@firebase/firestore", () => ({}));
 vi.mock("@firebase/firestore/lite", () => ({}));
-vi.mock("$lib/shared/application/state/app-state.svelte", () => ({
+vi.mock("#lib/shared/application/state/app-state.svelte.js", () => ({
   getSettings: vi.fn(() => ({})),
 }));
 vi.mock(
-  "$lib/shared/settings/services/implementations/FirebaseSettingsPersister",
+  "#lib/shared/settings/services/implementations/FirebaseSettingsPersister",
   () => ({ FirebaseSettingsPersister: class {} })
 );
-vi.mock("$lib/shared/di/containers/core-container", () => ({}));
+vi.mock("#lib/shared/di/containers/core-container", () => ({}));
 
-import { AnimationEngine } from "$lib/shared/animation-engine/services/animation-engine.svelte";
-import type { LifecycleInitCtx } from "$lib/shared/animation-engine/services/canvas-lifecycle-manager";
-import type { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+import { AnimationEngine } from "#lib/shared/animation-engine/services/animation-engine.svelte.js";
+import type { LifecycleInitCtx } from "#lib/shared/animation-engine/services/canvas-lifecycle-manager.js";
+import type { AnimationVisibilityStateManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 
 /** A visibility manager that answers every read with "off". */
 function makeVisibilityStub(): AnimationVisibilityStateManager {

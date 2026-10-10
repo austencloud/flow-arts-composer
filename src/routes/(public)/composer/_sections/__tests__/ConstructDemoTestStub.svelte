@@ -4,8 +4,8 @@
   and the step grid render nothing.
 -->
 <script lang="ts">
-  import { createPictographData } from "$lib/shared/pictograph/shared/domain/factories/create-pictograph-data";
-  import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
+  import { createPictographData } from "#lib/shared/pictograph/shared/domain/factories/create-pictograph-data.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 
   let {
     startPlacementState,

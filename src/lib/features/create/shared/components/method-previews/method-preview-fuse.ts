@@ -6,9 +6,9 @@
 import {
   resolveFusePictographMotionFrame,
   type FusePictographMotionFrame,
-} from "$lib/features/fuse/services/fuse-pictograph-motion-frame";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/features/fuse/services/fuse-pictograph-motion-frame.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import {
   transformOnto,
   type CellRect,

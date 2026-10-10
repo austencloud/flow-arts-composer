@@ -2,8 +2,8 @@ import {
   GridLocation,
   GridMode,
   GridPlacement,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import type { OrientationOption } from "./level5-lab-types";
 
 

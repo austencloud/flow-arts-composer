@@ -1,4 +1,4 @@
-import { CommandStack } from "$lib/shared/history/command-stack.svelte";
+import { CommandStack } from "#lib/shared/history/command-stack.svelte.js";
 import {
   cloneBuilderSteps,
   cloneStartPoses,

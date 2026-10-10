@@ -3,10 +3,10 @@ import {
   activateSaveShortcutTarget,
   hasSaveShortcutTarget,
   resolveSaveShortcutTarget,
-} from "$lib/shared/keyboard/domain/save-shortcut-target";
-import { registerSaveShortcut } from "$lib/shared/keyboard/registration/register-save-shortcut";
-import { KeyboardShortcutManager } from "$lib/shared/keyboard/services/keyboard-shortcut-manager";
-import { ShortcutRegistry } from "$lib/shared/keyboard/services/shortcut-registry";
+} from "#lib/shared/keyboard/domain/save-shortcut-target.js";
+import { registerSaveShortcut } from "#lib/shared/keyboard/registration/register-save-shortcut.js";
+import { KeyboardShortcutManager } from "#lib/shared/keyboard/services/keyboard-shortcut-manager.js";
+import { ShortcutRegistry } from "#lib/shared/keyboard/services/shortcut-registry.js";
 
 function makeVisible(element: HTMLElement): void {
   Object.defineProperty(element, "getClientRects", {

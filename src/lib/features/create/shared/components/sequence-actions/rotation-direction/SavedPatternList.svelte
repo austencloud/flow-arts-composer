@@ -4,7 +4,7 @@
   List of user's saved rotation direction patterns with apply and delete actions.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { RotationDirectionPattern } from "../../../domain/models/rotation-direction-pattern-data";
 
   interface Props {

@@ -1,4 +1,4 @@
-import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
+import { featureFlagService } from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
 
 /** Early-access gate for Post Studio — registered in early-access-feature-flags.ts. */
 export const POST_STUDIO_FEATURE_ID = "capability:viewer:post-studio" as const;

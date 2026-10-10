@@ -7,7 +7,7 @@
  * owner. See the reflow spec + no-ghostwriting rule.
  */
 import type { GuideBlock } from "../guide-content-blocks";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { THE_GRID_ALPHA3 } from "../the-grid-pictograph";
 
 export const theGridContent: GuideBlock[] = [

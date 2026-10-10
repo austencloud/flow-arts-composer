@@ -5,24 +5,24 @@
     userProportionsState,
     type CameraStateSnapshot,
   } from "@austencloud/scene-3d";
-  import midflank from "$lib/shared/3d/environments/domain/models/scene-configs/ember-midflank-r5.json";
-  import { SCENE_FEATURES } from "$lib/shared/3d/scene-features/domain/scene-feature-registry";
-  import { replaceState } from "$app/navigation";
+  import midflank from "#lib/shared/3d/environments/domain/models/scene-configs/ember-midflank-r5.json";
+  import { SCENE_FEATURES } from "#lib/shared/3d/scene-features/domain/scene-feature-registry.js";
+  import { goto } from "$app/navigation";
   import { onDestroy } from "svelte";
 
-  import Viewer3DFullscreen from "$lib/shared/3d/components/Viewer3DFullscreen.svelte";
-  import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
+  import Viewer3DFullscreen from "#lib/shared/3d/components/Viewer3DFullscreen.svelte";
+  import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
   import {
     readCameraUrlPose,
     setCameraUrlPose,
-  } from "$lib/shared/3d/domain/camera-url-pose";
-  import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
-  import { createPlaybackState } from "$lib/shared/3d/state/playback-state.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import demoSequenceJson from "$lib/shared/landing/data/demo-sequence.json";
-  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { EMBER_VIEWER_FRONT_STAGE_FACING_ANGLE } from "$lib/shared/3d/domain/viewer-formation-facing";
-  import { parseGridJoinToken } from "$lib/shared/foundation/domain/models/grid-join-token";
+  } from "#lib/shared/3d/domain/camera-url-pose.js";
+  import { createViewer3DState } from "#lib/shared/3d/state/viewer-3d-state.svelte.js";
+  import { createPlaybackState } from "#lib/shared/3d/state/playback-state.svelte.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+  import demoSequenceJson from "#lib/shared/landing/data/demo-sequence.json";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { EMBER_VIEWER_FRONT_STAGE_FACING_ANGLE } from "#lib/shared/3d/domain/viewer-formation-facing.js";
+  import { parseGridJoinToken } from "#lib/shared/foundation/domain/models/grid-join-token.js";
 
   const WORKBENCH_SCENES = new Set<string>([
     BackgroundType.FOREST,
@@ -161,7 +161,7 @@
     const url = new URL(window.location.href);
     if (url.searchParams.get("scene") === scene) return;
     url.searchParams.set("scene", scene);
-    replaceState(url, {});
+    goto(url, { shallow: true, replace: true });
   });
 
   $effect(() => {
@@ -169,7 +169,7 @@
     if (!camera || typeof window === "undefined") return;
     const url = new URL(window.location.href);
     setCameraUrlPose(url, camera, 3);
-    replaceState(url, {});
+    goto(url, { shallow: true, replace: true });
   });
 
   onDestroy(() => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allocatePaneHeight } from "$lib/features/browse/gallery-home/pane-height-allocation";
+import { allocatePaneHeight } from "#lib/features/browse/gallery-home/pane-height-allocation.js";
 
 describe("split-pane height allocation", () => {
   it("fits three bounded rows instead of charging each row its maximum", () => {

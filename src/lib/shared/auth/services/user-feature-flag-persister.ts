@@ -22,7 +22,7 @@
  */
 
 import type { Unsubscribe } from "firebase/firestore";
-import { trackWrite } from "$lib/shared/offline/state/sync-status-state.svelte";
+import { trackWrite } from "#lib/shared/offline/state/sync-status-state.svelte.js";
 import { isValidFeatureId } from "../domain/models/feature-flag";
 import type {
   FeatureId,

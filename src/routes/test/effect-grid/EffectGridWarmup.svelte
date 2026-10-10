@@ -2,8 +2,8 @@
   import { tick } from "svelte";
   import { useThrelte } from "@threlte/core";
 
-  import { warmupRenderer } from "$lib/shared/3d/scene-boot/renderer-warmup";
-  import { resolveThrelteHandles } from "$lib/shared/3d/scene-boot/threlte-handles";
+  import { warmupRenderer } from "#lib/shared/3d/scene-boot/renderer-warmup.js";
+  import { resolveThrelteHandles } from "#lib/shared/3d/scene-boot/threlte-handles.js";
 
   interface Props {
     armed: boolean;

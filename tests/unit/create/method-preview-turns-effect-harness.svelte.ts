@@ -1,4 +1,4 @@
-import type { MethodPreviewTurns } from "$lib/features/create/shared/state/method-preview-turns.svelte";
+import type { MethodPreviewTurns } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 
 /**
  * Runs `signal` inside an effect, as the front door's gate and the scenes do,

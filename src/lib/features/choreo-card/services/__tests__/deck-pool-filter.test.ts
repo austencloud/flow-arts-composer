@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildSequencePool } from "../deck-composer";
 import type { Catalog } from "../../domain/models/Catalog";
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 function loopCatalog(over: Partial<Catalog>, sequenceIds: string[] = ["alpha1_AB"]): Catalog {
   return {

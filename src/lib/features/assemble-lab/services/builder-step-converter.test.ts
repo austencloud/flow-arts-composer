@@ -2,15 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HandPath,
   HandSide,
   MotionType,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 import type { BuilderStep } from "../state/assemble-state.svelte";
 import {
   convertToPictographs,

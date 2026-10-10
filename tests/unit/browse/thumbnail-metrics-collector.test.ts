@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ThumbnailMetricsCollector,
   type ThumbnailRequestContext,
-} from "$lib/shared/browse/services/thumbnail-metrics-collector";
+} from "#lib/shared/browse/services/thumbnail-metrics-collector.js";
 
 function requestContext(
   overrides: Partial<ThumbnailRequestContext> = {}

@@ -9,7 +9,7 @@
   Domain: Retro Desktop Shell
 -->
 <script lang="ts">
-  import { signInWithEmail, signInWithGoogle } from "$lib/shared/auth/services/authenticator";
+  import { signInWithEmail, signInWithGoogle } from "#lib/shared/auth/services/authenticator.js";
   import { desktopState } from "../../state/desktop-state.svelte";
   import RetroButton from "../primitives/RetroButton.svelte";
 

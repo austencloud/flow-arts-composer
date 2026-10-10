@@ -1,7 +1,7 @@
 <script lang="ts">
   import { effectUiLabel } from "./effect-ui-label";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { claimedViewTransitionName } from "#lib/shared/transitions/claimed-view-transition-name.js";
   import type { Snippet } from "svelte";
   import { EFFECTS, type EffectMeta } from "./effect-registry";
   import {
@@ -10,7 +10,7 @@
     CATALOG_TILE_PAD,
     MAX_LIST_ROW,
     type EffectCatalogFit,
-  } from "$lib/shared/animation-engine/domain/effect-catalog-fit";
+  } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
 
   interface Props {
     activeEffect: string;

@@ -2,7 +2,7 @@
 WordStepNavigation - Step navigation dots for letter sequence
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import type { LetterDefinition } from "../../../../domain/constants/word-visualizer-data";
 
   let {

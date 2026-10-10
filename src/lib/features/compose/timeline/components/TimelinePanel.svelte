@@ -13,15 +13,15 @@
    * └──────────────────────────────────────────────────────────────────┘
    */
 
-  import { t } from "$lib/shared/i18n/i18n.svelte";
-  import { getTimelineState } from "$lib/shared/animation-engine/state/timeline-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getTimelineState } from "#lib/shared/animation-engine/state/timeline-state.svelte.js";
   import { getTimelinePlayer } from "../services/timeline-playback-service";
   import { getTimelineSnapper } from "../services/timeline-snap-service";
   import {
     loadFromStorage,
     saveToStorage,
     TIMELINE_STORAGE_KEYS,
-  } from "$lib/shared/animation-engine/timeline/state/timeline-storage";
+  } from "#lib/shared/animation-engine/timeline/state/timeline-storage.js";
   import TimelineControls from "./TimelineControls.svelte";
   import ClipInspector from "./ClipInspector.svelte";
   import MediaBrowserPanel, {
@@ -29,13 +29,13 @@
   } from "./media-browser/MediaBrowserPanel.svelte";
   import TimelinePreview from "./TimelinePreview.svelte";
   import SourcePreview from "./SourcePreview.svelte";
-  import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
+  import PanelGroup from "#lib/shared/panels/PanelGroup.svelte";
   import {
     timeToPixels,
     type TimelineTrack,
     type TimelineClip,
-  } from "$lib/shared/animation-engine/domain/timeline-types";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  } from "#lib/shared/animation-engine/domain/timeline-types.js";
+  import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import { untrack } from "svelte";
 
   // Extracted components

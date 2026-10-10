@@ -1,6 +1,6 @@
 import { render } from "vitest-browser-svelte";
 import { describe, it, expect, vi } from "vitest";
-import { GenerationMode } from "$lib/shared/foundation/domain/models/generation/generate-models";
+import { GenerationMode } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
 import LengthCard from "./LengthCard.svelte";
 import LengthCardClampHarness from "./__tests__/LengthCardClampHarness.svelte";
 

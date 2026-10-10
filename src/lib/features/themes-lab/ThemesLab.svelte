@@ -1,28 +1,28 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { setSceneLabContext } from "$lib/features/lab/tabs/scene-lab/context/scene-lab-context";
-  import { applyThemeForBackground } from "$lib/shared/settings/utils/background-theme-calculator";
+  import { setSceneLabContext } from "#lib/features/lab/tabs/scene-lab/context/scene-lab-context.js";
+  import { applyThemeForBackground } from "#lib/shared/settings/utils/background-theme-calculator.js";
   import { createThemesLabState } from "./state/themes-lab-state.svelte";
   import ThemeStrip from "./components/ThemeStrip.svelte";
   import ThemeHeader from "./components/ThemeHeader.svelte";
   import ThemeControlsPanel from "./components/ThemeControlsPanel.svelte";
-  import ScenePreview from "$lib/features/lab/tabs/scene-lab/components/ScenePreview.svelte";
+  import ScenePreview from "#lib/features/lab/tabs/scene-lab/components/ScenePreview.svelte";
   import type { Component } from "svelte";
   import type { ThemeId } from "./domain/theme-types";
-  import { composerRegistry } from "$lib/shared/3d/scene-composer/registry";
-  import { createComposerSaveState } from "$lib/shared/3d/scene-composer/composer-save-state.svelte";
-  import "$lib/shared/3d/scene-composer/register-scene-lab-composer-plugins";
+  import { composerRegistry } from "#lib/shared/3d/scene-composer/registry.js";
+  import { createComposerSaveState } from "#lib/shared/3d/scene-composer/composer-save-state.svelte.js";
+  import "#lib/shared/3d/scene-composer/register-scene-lab-composer-plugins.js";
 
-  import OceanLab from "$lib/features/background-builder/components/OceanLab.svelte";
-  import CosmicLab from "$lib/features/background-builder/components/CosmicLab.svelte";
-  import ForestLab from "$lib/features/background-builder/components/ForestLab.svelte";
-  import BlossomLab from "$lib/features/background-builder/components/BlossomLab.svelte";
-  import PrideLab from "$lib/features/background-builder/components/PrideLab.svelte";
-  import EmberLab from "$lib/features/background-builder/components/EmberLab.svelte";
-  import WinterLab from "$lib/features/background-builder/components/WinterLab.svelte";
-  import AutumnLab from "$lib/features/background-builder/components/AutumnLab.svelte";
-  import CelestialLab from "$lib/features/background-builder/components/CelestialLab.svelte";
-  import VoidLab from "$lib/features/background-builder/components/VoidLab.svelte";
+  import OceanLab from "#lib/features/background-builder/components/OceanLab.svelte";
+  import CosmicLab from "#lib/features/background-builder/components/CosmicLab.svelte";
+  import ForestLab from "#lib/features/background-builder/components/ForestLab.svelte";
+  import BlossomLab from "#lib/features/background-builder/components/BlossomLab.svelte";
+  import PrideLab from "#lib/features/background-builder/components/PrideLab.svelte";
+  import EmberLab from "#lib/features/background-builder/components/EmberLab.svelte";
+  import WinterLab from "#lib/features/background-builder/components/WinterLab.svelte";
+  import AutumnLab from "#lib/features/background-builder/components/AutumnLab.svelte";
+  import CelestialLab from "#lib/features/background-builder/components/CelestialLab.svelte";
+  import VoidLab from "#lib/features/background-builder/components/VoidLab.svelte";
 
   const state = createThemesLabState();
   const composerSave = createComposerSaveState({

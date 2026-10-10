@@ -9,12 +9,12 @@ import {
   plotToDataY,
   plotWidth,
   type CurvePlotGeometry,
-} from "$lib/shared/share/components/post-studio/editor/post-curve-plot";
+} from "#lib/shared/share/components/post-studio/editor/post-curve-plot.js";
 import {
   POST_EASING_Y_MAX,
   POST_EASING_Y_MIN,
-} from "$lib/shared/media-composition/domain/post-project";
-import { EASING_PRESETS } from "$lib/shared/media-composition/domain/post-project-keyframes";
+} from "#lib/shared/media-composition/domain/post-project.js";
+import { EASING_PRESETS } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 
 function close(actual: number, expected: number) {
   expect(actual).toBeCloseTo(expected, 9);

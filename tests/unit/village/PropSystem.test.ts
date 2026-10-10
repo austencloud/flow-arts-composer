@@ -1,16 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { PropSystem } from "$lib/features/village/engine/systems/prop-system";
+import { PropSystem } from "#lib/features/village/engine/systems/prop-system.js";
 import {
 	createVillageWorld,
 	createAvatarEntity,
-} from "$lib/features/village/engine/village-world";
-import * as personalityGenerator from "$lib/features/village/services/personality-generator";
-import { PROP_WEAR_PROFILES } from "$lib/features/village/domain/village-constants";
+} from "#lib/features/village/engine/village-world.js";
+import * as personalityGenerator from "#lib/features/village/services/personality-generator.js";
+import { PROP_WEAR_PROFILES } from "#lib/features/village/domain/village-constants.js";
 import type {
 	VillageEventMap,
 	VillageEventKey,
 	PropArtifact,
-} from "$lib/features/village/domain/village-types";
+} from "#lib/features/village/domain/village-types.js";
 
 function makeEmitter() {
 	const events: Record<string, unknown[][]> = {};

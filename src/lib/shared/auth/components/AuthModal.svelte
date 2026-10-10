@@ -10,25 +10,25 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import { page } from "$app/state";
-  import { captureWhenReady } from "$lib/shared/analytics/services/posthog";
+  import { captureWhenReady } from "#lib/shared/analytics/services/posthog.js";
   import {
     trackAuthModalAbandoned,
     trackAuthProviderResult,
-  } from "$lib/shared/analytics/auth-events";
+  } from "#lib/shared/analytics/auth-events.js";
   import type {
     AuthMode,
     AuthNudgeTrigger,
-  } from "$lib/shared/auth/domain/auth-nudge-trigger";
-  import { getAuthPromptContent } from "$lib/shared/auth/domain/auth-nudge-trigger";
-  import { getInAppBrowserDetector } from "$lib/shared/auth/get-in-app-browser-detector";
+  } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
+  import { getAuthPromptContent } from "#lib/shared/auth/domain/auth-nudge-trigger.js";
+  import { getInAppBrowserDetector } from "#lib/shared/auth/get-in-app-browser-detector.js";
   import {
     clearAuthSubmissionBridge,
     recordAuthSubmission,
-  } from "$lib/shared/auth/services/auth-analytics-bridge";
-  import { signInWithFacebook } from "$lib/shared/auth/services/authenticator";
-  import { getLastAuthMethod } from "$lib/shared/auth/services/last-auth-method.svelte";
-  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  } from "#lib/shared/auth/services/auth-analytics-bridge.js";
+  import { signInWithFacebook } from "#lib/shared/auth/services/authenticator.js";
+  import { getLastAuthMethod } from "#lib/shared/auth/services/last-auth-method.svelte.js";
+  import BaseModal from "#lib/shared/foundation/ui/modal/BaseModal.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { authDrawerState } from "../state/auth-drawer-state.svelte";
   import ContextualAuthPrompt from "./ContextualAuthPrompt.svelte";
   import type { GuestEncorePrompt } from "../domain/auth-nudge-trigger";

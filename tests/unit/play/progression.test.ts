@@ -3,11 +3,11 @@ import {
   computeStars,
   mergeProgress,
   applyResult,
-} from "$lib/features/learn/play/domain/progression";
+} from "#lib/features/learn/play/domain/progression.js";
 import type {
   GameProgress,
   PlayProgress,
-} from "$lib/features/learn/play/domain/arcade-types";
+} from "#lib/features/learn/play/domain/arcade-types.js";
 
 const stars = { one: 500, two: 1000, three: 1500 };
 

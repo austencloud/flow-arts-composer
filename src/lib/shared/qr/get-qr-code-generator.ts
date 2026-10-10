@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { QRCodeGenerator } from "./services/qr-code-generator";
 import { getShortCodeManager } from "./get-short-code-manager";
 

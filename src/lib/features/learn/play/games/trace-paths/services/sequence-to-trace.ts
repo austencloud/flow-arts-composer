@@ -15,11 +15,11 @@
 import {
   GridLocation,
   GridMode,
-} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { MotionData } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
+import { isVisibleMotion } from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import { buildTraceSegment } from "./hand-path-to-trace";
 import { TRACE_HANDS } from "../domain/trace-types";
 import type {

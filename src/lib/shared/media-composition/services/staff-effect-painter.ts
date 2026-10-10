@@ -1,35 +1,35 @@
-import type { LayoutRegion } from "$lib/shared/media-composition/domain/media-layout-schema";
-import type { PostStaffEffectId } from "$lib/shared/media-composition/domain/post-project";
+import type { LayoutRegion } from "#lib/shared/media-composition/domain/media-layout-schema.js";
+import type { PostStaffEffectId } from "#lib/shared/media-composition/domain/post-project.js";
 import {
   staffTipPath,
   staffTipsAt,
   type StaffColor,
   type StaffTipTrack,
-} from "$lib/shared/media-composition/domain/staff-tip-track";
-import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
+} from "#lib/shared/media-composition/domain/staff-tip-track.js";
+import type { EvaluatedFrameLayer } from "#lib/shared/media-composition/services/frame-evaluator.js";
 import {
   calculateMediaFit,
   calculateSourceCropFit,
   resolvePanOffset,
   turnOf,
-} from "$lib/shared/media-composition/services/media-fit";
+} from "#lib/shared/media-composition/services/media-fit.js";
 import type {
   PaintRect,
   PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
-import { Canvas2DTrailRenderer } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer";
+} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+import { Canvas2DTrailRenderer } from "#lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrailMode,
   type TrailPoint,
   type TrailSettings,
-} from "$lib/shared/animation-engine/domain/types/trail-types";
+} from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import {
   createCanvas2DEffectHost,
   type Canvas2DEffectHost,
-} from "$lib/shared/effects/services/canvas2d-effect-host";
-import { DEFAULT_EFFECTS_CONFIG } from "$lib/shared/effects/domain/defaults";
-import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
+} from "#lib/shared/effects/services/canvas2d-effect-host.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
+import type { EmitterTip } from "#lib/shared/effects/renderers/emitter-tip.js";
 
 /**
  * Draws an effect on the lit ends of the LED staffs in a filmed take, from

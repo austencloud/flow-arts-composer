@@ -2,24 +2,24 @@ import { describe, expect, it } from "vitest";
 import {
   createStaffEffectPainter,
   createStaffPointMapper,
-} from "$lib/shared/media-composition/services/staff-effect-painter";
-import { POST_STAFF_EFFECTS } from "$lib/shared/media-composition/domain/post-project";
-import type { StaffTipTrack } from "$lib/shared/media-composition/domain/staff-tip-track";
+} from "#lib/shared/media-composition/services/staff-effect-painter.js";
+import { POST_STAFF_EFFECTS } from "#lib/shared/media-composition/domain/post-project.js";
+import type { StaffTipTrack } from "#lib/shared/media-composition/domain/staff-tip-track.js";
 import {
   compilePostProject,
   staffEffectRole,
-} from "$lib/shared/media-composition/domain/post-project-compiler";
-import { evaluatePresetFrame } from "$lib/shared/media-composition/services/frame-evaluator";
-import { renderPostStudioFrame } from "$lib/shared/media-composition/services/post-studio-frame-compositor";
+} from "#lib/shared/media-composition/domain/post-project-compiler.js";
+import { evaluatePresetFrame } from "#lib/shared/media-composition/services/frame-evaluator.js";
+import { renderPostStudioFrame } from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
 import type {
   PaintFrame,
   PostStudioLayerPainter,
-} from "$lib/shared/media-composition/services/post-studio-layer-painter";
-import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
+} from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
+import { CANVAS2D_HOSTED_EFFECTS } from "#lib/shared/effects/services/canvas2d-effect-host.js";
 import {
   EFFECT_ICONS,
   EFFECT_LABELS,
-} from "$lib/shared/effects/domain/effect-meta";
+} from "#lib/shared/effects/domain/effect-meta.js";
 import { project, video } from "./post-project-fixtures";
 
 type Transform = NonNullable<PaintFrame["transform"]>;

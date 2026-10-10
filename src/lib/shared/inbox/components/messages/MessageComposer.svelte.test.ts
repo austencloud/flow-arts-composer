@@ -2,8 +2,8 @@ import { flushSync } from "svelte";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Message } from "$lib/shared/messaging/domain/models/message-models";
-import { MemoryDeliveryRepository } from "$test-helpers/inbox/memory-delivery-repository";
+import type { Message } from "#lib/shared/messaging/domain/models/message-models.js";
+import { MemoryDeliveryRepository } from "#test-helpers/inbox/memory-delivery-repository.js";
 import type { MessageDeliveryState } from "../../state/message-delivery-state.svelte";
 import { createMessageDeliveryState } from "../../state/message-delivery-state.svelte";
 import { inboxState } from "../../state/inbox-state.svelte";
@@ -25,11 +25,11 @@ const mocks = vi.hoisted(() => ({
   real: null as unknown,
 }));
 
-vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
+vi.mock("#lib/shared/application/get-haptic-feedback.js", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/messaging/services/messenger", () => ({
+vi.mock("#lib/shared/messaging/services/messenger.js", () => ({
   messagingService: {
     editMessage: mocks.editMessage,
     sendMessage: mocks.sendMessage,
@@ -77,25 +77,25 @@ vi.mock("../../context/message-delivery-context", () => {
   return { getMessageDeliveryContext: () => delivery };
 });
 
-vi.mock("$lib/shared/application/get-error-handler", () => ({
+vi.mock("#lib/shared/application/get-error-handler.js", () => ({
   getErrorHandler: () => ({ showUserError: mocks.showUserError }),
 }));
 
-vi.mock("$lib/shared/messaging/get-message-image-sender", () => ({
+vi.mock("#lib/shared/messaging/get-message-image-sender.js", () => ({
   getMessageImageSender: () => ({
     send: vi.fn(() => ({ promise: Promise.resolve(), cancel: vi.fn() })),
   }),
 }));
 
-vi.mock("$lib/shared/browse/get-browse-loader", () => ({
+vi.mock("#lib/shared/browse/get-browse-loader.js", () => ({
   getBrowseLoader: () => ({}),
 }));
 
-vi.mock("$lib/shared/qr/get-short-code-manager", () => ({
+vi.mock("#lib/shared/qr/get-short-code-manager.js", () => ({
   getShortCodeManager: () => ({ createShortCode: vi.fn() }),
 }));
 
-vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
+vi.mock("#lib/shared/toast/state/toast-state.svelte.js", () => ({
   toastQueue: [],
   showToast: vi.fn(),
   removeToast: vi.fn(),

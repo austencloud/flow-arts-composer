@@ -11,13 +11,13 @@ import type { TabVisibilityInfo } from "./types";
 import { MODULE_DEFINITIONS } from "../config/module-definitions";
 import {
   featureFlagService,
-} from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
+} from "#lib/shared/auth/services/post-hog-feature-flag-service.svelte.js";
 import {
   tabIdToFeatureId,
   getDefaultFeatureRole,
   moduleIdToFeatureId,
-} from "$lib/shared/auth/domain/models/feature-flag";
-import { hasRolePrivilege } from "$lib/shared/auth/domain/models/user-role";
+} from "#lib/shared/auth/domain/models/feature-flag.js";
+import { hasRolePrivilege } from "#lib/shared/auth/domain/models/user-role.js";
 
 export function getAllTabsForModule(moduleId: ModuleId): TabVisibilityInfo[] {
   const moduleDef = MODULE_DEFINITIONS.find((m) => m.id === moduleId);

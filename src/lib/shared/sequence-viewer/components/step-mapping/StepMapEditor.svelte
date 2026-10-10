@@ -23,30 +23,30 @@
   docs/superpowers/specs/2026-08-16-step-map-editor-redesign-design.md.
 -->
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onDestroy, untrack } from "svelte";
-  import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
-  import { generateEvenBeatTimestamps } from "$lib/shared/video-collaboration/utils/step-map-utils";
-  import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
-  import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+  import type { StepMap } from "#lib/shared/video-collaboration/domain/collaborative-video.js";
+  import { generateEvenBeatTimestamps } from "#lib/shared/video-collaboration/utils/step-map-utils.js";
+  import { formatTime } from "#lib/shared/sequence-viewer/utils/format-time.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import type { StartPlacementData } from "#lib/shared/foundation/domain/models/start-placement-data.js";
   import type { GridJoin } from "@tka/tka-types";
   import { gridJoinCellResolver } from "@tka/render-core";
-  import { mirrorGridJoin } from "$lib/shared/create/services/grid-join-transforms";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { mirrorGridJoin } from "#lib/shared/create/services/grid-join-transforms.js";
+  import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import StepMapTimeline from "./StepMapTimeline.svelte";
   import {
     clearStepMapDraft,
     loadStepMapDraft,
     saveStepMapDraft,
   } from "./step-map-draft";
-  import { mirrorBeat } from "$lib/shared/create/services/step-transforms";
-  import { mirrorStartPlacement } from "$lib/shared/create/services/start-placement-transforms";
-  import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import { mirrorBeat } from "#lib/shared/create/services/step-transforms.js";
+  import { mirrorStartPlacement } from "#lib/shared/create/services/start-placement-transforms.js";
+  import { motionQueryHandler } from "#lib/shared/pictograph/shared/services/motion-query-handler.js";
+  import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
   interface Props {
     videoUrl: string;

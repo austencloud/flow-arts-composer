@@ -1,9 +1,9 @@
 import {
   fromFirestoreFields,
   type FirestoreFields,
-} from "$lib/shared/firestore/firestore-value-codec";
-import { getPublicSequencesPath } from "$lib/shared/library/data/firestore-paths";
-import type { PublicSequenceIndex } from "$lib/shared/foundation/domain/models/public-sequence-index";
+} from "#lib/shared/firestore/firestore-value-codec.js";
+import { getPublicSequencesPath } from "#lib/shared/library/data/firestore-paths.js";
+import type { PublicSequenceIndex } from "#lib/shared/foundation/domain/models/public-sequence-index.js";
 
 const FIRESTORE_HOST = "https://firestore.googleapis.com/v1";
 const PROJECT_ID = "the-kinetic-alphabet";

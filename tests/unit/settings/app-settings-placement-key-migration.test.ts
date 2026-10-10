@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeLegacyAppSettings } from "$lib/shared/settings/domain/app-settings";
+import { normalizeLegacyAppSettings } from "#lib/shared/settings/domain/app-settings.js";
 
 describe("normalizeLegacyAppSettings position -> placement rename", () => {
   it("maps visibility.positionsGlyph to visibility.placementsGlyph when the new key is absent", () => {

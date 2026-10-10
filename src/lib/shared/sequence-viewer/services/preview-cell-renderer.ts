@@ -1,6 +1,6 @@
-import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
-import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
-import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-appearance";
+import type { FanAppearance } from "#lib/shared/pictograph/prop/domain/fan-appearance.js";
+import type { PropLook } from "#lib/shared/pictograph/prop/domain/prop-look.js";
+import type { TriangleGrip } from "#lib/shared/pictograph/prop/domain/triangle-appearance.js";
 /**
  * Preview Cell Renderer
  *
@@ -9,10 +9,10 @@ import type { TriangleGrip } from "$lib/shared/pictograph/prop/domain/triangle-a
  * 2. WorkerRenderPool / LayerCompositor - off-thread rendering
  */
 
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import type { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { resolvePreviewCellRender } from "./preview-cell-render-contract";
-import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
+import type { BrowseViewMode } from "#lib/shared/browse/domain/browse-view-mode.js";
 
 /**
  * Options for rendering a preview cell.
@@ -115,14 +115,14 @@ export interface PreviewCellRenderOptions {
    *  so it never uploads a personal-preference render. */
   uploadCanonical?: boolean;
 }
-import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
-import { pictographBlobCache } from "$lib/shared/render/services/pictograph-blob-cache";
-import { getWorkerRenderPool } from "$lib/shared/render/services/worker-render-pool";
+import { pictographPreparer } from "#lib/shared/pictograph/shared/services/pictograph-preparer.js";
+import { pictographBlobCache } from "#lib/shared/render/services/pictograph-blob-cache.js";
+import { getWorkerRenderPool } from "#lib/shared/render/services/worker-render-pool.js";
 import { deriveCacheKey } from "./cell-cache-key-deriver";
 import { compositeStepNumberOnBlob } from "./step-number-compositor";
-import * as pictographCloudCache from "$lib/shared/render/services/pictograph-cloud-cache";
-import { deriveCloudCellHash } from "$lib/shared/render/services/cloud-cell-key";
-import { pngBlobToWebp } from "$lib/shared/render/services/png-blob-to-webp";
+import * as pictographCloudCache from "#lib/shared/render/services/pictograph-cloud-cache.js";
+import { deriveCloudCellHash } from "#lib/shared/render/services/cloud-cell-key.js";
+import { pngBlobToWebp } from "#lib/shared/render/services/png-blob-to-webp.js";
 
 /**
  * Render a single pictograph and return a blob URL.

@@ -2,8 +2,8 @@ import { render } from "vitest-browser-svelte";
 import { page } from "vitest/browser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-import { LOOPComponent } from "$lib/features/create/generate/shared/domain/models/generate-models";
-import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import { LOOPComponent } from "#lib/features/create/generate/shared/domain/models/generate-models.js";
+import { LOOPType } from "#lib/shared/foundation/domain/models/generation/circular-models.js";
 import LOOPExpandedOverlay from "./LOOPExpandedOverlay.svelte";
 
 type RhythmValue = {

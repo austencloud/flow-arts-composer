@@ -25,7 +25,7 @@ import {
 import {
   propRateForKnobs,
   type QftKnobs,
-} from "$lib/shared/notation/qft/qft-model";
+} from "#lib/shared/notation/qft/qft-model.js";
 import { theoryRatioLabel } from "./theory-ratio";
 import type { VtgMode } from "../services/shape-matrix-realizations";
 

@@ -10,9 +10,9 @@
  * Call inside a `$derived.by` — it reads reactive state, so the result tracks
  * membership changes for free.
  */
-import type { CollectionOption } from "$lib/features/browse/gallery-home/gallery-drill-catalog.svelte";
-import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
-import { communityCollectionsState } from "$lib/features/browse/collections/state/community-collections-state.svelte";
+import type { CollectionOption } from "#lib/features/browse/gallery-home/gallery-drill-catalog.svelte.js";
+import { collectionsState } from "#lib/features/library/state/collections-state.svelte.js";
+import { communityCollectionsState } from "#lib/features/browse/collections/state/community-collections-state.svelte.js";
 
 interface CollectionLike {
   id: string;

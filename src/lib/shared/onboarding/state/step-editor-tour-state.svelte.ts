@@ -9,7 +9,7 @@ import { AUTO_TOURS_ENABLED } from "../domain/onboarding-flags";
 import {
   safeLocalStorageSetItem,
   removeLocalStorageItem,
-} from "$lib/shared/foundation/services/storage-manager";
+} from "#lib/shared/foundation/services/storage-manager.js";
 
 const TOUR_COMPLETED_KEY = "tka-step-editor-tour-completed";
 

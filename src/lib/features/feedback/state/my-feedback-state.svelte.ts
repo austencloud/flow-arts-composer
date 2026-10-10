@@ -11,11 +11,11 @@
 import type {
   FeedbackItem,
   FeedbackType,
-} from "$lib/shared/feedback/domain/models/feedback-models";
-import { feedbackService } from "$lib/shared/feedback/services/feedback-repository";
-import { authState } from "$lib/shared/auth/state/auth-state.svelte";
-import { userPreviewState } from "$lib/shared/debug/state/user-preview-state.svelte";
-import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+} from "#lib/shared/feedback/domain/models/feedback-models.js";
+import { feedbackService } from "#lib/shared/feedback/services/feedback-repository.js";
+import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
+import { userPreviewState } from "#lib/shared/debug/state/user-preview-state.svelte.js";
+import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
 
 /**
  * Creates my feedback state for testers

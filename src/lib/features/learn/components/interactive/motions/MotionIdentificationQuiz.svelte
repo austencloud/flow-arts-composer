@@ -3,7 +3,7 @@ MotionIdentificationQuiz - Quiz to identify motion types from animations
 User must play animation first, then identify the motion type (1-6)
 -->
 <script lang="ts">
-  import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+  import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
   import {
     MOTION_QUIZ_QUESTIONS,
     MOTION_TYPE_INFO,

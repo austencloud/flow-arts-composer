@@ -16,12 +16,14 @@ import { featureGatePlugin } from "./src/config/vite-plugin-feature-gate";
 import { museumPlacementPlugin } from "./src/lib/features/museum/dev/museum-placement-plugin";
 import { composerPlacementPlugin } from "./src/lib/shared/3d/scene-composer/persistence/composer-placement-plugin";
 import { sveltekit } from "@sveltejs/kit/vite";
-// Paraglide removed - using lightweight JSON-based i18n in $lib/shared/i18n/
+import adapter from "@sveltejs/adapter-cloudflare";
+import { svelteOptions } from "./src/config/svelte-options.js";
+// Paraglide removed - using lightweight JSON-based i18n in #lib/shared/i18n/
 import { spawn, type ChildProcess } from "child_process";
 import fs from "fs";
 import type { IncomingMessage, ServerResponse } from "http";
 import path from "path";
-import type { ViteDevServer } from "vite";
+import type { Rolldown, ViteDevServer } from "vite";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -764,6 +766,12 @@ const classifyChunk = (id: string): string | undefined => {
     ) {
       return "vendor-svelte";
     }
+    // SvelteKit's client entry must stay a small chunk that dynamically
+    // imports the router (runtime/client/client-entry.js); the build reads
+    // that edge to find the router and fails if a named chunk swallows both.
+    if (id.includes("node_modules/@sveltejs/kit/src/runtime/client/")) {
+      return undefined;
+    }
     if (id.includes("node_modules/@sveltejs/kit/")) {
       return "vendor-sveltekit";
     }
@@ -902,29 +910,70 @@ const classifyChunk = (id: string): string | undefined => {
   return undefined;
 };
 
-// Collapse Rollup's automatic micro-chunks in the CLIENT bundle only.
+// Collapse the bundler's automatic micro-chunks in the CLIENT bundle only.
 //
-// WHY A PLUGIN. The obvious spelling is `experimentalMinChunkSize` inline in
-// build.rollupOptions.output, gated on defineConfig's `isSsrBuild`. That gate
-// does not hold: SvelteKit drives both builds through Vite 7's environments
-// API, the config factory is evaluated once, and `isSsrBuild` was undefined —
-// so the option reached the SERVER build too, where merging folds neighbouring
-// modules into a route's own chunk and SvelteKit's endpoint analysis aborts:
+// Rolldown has no `experimentalMinChunkSize`; its equivalent is a catch-all
+// group for app source with `entriesAware`, which keeps modules that load for
+// different sets of entries apart and merges the pieces under the threshold.
+// Measured 2026-10-10 on the Vite 8 build: 1583 client JS files outside
+// workers/ (1248 under 10 KB) without it, about 800 (some 400 under 10 KB)
+// with it.
+//
+// A merged chunk is named "app~" plus the entries it serves ("nodes/0~
+// nodes/3~…"), and its CSS file takes that name, slashes included, which
+// nested assets/ up to 13 folders deep. JS chunk files are hash-only, so only
+// asset names are cut back to the last segment.
+//
+// WHY A PLUGIN. The obvious spelling is an inline output option gated on
+// defineConfig's `isSsrBuild`. That gate does not hold: SvelteKit drives both
+// builds through Vite's environments API, the config factory is evaluated
+// once, and `isSsrBuild` was undefined — so the option reached the SERVER
+// build too, where merging folds neighbouring modules into a route's own chunk
+// and SvelteKit's endpoint analysis aborts:
 //   Error: Invalid export 'P' in /api/gallery-write
-// (Verified: baseline builds clean, inline+isSsrBuild reproduces the abort.)
-// `outputOptions` runs per build with the resolved output dir, which is an
-// unambiguous discriminator — SvelteKit writes the browser bundle to
-// .svelte-kit/output/client and the server bundle to .../server.
+// (Verified under Vite 7: baseline builds clean, inline+isSsrBuild reproduces
+// the abort.) `outputOptions` runs per build with the resolved output dir,
+// which is an unambiguous discriminator — SvelteKit writes the browser bundle
+// to .svelte-kit/output/client and the server bundle to .../server.
 //
 // Server bundles are read off local disk and gain nothing from fewer files;
 // the round trips this fixes are the browser's.
 const clientOnlyChunkMergePlugin = () => ({
   name: "tka-client-chunk-merge",
   apply: "build" as const,
-  outputOptions(options: { dir?: string; experimentalMinChunkSize?: number }) {
+  outputOptions(options: Rolldown.OutputOptions) {
     const dir = (options.dir ?? "").replace(/\\/g, "/");
     if (!dir.includes("/output/client")) return null;
-    return { ...options, experimentalMinChunkSize: 20_000 };
+    const splitting =
+      typeof options.codeSplitting === "object" ? options.codeSplitting : {};
+    const assetPattern = options.assetFileNames;
+    return {
+      ...options,
+      assetFileNames:
+        typeof assetPattern === "string"
+          ? (asset: Rolldown.PreRenderedAsset) => {
+              const name = asset.names[0] ?? "";
+              if (!name.includes("~")) return assetPattern;
+              const stem = path
+                .basename(name.replace(/^.*~/, ""), path.extname(name))
+                .replace(/[^\w.-]/g, "");
+              return assetPattern.replace("[name]", stem || "app");
+            }
+          : assetPattern,
+      codeSplitting: {
+        ...splitting,
+        groups: [
+          ...(splitting.groups ?? []),
+          {
+            name: "app",
+            test: (id: string) =>
+              !id.includes("node_modules") && !/\.css(?:$|\?)/.test(id),
+            entriesAware: true,
+            entriesAwareMergeThreshold: 20_000,
+          },
+        ],
+      },
+    };
   },
 });
 
@@ -947,14 +996,97 @@ const dependencyCachePlan = createViteDependencyCachePlan({
   projectRoot: dirname,
 });
 
+// SvelteKit options. Before SvelteKit 3 these lived in svelte.config.js.
+const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
+  ...svelteOptions,
+
+  adapter: adapter({
+    routes: {
+      include: ["/*"],
+      exclude: [
+        "/_app/immutable/*",
+        "/_app/version.json",
+        "/.well-known/*",
+        "/animations/*",
+        "/assets/*",
+        "/audio/*",
+        "/branding/*",
+        "/data/*",
+        "/fonts/*",
+        "/gallery/*",
+        "/guide/*",
+        "/guides/*",
+        "/images/*",
+        "/models/*",
+        "/pictographs/*",
+        "/pwa/*",
+        "/retro-eras/*",
+        "/screenshots/*",
+        "/sounds/*",
+        "/textures/*",
+        "/thumbnails/*",
+        "/favicon.png",
+        "/firebase-messaging-handler.js",
+        "/firebase-messaging-sw.js",
+        "/legacy-sw.js",
+        "/manifest.webmanifest",
+        "/og-default.png",
+        "/sw.js",
+        // Serve prerendered pages (landing, about, glossary, …) from the
+        // static asset layer instead of waking the Worker — without this,
+        // "/" returns cf-cache-status: DYNAMIC and pays ~1-2s Worker TTFB.
+        // MUST stay LAST: Cloudflare caps _routes.json at 100 rules and the
+        // adapter truncates overflow. Placed last, only tail-end prerendered
+        // guide pages fall off (already covered by the /guide/* wildcard);
+        // placed first, it would truncate the asset wildcards above and
+        // route every static asset through the Worker.
+        "<prerendered>",
+      ],
+    },
+  }),
+
+  // PostHog session replay requires absolute paths to properly record assets.
+  // By default, Svelte uses relative paths during SSR which breaks replay.
+  paths: {
+    relative: false,
+  },
+
+  prerender: {
+    crawl: true,
+    handleHttpError: ({ path, message, status }) => {
+      // These generated or synced asset directories can be absent from a
+      // clean CI checkout. Ignore only missing assets; a broken page or any
+      // server error must still stop the build.
+      if (
+        status === 404 &&
+        (path.startsWith("/pwa/") ||
+          path.startsWith("/notation/letters/") ||
+          path.startsWith("/thumbnails/") ||
+          path.startsWith("/Explore_thumbnails/"))
+      )
+        return;
+      throw new Error(message);
+    },
+    handleMissingId: ({ path, id }) => {
+      // Guide nav renders section anchor links for the active chapter,
+      // but placeholder pages don't have those section elements yet
+      if (path.startsWith("/guide/level-1/")) return;
+      // Archive record hashes are client-managed selection state. Rendering
+      // matching DOM ids would trigger a native jump before hydration and
+      // leave the viewport stranded inside the overflow-hidden archive.
+      if (path === "/history" && id.startsWith("archive-record-")) return;
+      // Atlas hashes select a category or term after hydration. They are URL
+      // state, not scroll targets, so rendering matching ids would make the
+      // browser jump inside the full-viewport workspace before Atlas can
+      // restore the requested view.
+      if (path === "/atlas") return;
+      throw new Error(`Missing id "#${id}" on ${path}`);
+    },
+  },
+};
+
 export default defineConfig(({ command, mode }) => ({
   cacheDir: command === "serve" ? dependencyCachePlan.cacheDir : undefined,
-  esbuild: {
-    pure:
-      mode === "production"
-        ? ["console.log", "console.debug", "console.info"]
-        : [],
-  },
   define: {
     __DEFINES__: JSON.stringify({}),
     __APP_VERSION__: JSON.stringify(packageJson.version),
@@ -1004,7 +1136,7 @@ export default defineConfig(({ command, mode }) => ({
     // The old vitePlugin.hot option (svelte-hmr) was removed in
     // vite-plugin-svelte 6 — preserveLocalState/injectCss no longer exist.
     // For state preservation across HMR, use `// @hmr:keep-all` comments.
-    sveltekit(),
+    sveltekit(svelteKitOptions),
     clientOnlyChunkMergePlugin(),
     deployStaticCopyPlugin(), // Copies static/ into the client build minus files the deploy trim deletes
     dictionaryPlugin(),
@@ -1143,41 +1275,55 @@ export default defineConfig(({ command, mode }) => ({
       process.env.VITE_SOURCEMAP === "true" &&
       Boolean(process.env.POSTHOG_PERSONAL_API_KEY),
     target: "esnext",
-    minify: "esbuild",
-    // 2026: Fast default minification
-    cssMinify: "esbuild",
-    // 2026: Works with Svelte 5
+    // Vite 8 minifies JS with Oxc and CSS with Lightning CSS by default. The
+    // esbuild minifiers this config named before are deprecated.
 
-    rollupOptions: {
+    rolldownOptions: {
       // Externalize server-only modules that can't be bundled
       external: ["@resvg/resvg-js", /mcp-server/],
+      // Production bundles drop console.log/debug/info calls whose result is
+      // unused. Vite 7 did this with `esbuild.pure`, which Oxc has no field for.
+      treeshake:
+        mode === "production"
+          ? {
+              manualPureFunctions: [
+                "console.log",
+                "console.debug",
+                "console.info",
+              ],
+            }
+          : undefined,
       output: {
         // Strategic chunking — see classifyChunk() above the config for the
         // full rationale (incl. the 2026-06-16 vendor-three ⇄ vendor TDZ fix).
-        manualChunks: classifyChunk,
+        // One group whose name() is classifyChunk is exactly what Rolldown
+        // turns a deprecated `manualChunks` function into.
+        codeSplitting: {
+          groups: [{ name: (id) => classifyChunk(id) ?? null }],
+        },
         // classifyChunk names node_modules chunks and the measured scene-only
-        // leaves above. Other src/lib modules use Rollup's automatic split,
-        // which emits one chunk per
-        // distinct set of reachable entry points. On a dynamic-import-heavy
-        // graph that shatters into hundreds of micro-chunks: the homepage
-        // launchpad's media closure alone was 238 files, of which 202 were
-        // under 10 KB and carried just 505 KB between them — 85% of the
-        // requests for 10% of the bytes, each one a round trip that cannot
-        // start until its parent parses. Measured max critical path latency
-        // was 6,225 ms with the last resource landing at 6.8 s.
+        // leaves above. Other src/lib modules use the bundler's automatic
+        // split, which emits one chunk per distinct set of reachable entry
+        // points. On a dynamic-import-heavy graph that shatters into hundreds
+        // of micro-chunks: the homepage launchpad's media closure alone was
+        // 238 files, of which 202 were under 10 KB and carried just 505 KB
+        // between them — 85% of the requests for 10% of the bytes, each one a
+        // round trip that cannot start until its parent parses. Measured max
+        // critical path latency was 6,225 ms with the last resource landing
+        // at 6.8 s.
         //
-        // Rollup merges anything below this into a sibling with a compatible
-        // dependent-entry set. Manual chunks are assigned BEFORE this runs
-        // (getChunkAssignments → getChunkDefinitionsFromManualChunks) and are
-        // never merged, so vendor-three/vendor-svelte and the acyclicity they
-        // buy are untouched. Merging also respects side-effect ordering.
+        // The client build appends an "app" group after this one that merges
+        // small app chunks into siblings loaded for compatible entry sets.
+        // Groups claim modules in order, so classifyChunk's named chunks
+        // (vendor-three, vendor-svelte and the acyclicity they buy) are
+        // settled before the merge group sees anything.
         //
         // The tradeoff is deliberate: a merged chunk can pull in a little code
         // a given route doesn't need. At these sizes that is a few KB against
         // a round trip, and the round trips were the whole cost.
         //
-        // Applied CLIENT-ONLY by the clientOnlyChunkMergePlugin below — see
-        // there for why this cannot live inline.
+        // Applied CLIENT-ONLY by the clientOnlyChunkMergePlugin — see there
+        // for why this cannot live inline.
       },
     },
     chunkSizeWarningLimit: 1000, // Warn for 1MB+ chunks
@@ -1210,17 +1356,17 @@ export default defineConfig(({ command, mode }) => ({
       "@austencloud/media-tagging-types",
       "@austencloud/media-tagging-ui",
     ],
+    // Vite 8 accepts only package names here (no RegExp). A package name also
+    // covers its subpaths, so "three" externalizes "three/webgpu" and the
+    // examples. The mcp-server pattern stays in build.rolldownOptions.external.
     external: [
       "pdfjs-dist",
       "page-flip",
-      // MCP server has native dependencies that can't be bundled
-      /mcp-server/,
       "@resvg/resvg-js",
       // Three.js and related WebGL packages - must be external for SSR because
       // they access WebGL constants at module load time which don't exist in Node.js
       // (causes "Cannot read properties of undefined (reading 'VERTEX')" error)
       "three",
-      /^three\//,
       "troika-three-text",
       "postprocessing",
       "three-perf",
@@ -1235,13 +1381,14 @@ export default defineConfig(({ command, mode }) => ({
   // ============================================================================
   worker: {
     format: "es",
-    rollupOptions: {
-      // The composition worker dynamically imports modules that transitively
-      // reference $app/environment (resolved to __sveltekit/environment by SvelteKit).
-      // This virtual module doesn't exist in the worker Rollup context. Since these
-      // dynamic imports are behind try/catch and never actually reached in worker
-      // context, externalizing the unresolvable module lets the build succeed.
-      external: ["__sveltekit/environment", /^\$env\//],
+    rolldownOptions: {
+      // The workers' dynamic imports transitively reach `$app/*` modules
+      // (`$app/env`, `$app/state`, `$app/navigation`). The worker bundle runs
+      // without SvelteKit's plugins, so those cannot be built there:
+      // `$app/navigation` pulls in the router's root.svelte. Since these
+      // dynamic imports are behind try/catch and never actually reached in
+      // worker context, externalizing them lets the build succeed.
+      external: [/^\$app\//],
     },
   },
   // ============================================================================

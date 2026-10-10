@@ -8,7 +8,7 @@ import {
   findWordUnitsRotationOffset,
 } from "../word-notation";
 import { splitWordLetterUnits } from "@tka/render-composition";
-import { Letter } from "$lib/shared/foundation/domain/models/letter";
+import { Letter } from "#lib/shared/foundation/domain/models/letter.js";
 
 describe("parseWordNotation", () => {
   it("reads plain words as unskewed units, keeping dash suffixes", () => {

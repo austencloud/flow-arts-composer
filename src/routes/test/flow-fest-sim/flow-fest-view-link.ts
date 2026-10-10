@@ -13,7 +13,7 @@
  * other 3D scenes."
  *
  * "Like we do in other 3D scenes" is literal, and this file does not reinvent
- * it: `$lib/shared/3d/domain/camera-url-pose` already owns the `?cam=&look=&fov=`
+ * it: `#lib/shared/3d/domain/camera-url-pose.js` already owns the `?cam=&look=&fov=`
  * vocabulary that the ocean, autumn, winter, celestial, and forest review routes
  * share. What is genuinely new here is the conversion, because this route has no
  * orbit camera to read a target off — it has a walking player with a yaw and a
@@ -31,7 +31,7 @@
 import {
   readCameraUrlPose,
   setCameraUrlPose,
-} from "$lib/shared/3d/domain/camera-url-pose";
+} from "#lib/shared/3d/domain/camera-url-pose.js";
 import type { FlowFestReviewCamera } from "../flow-fest-graybox/flow-fest-runtime-contract";
 
 /**

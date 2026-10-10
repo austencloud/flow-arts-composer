@@ -50,7 +50,7 @@ import {
   VERTICAL_MIRROR_PLACEMENT_MAP,
 } from "@tka/sequence-engine/loop";
 
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 import type {
   AdmissibleClosure,

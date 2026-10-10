@@ -11,9 +11,9 @@
  * density, and shutter normalization all read it.
  */
 
-import type { LedIntent } from "$lib/shared/effects/domain/effects-config";
-import { ledBrightnessToFloat } from "$lib/shared/animation-engine/domain/types/led-types";
-import { PROP_REFERENCE_FLUX } from "$lib/shared/animation-engine/domain/led-photometry";
+import type { LedIntent } from "#lib/shared/effects/domain/effects-config.js";
+import { ledBrightnessToFloat } from "#lib/shared/animation-engine/domain/types/led-types.js";
+import { PROP_REFERENCE_FLUX } from "#lib/shared/animation-engine/domain/led-photometry.js";
 import type { LedPassPayload, LedTipState, LedSegment } from "../domain/led-pass";
 
 const STREAK_VELOCITY_THRESHOLD = 0.01;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { migrateAppliedTransforms } from '$lib/features/compose/tabs/arrange/services/arrange-grid-serializer';
+import { migrateAppliedTransforms } from '#lib/features/compose/tabs/arrange/services/arrange-grid-serializer.js';
 
 describe('migrateAppliedTransforms', () => {
   it('converts legacy appliedTransforms to transformStack', () => {

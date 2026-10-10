@@ -39,14 +39,14 @@
     type Material,
   } from "three";
   import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-  import type { OceanQualityConfig } from "$lib/shared/3d/environments/scenes/ocean/quality/ocean-quality";
-  import GodRayShafts from "$lib/shared/3d/environments/scenes/ocean/runtime/atmosphere/GodRayShafts.svelte";
-  import MarineParticles from "$lib/shared/3d/environments/scenes/ocean/runtime/atmosphere/MarineParticles.svelte";
-  import FishBoids from "$lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/FishBoids.svelte";
-  import { createFishScatterState } from "$lib/shared/3d/environments/scenes/ocean/runtime/interaction/fish-scatter";
-  import JellyfishSwarm from "$lib/shared/3d/environments/scenes/ocean/runtime/fauna/jellyfish/JellyfishSwarm.svelte";
+  import type { OceanQualityConfig } from "#lib/shared/3d/environments/scenes/ocean/quality/ocean-quality.js";
+  import GodRayShafts from "#lib/shared/3d/environments/scenes/ocean/runtime/atmosphere/GodRayShafts.svelte";
+  import MarineParticles from "#lib/shared/3d/environments/scenes/ocean/runtime/atmosphere/MarineParticles.svelte";
+  import FishBoids from "#lib/shared/3d/environments/scenes/ocean/runtime/fauna/fish/FishBoids.svelte";
+  import { createFishScatterState } from "#lib/shared/3d/environments/scenes/ocean/runtime/interaction/fish-scatter.js";
+  import JellyfishSwarm from "#lib/shared/3d/environments/scenes/ocean/runtime/fauna/jellyfish/JellyfishSwarm.svelte";
   import TrenchGallery from "./TrenchGallery.svelte";
-  import { WATER_Y } from "$lib/shared/3d/environments/scenes/ocean/runtime/atmosphere/god-ray-axis";
+  import { WATER_Y } from "#lib/shared/3d/environments/scenes/ocean/runtime/atmosphere/god-ray-axis.js";
 
   interface Props {
     quality: OceanQualityConfig;

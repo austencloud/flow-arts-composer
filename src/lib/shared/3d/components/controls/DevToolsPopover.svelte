@@ -1,9 +1,9 @@
 <script lang="ts">
   import { Vector3 } from "three";
   import { getViewer3DContext } from "../../context/viewer-3d-context";
-  import { oceanQualityOverride } from "$lib/shared/3d/environments/scenes/ocean/quality/ocean-quality-override.svelte";
-  import { oceanDebugToggles } from "$lib/shared/3d/environments/scenes/ocean/quality/ocean-debug-toggles.svelte";
-  import type { OceanQualityTier } from "$lib/shared/3d/environments/scenes/ocean/quality/ocean-quality";
+  import { oceanQualityOverride } from "#lib/shared/3d/environments/scenes/ocean/quality/ocean-quality-override.svelte.js";
+  import { oceanDebugToggles } from "#lib/shared/3d/environments/scenes/ocean/quality/ocean-debug-toggles.svelte.js";
+  import type { OceanQualityTier } from "#lib/shared/3d/environments/scenes/ocean/quality/ocean-quality.js";
 
   const viewer = getViewer3DContext();
   let copiedCamera = $state(false);

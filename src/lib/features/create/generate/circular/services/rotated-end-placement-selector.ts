@@ -9,7 +9,7 @@
  * For quartered LOOPs: Randomly chooses between clockwise or counter-clockwise 90° rotation
  */
 
-import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import {
   HALF_PLACEMENT_MAP,
   QUARTER_PLACEMENT_MAP_CCW,

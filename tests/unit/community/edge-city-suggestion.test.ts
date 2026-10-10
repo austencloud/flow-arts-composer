@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createEdgeCitySuggestion } from "$lib/features/community/services/edge-city-suggestion";
-import { CityResolutionError } from "$lib/features/community/domain/canonical-city";
+import { createEdgeCitySuggestion } from "#lib/features/community/services/edge-city-suggestion.js";
+import { CityResolutionError } from "#lib/features/community/domain/canonical-city.js";
 import type {
   ForwardGeocodeResult,
   Geocoder,
-} from "$lib/features/community/services/geocoding-service";
+} from "#lib/features/community/services/geocoding-service.js";
 
 function geocoder(result: ForwardGeocodeResult): Geocoder {
   return {

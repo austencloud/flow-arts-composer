@@ -16,12 +16,12 @@
  * the player submerged when `position.y + 0.75 < terrain.waterlineY`.
  */
 import { describe, it, expect, beforeAll } from "vitest";
-import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
+import { buildVulcanCaveFloorPlan } from "#lib/features/museum/data/vulcan-cave-floor-plan.js";
 import {
   MuseumPhysicsProvider,
   SOLID_TYPES,
-} from "$lib/features/museum/services/museum-physics-provider";
-import { tileKey } from "$lib/features/museum/domain/museum-grid-types";
+} from "#lib/features/museum/services/museum-physics-provider.js";
+import { tileKey } from "#lib/features/museum/domain/museum-grid-types.js";
 import {
   buildDrownedGalleryLayout,
   CAUSEWAY_Y,
@@ -29,7 +29,7 @@ import {
   LANDING_Y,
   TILE_METRES,
   WATERLINE_Y,
-} from "$lib/features/museum/data/drowned-gallery-terrain";
+} from "#lib/features/museum/data/drowned-gallery-terrain.js";
 
 const TILE = TILE_METRES;
 const STANDING_Y = 0.85;

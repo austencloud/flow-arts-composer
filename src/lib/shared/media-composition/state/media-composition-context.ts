@@ -1,5 +1,5 @@
 import { getContext, setContext } from "svelte";
-import type { MediaCompositionState } from "$lib/shared/media-composition/state/media-composition-state.svelte";
+import type { MediaCompositionState } from "#lib/shared/media-composition/state/media-composition-state.svelte.js";
 
 const MEDIA_COMPOSITION_CONTEXT = Symbol("media-composition");
 

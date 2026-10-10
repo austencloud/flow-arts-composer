@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { ShortCodeManager, type ShortCodeSequenceLoader } from './services/short-code-manager';
-import { getPublicSequenceHashMatcher } from '$lib/shared/sequence-viewer/get-public-sequence-hash-matcher';
+import { getPublicSequenceHashMatcher } from '#lib/shared/sequence-viewer/get-public-sequence-hash-matcher.js';
 
 let instance: ShortCodeManager | null = null;
 let _browseLoader: ShortCodeSequenceLoader | null = null;

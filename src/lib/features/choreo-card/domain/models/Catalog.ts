@@ -1,4 +1,4 @@
-import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 export interface CatalogFamily {
   readonly id: string;

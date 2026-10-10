@@ -4,14 +4,14 @@
   chips stamp + auto-highlight by derivation.
 -->
 <script lang="ts">
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
+  import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
+  import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
+  import ChipPopoverOption from "#lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import RhythmGlyph from "./RhythmGlyph.svelte";
   import PatternStepStrip from "./PatternStepStrip.svelte";
   import type { StripBinding, StripValue } from "./pattern-strip-types";
-  import type { RhythmDef } from "$lib/shared/create/domain/rhythm/rhythm-catalog";
-  import { tDynamic } from "$lib/shared/i18n/i18n.svelte.js";
+  import type { RhythmDef } from "#lib/shared/create/domain/rhythm/rhythm-catalog.js";
+  import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import {
     displayLane, displayMask, displayRhythm, sentenceAmount,
     sentenceConnector, sentenceSubject, sentenceVerb,
@@ -25,7 +25,7 @@
     stampSingle,
     resizePeriod,
     laneMaskFor,
-  } from "$lib/shared/create/domain/rhythm/rhythm-mask";
+  } from "#lib/shared/create/domain/rhythm/rhythm-mask.js";
 
   interface Props {
     binding: StripBinding;

@@ -1,7 +1,7 @@
 <!-- Main Application Layout -->
 <script module lang="ts">
-  import { getApplicationInitializer } from "$lib/shared/application/get-application-initializer";
-  import { readBootSnapshot } from "$lib/shared/application/services/boot-snapshot";
+  import { getApplicationInitializer } from "#lib/shared/application/get-application-initializer.js";
+  import { readBootSnapshot } from "#lib/shared/application/services/boot-snapshot.js";
   // Module-level: survives component remounts so we never show the auth
   // spinner again after the app has loaded once in this session.
   // Seed from the boot snapshot: if the app has successfully booted before,
@@ -21,9 +21,9 @@
 </script>
 
 <script lang="ts">
-  import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
-  import { settingsService as settingsServiceSingleton } from "$lib/shared/settings/state/settings-state.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import { getDeviceDetector } from "#lib/shared/device/get-device-detector.js";
+  import { settingsService as settingsServiceSingleton } from "#lib/shared/settings/state/settings-state.svelte.js";
   import { createGlobalChiralitySeam } from "../../settings/components/tabs/prop-type/prop-chirality-seam";
   import WhatsNewChecker from "../../settings/components/WhatsNewChecker.svelte";
   import ErrorModal from "../../error/components/ErrorModal.svelte";
@@ -31,10 +31,10 @@
   import InboxSubscriptionProvider from "../../inbox/components/InboxSubscriptionProvider.svelte";
   import { inboxState } from "../../inbox/state/inbox-state.svelte";
   import { parseInboxRouteIntent } from "../../inbox/domain/inbox-route-intent";
-  import { myFeedbackDetailState } from "$lib/shared/feedback/state/my-feedback-detail-state.svelte";
-  import { quickFeedbackState } from "$lib/shared/feedback/state/quick-feedback-state.svelte";
+  import { myFeedbackDetailState } from "#lib/shared/feedback/state/my-feedback-detail-state.svelte.js";
+  import { quickFeedbackState } from "#lib/shared/feedback/state/quick-feedback-state.svelte.js";
   import { supportModalState } from "../../support/state/support-modal-state.svelte";
-  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import LazyMount from "#lib/shared/components/LazyMount.svelte";
   import { appEntryState } from "../../onboarding/state/app-entry-state.svelte.ts";
   import { createAccountSetupState } from "../../onboarding/state/account-setup-state.svelte";
   import { setAccountSetupContext } from "../../onboarding/context/account-setup-context";
@@ -45,11 +45,11 @@
   import { propDrawerState } from "../../settings/state/prop-drawer-state.svelte";
   import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
   import { HandSide } from "../../pictograph/shared/domain/enums/pictograph-enums";
-  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+  import { getMotionColor } from "#lib/shared/utils/svg-color-utils.js";
   import { setPropHandColors } from "@austencloud/scene-3d/prop-hand-palette";
 
   import { getContext, onMount } from "svelte";
-  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
+  import { bootProfiler } from "#lib/shared/analytics/boot-profiler.js";
   import MainInterface from "../../MainInterface.svelte";
   import PostSaveActivationHost from "../../onboarding/components/PostSaveActivationHost.svelte";
   import {
@@ -60,19 +60,19 @@
   import type { SheetType } from "../../navigation/services/types";
   import { authState } from "../../auth/state/auth-state.svelte";
   import { authDrawerState } from "../../auth/state/auth-drawer-state.svelte";
-  import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
   import {
     anonymousImportPrompt,
     confirmAnonymousImport,
     cancelAnonymousImport,
-  } from "$lib/shared/auth/state/anonymous-import-prompt.svelte";
+  } from "#lib/shared/auth/state/anonymous-import-prompt.svelte.js";
   import ErrorScreen from "../../foundation/ui/ErrorScreen.svelte";
-  import type { SettingsState } from "$lib/shared/settings/state/settings-state.svelte";
+  import type { SettingsState } from "#lib/shared/settings/state/settings-state.svelte.js";
   import {
     initializeTheme,
     updateTheme as updateThemeService,
   } from "../../theme/services/theme-service";
-  import type { ApplicationInitializer } from "$lib/shared/application/services/application-initializer";
+  import type { ApplicationInitializer } from "#lib/shared/application/services/application-initializer.js";
   import {
     getSettings,
     restoreApplicationState,
@@ -86,7 +86,7 @@
     setInitializationState,
     initializeAppState,
   } from "../state/initialization-state.svelte";
-  import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
+  import type { DeviceDetector } from "#lib/shared/device/services/device-detector.js";
   import BackgroundHost from "../../background/shared/components/BackgroundHost.svelte";
   import { BackgroundType } from "@austencloud/backgrounds";
   import {
@@ -102,8 +102,8 @@
   import { resolveAccessTier } from "../../auth/domain/access-tier";
   import { isPremiumOrAbove } from "../../auth/domain/models/user-role";
   import { detectAndCaptureScanEntry } from "../../analytics/scan-attribution";
-  import { writeBootSnapshot } from "$lib/shared/application/services/boot-snapshot";
-  import { CURRENT_MODULE_KEY } from "$lib/shared/navigation/config/storage-keys";
+  import { writeBootSnapshot } from "#lib/shared/application/services/boot-snapshot.js";
+  import { CURRENT_MODULE_KEY } from "#lib/shared/navigation/config/storage-keys.js";
   // Get DI container from context
   // Services - resolved lazily
   let initService: ApplicationInitializer | null = $state(null);
@@ -769,14 +769,14 @@
 
     <!-- Collections picker — app-level so it outlives the card that opened it
          (unticking the collection you're browsing unmounts that card) -->
-    {#await import("$lib/features/library/components/collection-picker/CollectionPickerHost.svelte") then mod}
+    {#await import("#lib/features/library/components/collection-picker/CollectionPickerHost.svelte") then mod}
       <mod.default />
     {/await}
 
     <!-- Quick Feedback Panel (desktop hotkey: f) -->
     <LazyMount
       loader={() =>
-        import("$lib/features/feedback/components/quick/QuickFeedbackPanel.svelte")}
+        import("#lib/features/feedback/components/quick/QuickFeedbackPanel.svelte")}
       active={quickFeedbackState.isOpen}
       debugName="quick feedback"
     />
@@ -784,7 +784,7 @@
     <!-- My Feedback Detail Drawer (for viewing/editing user's own feedback) -->
     <LazyMount
       loader={() =>
-        import("$lib/features/feedback/components/my-feedback/MyFeedbackDetail.svelte")}
+        import("#lib/features/feedback/components/my-feedback/MyFeedbackDetail.svelte")}
       active={showFeedbackDetail}
       debugName="feedback detail"
       props={{
@@ -797,7 +797,7 @@
     />
 
     <!-- System Announcements Modal -->
-    {#await import("$lib/features/admin/components/AnnouncementChecker.svelte") then mod}
+    {#await import("#lib/features/admin/components/AnnouncementChecker.svelte") then mod}
       <mod.default />
     {/await}
 

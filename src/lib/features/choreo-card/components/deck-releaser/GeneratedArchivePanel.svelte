@@ -7,9 +7,9 @@
 <script lang="ts">
   import type { ArchivedDeckMeta } from "../../services/deck-archive-store";
   import { flip } from "svelte/animate";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { flipDuration, growFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { flipDuration, growFade } from "#lib/shared/transitions/motion.js";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
 
   interface Props {
     decks: ArchivedDeckMeta[];

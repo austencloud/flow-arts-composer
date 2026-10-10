@@ -7,7 +7,7 @@
 
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { Timestamp } from 'firebase/firestore';
-import { getFirestoreInstance } from '$lib/shared/auth/firebase';
+import { getFirestoreInstance } from '#lib/shared/auth/firebase.js';
 
 export class AgeVerifier {
 	private readonly PRIVATE_PROFILES_COLLECTION = 'userPrivateProfiles';

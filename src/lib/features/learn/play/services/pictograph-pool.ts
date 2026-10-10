@@ -5,9 +5,9 @@
  * a second dataframe load. A failed load clears the promise so a visible retry
  * can make a fresh attempt.
  */
-import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
+import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { letterQueryHandler } from "#lib/shared/pictograph/tka-glyph/services/letter-query-handler.js";
 
 export type PlayPictographPool = ReadonlyMap<string, readonly PictographData[]>;
 

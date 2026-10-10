@@ -1,6 +1,6 @@
-import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { parsePropTypeFromURLValue } from "$lib/shared/navigation/services/sequence-encoder";
+import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+import { parsePropTypeFromURLValue } from "#lib/shared/navigation/services/sequence-encoder.js";
 
 /** A raw, untrusted prop-config shape. Values come from Firestore wire data,
  * URL params, or scan telemetry, so nothing is assumed valid until parsed. */

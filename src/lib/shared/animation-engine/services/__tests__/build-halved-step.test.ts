@@ -1,18 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { buildHalvedStep } from "$lib/shared/animation-engine/services/build-halved-step";
-import { calculateOrientationAt } from "$lib/shared/animation-engine/services/orientation-at";
-import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+import { buildHalvedStep } from "#lib/shared/animation-engine/services/build-halved-step.js";
+import { calculateOrientationAt } from "#lib/shared/animation-engine/services/orientation-at.js";
+import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
 import {
   createMotionData,
   isVisibleMotion,
-} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+} from "#lib/shared/pictograph/shared/domain/models/motion-data.js";
 import {
   MotionType,
   HandSide,
   Orientation,
   RotationDirection,
-} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
+import { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 
 describe("buildHalvedStep — real motion families", () => {
   it("PRO E->S, IN->IN, CW, 1 turn (red real, blue placeholder)", () => {

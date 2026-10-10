@@ -3,10 +3,10 @@ import {
 	resolveRigLocalPropCenter3D,
 	resolveTrailSources3D,
 	TipPositionBridge3D,
-} from "$lib/shared/3d/effects/tip-position-bridge-3d";
-import { resolvePropTipAnchors3D } from "$lib/shared/3d/effects/prop-tip-geometry-3d";
-import { TrackingMode } from "$lib/shared/animation-engine/domain/types/trail-types";
-import type { TipPositionData3D } from "$lib/shared/3d/effects/types";
+} from "#lib/shared/3d/effects/tip-position-bridge-3d.js";
+import { resolvePropTipAnchors3D } from "#lib/shared/3d/effects/prop-tip-geometry-3d.js";
+import { TrackingMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
+import type { TipPositionData3D } from "#lib/shared/3d/effects/types.js";
 import { PropType, propFinishState } from "@austencloud/scene-3d";
 
 function makePropState(x: number, y: number, z: number) {

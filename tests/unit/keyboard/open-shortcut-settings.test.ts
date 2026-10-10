@@ -5,16 +5,16 @@ const openHelp = vi.fn();
 const logKeyboardShortcutSettingsOpened = vi.fn();
 
 vi.mock(
-  "$lib/shared/navigation-coordinator/navigation-coordinator.svelte",
+  "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js",
   () => ({ handleModuleChange })
 );
-vi.mock("$lib/shared/keyboard/state/keyboard-shortcut-state.svelte", () => ({
+vi.mock("#lib/shared/keyboard/state/keyboard-shortcut-state.svelte.js", () => ({
   keyboardShortcutState: {
     context: "create",
     openHelp,
   },
 }));
-vi.mock("$lib/shared/keyboard/keyboard-shortcut-analytics", () => ({
+vi.mock("#lib/shared/keyboard/keyboard-shortcut-analytics.js", () => ({
   logKeyboardShortcutSettingsOpened,
 }));
 
@@ -25,7 +25,7 @@ describe("openShortcutSettings", () => {
 
   it("records its source and navigates to the Keyboard settings destination", async () => {
     const { openShortcutSettings } =
-      await import("$lib/shared/keyboard/open-shortcut-settings");
+      await import("#lib/shared/keyboard/open-shortcut-settings.js");
 
     await openShortcutSettings("keyboard_shortcut", {
       view: "current",
