@@ -54,7 +54,8 @@
 <style>
   .account-settings {
     display: grid;
-    grid-template-rows: repeat(4, minmax(5em, 1fr));
+    grid-template-rows: repeat(4, minmax(5em, auto));
+    align-content: start;
     width: 100%;
     min-height: 0;
   }
@@ -71,6 +72,15 @@
 
   .account-settings :global(.input-row) {
     width: min(100%, 34rem);
+  }
+
+  /* In the three-column layout the rows may grow a little to share the
+     column's height, but never so far that a one-line value floats in an
+     empty band. */
+  @container profile-tab (min-width: 75rem) {
+    .account-settings {
+      grid-template-rows: repeat(4, minmax(5em, 6.25em));
+    }
   }
 
   @container profile-tab (min-width: 105rem) {
