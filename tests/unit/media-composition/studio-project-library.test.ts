@@ -94,7 +94,24 @@ describe("Studio project library", () => {
     expect(sequence.id).toBe("source-1");
   });
 
-  it("requires a real source for software showcases", async () => {
+  it("creates a named source-free showcase without inventing a sequence", async () => {
+    persistStudioProject.mockClear();
+    const id = await createSoftwareProject("  Software tour  ");
+    const [source, project] = persistStudioProject.mock.calls[0] as [
+      SequenceData | null,
+      PostProject,
+    ];
+    expect(id).toMatch(/^studio-project:showcase:/);
+    expect(source).toBeNull();
+    expect(project).toMatchObject({
+      sequenceId: id,
+      sourceKind: "none",
+      title: "Software tour",
+    });
+    expect(project.tracks[0]?.items).toEqual([]);
+  });
+
+  it("requires real steps when a source is supplied for a software showcase", async () => {
     persistStudioProject.mockClear();
     await expect(
       createSoftwareProject("Showcase", { ...sequence, steps: [] })
@@ -107,6 +124,40 @@ describe("Studio project library", () => {
     ];
     expect(id).toMatch(/^studio-project:showcase:/);
     expect(project.tracks[0]?.items).toEqual([]);
+  });
+
+  it("duplicates a source-free showcase with its media and a separate identity", async () => {
+    persistStudioProject.mockClear();
+    resolvePostSequence.mockClear();
+    const original = createEmptyPostProject({
+      sequenceId: "studio-project:showcase:original",
+      now: 1,
+      sourceKind: "none",
+      title: "Demo",
+    });
+    original.images = [
+      {
+        id: "hero",
+        label: "Hero",
+        ref: { kind: "linked", url: "https://example.test/hero.png" },
+      },
+    ];
+    loadPostProject.mockReturnValue(original);
+    const id = await duplicateStudioProject(original.sequenceId);
+    const [source, duplicate] = persistStudioProject.mock.calls[0] as [
+      SequenceData | null,
+      PostProject,
+    ];
+    expect(source).toBeNull();
+    expect(id).not.toBe(original.sequenceId);
+    expect(duplicate).toMatchObject({
+      sequenceId: id,
+      sourceKind: "none",
+      title: "Demo (copy)",
+      images: original.images,
+    });
+    expect(duplicate.images).not.toBe(original.images);
+    expect(resolvePostSequence).not.toHaveBeenCalled();
   });
 
   it("copies arrangements under a new arrangement identity without changing the original", async () => {

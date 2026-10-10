@@ -150,7 +150,7 @@
    */
   interface Props {
     editor: PostEditorState;
-    sequence: SequenceData;
+    sequence: SequenceData | null;
     bindingFor: (role: string) => CompositionSourceBinding | null;
     labelFor: (item: PostItem) => string;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
@@ -2510,7 +2510,11 @@
   {:else}
     <div class="empty">
       <i class="fa-solid fa-film" aria-hidden="true"></i>
-      <span>{t("post_editor_empty_preview")}</span>
+      <span
+        >{editor.project.sourceKind === "none"
+          ? "Add footage, text, or an image to see the post here"
+          : t("post_editor_empty_preview")}</span
+      >
     </div>
   {/if}
 

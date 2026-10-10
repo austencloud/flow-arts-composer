@@ -18,7 +18,7 @@
     intent?: StudioIntent | null;
     entries: StudioLibraryEntry[];
     onclose: () => void;
-    onopen: (id: string) => void;
+    onopen: (id: string, footage?: File) => void;
     onfeature: (slug: string) => void;
   } = $props();
   let chosen = $state<StudioIntent | null>(null);
@@ -27,6 +27,7 @@
   let error = $state<string | null>(null);
   let picker = $state(false);
   let pickRequested = $state(false);
+  let footageInput = $state<HTMLInputElement>();
   const options = [
     {
       id: "tutorial" as const,
@@ -73,16 +74,32 @@
         id = await service.createStudioArrangement(sequence, name);
       } else {
         const service = await import("../services/studio-project-library.js");
-        id =
-          chosen === "showcase"
-            ? await service.createSoftwareProject(
-                name || "Software showcase",
-                sequence
-              )
-            : await service.createStudioTutorial(sequence, name);
+        id = await service.createStudioTutorial(sequence, name);
       }
       onclose();
       onopen(id);
+    } catch (cause) {
+      error =
+        cause instanceof Error
+          ? cause.message
+          : "The project could not be created.";
+    } finally {
+      busy = false;
+    }
+  }
+  async function createShowcase(footage?: File): Promise<void> {
+    if (busy) return;
+    busy = true;
+    error = null;
+    try {
+      const service = await import("../services/studio-project-library.js");
+      const title =
+        name.trim() ||
+        footage?.name.replace(/\.[^.]+$/, "").slice(0, 100) ||
+        "Software showcase";
+      const id = await service.createSoftwareProject(title);
+      onclose();
+      onopen(id, footage);
     } catch (cause) {
       error =
         cause instanceof Error
@@ -196,6 +213,46 @@
           placeholder={option?.title}
         /></label
       >
+      {#if chosen === "showcase"}
+        <div class="showcase-starts">
+          <button
+            type="button"
+            disabled={busy}
+            onclick={() => footageInput?.click()}
+          >
+            <i class="fas fa-film" aria-hidden="true"></i>
+            <span
+              ><strong>Import footage</strong><span
+                >Start with a screen recording or video from your device.</span
+              ></span
+            >
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onclick={() => void createShowcase()}
+          >
+            <i class="far fa-file" aria-hidden="true"></i>
+            <span
+              ><strong>Start blank</strong><span
+                >Add footage, images and text as you go.</span
+              ></span
+            >
+          </button>
+        </div>
+        <input
+          bind:this={footageInput}
+          class="footage-input"
+          type="file"
+          accept="video/*,.mp4,.mov,.webm,.m4v"
+          aria-label="Choose footage for your showcase"
+          onchange={() => {
+            const file = footageInput.files?.[0];
+            footageInput.value = "";
+            if (file) void createShowcase(file);
+          }}
+        />
+      {/if}
       {#if templates.length && chosen !== "arrangement"}
         <div class="reuse-heading">
           <h3>Reuse an edit</h3>
@@ -221,30 +278,28 @@
           {/each}
         </ul>
       {/if}
-      <div class="fresh">
-        <div>
-          <h3>
-            {chosen === "arrangement"
-              ? "Choose the first sequence"
-              : "Start with a sequence"}
-          </h3>
-          <p>
-            {chosen === "arrangement"
-              ? "Add more sequences and adjust the grid in the editor."
-              : chosen === "showcase"
-                ? "Use its animation or notation alongside your own footage."
+      {#if chosen !== "showcase"}<div class="fresh">
+          <div>
+            <h3>
+              {chosen === "arrangement"
+                ? "Choose the first sequence"
+                : "Start with a sequence"}
+            </h3>
+            <p>
+              {chosen === "arrangement"
+                ? "Add more sequences and adjust the grid in the editor."
                 : "Add your recording and build the tutorial around it."}
-          </p>
-        </div>
-        <button
-          class="choose"
-          type="button"
-          disabled={busy}
-          onclick={() => (pickRequested = true)}
-          >Choose a sequence <i class="fas fa-arrow-right" aria-hidden="true"
-          ></i></button
-        >
-      </div>
+            </p>
+          </div>
+          <button
+            class="choose"
+            type="button"
+            disabled={busy}
+            onclick={() => (pickRequested = true)}
+            >Choose a sequence <i class="fas fa-arrow-right" aria-hidden="true"
+            ></i></button
+          >
+        </div>{/if}
     {/if}
   </div>
 </BaseModal>
@@ -379,6 +434,45 @@
   }
   .reuse-heading {
     margin-top: 28px;
+  }
+  .showcase-starts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .showcase-starts button {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 20px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 8px;
+    background: var(--theme-card-bg);
+    text-align: left;
+  }
+  .showcase-starts button:hover {
+    border-color: var(--theme-accent);
+  }
+  .showcase-starts i {
+    padding-top: 2px;
+    font-size: 20px;
+    color: var(--theme-accent);
+  }
+  .showcase-starts button > span {
+    display: grid;
+    gap: 8px;
+  }
+  .showcase-starts strong {
+    font-size: 16px;
+  }
+  .showcase-starts span span {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--theme-text-secondary);
+  }
+  .footage-input {
+    display: none;
   }
   .templates {
     margin: 12px 0 0;

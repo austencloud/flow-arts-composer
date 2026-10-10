@@ -98,6 +98,7 @@ export function describeStudioProject(
   }
   const title =
     options.title?.trim() ||
+    project.title ||
     sequence?.displayName ||
     sequence?.name ||
     sequence?.word ||
@@ -178,10 +179,13 @@ async function readStudioProject(
     [local, disk, cloud?.project ?? null]
       .filter((candidate): candidate is PostProject => candidate !== null)
       .sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
-  const sequence = project
-    ? (cloud?.source ??
-      (resolveSource ? await resolvePostSequence(id) : cachedPostSequence(id)))
-    : null;
+  const sequence =
+    project && project.sourceKind !== "none"
+      ? (cloud?.source ??
+        (resolveSource
+          ? await resolvePostSequence(id)
+          : cachedPostSequence(id)))
+      : null;
   assertStudioAccount(uid);
   return { project, sequence, uid };
 }
@@ -199,26 +203,29 @@ export async function duplicateSoftwareFeatureVideo(
 }
 
 function nameFor(
-  sequence: SequenceData,
+  sequence: SequenceData | null,
   title: string | undefined,
   fallback: string
 ): string {
   return (
     title?.trim() ||
-    sequence.displayName ||
-    sequence.name ||
-    sequence.word ||
+    sequence?.displayName ||
+    sequence?.name ||
+    sequence?.word ||
     fallback
   );
 }
 
 async function createIndependentProject(
-  sequence: SequenceData,
+  sequence: SequenceData | null,
   title: string | undefined,
   kind: "tutorial" | "showcase" | "arrangement",
   template?: PostProject
 ): Promise<string> {
-  if (!sequence.steps?.length) throw new Error("Choose a sequence with steps.");
+  if (sequence && !sequence.steps?.length)
+    throw new Error("Choose a sequence with steps.");
+  if (!sequence && kind !== "showcase")
+    throw new Error("Choose a sequence with steps.");
   const uid = await currentPostAccount();
   const id =
     kind === "arrangement"
@@ -233,18 +240,26 @@ async function createIndependentProject(
         ? "Arrangement"
         : "Software showcase"
   );
-  const source = structuredClone({
-    ...sequence,
-    id,
-    name,
-    displayName: name,
-  }) as SequenceData;
+  const source = sequence
+    ? (structuredClone({
+        ...sequence,
+        id,
+        name,
+        displayName: name,
+      }) as SequenceData)
+    : null;
   const now = Date.now();
-  const empty = createEmptyPostProject({ sequenceId: id, now });
+  const empty = createEmptyPostProject({
+    sequenceId: id,
+    now,
+    title: name,
+    ...(source ? {} : { sourceKind: "none" as const }),
+  });
   const project = template
     ? PostProjectSchema.parse({
         ...structuredClone(template),
         sequenceId: id,
+        title: name,
         updatedAt: now,
       })
     : kind === "tutorial"
@@ -290,7 +305,7 @@ async function createIndependentProject(
             },
           ],
         })
-      : empty;
+      : PostProjectSchema.parse(empty);
   await persistStudioProject(source, project, uid);
   return id;
 }
@@ -313,22 +328,24 @@ export async function duplicateStudioProject(
   assertStudioAccount(uid);
   if (!saved.project) throw new Error("This project is unavailable.");
   const source = saved.sequence;
-  if (!source)
+  if (!source && saved.project.sourceKind !== "none")
     throw new Error("This project's source sequence is unavailable.");
-  const kind = studioProjectKindFromId(sequenceId) ?? "tutorial";
+  const kind =
+    studioProjectKindFromId(sequenceId) ??
+    (saved.project.sourceKind === "none" ? "showcase" : "tutorial");
   return createIndependentProject(
     source,
-    title || `${nameFor(source, undefined, "Project")} (copy)`,
+    title ||
+      `${saved.project.title || nameFor(source, undefined, "Project")} (copy)`,
     kind,
     saved.project
   );
 }
 
-/** A source is explicit because the current Post editor requires real sequence steps. */
 export function createSoftwareProject(
   title: string,
-  source: SequenceData
+  source?: SequenceData | null
 ): Promise<string> {
   if (!title.trim()) throw new Error("Name this software showcase.");
-  return createIndependentProject(source, title, "showcase");
+  return createIndependentProject(source ?? null, title, "showcase");
 }

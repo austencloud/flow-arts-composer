@@ -32,10 +32,17 @@ focus, dismissal and scrolling. The project page owns its single scroll area.
 ## Creation
 
 Tutorials can reuse a saved edit as an independent copy or start from another
-sequence. Showcases can copy a saved feature video, including its media, or
-start with an explicitly selected source sequence. Arrangements ask for their
-first sequence only after that intent is selected. This change does not invent
-a source sequence to bypass the editor's existing source requirement.
+sequence. Showcases can start blank, import footage from the device, or copy a
+saved project. Importing footage opens it on the timeline; cancelling the file
+picker creates nothing. A blank showcase can add footage, images and text later.
+Arrangements ask for their first sequence only after that intent is selected.
+
+Source-free showcases store `sourceKind: "none"` and a title in the project.
+The existing `sequenceId` field remains the opaque project storage identity;
+it does not imply a source sequence exists. Legacy projects without the marker
+still require their real sequence. Source-free projects skip sequence loading,
+sequence-only tools and sequence render preparation. Their edits, independent
+copies, drafts and exports use the same timeline and media pipeline.
 
 ## Review
 
@@ -66,7 +73,26 @@ was not exercised.
 
 Previews show source artwork or source media, labelled accordingly. They are
 not renders of the finished composition. Background cards use saved sequence
-snapshots; missing sources do not trigger a public-library download. A fresh
-showcase still needs an explicit source because the current editor requires
-one. Reusing a saved showcase avoids that selection. Device-local video files
-may need relinking on another device.
+snapshots; missing sources do not trigger a public-library download. Device-local
+video files need relinking after a reload or on another device; project edits
+are saved, but device-local video bytes are not stored with them.
+
+## Source-free showcase verification, 2026-10-10
+
+Thirteen focused suites passed with 88 tests covering project loading, account
+and draft storage, independent copies, arrangements, and editor state. A later
+regression check passed seven tests across two suites, including preserving the
+destination's source identity when importing an older backup. The full Svelte
+check reported zero errors and warnings before final integration.
+
+An isolated browser created a blank showcase, saved and reopened it, made an
+independent copy, and imported footage directly into a new showcase. A saved
+footage project reopened and accepted its original file without loading a
+sequence. It exported a playable 1080×1920 MP4 lasting 1.73 seconds. Independent
+playback of the downloaded file confirmed its dimensions and duration.
+
+The showcase choices were inspected at 375×667, 960×412, 820×1180, 1440×900,
+1920×1080, 2560×1440 and 3840×2160 CSS pixels without horizontal overflow.
+Evidence and logs: `E:/tmp/studio-source-free-20261010/`. Browser checks used
+isolated storage and blocked external requests; live cloud round trips and
+real 200% browser zoom were not exercised.

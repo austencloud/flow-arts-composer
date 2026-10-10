@@ -261,7 +261,7 @@ function choicesFromRecords(
       if (current && current.updatedAt >= project.updatedAt) continue;
       choices.set(project.sequenceId, {
         sequenceId: project.sequenceId,
-        title: project.sequenceId,
+        title: project.title ?? project.sequenceId,
         word: "",
         updatedAt: project.updatedAt,
         hasDraft: true,
@@ -351,7 +351,10 @@ export async function listPostProjects(): Promise<{
     const draft = choices.get(recent.sequenceId);
     choices.set(recent.sequenceId, {
       sequenceId: recent.sequenceId,
-      title: recent.title,
+      title:
+        draft?.title && draft.title !== draft.sequenceId
+          ? draft.title
+          : recent.title,
       word: recent.word,
       updatedAt: Math.max(draft?.updatedAt ?? 0, recent.openedAt),
       hasDraft: !!draft,

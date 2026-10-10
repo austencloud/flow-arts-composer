@@ -22,6 +22,7 @@
     busy?: boolean;
     onAddDeviceVideo: () => void;
     onTapBeats: (takeId: string) => void;
+    hasSequence?: boolean;
   }
 
   let {
@@ -32,6 +33,7 @@
     busy = false,
     onAddDeviceVideo,
     onTapBeats,
+    hasSequence = true,
   }: Props = $props();
 
   let relinkInput = $state<HTMLInputElement | null>(null);
@@ -121,9 +123,9 @@
                 ? t("post_editor_one_clip")
                 : t("post_editor_clip_count", { count: clips })}
           </p>
-          <p class="meta">
-            <span class="status status-{status}">{STATUS_TEXT[status]}</span>
-          </p>
+          {#if hasSequence}<p class="meta">
+              <span class="status status-{status}">{STATUS_TEXT[status]}</span>
+            </p>{/if}
           {#if !loaded}
             <p class="warn">
               {take.ref.kind === "local"
@@ -133,13 +135,13 @@
           {/if}
           <div class="row">
             {#if loaded}
-              <PanelButton
-                variant={status === "confirmed" ? "secondary" : "primary"}
-                onclick={() => onTapBeats(take.id)}
-              >
-                <i class="fa-solid fa-drum" aria-hidden="true"></i>
-                {t("post_editor_tap_beats")}
-              </PanelButton>
+              {#if hasSequence}<PanelButton
+                  variant={status === "confirmed" ? "secondary" : "primary"}
+                  onclick={() => onTapBeats(take.id)}
+                >
+                  <i class="fa-solid fa-drum" aria-hidden="true"></i>
+                  {t("post_editor_tap_beats")}
+                </PanelButton>{/if}
               <PanelButton
                 onclick={() => editor.appendTakeClip(take.id)}
                 ariaLabel={t("post_editor_add_clip_of", { take: name })}

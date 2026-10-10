@@ -33,6 +33,33 @@ const sequence = (id: string, word: string) => ({
 });
 
 describe("Post project selection", () => {
+  it("lists a source-free project by its saved title without a recent sequence", async () => {
+    const id = "studio-project:showcase:blank";
+    const project = createEmptyPostProject({
+      sequenceId: id,
+      now: 100,
+      sourceKind: "none",
+      title: "Software tour",
+    });
+    localStorage.setItem(
+      `tka:post-studio:project:v2:${id}`,
+      JSON.stringify(project)
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue({ ok: true, json: async () => ({ records: [] }) })
+    );
+    const result = await listPostProjects();
+    expect(result.projects).toEqual([
+      expect.objectContaining({
+        sequenceId: id,
+        title: "Software tour",
+        hasDraft: true,
+      }),
+    ]);
+  });
   it("simplifies displayed words without changing saved sequence or project data", async () => {
     const id = "Δ-ΛRZ";
     const word = id.repeat(4);
