@@ -1,6 +1,11 @@
 <script lang="ts">
   import GuideShell from "./_components/GuideShell.svelte";
-  import { bodyPagesByGroup } from "./level-1/_data/guide-manifest";
+  import {
+    GROUP_TITLES,
+    bodyPagesByGroup,
+  } from "./level-1/_data/guide-manifest";
+  import { getAvailableConcepts } from "#lib/features/learn/domain/concept-experience-registry.js";
+  import { buildConceptPath } from "#lib/features/learn/domain/concept-routes.js";
   import { seoForSlug } from "./level-1/_data/guide-page-seo";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
@@ -16,6 +21,14 @@
       ? tDynamic("guide_hub_first_topic")
       : firstTopicLabel
   );
+
+  // Lesson first (approved 2026-10-10): the primary action opens the first
+  // published lesson; reading the written guide is the second choice.
+  const firstLessonHref = buildConceptPath(getAvailableConcepts()[0]?.id);
+  const levelOnePath = bodyPagesByGroup().map((bucket) => ({
+    title: GROUP_TITLES[bucket.group],
+    href: `/guide/level-1/${bucket.entries[0]?.entry.id ?? ""}`,
+  }));
 
   const guideSections = [
     {
@@ -83,16 +96,28 @@
       <header class="intro">
         <span class="kicker">{tDynamic("guide_hub_kicker")}</span>
         <h1>{tDynamic("guide_hub_title")}</h1>
-        <p>{tDynamic("guide_hub_intro")}</p>
+        <div class="welcome">
+          <p class="welcome-greeting">{tDynamic("guide_welcome_greeting")}</p>
+          <p>{tDynamic("guide_welcome_what")}</p>
+          <p>{tDynamic("guide_welcome_pictographs")}</p>
+        </div>
+        <ol class="level-path" aria-label={tDynamic("guide_hub_level1_title")}>
+          {#each levelOnePath as stop, index (stop.href)}
+            <li>
+              <a href={stop.href}>
+                <span class="path-number" aria-hidden="true">{index + 1}</span>
+                <strong>{stop.title}</strong>
+              </a>
+            </li>
+          {/each}
+        </ol>
         <div class="intro-actions">
-          <a class="primary-action" href={firstTopicHref}>
-            {tDynamic("guide_hub_start_with", {
-              topic: localizedFirstTopicLabel,
-            })}
+          <a class="primary-action" href={firstLessonHref}>
+            {tDynamic("guide_hub_start_lesson")}
             <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
           </a>
-          <a class="secondary-action" href="/learn/concepts">
-            {tDynamic("guide_hub_interactive_lessons")}
+          <a class="secondary-action" href={firstTopicHref}>
+            {tDynamic("guide_hub_read_guide")}
           </a>
         </div>
       </header>
@@ -187,12 +212,62 @@
     text-align: left;
   }
 
-  .intro > p {
-    margin: 1.4rem 0 0;
+  .welcome {
+    max-width: 44rem;
+    margin-top: 1.4rem;
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .welcome p {
+    margin: 0;
     color: var(--guide-text-dim);
     font-size: clamp(1rem, 1.35vw, 1.18rem);
     line-height: 1.65;
     text-wrap: pretty;
+  }
+
+  .welcome .welcome-greeting {
+    color: var(--guide-text);
+    font-weight: 650;
+  }
+
+  .level-path {
+    margin: 1.6rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .level-path a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 44px;
+    padding: 0.55rem 0.95rem;
+    border: 1px solid var(--guide-stroke);
+    border-radius: 999px;
+    background: var(--guide-card);
+    color: var(--guide-text);
+    text-decoration: none;
+  }
+
+  .level-path a:hover,
+  .level-path a:focus-visible {
+    border-color: var(--guide-accent);
+  }
+
+  .path-number {
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--guide-accent) 22%, transparent);
+    font-size: 0.8rem;
+    font-weight: 700;
   }
 
   .intro-actions {
