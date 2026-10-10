@@ -1,10 +1,11 @@
 <!--
   ChangelogRichText - renders changelog entry text with inline links and icons
 
-  Entry text supports two tokens, both authored by the release pipeline:
+  Entry text supports three tokens, all authored by the release pipeline:
     [label](url)   -> real link. Internal URLs (tkaflowarts.com / relative)
                       client-route in-app; external URLs open a new tab.
     {icon:name}    -> inline FontAwesome glyph, e.g. {icon:play}
+    **text**       -> bold run; may contain links and icons.
 
   Shared by WhatsNewModal and the Release Notes tab so both surfaces render
   identically. Plain text passes through untouched — no @html anywhere.
@@ -18,7 +19,10 @@
     isValidTabForModule,
   } from "#lib/shared/navigation/services/navigation-validator.js";
   import { openSheet } from "#lib/shared/navigation/services/sheet-router.js";
-  import { toChangelogSegments } from "#lib/shared/versioning/domain/utils/changelog-rich-text.js";
+  import {
+    toChangelogSegments,
+    type ChangelogInlineSegment,
+  } from "#lib/shared/versioning/domain/utils/changelog-rich-text.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
 
   let {
@@ -74,25 +78,36 @@
   const segments = $derived(toChangelogSegments(text));
 </script>
 
+{#snippet inline(
+  segment: ChangelogInlineSegment
+)}{#if segment.kind === "text"}{segment.value}{:else if segment.kind === "link"}<LinkChip
+      class="entry-link"
+      size="inline"
+      wrap
+      href={segment.href}
+      onclick={(event) =>
+        handleLinkClick(event, segment.href, segment.external)}
+      >{segment.label}</LinkChip
+    >{:else}<span class="inline-icon" aria-hidden="true"
+      ><i class="fas {segment.name}"></i></span
+    >{/if}{/snippet}
+
 <span class="rich-text">
   {#each segments as segment}
-    {#if segment.kind === "text"}{segment.value}{:else if segment.kind === "link"}<LinkChip
-        class="entry-link"
-        size="inline"
-        wrap
-        href={segment.href}
-        onclick={(event) =>
-          handleLinkClick(event, segment.href, segment.external)}
-        >{segment.label}</LinkChip
-      >{:else}<span class="inline-icon" aria-hidden="true"
-        ><i class="fas {segment.name}"></i></span
-      >{/if}
+    {#if segment.kind === "strong"}<strong
+        >{#each segment.children as child}{@render inline(child)}{/each}</strong
+      >{:else}{@render inline(segment)}{/if}
   {/each}
 </span>
 
 <style>
   .rich-text {
     display: inline;
+  }
+
+  .rich-text strong {
+    font-weight: 700;
+    color: var(--theme-text, inherit);
   }
 
   .inline-icon {

@@ -24,10 +24,14 @@ export const CONSTRUCT_DECOYS =
 /**
  * The choice spot (0, 1, or 2) holding the real step in `slot` on a scene's
  * `play`th turn. Neighboring boxes never use the same spot, and the spots
- * shift each turn, so the pick reads as a choice.
+ * shift each turn, so the pick reads as a choice. The pick steps one spot
+ * left per box, so most of the finger's hops are shorter than a box: hops
+ * to the right are long enough that the finger winds up and overshoots, and
+ * a turn has no room for more than one.
  */
 export function constructPick(slot: number, play: number): number {
-  return (slot + play) % CONSTRUCT_CHOICE_COUNT;
+  const count = CONSTRUCT_CHOICE_COUNT;
+  return (((play - slot) % count) + count) % count;
 }
 
 /** The spots a box's other moves take, in order, around the real pick. */

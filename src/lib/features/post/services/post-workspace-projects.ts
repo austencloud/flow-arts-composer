@@ -9,6 +9,7 @@ import {
 import { loadByIdentifier } from "#lib/shared/sequence-viewer/services/sequence-data-provider.js";
 import { auth } from "#lib/shared/auth/firebase.js";
 import { legacyPostOwner } from "#lib/shared/media-composition/services/post-project-store.js";
+import { isIndependentStudioProjectId } from "#lib/shared/media-composition/domain/studio-project-id.js";
 
 const SNAPSHOT_PREFIX = "tka:post:sequence:v1:";
 const RECENT_KEY = "tka:post:recent:v1";
@@ -149,11 +150,16 @@ export async function resolvePostSequence(
 ): Promise<SequenceData | null> {
   const cached = cachedPostSequence(sequenceId);
   if (cached) return cached;
+  // Independent Studio aliases only exist in account/local snapshots. Sending
+  // one to the public gallery cannot find it and can surface a global error
+  // while a library card is loading in the background.
+  if (isIndependentStudioProjectId(sequenceId)) return null;
   const loaded = await loadByIdentifier(sequenceId, { wordFallback: false });
   return loaded?.id === sequenceId && loaded.steps?.length ? loaded : null;
 }
 
-function cachedPostSequence(sequenceId: string): SequenceData | null {
+/** Read a saved source snapshot without consulting the public sequence gallery. */
+export function cachedPostSequence(sequenceId: string): SequenceData | null {
   const memory = memorySnapshots.get(snapshotKey(sequenceId));
   if (memory?.id === sequenceId && memory.steps?.length) return memory;
   try {
@@ -230,7 +236,7 @@ function choicesFromRecords(
       const parsed = PostProjectSchema.safeParse(JSON.parse(record.value));
       if (!parsed.success) continue;
       const project = parsed.data;
-      const studioId = project.sequenceId.startsWith("studio-arrangement:");
+      const studioId = isIndependentStudioProjectId(project.sequenceId);
       const uid = accountId();
       const studioKey =
         studioId && uid
@@ -255,7 +261,7 @@ function choicesFromRecords(
       if (current && current.updatedAt >= project.updatedAt) continue;
       choices.set(project.sequenceId, {
         sequenceId: project.sequenceId,
-        title: project.sequenceId,
+        title: project.title ?? project.sequenceId,
         word: "",
         updatedAt: project.updatedAt,
         hasDraft: true,
@@ -345,7 +351,10 @@ export async function listPostProjects(): Promise<{
     const draft = choices.get(recent.sequenceId);
     choices.set(recent.sequenceId, {
       sequenceId: recent.sequenceId,
-      title: recent.title,
+      title:
+        draft?.title && draft.title !== draft.sequenceId
+          ? draft.title
+          : recent.title,
       word: recent.word,
       updatedAt: Math.max(draft?.updatedAt ?? 0, recent.openedAt),
       hasDraft: !!draft,

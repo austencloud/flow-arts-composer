@@ -16,17 +16,19 @@ import {
   savePostDraft,
 } from "#lib/shared/media-composition/services/post-draft-storage.js";
 
-const sourceId = "studio-arrangement:shared-id";
-const project = (now: number) =>
-  createEmptyPostProject({ sequenceId: sourceId, now });
-
 afterEach(() => {
   account.uid = "account-a";
   localStorage.clear();
   vi.unstubAllGlobals();
 });
 
-describe("Studio arrangement disk isolation", () => {
+describe.each([
+  "studio-arrangement:shared-id",
+  "studio-project:tutorial:shared-id",
+  "studio-project:showcase:shared-id",
+])("Studio project disk isolation: %s", (sourceId) => {
+  const project = (now: number) =>
+    createEmptyPostProject({ sequenceId: sourceId, now });
   it("reopens a guest draft from its exact browser key without a disk archive", async () => {
     account.uid = null;
     localStorage.setItem(
@@ -82,7 +84,7 @@ describe("Studio arrangement disk isolation", () => {
     const result = await loadPostDraft(sourceId);
     expect(result.project?.updatedAt).toBe(99);
     expect(fetch.mock.calls[0]?.[0]).toContain(
-      "sequenceId=account%3Aaccount-a%3Astudio-arrangement%3Ashared-id"
+      `sequenceId=${encodeURIComponent(`account:account-a:${sourceId}`)}`
     );
 
     account.uid = "account-b";
@@ -95,7 +97,7 @@ describe("Studio arrangement disk isolation", () => {
     vi.stubGlobal("fetch", fetch);
     await savePostDraft(project(7));
     expect(JSON.parse(fetch.mock.calls[0]?.[1].body).records[0].key).toBe(
-      "tka:post-studio:project:v2:account:account-a:studio-arrangement:shared-id"
+      `tka:post-studio:project:v2:account:account-a:${sourceId}`
     );
 
     fetch.mockImplementation(async () => {

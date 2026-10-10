@@ -22,6 +22,17 @@ describe("draft autosave", () => {
   it("skips only an empty mount, while keeping projects with takes or items", () => {
     const empty = draft(1);
     expect(shouldSubmitPostDraft(empty, 0)).toBe(false);
+    expect(
+      shouldSubmitPostDraft(
+        createEmptyPostProject({
+          sequenceId: "studio-project:showcase:blank",
+          now: 1,
+          sourceKind: "none",
+          title: "Tour",
+        }),
+        0
+      )
+    ).toBe(true);
     expect(shouldSubmitPostDraft(empty, 1)).toBe(true);
     expect(
       shouldSubmitPostDraft(

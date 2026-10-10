@@ -842,6 +842,9 @@ export const PostProjectSchema = z
   .object({
     schemaVersion: z.literal(POST_PROJECT_SCHEMA_VERSION),
     sequenceId: IdSchema,
+    /** Absent on legacy projects, which still require a real sequence. */
+    sourceKind: z.enum(["sequence", "none"]).optional(),
+    title: z.string().trim().min(1).max(120).optional(),
     /** Prop used by this post's card and animation when an item has no override. */
     propType: z.nativeEnum(PropType).optional(),
     takes: z.array(PostTakeSchema),
@@ -1201,10 +1204,14 @@ export const MAIN_TRACK_ID = "main";
 export function createEmptyPostProject(input: {
   sequenceId: string;
   now: number;
+  sourceKind?: "sequence" | "none";
+  title?: string;
 }): PostProject {
   return {
     schemaVersion: POST_PROJECT_SCHEMA_VERSION,
     sequenceId: input.sequenceId,
+    ...(input.sourceKind ? { sourceKind: input.sourceKind } : {}),
+    ...(input.title ? { title: input.title.trim() } : {}),
     takes: [],
     tracks: [{ id: MAIN_TRACK_ID, hidden: false, locked: false, items: [] }],
     audio: "takes",

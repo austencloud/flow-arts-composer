@@ -93,6 +93,47 @@ export async function loadFeatureVideo(
   return parsed.data;
 }
 
+/** Makes a separate feature video with its own copied media folder. */
+export async function duplicateSoftwareFeatureVideo(
+  slug: string,
+  title: string,
+  fetcher: Fetcher = fetch
+): Promise<string> {
+  if (!import.meta.env.DEV)
+    throw new Error("Feature video copies are available on the dev server.");
+  const name = title.trim();
+  if (!name || name.length > 120)
+    throw new Error("Name the copy in 1 to 120 characters.");
+  const stem =
+    name
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48)
+      .replace(/-+$/g, "") || "showcase";
+  const copySlug = `${stem}-${crypto.randomUUID().slice(0, 8)}`;
+  const body = await readJson(
+    await fetcher(
+      `${FEATURE_VIDEO_API}/${encodeURIComponent(slug)}/duplicate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: copySlug,
+          title: name,
+          shareMedia: false,
+        }),
+      }
+    )
+  );
+  const parsed = FeatureVideoFileSchema.safeParse(body.file);
+  if (!parsed.success || parsed.data.slug !== copySlug)
+    throw new Error("The dev server sent an unreadable feature video copy.");
+  return copySlug;
+}
+
 /**
  * Sends a finished render to the project's exports/ folder. `name` picks its
  * file name; the dev server numbers it when an earlier render has that name.

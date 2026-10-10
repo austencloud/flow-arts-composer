@@ -13,6 +13,7 @@ import { applyPostProjectOps } from "#lib/shared/media-composition/domain/post-p
 import { addTakeTap } from "#lib/shared/media-composition/domain/take-timing.js";
 import {
   createFeatureVideoSync,
+  duplicateSoftwareFeatureVideo,
   listFeatureVideos,
   loadFeatureVideo,
   type FeatureVideoSync,
@@ -417,6 +418,35 @@ describe("a feature video in the Post editor", () => {
 });
 
 describe("listing and loading", () => {
+  it("duplicates a feature into a separately named project with copied media", async () => {
+    const requests: { url: string; body: Record<string, unknown> }[] = [];
+    const fetcher = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        requests.push({ url: String(input), body });
+        return Response.json(
+          { file: { ...featureFile(), slug: body.slug, title: body.title } },
+          { status: 201 }
+        );
+      }
+    ) as typeof fetch;
+    const slug = await duplicateSoftwareFeatureVideo(
+      "promo",
+      "My Showcase",
+      fetcher
+    );
+    expect(slug).toMatch(/^my-showcase-[a-f0-9]{8}$/);
+    expect(requests).toEqual([
+      {
+        url: `${FEATURE_VIDEO_API}/promo/duplicate`,
+        body: {
+          slug,
+          title: "My Showcase",
+          shareMedia: false,
+        },
+      },
+    ]);
+  });
   it("lists and loads feature videos and passes on the server's message", async () => {
     const file = featureFile();
     const summary = {

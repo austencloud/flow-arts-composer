@@ -20,6 +20,7 @@
     onRender: () => void;
     onCancel: () => void;
     onTapBeats: (takeId: string) => void;
+    hasSequence?: boolean;
     onSharePost?: () => void;
     /** A feature video's render, once it is in the project's exports/ folder. */
     savedTo?: string | null;
@@ -38,6 +39,7 @@
     onRender,
     onCancel,
     onTapBeats,
+    hasSequence = true,
     onSharePost,
     savedTo = null,
     saveError = "",
@@ -61,6 +63,7 @@
         });
         continue;
       }
+      if (!hasSequence) continue;
       const status = editor.timingStatus(take.id);
       if (status !== "confirmed") {
         items.push({
@@ -112,7 +115,11 @@
           <li>
             {#if item.takeId}
               {@const takeId = item.takeId}
-              <button type="button" class="link" onclick={() => onTapBeats(takeId)}>
+              <button
+                type="button"
+                class="link"
+                onclick={() => onTapBeats(takeId)}
+              >
                 {item.text}
               </button>
             {:else}

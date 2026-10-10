@@ -37,8 +37,9 @@
   interface Props {
     /** Retain the draft while its host is hidden, without running playback. */
     active?: boolean;
-    sequence: SequenceData;
+    sequence: SequenceData | null;
     initialProject?: PostProject;
+    initialFootage?: File | null;
     editArrangementOnOpen?: boolean;
     /** A feature video: its post saves to its folder through the dev server. */
     feature?: FeatureVideoSync;
@@ -75,6 +76,7 @@
     active = true,
     sequence,
     initialProject,
+    initialFootage = null,
     editArrangementOnOpen = false,
     feature,
     onSaveDraft,
@@ -115,7 +117,7 @@
   let urlPropType = $state<PropType | undefined>(psSeed?.propType);
   let projectPropType = $state<PropType | undefined>(initialProject?.propType);
   const sequencePropType = $derived(
-    sequence.steps
+    (sequence?.steps ?? [])
       .flatMap((step) => [step.motions.left, step.motions.right])
       .find((motion) => motion.isVisible)?.propType
   );
@@ -190,11 +192,12 @@
   }
 </script>
 
-{#key sequence.id}
+{#key initialProject?.sequenceId ?? sequence?.id}
   <PostEditorWorkspace
     {active}
     {sequence}
     {initialProject}
+    {initialFootage}
     {editArrangementOnOpen}
     {feature}
     {onSaveDraft}

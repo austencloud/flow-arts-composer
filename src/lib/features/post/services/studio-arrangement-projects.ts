@@ -55,25 +55,28 @@ function firstPopulatedSequence(
 }
 
 export async function persistStudioProject(
-  source: SequenceData,
+  source: SequenceData | null,
   project: PostProject,
   uid: string | null
 ): Promise<void> {
   assertStudioAccount(uid);
-  // rememberPostSequence also updates Post's recent list and active selection.
-  // Verify the source separately because its cache intentionally swallows quota errors.
-  rememberPostSequence(source);
-  const key = sourceStorageKey(source.id, uid);
-  try {
-    if (localStorage.getItem(key) !== JSON.stringify(source))
+  if (!source && project.sourceKind !== "none")
+    throw new Error("The source sequence is missing.");
+  if (source) {
+    // Verify the source separately because its cache intentionally swallows quota errors.
+    rememberPostSequence(source);
+    const key = sourceStorageKey(source.id, uid);
+    try {
+      if (localStorage.getItem(key) !== JSON.stringify(source))
+        throw new Error(
+          "The arrangement source could not be verified on this device."
+        );
+    } catch (cause) {
       throw new Error(
-        "The arrangement source could not be verified on this device."
+        "The arrangement source could not be saved on this device.",
+        { cause }
       );
-  } catch (cause) {
-    throw new Error(
-      "The arrangement source could not be saved on this device.",
-      { cause }
-    );
+    }
   }
   assertStudioAccount(uid);
   const saved = savePostProject(project);

@@ -1,6 +1,14 @@
 <script lang="ts">
   import GuideShell from "./_components/GuideShell.svelte";
-  import { bodyPagesByGroup } from "./level-1/_data/guide-manifest";
+  import {
+    GROUP_TITLES,
+    bodyPagesByGroup,
+  } from "./level-1/_data/guide-manifest";
+  import { getAvailableConcepts } from "#lib/features/learn/domain/concept-experience-registry.js";
+  import {
+    buildConceptPath,
+    buildConceptStartPath,
+  } from "#lib/features/learn/domain/concept-routes.js";
   import { seoForSlug } from "./level-1/_data/guide-page-seo";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
@@ -16,6 +24,18 @@
       ? tDynamic("guide_hub_first_topic")
       : firstTopicLabel
   );
+
+  // Lesson first (approved 2026-10-10): the primary action opens the first
+  // published lesson from its first step; reading the written guide is the
+  // second choice.
+  const firstLessonId = getAvailableConcepts()[0]?.id;
+  const firstLessonHref = firstLessonId
+    ? buildConceptStartPath(firstLessonId)
+    : buildConceptPath();
+  const levelOnePath = bodyPagesByGroup().map((bucket) => ({
+    title: GROUP_TITLES[bucket.group],
+    href: `/guide/level-1/${bucket.entries[0]?.entry.id ?? ""}`,
+  }));
 
   const guideSections = [
     {
@@ -83,18 +103,30 @@
       <header class="intro">
         <span class="kicker">{tDynamic("guide_hub_kicker")}</span>
         <h1>{tDynamic("guide_hub_title")}</h1>
-        <p>{tDynamic("guide_hub_intro")}</p>
+        <p class="welcome-greeting">{tDynamic("guide_welcome_greeting")}</p>
         <div class="intro-actions">
-          <a class="primary-action" href={firstTopicHref}>
-            {tDynamic("guide_hub_start_with", {
-              topic: localizedFirstTopicLabel,
-            })}
+          <a class="primary-action" href={firstLessonHref}>
+            {tDynamic("guide_hub_start_lesson")}
             <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
           </a>
-          <a class="secondary-action" href="/learn/concepts">
-            {tDynamic("guide_hub_interactive_lessons")}
+          <a class="secondary-action" href={firstTopicHref}>
+            {tDynamic("guide_hub_read_guide")}
           </a>
         </div>
+        <div class="welcome">
+          <p>{tDynamic("guide_welcome_what")}</p>
+          <p>{tDynamic("guide_welcome_pictographs")}</p>
+        </div>
+        <ol class="level-path" aria-label={tDynamic("guide_hub_level1_title")}>
+          {#each levelOnePath as stop, index (stop.href)}
+            <li>
+              <a href={stop.href}>
+                <span class="path-number" aria-hidden="true">{index + 1}</span>
+                <strong>{stop.title}</strong>
+              </a>
+            </li>
+          {/each}
+        </ol>
       </header>
 
       <section class="section-index" aria-labelledby="section-index-heading">
@@ -176,30 +208,107 @@
     text-wrap: balance;
   }
 
-  .intro h1 {
-    max-width: 15ch;
-    margin: 0;
-    padding: 0;
-    font-size: clamp(2.75rem, 5.3vw, 5.5rem);
-    font-weight: 780;
-    line-height: 0.98;
-    letter-spacing: -0.052em;
-    text-align: left;
+  /* A centered welcome: the site's own page-title voice (the Fraunces
+     italic of the landing wordmark and the other public pages), one line
+     where the width allows, with everything below it on the same axis. */
+  /* Flex, not grid: the guide's global h1 rule sets a named grid-column
+     that would open a second implicit column here. */
+  .intro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
 
-  .intro > p {
-    margin: 1.4rem 0 0;
+  .intro h1 {
+    margin: 0;
+    padding: 0;
+    font-family: var(--page-title-font, "Fraunces", Georgia, serif);
+    font-style: italic;
+    font-weight: 700;
+    font-variation-settings:
+      "opsz" 144,
+      "wght" 700,
+      "SOFT" 0,
+      "WONK" 1;
+    font-size: clamp(2.6rem, 1.4rem + 3.4vw, 5rem);
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+    text-align: center;
+  }
+
+  .welcome {
+    max-width: 42rem;
+    margin-top: 2rem;
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .welcome p {
+    margin: 0;
     color: var(--guide-text-dim);
     font-size: clamp(1rem, 1.35vw, 1.18rem);
     line-height: 1.65;
     text-wrap: pretty;
   }
 
+  .welcome-greeting {
+    margin: 1rem 0 0;
+    color: color-mix(in srgb, var(--guide-accent) 70%, white);
+    font-family: var(--page-title-font, "Fraunces", Georgia, serif);
+    font-style: italic;
+    font-weight: 600;
+    font-size: clamp(1.25rem, 1rem + 0.8vw, 1.65rem);
+    line-height: 1.3;
+  }
+
+  .level-path {
+    margin: 1.75rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
+  }
+
+  .level-path a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 44px;
+    padding: 0.55rem 0.95rem;
+    border: 1px solid var(--guide-stroke);
+    border-radius: 999px;
+    background: var(--guide-card);
+    color: var(--guide-text);
+    text-decoration: none;
+  }
+
+  .level-path a:hover,
+  .level-path a:focus-visible {
+    border-color: var(--guide-accent);
+  }
+
+  .path-number {
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--guide-accent) 22%, transparent);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  /* The way in sits right under the greeting so the first lesson is on
+     the first screen at every size; the welcome text follows it. */
   .intro-actions {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 0.75rem;
-    margin-top: 2rem;
+    margin-top: 1.5rem;
   }
 
   .primary-action,
@@ -233,9 +342,9 @@
   }
 
   .secondary-action {
-    padding: 0.75rem 1rem;
-    border-color: var(--guide-stroke);
-    background: var(--guide-card);
+    padding: 0.75rem 1.1rem;
+    border-color: color-mix(in srgb, var(--guide-text) 30%, transparent);
+    background: color-mix(in srgb, var(--guide-text) 5%, transparent);
   }
 
   .secondary-action:hover,
@@ -252,8 +361,20 @@
     outline-offset: 3px;
   }
 
+  /* The index and the PDF strip share one centered band under the
+     welcome, so the page has a single axis instead of a left-hugging list. */
+  .section-index,
+  .pdf-strip {
+    max-width: 64rem;
+    margin-inline: auto;
+  }
+
   .section-index {
     margin-top: clamp(4rem, 8vw, 7rem);
+  }
+
+  .section-index h2 {
+    text-align: center;
   }
 
   h2 {
@@ -371,8 +492,9 @@
   }
 
   @media (max-width: 760px) {
+    /* The layout already starts below the fixed Guide contents button. */
     .guide-hub {
-      padding-top: 6.5rem;
+      padding-top: 2rem;
     }
 
     .section-row {
