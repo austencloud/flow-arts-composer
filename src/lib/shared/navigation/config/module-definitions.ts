@@ -251,10 +251,10 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
     id: "post",
     labelKey: "module_post",
     descKey: "module_desc_post",
-    label: "Post",
+    label: "Studio",
     icon: '<i class="fas fa-clapperboard" aria-hidden="true"></i>',
     color: "#a4aab5",
-    description: "Edit and export sequence posts",
+    description: "Arrange sequences and edit videos",
     isMain: true,
     sections: [],
   },
@@ -522,5 +522,5 @@ const FEATURE_ENABLED: Record<string, boolean> = {
 };
 
 export const ENABLED_MODULE_DEFINITIONS = MODULE_DEFINITIONS.filter(
-  (m) => FEATURE_ENABLED[m.id] !== false
+  (m) => m.id !== "compose" && FEATURE_ENABLED[m.id] !== false
 );

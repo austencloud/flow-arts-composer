@@ -15,6 +15,7 @@ import type {
 export type PostPanelToolId =
   | "videos"
   | "add"
+  | "arrangement"
   | "canvas"
   | "look"
   | "export"
@@ -113,6 +114,8 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "duplicate",
         "delete",
       ];
+    case "arrangement":
+      return ["back", "arrangement", "split", "timing", ...ITEM_TAIL];
     case "animation":
       if (selection.isTunnel)
         return [

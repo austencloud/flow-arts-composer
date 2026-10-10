@@ -665,6 +665,180 @@ interface DrawnLayer {
   regionPixels: PixelRect;
 }
 
+/** The grid mounts canvas engines asynchronously, including on its first export frame. */
+function waitForArrangementSurface(
+  layerElement: HTMLElement
+): Promise<HTMLElement> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const observer = new MutationObserver(check);
+    const timeout = setTimeout(
+      () =>
+        finish(
+          new Error(
+            "Arrangement preview did not finish rendering before export"
+          )
+        ),
+      15_000
+    );
+
+    function finish(error?: Error, surface?: HTMLElement) {
+      if (settled) return;
+      settled = true;
+      observer.disconnect();
+      clearTimeout(timeout);
+      if (error) reject(error);
+      else resolve(surface!);
+    }
+
+    function check() {
+      const surface = layerElement.querySelector<HTMLElement>(
+        "[data-arrangement-surface]"
+      );
+      if (!surface) return;
+      if (surface.querySelector("[data-arrangement-cell-error]")) {
+        finish(new Error("An arrangement cell failed to render for export"));
+        return;
+      }
+      const expected = Number(surface.dataset.arrangementCellCount);
+      const cells = surface.querySelectorAll("[data-arrangement-cell-ready]");
+      if (Number.isFinite(expected) && cells.length < expected) return;
+      if (surface.querySelector('[data-arrangement-cell-ready="false"]'))
+        return;
+      finish(undefined, surface);
+    }
+
+    observer.observe(layerElement, {
+      childList: true,
+      attributes: true,
+      subtree: true,
+    });
+    check();
+  });
+}
+
+/**
+ * The animation cells already contain their finished canvas frames. Drawing
+ * those pixels directly avoids cloning a whole grid into a large SVG/image on
+ * every video frame. Other media types still use the DOM capture below.
+ */
+function drawArrangementCanvases(
+  context: CanvasRenderingContext2D,
+  surface: HTMLElement,
+  geometry: FrameLayerGeometry
+): boolean {
+  const cells = Array.from(
+    surface.querySelectorAll<HTMLElement>(".arrangement-cell")
+  );
+  if (
+    !cells.length ||
+    cells.some((cell) => cell.dataset.mediaType !== "animation")
+  )
+    return false;
+
+  const bounds = surface.getBoundingClientRect();
+  if (bounds.width <= 0 || bounds.height <= 0)
+    throw new Error("Arrangement export surface has no size");
+  const scaleX = geometry.region.width / bounds.width;
+  const scaleY = geometry.region.height / bounds.height;
+  const x = (clientX: number) =>
+    geometry.region.x + (clientX - bounds.left) * scaleX;
+  const y = (clientY: number) =>
+    geometry.region.y + (clientY - bounds.top) * scaleY;
+  const rect = (element: Element) => {
+    const box = element.getBoundingClientRect();
+    return {
+      x: x(box.left),
+      y: y(box.top),
+      width: box.width * scaleX,
+      height: box.height * scaleY,
+    };
+  };
+
+  // Verify every engine is mounted before painting any cells. A missing GPU
+  // surface should fail visibly instead of silently exporting a blank slot.
+  const cellCanvases = cells.map((cell) => {
+    const canvases = Array.from(
+      cell.querySelectorAll(".canvas-wrapper canvas")
+    );
+    if (
+      !canvases.length ||
+      canvases.some((canvas) => !canvas.width || !canvas.height)
+    )
+      throw new Error("An arrangement canvas was not ready for export");
+    return canvases;
+  });
+
+  context.save();
+  applyLayerTransform(context, geometry);
+  context.beginPath();
+  context.rect(
+    geometry.region.x,
+    geometry.region.y,
+    geometry.region.width,
+    geometry.region.height
+  );
+  context.clip();
+  context.fillStyle = getComputedStyle(surface).backgroundColor || "#101018";
+  context.fillRect(
+    geometry.region.x,
+    geometry.region.y,
+    geometry.region.width,
+    geometry.region.height
+  );
+
+  for (const [index, cell] of cells.entries()) {
+    const cellCanvas = cell.querySelector<HTMLElement>(".cell-canvas");
+    if (!cellCanvas) continue;
+    const cellRect = rect(cellCanvas);
+    context.save();
+    context.beginPath();
+    context.rect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+    context.clip();
+    const style = getComputedStyle(cellCanvas);
+    context.fillStyle = style.backgroundColor;
+    context.fillRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height);
+
+    const wrapper = cellCanvas.querySelector<HTMLElement>(".canvas-wrapper");
+    if (wrapper) {
+      const wrapperRect = rect(wrapper);
+      context.fillStyle = getComputedStyle(wrapper).backgroundColor;
+      context.fillRect(
+        wrapperRect.x,
+        wrapperRect.y,
+        wrapperRect.width,
+        wrapperRect.height
+      );
+    }
+    for (const canvas of cellCanvases[index]) {
+      const canvasRect = rect(canvas);
+      if (canvasRect.width > 0 && canvasRect.height > 0) {
+        context.drawImage(
+          canvas,
+          canvasRect.x,
+          canvasRect.y,
+          canvasRect.width,
+          canvasRect.height
+        );
+      }
+    }
+    const border = Number.parseFloat(style.borderTopWidth) * scaleY;
+    if (border > 0) {
+      context.strokeStyle = style.borderTopColor;
+      context.lineWidth = border;
+      context.strokeRect(
+        cellRect.x + border / 2,
+        cellRect.y + border / 2,
+        cellRect.width - border,
+        cellRect.height - border
+      );
+    }
+    context.restore();
+  }
+  context.restore();
+  return true;
+}
+
 /** One layer, turned with its region and clipped to its rounded rect. */
 async function drawRegionLayer(
   context: CanvasRenderingContext2D,
@@ -737,7 +911,45 @@ async function drawRegionLayer(
   context.globalAlpha = layer.opacity;
 
   const renderMode = layerElement.dataset.renderMode;
-  if (renderMode === "sequence-animation") {
+  if (renderMode === "arrangement") {
+    const surface = await waitForArrangementSurface(layerElement);
+    const bounds = surface.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0)
+      throw new Error("Arrangement export surface has no size");
+    const geometry = resolveFrameLayerGeometry({
+      preset: input.preset,
+      region: { ...region, fit: "fill" },
+      sourceWidth: 1,
+      sourceHeight: 1,
+      transform: layer.transform,
+    });
+    if (drawArrangementCanvases(context, surface, geometry)) {
+      context.restore();
+      return;
+    }
+    const scale = Math.max(
+      1,
+      regionPixels.width / bounds.width,
+      regionPixels.height / bounds.height
+    );
+    const image = input.pictographCapture
+      ? await input.pictographCapture.capture(
+          surface,
+          bounds.width,
+          bounds.height,
+          scale
+        )
+      : await (
+          await import("modern-screenshot")
+        ).domToCanvas(surface, {
+          width: bounds.width,
+          height: bounds.height,
+          scale,
+          ...POST_STUDIO_DOM_CAPTURE_OPTIONS,
+        });
+    applyLayerTransform(context, geometry);
+    drawSource(context, image, geometry);
+  } else if (renderMode === "sequence-animation") {
     // The preview lays this surface out to fill its region box, and a DOM
     // surface has no footage size to fit. Fitting a 1x1 stand-in with the
     // region's own "contain" drew the capture as a centred square, so a

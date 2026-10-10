@@ -18,12 +18,18 @@ const PLAN_PREFIX = "tka:post-studio:plan:v1:";
 const memorySnapshots = new Map<string, SequenceData>();
 
 function accountId(): string | null {
-  return auth.currentUser && !auth.currentUser.isAnonymous ? auth.currentUser.uid : null;
+  return auth.currentUser && !auth.currentUser.isAnonymous
+    ? auth.currentUser.uid
+    : null;
 }
 
 function scopedKey(key: string): string {
   const uid = accountId();
-  return uid ? `${key}:account:${uid}` : legacyPostOwner() ? `${key}:guest` : key;
+  return uid
+    ? `${key}:account:${uid}`
+    : legacyPostOwner()
+      ? `${key}:guest`
+      : key;
 }
 
 function snapshotKey(sequenceId: string): string {
@@ -151,8 +157,9 @@ function cachedPostSequence(sequenceId: string): SequenceData | null {
   const memory = memorySnapshots.get(snapshotKey(sequenceId));
   if (memory?.id === sequenceId && memory.steps?.length) return memory;
   try {
-    const raw = safeStorage()?.getItem(snapshotKey(sequenceId)) ??
-      ((!legacyPostOwner() || legacyPostOwner() === accountId())
+    const raw =
+      safeStorage()?.getItem(snapshotKey(sequenceId)) ??
+      (!legacyPostOwner() || legacyPostOwner() === accountId()
         ? safeStorage()?.getItem(`${SNAPSHOT_PREFIX}${sequenceId}`)
         : null);
     if (raw) {
@@ -221,13 +228,29 @@ function choicesFromRecords(
       continue;
     try {
       const parsed = PostProjectSchema.safeParse(JSON.parse(record.value));
+      if (!parsed.success) continue;
+      const project = parsed.data;
+      const studioId = project.sequenceId.startsWith("studio-arrangement:");
+      const uid = accountId();
+      const studioKey =
+        studioId && uid
+          ? `${PROJECT_PREFIX}account:${uid}:${project.sequenceId}`
+          : studioId && legacyPostOwner()
+            ? `${PROJECT_PREFIX}guest:${project.sequenceId}`
+            : studioId
+              ? `${PROJECT_PREFIX}${project.sequenceId}`
+              : null;
+      const unclaimedStudio =
+        studioId &&
+        !legacyPostOwner() &&
+        record.key === `${PROJECT_PREFIX}${project.sequenceId}`;
       if (
-        !parsed.success ||
-        record.key !== `${PROJECT_PREFIX}${parsed.data.sequenceId}` &&
-        record.key !== `${PROJECT_PREFIX}guest:${parsed.data.sequenceId}`
+        studioId
+          ? record.key !== studioKey && !unclaimedStudio
+          : record.key !== `${PROJECT_PREFIX}${project.sequenceId}` &&
+            record.key !== `${PROJECT_PREFIX}guest:${project.sequenceId}`
       )
         continue;
-      const project = parsed.data;
       const current = choices.get(project.sequenceId);
       if (current && current.updatedAt >= project.updatedAt) continue;
       choices.set(project.sequenceId, {
@@ -248,7 +271,10 @@ export async function listPostProjects(): Promise<{
   projects: PostProjectChoice[];
   error: string | null;
 }> {
-  const guestAfterClaim = !!legacyPostOwner() && legacyPostOwner() !== (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid);
+  const guestAfterClaim =
+    !!legacyPostOwner() &&
+    legacyPostOwner() !==
+      (auth.currentUser?.isAnonymous ? null : auth.currentUser?.uid);
   let browserRecords: PostDraftRecord[] = [];
   let error: string | null = null;
   try {
@@ -260,7 +286,8 @@ export async function listPostProjects(): Promise<{
   const controller = new AbortController();
   let deadline: ReturnType<typeof setTimeout> | undefined;
   try {
-    if (guestAfterClaim) throw new Error("Account backups are private.");
+    if (guestAfterClaim && !accountId())
+      throw new Error("Account backups are private.");
     const archive = (async () => {
       const response = await fetch("/_local/post-studio-drafts", {
         cache: "no-store",
@@ -292,15 +319,21 @@ export async function listPostProjects(): Promise<{
         "key" in record &&
         typeof record.key === "string" &&
         "value" in record &&
-        typeof record.value === "string"
+        typeof record.value === "string" &&
+        (!guestAfterClaim ||
+          record.key.startsWith(
+            `${PROJECT_PREFIX}account:${accountId()}:studio-arrangement:`
+          ))
     );
   } catch {
-    error = guestAfterClaim ? error : [
-      error,
-      "Computer backups could not be read. Browser projects are shown.",
-    ]
-      .filter(Boolean)
-      .join(" ");
+    error = guestAfterClaim
+      ? error
+      : [
+          error,
+          "Computer backups could not be read. Browser projects are shown.",
+        ]
+          .filter(Boolean)
+          .join(" ");
   } finally {
     clearTimeout(deadline);
   }

@@ -51,8 +51,8 @@ export function createViewerDestinationActions(
     dependencies.showToast({
       message:
         preset === "combo-export"
-          ? "Opening in Compose for combined export..."
-          : "Opening in Compose...",
+          ? "Opening in Studio for combined export..."
+          : "Opening in Studio...",
       type: "info",
       duration: 2000,
     });

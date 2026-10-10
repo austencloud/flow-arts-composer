@@ -21,6 +21,7 @@ import {
   sameChannelValue,
 } from "#lib/shared/media-composition/domain/post-project-keyframes.js";
 import type { PostTake } from "#lib/shared/media-composition/domain/post-plan.js";
+import { arrangementDurationSeconds } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
 import { withMotionKeys } from "#lib/shared/media-composition/domain/post-project-motion-keys.js";
 import {
   mergeSeparateTunnelHook,
@@ -106,7 +107,7 @@ function normalizeLayout(stored: PostProject): PostProject {
     const lead =
       sized.kind === "animation" && sized.tunnelHook?.backdrop ? 0 : intro;
 
-    if (sized.fill && sized.kind !== "video") {
+    if (sized.fill && sized.kind !== "video" && sized.kind !== "arrangement") {
       const target = anchored ?? mainAt(sized.start + intro);
       if (!target) return withChanges(sized, { fill: false, anchor: null });
       const start = Math.max(0, target.start - lead);
@@ -239,6 +240,21 @@ function sizeItem(
       sourceOut - canonical.sourceIn < minSpan
         ? Math.max(0, sourceOut - minSpan)
         : canonical.sourceIn;
+    const duration = (sourceOut - sourceIn) / canonical.speed;
+    const fades = fittedFades(canonical.fadeIn, canonical.fadeOut, duration);
+    return withChanges(canonical, {
+      sourceIn,
+      sourceOut,
+      duration,
+      fadeIn: fades.fadeIn,
+      fadeOut: fades.fadeOut,
+    });
+  }
+  if (canonical.kind === "arrangement") {
+    const limit = arrangementDurationSeconds(canonical.snapshot);
+    const minSpan = Math.min(limit, POST_MIN_ITEM_SECONDS * canonical.speed);
+    const sourceOut = Math.min(limit, Math.max(minSpan, canonical.sourceOut));
+    const sourceIn = Math.min(canonical.sourceIn, sourceOut - minSpan);
     const duration = (sourceOut - sourceIn) / canonical.speed;
     const fades = fittedFades(canonical.fadeIn, canonical.fadeOut, duration);
     return withChanges(canonical, {

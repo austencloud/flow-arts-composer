@@ -1,7 +1,11 @@
 <script lang="ts">
+  import StudioArrangements from "./components/StudioArrangements.svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { isTkaWord, simplifyRepeatedWord } from "#lib/shared/foundation/utils/word-simplifier.js";
+  import {
+    isTkaWord,
+    simplifyRepeatedWord,
+  } from "#lib/shared/foundation/utils/word-simplifier.js";
   import TKAWordGlyph from "#lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { getExportOptionsState } from "#lib/shared/animation-panel/state/export-options-state.svelte.js";
   import { createCardPreviewState } from "#lib/shared/share/state/card-preview-state.svelte.js";
@@ -38,14 +42,11 @@
       ? {
           listFeatures: async () =>
             (
-              await import(
-                "#lib/shared/media-composition/services/feature-video-client.js"
-              )
+              await import("#lib/shared/media-composition/services/feature-video-client.js")
             ).listFeatureVideos(),
           loadFeature: async (slug: string) => {
-            const client = await import(
-              "#lib/shared/media-composition/services/feature-video-client.js"
-            );
+            const client =
+              await import("#lib/shared/media-composition/services/feature-video-client.js");
             return client.createFeatureVideoSync(
               await client.loadFeatureVideo(slug)
             );
@@ -92,7 +93,8 @@
   let previousAccount: string | null | undefined = undefined;
   $effect(() => {
     if (!authState.initialized) return;
-    const uid = authState.user && !authState.user.isAnonymous ? authState.user.uid : null;
+    const uid =
+      authState.user && !authState.user.isAnonymous ? authState.user.uid : null;
     if (previousAccount === uid) return;
     previousAccount = uid;
     initialVisit = true;
@@ -104,6 +106,7 @@
     if (!authState.initialized) return;
     authState.user?.uid;
     const project = page.url.searchParams.get("project");
+    const library = page.url.searchParams.get("library") === "1";
     const feature = import.meta.env.DEV
       ? page.url.searchParams.get("feature")
       : null;
@@ -113,12 +116,14 @@
       previousFeature = feature;
       if (feature) void state.openFeature(feature);
       else {
-        const target = project || state.lastSelectedId();
+        const target = project || (!library && state.lastSelectedId());
         if (target) void state.open(target);
       }
       return;
     }
-    if (feature && feature !== previousFeature) void state.openFeature(feature);
+    if (library) state.showProjects();
+    else if (feature && feature !== previousFeature)
+      void state.openFeature(feature);
     else if (project && project !== previousParam) void state.open(project);
     previousParam = project;
     previousFeature = feature;
@@ -149,16 +154,20 @@
   }
 </script>
 
-<section class="post-module" aria-label="Post">
+<section class="post-module" aria-label="Studio">
   {#if !canAccessPostStudio() && !featureMode}
-    <div class="editor-status" role="status">Post is in early access.</div>
+    <div class="editor-status" role="status">Studio is in early access.</div>
   {:else}
     <div class="project-list" hidden={!state.showingProjects}>
       <header class="list-header">
         <h1>Projects</h1>
-        <p>Open a saved post or choose Edit in Post from a sequence.</p>
+        <p>Arrange sequences and edit videos in one project.</p>
       </header>
-      {#if authState.user && !authState.user.isAnonymous}<p class="notice">Saved edits sync with your account. You need to select this device’s videos again on another device.</p>{/if}
+      <StudioArrangements onopen={openProject} />
+      {#if authState.user && !authState.user.isAnonymous}<p class="notice">
+          Saved edits sync with your account. You need to select this device’s
+          videos again on another device.
+        </p>{/if}
       {#if state.catalogError}<p class="notice" role="status">
           {state.catalogError}
         </p>{/if}
@@ -166,7 +175,8 @@
           Loading projects…
         </p>
       {:else if state.projects.length === 0}<p class="list-status">
-          No post projects yet. Open a sequence and choose Edit in Post.
+          Your Studio projects will appear here. Start an arrangement or open
+          Studio from a sequence.
         </p>
       {:else}
         <ul>
@@ -192,7 +202,11 @@
                     <div class="project-details">
                       {#if showProjectWord}
                         {#if isTkaWord(projectWord)}
-                          <TKAWordGlyph word={projectWord} height={14} darkMode />
+                          <TKAWordGlyph
+                            word={projectWord}
+                            height={14}
+                            darkMode
+                          />
                         {:else}
                           <span>{projectWord}</span>
                         {/if}
@@ -219,8 +233,9 @@
               {state.featureError}
             </p>{/if}
           {#if state.unreadableFeatures.length}<p class="notice" role="status">
-              Could not read the project.json in {state.unreadableFeatures.join(", ")}.
-              Each folder's history keeps earlier copies.
+              Could not read the project.json in {state.unreadableFeatures.join(
+                ", "
+              )}. Each folder's history keeps earlier copies.
             </p>{/if}
           {#if state.features.length}
             <ul>
@@ -274,7 +289,7 @@
         </div>
       </div>
       {#if state.loadingProject}<div class="editor-status" role="status">
-          Opening post…
+          Opening project…
         </div>
       {:else if !state.sequence}<div class="editor-status error" role="alert">
           <p>{state.projectError || "This sequence could not be opened."}</p>
@@ -285,11 +300,22 @@
       {:else}
         {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${state.feature ? featureSelectionId(state.feature.slug) : state.sequence.id}`}
           <PostStudio
+            editArrangementOnOpen={!!state.selectedId?.startsWith(
+              "studio-arrangement:"
+            )}
             active={visible && !state.showingProjects}
             sequence={state.sequence}
             feature={state.feature ?? undefined}
-            initialProject={state.feature ? state.feature.initialProject : (state.draft ?? undefined)}
-            onSaveDraft={state.feature ? state.feature.save : authState.user && !authState.user.isAnonymous ? saveSyncedFor(state.sequence) : state.diskAvailable ? savePostDraft : undefined}
+            initialProject={state.feature
+              ? state.feature.initialProject
+              : (state.draft ?? undefined)}
+            onSaveDraft={state.feature
+              ? state.feature.save
+              : authState.user && !authState.user.isAnonymous
+                ? saveSyncedFor(state.sequence)
+                : state.diskAvailable
+                  ? savePostDraft
+                  : undefined}
             draftLoadError={state.projectError}
             cardPreviewUrl={cardPreview.url}
             cardRenderOptions={cardPreview.renderOptions}

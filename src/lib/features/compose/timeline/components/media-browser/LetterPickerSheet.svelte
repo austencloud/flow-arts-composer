@@ -2,6 +2,8 @@
   LetterPickerSheet.svelte - Modal for selecting starting letter filter
 -->
 <script lang="ts">
+  import { onMount } from "svelte";
+
   interface Props {
     currentLetter: string | null;
     onSelect: (letter: string | null) => void;
@@ -11,28 +13,70 @@
   let { currentLetter, onSelect, onClose }: Props = $props();
 
   const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  let dialogElement: HTMLDivElement;
+
+  onMount(() => {
+    const previousFocus =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    dialogElement.focus();
+    return () => previousFocus?.focus();
+  });
 
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Escape") {
-      onClose();
-    } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
+      e.stopPropagation();
       onClose();
+    } else if (e.key === "Tab") {
+      const buttons = Array.from(
+        dialogElement.querySelectorAll<HTMLButtonElement>(
+          "button:not(:disabled)"
+        )
+      );
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+      if (!first || !last) return;
+      if (
+        e.shiftKey &&
+        (document.activeElement === first ||
+          document.activeElement === dialogElement)
+      ) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
+  }
+
+  function selectLetter(letter: string | null) {
+    onSelect(letter);
+    onClose();
   }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="letter-sheet-overlay" onclick={onClose} aria-hidden="true">
-  <div
-    class="letter-sheet"
-    onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => e.stopPropagation()}
-    role="dialog"
+<div class="letter-sheet-overlay">
+  <button
+    class="letter-sheet-backdrop"
+    type="button"
+    aria-label="Close letter picker"
     tabindex="-1"
+    onclick={onClose}
+  ></button>
+  <div
+    bind:this={dialogElement}
+    class="letter-sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="letter-sheet-title"
+    tabindex="-1"
+    onkeydown={handleKeydown}
   >
     <div class="sheet-header">
-      <span>Starting Letter</span>
+      <span id="letter-sheet-title">Starting Letter</span>
       <button
         class="close-btn"
         onclick={onClose}
@@ -45,7 +89,8 @@
       <button
         class="letter-btn"
         class:active={currentLetter === null}
-        onclick={() => onSelect(null)}
+        aria-pressed={currentLetter === null}
+        onclick={() => selectLetter(null)}
       >
         All
       </button>
@@ -53,7 +98,8 @@
         <button
           class="letter-btn"
           class:active={currentLetter === letter}
-          onclick={() => onSelect(letter)}
+          aria-pressed={currentLetter === letter}
+          onclick={() => selectLetter(letter)}
         >
           {letter}
         </button>
@@ -66,14 +112,23 @@
   .letter-sheet-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: var(--z-modal);
     animation: fadeIn var(--duration-normal) ease;
+  }
+
+  .letter-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    cursor: default;
   }
 
   @keyframes fadeIn {
@@ -86,6 +141,7 @@
   }
 
   .letter-sheet {
+    position: relative;
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: 20px;

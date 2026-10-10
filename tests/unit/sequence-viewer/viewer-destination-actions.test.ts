@@ -19,6 +19,8 @@ function createActions(
   const savePendingEditSequence = vi.fn();
   const openCreateConstruct = vi.fn();
   const showAuth = vi.fn();
+  const saveSequenceHandoff = vi.fn();
+  const navigate = vi.fn();
 
   const actions = createViewerDestinationActions(
     {
@@ -32,8 +34,8 @@ function createActions(
       enterVideoUpload,
     },
     {
-      saveSequenceHandoff: vi.fn() as never,
-      navigate: vi.fn(),
+      saveSequenceHandoff: saveSequenceHandoff as never,
+      navigate,
       showToast: showToast as never,
       showAuth,
       savePendingEditSequence,
@@ -51,8 +53,33 @@ function createActions(
     savePendingEditSequence,
     openCreateConstruct,
     showAuth,
+    saveSequenceHandoff,
+    navigate,
   };
 }
+
+describe("viewer Studio destination", () => {
+  it("keeps the sequence handoff through the Compose compatibility route", async () => {
+    const harness = createActions();
+
+    await harness.actions.handleOpenInCompose("combo-export");
+
+    expect(harness.saveSequenceHandoff).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sequence: expect.objectContaining({ id: "sequence-1" }),
+        preferredPreset: "combo-export",
+        returnPath: "/browse/library",
+      })
+    );
+    expect(harness.onClose).toHaveBeenCalledWith("navigate");
+    expect(harness.navigate).toHaveBeenCalledWith("/compose?handoff=true");
+    expect(harness.showToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Opening in Studio for combined export...",
+      })
+    );
+  });
+});
 
 describe("viewer Remix destination", () => {
   it("hands off the sequence and closes without Back navigation before opening Construct", () => {
