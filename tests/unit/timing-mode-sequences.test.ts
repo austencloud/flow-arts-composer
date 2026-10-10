@@ -4,10 +4,12 @@ import { hydrateSequence } from "#lib/features/choreo-card/services/sequence-ren
 import { TnDMode } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { deriveTnDFromPictograph } from "#lib/shared/pictograph/shared/domain/utils/tnd-deriver.js";
 import { deriveWord } from "#lib/shared/foundation/services/word-deriver.js";
+import { jsonCache } from "#lib/shared/pictograph/shared/services/simple-json-cache.js";
 import { MODE_ORDER } from "#lib/shared/shape-matrix/services/shape-matrix-realizations.js";
 import {
   adjustModeLoop,
   adjustModeLoops,
+  loadModeLoops,
   modeLoopCount,
   modeLoopsPerGrid,
   selectModeLoops,
@@ -19,11 +21,28 @@ const records = JSON.parse(
   readFileSync("static/data/hero/tnd-base-words.json", "utf8")
 );
 const sequences = records.map(hydrateSequence);
-vi.mock("#lib/features/browse/gallery-home/canonical-tnd-pool.js", () => ({
-  loadCanonicalTnDBaseSequences: async () => sequences,
-}));
 
 describe("mode guide four-count loops", () => {
+  it("loads every mode through the page's own loader", async () => {
+    // Serve the checked-in snapshot at its real URL, so the test goes through
+    // the same loader and data the page fetches in the browser.
+    const get = vi
+      .spyOn(jsonCache, "get")
+      .mockImplementation(async (url: string) => {
+        if (url !== "/data/hero/tnd-base-words.json")
+          throw new Error(`Unexpected fetch ${url}`);
+        return records;
+      });
+    try {
+      for (const code of MODE_ORDER) {
+        const loops = await loadModeLoops(code);
+        expect(loops).toHaveLength(modeLoopCount(code));
+      }
+    } finally {
+      get.mockRestore();
+    }
+  });
+
   it("gives every mode real closed loops on both grids, all in that mode", () => {
     const expected = {
       SS: ["AAAA", "BBBB", "CCCC", "AAAA", "BBBB", "CCCC"],

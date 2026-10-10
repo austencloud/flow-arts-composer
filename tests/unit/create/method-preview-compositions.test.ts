@@ -7,7 +7,9 @@ import { describe, expect, it } from "vitest";
 import {
   assembleLayout,
   cellCenter,
+  CONSTRUCT_CHOICE_COUNT,
   CONSTRUCT_MAX_SLOTS,
+  constructChoiceCells,
   constructLayout,
   fuseLayout,
   generateLayout,
@@ -66,6 +68,38 @@ describe("Construct", () => {
       at(0, 104, 96),
       at(104, 104, 96),
     ]);
+  });
+});
+
+describe("Construct choices", () => {
+  it("sets three choices across the middle of a box", () => {
+    expect(constructChoiceCells(at(0, 0, 68))).toEqual([
+      at(1, 24, 20),
+      at(24, 24, 20),
+      at(47, 24, 20),
+    ]);
+    expect(constructChoiceCells(at(0, 11, 73))).toEqual([
+      at(0, 36, 22),
+      at(25, 36, 22),
+      at(50, 36, 22),
+    ]);
+  });
+
+  it("keeps every choice inside its box", () => {
+    for (const box of constructLayout("square", 200, 200)) {
+      const cells = constructChoiceCells(box);
+      expect(cells).toHaveLength(CONSTRUCT_CHOICE_COUNT);
+      for (const cell of cells) {
+        expect(cell.x).toBeGreaterThanOrEqual(box.x);
+        expect(cell.y).toBeGreaterThanOrEqual(box.y);
+        expect(cell.x + cell.size).toBeLessThanOrEqual(box.x + box.size);
+        expect(cell.y + cell.size).toBeLessThanOrEqual(box.y + box.size);
+      }
+    }
+  });
+
+  it("offers none in a box too small to split", () => {
+    expect(constructChoiceCells(at(0, 0, 4))).toEqual([]);
   });
 });
 

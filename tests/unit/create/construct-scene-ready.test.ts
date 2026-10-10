@@ -3,6 +3,7 @@
  * drawn, including when the box resizes to fewer slots before the last one
  * reported (the card would otherwise rest on its tint).
  */
+import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakePictograph } from "./FakeMethodPictograph.svelte";
 import { mountConstructScene } from "./construct-scene-ready-harness.svelte";
@@ -55,6 +56,22 @@ describe("Construct scene readiness", () => {
     scene = mountConstructScene(host, SQUARE, onready);
     expect(host.querySelectorAll(".slot")).toHaveLength(4);
     expect(onready).not.toHaveBeenCalled();
+  });
+
+  it("mounts each box's other moves only once every slot has drawn", () => {
+    fakePictograph.reportBudget = 3;
+    fakePictograph.deferred.length = 0;
+    const onready = vi.fn();
+    scene = mountConstructScene(host, SQUARE, onready);
+    expect(host.querySelectorAll(".choice")).toHaveLength(0);
+    for (const report of fakePictograph.deferred.splice(0)) report();
+    flushSync();
+    expect(onready).toHaveBeenCalled();
+    const slots = host.querySelectorAll(".slot");
+    expect(slots).toHaveLength(4);
+    for (const slot of slots) {
+      expect(slot.querySelectorAll(".choice")).toHaveLength(2);
+    }
   });
 
   it("reports ready when the box shrinks to the slots that already drew", () => {

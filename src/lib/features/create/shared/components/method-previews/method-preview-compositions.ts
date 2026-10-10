@@ -97,6 +97,28 @@ export function constructLayout(
   return size > 0 ? centeredRow(count, size, gap, width, height) : [];
 }
 
+/** Choices in each Construct box: the real step and two other moves. */
+export const CONSTRUCT_CHOICE_COUNT = 3;
+
+/**
+ * Construct's choices: a row across the middle of a box. The row spans the
+ * box with thin gaps, so the choices stay as large as the box allows.
+ */
+export function constructChoiceCells(box: CellRect): CellRect[] {
+  const count = CONSTRUCT_CHOICE_COUNT;
+  const gap = Math.max(2, Math.round(box.size * 0.04));
+  const size = Math.floor((box.size - gap * (count - 1)) / count);
+  if (size <= 0) return [];
+  const span = count * size + (count - 1) * gap;
+  const x0 = box.x + Math.floor((box.size - span) / 2);
+  const y = box.y + Math.floor((box.size - size) / 2);
+  return Array.from({ length: count }, (_, index) => ({
+    x: x0 + index * (size + gap),
+    y,
+    size,
+  }));
+}
+
 /** Generate: the dice, then the cells it fills. */
 export const GENERATE_STRIP_SLOTS = Object.freeze({ min: 4, max: 5 });
 
