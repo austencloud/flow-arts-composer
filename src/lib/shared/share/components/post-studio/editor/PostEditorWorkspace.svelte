@@ -122,7 +122,11 @@
     qrImageForAppearance,
     qrPayloadForImage,
   } from "../post-qr-image-appearance";
-  import { createPostVideoPreviews } from "$lib/shared/media-composition/state/post-video-previews.svelte";
+  import {
+    createTabSync,
+    createVideoPreviews,
+  } from "@austencloud/video-editor";
+  import { getPreviewVideoCache } from "$lib/shared/media-composition/get-preview-video-cache";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorActions from "./PostEditorActions.svelte";
   import PostSaveButton from "./PostSaveButton.svelte";
@@ -163,7 +167,6 @@
     shouldSubmitPostDraft,
   } from "$lib/shared/media-composition/services/post-draft-storage";
   import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
-  import { createPostTabSync } from "$lib/shared/media-composition/services/post-tab-sync";
   import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
   import type { SavedFeatureExport } from "$lib/shared/media-composition/domain/feature-video-export";
   import {
@@ -341,7 +344,7 @@
     );
     onPropChange(propType);
   }
-  const videoPreviews = createPostVideoPreviews(
+  const videoPreviews = createVideoPreviews(
     () =>
       editor.takes.map((take) => ({
         id: take.id,
@@ -349,7 +352,8 @@
         // Takes cut from one recording share one editing copy.
         assetKey: takeFileKey(take.ref),
       })),
-    () => editor.isPlaying
+    () => editor.isPlaying,
+    getPreviewVideoCache()
   );
   const session = createPostTimingSession(
     editor,
@@ -396,8 +400,8 @@
   // post may reach it: the tab sync is keyed by sequence alone.
   const tabSync = featureVideo
     ? null
-    : createPostTabSync(
-        sequence.id,
+    : createTabSync(
+        `tka:post-studio:tabs:${sequence.id}`,
         (project) => editor.adoptSaved(project),
         () => loadPostProject(sequence.id)
       );

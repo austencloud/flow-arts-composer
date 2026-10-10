@@ -1,5 +1,5 @@
 import type { IPreviewVideoCache } from "@austencloud/video-editor/render";
-import { createPostVideoPreviews } from "$lib/shared/media-composition/state/post-video-previews.svelte";
+import { createVideoPreviews } from "@austencloud/video-editor";
 
 export interface HarnessVideoSource {
   id: string;
@@ -14,9 +14,9 @@ export function createPostVideoPreviewsHarness(
 ) {
   let sources = $state(initial.map((source) => ({ ...source })));
   let playing = $state(initiallyPlaying);
-  let previews!: ReturnType<typeof createPostVideoPreviews>;
+  let previews!: ReturnType<typeof createVideoPreviews>;
   const dispose = $effect.root(() => {
-    previews = createPostVideoPreviews(
+    previews = createVideoPreviews(
       () => sources,
       () => playing,
       cache
