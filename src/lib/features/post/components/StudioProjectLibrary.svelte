@@ -245,8 +245,8 @@
       ><i class="fas fa-cloud" aria-hidden="true"></i>
       {authState.user && !authState.user.isAnonymous
         ? "Edits sync with your account."
-        : "Edits are saved on this device."} Device videos may need to be selected
-      again elsewhere.</span
+        : "Edits are saved on this device."} Device videos are kept in this browser;
+      on another device, pick them again.</span
     >
     {#if features.length}<span
         >Software project folders are saved on this computer.</span
