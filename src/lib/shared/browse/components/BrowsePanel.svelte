@@ -372,22 +372,22 @@
     <BrowseFilterBar {engine} chipsOnly={!!onOpenFilters} {onSaveSmart} />
   {/if}
 
+  {#if engine.isLoadingMore}
+    <div role="status" class="library-load-progress">
+      Loading more saved sequences…
+    </div>
+  {:else if engine.loadMoreError}
+    <div role="status" class="library-load-progress">
+      Some saved sequences have not loaded yet.
+      <button onclick={() => engine.refresh()}>Try again</button>
+    </div>
+  {/if}
   <div
     class="panel-content"
     class:internal-grid-scroll={usesInternalGridScroller}
     bind:this={contentEl}
     onscroll={handleScroll}
   >
-    {#if engine.isLoadingMore}
-      <div role="status" class="library-load-progress">
-        Loading more saved sequences…
-      </div>
-    {:else if engine.loadMoreError}
-      <div role="status" class="library-load-progress">
-        Some saved sequences have not loaded yet.
-        <button onclick={() => engine.refresh()}>Try again</button>
-      </div>
-    {/if}
     {#if engine.error}
       <div class="error-state" role="alert">
         <p>{engine.error}</p>
@@ -507,6 +507,35 @@
     margin: 0;
     font-size: var(--font-size-base, 16px);
     color: var(--theme-text, white);
+  }
+
+  .library-load-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm, 8px);
+    flex-shrink: 0;
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+    color: var(--theme-text, white);
+    background: var(--theme-panel-bg);
+    font-size: var(--font-size-min, 14px);
+  }
+
+  .library-load-progress button {
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--radius-md, 8px);
+    background: var(--theme-card-bg);
+    color: var(--theme-text, white);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .library-load-progress button:focus-visible {
+    outline: 2px solid var(--theme-text, white);
+    outline-offset: 2px;
   }
 
   .panel-content {
