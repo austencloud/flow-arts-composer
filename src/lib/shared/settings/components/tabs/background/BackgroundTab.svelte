@@ -5,6 +5,7 @@
     releaseBackground,
   } from "#lib/shared/background/shared/state/background-hold.svelte.js";
   import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import type { HapticFeedback } from "#lib/shared/application/services/haptic-feedback.js";
@@ -19,6 +20,7 @@
   import { onMount } from "svelte";
   import type { AppSettings } from "../../../domain/app-settings";
   import { applyThemeFromColors } from "../../../utils/background-theme-calculator";
+  import SettingsSectionHeader from "../../SettingsSectionHeader.svelte";
   import ThemePreview from "./ThemePreview.svelte";
 
   let { settings, onUpdate } = $props<{
@@ -116,150 +118,174 @@
 
 <div class="background-tab themed-scrollbar">
   <section class="theme-workspace" aria-labelledby="theme-heading">
-    <header class="theme-intro">
-      <h3 id="theme-heading">{t("tab_settings_theme")}</h3>
-      <p>{t("settings_background_intro")}</p>
-    </header>
-
-    <div class="theme-composition">
-      <section
-        class="theme-stage"
-        aria-label={t("settings_previewing_theme", {
-          theme: themeName(previewType),
+    <div class="theme-band">
+      <SettingsSectionHeader
+        icon="fas fa-palette"
+        title={t("settings_choose_theme")}
+        description={t("settings_themes_available", {
+          count: BACKGROUND_CARD_REGISTRY.length,
         })}
+        headingId="theme-heading"
       >
-        <ThemePreview type={previewType} fallback={preview.gradient} />
-        <div class="stage-scrim"></div>
-        <div class="stage-copy">
-          <p class="stage-label">{t("settings_live_preview")}</p>
-          <Crossfade key={previewType} duration={DURATION.normal}>
-            <div class="stage-title-wrap">
-              <h4>{themeName(previewType)}</h4>
-              <p>{themeDescription(previewType)}</p>
-            </div>
-          </Crossfade>
-        </div>
-      </section>
-
-      <section class="theme-controls" aria-label={t("settings_theme_choices")}>
-        <div class="controls-heading">
-          <div>
-            <p class="eyebrow">{t("settings_choose_theme")}</p>
-            <span
-              >{t("settings_themes_available", {
-                count: BACKGROUND_CARD_REGISTRY.length,
-              })}</span
-            >
-          </div>
-          <button
-            type="button"
-            class="apply-theme"
-            class:applied={previewIsCurrent}
-            onclick={applyPreview}
-            disabled={!canApplyPreview}
-          >
-            {canApplyPreview
-              ? t("settings_use_theme", { theme: themeName(previewType) })
-              : t("settings_current_theme")}
-            {#if !canApplyPreview}<i class="fas fa-check" aria-hidden="true"
-              ></i>{/if}
-          </button>
-        </div>
-
-        <div class="theme-choices" aria-label={t("settings_choose_theme")}>
-          {#each BACKGROUND_CARD_REGISTRY as theme}
-            <button
-              type="button"
-              class:previewing={previewType === theme.type}
-              aria-pressed={previewType === theme.type}
-              aria-label={currentType === theme.type
-                ? t("settings_theme_current_aria", {
-                    theme: themeName(theme.type),
-                  })
-                : themeName(theme.type)}
-              onclick={() => previewTheme(theme.type as BackgroundType)}
-            >
-              <span
-                class="choice-art"
-                style:background={theme.gradient}
-                aria-hidden="true"
-              >
-                <img src={`/images/theme-previews/${theme.type}.webp`} alt="" />
-                <span class="choice-scrim"></span>
-                <span class="choice-name">{themeName(theme.type)}</span>
-                {#if currentType === theme.type}
-                  <span class="choice-current">{t("settings_current")}</span>
-                {/if}
+        {#snippet action()}
+          <Crossfade key={canApplyPreview ? previewType : "current"}>
+            {#if canApplyPreview}
+              <span class="apply-action">
+                <PanelButton variant="primary" onclick={applyPreview}>
+                  {t("settings_use_theme", { theme: themeName(previewType) })}
+                </PanelButton>
               </span>
-            </button>
-          {/each}
-        </div>
-      </section>
+            {:else}
+              <!-- A state, not an action, so it reads as a quiet label. -->
+              <span class="theme-status">
+                <i class="fas fa-check" aria-hidden="true"></i>
+                {t("settings_current_theme")}
+              </span>
+            {/if}
+          </Crossfade>
+        {/snippet}
+      </SettingsSectionHeader>
+    </div>
+
+    <section
+      class="theme-stage"
+      aria-label={t("settings_previewing_theme", {
+        theme: themeName(previewType),
+      })}
+    >
+      <ThemePreview type={previewType} fallback={preview.gradient} />
+      <div class="stage-scrim"></div>
+      <div class="stage-copy">
+        <p class="stage-label">{t("settings_live_preview")}</p>
+        <Crossfade key={previewType} duration={DURATION.normal}>
+          <div class="stage-title-wrap">
+            <p class="stage-title">{themeName(previewType)}</p>
+            <p>{themeDescription(previewType)}</p>
+          </div>
+        </Crossfade>
+      </div>
+    </section>
+
+    <div class="theme-choices" aria-label={t("settings_theme_choices")}>
+      {#each BACKGROUND_CARD_REGISTRY as theme}
+        <button
+          type="button"
+          class:previewing={previewType === theme.type}
+          aria-pressed={previewType === theme.type}
+          aria-label={currentType === theme.type
+            ? t("settings_theme_current_aria", {
+                theme: themeName(theme.type),
+              })
+            : themeName(theme.type)}
+          onclick={() => previewTheme(theme.type as BackgroundType)}
+        >
+          <span
+            class="choice-art"
+            style:background={theme.gradient}
+            aria-hidden="true"
+          >
+            <img src={`/images/theme-previews/${theme.type}.webp`} alt="" />
+            <span class="choice-scrim"></span>
+            <span class="choice-name">{themeName(theme.type)}</span>
+            {#if currentType === theme.type}
+              <span class="choice-current">{t("settings_current")}</span>
+            {/if}
+          </span>
+        </button>
+      {/each}
     </div>
   </section>
 </div>
 
 <style>
+  /* The tab is the page's scroller while the panel stacks. Side by side, the
+     panel fills the tab and scrolls it only below its minimum height. */
   .background-tab {
-    --settings-gap: clamp(8px, 1cqi, 12px);
-    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    max-width: var(--shell-w, 100%);
+    min-height: 0;
+    margin: 0 auto;
+    overflow-y: auto;
+    box-sizing: border-box;
+    container: theme-tab / inline-size;
+  }
+
+  /* Matches the Preferences and Props panels: one bordered surface opened by
+     a header band. The band carries the apply action so it sits beside the
+     choices it applies. */
+  .theme-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(min-content, 1fr);
-    min-height: 0;
-    height: 100%;
-    overflow: auto;
-    padding: var(--settings-gap);
-  }
-  .theme-workspace {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    width: 100%;
+    grid-template-areas:
+      "band"
+      "stage"
+      "choices";
+    flex: 0 0 auto;
     min-width: 0;
-  }
-  .theme-intro {
-    flex: none;
-    margin-bottom: var(--settings-gap);
-  }
-  .eyebrow {
-    margin: 0 0 4px;
-    color: var(--theme-text-dim);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .theme-intro h3 {
-    margin: 0;
-    color: var(--theme-text);
-    font-family: system-ui, sans-serif;
-    font-size: clamp(22px, 4cqi, 32px);
-    line-height: 1.1;
-  }
-  .theme-intro > p:last-child {
-    margin: 6px 0 0;
-    color: var(--theme-text-dim);
-    font-size: 14px;
-  }
-  .theme-composition {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    min-width: 0;
-  }
-  .theme-stage {
-    position: relative;
-    flex: 1 0 280px;
-    min-height: 280px;
+    margin: clamp(0.75em, 1.4cqi, 1.75em) clamp(0.75em, 2cqi, 3em);
     overflow: hidden;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 18px 18px 0 0;
+    border: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
+    border-radius: 1.25em;
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, rgba(0, 0, 0, 0.88)) 14%,
+      #070b10 86%
+    );
+    box-shadow: var(--theme-panel-shadow, 0 1rem 3rem rgba(0, 0, 0, 0.35));
+    isolation: isolate;
+    --settings-row-inline: 1.15em;
+  }
+
+  :global(html[data-theme-luminance="bright"]) .theme-workspace {
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, rgba(255, 255, 255, 0.88)) 14%,
+      #f6f7f9 86%
+    );
+  }
+
+  .theme-band {
+    grid-area: band;
+    min-width: 0;
+    background: color-mix(in srgb, var(--theme-text) 2%, transparent);
+  }
+
+  .theme-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    min-height: var(--min-touch-target, 44px);
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .theme-status i {
+    color: var(--theme-accent-text, var(--theme-accent));
+  }
+
+  /* The label stays visible at every width; the band hides span labels on
+     narrow tabs, which suits icon actions but not this one. */
+  .apply-action :global(.panel-btn) {
+    white-space: nowrap;
+  }
+
+  /* ── Live preview ── */
+
+  .theme-stage {
+    grid-area: stage;
+    position: relative;
+    height: clamp(220px, 38dvh, 380px);
+    min-width: 0;
+    overflow: hidden;
     isolation: isolate;
     background: var(--theme-panel-bg);
   }
+
   .stage-scrim {
     position: absolute;
     z-index: 1;
@@ -270,6 +296,7 @@
     );
     pointer-events: none;
   }
+
   .stage-copy {
     position: absolute;
     z-index: 2;
@@ -279,6 +306,7 @@
     color: white;
     pointer-events: none;
   }
+
   .stage-label {
     margin: 0 0 6px;
     font-size: 12px;
@@ -287,13 +315,7 @@
     text-transform: uppercase;
     opacity: 0.8;
   }
-  .stage-title-wrap h4 {
-    margin: 0;
-    font-family: system-ui, sans-serif;
-    font-size: clamp(36px, 5cqi, 64px);
-    line-height: 0.9;
-    letter-spacing: -0.05em;
-  }
+
   .stage-title-wrap p {
     max-width: 38ch;
     min-height: 2.8em;
@@ -301,39 +323,32 @@
     font-size: 14px;
     line-height: 1.4;
   }
-  .theme-controls {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    flex: none;
-    min-width: 0;
-    padding: 14px;
-    border: 1px solid var(--theme-stroke);
-    border-top: 0;
-    border-radius: 0 0 18px 18px;
-    background: var(--theme-card-bg);
+
+  .stage-title-wrap .stage-title {
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    font-size: clamp(36px, 5cqi, 64px);
+    font-weight: 700;
+    line-height: 0.9;
+    letter-spacing: -0.05em;
   }
-  .controls-heading {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-  .controls-heading .eyebrow {
-    margin-bottom: 2px;
-    color: var(--theme-text);
-  }
-  .controls-heading span {
-    color: var(--theme-text-dim);
-    font-size: 12px;
-  }
+
+  /* ── Choices ── */
+
   .theme-choices {
+    grid-area: choices;
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-width: 0;
     min-height: 0;
     gap: 8px;
+    padding: 1rem var(--settings-row-inline);
+    border-top: 1px solid var(--theme-stroke);
+    background: color-mix(in srgb, var(--theme-text) 2%, transparent);
   }
+
   .theme-choices button {
     position: relative;
     display: block;
@@ -352,19 +367,22 @@
       background var(--transition-fast),
       box-shadow var(--transition-fast);
   }
+
   .theme-choices button:hover {
     border-color: var(--theme-stroke-strong);
     box-shadow: 0 0 0 1px var(--theme-stroke-strong);
   }
+
   .theme-choices button.previewing {
     border-color: var(--theme-accent);
     box-shadow: 0 0 0 2px var(--theme-accent);
   }
-  .theme-choices button:focus-visible,
-  .apply-theme:focus-visible {
+
+  .theme-choices button:focus-visible {
     outline: 3px solid var(--theme-accent);
     outline-offset: 2px;
   }
+
   .choice-art {
     position: absolute;
     inset: 0;
@@ -373,6 +391,7 @@
     isolation: isolate;
     background: var(--theme-card-bg);
   }
+
   .choice-art img {
     display: block;
     width: 100%;
@@ -380,6 +399,7 @@
     object-fit: cover;
     transition: transform var(--transition-fast);
   }
+
   .choice-scrim {
     position: absolute;
     z-index: 1;
@@ -387,13 +407,16 @@
     background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
     pointer-events: none;
   }
+
   .theme-choices button:hover .choice-art img,
   .theme-choices button:focus-visible .choice-art img {
     transform: scale(1.04);
   }
+
   .theme-choices button:active .choice-art img {
     transform: scale(1.01);
   }
+
   .choice-name {
     position: absolute;
     z-index: 2;
@@ -409,6 +432,7 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     white-space: nowrap;
   }
+
   .choice-current {
     position: absolute;
     z-index: 2;
@@ -424,99 +448,85 @@
     border-radius: 5px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
   }
-  .apply-theme {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    min-width: 164px;
-    gap: 8px;
-    flex: 0 0 auto;
-    padding: 8px 14px;
-    color: var(--theme-button-text, #fff);
-    font: inherit;
-    font-weight: 700;
-    white-space: nowrap;
-    background: var(--theme-accent);
-    border: 1px solid var(--theme-accent);
-    border-radius: 10px;
-    cursor: pointer;
-    transition:
-      background var(--transition-fast),
-      border-color var(--transition-fast);
-  }
-  .apply-theme:hover:not(:disabled) {
-    background: var(--theme-accent-strong);
-  }
-  .apply-theme:disabled {
-    color: var(--theme-text);
-    background: transparent;
-    border-color: var(--theme-stroke-strong);
-    cursor: default;
-  }
-  @container (max-width: 759px) {
-    .theme-stage {
-      flex-basis: clamp(220px, 38dvh, 380px);
-      min-height: clamp(220px, 38dvh, 380px);
+
+  /* A phone has no room for the title and "Use Celestial" side by side, so
+     the action takes its own full-width row under the title. */
+  @container theme-tab (max-width: 32rem) {
+    .theme-workspace {
+      --settings-row-inline: 0.9rem;
     }
-    .theme-controls {
-      padding: 12px;
+
+    .theme-band :global(.section-header) {
+      flex-wrap: wrap;
+      align-items: center;
     }
+
+    .theme-band :global(.section-action) {
+      flex: 1 1 100%;
+    }
+
+    .apply-action,
+    .apply-action :global(.panel-btn) {
+      display: flex;
+      width: 100%;
+    }
+  }
+
+  /* Phones keep two large choices a row; a tablet fits all ten in two rows. */
+  @container theme-tab (width < 37.5rem) {
     .theme-choices {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
     .theme-choices button {
       min-height: 120px;
     }
-    .controls-heading {
-      align-items: flex-start;
-    }
-    .apply-theme {
-      min-height: 44px;
-    }
   }
-  @container (min-width: 600px) and (max-width: 759px) {
-    .theme-choices {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
-  }
+
   @media (max-height: 650px) and (min-width: 760px) {
     .theme-stage {
-      flex-basis: 220px;
-      min-height: 220px;
+      height: 220px;
     }
   }
+
+  /* ── Side by side ── the preview takes the room, the band and choices sit
+     in a column on the right, split from it by one seam. */
   @media (min-aspect-ratio: 1/1) {
-    @container (min-width: 1000px) {
-      .theme-composition {
-        display: grid;
+    @container theme-tab (min-width: 62.5rem) {
+      .theme-workspace {
+        flex: 1 1 0;
+        min-height: 38rem;
         grid-template-columns: minmax(0, 1fr) clamp(360px, 36cqi, 640px);
-        gap: var(--settings-gap);
-        min-height: 620px;
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas:
+          "stage band"
+          "stage choices";
       }
+
       .theme-stage {
+        height: auto;
         min-height: 0;
-        border-radius: 18px;
+        border-right: 1px solid var(--theme-stroke);
       }
-      .theme-controls {
-        min-height: 0;
-        border-top: 1px solid var(--theme-stroke);
-        border-radius: 18px;
-      }
+
       .theme-choices {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         grid-template-rows: repeat(5, minmax(100px, 1fr));
-      }
-      .controls-heading {
-        align-items: center;
+        border-top: 0;
       }
     }
   }
+
   @media (prefers-reduced-motion: reduce) {
     .theme-choices button,
-    .choice-art img,
-    .apply-theme {
+    .choice-art img {
       transition: none;
+    }
+  }
+
+  @media (prefers-contrast: high) {
+    .theme-workspace {
+      border-width: 2px;
     }
   }
 </style>
