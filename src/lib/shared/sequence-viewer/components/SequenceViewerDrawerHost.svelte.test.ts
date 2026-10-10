@@ -102,6 +102,7 @@ describe("SequenceViewerDrawerHost URL bootstrap", () => {
 
     await vi.waitFor(() => {
       expect(mocks.openSequenceOverlay).toHaveBeenCalledWith(hydratedSequence, {
+        analyticsSource: "qr",
         fromUrl: true,
         playOnOpen: true,
         shortCode: "COLD42",
@@ -144,6 +145,7 @@ describe("SequenceViewerDrawerHost URL bootstrap", () => {
 
     await vi.waitFor(() => {
       expect(mocks.openSequenceOverlay).toHaveBeenCalledWith(hydratedSequence, {
+        analyticsSource: "qr",
         fromUrl: true,
         playOnOpen: true,
         shortCode: "SCAN42",
@@ -188,6 +190,7 @@ describe("SequenceViewerDrawerHost URL bootstrap", () => {
         expect(mocks.openSequenceOverlay).toHaveBeenCalledWith(
           { id: `hydrated-${code}` },
           {
+            analyticsSource: "qr",
             fromUrl: true,
             playOnOpen: true,
             shortCode: code,
