@@ -11,6 +11,7 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SettingsSectionHeader from "#lib/shared/settings/components/SettingsSectionHeader.svelte";
   import { getErrorHandler } from "#lib/shared/application/get-error-handler.js";
   import { getFCMTokenManager } from "#lib/shared/push/get-fcm-token-manager.js";
   import type { PushDeviceRegistrationState } from "#lib/shared/push/services/fcm-token-manager.js";
@@ -523,17 +524,35 @@
   ]);
 </script>
 
-<div class="notification-preferences-panel" class:preview-mode={isPreviewMode}>
-  <header class="page-header">
-    <span class="page-icon" aria-hidden="true">
-      <i class="fas fa-bell"></i>
-    </span>
-    <span class="page-heading">
-      <h1>{t("feedback_notification_prefs")}</h1>
-      <p>{t("feedback_notification_prefs_subtitle")}</p>
-    </span>
-  </header>
+{#snippet alertActions()}
+  <span
+    class="alert-actions"
+    aria-label={t("create_review_bulk_alert_controls")}
+  >
+    <PanelButton
+      variant="quiet"
+      onclick={() => setAllAlerts(true)}
+      disabled={bulkBusy !== null}
+      ariaLabel={t("feedback_enable_all")}
+      ariaBusy={bulkBusy === "enable"}
+    >
+      <i class="fas fa-check" aria-hidden="true"></i>
+      <span>{t("feedback_enable_all")}</span>
+    </PanelButton>
+    <PanelButton
+      variant="quiet"
+      onclick={() => setAllAlerts(false)}
+      disabled={bulkBusy !== null}
+      ariaLabel={t("feedback_disable_all")}
+      ariaBusy={bulkBusy === "disable"}
+    >
+      <i class="fas fa-ban" aria-hidden="true"></i>
+      <span>{t("feedback_disable_all")}</span>
+    </PanelButton>
+  </span>
+{/snippet}
 
+<div class="notification-preferences-panel" class:preview-mode={isPreviewMode}>
   {#if isPreviewMode}
     <div class="preview-banner">
       <i class="fas fa-eye" aria-hidden="true"></i>
@@ -565,9 +584,9 @@
       <p>{t("feedback_sign_in_prefs")}</p>
     </div>
   {:else}
-    <div class="notification-workspace">
+    <div class="notification-workspace" class:has-delivery={!isPreviewMode}>
       {#if !isPreviewMode}
-        <div class="delivery-pane">
+        <div class="workspace-column">
           <NotificationDeliverySection
             {preferences}
             {pushDeviceState}
@@ -590,66 +609,32 @@
         </div>
       {/if}
 
-      <section class="alerts-region" aria-labelledby="alerts-heading">
-        <header class="alerts-header">
-          <span class="region-icon" aria-hidden="true">
-            <i class="fas fa-inbox"></i>
-          </span>
-          <span class="region-heading">
-            <h2 id="alerts-heading">{t("feedback_in_app_alerts")}</h2>
-            <p>{t("feedback_in_app_alerts_desc")}</p>
-          </span>
+      <section
+        class="workspace-column alerts-region"
+        aria-labelledby="alerts-heading"
+      >
+        <SettingsSectionHeader
+          icon="fas fa-inbox"
+          title={t("feedback_in_app_alerts")}
+          description={t("feedback_in_app_alerts_desc")}
+          headingId="alerts-heading"
+          action={isPreviewMode ? undefined : alertActions}
+        />
 
-          {#if !isPreviewMode}
-            <span class="alert-actions" aria-label={t("create_review_bulk_alert_controls")}>
-              <PanelButton
-                variant="secondary"
-                onclick={() => setAllAlerts(true)}
-                disabled={bulkBusy !== null}
-                ariaLabel={t("feedback_enable_all")}
-                ariaBusy={bulkBusy === "enable"}
-              >
-                <i class="fas fa-check" aria-hidden="true"></i>
-                <span>{t("feedback_enable_all")}</span>
-              </PanelButton>
-              <PanelButton
-                variant="secondary"
-                onclick={() => setAllAlerts(false)}
-                disabled={bulkBusy !== null}
-                ariaLabel={t("feedback_disable_all")}
-                ariaBusy={bulkBusy === "disable"}
-              >
-                <i class="fas fa-ban" aria-hidden="true"></i>
-                <span>{t("feedback_disable_all")}</span>
-              </PanelButton>
-            </span>
-          {/if}
-        </header>
-
-        <div class="alerts-body">
-          <div class="alert-groups">
-            {#each visiblePreferenceGroups as group (group.id)}
-              <div
-                class="group-slot"
-                class:group-messages={group.id === "messages"}
-                class:group-feedback={group.id === "feedback"}
-                class:group-activity={group.id === "activity"}
-                class:group-admin={group.id === "admin"}
-              >
-                <PreferenceGroup
-                  title={group.title}
-                  description={group.description}
-                  icon={group.icon}
-                  items={group.items}
-                  {preferences}
-                  isBusyKey={(key) => pendingKeys.has(key)}
-                  onToggle={togglePreference}
-                  disabled={isPreviewMode}
-                  layout={group.id === "admin" ? "grid-2" : "stack"}
-                />
-              </div>
-            {/each}
-          </div>
+        <div class="alert-groups">
+          {#each visiblePreferenceGroups as group (group.id)}
+            <PreferenceGroup
+              title={group.title}
+              description={group.description}
+              icon={group.icon}
+              items={group.items}
+              {preferences}
+              isBusyKey={(key) => pendingKeys.has(key)}
+              onToggle={togglePreference}
+              disabled={isPreviewMode}
+              framed={false}
+            />
+          {/each}
         </div>
       </section>
 
@@ -662,88 +647,27 @@
 </div>
 
 <style>
+  /* Same frame as Preferences and Account: one panel in the middle of the
+     tab, sections opened by header bands and split by hairlines. */
   .notification-preferences-panel {
     container: notification-preferences / inline-size;
     display: grid;
-    flex: 0 0 auto;
-    align-content: start;
+    flex: 1 1 auto;
+    align-content: safe center;
     gap: 0.9em;
     width: 100%;
-    max-width: var(--shell-w, min(108rem, 92vw));
     min-height: 100%;
     min-width: 0;
-    margin: 0 auto;
-    padding: clamp(0.75em, 1.4cqi, 1.75em) clamp(0.65em, 2cqi, 3em);
+    padding: clamp(0.75em, 1.4cqi, 1.75em) clamp(0.75em, 2cqi, 3em);
   }
 
-  @media (min-width: 1680px) and (min-height: 45rem) {
-    .notification-preferences-panel {
-      font-size: clamp(16px, calc(16px + (100vw - 1680px) * 8 / 2160), 24px);
-      --font-size-min: 0.875em;
-      --font-size-compact: 0.75em;
-      --font-size-xs: 0.75em;
-      --font-size-sm: 0.875em;
-      --font-size-base: 1em;
-      --font-size-lg: 1.125em;
-      --font-size-xl: 1.25em;
-      --font-size-2xl: 1.5em;
-      --font-size-3xl: 1.875em;
-    }
-  }
-
-  @media (min-width: 2600px) and (min-height: 70rem) {
-    .notification-preferences-panel {
-      padding-block-start: clamp(4rem, 8dvh, 11rem);
-    }
-  }
-
-  .page-header {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 0.9em;
+  .preview-banner,
+  .state-surface,
+  .notification-workspace {
+    width: 100%;
+    max-width: 84rem;
     min-width: 0;
-  }
-
-  .page-icon {
-    display: grid;
-    width: 3.5em;
-    height: 3.5em;
-    place-items: center;
-    border: 1px solid color-mix(in srgb, var(--theme-accent) 30%, transparent);
-    border-radius: 1em;
-    color: var(--theme-text-on-accent, #fff);
-    background: linear-gradient(
-      145deg,
-      var(--theme-accent-strong, var(--theme-accent)),
-      color-mix(in srgb, var(--theme-accent) 72%, #6d184b)
-    );
-    box-shadow: 0 0.7em 1.8em
-      color-mix(in srgb, var(--theme-accent) 18%, transparent);
-  }
-
-  .page-heading {
-    min-width: 0;
-  }
-
-  .page-heading h1,
-  .page-heading p {
-    margin: 0;
-  }
-
-  .page-heading h1 {
-    color: var(--theme-text);
-    font-size: max(1.5rem, var(--font-size-2xl));
-    font-weight: 775;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-  }
-
-  .page-heading p {
-    margin-top: 0.25em;
-    color: var(--theme-text-dim);
-    font-size: max(0.875rem, var(--font-size-min));
-    line-height: 1.4;
+    margin-inline: auto;
   }
 
   .preview-banner {
@@ -766,7 +690,7 @@
     justify-content: center;
     flex-direction: column;
     gap: 0.75em;
-    border: 1px solid var(--theme-stroke-strong);
+    border: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
     border-radius: 1.25em;
     color: var(--theme-text-dim);
     background: var(--theme-panel-bg);
@@ -797,92 +721,44 @@
   }
 
   .notification-workspace {
+    --settings-row-inline: 1.15em;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    min-width: 0;
     overflow: hidden;
     border: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
     border-radius: 1.25em;
-    background: var(--theme-panel-bg);
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, rgba(0, 0, 0, 0.88)) 14%,
+      #070b10 86%
+    );
     box-shadow: var(--theme-panel-shadow, 0 1rem 3rem rgba(0, 0, 0, 0.35));
     isolation: isolate;
   }
 
-  .delivery-pane {
-    min-width: 0;
-    border-bottom: 1px solid var(--theme-stroke);
+  :global(html[data-theme-luminance="bright"]) .notification-workspace {
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, rgba(255, 255, 255, 0.88)) 14%,
+      #f6f7f9 86%
+    );
   }
 
-  /* A wide canvas that is not also tall enough for the stacked regions sets
-     delivery beside alerts, so the whole page lands on one screen. Past ~1500px
-     of viewport height the stack fits on its own and fills the page better. */
-  @media (max-height: 1500px) {
-    @container notification-preferences (min-width: 76rem) {
-      .notification-workspace:has(.delivery-pane) {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1.85fr);
-      }
-
-      .notification-workspace:has(.delivery-pane) .delivery-pane {
-        border-right: 1px solid var(--theme-stroke);
-        border-bottom: 0;
-      }
-
-      .notification-workspace:has(.delivery-pane) .system-notice {
-        grid-column: 1 / -1;
-      }
-    }
+  /* Previewing another person's settings shows alerts only; one full-width
+     column would stretch every row across the screen. */
+  .notification-workspace:not(.has-delivery) {
+    max-width: 48rem;
   }
 
-  .alerts-region {
-    container: alerts-region / inline-size;
+  .workspace-column {
     display: flex;
     min-width: 0;
     flex-direction: column;
+    background: color-mix(in srgb, var(--theme-text) 2%, transparent);
   }
 
-  .alerts-header {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.8em;
-    min-height: 5em;
-    padding: 0.9em 1.1em;
-    border-bottom: 1px solid var(--theme-stroke);
-    background: color-mix(in srgb, var(--theme-text) 3%, transparent);
-  }
-
-  .region-icon {
-    display: grid;
-    width: 2.7em;
-    height: 2.7em;
-    place-items: center;
-    border: 1px solid color-mix(in srgb, var(--theme-accent) 24%, transparent);
-    border-radius: 0.75em;
-    color: var(--theme-accent-text, var(--theme-accent));
-    background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
-  }
-
-  .region-heading {
-    min-width: 0;
-  }
-
-  .region-heading h2,
-  .region-heading p {
-    margin: 0;
-  }
-
-  .region-heading h2 {
-    color: var(--theme-text);
-    font-size: max(1.125rem, var(--font-size-lg));
-    font-weight: 750;
-    line-height: 1.25;
-  }
-
-  .region-heading p {
-    margin-top: 0.2em;
-    color: var(--theme-text-dim);
-    font-size: max(0.875rem, var(--font-size-min));
-    line-height: 1.35;
+  .workspace-column + .workspace-column {
+    border-top: 1px solid var(--theme-stroke);
   }
 
   .alert-actions {
@@ -891,29 +767,16 @@
     gap: 0.5em;
   }
 
-  .alert-actions :global(.panel-btn) {
-    width: auto;
-    min-width: 7.4em;
-    padding-inline: 0.9em;
-  }
-
-  .alerts-body {
-    display: flex;
-    min-width: 0;
-    flex: 1 1 auto;
-    flex-direction: column;
-    gap: 0.75em;
-    padding: 1em;
-  }
-
+  /* Every group carries a top hairline; pulling the list up by one pixel
+     lays the first one over the band's own rule, so each column of groups
+     starts with a single line. */
   .alert-groups {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.75em;
+    margin-top: -1px;
   }
 
-  .group-slot {
-    min-width: 0;
+  .alerts-region .alert-groups :global(.preference-group.flush) {
+    border-top: 1px solid var(--theme-stroke);
+    break-inside: avoid;
   }
 
   .system-notice {
@@ -921,10 +784,10 @@
     align-items: center;
     gap: 0.65em;
     min-height: var(--min-touch-target);
-    padding: 0.75em 1.1em;
+    padding: 0.75em var(--settings-row-inline);
     border-top: 1px solid var(--theme-stroke);
     color: var(--theme-text-dim);
-    background: color-mix(in srgb, var(--theme-accent) 6%, transparent);
+    background: color-mix(in srgb, var(--theme-text) 3%, transparent);
   }
 
   .system-notice i {
@@ -934,108 +797,95 @@
 
   .system-notice p {
     margin: 0;
-    font-size: max(0.75rem, var(--font-size-compact));
+    font-size: max(0.875rem, var(--font-size-min));
     line-height: 1.4;
   }
 
-  @container alerts-region (min-width: 48rem) {
-    .alert-groups {
-      grid-template-areas:
-        "feedback messages"
-        "feedback activity";
+  /* Delivery and alerts side by side, sharing one seam; the notice runs
+     across the foot. */
+  @container notification-preferences (min-width: 52rem) {
+    .notification-workspace.has-delivery {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      align-items: start;
     }
 
-    /* Non-admins get no third row at all — a named-but-empty area still collects
-       a row gap, which reads as a stray notch under the last group. */
-    .alert-groups:has(.group-admin) {
-      grid-template-areas:
-        "feedback messages"
-        "feedback activity"
-        "admin    admin";
+    .has-delivery .workspace-column + .workspace-column {
+      border-top: 0;
+      border-left: 1px solid var(--theme-stroke);
     }
 
-    .group-messages {
-      grid-area: messages;
-    }
-
-    .group-feedback {
-      grid-area: feedback;
-    }
-
-    .group-activity {
-      grid-area: activity;
-    }
-
-    .group-admin {
-      grid-area: admin;
+    .system-notice {
+      grid-column: 1 / -1;
     }
   }
 
-  @container notification-preferences (max-width: 40rem) {
+  /* With room for it, alerts take the wider share and set their groups in
+     two balanced columns, so the two sides of the panel end near each other
+     instead of leaving delivery with a tall empty strip. */
+  @container notification-preferences (min-width: 60rem) {
+    .notification-workspace.has-delivery {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+    }
+  }
+
+  /* Alert groups split into two balanced columns whenever the alerts side
+     is wide enough: stacked tablets, and wide screens. Between the two, the
+     even side-by-side split leaves it too narrow, so it stays one column. */
+  @container notification-preferences (min-width: 40rem) {
+    .alert-groups {
+      columns: 2;
+      column-gap: 0;
+      column-rule: 1px solid var(--theme-stroke);
+    }
+  }
+
+  @container notification-preferences (52rem <= width < 60rem) {
+    .has-delivery .alert-groups {
+      columns: auto;
+    }
+  }
+
+  @container notification-preferences (min-width: 105rem) {
+    .notification-workspace {
+      --settings-row-inline: 1.35em;
+    }
+  }
+
+  @container notification-preferences (max-width: 32rem) {
     .notification-preferences-panel {
       align-content: start;
-      padding-inline: 0.6rem;
-    }
-
-    .page-icon {
-      width: 3rem;
-      height: 3rem;
-      border-radius: 0.85rem;
-    }
-
-    .page-heading h1 {
-      font-size: 1.4rem;
+      padding-inline: 0.65rem;
     }
 
     .notification-workspace {
-      border-radius: 0.95rem;
+      --settings-row-inline: 0.9rem;
     }
 
-    .alerts-header {
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: start;
-      padding: 0.85rem;
+    /* The bulk switches keep their words on a phone: they drop under the
+       heading and share the row instead of shrinking to bare icons. */
+    .alerts-region :global(.section-header) {
+      flex-wrap: wrap;
+    }
+
+    .alerts-region :global(.section-heading) {
+      flex: 1 1 0;
+    }
+
+    .alerts-region :global(.section-action) {
+      flex: 1 1 100%;
     }
 
     .alert-actions {
-      grid-column: 1 / -1;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      width: 100%;
     }
 
-    .alert-actions :global(.panel-btn) {
+    .notification-workspace .alert-actions :global(.panel-btn) {
       width: 100%;
       min-width: 0;
     }
 
-    .alerts-body {
-      padding: 0.75rem;
-    }
-  }
-
-  @media (max-height: 34rem) {
-    .notification-preferences-panel {
-      align-content: start;
-      gap: 0.65rem;
-      padding-block: 0.6rem;
-    }
-
-    .page-icon {
-      width: 2.75rem;
-      height: 2.75rem;
-    }
-
-    .page-heading p {
-      margin-top: 0.1rem;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .notification-preferences-panel {
-      scroll-behavior: auto;
+    .notification-workspace .alert-actions :global(.panel-btn span) {
+      display: inline;
     }
   }
 
