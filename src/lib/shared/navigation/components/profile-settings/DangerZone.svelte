@@ -13,6 +13,9 @@
   import FacebookIcon from "#lib/shared/auth/components/icons/FacebookIcon.svelte";
   import GoogleIcon from "#lib/shared/auth/components/icons/GoogleIcon.svelte";
   import InstagramIcon from "#lib/shared/auth/components/icons/InstagramIcon.svelte";
+  import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { DURATION } from "#lib/shared/transitions/transitions.js";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   const ctx = getProfileSettingsContext();
 
@@ -110,7 +113,7 @@
   </button>
 
   {#if isExpanded}
-    <div id="danger-zone-content" class="danger-content">
+    <div id="danger-zone-content" class="danger-content" transition:growFade>
       {#if isAdmin}
         <p class="warning-text">
           <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
@@ -125,144 +128,156 @@
           )}
         </p>
 
-        {#if !ctx.ui.showDeleteConfirmation}
-          <button
-            class="button button--danger"
-            onclick={handleShowConfirmation}
-          >
-            <i class="fas fa-trash-alt" aria-hidden="true"></i>
-            {t("nav_ui_continue_to_deletion")}
-          </button>
-        {:else}
-          <div class="confirmation-box">
-            <p class="confirmation-text">
-              <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-              {t("nav_ui_deleting_this_account_is_permanent")}
-            </p>
-
-            <div class="confirmation-input-section">
-              <label for="delete-confirmation" class="confirmation-label">
-                {t("nav_delete_confirmation")} <strong>{userIdentifier}</strong>
-              </label>
-              <input
-                id="delete-confirmation"
-                type="text"
-                class="confirmation-input"
-                class:valid={isConfirmationValid}
-                placeholder={userIdentifier}
-                bind:value={confirmationText}
-                autocomplete="off"
-                spellcheck="false"
-              />
+        <Crossfade
+          key={ctx.ui.showDeleteConfirmation}
+          duration={DURATION.emphasis}
+          animateHeight
+        >
+          {#if !ctx.ui.showDeleteConfirmation}
+            <div>
+              <button
+                class="button button--danger"
+                onclick={handleShowConfirmation}
+              >
+                <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                {t("nav_ui_continue_to_deletion")}
+              </button>
             </div>
-
-            <div class="confirmation-input-section">
-              <label for="delete-reason" class="confirmation-label">
-                {t("nav_ui_why_are_you_leaving_optional")}
-              </label>
-              <textarea
-                id="delete-reason"
-                class="confirmation-input reason-input"
-                placeholder={t("nav_ui_share_what_went_wrong")}
-                bind:value={deleteReason}
-                maxlength="500"
-                rows="2"
-                disabled={isDeleting}
-              ></textarea>
-            </div>
-
-            {#if hasOAuth}
-              <p class="confirmation-label reauth-hint">
-                {t(
-                  "nav_ui_confirm_with_your_linked_account_to_permanently_delete"
-                )}
+          {:else}
+            <div class="confirmation-box">
+              <p class="confirmation-text">
+                <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                {t("nav_ui_deleting_this_account_is_permanent")}
               </p>
-            {:else}
+
               <div class="confirmation-input-section">
-                <label for="delete-password" class="confirmation-label">
-                  {t("nav_delete_password")}
+                <label for="delete-confirmation" class="confirmation-label">
+                  {t("nav_delete_confirmation")}
+                  <strong>{userIdentifier}</strong>
                 </label>
                 <input
-                  id="delete-password"
-                  type="password"
+                  id="delete-confirmation"
+                  type="text"
                   class="confirmation-input"
-                  class:valid={deletePassword.length > 0}
-                  placeholder={t("nav_ui_your_current_password")}
-                  bind:value={deletePassword}
-                  autocomplete="current-password"
-                  disabled={isDeleting}
+                  class:valid={isConfirmationValid}
+                  placeholder={userIdentifier}
+                  bind:value={confirmationText}
+                  autocomplete="off"
+                  spellcheck="false"
                 />
               </div>
-            {/if}
 
-            {#if deleteError}
-              <p class="error-message" role="alert">
-                <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
-                {deleteError}
-              </p>
-            {/if}
+              <div class="confirmation-input-section">
+                <label for="delete-reason" class="confirmation-label">
+                  {t("nav_ui_why_are_you_leaving_optional")}
+                </label>
+                <textarea
+                  id="delete-reason"
+                  class="confirmation-input reason-input"
+                  placeholder={t("nav_ui_share_what_went_wrong")}
+                  bind:value={deleteReason}
+                  maxlength="500"
+                  rows="2"
+                  disabled={isDeleting}
+                ></textarea>
+              </div>
 
-            <div class="button-row">
-              <button class="button button--secondary" onclick={handleCancel}>
-                {t("action_cancel")}
-              </button>
               {#if hasOAuth}
-                {#if hasGoogle}
-                  <button
-                    class="button button--danger-confirm"
-                    onclick={() => runDelete({ method: "google" })}
-                    disabled={!usernameMatches || isDeleting}
-                  >
-                    <span class="reauth-provider-icon"><GoogleIcon /></span>
-                    {isDeleting
-                      ? t("feedback_deleting")
-                      : t("nav_ui_confirm_with_google")}
-                  </button>
-                {/if}
-                {#if hasFacebook}
-                  <button
-                    class="button button--danger-confirm"
-                    onclick={() => runDelete({ method: "facebook" })}
-                    disabled={!usernameMatches || isDeleting}
-                  >
-                    <span class="reauth-provider-icon facebook"
-                      ><FacebookIcon /></span
-                    >
-                    {isDeleting
-                      ? t("feedback_deleting")
-                      : t("nav_ui_confirm_with_facebook")}
-                  </button>
-                {/if}
-                {#if hasInstagram}
-                  <button
-                    class="button button--danger-confirm"
-                    onclick={() => runDelete({ method: "instagram" })}
-                    disabled={!usernameMatches || isDeleting}
-                  >
-                    <span class="reauth-provider-icon instagram"
-                      ><InstagramIcon /></span
-                    >
-                    {isDeleting
-                      ? t("feedback_deleting")
-                      : t("nav_ui_confirm_with_instagram")}
-                  </button>
-                {/if}
+                <p class="confirmation-label reauth-hint">
+                  {t(
+                    "nav_ui_confirm_with_your_linked_account_to_permanently_delete"
+                  )}
+                </p>
               {:else}
-                <button
-                  class="button button--danger-confirm"
-                  onclick={() =>
-                    runDelete({ method: "password", password: deletePassword })}
-                  disabled={!isConfirmationValid || isDeleting}
-                >
-                  <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                  {isDeleting
-                    ? t("feedback_deleting")
-                    : t("nav_ui_delete_forever")}
-                </button>
+                <div class="confirmation-input-section">
+                  <label for="delete-password" class="confirmation-label">
+                    {t("nav_delete_password")}
+                  </label>
+                  <input
+                    id="delete-password"
+                    type="password"
+                    class="confirmation-input"
+                    class:valid={deletePassword.length > 0}
+                    placeholder={t("nav_ui_your_current_password")}
+                    bind:value={deletePassword}
+                    autocomplete="current-password"
+                    disabled={isDeleting}
+                  />
+                </div>
               {/if}
+
+              {#if deleteError}
+                <p class="error-message" role="alert" transition:growFade>
+                  <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                  {deleteError}
+                </p>
+              {/if}
+
+              <div class="button-row">
+                <button class="button button--secondary" onclick={handleCancel}>
+                  {t("action_cancel")}
+                </button>
+                {#if hasOAuth}
+                  {#if hasGoogle}
+                    <button
+                      class="button button--danger-confirm"
+                      onclick={() => runDelete({ method: "google" })}
+                      disabled={!usernameMatches || isDeleting}
+                    >
+                      <span class="reauth-provider-icon"><GoogleIcon /></span>
+                      {isDeleting
+                        ? t("feedback_deleting")
+                        : t("nav_ui_confirm_with_google")}
+                    </button>
+                  {/if}
+                  {#if hasFacebook}
+                    <button
+                      class="button button--danger-confirm"
+                      onclick={() => runDelete({ method: "facebook" })}
+                      disabled={!usernameMatches || isDeleting}
+                    >
+                      <span class="reauth-provider-icon facebook"
+                        ><FacebookIcon /></span
+                      >
+                      {isDeleting
+                        ? t("feedback_deleting")
+                        : t("nav_ui_confirm_with_facebook")}
+                    </button>
+                  {/if}
+                  {#if hasInstagram}
+                    <button
+                      class="button button--danger-confirm"
+                      onclick={() => runDelete({ method: "instagram" })}
+                      disabled={!usernameMatches || isDeleting}
+                    >
+                      <span class="reauth-provider-icon instagram"
+                        ><InstagramIcon /></span
+                      >
+                      {isDeleting
+                        ? t("feedback_deleting")
+                        : t("nav_ui_confirm_with_instagram")}
+                    </button>
+                  {/if}
+                {:else}
+                  <button
+                    class="button button--danger-confirm"
+                    onclick={() =>
+                      runDelete({
+                        method: "password",
+                        password: deletePassword,
+                      })}
+                    disabled={!isConfirmationValid || isDeleting}
+                  >
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                    {isDeleting
+                      ? t("feedback_deleting")
+                      : t("nav_ui_delete_forever")}
+                  </button>
+                {/if}
+              </div>
             </div>
-          </div>
-        {/if}
+          {/if}
+        </Crossfade>
       {/if}
     </div>
   {/if}

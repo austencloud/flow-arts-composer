@@ -57,6 +57,7 @@
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   import type {
     AccountManager,
@@ -491,42 +492,48 @@
   {:else if authState.isFullAccount && authState.user}
     <div class="profile-content">
       {#if showAccountSetup && accountSetupState}
-        <AccountSetupChecklist
-          state={accountSetupState}
-          onTaskAction={handleAccountSetupTask}
-          variant="prompt"
-        />
+        <div class="setup-notice" transition:growFade>
+          <AccountSetupChecklist
+            state={accountSetupState}
+            onTaskAction={handleAccountSetupTask}
+            variant="prompt"
+          />
+        </div>
       {:else if showSetupCompletion}
-        <section class="setup-complete" role="status" aria-live="polite">
-          <span class="setup-complete-icon" aria-hidden="true">
-            <i class="fas fa-check"></i>
-          </span>
-          <span class="setup-complete-copy">
-            <strong>{t("profile_setup_complete")}</strong>
-            <span>{t("profile_setup_saved")}</span>
-          </span>
-          <button
-            type="button"
-            class="dismiss-completion"
-            onclick={() => (showSetupCompletion = false)}
-            aria-label={t("profile_dismiss_setup_confirmation")}
-          >
-            <i class="fas fa-xmark" aria-hidden="true"></i>
-          </button>
-        </section>
+        <div class="setup-notice" transition:growFade>
+          <section class="setup-complete" role="status" aria-live="polite">
+            <span class="setup-complete-icon" aria-hidden="true">
+              <i class="fas fa-check"></i>
+            </span>
+            <span class="setup-complete-copy">
+              <strong>{t("profile_setup_complete")}</strong>
+              <span>{t("profile_setup_saved")}</span>
+            </span>
+            <button
+              type="button"
+              class="dismiss-completion"
+              onclick={() => (showSetupCompletion = false)}
+              aria-label={t("profile_dismiss_setup_confirmation")}
+            >
+              <i class="fas fa-xmark" aria-hidden="true"></i>
+            </button>
+          </section>
+        </div>
       {:else if showAccountSetupUnavailable && accountSetupState}
-        <section class="setup-unavailable" role="status">
-          <span>
-            <strong>{t("profile_setup_status_unavailable")}</strong>
-            {t("profile_account_still_available")}
-          </span>
-          <PanelButton
-            variant="secondary"
-            onclick={() => void accountSetupState.loadForCurrentUser()}
-          >
-            {t("action_retry")}
-          </PanelButton>
-        </section>
+        <div class="setup-notice" transition:growFade>
+          <section class="setup-unavailable" role="status">
+            <span>
+              <strong>{t("profile_setup_status_unavailable")}</strong>
+              {t("profile_account_still_available")}
+            </span>
+            <PanelButton
+              variant="secondary"
+              onclick={() => void accountSetupState.loadForCurrentUser()}
+            >
+              {t("action_retry")}
+            </PanelButton>
+          </section>
+        </div>
       {/if}
 
       <div class="account-workspace">
@@ -679,9 +686,14 @@
   .profile-content {
     display: flex;
     flex-direction: column;
-    gap: clamp(0.75em, 1cqi, 1em);
     width: 100%;
     min-width: 0;
+  }
+
+  /* The notice owns the space below it, so dismissing it can ease that space
+     closed with the notice instead of leaving a gap to snap shut afterwards. */
+  .setup-notice {
+    padding-bottom: clamp(0.75em, 1cqi, 1em);
   }
 
   .setup-complete,
@@ -932,6 +944,7 @@
 
   .preview-banner {
     display: flex;
+    margin-bottom: clamp(0.75em, 1cqi, 1em);
     align-items: center;
     gap: 0.6rem;
     min-height: var(--min-touch-target);
