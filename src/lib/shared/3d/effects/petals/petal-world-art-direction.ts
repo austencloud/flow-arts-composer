@@ -29,10 +29,10 @@ export interface PetalEnvironmentProfile3D {
 
 export const NEUTRAL_PETAL_ENVIRONMENT_PROFILE: PetalEnvironmentProfile3D = {
   backdropLuminance: 0.18,
-  minimumSurfaceLuminance: 0.08,
+  minimumSurfaceLuminance: 0.12,
   maximumSurfaceLuminance: 0.72,
-  contrastStrength: 0,
-  edgeStrength: 0,
+  contrastStrength: 0.45,
+  edgeStrength: 0.1,
   opacityScale: 1,
   motionEmissionScale: 1,
   ambientEmissionScale: 1,
@@ -167,7 +167,8 @@ export function resolvePetalEnvironmentProfile(
  *
  * A small compensation is needed because a world-space plane loses more
  * apparent area through perspective and edge-on rotation than the equivalent
- * Canvas2D silhouette. The result remains roughly half the old 3D footprint.
+ * Canvas2D silhouette. Motion-born petals need a little more area to read as
+ * they tumble near the props; ambient petals retain their softer footprint.
  */
 export function resolvePetalWorldSize(
   baseSize: number,
@@ -176,7 +177,7 @@ export function resolvePetalWorldSize(
   ambient: boolean,
   rand: () => number = Math.random
 ): number {
-  const perspectiveCompensation = 1.45;
+  const perspectiveCompensation = ambient ? 1.45 : 1.8;
   const ambientScale = ambient ? 0.84 : 1;
   return (
     resolvePetalSize(baseSize, intensity, shape, rand) *
