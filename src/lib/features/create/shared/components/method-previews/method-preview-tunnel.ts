@@ -5,6 +5,7 @@
  */
 import { rotateSequenceGeometry } from "#lib/shared/create/services/sequence-derived-fields.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
+import { TUNNEL_REVEAL_DURATION } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-reveal.js";
 
 /** The Tunnel's own Radial preset (TUNNEL_PRESETS): four performers. */
 export const TUNNEL_PREVIEW_PRESET = "radial";
@@ -12,13 +13,17 @@ export const TUNNEL_PREVIEW_PRESET = "radial";
 /** The scene's beats, in milliseconds, in the order they play. */
 export const TUNNEL_PREVIEW_TIMING = Object.freeze({
   /** The tunnel plays before the finger comes in. */
-  leadMs: 700,
-  /** The stage fades out once the dice is pressed. */
-  fadeOutMs: 180,
+  leadMs: 450,
+  /** Once the dice is pressed, the copies fold back into its performer. */
+  foldMs: 280,
+  /** That performer, alone, dips out over its tile. */
+  fadeOutMs: 150,
   /** The longest the scene waits for the new tunnel to build and paint. */
   buildWaitMs: 1200,
-  /** The new tunnel fades in. */
-  fadeInMs: 260,
+  /** The performer comes back alone with its new sequence. */
+  fadeInMs: 200,
+  /** Its copies bloom out around it, as the viewer's Tunnel brings them in. */
+  bloomMs: TUNNEL_REVEAL_DURATION,
 });
 
 /**

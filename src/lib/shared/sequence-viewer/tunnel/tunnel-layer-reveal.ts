@@ -1,4 +1,5 @@
 import { DURATION } from "#lib/shared/transitions/transitions.js";
+import type { AdditionalLayerProps } from "#lib/shared/animation-engine/domain/types/trail-capture-types.js";
 import type { PropState } from "#lib/shared/foundation/domain/types/prop-state.js";
 import { normalizeAngleSigned } from "#lib/shared/animation-engine/services/angle-calculator.js";
 
@@ -111,6 +112,23 @@ export function resolveTunnelLayerOpacity(
   layerCount: number
 ): number {
   return resolveTunnelLayerProgress(progress, layerIndex, layerCount);
+}
+
+/**
+ * The copies `reveal` of the way through their bloom, each with its staggered
+ * opacity. A full reveal returns them as they are.
+ */
+export function revealTunnelCopies(
+  layers: AdditionalLayerProps[],
+  reveal: number
+): AdditionalLayerProps[] {
+  if (reveal >= 1) return layers;
+  return layers.map((layer, index) => ({
+    ...layer,
+    opacity:
+      (layer.opacity ?? 1) *
+      resolveTunnelLayerOpacity(reveal, index, layers.length),
+  }));
 }
 
 /**
