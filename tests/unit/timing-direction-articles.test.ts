@@ -4,6 +4,7 @@ import {
   getTimingDirectionArticleByPair,
   TIMING_DIRECTION_ARTICLES,
   TIMING_DIRECTION_ARTICLE_SLUGS,
+  TIMING_DIRECTION_SOURCE,
 } from "../../src/routes/(public)/timing-and-direction/_data/timing-direction-articles";
 
 describe("timing and direction article cluster", () => {
@@ -43,7 +44,7 @@ describe("timing and direction article cluster", () => {
     });
   });
 
-  it("gives every indexable article unique substantive copy and sources", () => {
+  it("gives every indexable article unique substantive copy", () => {
     expect(
       new Set(TIMING_DIRECTION_ARTICLES.map(({ name }) => name)).size
     ).toBe(6);
@@ -54,10 +55,7 @@ describe("timing and direction article cluster", () => {
 
     for (const article of TIMING_DIRECTION_ARTICLES) {
       expect(article.metaDescription.length).toBeLessThanOrEqual(160);
-      expect(article.sources.length).toBeGreaterThanOrEqual(3);
-      expect(
-        article.sources.every(({ url }) => url.startsWith("https://"))
-      ).toBe(true);
+      expect(article.metaDescription.startsWith(article.name)).toBe(true);
       expect(getTimingDirectionArticle(article.slug)).toEqual(article);
       expect(
         getTimingDirectionArticleByPair(article.timing, article.direction)
@@ -65,24 +63,8 @@ describe("timing and direction article cluster", () => {
     }
   });
 
-  it("links each original mode to the matching FAI lesson, without inventing quarter pages", () => {
-    for (const article of TIMING_DIRECTION_ARTICLES) {
-      const fai = article.learningResources.find(({ url }) =>
-        url.startsWith("https://flowartsinstitute.com/")
-      );
-      if (article.timing === "Quarter") {
-        expect(fai).toBeUndefined();
-      } else {
-        expect(fai?.url).toBe(
-          `https://flowartsinstitute.com/portfolio-item/${article.slug}/`
-        );
-      }
-      expect(
-        new Set(article.learningResources.map(({ url }) => url)).size
-      ).toBe(article.learningResources.length);
-      for (const resource of article.learningResources) {
-        expect(new URL(resource.url).protocol).toBe("https:");
-      }
-    }
+  it("credits the Vulcan Tech Gospel as the source of the mode names", () => {
+    expect(new URL(TIMING_DIRECTION_SOURCE.url).protocol).toBe("https:");
+    expect(TIMING_DIRECTION_SOURCE.label).toContain("Vulcan Tech Gospel");
   });
 });

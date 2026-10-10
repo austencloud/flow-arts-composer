@@ -33,12 +33,18 @@
     /** Include the increment in compact button labels when descriptions are hidden. */
     showRotationDegreesInLabel?: boolean;
     desktopColumns?: 2 | 3;
+    /** Columns for the compact (non-panel) tiles. Four puts a four-action
+        surface on one row. */
+    mobileColumns?: 3 | 4;
     /** Other sequence surfaces provide only the callbacks that are valid in
         their context; absent callbacks remove those tiles. */
     secondarySectionLabel?: string;
     /** Compact surfaces can place Choose Start beside the geometric transforms
         instead of creating a sparse secondary row. */
     shiftStartPlacement?: "secondary" | "transform";
+    /** A surface with no other secondary actions can put Reset beside the
+        transforms, so it does not get a section of its own. */
+    resetPlacement?: "secondary" | "transform";
     onReset?: () => void;
     /** Guest-gated Patterns section: tiles stay tappable but show a lock and
         route to sign-up (the parent supplies gated handlers). */
@@ -80,8 +86,10 @@
     rotationDegrees = 45,
     showRotationDegreesInLabel = false,
     desktopColumns = 2,
+    mobileColumns = 3,
     secondarySectionLabel = t("create_transform_patterns"),
     shiftStartPlacement = "secondary",
+    resetPlacement = "secondary",
     onReset,
     patternsLocked = false,
     onHelpSelect,
@@ -123,7 +131,7 @@
       hasPatternTools ||
       (onShiftStart && shiftStartPlacement === "secondary") ||
       onRewind ||
-      onReset
+      (onReset && resetPlacement === "secondary")
     )
   );
   const hasEditActions = $derived(
@@ -170,12 +178,30 @@
   </button>
 {/snippet}
 
+{#snippet resetButton(reset: () => void)}
+  <button
+    class="grid-btn reset"
+    onclick={reset}
+    {disabled}
+    aria-label={t("create_transform_reset_aria")}
+  >
+    <div class="btn-icon">
+      <i class="fas fa-arrow-rotate-left" aria-hidden="true"></i>
+    </div>
+    <div class="btn-text">
+      <span class="btn-label">{t("create_ui_reset")}</span>
+      <span class="btn-desc">{t("create_transform_original_path")}</span>
+    </div>
+  </button>
+{/snippet}
+
 <div
   class="actions-container"
   class:disabled
   class:desktop={isDesktopPanel}
   class:three-column={isDesktopPanel && desktopColumns === 3}
   class:mobile={!isDesktopPanel && !toolbar}
+  class:four-column={!isDesktopPanel && !toolbar && mobileColumns === 4}
   class:toolbar
   class:compact={compactMode}
   class:help-mode={helpMode}
@@ -332,6 +358,9 @@
       {#if onShiftStart && shiftStartPlacement === "transform"}
         {@render shiftStartButton()}
       {/if}
+      {#if onReset && resetPlacement === "transform"}
+        {@render resetButton(onReset)}
+      {/if}
     </div>
   </section>
 
@@ -475,21 +504,8 @@
             </div>
           </button>
         {/if}
-        {#if onReset}
-          <button
-            class="grid-btn reset"
-            onclick={onReset}
-            {disabled}
-            aria-label={t("create_transform_reset_aria")}
-          >
-            <div class="btn-icon">
-              <i class="fas fa-arrow-rotate-left" aria-hidden="true"></i>
-            </div>
-            <div class="btn-text">
-              <span class="btn-label">{t("create_ui_reset")}</span>
-              <span class="btn-desc">{t("create_transform_original_path")}</span>
-            </div>
-          </button>
+        {#if onReset && resetPlacement === "secondary"}
+          {@render resetButton(onReset)}
         {/if}
       </div>
     </section>
@@ -718,6 +734,9 @@
   .actions-container.mobile .section-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 4px;
+  }
+  .actions-container.mobile.four-column .section-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 
   /* Desktop: horizontal layout (icon left, label right) for compact rows */
