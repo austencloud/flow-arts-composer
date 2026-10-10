@@ -324,10 +324,10 @@
     align-items: flex-start;
     gap: 10px;
     flex: 1;
-    padding: 10px 12px;
-    background: var(--theme-card-bg);
+    padding: 10px 4px;
+    background: transparent;
     border: none;
-    border-radius: 8px;
+    border-radius: 0;
     text-align: left;
     cursor: default;
     transition:
@@ -341,7 +341,7 @@
   }
 
   .change-item.clickable:hover {
-    background: var(--theme-card-hover-bg);
+    background: color-mix(in srgb, var(--theme-text) 4%, transparent);
   }
 
   .change-item.clickable:active {
@@ -385,9 +385,9 @@
   .feedback-link-icon {
     flex-shrink: 0;
     padding: 8px 10px;
-    background: var(--theme-card-bg);
+    background: transparent;
     border: none;
-    color: var(--theme-stroke-strong);
+    color: var(--theme-text-dim);
     font-size: var(--font-size-compact);
     cursor: pointer;
     border-radius: 8px;

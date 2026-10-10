@@ -2,6 +2,8 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { onMount, tick } from "svelte";
   import ConfirmDialog from "#lib/shared/foundation/ui/ConfirmDialog.svelte";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SettingsSubpage from "#lib/shared/settings/components/SettingsSubpage.svelte";
   import PanelSearch from "#lib/shared/components/panel/PanelSearch.svelte";
   import SegmentedControl from "#lib/shared/ui/components/SegmentedControl.svelte";
   import ShortcutBindingEditor from "./ShortcutBindingEditor.svelte";
@@ -20,6 +22,15 @@
   } from "../domain/shortcut-center-catalog";
   import { localizeShortcut, localizeShortcutLabel } from "../domain/shortcut-presentation";
   import { getLocale } from "#lib/shared/i18n/i18n.svelte.js";
+
+  let {
+    backLabel,
+    onBack,
+  }: {
+    /** Label of the settings tab the back control returns to. */
+    backLabel?: string;
+    onBack?: () => void;
+  } = $props();
 
   let registry: ShortcutRegistry | null = null;
   let customizer = $state<ShortcutCustomizer | null>(null);
@@ -179,117 +190,116 @@
   }
 </script>
 
-<section class="shortcut-settings" aria-labelledby="shortcut-center-title">
-  <header class="shortcut-settings-header">
-    <span class="shortcut-settings-icon" aria-hidden="true">
-      <i class="fas fa-keyboard"></i>
-    </span>
-    <span>
-      <h1 id="shortcut-center-title">{t("keyboard_ui_title")}</h1>
-      <p>{t("keyboard_ui_subtitle")}</p>
-    </span>
-  </header>
+{#snippet resetAction()}
+  <PanelButton
+    variant="quiet"
+    onclick={() => (showResetConfirmation = true)}
+    ariaLabel={t("keyboard_ui_reset_all")}
+  >
+    <i class="fas fa-undo" aria-hidden="true"></i>
+    <span>{t("keyboard_ui_reset_all")}</span>
+  </PanelButton>
+{/snippet}
 
-  <div class="shortcut-center">
-    <div class="toolbar">
-      <PanelSearch
-        bind:value={query}
-        bind:inputRef={searchInput}
-        maxWidth="none"
-        placeholder={t("keyboard_ui_search_placeholder")}
-        ariaLabel={t("keyboard_ui_search_label")}
-        autofocus={true}
+{#snippet searchTools()}
+  <div class="toolbar">
+    <PanelSearch
+      bind:value={query}
+      bind:inputRef={searchInput}
+      maxWidth="none"
+      placeholder={t("keyboard_ui_search_placeholder")}
+      ariaLabel={t("keyboard_ui_search_label")}
+      autofocus={true}
+    />
+
+    <div class="view-picker">
+      <SegmentedControl
+        options={viewOptions}
+        value={view}
+        onchange={(nextView) => (view = nextView)}
+        color="accent"
+        size="sm"
+        density="compact"
+        semantics="radiogroup"
+        ariaLabel={t("keyboard_ui_view_label")}
       />
-
-      <div class="view-picker">
-        <SegmentedControl
-          options={viewOptions}
-          value={view}
-          onchange={(nextView) => (view = nextView)}
-          color="accent"
-          size="sm"
-          density="compact"
-          semantics="radiogroup"
-          ariaLabel={t("keyboard_ui_view_label")}
-        />
-      </div>
-
-      {#if changedCount > 0}
-        <button
-          type="button"
-          class="reset-all-button"
-          onclick={() => (showResetConfirmation = true)}
-        >
-          {t("keyboard_ui_reset_all")}
-        </button>
-      {/if}
     </div>
+  </div>
 
-    <div class="result-summary" aria-live="polite">
-      <span>{t(visibleCount === 1 ? "keyboard_ui_one_shortcut" : "keyboard_ui_shortcuts_count", { count: visibleCount })}</span
-      >
-      {#if view === "current"}
-        <span>{t("keyboard_ui_for_context", { context: getShortcutContextLabel(currentContext) })}</span>
-      {/if}
-    </div>
+  <p class="result-summary" aria-live="polite">
+    <span>{t(visibleCount === 1 ? "keyboard_ui_one_shortcut" : "keyboard_ui_shortcuts_count", { count: visibleCount })}</span>
+    {#if view === "current"}
+      <span>{t("keyboard_ui_for_context", { context: getShortcutContextLabel(currentContext) })}</span>
+    {/if}
+  </p>
+{/snippet}
 
-    <div
-      bind:this={workspaceElement}
-      class="workspace"
-      class:editing={selectedItem !== null}
-    >
-      <div class="list-pane">
-        {#if groups.length > 0}
-          <div class="groups">
-            {#each groups as group (group.context)}
-              <ShortcutContextSection
-                context={group.context}
-                label={group.label}
-                shortcuts={group.items}
-                {selectedShortcutId}
-                onEditShortcut={editShortcut}
-                onResetShortcut={resetShortcut}
-              />
-            {/each}
-          </div>
-        {:else}
-          <div class="empty-state">
-            <i class="fas fa-keyboard" aria-hidden="true"></i>
-            <h3>{getEmptyMessage()}</h3>
-            {#if query}
-              <button type="button" onclick={() => (query = "")}
-                >{t("keyboard_ui_clear_search")}</button
-              >
-            {:else if view === "changed"}
-              <p>{t("keyboard_ui_choose_from_all")}</p>
-            {/if}
-          </div>
-        {/if}
-      </div>
-
-      {#if selectedItem && customizer}
-        <div class="editor-pane">
-          <ShortcutBindingEditor
-            item={selectedItem}
-            contextLabel={selectedContextLabel}
-            detectConflicts={(keyCombo) =>
-              customizer?.detectConflicts(selectedItem.shortcut.id, keyCombo) ??
-              []}
-            onSave={(keyCombo) => saveShortcut(selectedItem, keyCombo)}
-            onReplace={(keyCombo) => replaceShortcut(selectedItem, keyCombo)}
-            onSwap={(_, conflictId) => swapShortcut(selectedItem, conflictId)}
-            onReset={() => resetShortcut(selectedItem)}
-            onDisable={() => disableShortcut(selectedItem)}
-            onEnable={() => enableShortcut(selectedItem)}
-            onClose={() => (selectedShortcutId = null)}
-          />
+<SettingsSubpage
+  icon="fas fa-keyboard"
+  title={t("keyboard_ui_title")}
+  description={t("keyboard_ui_subtitle")}
+  headingId="shortcut-center-title"
+  {backLabel}
+  {onBack}
+  action={changedCount > 0 ? resetAction : undefined}
+  toolbar={searchTools}
+>
+  <div
+    bind:this={workspaceElement}
+    class="workspace"
+    class:editing={selectedItem !== null}
+  >
+    <div class="list-pane">
+      {#if groups.length > 0}
+        <div class="groups">
+          {#each groups as group (group.context)}
+            <ShortcutContextSection
+              context={group.context}
+              label={group.label}
+              shortcuts={group.items}
+              {selectedShortcutId}
+              onEditShortcut={editShortcut}
+              onResetShortcut={resetShortcut}
+            />
+          {/each}
+        </div>
+      {:else}
+        <div class="empty-state">
+          <i class="fas fa-keyboard" aria-hidden="true"></i>
+          <h3>{getEmptyMessage()}</h3>
+          {#if query}
+            <button type="button" onclick={() => (query = "")}
+              >{t("keyboard_ui_clear_search")}</button
+            >
+          {:else if view === "changed"}
+            <p>{t("keyboard_ui_choose_from_all")}</p>
+          {/if}
         </div>
       {/if}
     </div>
 
-    <p class="sr-only" aria-live="assertive">{announcement}</p>
+    {#if selectedItem && customizer}
+      <div class="editor-pane">
+        <ShortcutBindingEditor
+          item={selectedItem}
+          contextLabel={selectedContextLabel}
+          detectConflicts={(keyCombo) =>
+            customizer?.detectConflicts(selectedItem.shortcut.id, keyCombo) ??
+            []}
+          onSave={(keyCombo) => saveShortcut(selectedItem, keyCombo)}
+          onReplace={(keyCombo) => replaceShortcut(selectedItem, keyCombo)}
+          onSwap={(_, conflictId) => swapShortcut(selectedItem, conflictId)}
+          onReset={() => resetShortcut(selectedItem)}
+          onDisable={() => disableShortcut(selectedItem)}
+          onEnable={() => enableShortcut(selectedItem)}
+          onClose={() => (selectedShortcutId = null)}
+        />
+      </div>
+    {/if}
   </div>
-</section>
+
+  <p class="sr-only" aria-live="assertive">{announcement}</p>
+</SettingsSubpage>
 
 <ConfirmDialog
   bind:isOpen={showResetConfirmation}
@@ -303,73 +313,19 @@
 />
 
 <style>
-  .shortcut-settings {
-    width: min(100%, 72rem);
-    min-height: 100%;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    color: var(--theme-text);
-  }
-
-  .shortcut-settings-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: clamp(0.75rem, 2vw, 1.35rem) clamp(0.25rem, 1vw, 0.75rem);
-  }
-
-  .shortcut-settings-icon {
-    width: clamp(2.75rem, 4vw, 3.5rem);
-    height: clamp(2.75rem, 4vw, 3.5rem);
-    flex: none;
-    display: grid;
-    place-items: center;
-    border-radius: 0.9rem;
-    background: color-mix(in srgb, var(--theme-accent) 14%, transparent);
-    color: var(--theme-accent);
-    font-size: var(--font-size-lg);
-  }
-
-  .shortcut-settings-header h1,
-  .shortcut-settings-header p {
-    margin: 0;
-  }
-
-  .shortcut-settings-header h1 {
-    font-size: clamp(var(--font-size-xl), 2.5vw, var(--font-size-2xl));
-    line-height: 1.15;
-  }
-
-  .shortcut-settings-header p {
-    margin-top: 0.25rem;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-sm);
-  }
-
-  .shortcut-center {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-    border-top: 1px solid var(--theme-stroke);
-  }
-
+  /* Search and the view filter share one line when there's room. */
   .toolbar {
     display: grid;
-    grid-template-columns: minmax(15rem, 1fr) minmax(19rem, 30rem) auto;
+    grid-template-columns: minmax(12rem, 1fr) minmax(17rem, 28rem);
     align-items: center;
     gap: 0.75rem;
-    padding: 0.8rem 1rem 0.55rem;
-    border-bottom: 1px solid var(--theme-stroke);
   }
 
-  :global(.shortcut-center .panel-search) {
+  :global(.subpage-toolbar .panel-search) {
     padding: 0;
   }
 
-  :global(.shortcut-center .panel-search__icon) {
+  :global(.subpage-toolbar .panel-search__icon) {
     left: 0.8rem;
   }
 
@@ -377,7 +333,69 @@
     min-width: 0;
   }
 
-  .reset-all-button,
+  .result-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.55rem 0 0;
+    color: var(--theme-text-dim);
+    font-size: max(0.8125rem, var(--font-size-compact));
+  }
+
+  /* The one scroller on the page: the editor sits above the list while a
+     shortcut is being changed. Positioned so the rows' visually hidden labels
+     stay inside it instead of stretching the page. */
+  .workspace {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .list-pane {
+    flex: none;
+    min-width: 0;
+  }
+
+  .editor-pane {
+    flex: none;
+    order: -1;
+    min-width: 0;
+    padding: 0.85rem var(--settings-row-inline);
+    border-bottom: 1px solid var(--theme-stroke);
+  }
+
+  .empty-state {
+    display: flex;
+    min-height: 15rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem var(--settings-row-inline);
+    color: var(--theme-text-dim);
+    text-align: center;
+  }
+
+  .empty-state i {
+    font-size: 2rem;
+    color: var(--theme-accent-text, var(--theme-accent));
+  }
+
+  .empty-state h3,
+  .empty-state p {
+    margin: 0;
+  }
+
+  .empty-state h3 {
+    color: var(--theme-text);
+    font-size: var(--font-size-base);
+  }
+
   .empty-state button {
     min-height: var(--min-touch-target);
     padding: 0 0.85rem;
@@ -390,81 +408,13 @@
     cursor: pointer;
   }
 
-  .reset-all-button:hover,
   .empty-state button:hover {
     background: var(--theme-card-hover-bg);
   }
 
-  .reset-all-button:focus-visible,
   .empty-state button:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
-  }
-
-  .result-summary {
-    display: flex;
-    gap: 0.35rem;
-    padding: 0.45rem 1rem;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact);
-  }
-
-  .workspace {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 0.75rem;
-    min-width: 0;
-    min-height: 0;
-    padding: 0 1rem 1rem;
-    overflow-y: auto;
-  }
-
-  .list-pane {
-    flex: none;
-    min-width: 0;
-  }
-
-  .groups {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.75rem;
-  }
-
-  .editor-pane {
-    flex: none;
-    order: -1;
-    min-width: 0;
-    min-height: 0;
-  }
-
-  .empty-state {
-    display: flex;
-    min-height: 15rem;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: 2rem;
-    border: 1px dashed var(--theme-stroke-strong);
-    border-radius: 1rem;
-    color: var(--theme-text-dim);
-    text-align: center;
-  }
-
-  .empty-state i {
-    font-size: 2rem;
-    color: var(--theme-accent);
-  }
-
-  .empty-state h3,
-  .empty-state p {
-    margin: 0;
-  }
-
-  .empty-state h3 {
-    color: var(--theme-text);
-    font-size: var(--font-size-base);
   }
 
   .sr-only {
@@ -479,51 +429,16 @@
     border: 0;
   }
 
-  @media (max-width: 800px) {
+  @container settings-subpage (max-width: 44rem) {
     .toolbar {
       grid-template-columns: minmax(0, 1fr);
-      padding-inline: 0.75rem;
-    }
-
-    .reset-all-button {
-      justify-self: stretch;
-    }
-
-    .result-summary {
-      padding-inline: 0.75rem;
-    }
-
-    .workspace {
-      padding: 0 0.75rem 0.75rem;
-    }
-  }
-
-  @media (max-width: 520px) {
-    .shortcut-settings-header {
-      padding-inline: 0.25rem;
-    }
-
-    .toolbar {
-      gap: 0.45rem;
-      padding-block: 0.55rem;
-    }
-
-    .result-summary {
-      padding-block: 0.35rem;
+      gap: 0.5rem;
     }
   }
 
   @media (max-height: 520px) {
-    .shortcut-settings-header {
-      padding-block: 0.5rem;
-    }
-
-    .toolbar {
-      padding-block: 0.45rem;
-    }
-
     .result-summary {
-      padding-block: 0.25rem;
+      margin-top: 0.3rem;
     }
   }
 </style>

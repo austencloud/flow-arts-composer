@@ -128,7 +128,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 0 0 10px 0;
+    margin: 0 0 4px 0;
     font-size: var(--font-size-sm);
     font-weight: 600;
   }
@@ -170,11 +170,9 @@
     padding: 0;
     list-style: none;
   }
-  .change-list li {
-    margin-bottom: 6px;
-  }
-  .change-list li:last-child {
-    margin-bottom: 0;
+  /* Plain rows split by hairlines, like every other settings list. */
+  .change-list li + li {
+    border-top: 1px solid var(--theme-stroke);
   }
 
   .add-entry-btn {
