@@ -150,14 +150,14 @@
     gap: 1.1em;
   }
 
-  /* Icon, title and action share the first row; the description runs under
-     the title so a narrow column never squeezes it beside the button. */
+  /* Icon, title and action share the first row; the description runs the
+     full width below it, clear of the button. */
   .identity-header {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 0.75em;
-    row-gap: 0.2em;
+    row-gap: 0.75em;
   }
 
   .identity-icon {
@@ -183,7 +183,7 @@
   }
 
   .identity-description {
-    grid-column: 2 / -1;
+    grid-column: 1 / -1;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.65));
     font-size: max(0.875rem, var(--font-size-min));
     line-height: 1.35;

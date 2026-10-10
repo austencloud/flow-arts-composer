@@ -41,6 +41,7 @@
   import ProfileHeroSection from "./profile/ProfileHeroSection.svelte";
   import AuthPrompt from "./profile/AuthPrompt.svelte";
   import ProfilePhotoPicker from "../ProfilePhotoPicker.svelte";
+  import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
   import MyPropsCard from "#lib/shared/navigation/components/account/MyPropsCard.svelte";
   import AccountSetupChecklist from "#lib/shared/onboarding/components/account-setup/AccountSetupChecklist.svelte";
   import { tryGetAccountSetupContext } from "#lib/shared/onboarding/context/account-setup-context.js";
@@ -57,6 +58,7 @@
   import { toast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
 
   import type {
     AccountManager,
@@ -405,15 +407,11 @@
         </div>
 
         <section class="workspace-section personal-section">
-          <header class="section-header">
-            <span class="section-icon"
-              ><i class="fas fa-user" aria-hidden="true"></i></span
-            >
-            <span class="section-heading">
-              <h2>{t("profile_personal_details")}</h2>
-              <p>{t("profile_preview_appearance")}</p>
-            </span>
-          </header>
+          <SettingsSectionHeader
+            icon="fas fa-user"
+            title={t("profile_personal_details")}
+            description={t("profile_preview_appearance")}
+          />
           <div class="section-body value-list">
             <AccountValueRow
               label={t("profile_display_name")}
@@ -437,15 +435,11 @@
 
         <div class="access-pane">
           <section class="workspace-group sign-in-section">
-            <header class="section-header">
-              <span class="section-icon"
-                ><i class="fas fa-link" aria-hidden="true"></i></span
-              >
-              <span class="section-heading">
-                <h2>{t("profile_sign_in_methods")}</h2>
-                <p>{t("profile_connected_providers")}</p>
-              </span>
-            </header>
+            <SettingsSectionHeader
+              icon="fas fa-link"
+              title={t("profile_sign_in_methods")}
+              description={t("profile_connected_providers")}
+            />
             <div class="section-body">
               <ConnectedAccountsPreview
                 providers={previewAuthData?.providers ?? []}
@@ -456,15 +450,11 @@
           </section>
 
           <section class="workspace-group security-section">
-            <header class="section-header">
-              <span class="section-icon"
-                ><i class="fas fa-shield-halved" aria-hidden="true"></i></span
-              >
-              <span class="section-heading">
-                <h2>{t("profile_security")}</h2>
-                <p>{t("profile_security_preview_desc")}</p>
-              </span>
-            </header>
+            <SettingsSectionHeader
+              icon="fas fa-shield-halved"
+              title={t("profile_security")}
+              description={t("profile_security_preview_desc")}
+            />
             <div class="section-body value-list">
               <AccountValueRow
                 label={t("auth_password")}
@@ -491,42 +481,48 @@
   {:else if authState.isFullAccount && authState.user}
     <div class="profile-content">
       {#if showAccountSetup && accountSetupState}
-        <AccountSetupChecklist
-          state={accountSetupState}
-          onTaskAction={handleAccountSetupTask}
-          variant="prompt"
-        />
+        <div class="setup-notice" transition:growFade>
+          <AccountSetupChecklist
+            state={accountSetupState}
+            onTaskAction={handleAccountSetupTask}
+            variant="prompt"
+          />
+        </div>
       {:else if showSetupCompletion}
-        <section class="setup-complete" role="status" aria-live="polite">
-          <span class="setup-complete-icon" aria-hidden="true">
-            <i class="fas fa-check"></i>
-          </span>
-          <span class="setup-complete-copy">
-            <strong>{t("profile_setup_complete")}</strong>
-            <span>{t("profile_setup_saved")}</span>
-          </span>
-          <button
-            type="button"
-            class="dismiss-completion"
-            onclick={() => (showSetupCompletion = false)}
-            aria-label={t("profile_dismiss_setup_confirmation")}
-          >
-            <i class="fas fa-xmark" aria-hidden="true"></i>
-          </button>
-        </section>
+        <div class="setup-notice" transition:growFade>
+          <section class="setup-complete" role="status" aria-live="polite">
+            <span class="setup-complete-icon" aria-hidden="true">
+              <i class="fas fa-check"></i>
+            </span>
+            <span class="setup-complete-copy">
+              <strong>{t("profile_setup_complete")}</strong>
+              <span>{t("profile_setup_saved")}</span>
+            </span>
+            <button
+              type="button"
+              class="dismiss-completion"
+              onclick={() => (showSetupCompletion = false)}
+              aria-label={t("profile_dismiss_setup_confirmation")}
+            >
+              <i class="fas fa-xmark" aria-hidden="true"></i>
+            </button>
+          </section>
+        </div>
       {:else if showAccountSetupUnavailable && accountSetupState}
-        <section class="setup-unavailable" role="status">
-          <span>
-            <strong>{t("profile_setup_status_unavailable")}</strong>
-            {t("profile_account_still_available")}
-          </span>
-          <PanelButton
-            variant="secondary"
-            onclick={() => void accountSetupState.loadForCurrentUser()}
-          >
-            {t("action_retry")}
-          </PanelButton>
-        </section>
+        <div class="setup-notice" transition:growFade>
+          <section class="setup-unavailable" role="status">
+            <span>
+              <strong>{t("profile_setup_status_unavailable")}</strong>
+              {t("profile_account_still_available")}
+            </span>
+            <PanelButton
+              variant="secondary"
+              onclick={() => void accountSetupState.loadForCurrentUser()}
+            >
+              {t("action_retry")}
+            </PanelButton>
+          </section>
+        </div>
       {/if}
 
       <div class="account-workspace">
@@ -551,15 +547,11 @@
           id="profile-account-settings"
           class="workspace-section personal-section"
         >
-          <header class="section-header">
-            <span class="section-icon"
-              ><i class="fas fa-user" aria-hidden="true"></i></span
-            >
-            <span class="section-heading">
-              <h2>{t("profile_personal_details")}</h2>
-              <p>{t("profile_personal_details_desc")}</p>
-            </span>
-          </header>
+          <SettingsSectionHeader
+            icon="fas fa-user"
+            title={t("profile_personal_details")}
+            description={t("profile_personal_details_desc")}
+          />
           <div class="section-body">
             <AccountSettingsSection
               user={authState.user}
@@ -573,15 +565,12 @@
 
         <div class="access-pane">
           <section class="workspace-group sign-in-section">
-            <header class="section-header">
-              <span class="section-icon"
-                ><i class="fas fa-link" aria-hidden="true"></i></span
-              >
-              <span class="section-heading">
-                <h2>{t("profile_sign_in_methods")}</h2>
-                <p>{t("profile_sign_in_methods_desc")}</p>
-              </span>
-              <span class="section-action">
+            <SettingsSectionHeader
+              icon="fas fa-link"
+              title={t("profile_sign_in_methods")}
+              description={t("profile_sign_in_methods_desc")}
+            >
+              {#snippet action()}
                 <PanelButton
                   variant="quiet"
                   onclick={() => (manageSignInMethods = !manageSignInMethods)}
@@ -599,8 +588,8 @@
                       : t("settings_presets_manage")}</span
                   >
                 </PanelButton>
-              </span>
-            </header>
+              {/snippet}
+            </SettingsSectionHeader>
             <div class="section-body">
               <ConnectedAccounts
                 managing={manageSignInMethods}
@@ -610,15 +599,11 @@
           </section>
 
           <section class="workspace-group security-section">
-            <header class="section-header">
-              <span class="section-icon"
-                ><i class="fas fa-shield-halved" aria-hidden="true"></i></span
-              >
-              <span class="section-heading">
-                <h2>{t("profile_security")}</h2>
-                <p>{t("profile_security_desc")}</p>
-              </span>
-            </header>
+            <SettingsSectionHeader
+              icon="fas fa-shield-halved"
+              title={t("profile_security")}
+              description={t("profile_security_desc")}
+            />
             <div class="section-body security-body">
               {#if profileState.hasPasswordProvider(authState.user)}
                 <PasswordChangeForm
@@ -679,9 +664,14 @@
   .profile-content {
     display: flex;
     flex-direction: column;
-    gap: clamp(0.75em, 1cqi, 1em);
     width: 100%;
     min-width: 0;
+  }
+
+  /* The notice owns the space below it, so dismissing it can ease that space
+     closed with the notice instead of leaving a gap to snap shut afterwards. */
+  .setup-notice {
+    padding-bottom: clamp(0.75em, 1cqi, 1em);
   }
 
   .setup-complete,
@@ -847,60 +837,6 @@
     border-top: 1px solid var(--theme-stroke);
   }
 
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75em;
-    min-height: 4.5em;
-    padding: 0.85em 1.15em;
-    border-bottom: 1px solid var(--theme-stroke);
-    background: color-mix(in srgb, var(--theme-text) 3%, transparent);
-  }
-
-  .section-heading {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .section-action {
-    flex: 0 0 auto;
-  }
-
-  .section-action :global(.panel-btn) {
-    min-width: 7.25em;
-  }
-
-  .section-icon {
-    display: grid;
-    width: 2.5em;
-    height: 2.5em;
-    flex: 0 0 auto;
-    place-items: center;
-    border-radius: 0.7em;
-    color: var(--theme-accent-text, var(--theme-accent));
-    background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--theme-accent) 22%, transparent);
-  }
-
-  .section-header h2,
-  .section-header p {
-    margin: 0;
-  }
-
-  .section-header h2 {
-    color: var(--theme-text);
-    font-size: max(1.125rem, var(--font-size-lg));
-    font-weight: 750;
-    line-height: 1.25;
-  }
-
-  .section-header p {
-    margin-top: 0.2em;
-    color: var(--theme-text-dim);
-    font-size: max(0.875rem, var(--font-size-min));
-    line-height: 1.35;
-  }
-
   .section-body {
     min-width: 0;
     padding: 0.45em 1.15em 0.85em;
@@ -932,6 +868,7 @@
 
   .preview-banner {
     display: flex;
+    margin-bottom: clamp(0.75em, 1cqi, 1em);
     align-items: center;
     gap: 0.6rem;
     min-height: var(--min-touch-target);
@@ -1043,11 +980,6 @@
       padding: 2.5em;
     }
 
-    .section-header {
-      min-height: 4.75em;
-      padding: 0.95em 1.35em;
-    }
-
     .section-body {
       padding-inline: 1.35em;
     }
@@ -1061,21 +993,6 @@
     .profile-tab {
       align-content: start;
       padding-inline: 0.65rem;
-    }
-
-    .section-header {
-      align-items: flex-start;
-      min-height: 0;
-      padding: 0.9rem;
-    }
-
-    .section-action :global(.panel-btn) {
-      min-width: var(--min-touch-target, 44px);
-      padding-inline: 0.75rem;
-    }
-
-    .section-action :global(.panel-btn span) {
-      display: none;
     }
 
     .section-body {

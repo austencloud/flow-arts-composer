@@ -43,7 +43,7 @@ interface LoopGroup {
 
 /**
  * The four-count loops each mode guide offers, drawn from the canonical T&D
- * base pool. Each row is ordered pro-spin, anti-spin, then mixed. The same
+ * base words. Each row is ordered pro-spin, anti-spin, then mixed. The same
  * letters can land in a different family on the other grid (DJDJ is
  * Together-Opposite on diamond and Quarter-Opposite on box), so every word is
  * listed with the grid that gives it this mode; selection verifies each step.
@@ -129,10 +129,15 @@ export function selectModeLoops(
   );
 }
 
+/**
+ * Load from the full 22-word base snapshot. The gallery's canonical base pool
+ * keeps only the 19 diamond-family representatives, which leaves out the box
+ * words Split-Opposite needs (PMPM, QNQN, RORO).
+ */
 export async function loadModeLoops(code: VtgMode): Promise<ModeLoop[]> {
-  const { loadCanonicalTnDBaseSequences } =
-    await import("#lib/features/browse/gallery-home/canonical-tnd-pool.js");
-  return selectModeLoops(code, await loadCanonicalTnDBaseSequences());
+  const { loadTndBaseWords } =
+    await import("#lib/features/choreo-card/services/tnd-base-word-snapshot.js");
+  return selectModeLoops(code, await loadTndBaseWords());
 }
 
 export async function adjustModeLoop(
