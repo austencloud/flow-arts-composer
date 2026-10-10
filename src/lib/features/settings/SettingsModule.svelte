@@ -425,6 +425,75 @@
     align-items: stretch;
   }
 
+  /* The shared tab view transition (navigation coordinator) animates the
+     element with this name when the section changes. Named only while a tab
+     slide runs, so the Settings portal still zooms the panel with the page. */
+  :global(html.tab-slide-left) .panel,
+  :global(html.tab-slide-right) .panel {
+    view-transition-name: tab-content;
+  }
+
+  /* Settings' own take on the shared tab slide: the outgoing tab drifts away
+     and fades fast, the incoming one rises from the side of the tab that was
+     picked (later tabs from below, earlier from above) with a little depth,
+     overlapping the exit so the panel is never empty. Scoped by :has so other
+     modules keep the shared slide once this stylesheet has loaded. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.tab-slide-left:has(.settings-module))::view-transition-old(
+        tab-content
+      ) {
+      animation: var(--duration-fast) var(--ease-in) both settings-tab-out-up;
+    }
+
+    :global(html.tab-slide-left:has(.settings-module))::view-transition-new(
+        tab-content
+      ) {
+      animation: var(--duration-emphasis) var(--ease-out)
+        calc(var(--duration-fast) / 2) both settings-tab-in-up;
+    }
+
+    :global(html.tab-slide-right:has(.settings-module))::view-transition-old(
+        tab-content
+      ) {
+      animation: var(--duration-fast) var(--ease-in) both settings-tab-out-down;
+    }
+
+    :global(html.tab-slide-right:has(.settings-module))::view-transition-new(
+        tab-content
+      ) {
+      animation: var(--duration-emphasis) var(--ease-out)
+        calc(var(--duration-fast) / 2) both settings-tab-in-down;
+    }
+  }
+
+  @keyframes -global-settings-tab-out-up {
+    to {
+      opacity: 0;
+      transform: translateY(-1.5rem) scale(0.98);
+    }
+  }
+
+  @keyframes -global-settings-tab-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(2.5rem) scale(0.98);
+    }
+  }
+
+  @keyframes -global-settings-tab-out-down {
+    to {
+      opacity: 0;
+      transform: translateY(1.5rem) scale(0.98);
+    }
+  }
+
+  @keyframes -global-settings-tab-in-down {
+    from {
+      opacity: 0;
+      transform: translateY(-2.5rem) scale(0.98);
+    }
+  }
+
   /* Loading state */
   .loading-state {
     display: flex;
