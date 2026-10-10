@@ -59,7 +59,9 @@
       : largestHandDistance()
   );
   const GRID_FILL_FRACTION = 0.2;
-  const dualWheelOffset = $derived(userProportionsState.staffLength / 2);
+  const dualWheelOffset = $derived(
+    (characterState?.staffLength ?? userProportionsState.staffLength) / 2
+  );
 
   function computeDistanceForWidth(sceneWidth: number): number {
     if (typeof document === "undefined") return 3.0;

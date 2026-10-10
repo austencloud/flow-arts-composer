@@ -15,12 +15,18 @@ import {
   type TerminalStepPlan,
 } from "@austencloud/scene-3d";
 import { PlaneMode } from "@austencloud/scene-3d";
+import { cmToUnits, userProportionsState } from "@austencloud/scene-3d";
 import {
   PLANE_MODE_CONFIGS,
   type PlaneModeConfig,
 } from "@austencloud/scene-3d";
 import { createPlaybackState } from "./playback-state.svelte";
 import { calculatePropState } from "../services/prop-state-interpolator";
+import {
+  gridJoinScale3D,
+  resolveGridJoin3D,
+  scalePerformerHandDistance3D,
+} from "../services/grid-join-3d";
 import {
   DEFAULT_PERFORMER_HAND_DISTANCE,
   type PerformerHandDistance,
@@ -414,8 +420,17 @@ export function createCharacterInstanceState(
   // How far each hand sits from its grid center. Every performer holds the
   // fixed default until a grid style derives it from the body and the staff
   // (docs/architecture/performer-grid-styles.md). Not persisted.
-  let handDistance = $state.raw<PerformerHandDistance>(
+  let baseHandDistance = $state.raw<PerformerHandDistance>(
     DEFAULT_PERFORMER_HAND_DISTANCE
+  );
+  const gridScale = $derived(gridJoinScale3D(resolveGridJoin3D(loadedSequence)));
+  const handDistance = $derived(
+    scalePerformerHandDistance3D(baseHandDistance, gridScale)
+  );
+  const staffLength = $derived(
+    (_settings.staffLengthCm == null
+      ? userProportionsState.staffLength
+      : cmToUnits(_settings.staffLengthCm)) * gridScale
   );
 
   /**
@@ -1483,9 +1498,15 @@ export function createCharacterInstanceState(
     get handDistance() {
       return handDistance;
     },
+    get gridScale() {
+      return gridScale;
+    },
+    get staffLength() {
+      return staffLength;
+    },
     /** Grid styles and picture probes set this; nothing persists it. */
     setHandDistance(next: PerformerHandDistance) {
-      handDistance = next;
+      baseHandDistance = next;
     },
 
     // Playback delegation

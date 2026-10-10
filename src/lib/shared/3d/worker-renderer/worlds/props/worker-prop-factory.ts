@@ -86,6 +86,18 @@ function missingLoader(
 export async function createWorkerPropVisual(
   options: WorkerPropFactoryOptions
 ): Promise<WorkerPropFactoryResult> {
+  const scale = options.geometryScale ?? 1;
+  const result = await createUnscaledWorkerPropVisual({
+    ...options,
+    length: options.length / scale,
+  });
+  if (result.ok) result.visual.root.scale.multiplyScalar(scale);
+  return result;
+}
+
+async function createUnscaledWorkerPropVisual(
+  options: WorkerPropFactoryOptions
+): Promise<WorkerPropFactoryResult> {
   if (!isExactWorkerPropType(options.propType)) {
     return {
       ok: false,

@@ -294,6 +294,27 @@ export function resolvePropTipAnchors3D(
   ]);
 }
 
+/** Match anchors to a prop built at nominal length and scaled at its mesh root. */
+export function resolveScaledPropTipAnchors3D(
+  propType: string | undefined,
+  staffHalfLength: number,
+  propScale: number,
+  build: PropBuildTipGeometry3D
+): PropTipAnchor3D[] {
+  return resolvePropTipAnchors3D(
+    propType,
+    staffHalfLength / propScale,
+    build
+  ).map((anchor) => ({
+    ...anchor,
+    offset: {
+      x: anchor.offset.x * propScale,
+      y: anchor.offset.y * propScale,
+      z: anchor.offset.z * propScale,
+    },
+  }));
+}
+
 /** Stable identity for an anchor set, so a prop swap can drop stale velocity history. */
 export function propTipAnchorSignature3D(
   anchors: readonly PropTipAnchor3D[]

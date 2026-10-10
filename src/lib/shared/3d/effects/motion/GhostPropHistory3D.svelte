@@ -27,6 +27,7 @@
     params: Ghost3DParams;
     enabled: boolean;
     propLength: number;
+    geometryScale?: number;
     handAnchor: { x: number; z: number };
     currentStep: number;
     totalSteps: number;
@@ -41,6 +42,7 @@
     params,
     enabled,
     propLength,
+    geometryScale = 1,
     handAnchor,
     currentStep,
     totalSteps,
@@ -140,6 +142,7 @@
       lifetimeSeconds={params.lifetimeSeconds}
       rimPower={params.rimPower}
       {propLength}
+      {geometryScale}
       {slotIndex}
     />
   {/each}

@@ -149,10 +149,13 @@
   // rather than rendering a nonsense prop; the fit result says so explicitly.
   const propLength = $derived.by(() => {
     const pinned = props.propLengthCm;
-    if (pinned != null && Number.isFinite(pinned)) return cmToUnits(pinned);
-    return staffFit?.fits
-      ? cmToUnits(staffFit.recommendedStaffLengthCm)
-      : undefined;
+    const baseLength =
+      pinned != null && Number.isFinite(pinned)
+        ? cmToUnits(pinned)
+        : staffFit?.fits
+          ? cmToUnits(staffFit.recommendedStaffLengthCm)
+          : userProportionsState.staffLength;
+    return baseLength * performerState.gridScale;
   });
   // The turn's timing is planned once per sequence, not re-derived per frame:
   // the curve needs the whole score to know when to start leading.
@@ -184,7 +187,7 @@
     resolvePerformerContact(performerState, {
       displace: !authoredStanceActive,
       clearBody: props.bodyClearance != null,
-      staffLengthM: propLength ?? userProportionsState.staffLength,
+      staffLengthM: propLength,
       measurements: reachMeasurements,
     })
   );
@@ -287,6 +290,7 @@
   enableFootPlanting={props.enableFootPlanting ?? true}
   weldGrip={props.weldGrip ?? false}
   {propLength}
+  propScale={performerState.gridScale}
   headDodge={true}
   stanceYaw={renderedUpperBodyStance.yawRad}
   stanceSegments={renderedUpperBodyStance.segments ?? null}
@@ -334,6 +338,7 @@
         rightPropType={toScenePropType(props.propType)}
         {isPlaying}
         {staffHalfLength}
+        propScale={performerState.gridScale}
         {tipEffectMap}
         leftHandPos={blueHandPos}
         rightHandPos={redHandPos}

@@ -115,6 +115,28 @@ describe("worker imperative effect frame builder", () => {
     expect(() => structuredClone(output)).not.toThrow();
   });
 
+  it("keeps effective staff tips exact and scales fixed fan effects", () => {
+    const staff = input("trails");
+    staff.staffHalfLength = 0.4;
+    staff.propScale = 2 / 3;
+    const staffTrails = new WorkerImperativeEffectFrameBuilder()
+      .build(staff)
+      .imperative?.filter((frame) => frame.renderer === "trail");
+    expect(staffTrails).toHaveLength(2);
+    expect(
+      Math.abs(staffTrails![0]!.position[0] - staffTrails![1]!.position[0])
+    ).toBeCloseTo(0.8);
+
+    const moonInput = input("led");
+    moonInput.propScale = 0.5;
+    moonInput.left.propType = PropType.FAN;
+    moonInput.intent.propBuild = { ...propFinishState.build, fanBuild: "moon" };
+    const moonFan = new WorkerImperativeEffectFrameBuilder()
+      .build(moonInput)
+      .imperative?.find((frame) => frame.renderer === "moon-fan");
+    expect(moonFan).toMatchObject({ scale: 0.5 });
+  });
+
   it("keeps LED pattern sampling and sub-frame supersampling inside the worker", () => {
     const builder = new WorkerImperativeEffectFrameBuilder();
     const first = builder.build(input("led"));
