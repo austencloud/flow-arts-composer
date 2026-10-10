@@ -151,6 +151,24 @@ export function buildFromHandPathId(
   return buildFromTrace(trace);
 }
 
+/**
+ * The hand-path ID of a sequence's actual steps: each hand's start location,
+ * then every end location. The two hands are sorted, the same dedup order the
+ * stored `metadata.handPathId` uses, so sequences that differ only in props,
+ * turns, or which hand leads share one ID. Computed from the steps, it stays
+ * right after a transform or a grid change that leaves stored metadata stale.
+ */
+export function handPathIdFor(sequence: SequenceData): string {
+  const steps = sequence.steps;
+  if (steps.length === 0) return "";
+  const trace = (hand: "left" | "right") =>
+    [
+      steps[0]!.motions[hand].startLocation,
+      ...steps.map((step) => step.motions[hand].endLocation),
+    ].join("→");
+  return [trace("left"), trace("right")].sort().join("|");
+}
+
 // ============================================================================
 // PRIVATE HELPERS
 // ============================================================================
