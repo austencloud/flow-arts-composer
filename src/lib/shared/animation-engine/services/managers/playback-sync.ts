@@ -93,6 +93,9 @@ export class PlaybackSync {
   // sequence at the top of update(), before that block compares anything.
   private lastTrailSeqStartPlacement: string | null = null;
   private lastTrailSeqWasCircular = false;
+  // The player drops its sequence before every load, so whatever comes next
+  // is a new run even when it is the same sequence again.
+  private sequenceUnloaded = false;
 
   private previewDarkModeActive: boolean = false;
   private _prevTrailsActive: boolean = true;
@@ -286,9 +289,13 @@ export class PlaybackSync {
       props.sequenceData ?? null
     );
 
+    if (!props.sequenceData) this.sequenceUnloaded = true;
+
     // Detect sequence content changes and re-initialize orchestrator if needed
     if (props.sequenceData && lifecycleManager.orchestrator) {
       const newHash = frameSystem.getSequenceContentHash(props.sequenceData);
+      const newRun = this.sequenceUnloaded;
+      this.sequenceUnloaded = false;
       if (newHash !== frameSystem.lastSequenceContentHash) {
         // Seamless handoff: the outgoing sequence was a CIRCULAR loop (end
         // pose = start pose) and the incoming one starts at that same grid
@@ -321,6 +328,7 @@ export class PlaybackSync {
         // trail flows across the boundary.
         if (!seamlessHandoff) {
           effectSystem.trailOverlay?.clearBuffers();
+          if (newRun) lifecycleManager.renderLoop?.resetRunHistory();
         }
         effectSystem.fireTipTracker?.reset();
         effectSystem.fireRenderer?.clearSimulation();
@@ -351,6 +359,8 @@ export class PlaybackSync {
               console.error(`[TRANSFORM-DIAG] Precomputation FAILED:`, err);
             });
         }
+      } else if (newRun) {
+        this.clearRunHistory();
       }
     }
 
@@ -687,6 +697,20 @@ export class PlaybackSync {
         join
       )
       .then(rerender);
+  }
+
+  /**
+   * The same sequence loaded again, as when Play starts it over. Its content
+   * hash is unchanged, so the block in update() keeps the effects' memory of
+   * the last run. That memory froze while the player was hidden, and the new
+   * run would open on the old run's trail, Ghost and flames.
+   */
+  private clearRunHistory(): void {
+    const { lifecycleManager, effectSystem } = this.deps;
+    this.clearGridJoinStreaks();
+    effectSystem.fireRenderer?.clearSimulation();
+    effectSystem.charcoalRenderer?.clearSimulation();
+    lifecycleManager.renderLoop?.resetRunHistory();
   }
 
   /** Trails and the flame tip tracker, which would join old places to new. */

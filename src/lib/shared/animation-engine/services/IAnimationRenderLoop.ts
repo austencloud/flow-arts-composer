@@ -292,6 +292,14 @@ export interface IAnimationRenderLoop {
   triggerRender(getFrameParams: () => RenderFrameParams): void;
 
   /**
+   * Start the effect memory over for a new run of the same sequence: clear
+   * every registry effect overlay (Ghost, sparkles and the rest) and forget
+   * the loop-wrap tracking, so the next frame reads as the first frame of a
+   * run instead of a wrap back from wherever the last run stopped.
+   */
+  resetRunHistory(): void;
+
+  /**
    * Put the loop under external (deterministic) control. When true, the
    * free-running rAF loop is disabled: start()/triggerRender() and the
    * self-reschedule become no-ops, so effect keep-warm/prewarm paths can't

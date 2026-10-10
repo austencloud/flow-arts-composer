@@ -568,12 +568,7 @@ export class AnimationRenderLoop {
       this.rafId = null;
     }
     this.getFrameParamsCallback = null;
-    // Reset loop tracking on stop
-    this.previousStep = 0;
-    this.previousStepDrawn = false;
-    this.loopOccurredAtStep = null;
-    this.hasLoopedAtLeastOnce = false;
-    this.loopStartTime = 0;
+    this.forgetLoopTracking();
     // Reset effect error tracking so effects can retry on next start
     this.consecutiveFireErrors = 0;
     this.consecutiveLedErrors = 0;
@@ -582,6 +577,22 @@ export class AnimationRenderLoop {
     this.effectErrors.clear();
     this.effectDisabled.clear();
     this.effectLastFrameTime.clear();
+  }
+
+  resetRunHistory(): void {
+    this.forgetLoopTracking();
+    for (const entry of this.effectDispatchRegistry) {
+      const renderer = entry.getRenderer(this);
+      if (renderer?.isInitialized()) renderer.clear();
+    }
+  }
+
+  private forgetLoopTracking(): void {
+    this.previousStep = 0;
+    this.previousStepDrawn = false;
+    this.loopOccurredAtStep = null;
+    this.hasLoopedAtLeastOnce = false;
+    this.loopStartTime = 0;
   }
 
   isRunning(): boolean {
