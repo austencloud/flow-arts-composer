@@ -25,7 +25,7 @@
   import GuidePage from "./GuidePage.svelte";
   import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
   import { getConceptExperienceForGuideSlug } from "#lib/features/learn/domain/concept-experience-registry.js";
-  import { buildConceptPath } from "#lib/features/learn/domain/concept-routes.js";
+  import { buildConceptStartPath } from "#lib/features/learn/domain/concept-routes.js";
   import { setGuidePrintMode } from "../_data/guide-data-context";
   import { loadOverrides } from "../_data/guide-overrides.svelte";
   import "../_styles/guide.css";
@@ -198,7 +198,7 @@
         darkMode={isDark}
         kicker={topicKicker}
         lessonHref={interactiveLesson
-          ? buildConceptPath(interactiveLesson.conceptId)
+          ? buildConceptStartPath(interactiveLesson.conceptId)
           : null}
       />
     {:else}
@@ -213,7 +213,7 @@
         </div>
         {#if interactiveLesson}
           <span class="interactive-lesson">
-            <LinkChip href={buildConceptPath(interactiveLesson.conceptId)}
+            <LinkChip href={buildConceptStartPath(interactiveLesson.conceptId)}
               ><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
               Learn this interactively</LinkChip
             >

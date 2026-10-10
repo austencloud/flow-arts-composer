@@ -5,7 +5,10 @@
     bodyPagesByGroup,
   } from "./level-1/_data/guide-manifest";
   import { getAvailableConcepts } from "#lib/features/learn/domain/concept-experience-registry.js";
-  import { buildConceptPath } from "#lib/features/learn/domain/concept-routes.js";
+  import {
+    buildConceptPath,
+    buildConceptStartPath,
+  } from "#lib/features/learn/domain/concept-routes.js";
   import { seoForSlug } from "./level-1/_data/guide-page-seo";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
 
@@ -23,8 +26,12 @@
   );
 
   // Lesson first (approved 2026-10-10): the primary action opens the first
-  // published lesson; reading the written guide is the second choice.
-  const firstLessonHref = buildConceptPath(getAvailableConcepts()[0]?.id);
+  // published lesson from its first step; reading the written guide is the
+  // second choice.
+  const firstLessonId = getAvailableConcepts()[0]?.id;
+  const firstLessonHref = firstLessonId
+    ? buildConceptStartPath(firstLessonId)
+    : buildConceptPath();
   const levelOnePath = bodyPagesByGroup().map((bucket) => ({
     title: GROUP_TITLES[bucket.group],
     href: `/guide/level-1/${bucket.entries[0]?.entry.id ?? ""}`,
