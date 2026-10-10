@@ -72,41 +72,36 @@
 </button>
 
 <style>
+  /* A row of the settings panel: no frame of its own, hairlines come from
+     the list it sits in. */
   .channel-card {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.85em;
     width: 100%;
-    min-height: 5.25em;
-    padding: 0.85em;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 0.85em;
+    min-height: 4.75em;
+    padding: 0.85em var(--settings-row-inline, 1.15em);
+    border: 0;
+    border-radius: 0;
     color: var(--theme-text);
-    background: var(--theme-card-bg);
+    background: transparent;
     font: inherit;
     text-align: left;
     cursor: pointer;
-    transition:
-      background var(--duration-fast) ease,
-      border-color var(--duration-fast) ease,
-      transform var(--duration-fast) ease;
+    transition: background var(--duration-fast) ease;
     -webkit-tap-highlight-color: transparent;
   }
 
   .channel-card:hover:not(:disabled) {
-    border-color: var(--theme-stroke-strong);
     background: var(--theme-card-hover-bg);
-    transform: translateY(-1px);
-  }
-
-  .channel-card:active:not(:disabled) {
-    transform: translateY(0);
   }
 
   .channel-card:focus-visible {
+    position: relative;
+    z-index: 1;
     outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
   .channel-card:disabled {
@@ -120,16 +115,7 @@
   }
 
   .channel-card.enabled {
-    border-color: color-mix(
-      in srgb,
-      var(--theme-accent) 64%,
-      var(--theme-stroke)
-    );
-    background: color-mix(
-      in srgb,
-      var(--theme-accent) 11%,
-      var(--theme-card-bg)
-    );
+    background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
   }
 
   .channel-icon {
@@ -202,8 +188,7 @@
   @container notification-preferences (max-width: 32rem) {
     .channel-card {
       gap: 0.65rem;
-      min-height: 5.5rem;
-      padding: 0.75rem;
+      min-height: 5.25rem;
     }
 
     .channel-icon {
@@ -222,12 +207,6 @@
   @media (prefers-reduced-motion: reduce) {
     .channel-card {
       transition: none;
-    }
-  }
-
-  @media (prefers-contrast: more) {
-    .channel-card {
-      border-width: 2px;
     }
   }
 </style>

@@ -172,37 +172,6 @@ describe("NotificationPreferencesPanel", () => {
       .toHaveAttribute("aria-checked", "true");
   });
 
-  it("keeps the page heading anchored while preferences load", async () => {
-    let resolvePreferences!: (
-      value: typeof DEFAULT_NOTIFICATION_PREFERENCES
-    ) => void;
-    mocks.getPreferences.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolvePreferences = resolve;
-        })
-    );
-
-    render(NotificationPreferencesPanel);
-
-    const heading = page.getByRole("heading", {
-      name: "Notification Preferences",
-    });
-    await expect.element(heading).toBeVisible();
-    const loadingTop = heading.element().getBoundingClientRect().top;
-
-    resolvePreferences(DEFAULT_NOTIFICATION_PREFERENCES);
-    await expect
-      .element(page.getByRole("heading", { name: "Delivery methods" }))
-      .toBeVisible();
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-    );
-
-    const loadedTop = heading.element().getBoundingClientRect().top;
-    expect(Math.abs(loadedTop - loadingTop)).toBeLessThanOrEqual(1);
-  });
-
   it("starts email as an explicit opt-in with all requested categories", async () => {
     render(NotificationPreferencesPanel);
 

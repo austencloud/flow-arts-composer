@@ -39,7 +39,7 @@ Manages navigation through 5 pages:
     : undefined;
 
   // Persistence for HMR/refresh survival
-  const persistence = getExperiencePersistence("staff");
+  const persistence = getExperiencePersistence("staff-placements");
 
   let currentPage = $state(persistence.load().step || 1);
   const totalPages = 5;
