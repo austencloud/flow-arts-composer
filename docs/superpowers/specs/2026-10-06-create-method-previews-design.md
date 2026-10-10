@@ -86,7 +86,7 @@ one and nothing is measured per card.
 | 480–1199 px, portrait board (Fold, tablet)        | 336–392 × 207–315 | Strip on top, text below                                   |
 | 480–1199 px, landscape board (Fold landscape)     | 394×172           | Square beside the text                                     |
 | Short landscape (existing height rule)            | 427×105           | Square beside the text                                     |
-| 1200 px and up, primary row (Construct, Generate) | 632–790 × 200     | Square beside the text                                     |
+| 1200 px and up, primary row (Construct, Generate) | 557–790 wide      | Strip four steps wide on top (2026-10-09; was a square)    |
 | 1200 px and up, other rows                        | 306–385 wide      | Strip on top; these cards grow into the spare board height |
 
 These rules hold everywhere:
