@@ -932,11 +932,7 @@
   .primary-action {
     min-height: 50px;
     padding: 11px 15px;
-    background: color-mix(
-      in srgb,
-      var(--semantic-success, #10b981) 68%,
-      var(--theme-shadow, #000)
-    );
+    background: color-mix(in srgb, var(--semantic-success, #10b981) 68%, #000);
     color: var(--theme-text-on-accent, #fff);
   }
 

@@ -237,9 +237,6 @@
     color: var(--theme-accent, rgba(139, 92, 246, 1));
     cursor: pointer;
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow:
-      0 2px 8px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke);
     -webkit-tap-highlight-color: transparent;
     font-size: var(--font-size-base);
   }
@@ -248,9 +245,6 @@
     background: var(--theme-card-bg);
     border-color: var(--theme-stroke-strong);
     color: var(--theme-text);
-    box-shadow:
-      0 2px 8px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke);
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -258,20 +252,12 @@
       transform: scale(1.05);
       background: var(--theme-card-hover-bg);
       border-color: var(--theme-accent, rgba(139, 92, 246, 0.6));
-      box-shadow:
-        0 4px 14px var(--theme-shadow),
-        inset 0 1px 0 var(--theme-card-hover-bg);
     }
 
     .play-pause-btn.playing:hover:not(:disabled) {
       background: var(--theme-card-hover-bg);
       border-color: var(--theme-accent, rgba(139, 92, 246, 0.7));
       color: var(--theme-accent, #a78bfa);
-      box-shadow:
-        0 4px 16px var(--theme-shadow),
-        0 0 16px
-          color-mix(in srgb, var(--theme-accent, #8b5cf6) 35%, transparent),
-        inset 0 1px 0 var(--theme-card-hover-bg);
     }
   }
 

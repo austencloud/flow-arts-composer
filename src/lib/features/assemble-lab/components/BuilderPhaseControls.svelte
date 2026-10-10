@@ -276,7 +276,6 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: var(--settings-radius-md, 14px);
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
-    box-shadow: 0 8px 32px var(--theme-shadow, rgba(0, 0, 0, 0.3));
     animation: assemble-popover-in var(--duration-fast, 150ms) ease-out;
     z-index: var(--z-dropdown, 100);
   }

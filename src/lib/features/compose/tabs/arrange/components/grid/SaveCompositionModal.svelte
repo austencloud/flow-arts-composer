@@ -143,18 +143,13 @@
   .name-input {
     width: 100%;
     padding: 12px 16px;
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--theme-shadow) 40%, transparent),
-      color-mix(in srgb, var(--theme-shadow) 30%, transparent)
-    );
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.3));
     border: 2px solid var(--theme-stroke-strong);
     border-radius: 10px;
     color: var(--theme-text, white);
     font-size: var(--font-size-sm);
     font-family: inherit;
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px var(--theme-shadow) inset;
   }
 
   .name-input:focus {
@@ -164,19 +159,7 @@
       var(--theme-accent, var(--semantic-info)) 60%,
       transparent
     );
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--theme-shadow) 50%, transparent),
-      color-mix(in srgb, var(--theme-shadow) 40%, transparent)
-    );
-    box-shadow:
-      0 0 0 3px
-        color-mix(
-          in srgb,
-          var(--theme-accent, var(--semantic-info)) 20%,
-          transparent
-        ),
-      0 2px 8px var(--theme-shadow) inset;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.4));
   }
 
   .name-input::placeholder {

@@ -719,12 +719,11 @@
     left: 24px;
     z-index: 10;
     padding: 0;
-    background: color-mix(in srgb, var(--theme-shadow) 50%, transparent);
+    background: rgba(0, 0, 0, 0.5);
     border: 2px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-radius: 50%;
     cursor: pointer;
     transition: all var(--duration-normal, 200ms) ease;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .creator-badge:hover {

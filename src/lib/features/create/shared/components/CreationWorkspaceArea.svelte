@@ -255,7 +255,12 @@
       : (animatingStepNumber ?? practiceStepIndex)}
   />
   <div class="workspace-content">
+    <!-- Play collapses the tool panel as the grid hands off to the animator,
+         and Close brings it back. Holding the outgoing side spares the hidden
+         step grid or animator a re-layout at a size nobody sees. The
+         wrapper's overflow: hidden clips a held side larger than the stage. -->
     <DualSourceCrossfade
+      holdOutgoing
       active={playback !== null &&
       playbackKey === retainedPlaybackKey &&
       readyPlayback === retainedPlayback

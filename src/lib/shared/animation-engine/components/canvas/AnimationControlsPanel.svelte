@@ -331,9 +331,6 @@
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
     border: 1.5px solid var(--theme-stroke);
     border-radius: 14px;
-    box-shadow:
-      0 4px 20px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-card-bg);
     -webkit-overflow-scrolling: touch;
     transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -419,9 +416,6 @@
     cursor: pointer;
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
-    box-shadow:
-      0 1px 3px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-card-bg);
   }
 
   .settings-sheet-btn i {

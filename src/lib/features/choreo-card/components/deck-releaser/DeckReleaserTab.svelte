@@ -1014,8 +1014,6 @@
       var(--theme-accent, #8b5cf6) 18%,
       var(--theme-card-bg, rgba(255, 255, 255, 0.04))
     );
-    box-shadow: 0 10px 24px
-      color-mix(in srgb, var(--theme-shadow, #000) 40%, transparent);
   }
 
   .festival-job:active {
@@ -1152,8 +1150,6 @@
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 16px;
     text-align: center;
-    box-shadow: 0 24px 70px
-      color-mix(in srgb, var(--theme-shadow, #000) 55%, transparent);
   }
 
   .released-icon {

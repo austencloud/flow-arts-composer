@@ -55,12 +55,10 @@
     /* Base button styling */
     background: var(--theme-stroke);
     border: 1px solid var(--theme-stroke-strong);
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .panel-button:hover:not(:disabled) {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px var(--theme-shadow);
   }
 
   .panel-button:active:not(:disabled) {

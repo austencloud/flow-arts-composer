@@ -191,7 +191,6 @@
     background: var(--theme-accent);
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 2px 8px var(--theme-shadow);
     transition: transform var(--duration-normal) ease;
   }
 
@@ -211,7 +210,6 @@
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 2px 8px var(--theme-shadow);
     transition: transform var(--duration-normal) ease;
   }
 
@@ -305,7 +303,6 @@
     background: white;
     border-radius: 50%;
     transition: transform var(--duration-emphasis) ease;
-    box-shadow: 0 2px 4px var(--theme-shadow);
   }
 
   .toggle-button.active .toggle-thumb {

@@ -337,7 +337,6 @@
     display: flex;
     overflow: hidden;
     transition: all var(--duration-normal) ease;
-    box-shadow: 0 2px 6px var(--theme-shadow);
     user-select: none;
     border: 1px solid
       color-mix(in srgb, var(--clip-color, var(--theme-accent)) 70%, white);

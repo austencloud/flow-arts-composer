@@ -280,7 +280,6 @@
     cursor: pointer;
     z-index: 20;
     transition: all var(--duration-normal);
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .grid-settings-btn:hover {
@@ -317,7 +316,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--theme-shadow) 70%, transparent);
+    background: rgba(0, 0, 0, 0.7);
     z-index: 30;
   }
 

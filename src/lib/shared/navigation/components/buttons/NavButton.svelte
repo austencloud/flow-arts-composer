@@ -281,7 +281,6 @@
     font-weight: 600;
     line-height: 16px;
     text-align: center;
-    box-shadow: 0 1px 3px var(--theme-shadow);
     animation: badgePop var(--duration-emphasis) ease;
     pointer-events: none;
     z-index: 5;

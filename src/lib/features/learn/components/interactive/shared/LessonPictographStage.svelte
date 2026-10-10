@@ -136,9 +136,6 @@
       color-mix(in srgb, var(--stage-accent) 46%, var(--theme-stroke));
     border-radius: 1.25rem;
     background: var(--theme-panel-bg);
-    box-shadow:
-      0 1.5rem 4rem var(--theme-shadow),
-      0 0 3rem color-mix(in srgb, var(--stage-accent) 12%, transparent);
   }
 
   .loading-state,

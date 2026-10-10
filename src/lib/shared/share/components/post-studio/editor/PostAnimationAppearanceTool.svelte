@@ -727,7 +727,6 @@
       var(--theme-panel-bg, #101014),
       var(--theme-panel-bg, #101014)
     );
-    box-shadow: 0 8px 24px var(--theme-shadow, rgb(0 0 0 / 0.35));
     color: var(--theme-text, #fff);
     font-size: var(--font-size-min, 14px);
     line-height: 1.45;

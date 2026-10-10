@@ -465,9 +465,6 @@
     /* Prevent browser from intercepting touch for scroll - drag is JS-handled */
     touch-action: none;
     transition: all var(--duration-normal) var(--spring-smooth);
-    box-shadow:
-      0 2px 8px var(--theme-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .kanban-card:hover {
@@ -482,10 +479,6 @@
       var(--theme-stroke)
     );
     transform: translateY(-2px) scale(1.01);
-    box-shadow:
-      0 8px 20px var(--theme-shadow),
-      0 0 20px color-mix(in srgb, var(--type-color) 15%, transparent),
-      inset 0 1px 0 var(--theme-card-bg);
   }
 
   .kanban-card:active {
@@ -574,7 +567,6 @@
     flex-shrink: 0;
     border-radius: var(--kc-radius-sm);
     object-fit: cover;
-    box-shadow: 0 2px 6px var(--theme-shadow);
   }
 
   .card-title {

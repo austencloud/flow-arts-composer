@@ -134,7 +134,7 @@
     /* Subtle glass effect */
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
-    border-bottom: 2px solid var(--theme-shadow);
+    border-bottom: none;
     border-radius: 6px;
 
     /* Text styling */
@@ -146,15 +146,6 @@
     text-transform: uppercase;
     letter-spacing: 0.3px;
     white-space: nowrap;
-
-    /* Subtle depth */
-    /* NOTE: the inset rgba(255,255,255,...) highlights below are an intentional
-       3D-keycap specular effect (top-edge light catch). They are deliberately
-       pure-white translucent regardless of theme — not a tokenizable surface
-       color — so they are kept as literal rgba per audit guidance. */
-    box-shadow:
-      0 1px 3px var(--theme-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
     transition: all var(--duration-fast) ease;
   }
@@ -170,11 +161,6 @@
       in srgb,
       var(--theme-accent-strong, var(--theme-accent-strong)) 25%,
       transparent
-    );
-    border-bottom-color: color-mix(
-      in srgb,
-      var(--theme-accent-strong, var(--theme-accent-strong)) 30%,
-      var(--theme-shadow)
     );
     color: var(--theme-accent-strong);
   }
@@ -192,26 +178,12 @@
 
   .kbd.pressable:hover {
     transform: translateY(-2px);
-    box-shadow:
-      0 6px 12px var(--theme-shadow, var(--theme-shadow)),
-      0 2px 4px var(--theme-shadow, var(--theme-shadow)),
-      inset 0 1px 0 rgba(255, 255, 255, 0.18);
     border-color: var(--theme-stroke-strong);
   }
 
   .kbd.pressable:active {
     transform: translateY(1px);
     border-bottom-width: 1px;
-    box-shadow:
-      0 1px 2px var(--theme-shadow, var(--theme-shadow)),
-      inset 0 2px 4px var(--theme-shadow);
-  }
-
-  .kbd.modifier.pressable:hover {
-    box-shadow:
-      0 6px 16px color-mix(in srgb, var(--theme-accent-strong) 35%, transparent),
-      0 2px 4px var(--theme-shadow, var(--theme-shadow)),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 
   /* Size variants */

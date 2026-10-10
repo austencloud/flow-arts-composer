@@ -149,7 +149,6 @@
     font-weight: 500;
     cursor: pointer;
     transition: all var(--duration-normal) ease;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .filter-chip:hover {

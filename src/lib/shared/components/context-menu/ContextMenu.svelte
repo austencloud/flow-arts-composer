@@ -313,9 +313,6 @@
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
     border-radius: 8px;
-    box-shadow:
-      0 8px 24px var(--theme-shadow, rgba(0, 0, 0, 0.6)),
-      0 2px 8px var(--theme-shadow, rgba(0, 0, 0, 0.4));
     overflow-y: auto;
     overscroll-behavior: contain;
     max-height: var(--bits-floating-available-height, calc(100dvh - 16px));

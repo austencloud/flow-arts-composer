@@ -629,7 +629,6 @@ Features:
     );
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
     border-radius: var(--radius-lg, 12px);
-    box-shadow: 0 4px 16px var(--theme-shadow, rgba(0, 0, 0, 0.26));
     transition:
       border-radius var(--duration-normal, 200ms) var(--ease-out, ease-out),
       border-color var(--duration-normal, 200ms) var(--ease-out, ease-out);
@@ -675,10 +674,6 @@ Features:
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-bottom: 0;
     border-radius: var(--radius-xl, 16px) var(--radius-xl, 16px) 0 0;
-    box-shadow:
-      0 -18px 48px var(--theme-shadow, rgba(0, 0, 0, 0.48)),
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-accent, #22b8db) 24%, transparent);
     transform-origin: var(
       --bits-popover-content-transform-origin,
       bottom center
@@ -710,7 +705,6 @@ Features:
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     border-top: 0;
     border-radius: 0 0 var(--radius-xl, 16px) var(--radius-xl, 16px);
-    box-shadow: 0 18px 48px var(--theme-shadow, rgba(0, 0, 0, 0.48));
     opacity: 1;
     transition:
       height var(--duration-emphasis, 280ms) var(--ease-out, ease-out),

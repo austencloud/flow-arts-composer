@@ -97,7 +97,6 @@
 
   .subscribe-button:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px var(--theme-shadow);
   }
 
   .subscribe-button:active:not(:disabled) {

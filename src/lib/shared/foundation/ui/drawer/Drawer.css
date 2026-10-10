@@ -758,13 +758,6 @@ dialog.drawer-content {
   overflow: hidden;
 }
 
-/* When drawer is active with scale, add subtle overlay */
-:global(body.drawer-scale-bg-active .drawer-scale-bg) {
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.1),
-    0 10px 40px var(--theme-shadow);
-}
-
 /* Dark mode variant for background dimming */
 :global(.drawer-scale-bg::after) {
   content: "";

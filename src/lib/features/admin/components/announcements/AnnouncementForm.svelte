@@ -547,7 +547,6 @@
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .selection-chip i:not(.chip-check),
@@ -642,7 +641,6 @@
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     border: 2px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
     color: var(--theme-text);
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .cancel-button:hover {

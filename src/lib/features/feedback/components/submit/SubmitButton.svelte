@@ -83,8 +83,6 @@
     letter-spacing: 0.01em;
     cursor: pointer;
     transition: all var(--duration-normal) ease;
-    box-shadow: 0 3px 12px
-      color-mix(in srgb, var(--active-type-color) 30%, var(--theme-shadow));
     overflow: hidden;
   }
 

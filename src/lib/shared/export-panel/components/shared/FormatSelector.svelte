@@ -154,9 +154,6 @@
     background: var(--theme-accent);
     border-color: var(--theme-accent);
     color: white;
-    box-shadow:
-      0 2px 8px var(--theme-shadow),
-      0 0 0 1px var(--theme-accent-glow);
   }
 
   .format-chip.active:hover {

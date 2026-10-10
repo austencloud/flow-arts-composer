@@ -323,9 +323,6 @@
     );
     border: 1px solid var(--theme-stroke);
     border-radius: 14px;
-    box-shadow:
-      0 8px 32px var(--theme-shadow, rgba(0, 0, 0, 0.3)),
-      0 2px 8px var(--theme-shadow, rgba(0, 0, 0, 0.2));
     z-index: 50;
 
     /* Entrance animation: scale + opacity with overshoot */

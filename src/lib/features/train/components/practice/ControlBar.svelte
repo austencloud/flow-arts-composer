@@ -164,7 +164,7 @@
     background: var(--theme-panel-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: var(--radius-2026-md, 14px);
-    box-shadow: var(--shadow-2026-sm, 0 1px 3px var(--theme-shadow));
+    box-shadow: var(--shadow-2026-sm, none);
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: 1rem;
     cursor: pointer;

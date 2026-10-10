@@ -280,9 +280,7 @@ icons when enabled. Click opens the expanded overlay.
      transparent border keeps the on-state box size. */
   .loop-card-wrapper.enabled {
     background: none;
-    box-shadow:
-      0 2px 4px var(--theme-shadow),
-      0 4px 12px color-mix(in srgb, var(--theme-accent) 20%, transparent);
+    box-shadow: none;
     border: 1px solid transparent;
   }
 
@@ -400,24 +398,10 @@ icons when enabled. Click opens the expanded overlay.
     );
   }
 
-  /* Text readable over both states */
-  .loop-card-wrapper :global(.card-header),
-  .card-value {
-    text-shadow:
-      0 1px 2px var(--theme-shadow),
-      0 2px 4px color-mix(in srgb, var(--theme-shadow) 20%, transparent);
-  }
-
   @media (hover: hover) {
     .loop-card-wrapper:hover {
       transform: scale(1.02);
       filter: brightness(1.08);
-    }
-    .loop-card-wrapper.enabled:hover {
-      box-shadow:
-        0 2px 4px var(--theme-shadow),
-        0 6px 16px color-mix(in srgb, var(--theme-accent) 30%, transparent),
-        0 12px 24px color-mix(in srgb, var(--theme-accent) 15%, transparent);
     }
   }
 

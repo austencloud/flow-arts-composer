@@ -154,36 +154,11 @@ Always renders as a pure button. Word input is now in WordInputCard.
     display: flex;
     align-items: center;
     justify-content: center;
-
-    box-shadow:
-      0 4px 12px
-        color-mix(
-          in srgb,
-          var(--semantic-success, var(--semantic-success)) 40%,
-          transparent
-        ),
-      0 2px 6px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke-strong),
-      inset 0 -1px 0 var(--theme-shadow);
   }
 
   .generate-button-card:focus-visible {
     outline: 2px solid var(--theme-text, white);
     outline-offset: 2px;
-  }
-
-  .generate-button-card.dirty {
-    box-shadow:
-      0 0 0 3px var(--semantic-warning, #f59e0b),
-      0 4px 12px
-        color-mix(
-          in srgb,
-          var(--semantic-success, var(--semantic-success)) 40%,
-          transparent
-        ),
-      0 2px 6px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke-strong),
-      inset 0 -1px 0 var(--theme-shadow);
   }
 
   .button-content {
@@ -198,17 +173,6 @@ Always renders as a pure button. Word input is now in WordInputCard.
   .generate-button-card:hover:not(:disabled) {
     filter: brightness(1.2) saturate(1.15);
     transform: scale(1.02);
-
-    box-shadow:
-      0 8px 20px
-        color-mix(
-          in srgb,
-          var(--semantic-success, var(--semantic-success)) 60%,
-          transparent
-        ),
-      0 4px 12px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke-strong),
-      inset 0 -1px 0 var(--theme-shadow);
 
     text-shadow:
       0 2px 6px rgba(0, 0, 0, 0.6),

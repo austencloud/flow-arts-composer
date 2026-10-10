@@ -163,10 +163,7 @@
     );
     background-size: 200% 200%;
     animation: tndShimmer 6s ease-in-out infinite;
-    box-shadow:
-      0 2px 4px var(--theme-shadow),
-      0 4px 12px color-mix(in srgb, var(--tnd-accent) 20%, transparent),
-      inset 0 1px 0 var(--theme-stroke-strong);
+    box-shadow: none;
     border: 1px solid color-mix(in srgb, var(--tnd-accent) 40%, transparent);
   }
 
@@ -221,14 +218,6 @@
     border-radius: 16px 16px 0 0;
     pointer-events: none;
     z-index: 1;
-  }
-
-  .tnd-card-wrapper :global(.card-header),
-  .line-value,
-  .line-label {
-    text-shadow:
-      0 1px 2px var(--theme-shadow),
-      0 2px 4px color-mix(in srgb, var(--theme-shadow) 20%, transparent);
   }
 
   @media (hover: hover) {
@@ -290,7 +279,6 @@
 
   .line-icon {
     flex: none;
-    filter: drop-shadow(0 1px 1px var(--theme-shadow));
   }
 
   .tnd-line.blocked .line-value {

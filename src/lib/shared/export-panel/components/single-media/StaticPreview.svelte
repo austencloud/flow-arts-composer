@@ -273,7 +273,6 @@
     max-height: 100%;
     object-fit: contain;
     border-radius: 4px;
-    box-shadow: 0 4px 16px var(--theme-shadow);
   }
 
   .empty-state,

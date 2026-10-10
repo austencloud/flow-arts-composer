@@ -114,7 +114,6 @@
       transparent
     );
     color: var(--theme-text);
-    box-shadow: 0 1px 3px var(--theme-shadow);
   }
 
   .panel-tab i {

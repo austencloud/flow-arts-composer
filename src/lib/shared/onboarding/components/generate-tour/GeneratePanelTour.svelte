@@ -369,7 +369,6 @@
     font-weight: 700;
     color: white;
     line-height: 1.2;
-    text-shadow: 0 1px 4px var(--theme-shadow, rgba(0, 0, 0, 0.3));
   }
 
   .generate-value {

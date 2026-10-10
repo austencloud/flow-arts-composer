@@ -12,6 +12,58 @@ const second = createRawSnippet(() => ({
 
 afterEach(() => vi.restoreAllMocks());
 
+const frames = () =>
+  new Promise<void>((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  );
+const boxOf = (scene: string) => {
+  const rect = document
+    .querySelector(`[data-scene="${scene}"]`)!
+    .closest(".source")!
+    .getBoundingClientRect();
+  return [rect.width, rect.height];
+};
+
+describe("holding the outgoing source", () => {
+  it("keeps the outgoing box through a stage resize until it is shown again", async () => {
+    const screen = render(DualSourceCrossfade, {
+      first,
+      second,
+      active: "first",
+      holdOutgoing: true,
+    });
+    const stage = screen.container as HTMLElement;
+    stage.style.cssText = "width: 300px; height: 200px";
+    await frames();
+
+    await screen.rerender({ active: "second" });
+    stage.style.height = "500px";
+    await frames();
+    expect(boxOf("first")).toEqual([300, 200]);
+    expect(boxOf("second")).toEqual([300, 500]);
+
+    await screen.rerender({ active: "first" });
+    expect(boxOf("first")).toEqual([300, 500]);
+    expect(boxOf("second")).toEqual([300, 500]);
+  });
+
+  it("lets a hidden source follow the stage by default", async () => {
+    const screen = render(DualSourceCrossfade, {
+      first,
+      second,
+      active: "first",
+    });
+    const stage = screen.container as HTMLElement;
+    stage.style.cssText = "width: 300px; height: 200px";
+    await frames();
+
+    await screen.rerender({ active: "second" });
+    stage.style.height = "500px";
+    await frames();
+    expect(boxOf("first")).toEqual([300, 500]);
+  });
+});
+
 describe("stateful scene handoff", () => {
   it("retains both canvases while transferring interaction to the incoming scene", async () => {
     const screen = render(DualSourceCrossfade, {

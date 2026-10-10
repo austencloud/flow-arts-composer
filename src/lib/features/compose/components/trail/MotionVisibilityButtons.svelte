@@ -70,9 +70,6 @@
     cursor: pointer;
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
-    box-shadow:
-      0 1px 3px var(--theme-shadow),
-      inset 0 1px 0 color-mix(in srgb, var(--theme-text) 3%, transparent);
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -81,9 +78,6 @@
       border-color: var(--theme-stroke-strong);
       color: var(--theme-text, var(--theme-text-dim));
       transform: translateY(-1px);
-      box-shadow:
-        0 2px 8px var(--theme-shadow),
-        inset 0 1px 0 color-mix(in srgb, var(--theme-text) 5%, transparent);
     }
   }
 

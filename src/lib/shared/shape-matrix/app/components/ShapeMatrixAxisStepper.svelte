@@ -308,7 +308,6 @@
       var(--theme-panel-bg, #101721),
       var(--theme-panel-bg, #101721)
     );
-    box-shadow: 0 16px 42px var(--theme-shadow, rgb(0 0 0 / 0.42));
     color: var(--theme-text, #fff);
     overflow: auto;
     overscroll-behavior: contain;

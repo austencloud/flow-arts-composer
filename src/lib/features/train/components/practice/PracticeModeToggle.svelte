@@ -69,7 +69,7 @@
     display: flex;
     gap: 0.375rem;
     padding: 0.25rem;
-    background: color-mix(in srgb, var(--theme-shadow) 30%, transparent);
+    background: rgba(0, 0, 0, 0.3);
     border-radius: 0.75rem;
     border: 1px solid var(--theme-stroke, var(--theme-stroke));
   }

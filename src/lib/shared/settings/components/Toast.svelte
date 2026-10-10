@@ -59,9 +59,6 @@
     font-weight: 600; /* iOS semibold */
     line-height: 1.5; /* WCAG AAA compliant */
     letter-spacing: -0.24px; /* iOS footnote tracking - exact spec */
-    box-shadow:
-      0 8px 20px var(--theme-shadow),
-      0 2px 6px rgba(0, 0, 0, 0.12);
     z-index: var(--z-toast);
     pointer-events: none;
     /* iOS spring animation - exact curve */

@@ -509,7 +509,6 @@
   .word-label.has-word[aria-expanded="true"] {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
-    box-shadow: 0 4px 14px var(--theme-shadow, rgba(0, 0, 0, 0.2));
   }
 
   .word-label:focus-visible {

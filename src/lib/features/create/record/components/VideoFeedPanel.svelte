@@ -366,7 +366,7 @@ Features square aspect ratio for consistent layout and settings dialog for camer
   }
 
   .inactive-overlay {
-    background: color-mix(in srgb, var(--theme-shadow) 70%, transparent);
+    background: rgba(0, 0, 0, 0.7);
     color: var(--theme-text, white);
   }
 

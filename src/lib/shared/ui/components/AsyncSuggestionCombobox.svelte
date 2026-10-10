@@ -543,7 +543,7 @@
     color: var(--theme-text);
     font-size: var(--font-size-sm);
     transition: all var(--duration-normal) ease;
-    box-shadow: var(--theme-shadow, 0 2px 8px var(--theme-shadow));
+    box-shadow: var(--theme-shadow, none);
   }
 
   .search-input:focus {

@@ -515,7 +515,6 @@
     color: var(--theme-text-dim, var(--theme-text-dim));
     cursor: pointer;
     transition: all var(--duration-normal) ease;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .action-button:hover {
@@ -679,7 +678,6 @@
     border-radius: 6px;
     font-size: 0.8125rem;
     color: var(--theme-text-dim, var(--theme-text-dim));
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .context-tag i {

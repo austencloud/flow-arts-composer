@@ -211,9 +211,6 @@
       color-mix(in srgb, var(--theme-card-bg, #181b27) 88%, white 4%),
       color-mix(in srgb, var(--theme-card-bg, #181b27) 88%, black 8%)
     );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      0 2px 0 color-mix(in srgb, var(--theme-shadow, #000) 45%, transparent);
     color: var(
       --assemble-text-secondary,
       color-mix(in srgb, var(--theme-text, #fff) 84%, transparent)
@@ -248,10 +245,6 @@
       ),
       color-mix(in srgb, var(--numpad-color) 8%, var(--theme-card-bg, #181b27))
     );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 2px 0 color-mix(in srgb, var(--theme-shadow, #000) 45%, transparent),
-      0 0 18px color-mix(in srgb, var(--numpad-color) 16%, transparent);
     color: var(--theme-text, #fff);
   }
 
@@ -262,7 +255,7 @@
     place-items: center;
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.16));
     border-radius: 8px;
-    background: color-mix(in srgb, var(--theme-shadow, #000) 28%, transparent);
+    background: rgba(0, 0, 0, 0.28);
     box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.22);
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.7));
   }
@@ -277,7 +270,7 @@
     padding: 3px 6px;
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 7px;
-    background: color-mix(in srgb, var(--theme-shadow, #000) 35%, transparent);
+    background: rgba(0, 0, 0, 0.35);
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
     font-size: var(--font-size-compact, 12px);
     font-weight: 700;
@@ -353,10 +346,6 @@
       ),
       color-mix(in srgb, var(--theme-panel-bg, #111520) 94%, transparent);
     backdrop-filter: blur(22px) saturate(1.18);
-    box-shadow:
-      0 22px 54px color-mix(in srgb, var(--theme-shadow, #000) 48%, transparent),
-      0 0 32px color-mix(in srgb, var(--numpad-color) 12%, transparent),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
     color: var(--theme-text, #fff);
     z-index: var(--z-dropdown, 100);
     animation: keyboard-guide-in var(--duration-normal, 200ms)
@@ -435,7 +424,7 @@
     padding: 7px 9px;
     border: 1px solid color-mix(in srgb, var(--numpad-color) 28%, transparent);
     border-radius: 10px;
-    background: color-mix(in srgb, var(--theme-shadow, #000) 24%, transparent);
+    background: rgba(0, 0, 0, 0.24);
     font-variant-numeric: tabular-nums;
     font-size: var(--font-size-compact, 12px);
   }
@@ -466,7 +455,7 @@
     padding: 10px;
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
     border-radius: 15px;
-    background: color-mix(in srgb, var(--theme-shadow, #000) 42%, transparent);
+    background: rgba(0, 0, 0, 0.42);
     box-shadow:
       inset 0 2px 12px rgba(0, 0, 0, 0.34),
       inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -575,7 +564,7 @@
 
   .position-key.unavailable {
     border-color: var(--theme-stroke, rgba(255, 255, 255, 0.08));
-    background: color-mix(in srgb, var(--theme-shadow, #000) 28%, transparent);
+    background: rgba(0, 0, 0, 0.28);
     box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.24);
     opacity: 0.24;
   }

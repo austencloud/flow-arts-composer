@@ -58,7 +58,6 @@ Shows pre-render progress and perfect playback badge.
     font-size: var(--font-size-compact); /* Supplementary status text */
     font-weight: 500;
     z-index: 10;
-    box-shadow: 0 2px 8px var(--theme-shadow);
     min-width: 140px;
   }
 

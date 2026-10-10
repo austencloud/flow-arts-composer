@@ -707,11 +707,6 @@
         transparent 72%
       ),
       var(--theme-card-bg, rgba(255, 255, 255, 0.05));
-    box-shadow:
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-text, #ffffff) 8%, transparent),
-      0 2px 6px
-        color-mix(in srgb, var(--theme-shadow, #000000) 32%, transparent);
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.72));
     cursor: pointer;
     font-size: var(--font-size-min, 14px);
@@ -739,11 +734,6 @@
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.24));
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.1));
     color: var(--theme-text, #ffffff);
-    box-shadow:
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-text, #ffffff) 13%, transparent),
-      0 5px 14px
-        color-mix(in srgb, var(--theme-shadow, #000000) 38%, transparent);
     transform: translateY(-1px);
   }
 
@@ -963,7 +953,6 @@
     padding: 7px 11px;
     border-radius: 8px;
     background: var(--semantic-success, #22c55e);
-    box-shadow: 0 8px 24px var(--theme-shadow, rgba(0, 0, 0, 0.35));
     color: #06140b;
     font-size: var(--font-size-compact, 12px);
     font-weight: 800;

@@ -75,7 +75,6 @@
     border-radius: 10px;
     transition: transform var(--duration-dramatic)
       cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 2px 6px var(--theme-shadow);
     pointer-events: none;
   }
 

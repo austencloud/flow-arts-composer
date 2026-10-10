@@ -863,7 +863,6 @@
       var(--theme-card-bg, rgba(12, 12, 20, 0.8)) 88%,
       transparent
     );
-    box-shadow: 0 18px 48px var(--theme-shadow, rgba(0, 0, 0, 0.24));
   }
 
   .sequence-heading {

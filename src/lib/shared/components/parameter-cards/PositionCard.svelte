@@ -253,7 +253,6 @@ Supports Alpha, Beta, Gamma placements with Greek symbol pills
   .pill-option.selected {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.95));
     color: #6d28d9;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   .pill-option:active:not(:disabled) {

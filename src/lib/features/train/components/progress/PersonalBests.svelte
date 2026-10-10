@@ -124,7 +124,6 @@
     font-size: 1.25rem;
     font-weight: 700;
     color: #000000;
-    box-shadow: 0 2px 4px var(--theme-shadow, rgba(0, 0, 0, 0.2));
   }
 
   .best-stats {

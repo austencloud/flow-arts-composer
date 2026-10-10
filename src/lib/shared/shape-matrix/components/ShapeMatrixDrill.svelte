@@ -1742,7 +1742,6 @@
     border-radius: 999px;
     background: var(--theme-panel-bg, #101721);
     color: var(--semantic-error, #fb8a8a);
-    box-shadow: 0 0.5rem 1.5rem var(--theme-shadow, rgb(0 0 0 / 0.4));
     font-size: var(--font-size-min, 0.875rem);
     line-height: 1.4;
   }

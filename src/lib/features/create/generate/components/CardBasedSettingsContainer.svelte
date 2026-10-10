@@ -868,8 +868,7 @@ Delegates ALL logic to services (SRP compliant)
     --card-text-size: clamp(16px, 2.2vmin, 30px);
     --card-text-weight: 700;
     --card-text-spacing: 0.3px;
-    --card-text-shadow:
-      0 2px 6px var(--theme-shadow), 0 0 20px var(--theme-stroke-strong);
+    --card-text-shadow: none;
 
     min-height: 0; /* Allow flex to shrink */
     overflow: visible; /* Allow cards to pop over neighbors and modals to escape */

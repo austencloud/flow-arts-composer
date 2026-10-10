@@ -150,7 +150,7 @@
     --card-text-size: clamp(1.4rem, 5cqh, 2.2rem);
     --card-text-weight: 750;
     --card-text-spacing: 0;
-    --card-text-shadow: 0 2px 6px var(--theme-shadow);
+    --card-text-shadow: none;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--settings-spacing-md, 14px);

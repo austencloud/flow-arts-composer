@@ -421,7 +421,7 @@ Displays:
     display: flex;
     gap: 4px;
     padding: 8px 16px;
-    background: color-mix(in srgb, var(--theme-shadow) 10%, transparent);
+    background: rgba(0, 0, 0, 0.1);
   }
 
   .tab {
@@ -510,10 +510,7 @@ Displays:
     left: 0;
     right: 0;
     padding: 4px 6px;
-    background: linear-gradient(
-      transparent,
-      color-mix(in srgb, var(--theme-shadow) 80%, transparent)
-    );
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
     font-size: var(--font-size-compact);
     color: var(--theme-text, white);
     white-space: nowrap;

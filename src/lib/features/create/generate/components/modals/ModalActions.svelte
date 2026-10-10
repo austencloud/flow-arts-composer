@@ -114,7 +114,6 @@ Provides consistent, beautiful button layouts for modal actions
     );
     border-color: var(--theme-stroke-strong);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px var(--theme-shadow);
   }
 
   .cancel-button:active {

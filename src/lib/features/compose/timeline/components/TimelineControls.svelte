@@ -343,9 +343,6 @@
     font-size: var(--font-size-compact);
     font-weight: 600;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    box-shadow:
-      0 0 12px color-mix(in srgb, var(--theme-accent) 40%, transparent),
-      0 2px 4px var(--theme-shadow);
     animation: pulse 1s ease-in-out infinite;
   }
 
@@ -396,9 +393,7 @@
     background: var(--theme-accent);
     border-color: var(--theme-accent-strong);
     color: white;
-    box-shadow:
-      0 4px 12px var(--theme-shadow),
-      0 0 16px color-mix(in srgb, var(--theme-accent) 35%, transparent);
+    box-shadow: none;
     transform: translateY(-1px);
   }
 

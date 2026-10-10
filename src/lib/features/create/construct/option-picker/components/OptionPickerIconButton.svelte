@@ -50,9 +50,6 @@
     border-radius: var(--radius-lg, 12px);
     color: color-mix(in srgb, var(--theme-accent, #22b8db) 76%, white);
     cursor: pointer;
-    box-shadow:
-      0 5px 16px var(--theme-shadow, rgba(0, 0, 0, 0.28)),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
     transition:
       background var(--duration-normal, 200ms) ease,
       border-color var(--duration-normal, 200ms) ease,
@@ -67,9 +64,6 @@
     height: var(--min-touch-target, 44px);
     min-height: var(--min-touch-target, 44px);
     border-radius: var(--radius-md, 10px);
-    box-shadow:
-      0 3px 10px var(--theme-shadow, rgba(0, 0, 0, 0.24)),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 
   .option-picker-icon-button:hover {
@@ -89,10 +83,6 @@
       var(--theme-accent, #22b8db) 52%,
       var(--theme-stroke, rgba(255, 255, 255, 0.14))
     );
-    box-shadow:
-      0 6px 20px var(--theme-shadow, rgba(0, 0, 0, 0.3)),
-      inset 0 1px 0
-        color-mix(in srgb, var(--theme-accent, #22b8db) 24%, transparent);
   }
 
   .option-picker-icon-button:active {

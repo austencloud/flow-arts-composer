@@ -191,7 +191,7 @@
     flex-direction: column;
     gap: var(--space-2026-xs, 6px);
     padding: var(--space-2026-sm, 12px);
-    background: color-mix(in srgb, var(--theme-shadow) 20%, transparent);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: var(--radius-2026-sm, 10px);
     font-family: "Courier New", monospace;
     font-size: var(--font-size-compact, 12px);

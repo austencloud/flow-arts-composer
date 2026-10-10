@@ -133,7 +133,6 @@
     background: rgba(255, 255, 255, 0.05);
     border-color: var(--theme-stroke);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px var(--theme-shadow);
   }
 
   .video-card:hover .play-overlay {
