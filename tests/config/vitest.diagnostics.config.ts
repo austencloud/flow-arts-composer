@@ -45,8 +45,16 @@ export default defineConfig({
       $shared: path.resolve(projectRoot, "src/lib/shared"),
     },
 
+    // One harness file today (tests/tools/prop-continuity-artifact.test.ts)
+    // and nothing shared between harnesses: no emulator, port or temp dir, and
+    // each one writes its own artifact. So there is nothing to serialize and
+    // Vitest's default worker fan-out stays. (Vitest 4 removed `poolOptions`
+    // and with it `singleFork`; the `forks: { singleFork: true }` that used to
+    // sit here was an unknown key Vitest ignored without a warning, so dropping
+    // it changes nothing.)
     pool: "forks",
-    forks: { singleFork: true },
+    // A sweep walks every corpus sequence at a 0.002 phase step, far past the
+    // five-second default budget.
     testTimeout: 300_000,
     isolate: true,
   },
