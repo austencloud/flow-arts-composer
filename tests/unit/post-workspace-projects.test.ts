@@ -7,6 +7,7 @@ import {
   rememberPostSequence,
   resolvePostSequence,
 } from "#lib/features/post/services/post-workspace-projects.js";
+import { studioLibraryEntries } from "#lib/features/post/components/studio-library-entry.js";
 
 const { loadByIdentifier } = vi.hoisted(() => ({ loadByIdentifier: vi.fn() }));
 vi.mock(
@@ -77,6 +78,31 @@ describe("Post project selection", () => {
     expect(loadByIdentifier).toHaveBeenCalledWith("missing-id", {
       wordFallback: false,
     });
+  });
+
+  it("keeps missing independent Studio sources out of the public gallery", async () => {
+    const id = "studio-project:tutorial:archived";
+    expect(await resolvePostSequence(id)).toBeNull();
+    expect(loadByIdentifier).not.toHaveBeenCalled();
+
+    rememberPostSequence(sequence(id, "A") as never);
+    expect((await resolvePostSequence(id))?.id).toBe(id);
+    expect(loadByIdentifier).not.toHaveBeenCalled();
+  });
+
+  it("labels archived Studio drafts when only their machine ID remains", () => {
+    const id = "studio-project:tutorial:archived";
+    const choice = {
+      sequenceId: id,
+      title: id,
+      word: "",
+      updatedAt: 1,
+      hasDraft: true,
+    };
+    expect(studioLibraryEntries([choice], [])[0]?.title).toBe("Saved tutorial");
+    expect(
+      studioLibraryEntries([{ ...choice, title: "My tutorial" }], [])[0]?.title
+    ).toBe("My tutorial");
   });
 
   it("discovers browser, disk, and legacy plans without making copies", async () => {

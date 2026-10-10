@@ -1,6 +1,7 @@
 import type { PostProject } from "../domain/post-project";
 import { auth } from "#lib/shared/auth/firebase.js";
 import { legacyPostOwner } from "./post-project-store";
+import { isIndependentStudioProjectId } from "../domain/studio-project-id";
 import {
   projectDraftRecord,
   resolvePostStudioDraft,
@@ -12,10 +13,9 @@ const PREFIXES = [
   "tka:post-studio:project:v2:",
   "tka:post-studio:take-timing:v1:",
 ];
-const STUDIO_SOURCE_PREFIX = "studio-arrangement:";
 
 function archiveSequenceId(sequenceId: string): string {
-  if (!sequenceId.startsWith(STUDIO_SOURCE_PREFIX)) return sequenceId;
+  if (!isIndependentStudioProjectId(sequenceId)) return sequenceId;
   const uid =
     auth.currentUser && !auth.currentUser.isAnonymous
       ? auth.currentUser.uid
@@ -63,7 +63,7 @@ function recordsForSequence(
   records: readonly PostDraftRecord[],
   archiveId = sequenceId
 ): PostDraftRecord[] {
-  if (sequenceId.startsWith(STUDIO_SOURCE_PREFIX))
+  if (isIndependentStudioProjectId(sequenceId))
     return records.filter(
       (record) =>
         record.key === `${PREFIXES[0]}${archiveId}` &&
@@ -110,7 +110,7 @@ export async function loadPostDraft(sequenceId: string): Promise<{
   error: string | null;
 }> {
   const archiveId = archiveSequenceId(sequenceId);
-  const studioSource = sequenceId.startsWith(STUDIO_SOURCE_PREFIX);
+  const studioSource = isIndependentStudioProjectId(sequenceId);
   if (
     !studioSource &&
     legacyPostOwner() &&
@@ -189,7 +189,7 @@ export async function loadUnclaimedStudioDraft(sequenceId: string): Promise<{
   project: PostProject | null;
   error: string | null;
 }> {
-  if (!sequenceId.startsWith(STUDIO_SOURCE_PREFIX) || legacyPostOwner())
+  if (!isIndependentStudioProjectId(sequenceId) || legacyPostOwner())
     return { project: null, error: "The device draft is already claimed." };
   const records: PostDraftRecord[] = [];
   let error: string | null = null;
@@ -285,7 +285,7 @@ export async function savePostDraft(project: PostProject): Promise<void> {
   const archiveId = archiveSequenceId(project.sequenceId);
   await savePostDraftRecords([postDraftArchiveRecord(project, archiveId)]);
   if (
-    project.sequenceId.startsWith(STUDIO_SOURCE_PREFIX) &&
+    isIndependentStudioProjectId(project.sequenceId) &&
     archiveSequenceId(project.sequenceId) !== archiveId
   )
     throw new Error("The account changed while saving this arrangement draft.");
