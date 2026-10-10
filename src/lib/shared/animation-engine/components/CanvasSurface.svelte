@@ -558,17 +558,14 @@ captureEffectDiagnostics to the context menu.
   $effect(() => {
     if (isInitialized) {
       engineInstance.processPendingGlyph();
-      // Wait for the render loop to paint at least one frame before
-      // signaling readiness. The initializer sets isInitialized BEFORE
-      // starting the render loop (step 8 vs step 10), so without this
-      // delay the callback fires while the canvas is still blank.
+      // Wait for the render loop to paint its first frame before signaling
+      // readiness. The initializer sets isInitialized BEFORE starting the
+      // render loop (step 8 vs step 10), but the loop has already queued its
+      // frame by the time this effect runs, so one frame callback here runs
+      // after that paint.
       untrack(() => {
         if (onInitialized) {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              onInitialized?.();
-            });
-          });
+          requestAnimationFrame(() => onInitialized?.());
         }
       });
     }
@@ -606,31 +603,38 @@ captureEffectDiagnostics to the context menu.
   data-dark-mode={darkModeEnabled ? "true" : "false"}
 >
   {#if !suppress2DOverlays}
-    <GlyphOverlay
-      {letter}
-      {displayedLetter}
-      {displayedStepNumber}
-      {displayedMusicalPosition}
-      {stepData}
-      tkaGlyphVisible={effectiveTkaGlyphVisible}
-      elementalGlyphVisible={elementalGlyphVisible && bothMotionsVisible}
-      propElementalGlyphVisible={propElementalGlyphVisible && bothMotionsVisible}
-      {propElementalType}
-      {glyphFrame}
-      stepNumbersVisible={effectiveBeatNumbersVisible}
-      {placementGlyphVisible}
-      opacity={chromeOpacity}
-      darkMode={darkModeEnabled}
-      isAtStartPlacement={beatIndicators &&
-        !hideStepNumbers &&
-        currentStep < 1 &&
-        sequenceData !== null}
-      isAtEndPlacement={beatIndicators &&
-        !hideStepNumbers &&
-        sequenceData !== null &&
-        !effectiveIsSeamlesslyLoopable &&
-        currentStep >= (sequenceData.steps?.length ?? 0) + 0.99}
-    />
+    <!-- A player resets its sequence data to null before loading another, so
+         the overlay remounts for each load and shows the new start at once, as
+         a newly built player does, instead of fading labels out of the
+         sequence it replaced. Edits to a loaded sequence keep their fades. -->
+    {#key sequenceData === null}
+      <GlyphOverlay
+        {letter}
+        {displayedLetter}
+        {displayedStepNumber}
+        {displayedMusicalPosition}
+        {stepData}
+        tkaGlyphVisible={effectiveTkaGlyphVisible}
+        elementalGlyphVisible={elementalGlyphVisible && bothMotionsVisible}
+        propElementalGlyphVisible={propElementalGlyphVisible &&
+          bothMotionsVisible}
+        {propElementalType}
+        {glyphFrame}
+        stepNumbersVisible={effectiveBeatNumbersVisible}
+        {placementGlyphVisible}
+        opacity={chromeOpacity}
+        darkMode={darkModeEnabled}
+        isAtStartPlacement={beatIndicators &&
+          !hideStepNumbers &&
+          currentStep < 1 &&
+          sequenceData !== null}
+        isAtEndPlacement={beatIndicators &&
+          !hideStepNumbers &&
+          sequenceData !== null &&
+          !effectiveIsSeamlesslyLoopable &&
+          currentStep >= (sequenceData.steps?.length ?? 0) + 0.99}
+      />
+    {/key}
 
     <!-- Always mounted: PathLinesOverlay self-gates on showLeft/showRight and owns
          its own fade in/out, so the overlay must stay in the tree for its

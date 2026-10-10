@@ -187,47 +187,44 @@
 
 {#snippet animation()}
   {#if retainedPlayback}
-    {#key retainedPlayback}
-      {@const session = retainedPlayback}
-      <LazyMount
-        loader={loadWorkspacePlayback}
-        active
-        retryKey={playbackRun}
-        props={{
-          sequence: session.sequence,
-          active: playback !== null && playbackKey === retainedPlaybackKey,
-          run: playbackRun,
-          onready: (readyRun: number) => {
-            if (!playbackCandidate || readyRun !== playbackRun) return;
-            readyPlayback = session;
-            panelState.confirmWorkspacePlaybackReady(playbackCandidate);
-          },
-          onerror: (failedRun: number) => {
-            if (failedRun === playbackRun)
-              panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
-          },
-          onclose: () => panelState.stopWorkspacePlayback(),
-          onStepChange: (step: number) => (playbackStep = Math.floor(step)),
-          onPlaybackChange: (
-            reportedRun: number,
-            step: number,
-            playing: boolean
-          ) => {
-            const candidate = playbackCandidate;
-            if (!candidate || reportedRun !== playbackRun) return;
-            panelState.updateWorkspacePlaybackProgress(
-              candidate,
-              step,
-              playing
-            );
-          },
-        }}
-        onStatusChange={(status) => {
-          if (status === "error" && playbackCandidate)
-            panelState.failWorkspacePlaybackPreparation(playbackCandidate);
-        }}
-      />
-    {/key}
+    <!-- One player serves every sequence. Any source change stops playback
+         first, so a new sequence always arrives while the player is hidden,
+         and loading it into the mounted engine skips the full rebuild. -->
+    {@const session = retainedPlayback}
+    <LazyMount
+      loader={loadWorkspacePlayback}
+      active
+      retryKey={playbackRun}
+      props={{
+        sequence: session.sequence,
+        active: playback !== null && playbackKey === retainedPlaybackKey,
+        run: playbackRun,
+        onready: (readyRun: number) => {
+          if (!playbackCandidate || readyRun !== playbackRun) return;
+          readyPlayback = session;
+          panelState.confirmWorkspacePlaybackReady(playbackCandidate);
+        },
+        onerror: (failedRun: number) => {
+          if (failedRun === playbackRun)
+            panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
+        },
+        onclose: () => panelState.stopWorkspacePlayback(),
+        onStepChange: (step: number) => (playbackStep = Math.floor(step)),
+        onPlaybackChange: (
+          reportedRun: number,
+          step: number,
+          playing: boolean
+        ) => {
+          const candidate = playbackCandidate;
+          if (!candidate || reportedRun !== playbackRun) return;
+          panelState.updateWorkspacePlaybackProgress(candidate, step, playing);
+        },
+      }}
+      onStatusChange={(status) => {
+        if (status === "error" && playbackCandidate)
+          panelState.failWorkspacePlaybackPreparation(playbackCandidate);
+      }}
+    />
   {/if}
 {/snippet}
 
