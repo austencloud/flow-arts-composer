@@ -69,27 +69,17 @@
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: stretch;
     min-height: 3.5rem;
-    border: 1px solid transparent;
-    border-radius: 0.75rem;
-    background: var(--theme-card-bg);
-    overflow: hidden;
-    transition:
-      background var(--duration-fast) ease,
-      border-color var(--duration-fast) ease;
+    min-width: 0;
+    background: transparent;
+    transition: background var(--duration-fast) ease;
   }
 
-  .shortcut-row:hover,
+  .shortcut-row:hover {
+    background: color-mix(in srgb, var(--theme-text) 4%, transparent);
+  }
+
   .shortcut-row.selected {
-    border-color: color-mix(
-      in srgb,
-      var(--theme-accent) 45%,
-      var(--theme-stroke)
-    );
-    background: var(--theme-card-hover-bg);
-  }
-
-  .shortcut-row.customized {
-    border-left: 3px solid var(--theme-accent);
+    background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
   }
 
   .shortcut-row.disabled .shortcut-copy,
@@ -104,7 +94,7 @@
     gap: 0.75rem;
     min-width: 0;
     min-height: var(--min-touch-target);
-    padding: 0.55rem 0.75rem;
+    padding: 0.55rem var(--settings-row-inline, 1.15em);
     border: 0;
     background: transparent;
     color: var(--theme-text);
@@ -133,7 +123,7 @@
 
   .description {
     color: var(--theme-text-dim);
-    font-size: var(--font-size-compact);
+    font-size: max(0.8125rem, var(--font-size-compact));
   }
 
   .binding,
@@ -153,7 +143,7 @@
     padding: 0.15rem 0.4rem;
     border-radius: 999px;
     background: color-mix(in srgb, var(--theme-accent) 14%, transparent);
-    color: var(--theme-accent);
+    color: var(--theme-accent-text, var(--theme-accent));
     font-weight: 650;
   }
 

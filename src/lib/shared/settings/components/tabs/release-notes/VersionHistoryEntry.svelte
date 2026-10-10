@@ -201,7 +201,7 @@
 
   .entry-groups :global(.change-list) {
     display: grid;
-    gap: 0.5rem;
+    column-gap: clamp(1rem, 1.5vw, 2.5rem);
   }
 
   /* Entry text uses the primary UI role at every desktop width. */

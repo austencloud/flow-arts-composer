@@ -29,7 +29,7 @@
 <section class="context-section" aria-labelledby={headingId}>
   <header class="section-header">
     <div>
-      <h2 id={headingId}>{label}</h2>
+      <h3 id={headingId}>{label}</h3>
       <p>
         {shortcuts.length}
         {shortcuts.length === 1 ? t("keyboard_ui_command") : t("keyboard_ui_commands")}
@@ -53,51 +53,64 @@
 </section>
 
 <style>
+  /* An unframed group inside the subpage panel: a hairline above every group
+     but the first, a quiet heading, and rows split by hairlines. */
   .context-section {
     min-width: 0;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 1rem;
-    background: var(--theme-panel-bg);
-    overflow: hidden;
+  }
+
+  .context-section + :global(.context-section) {
+    border-top: 1px solid var(--theme-stroke);
   }
 
   .section-header {
-    padding: 0.85rem 1rem 0.7rem;
-    border-bottom: 1px solid var(--theme-stroke);
-    background: color-mix(in srgb, var(--theme-card-bg) 70%, transparent);
+    padding: 1em var(--settings-row-inline, 1.15em) 0.4em;
   }
 
-  h2,
+  h3,
   p {
     margin: 0;
   }
 
-  h2 {
+  h3 {
     color: var(--theme-text);
-    font-size: var(--font-size-base);
-    font-weight: 650;
+    font-size: max(0.9375rem, var(--font-size-base));
+    font-weight: 725;
+    line-height: 1.25;
   }
 
   p {
-    margin-top: 0.15rem;
+    margin-top: 0.15em;
     color: var(--theme-text-dim);
-    font-size: var(--font-size-compact);
+    font-size: max(0.8125rem, var(--font-size-compact));
+    line-height: 1.35;
   }
 
   p span {
-    color: var(--theme-accent);
+    color: var(--theme-accent-text, var(--theme-accent));
   }
 
   .section-content {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 0.4rem;
-    padding: 0.55rem;
   }
 
-  @container (min-width: 100rem) {
+  .section-content > :global(.shortcut-row + .shortcut-row) {
+    border-top: 1px solid var(--theme-stroke);
+  }
+
+  /* Two columns of rows on a wide panel, with a seam between them. */
+  @container settings-subpage (min-width: 56rem) {
     .section-content {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .section-content > :global(.shortcut-row:nth-child(2)) {
+      border-top: 0;
+    }
+
+    .section-content > :global(.shortcut-row:nth-child(odd)) {
+      border-right: 1px solid var(--theme-stroke);
     }
   }
 </style>
