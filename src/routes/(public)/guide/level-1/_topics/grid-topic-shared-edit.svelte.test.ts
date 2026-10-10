@@ -25,6 +25,7 @@ vi.mock("./GridModesEquation.svelte", async () => ({
 
 import GridStepHeader from "#lib/features/learn/components/interactive/grid-concept/GridStepHeader.svelte";
 import GridTopicPage from "./GridTopicPage.svelte";
+import GridHandbookPage from "./GridHandbookPage.svelte";
 
 const DEFINITIONS = ["centerPoint", "handPoints", "outerPoints"] as const;
 
@@ -62,6 +63,15 @@ describe("one shared edit reaches every Grid view", () => {
       kicker: "Level 1 · Positions / Motions",
       lessonHref: "/learn/concepts/grid",
     });
+    for (const unit of [...DEFINITIONS, "intro", "closing"]) {
+      await expect
+        .element(screen.getByText(`PROBE:${unit}`))
+        .toBeInTheDocument();
+    }
+  });
+
+  it("the print handbook page shows every shared definition", async () => {
+    const screen = render(GridHandbookPage, { pageNumber: 1 });
     for (const unit of [...DEFINITIONS, "intro", "closing"]) {
       await expect
         .element(screen.getByText(`PROBE:${unit}`))
