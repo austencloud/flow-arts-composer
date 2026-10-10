@@ -1,12 +1,8 @@
 <!--
   PreferencesTab.svelte - Workflow and Behavior Preferences
 
-  Controls app behavior like confirmation dialogs, prompts, and other
-  workflow preferences that users may want to customize.
-
-  Uses toggle rows (not chips) because behavior settings need descriptions
-  to explain what they do. Chips work for visibility where the element name
-  IS the setting, but preferences need context.
+  Language, confirmation dialogs, guides and local data, laid out as one
+  workspace panel with the same section bands as the Account tab.
 -->
 <script lang="ts">
   import { getHapticFeedback } from "#lib/shared/application/get-haptic-feedback.js";
@@ -22,7 +18,10 @@
   } from "#lib/shared/navigation-coordinator/navigation-coordinator.svelte.js";
   import OfflineLocalDataSection from "./preferences/OfflineLocalDataSection.svelte";
   import LanguagePreference from "./preferences/LanguagePreference.svelte";
-  import { Collapsible } from "bits-ui";
+  import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import SettingToggleButton from "../SettingToggleButton.svelte";
+  import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
+  import { growFade } from "#lib/shared/transitions/motion.js";
   import {
     applyNativeUpdate,
     checkForNativeUpdate,
@@ -118,546 +117,388 @@
 </script>
 
 <div class="preferences-tab" class:visible={isVisible}>
-  <!-- Header -->
-  <header class="tab-header">
-    <div class="header-icon">
-      <i class="fas fa-sliders" aria-hidden="true"></i>
-    </div>
-    <div class="header-content">
-      <h1>{t("settings_preferences")}</h1>
-      <p>{t("settings_customize_behavior")}</p>
-    </div>
-  </header>
+  <div class="preferences-workspace">
+    <div class="workspace-column">
+      <div class="workspace-section">
+        <LanguagePreference />
+      </div>
 
-  <LanguagePreference />
+      <section
+        class="workspace-section"
+        aria-labelledby="confirmations-heading"
+      >
+        <SettingsSectionHeader
+          icon="fas fa-comment-dots"
+          title={t("settings_confirmation_dialogs")}
+          headingId="confirmations-heading"
+        />
+        <div class="toggle-list">
+          <SettingToggleButton
+            label={t("settings_ask_before_clearing")}
+            checked={showClearConfirmation}
+            onToggle={handleToggleClearConfirmation}
+          />
+          <SettingToggleButton
+            label={t("settings_ask_before_loop")}
+            checked={showLoopConfirmation}
+            onToggle={handleToggleLoopConfirmation}
+          />
+        </div>
+      </section>
+    </div>
 
-  <section class="section">
-    <button
-      type="button"
-      class="toggle-row"
-      onclick={() => handleSectionChange("keyboard")}
-      aria-label={t("tab_settings_keyboard")}
-    >
-      <span class="toggle-info">
-        <span class="toggle-label"
-          ><i class="fas fa-keyboard" aria-hidden="true"></i>
-          {t("tab_settings_keyboard")}</span
+    <div class="workspace-column">
+      <section class="workspace-section" aria-labelledby="keyboard-heading">
+        <SettingsSectionHeader
+          icon="fas fa-keyboard"
+          title={t("tab_settings_keyboard")}
+          description={t("tab_desc_settings_keyboard")}
+          headingId="keyboard-heading"
         >
-      </span>
-      <i class="fas fa-chevron-right" aria-hidden="true"></i>
-    </button>
-  </section>
+          {#snippet action()}
+            <PanelButton
+              variant="quiet"
+              onclick={() => handleSectionChange("keyboard")}
+              ariaLabel={t("tab_desc_settings_keyboard")}
+            >
+              <i class="fas fa-arrow-right" aria-hidden="true"></i>
+              <span>{t("settings_presets_manage")}</span>
+            </PanelButton>
+          {/snippet}
+        </SettingsSectionHeader>
+      </section>
 
-  <!-- Confirmation Dialogs Section -->
-  <section class="section">
-    <h2 class="section-title">
-      <i class="fas fa-comment-dots" aria-hidden="true"></i>
-      {t("settings_confirmation_dialogs")}
-    </h2>
+      <section class="workspace-section" aria-labelledby="guides-heading">
+        <SettingsSectionHeader
+          icon="fas fa-compass"
+          title={t("settings_guides")}
+          headingId="guides-heading"
+        />
+        <div class="section-body guide-actions">
+          <PanelButton variant="secondary" onclick={handleReplayTutorial}>
+            <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+            <span>{t("settings_replay_construct_guide")}</span>
+          </PanelButton>
+          <PanelButton variant="secondary" onclick={handleReplayGenerateTour}>
+            <i class="fas fa-circle-question" aria-hidden="true"></i>
+            <span>{t("settings_replay_generate_tour")}</span>
+          </PanelButton>
+        </div>
+      </section>
 
-    <div class="toggle-list">
-      <!-- Clear Sequence Confirmation -->
-      <button
-        type="button"
-        class="toggle-row"
-        onclick={handleToggleClearConfirmation}
-        aria-pressed={showClearConfirmation}
-      >
-        <div class="toggle-info">
-          <span class="toggle-label">{t("settings_ask_before_clearing")}</span>
-        </div>
-        <div class="toggle-switch" class:active={showClearConfirmation}>
-          <div class="toggle-knob"></div>
-        </div>
-      </button>
-
-      <!-- LOOP Auto-Complete Confirmation -->
-      <button
-        type="button"
-        class="toggle-row"
-        onclick={handleToggleLoopConfirmation}
-        aria-pressed={showLoopConfirmation}
-      >
-        <div class="toggle-info">
-          <span class="toggle-label">{t("settings_ask_before_loop")}</span>
-        </div>
-        <div class="toggle-switch" class:active={showLoopConfirmation}>
-          <div class="toggle-knob"></div>
-        </div>
-      </button>
+      <section class="workspace-section" aria-labelledby="advanced-heading">
+        <SettingsSectionHeader
+          icon="fas fa-database"
+          title={t("settings_advanced")}
+          description={t("settings_advanced_desc")}
+          headingId="advanced-heading"
+        >
+          {#snippet action()}
+            <span class="disclosure-action">
+              <PanelButton
+                variant="quiet"
+                onclick={() => (advancedOpen = !advancedOpen)}
+                ariaExpanded={advancedOpen}
+                ariaControls="advanced-content"
+                ariaLabel={t("settings_advanced")}
+              >
+                <i
+                  class="fas fa-chevron-down advanced-chevron"
+                  class:open={advancedOpen}
+                  aria-hidden="true"
+                ></i>
+              </PanelButton>
+            </span>
+          {/snippet}
+        </SettingsSectionHeader>
+        {#if advancedOpen}
+          <div
+            id="advanced-content"
+            class="section-body advanced-body"
+            transition:growFade
+          >
+            <OfflineLocalDataSection />
+          </div>
+        {/if}
+      </section>
     </div>
-  </section>
 
-  <!-- Guides Section -->
-  <section class="section">
-    <h2 class="section-title">
-      <i class="fas fa-compass" aria-hidden="true"></i>
-      {t("settings_guides")}
-    </h2>
-
-    <div class="guide-buttons">
-      <button type="button" class="guide-button" onclick={handleReplayTutorial}>
-        <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-        <span>{t("settings_replay_construct_guide")}</span>
-      </button>
-
-      <button
-        type="button"
-        class="guide-button"
-        onclick={handleReplayGenerateTour}
-      >
-        <i class="fas fa-circle-question" aria-hidden="true"></i>
-        <span>{t("settings_replay_generate_tour")}</span>
-      </button>
-    </div>
-  </section>
-
-  <section class="section advanced-section">
-    <Collapsible.Root bind:open={advancedOpen}>
-      <Collapsible.Trigger class="advanced-trigger">
-        <span class="advanced-trigger-icon">
-          <i class="fas fa-database" aria-hidden="true"></i>
-        </span>
-        <span class="advanced-trigger-copy">
-          <strong>{t("settings_advanced")}</strong>
-          <small>{t("settings_advanced_desc")}</small>
-        </span>
-        <i
-          class="fas fa-chevron-down advanced-chevron"
-          class:open={advancedOpen}
-          aria-hidden="true"
-        ></i>
-      </Collapsible.Trigger>
-
-      <Collapsible.Content class="advanced-content">
-        <div class="advanced-content-inner">
-          <header class="advanced-content-header">
-            <h3>{t("settings_offline_local_data")}</h3>
-            <p>{t("settings_offline_local_data_desc")}</p>
-          </header>
-          <OfflineLocalDataSection />
-        </div>
-      </Collapsible.Content>
-    </Collapsible.Root>
-  </section>
-  <section class="section version-section">
-    <span>v{__APP_VERSION__}</span>
-    {#if nativeUpdate.currentVersion}
-      <span>
-        {t("settings_app_update_bundle", {
-          version: nativeUpdate.currentVersion,
-        })}
+    <footer class="version-band">
+      <span class="version-text">
+        <span>v{__APP_VERSION__}</span>
+        {#if nativeUpdate.currentVersion}
+          <span>
+            {t("settings_app_update_bundle", {
+              version: nativeUpdate.currentVersion,
+            })}
+          </span>
+        {/if}
       </span>
-    {/if}
-    <button
-      type="button"
-      class="version-button"
-      onclick={() => handleSectionChange("release-notes")}
-    >
-      {t("nav_ui_what_s_new")}
-    </button>
-    {#if nativeUpdate.available}
-      <button
-        type="button"
-        class="version-button"
-        class:ready={nativeUpdate.status === "ready"}
-        disabled={appUpdateBusy}
-        aria-live="polite"
-        onclick={handleAppUpdate}
-      >
-        {appUpdateLabel}
-      </button>
-    {/if}
-  </section>
+      <span class="version-actions">
+        <PanelButton
+          variant="quiet"
+          onclick={() => handleSectionChange("release-notes")}
+        >
+          <i class="fas fa-bullhorn" aria-hidden="true"></i>
+          <span>{t("nav_ui_what_s_new")}</span>
+        </PanelButton>
+        {#if nativeUpdate.available}
+          <span class="update-action" aria-live="polite">
+            <PanelButton
+              variant={nativeUpdate.status === "ready" ? "primary" : "quiet"}
+              disabled={appUpdateBusy}
+              ariaBusy={appUpdateBusy}
+              onclick={handleAppUpdate}
+            >
+              <i
+                class={appUpdateBusy
+                  ? "fas fa-circle-notch fa-spin"
+                  : "fas fa-mobile-screen"}
+                aria-hidden="true"
+              ></i>
+              <span>{appUpdateLabel}</span>
+            </PanelButton>
+          </span>
+        {/if}
+      </span>
+    </footer>
+  </div>
 </div>
 
 <style>
+  /* Matches the Account tab: one panel in the middle of the tab, sections
+     opened by header bands and split by hairlines. */
   .preferences-tab {
+    container: preferences-tab / inline-size;
+    display: grid;
+    /* Never shrinks below its content, so the bottom padding stays clear of
+       the navigation bar when the page scrolls. */
+    flex: 1 0 auto;
+    align-content: safe center;
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 16px;
+    min-height: 100%;
+    min-width: 0;
+    padding: clamp(0.75em, 1.4cqi, 1.75em) clamp(0.75em, 2cqi, 3em);
     opacity: 0;
-    transform: translateY(8px);
-    transition:
-      opacity 0.3s ease,
-      transform 0.3s ease;
+    transition: opacity var(--duration-normal) ease;
   }
 
   .preferences-tab.visible {
     opacity: 1;
-    transform: translateY(0);
   }
 
-  /* Header */
-  .tab-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-  }
-
-  .header-icon {
-    width: 56px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-    border-radius: 16px;
-    font-size: var(--font-size-2xl);
-    color: white;
-    flex-shrink: 0;
-  }
-
-  .header-content h1 {
-    margin: 0;
-    font-size: var(--font-size-xl);
-    font-weight: 600;
-    color: var(--theme-text, #ffffff);
-  }
-
-  .header-content p {
-    margin: 4px 0 0 0;
-    font-size: var(--font-size-sm);
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
-  }
-
-  /* Section */
-  .section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0;
-    font-size: var(--font-size-base);
-    font-weight: 600;
-    color: var(--theme-text, #ffffff);
-  }
-
-  .section-title i {
-    font-size: var(--font-size-sm);
-    color: var(--theme-accent, #f97316);
-  }
-
-  .section-title i.fa-compass {
-    color: var(--semantic-info, #3b82f6);
-  }
-
-  /* Toggle List */
-  .toggle-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 16px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all var(--duration-fast) ease;
-    text-align: left;
+  .preferences-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     width: 100%;
-    color: var(--theme-text);
-  }
-
-  .toggle-row:hover {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.06));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
-  }
-
-  .toggle-row:active {
-    transform: scale(0.995);
-  }
-
-  .toggle-row:focus-visible {
-    outline: 2px solid var(--theme-accent, #f97316);
-    outline-offset: 2px;
-  }
-
-  .toggle-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
+    /* Preferences hold a few short rows, so past two columns the panel stays
+       a settings measure in the middle of the tab instead of thinning into a
+       wide strip. */
+    max-width: 84rem;
     min-width: 0;
+    margin-inline: auto;
+    border: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
+    --panel-inner-radius: calc(1.25rem - 1px);
+    border-radius: 1.25em;
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, rgba(0, 0, 0, 0.88)) 14%,
+      #070b10 86%
+    );
+    box-shadow: var(--theme-panel-shadow, 0 1rem 3rem rgba(0, 0, 0, 0.35));
+    isolation: isolate;
   }
 
-  .toggle-label {
-    font-size: var(--font-size-base);
-    font-weight: 500;
-    color: var(--theme-text, #ffffff);
+  :global(html[data-theme-luminance="bright"]) .preferences-workspace {
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, rgba(255, 255, 255, 0.88)) 14%,
+      #f6f7f9 86%
+    );
   }
 
-  /* Toggle Switch */
-  .toggle-switch {
-    width: 52px;
-    height: 32px;
-    background: var(--theme-stroke, rgba(255, 255, 255, 0.15));
-    border-radius: 16px;
-    padding: 3px;
-    transition: background var(--duration-normal) ease;
-    flex-shrink: 0;
-  }
-
-  .toggle-switch.active {
-    background: var(--semantic-success, #22c55e);
-  }
-
-  .toggle-knob {
-    width: 26px;
-    height: 26px;
-    background: white;
-    border-radius: 50%;
-    transition: transform var(--duration-normal) ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  .toggle-switch.active .toggle-knob {
-    transform: translateX(20px);
-  }
-
-  /* Guide Buttons */
-  .guide-buttons {
+  .workspace-column,
+  .workspace-section {
     display: flex;
+    min-width: 0;
     flex-direction: column;
-    gap: 8px;
   }
 
-  .guide-button {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all var(--duration-fast) ease;
-    text-align: left;
-    width: 100%;
-    color: var(--theme-text, #ffffff);
-    font-size: var(--font-size-base);
-    font-weight: 500;
-  }
-
-  .guide-button:hover {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.06));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
-  }
-
-  .guide-button:active {
-    transform: scale(0.995);
-  }
-
-  .guide-button:focus-visible {
-    outline: 2px solid var(--theme-accent, #f97316);
-    outline-offset: 2px;
-  }
-
-  .guide-button i {
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
-    font-size: var(--font-size-sm);
-    width: 20px;
-    text-align: center;
-  }
-
-  .advanced-section {
-    padding-top: 0.25rem;
+  .workspace-column + .workspace-column,
+  .workspace-section + .workspace-section {
     border-top: 1px solid var(--theme-stroke);
   }
 
-  .version-section {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact);
+  .workspace-section {
+    background: color-mix(in srgb, var(--theme-text) 2%, transparent);
   }
 
-  .version-button {
-    border: 1px solid var(--theme-stroke);
-    border-radius: 999px;
-    background: var(--theme-card-bg);
-    color: var(--theme-text);
-    padding: 0.45rem 0.75rem;
-    cursor: pointer;
-    font: inherit;
-    font-size: var(--font-size-min);
+  /* The shorter column's last section fills the leftover height, so the
+     section surface reaches the version band. */
+  .workspace-section:last-child {
+    flex: 1 1 auto;
   }
 
-  .version-button:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
+  /* A section that is only a header band needs no rule under it; the next
+     section's top rule already separates them. */
+  .workspace-section > :global(.section-header:last-child) {
+    border-bottom: 0;
   }
 
-  .version-button:disabled {
-    cursor: default;
-    color: var(--theme-text-dim);
+  /* The panel does not clip its children, so the language menu can hang
+     past its edge; the tinted pieces at the corners round themselves. */
+  .workspace-column:first-child > .workspace-section:first-child,
+  .workspace-column:first-child
+    > .workspace-section:first-child
+    :global(.section-header) {
+    border-top-left-radius: var(--panel-inner-radius);
+    border-top-right-radius: var(--panel-inner-radius);
   }
 
-  .version-button.ready {
-    border-color: var(--theme-accent);
-    color: var(--theme-accent);
+  .version-band {
+    border-bottom-left-radius: var(--panel-inner-radius);
+    border-bottom-right-radius: var(--panel-inner-radius);
   }
 
-  :global(.advanced-trigger) {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.875rem;
-    width: 100%;
-    min-height: var(--min-touch-target);
-    padding: 0.875rem 1rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 0.75rem;
-    color: var(--theme-text);
-    background: var(--theme-card-bg);
-    cursor: pointer;
-    text-align: left;
+  .section-body {
+    min-width: 0;
+    padding: 0.85em 1.15em 1em;
   }
 
-  :global(.advanced-trigger:hover) {
-    border-color: var(--theme-stroke-strong);
-    background: var(--theme-card-hover-bg);
-  }
-
-  :global(.advanced-trigger:focus-visible) {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 2px;
-  }
-
-  .advanced-trigger-icon {
-    display: grid;
-    place-items: center;
-    width: var(--min-touch-target);
-    height: var(--min-touch-target);
-    border-radius: 0.7rem;
-    color: var(--theme-accent-strong, var(--theme-accent));
-    background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
-  }
-
-  .advanced-trigger-copy {
+  .toggle-list {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    min-width: 0;
   }
 
-  .advanced-trigger-copy strong {
-    font-size: max(0.875rem, var(--font-size-base));
-    font-weight: 650;
+  .toggle-list :global(.setting-toggle) {
+    padding-inline: 1.15em;
   }
 
-  .advanced-trigger-copy small,
-  .advanced-content-header p {
-    color: var(--theme-text-dim);
-    font-size: max(0.75rem, var(--font-size-compact));
-    line-height: 1.4;
+  .toggle-list :global(.setting-toggle + .setting-toggle) {
+    border-top: 1px solid var(--theme-stroke);
+  }
+
+  .guide-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6em;
+  }
+
+  .disclosure-action :global(.panel-btn) {
+    min-width: var(--min-touch-target, 44px);
   }
 
   .advanced-chevron {
-    color: var(--theme-text-dim);
-    transition: transform var(--duration-fast) ease;
+    transition: transform var(--transition-fast);
   }
 
   .advanced-chevron.open {
     transform: rotate(180deg);
   }
 
-  :global(.advanced-content) {
-    overflow: hidden;
+  .advanced-body {
+    padding-top: 0.5em;
   }
 
-  .advanced-content-inner {
-    margin-top: 0.75rem;
-    padding: 1rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 0.75rem;
-    background: color-mix(
-      in srgb,
-      var(--theme-panel-bg) 92%,
-      var(--theme-text) 2%
-    );
+  .version-band {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6em 1em;
+    padding: 0.75em 1.15em;
+    border-top: 1px solid var(--theme-stroke);
+    color: var(--theme-text-dim);
+    background: color-mix(in srgb, var(--theme-text) 3%, transparent);
+    font-size: max(0.875rem, var(--font-size-min));
+    font-variant-numeric: tabular-nums;
   }
 
-  .advanced-content-header {
-    margin-bottom: 1rem;
+  .version-text {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25em 0.9em;
   }
 
-  .advanced-content-header h3,
-  .advanced-content-header p {
-    margin: 0;
+  .version-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
   }
 
-  .advanced-content-header h3 {
-    color: var(--theme-text);
-    font-size: max(1rem, var(--font-size-base));
-    font-weight: 650;
+  /* Holds the longest status ("Downloading 100%") so the label can change
+     without pushing What's new. */
+  .update-action :global(.panel-btn) {
+    min-width: 13em;
   }
 
-  .advanced-content-header p {
-    margin-top: 0.25rem;
+  /* Two columns that share one seam, with the version band across the foot. */
+  @container preferences-tab (min-width: 48rem) {
+    .preferences-workspace {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .workspace-column + .workspace-column {
+      border-top: 0;
+      border-left: 1px solid var(--theme-stroke);
+    }
+
+    .workspace-column:first-child > .workspace-section:first-child,
+    .workspace-column:first-child
+      > .workspace-section:first-child
+      :global(.section-header) {
+      border-top-right-radius: 0;
+    }
+
+    .workspace-column:nth-child(2) > .workspace-section:first-child,
+    .workspace-column:nth-child(2)
+      > .workspace-section:first-child
+      :global(.section-header) {
+      border-top-right-radius: var(--panel-inner-radius);
+    }
+
+    .version-band {
+      grid-column: 1 / -1;
+    }
   }
 
-  /* Responsive */
-  @media (max-width: 640px) {
+  @container preferences-tab (min-width: 105rem) {
+    .section-body,
+    .version-band {
+      padding-inline: 1.35em;
+    }
+
+    .toggle-list :global(.setting-toggle) {
+      padding-inline: 1.35em;
+    }
+  }
+
+  @container preferences-tab (max-width: 32rem) {
     .preferences-tab {
-      padding: 12px;
-      gap: 20px;
+      align-content: start;
+      padding-inline: 0.65rem;
     }
 
-    .header-icon {
-      width: 48px;
-      height: 48px;
-      font-size: var(--font-size-xl);
+    .section-body,
+    .version-band {
+      padding-inline: 0.9rem;
     }
 
-    .toggle-row {
-      padding: 14px;
-    }
-
-    .toggle-switch {
-      width: 48px;
-      height: 28px;
-    }
-
-    .toggle-knob {
-      width: 22px;
-      height: 22px;
-    }
-
-    .toggle-switch.active .toggle-knob {
-      transform: translateX(20px);
+    .toggle-list :global(.setting-toggle) {
+      padding-inline: 0.9rem;
     }
   }
 
-  /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .preferences-tab,
-    .toggle-row,
-    .toggle-switch,
-    .toggle-knob {
-      transition: none !important;
-    }
-
     .advanced-chevron {
       transition: none;
+    }
+  }
+
+  @media (prefers-contrast: high) {
+    .preferences-workspace {
+      border-width: 2px;
     }
   }
 </style>
