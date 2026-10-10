@@ -36,6 +36,14 @@ const snapshot: ArrangementSnapshot = {
   skipStartPlacement: true,
 };
 
+// The test setup replaces document.createElement; HTML elements built this
+// way keep their dataset and style.
+const create = <K extends keyof HTMLElementTagNameMap>(tag: K) =>
+  document.createElementNS(
+    "http://www.w3.org/1999/xhtml",
+    tag
+  ) as HTMLElementTagNameMap[K];
+
 describe("arrangement frame export", () => {
   it("waits for cells before capturing a non-animation arrangement", async () => {
     vi.stubGlobal("CSS", { escape: (value: string) => value });
@@ -50,11 +58,6 @@ describe("arrangement frame export", () => {
       compiled.durationSeconds,
       0.25
     );
-    const create = <K extends keyof HTMLElementTagNameMap>(tag: K) =>
-      document.createElementNS(
-        "http://www.w3.org/1999/xhtml",
-        tag
-      ) as HTMLElementTagNameMap[K];
     const root = create("div");
     const mounted = create("div");
     mounted.className = "media-layer";
@@ -130,27 +133,27 @@ describe("arrangement frame export", () => {
       compiled.durationSeconds,
       0.25
     );
-    const root = document.createElement("div");
-    const mounted = document.createElement("div");
+    const root = create("div");
+    const mounted = create("div");
     mounted.className = "media-layer";
     mounted.dataset.clipId = "arrangement-1";
     mounted.dataset.renderMode = "arrangement";
-    const surface = document.createElement("div");
+    const surface = create("div");
     surface.dataset.arrangementSurface = "";
     surface.dataset.arrangementCellCount = "1";
     surface.style.backgroundColor = "#101018";
-    const cell = document.createElement("div");
+    const cell = create("div");
     cell.className = "arrangement-cell";
     cell.dataset.mediaType = "animation";
-    const cellCanvas = document.createElement("div");
+    const cellCanvas = create("div");
     cellCanvas.className = "cell-canvas";
     cellCanvas.dataset.arrangementCellReady = "true";
     cellCanvas.style.backgroundColor = "#12121c";
     cellCanvas.style.border = "1px solid #333";
-    const wrapper = document.createElement("div");
+    const wrapper = create("div");
     wrapper.className = "canvas-wrapper";
     wrapper.style.backgroundColor = "#0a0a0f";
-    const engineCanvas = document.createElement("canvas");
+    const engineCanvas = create("canvas");
     engineCanvas.width = 300;
     engineCanvas.height = 300;
     wrapper.append(engineCanvas);
@@ -172,7 +175,7 @@ describe("arrangement frame export", () => {
         },
       }
     );
-    const canvas = document.createElement("canvas");
+    const canvas = create("canvas");
     canvas.width = 600;
     canvas.height = 600;
     vi.spyOn(canvas, "getContext").mockReturnValue(
@@ -190,6 +193,90 @@ describe("arrangement frame export", () => {
       } as unknown as RenderPostStudioFrameInput["pictographCapture"],
     });
     expect(capture).not.toHaveBeenCalled();
+    expect(
+      drawImage.mock.calls.some(([source]) => source === engineCanvas)
+    ).toBe(true);
+  });
+
+  it("waits for cell canvases rebuilt at the export layout size", async () => {
+    vi.stubGlobal("CSS", { escape: (value: string) => value });
+    const project = createArrangementProject(
+      snapshot,
+      "studio-arrangement:export",
+      123
+    );
+    const compiled = compilePostProject(project, { now: 123 })!;
+    const layers = evaluatePresetFrame(
+      compiled.preset,
+      compiled.durationSeconds,
+      0.25
+    );
+    const root = create("div");
+    const mounted = create("div");
+    mounted.className = "media-layer";
+    mounted.dataset.clipId = "arrangement-1";
+    mounted.dataset.renderMode = "arrangement";
+    const surface = create("div");
+    surface.dataset.arrangementSurface = "";
+    surface.dataset.arrangementCellCount = "1";
+    const cell = create("div");
+    cell.className = "arrangement-cell";
+    cell.dataset.mediaType = "animation";
+    const cellCanvas = create("div");
+    cellCanvas.className = "cell-canvas";
+    cellCanvas.dataset.arrangementCellReady = "true";
+    const wrapper = create("div");
+    wrapper.className = "canvas-wrapper";
+    // The export laid the grid out at the file's size; the raster still has
+    // the preview's.
+    Object.defineProperty(wrapper, "clientWidth", { value: 540 });
+    Object.defineProperty(wrapper, "clientHeight", { value: 540 });
+    wrapper.dataset.rasterSize = "186";
+    const engineCanvas = create("canvas");
+    engineCanvas.width = 186;
+    engineCanvas.height = 186;
+    wrapper.append(engineCanvas);
+    cellCanvas.append(wrapper);
+    cell.append(cellCanvas);
+    surface.append(cell);
+    mounted.append(surface);
+    root.append(mounted);
+    const bounds = { left: 0, top: 0, width: 300, height: 300 } as DOMRect;
+    for (const element of [surface, cellCanvas, wrapper, engineCanvas])
+      vi.spyOn(element, "getBoundingClientRect").mockReturnValue(bounds);
+
+    const drawImage = vi.fn();
+    const context = new Proxy(
+      { drawImage },
+      {
+        get(target, key) {
+          return Reflect.get(target, key) ?? vi.fn();
+        },
+      }
+    );
+    const canvas = create("canvas");
+    canvas.width = 600;
+    canvas.height = 600;
+    vi.spyOn(canvas, "getContext").mockReturnValue(
+      context as unknown as CanvasRenderingContext2D
+    );
+    const rendering = renderPostStudioFrame({
+      canvas,
+      root,
+      preset: compiled.preset,
+      layers,
+      cardFrameCache: new Map(),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(
+      drawImage.mock.calls.some(([source]) => source === engineCanvas)
+    ).toBe(false);
+    engineCanvas.width = 540;
+    engineCanvas.height = 540;
+    wrapper.dataset.rasterSize = "540";
+    await rendering;
+
     expect(
       drawImage.mock.calls.some(([source]) => source === engineCanvas)
     ).toBe(true);

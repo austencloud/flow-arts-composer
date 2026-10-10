@@ -83,6 +83,11 @@
       current = false;
     };
   });
+
+  /** The account save, bound to the account and sequence the editor opened with. */
+  function saveSyncedFor(uid: string, source: SequenceData) {
+    return (project: PostProject) => saveSyncedPostDraft(project, source, uid);
+  }
 </script>
 
 <div class="post-studio-pane">
@@ -92,7 +97,7 @@
       {active}
       {sequence}
       initialProject={draft.project ?? undefined}
-      onSaveDraft={authState.user && !authState.user.isAnonymous ? (project) => saveSyncedPostDraft(project, sequence) : draft.diskAvailable ? savePostDraft : undefined}
+      onSaveDraft={authState.user && !authState.user.isAnonymous ? saveSyncedFor(authState.user.uid, sequence) : draft.diskAvailable ? savePostDraft : undefined}
       draftLoadError={draft.error}
       cardPreviewUrl={cardPreview.url}
       cardRenderOptions={cardPreview.renderOptions}

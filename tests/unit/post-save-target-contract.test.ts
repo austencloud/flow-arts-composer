@@ -8,8 +8,8 @@
  * video's post went into the ordinary post, or the reverse.
  *
  * This test locks the shape that fixed it: the editor reads its save once,
- * when it opens, and the Post page binds the account save to the sequence
- * when it hands it over. A feature video's add-video button names the
+ * when it opens, and the Post page binds the account save to the account
+ * and sequence when it hands it over. A feature video's add-video button names the
  * command that copies footage into its folder instead of opening a picker.
  *
  * If this test fails, fix the component; do not loosen the assertions.
@@ -39,10 +39,16 @@ describe("where a waiting Post save goes", () => {
     expect(source).not.toMatch(/\bonSaveDraft\(/);
   });
 
-  it("the Post page binds the account save to its sequence", () => {
+  it("the Post page binds the account save to its account and sequence", () => {
     const source = read(POST_MODULE);
-    expect(source).toContain("saveSyncedFor(state.sequence)");
-    expect(source).not.toContain("saveSyncedPostDraft(project, state.sequence");
+    expect(source).toContain(
+      "saveSyncedFor(authState.user.uid, moduleState.sequence)"
+    );
+    expect(source).not.toContain(
+      "saveSyncedPostDraft(project, moduleState.sequence"
+    );
+    // A retry left from the previous account is dropped on an account change.
+    expect(source).toContain("cancelPostCloudRetries()");
   });
 
   it("a feature video's add-video button names the command for footage", () => {

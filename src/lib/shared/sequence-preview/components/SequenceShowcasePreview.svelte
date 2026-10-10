@@ -27,7 +27,8 @@
     /** A host-owned sequence bypasses the lazy loader and updates in place. */
     sequence?: SequenceData | null;
     /** Keep it the same while the host edits its sequence (a transform, a
-     *  turn change) and the player's props glide to their new pose. */
+     *  turn change) and the player's props, and the rail's pictographs under
+     *  it, glide to their new pose. */
     transitionKey?: string | null;
     /** Keep the canonical player-and-rail composition visible and interactive. */
     alwaysLive?: boolean;
@@ -445,6 +446,7 @@
           loop: alwaysLive,
           stepPulse: false,
           onCellClick,
+          transitionKey,
         }}
       />
     </div>

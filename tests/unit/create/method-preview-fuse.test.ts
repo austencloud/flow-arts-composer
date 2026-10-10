@@ -8,11 +8,15 @@ import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-
 import { fuseLayout } from "#lib/features/create/shared/components/method-previews/method-preview-compositions.js";
 import {
   DEMO_SEQUENCE,
+  DEMO_STEP_START,
   startPictograph,
 } from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
 import {
+  FUSE_PREVIEW_DRAW_WAIT_MS,
+  FUSE_PREVIEW_STEPS,
   FUSE_PREVIEW_TIMING,
   fuseFrames,
+  fusePreviewFrames,
   fuseSources,
 } from "#lib/features/create/shared/components/method-previews/method-preview-fuse.js";
 
@@ -39,6 +43,12 @@ describe("Fuse preview frames", () => {
     expect(frames[0]?.motionStartData).toBe(DEMO_SEQUENCE.steps[2]);
     expect(frames[1]?.motionStartData).toBe(DEMO_SEQUENCE.steps[3]);
     expect(frames.map((frame) => frame.motionProgress)).toEqual([0, 0]);
+  });
+
+  it("shows any pair's steps from Fuse's place in the demo", () => {
+    expect(fusePreviewFrames(DEMO_SEQUENCE)).toEqual(
+      fuseFrames(DEMO_SEQUENCE, FUSE_PREVIEW_STEPS, DEMO_STEP_START.fuse)
+    );
   });
 });
 
@@ -152,5 +162,23 @@ describe("Fuse preview beats", () => {
       timing.mergeMs +
       2 * timing.stepMs;
     expect(end).toBeLessThanOrEqual(METHOD_PREVIEW_TIMING.turnMs - 500);
+  });
+
+  it("pops a new path in within the sources' fade", () => {
+    const timing = FUSE_PREVIEW_TIMING;
+    expect(timing.newHandMs).toBeGreaterThan(0);
+    expect(timing.newHandMs).toBeLessThan(timing.sourcesInMs);
+  });
+
+  it("still ends within the turn after waiting on a slow draw", () => {
+    const timing = FUSE_PREVIEW_TIMING;
+    const end =
+      FUSE_PREVIEW_DRAW_WAIT_MS +
+      timing.clearMs +
+      timing.sourcesInMs +
+      timing.slideMs +
+      timing.mergeMs +
+      FUSE_PREVIEW_STEPS * timing.stepMs;
+    expect(end).toBeLessThan(METHOD_PREVIEW_TIMING.turnMs);
   });
 });
