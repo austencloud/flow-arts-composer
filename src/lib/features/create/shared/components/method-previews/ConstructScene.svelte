@@ -118,8 +118,10 @@
     phases = cells.map((_, index) => (index === 0 ? "choosing" : "waiting"));
     const finger = sceneGhost(run, () => root);
     pose = finger.ghost;
-    const lead = cellCenter(first);
-    placeGhost(finger, lead.x + first.size * 0.35, lead.y + first.size * 0.3);
+    // The finger starts on the first pick: a glide there would spend time
+    // the last box needs before the turn ends.
+    const lead = cellCenter(constructChoiceCells(first)[picks[0]!] ?? first);
+    placeGhost(finger, lead.x, lead.y);
     for (const [index, cell] of cells.entries()) {
       const spot = constructChoiceCells(cell)[picks[index]!];
       const target = cellCenter(spot ?? cell);
