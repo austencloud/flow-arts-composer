@@ -599,6 +599,9 @@ captureEffectDiagnostics to the context menu.
 <div
   class="canvas-wrapper"
   bind:this={containerElement}
+  data-raster-size={isInitialized
+    ? engineInstance.settledCanvasSize || undefined
+    : undefined}
   data-transparent={backgroundAlpha === 0 ? "true" : "false"}
   data-dark-mode={darkModeEnabled ? "true" : "false"}
 >

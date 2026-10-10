@@ -286,6 +286,16 @@ export class AnimationEngine {
   }
 
   /**
+   * The side, in layout pixels, of the square the canvas is rasterized at,
+   * or 0 while a resize is reallocating it. An exporter compares it with the
+   * box to know the raster has caught up with a new layout size.
+   */
+  get settledCanvasSize(): number {
+    const state = this.lifecycleManager.resizer?.state;
+    return state && !state.isResizing ? state.currentSize : 0;
+  }
+
+  /**
    * Wire the shared EffectsConfigState so the engine reads live per-effect
    * intents (zap, etc.) from the same source the Customize panels write to.
    *
