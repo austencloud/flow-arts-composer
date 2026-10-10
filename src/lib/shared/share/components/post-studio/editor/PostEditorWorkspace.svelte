@@ -2991,6 +2991,8 @@
 
   .dock.timing {
     position: static;
+    /* The timing dock is static in its own grid area, so its settings sheet keeps the drawer's z-index above the stage. */
+    z-index: auto;
     margin: 0;
     padding: 0;
     border-top: 0;
