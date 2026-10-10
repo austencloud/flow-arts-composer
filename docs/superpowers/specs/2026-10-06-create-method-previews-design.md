@@ -207,7 +207,12 @@ one. A strip shows the dice and three or four steps. A square shows a 2×2 or
 A corner of the real matrix: blue-hand flowers down the side, red-hand flowers
 across the top, and cells drawn by `ShapeMatrixMandalaArt` from
 `loadShapeMatrix()` for the user's prop. A highlight lands on one cell. The
-cell grows and draws its mandala from start to finish.
+cell grows and draws its mandala from start to finish. Each turn is a Surprise
+roll (2026-10-10), as the Matrix's own Surprise button rolls one: the corner
+turns to a different page (another pair of turn bands from the level the
+Matrix opens on) and the light lands on a different crossing. The next page's
+paths and tiles paint in the background between turns; a turn whose page is
+not painted yet rolls only a new crossing.
 
 The drawing reuses the Matrix's own guide painter, `paintMandalaGuide`, with
 its progressive reveal (`reveal` and `progress`). The live mandala overlay
@@ -219,7 +224,7 @@ function.
 
 A short strip has no room to grow, so it shows one blue flower and the cells
 that fit, and the chosen cell draws in place. The finished picture is the
-corner with the chosen mandala drawn. Loading the matrix here also warms the
+latest roll's corner with its chosen mandala drawn. Loading the matrix here also warms the
 cache Shape uses, so Shape opens faster afterward.
 
 ### Fuse
