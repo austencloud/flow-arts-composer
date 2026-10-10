@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
     }) => void;
   }>,
   getAllSequences: vi.fn<() => Promise<SequenceData[]>>(),
+  removedListeners: new Set<(id: string) => void>(),
+  addedListeners: new Set<(sequence: SequenceData) => void>(),
 }));
 
 vi.mock(
@@ -72,8 +74,14 @@ vi.mock("#lib/shared/settings/state/settings-state.svelte.js", () => ({
 }));
 
 vi.mock("#lib/shared/library/library-events.js", () => ({
-  onLibraryMutated: () => () => {},
-  onLibrarySequenceAdded: () => () => {},
+  onLibraryMutated: (listener: (id: string) => void) => {
+    mocks.removedListeners.add(listener);
+    return () => mocks.removedListeners.delete(listener);
+  },
+  onLibrarySequenceAdded: (listener: (sequence: SequenceData) => void) => {
+    mocks.addedListeners.add(listener);
+    return () => mocks.addedListeners.delete(listener);
+  },
   onLibrarySequenceUpdated: () => () => {},
 }));
 
@@ -231,6 +239,30 @@ describe("BrowseEngine effective identity switching", () => {
     await engine.initialize();
     expect(engine.allSequences.map((item) => item.id)).toEqual(["my-draft"]);
     expect(mocks.pending).toHaveLength(0);
+    engine.destroy();
+    dispose();
+  });
+
+  it("keeps guest mutation updates with progressive account paging configured", async () => {
+    browseEngineAuthTestState.effectiveUserId = "guest";
+    browseEngineAuthTestState.isFullAccount = false;
+    recordSavedSequenceId("guest", "saved");
+    mocks.getAllSequences.mockResolvedValue([sequence("saved")]);
+    const { engine, dispose } = createBrowseEngineForTest({
+      persistKey: null,
+      initialSource: "my-library",
+      progressiveLibrary: true,
+    });
+    await engine.initialize();
+    await tick();
+    expect(engine.allSequences.map((item) => item.id)).toEqual(["saved"]);
+    for (const listener of mocks.addedListeners) listener(sequence("new-save"));
+    expect(engine.allSequences.map((item) => item.id)).toEqual([
+      "new-save",
+      "saved",
+    ]);
+    for (const listener of mocks.removedListeners) listener("saved");
+    expect(engine.allSequences.map((item) => item.id)).toEqual(["new-save"]);
     engine.destroy();
     dispose();
   });

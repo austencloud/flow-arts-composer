@@ -528,10 +528,16 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
 
   // --- Library mutation listeners ---
 
+  const usesSharedLibraryPages = (): boolean =>
+    !!config.progressiveLibrary &&
+    source === "my-library" &&
+    authState.isFullAccount &&
+    _viewMode.granularity !== "solo";
+
   const cleanupMutated = $effect.root(() => {
     $effect(() => {
       return onLibraryMutated((sequenceId) => {
-        if (config.progressiveLibrary) return;
+        if (usesSharedLibraryPages()) return;
         libraryCache = libraryCache?.filter((s) => s.id !== sequenceId) ?? null;
         loaderService.removeFromCache(sequenceId);
         allSequences = allSequences.filter((s) => s.id !== sequenceId);
@@ -540,7 +546,7 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
 
     $effect(() => {
       return onLibrarySequenceAdded((sequence) => {
-        if (config.progressiveLibrary) return;
+        if (usesSharedLibraryPages()) return;
         if (source === "my-library") {
           const librarySequence = withLibraryBrowseDate(sequence);
           if (libraryCache) {
