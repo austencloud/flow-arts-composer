@@ -30,6 +30,12 @@ vi.stubGlobal("fetch", async (input: string | URL | Request) => {
 });
 
 describe("three-petal and four-petal matrix realizations", () => {
+  // Every three-petal x four-petal cell in both axis orders and all timing
+  // modes, with each candidate's geometry recomputed: 17.6 s of pure CPU in a
+  // three-file run on 2026-10-10. Under the full suite's 31 forks the same test
+  // took 62,721 ms on 2026-10-09 and timed out against its 60 s budget; a file
+  // there runs five to eight times slower than alone. 120 s is the budget
+  // tests/unit/3d-animation gives a loaded machine.
   it("keeps every selected hand flower in both axis orders and all timing modes", async () => {
     const data = await loadShapeMatrix(PropType.STAFF);
     const flowers = (petals: number) =>
@@ -83,5 +89,5 @@ describe("three-petal and four-petal matrix realizations", () => {
           }
         }
     }
-  }, 60_000);
+  }, 120_000);
 });
