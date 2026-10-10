@@ -3,6 +3,7 @@
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import InlineAnimationPlayer from "#lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import StepStrip from "#lib/shared/timeline/StepStrip.svelte";
+  import EffectQuickSwitch from "#lib/shared/animation-engine/components/effects-panel/EffectQuickSwitch.svelte";
   import {
     createEffectsConfigState,
     type EffectsConfigState,
@@ -42,6 +43,7 @@
   // component. Subsequent Play runs only need their new sequence data loaded.
   let canvasInitialized = $state(false);
   let loadedRun = $state<number | null>(null);
+  let playerStage = $state<HTMLElement | null>(null);
   const visibilityManager = getAnimationVisibilityManager();
   let effectsConfigState = $state<EffectsConfigState>(
     visibilityManager.effectsConfigState ?? createEffectsConfigState()
@@ -73,12 +75,16 @@
   });
 </script>
 
+{#snippet effectSwitch()}
+  <EffectQuickSwitch {effectsConfigState} player={playerStage} />
+{/snippet}
+
 <div class="workspace-playback" data-testid="workspace-playback">
   <div class="playback-layout">
     <!-- Foreground for the workspace's click-background-to-close: taps here
          pause, seek, or scrub instead. -->
     <div class="playback-media" data-playback-foreground>
-      <div class="player-stage">
+      <div class="player-stage" bind:this={playerStage}>
         <InlineAnimationPlayer
           {sequence}
           sequenceLoadKey={loadIdentity}
@@ -87,6 +93,7 @@
           scrubbable
           videoDownload
           showScrubberPlaybackControl
+          scrubberTrailing={effectSwitch}
           hoverHint="none"
           autoPlay={active}
           autoPlayDelay={0}
