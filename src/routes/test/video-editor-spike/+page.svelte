@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
   import { untrack } from "svelte";
-  import { VideoEditor, runtimeProbe } from "@austencloud/video-editor";
+  import { VideoEditorSpike, runtimeProbe } from "@austencloud/video-editor";
   import { formatTimecode } from "@austencloud/video-editor/core";
   import "@austencloud/video-editor/css/video-editor-tokens.css";
 
@@ -16,7 +16,7 @@
 <main class="spike" data-ve-single-svelte={singleSvelte}>
   <h1>@austencloud/video-editor spike</h1>
   <p>Core says {formatTimecode(83.5)}. Single Svelte runtime: {singleSvelte}.</p>
-  <VideoEditor seconds={83.5} />
+  <VideoEditorSpike seconds={83.5} />
 </main>
 
 <style>
