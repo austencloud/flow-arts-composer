@@ -39,6 +39,7 @@
     active?: boolean;
     sequence: SequenceData;
     initialProject?: PostProject;
+    editArrangementOnOpen?: boolean;
     /** A feature video: its post saves to its folder through the dev server. */
     feature?: FeatureVideoSync;
     /** Saves elsewhere too; may hand back a later edit saved somewhere else. */
@@ -74,6 +75,7 @@
     active = true,
     sequence,
     initialProject,
+    editArrangementOnOpen = false,
     feature,
     onSaveDraft,
     draftLoadError = null,
@@ -193,6 +195,7 @@
     {active}
     {sequence}
     {initialProject}
+    {editArrangementOnOpen}
     {feature}
     {onSaveDraft}
     {draftLoadError}

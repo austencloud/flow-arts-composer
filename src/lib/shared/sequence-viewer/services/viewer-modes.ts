@@ -53,7 +53,7 @@ export const VIEWER_MODE_OPTIONS: ViewerModeOption[] = [
   {
     id: "post-studio",
     icon: "fa-wand-magic-sparkles",
-    label: "Post Studio",
+    label: "Studio",
     requiresPostStudioAccess: true,
   },
 ];

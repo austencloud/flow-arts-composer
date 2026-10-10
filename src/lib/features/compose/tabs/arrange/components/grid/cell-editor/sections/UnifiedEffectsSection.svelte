@@ -1,10 +1,8 @@
 <!--
   UnifiedEffectsSection.svelte
 
-  v4 mockup design:
-  - Cell scope: one 4×4 grid, applies to all
-  - Hand/Tip scope: compact channel rows (dot + label + badge),
-    tap row to target it, ONE grid below targets that row
+  Cell scope offers the effects supported by the cell-level setting.
+  Hand and tip scopes offer the full renderer registry.
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
@@ -24,9 +22,6 @@
     "led",
     "trails",
   ]);
-  function asCellEffect(e: EffectType): CellEffect {
-    return SHIPPED_CELL_EFFECTS.has(e) ? (e as CellEffect) : "none";
-  }
   import { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 
   type Scope = "cell" | "hand" | "tip";
@@ -65,6 +60,7 @@
     color: e.color,
     label: e.label,
   }));
+  const cellEffectGrid = effectGrid.filter((effect) => SHIPPED_CELL_EFFECTS.has(effect.value));
 
   const trailModes: { value: TrailMode; label: string }[] = [
     { value: TrailMode.FADE, label: "Fade" },
@@ -125,19 +121,16 @@
   });
 
   const gridTargetEffect = $derived.by<EffectType>(() => {
-    if (scope === "cell") return currentEffect as EffectType;
+    if (scope === "cell") return localMap["*"]?.effect ?? currentEffect as EffectType;
     return localMap[targetKey]?.effect ?? "none";
   });
+  const visibleEffectGrid = $derived(scope === "cell" ? cellEffectGrid : effectGrid);
 
   const gridTargetLabel = $derived.by(() => {
     if (scope === "cell") return "SELECT EFFECT";
     const ch = channels.find((c) => c.key === targetKey);
     return ch ? `EFFECT FOR ${ch.label.toUpperCase()}` : "SELECT EFFECT";
   });
-
-  const activeEffectMeta = $derived(
-    effectGrid.find((e) => e.value === gridTargetEffect)
-  );
 
   function getEffectMeta(effect: EffectType) {
     if (effect === "none")
@@ -153,12 +146,11 @@
 
   function handleGridTap(effect: EffectType) {
     if (scope === "cell") {
-      const cellEffect = asCellEffect(effect);
-      if (currentEffect === cellEffect && cellEffect !== "none") {
-        onSetEffect("none");
-      } else {
-        onSetEffect(cellEffect);
-      }
+      if (!SHIPPED_CELL_EFFECTS.has(effect)) return;
+      const next: CellEffect = gridTargetEffect === effect ? "none" : effect as CellEffect;
+      localMap = { "*": { effect: next } };
+      onSetEffect(next);
+      onUpdateMap(localMap);
       return;
     }
     const current = localMap[targetKey]?.effect ?? "none";
@@ -174,7 +166,9 @@
 
     if (newScope === "cell") {
       const most = mostCommonEffect(Object.keys(localMap));
-      newMap["*"] = { effect: most };
+      const cellEffect = SHIPPED_CELL_EFFECTS.has(most) ? most as CellEffect : "none";
+      newMap["*"] = { effect: cellEffect };
+      onSetEffect(cellEffect);
       targetKey = "*";
     } else if (newScope === "hand") {
       if (oldScope === "tip") {
@@ -304,13 +298,13 @@
   <!-- Header -->
   <span class="section-header">{gridTargetLabel}</span>
 
-  <!-- 4×4 icon-only grid -->
+  <!-- Available effects for the chosen scope -->
   <div
     class="effect-grid"
     role="radiogroup"
     aria-label={t("compose_ui_visual_effect")}
   >
-    {#each effectGrid as eff}
+    {#each visibleEffectGrid as eff}
       {@const isActive = gridTargetEffect === eff.value}
       <button
         class="grid-cell"
@@ -351,15 +345,6 @@
     </div>
   {/if}
 
-  <!-- Customize accordion -->
-  {#if activeEffectMeta}
-    <button class="accordion-row">
-      <span class="accordion-label">Customize {activeEffectMeta.label}</span>
-      <span class="accordion-right">
-        <i class="fas fa-chevron-right" aria-hidden="true"></i>
-      </span>
-    </button>
-  {/if}
 </div>
 
 <style>
@@ -561,7 +546,7 @@
     font-size: 10px;
   }
 
-  /* ── 4×4 icon-only grid ───────────────────────────────────── */
+  /* ── Effect icon grid ───────────────────────────────────── */
   .effect-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -657,47 +642,12 @@
     color: var(--theme-accent, #60a5fa);
   }
 
-  .accordion-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 10px;
-    min-height: 44px;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
-    border-radius: 8px;
-    cursor: pointer;
-    width: 100%;
-    transition:
-      background 150ms ease,
-      border-color 150ms ease;
-  }
-
-  .accordion-row:hover {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.06));
-    border-color: var(--theme-stroke, rgba(255, 255, 255, 0.1));
-  }
-
-  .accordion-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.75);
-  }
-
-  .accordion-right {
-    display: flex;
-    align-items: center;
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 10px;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .unified-effects {
       animation: none;
     }
     .grid-cell,
     .trail-chip,
-    .accordion-row,
     .scope-seg,
     .ch-row {
       transition: none;

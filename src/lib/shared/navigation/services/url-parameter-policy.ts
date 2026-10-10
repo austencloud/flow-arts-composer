@@ -60,6 +60,7 @@ const ROUTE_SCOPED_PARAMETERS: readonly RouteScopedParameter[] = [
   },
   { name: "handoff", isValidForPath: startsWith("/compose") },
   { name: "project", isValidForPath: startsWith("/post") },
+  { name: "library", isValidForPath: startsWith("/post") },
   { name: "feedback", isValidForPath: startsWith("/feedback") },
   { name: "openFeedback", isValidForPath: startsWith("/feedback") },
   { name: "theme", isValidForPath: startsWith("/settings/theme") },

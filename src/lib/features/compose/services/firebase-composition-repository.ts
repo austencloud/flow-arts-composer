@@ -28,7 +28,7 @@ import type { Composition } from "$lib/shared/animation-engine/domain/compose-ty
  * Get the current authenticated user ID.
  * Returns null if not authenticated.
  */
-function getUserId(): string | null {
+export function getUserId(): string | null {
   return auth.currentUser?.uid ?? null;
 }
 
@@ -43,11 +43,11 @@ export function isAuthenticated(): boolean {
  * Save a composition to Firestore.
  * Uses merge to avoid overwriting fields not present in the update.
  */
-export async function saveComposition(composition: Composition): Promise<void> {
-  const userId = getUserId();
+export async function saveComposition(composition: Composition, userId = getUserId()): Promise<void> {
   if (!userId) return;
+  if (composition.ownerId !== userId) throw new Error("Composition owner changed before cloud save");
 
-  const { createdAt, updatedAt, ...rest } = composition; // eslint-disable-line @typescript-eslint/no-unused-vars
+  const { createdAt, updatedAt, ...rest } = composition;
 
   await firestoreSet(
     getUserCompositionsPath(userId),
@@ -55,6 +55,7 @@ export async function saveComposition(composition: Composition): Promise<void> {
     {
       ...rest,
       createdAt: createdAt instanceof Date ? createdAt.toISOString() : createdAt,
+      updatedAt: updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt,
     } as Record<string, unknown>,
     { merge: true, trackOffline: true },
   );
@@ -65,8 +66,8 @@ export async function saveComposition(composition: Composition): Promise<void> {
  */
 export async function getComposition(
   compositionId: string,
+  userId = getUserId(),
 ): Promise<Composition | null> {
-  const userId = getUserId();
   if (!userId) return null;
 
   try {
@@ -96,8 +97,7 @@ export async function getComposition(
 /**
  * Load all compositions from Firestore for the current user.
  */
-export async function getCompositions(): Promise<Composition[]> {
-  const userId = getUserId();
+export async function getCompositions(userId = getUserId()): Promise<Composition[]> {
   if (!userId) return [];
 
   try {
@@ -106,18 +106,17 @@ export async function getCompositions(): Promise<Composition[]> {
       CompositionSchema,
       { orderBy: [{ field: "updatedAt", direction: "desc" }] },
     );
-    return parsed as unknown as Composition[];
+    return (parsed as unknown as Composition[]).map((composition) => ({ ...composition, ownerId: userId }));
   } catch (error) {
     console.error("Failed to load compositions from Firebase:", error);
-    return [];
+    throw error;
   }
 }
 
 /**
  * Delete a composition from Firestore.
  */
-export async function deleteComposition(compositionId: string): Promise<void> {
-  const userId = getUserId();
+export async function deleteComposition(compositionId: string, userId = getUserId()): Promise<void> {
   if (!userId) return;
 
   try {
@@ -146,8 +145,8 @@ export async function deleteComposition(compositionId: string): Promise<void> {
 export async function updateFavorite(
   compositionId: string,
   isFavorite: boolean,
+  userId = getUserId(),
 ): Promise<void> {
-  const userId = getUserId();
   if (!userId) return;
 
   try {

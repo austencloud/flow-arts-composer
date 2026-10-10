@@ -28,6 +28,7 @@ import type {
   PropColors,
 } from "$lib/shared/animation-engine/domain/compose-types";
 import type { Composition } from "$lib/shared/animation-engine/domain/compose-types";
+import { validateArrangementSnapshot, type ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
 import type { TrailMode } from "$lib/shared/animation-engine/domain/types/trail-types";
 import type {
   TipEffectMap,
@@ -52,10 +53,10 @@ import {
 import { calculateTotalBeats } from "../services/arrange-step-calculator";
 import { applyTransform } from "../services/arrange-layer-transformer";
 import { compositionSyncer } from "../../../services/composition-syncer";
-import { getComposition as dexieGetComposition } from "../../../services/dexie-composition-repository";
 
-import { getArrangeUndoManager } from "$lib/features/compose/tabs/arrange/get-arrange-undo-manager";
-import { getArrangePlaybackEngine } from "$lib/features/compose/tabs/arrange/get-arrange-playback-engine";
+import { ArrangeUndoManager } from "../services/arrange-undo-manager";
+import { ArrangePlaybackEngine } from "../services/arrange-playback-engine";
+import { getContext, hasContext, setContext } from "svelte";
 
 // Maximum backing array dimensions (8x8 = 64 cells)
 export const MAX_GRID_SIZE = 8;
@@ -138,11 +139,14 @@ function clampDimension(n: number): number {
 const DEFAULT_GRID_ROWS = 2;
 const DEFAULT_GRID_COLS = 2;
 
-function createArrangeGridState() {
+export function createArrangeGridState(options: { persist?: boolean } = {}) {
+  const persist = options.persist ?? true;
   // Services from module functions (stateless class ceremony retired)
-  const playbackEngine = getArrangePlaybackEngine();
+  const playbackEngine = new ArrangePlaybackEngine();
 
-  const initialConfig = loadGrid();
+  const initialConfig = persist ? loadGrid() : {
+    cells: createInitialGrid(), gridRows: DEFAULT_GRID_ROWS, gridCols: DEFAULT_GRID_COLS,
+  };
 
   // Core reactive state
   let cells = $state<GridCell[]>(initialConfig.cells);
@@ -196,22 +200,23 @@ function createArrangeGridState() {
   // Undo / Redo
   // =========================================================================
 
-  const undoManager = getArrangeUndoManager();
-  undoManager.init(() => ({ cells: deepCloneCells(cells), gridRows, gridCols }));
+  const undoManager = new ArrangeUndoManager();
+  undoManager.init(() => ({ cells: deepCloneCells(cells), gridRows, gridCols,
+    bpm: playbackBpm, skipStartPlacement }));
 
   let canUndo = $state(false);
   let canRedo = $state(false);
   let undoDescription = $state<string | null>(null);
   let redoDescription = $state<string | null>(null);
 
-  undoManager.subscribe(() => {
+  const unsubscribeUndo = undoManager.subscribe(() => {
     canUndo = undoManager.canUndo;
     canRedo = undoManager.canRedo;
     undoDescription = undoManager.undoDescription;
     redoDescription = undoManager.redoDescription;
   });
 
-  migrateLocalStorageCompositions();
+  if (persist) void migrateLocalStorageCompositions();
 
   function withUndo(
     type: ArrangeUndoOperationType,
@@ -245,9 +250,19 @@ function createArrangeGridState() {
   }
 
   function restoreSnapshot(snapshot: ArrangeGridSnapshot): void {
-    cells = deepCloneCells(snapshot.cells);
+    playbackEngine.stop();
+    const restored = createInitialGrid();
+    for (const cell of deepCloneCells(snapshot.cells)) {
+      if (cell.row >= 0 && cell.row < MAX_GRID_SIZE && cell.col >= 0 && cell.col < MAX_GRID_SIZE)
+        restored[cell.row * MAX_GRID_SIZE + cell.col] = cell;
+    }
+    cells = restored;
     gridRows = snapshot.gridRows;
     gridCols = snapshot.gridCols;
+    playbackEngine.setBpm(snapshot.bpm);
+    playbackBpm = snapshot.bpm;
+    skipStartPlacement = snapshot.skipStartPlacement;
+    selectedCellId = null;
     save();
   }
 
@@ -256,7 +271,7 @@ function createArrangeGridState() {
   // =========================================================================
 
   function save() {
-    saveGrid({ cells, gridRows, gridCols });
+    if (persist) saveGrid({ cells, gridRows, gridCols });
   }
 
   function getCellAt(row: number, col: number): GridCell | undefined {
@@ -388,6 +403,23 @@ function createArrangeGridState() {
   }
 
   return {
+    dispose(): void {
+      if (playbackPollId !== null) {
+        cancelAnimationFrame(playbackPollId);
+        playbackPollId = null;
+      }
+      playbackEngine.dispose();
+      unsubscribeUndo();
+      undoManager.clear();
+    },
+    captureSnapshot(): ArrangementSnapshot {
+      return validateArrangementSnapshot({ schemaVersion: 1, cells: deepCloneCells(cells),
+        gridRows, gridCols, bpm: playbackBpm, skipStartPlacement });
+    },
+    restoreSnapshot(snapshot: ArrangementSnapshot): void {
+      const validated = validateArrangementSnapshot(snapshot);
+      withUndo("LOAD_COMPOSITION", "Restore arrangement", () => restoreSnapshot(validated));
+    },
     get cells() {
       return cells;
     },
@@ -1111,6 +1143,7 @@ function createArrangeGridState() {
     },
     setBpm(bpm: number) {
       playbackEngine.setBpm(bpm);
+      playbackBpm = playbackEngine.bpm;
     },
 
     // Clipboard
@@ -1325,19 +1358,12 @@ function createArrangeGridState() {
     },
 
     async loadComposition(id: string): Promise<boolean> {
-      const composition = await dexieGetComposition(id);
+      const composition = await compositionSyncer.getComposition(id);
       if (!composition) return false;
 
       const restored = compositionToGridState(composition);
       withUndo("LOAD_COMPOSITION", `Load: ${composition.name}`, () => {
-        cells = restored.cells;
-        gridRows = restored.gridRows;
-        gridCols = restored.gridCols;
-        playbackEngine.setBpm(restored.bpm);
-        skipStartPlacement = restored.skipStartPlacement;
-        selectedCellId = null;
-        playbackEngine.stop();
-        save();
+        restoreSnapshot(restored);
       });
       return true;
     },
@@ -1382,20 +1408,36 @@ function createArrangeGridState() {
   };
 }
 
+const ARRANGE_GRID_CONTEXT = Symbol("arrange-grid-state");
 let _instance: ReturnType<typeof createArrangeGridState> | null = null;
 
-function getArrangeGridState() {
+function getLegacyArrangeGridState() {
   if (!_instance) {
     _instance = createArrangeGridState();
   }
   return _instance;
 }
 
+export function setArrangeGridStateContext(state: ArrangeGridState): void {
+  setContext(ARRANGE_GRID_CONTEXT, state);
+}
+
+export function getArrangeGridState(): ArrangeGridState {
+  try {
+    if (hasContext(ARRANGE_GRID_CONTEXT)) {
+      return getContext<ArrangeGridState>(ARRANGE_GRID_CONTEXT);
+    }
+  } catch {
+    // Legacy callers outside component initialization still use the shared instance.
+  }
+  return getLegacyArrangeGridState();
+}
+
 export const arrangeGridState = new Proxy(
   {} as ReturnType<typeof createArrangeGridState>,
   {
     get(_target, prop) {
-      return (getArrangeGridState() as Record<string | symbol, unknown>)[prop];
+      return (getLegacyArrangeGridState() as Record<string | symbol, unknown>)[prop];
     },
   }
 );

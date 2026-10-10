@@ -221,13 +221,24 @@ function choicesFromRecords(
       continue;
     try {
       const parsed = PostProjectSchema.safeParse(JSON.parse(record.value));
+      if (!parsed.success) continue;
+      const project = parsed.data;
+      const studioId = project.sequenceId.startsWith("studio-arrangement:");
+      const uid = accountId();
+      const studioKey = studioId && uid
+        ? `${PROJECT_PREFIX}account:${uid}:${project.sequenceId}`
+        : studioId && legacyPostOwner()
+          ? `${PROJECT_PREFIX}guest:${project.sequenceId}`
+          : studioId
+            ? `${PROJECT_PREFIX}${project.sequenceId}`
+            : null;
       if (
-        !parsed.success ||
-        record.key !== `${PROJECT_PREFIX}${parsed.data.sequenceId}` &&
-        record.key !== `${PROJECT_PREFIX}guest:${parsed.data.sequenceId}`
+        (studioId
+          ? record.key !== studioKey
+          : record.key !== `${PROJECT_PREFIX}${project.sequenceId}` &&
+            record.key !== `${PROJECT_PREFIX}guest:${project.sequenceId}`)
       )
         continue;
-      const project = parsed.data;
       const current = choices.get(project.sequenceId);
       if (current && current.updatedAt >= project.updatedAt) continue;
       choices.set(project.sequenceId, {
@@ -260,7 +271,7 @@ export async function listPostProjects(): Promise<{
   const controller = new AbortController();
   let deadline: ReturnType<typeof setTimeout> | undefined;
   try {
-    if (guestAfterClaim) throw new Error("Account backups are private.");
+    if (guestAfterClaim && !accountId()) throw new Error("Account backups are private.");
     const archive = (async () => {
       const response = await fetch("/_local/post-studio-drafts", {
         cache: "no-store",
@@ -292,7 +303,8 @@ export async function listPostProjects(): Promise<{
         "key" in record &&
         typeof record.key === "string" &&
         "value" in record &&
-        typeof record.value === "string"
+        typeof record.value === "string" &&
+        (!guestAfterClaim || record.key.startsWith(`${PROJECT_PREFIX}account:${accountId()}:studio-arrangement:`))
     );
   } catch {
     error = guestAfterClaim ? error : [

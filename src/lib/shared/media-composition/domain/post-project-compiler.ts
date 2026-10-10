@@ -85,6 +85,7 @@ export const TEXT_ROLE_PREFIX = "text:";
 function isTransitionVisual(item: PostItem): boolean {
   return (
     item.kind === "video" ||
+    item.kind === "arrangement" ||
     item.kind === "image" ||
     item.kind === "animation" ||
     item.kind === "moves" ||
@@ -95,6 +96,10 @@ function isTransitionVisual(item: PostItem): boolean {
 
 export function textRole(itemId: string): string {
   return `${TEXT_ROLE_PREFIX}${itemId}`;
+}
+
+export function arrangementRole(itemId: string): string {
+  return `arrangement:${itemId}`;
 }
 
 export function itemIdFromTextRole(role: string): string | null {
@@ -776,6 +781,33 @@ export function compilePostProject(
     const label = item.label ?? item.kind;
 
     switch (item.kind) {
+      case "arrangement": {
+        const roleKey = arrangementRole(item.id);
+        useRole(presetRole(roleKey, label, "manual", ["arrangement"]));
+        regions.push(region(item.id, label, box, "fill", zIndex));
+        const regionKeyframes = regionKeyframesFor(item, output);
+        if (regionKeyframes) regionKeyframesList.push(regionKeyframes);
+        const motion = motionFor(item);
+        clips.push({
+          id: item.id,
+          kind: "visual",
+          sourceRole: roleKey,
+          regionId: item.id,
+          start: seconds(item.start),
+          end: seconds(itemEnd(item)),
+          sourceIn: seconds(item.sourceIn),
+          sourceOut: seconds(item.sourceOut),
+          playbackRate: item.speed,
+          loop: false,
+          opacity: item.opacity,
+          ...(item.fadeIn > 0 ? { fadeInSeconds: item.fadeIn } : {}),
+          ...(item.fadeOut > 0 ? { fadeOutSeconds: item.fadeOut } : {}),
+          transform: IDENTITY_TRANSFORM,
+          useResolvedTimeMap: false,
+          ...(motion ? { motion } : {}),
+        });
+        return true;
+      }
       case "video": {
         if (!takes.has(item.takeId)) return false;
         useTake(item.takeId);

@@ -919,7 +919,7 @@
       </p>
     {/if}
   {:else if tool === "timing"}
-    {#if !onMain}
+    {#if !onMain && item.kind !== "arrangement"}
       <SegmentedControl
         color="accent"
         options={[

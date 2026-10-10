@@ -40,12 +40,19 @@ export interface CompositionStats {
 }
 
 
-export async function saveComposition(composition: Composition): Promise<Composition> {
+export async function saveComposition(
+  composition: Composition,
+  options: { preserveUpdatedAt?: boolean } = {},
+): Promise<Composition> {
   try {
+    const existing = await db.compositions.get(composition.id);
+    if (existing?.ownerId && composition.ownerId && existing.ownerId !== composition.ownerId) {
+      throw new Error("A composition with this ID belongs to another account");
+    }
     const now = new Date();
     const compositionToSave: Composition = {
       ...composition,
-      updatedAt: now,
+      updatedAt: options.preserveUpdatedAt ? composition.updatedAt : now,
       createdAt: composition.createdAt || now,
     };
 
@@ -67,6 +74,15 @@ export async function getComposition(compositionId: string): Promise<Composition
     console.error(`Failed to get composition ${compositionId}:`, error);
     return null;
   }
+}
+
+export async function getCompositionForOwner(compositionId: string, ownerId: string | null): Promise<Composition | null> {
+  const composition = await getComposition(compositionId);
+  return composition?.ownerId === ownerId ? composition : null;
+}
+
+export async function getLegacyCompositions(): Promise<Composition[]> {
+  return (await getCompositions()).filter((composition) => !composition.ownerId);
 }
 
 export async function updateComposition(

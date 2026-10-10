@@ -8,15 +8,17 @@
   Supports drag-to-resize cells by grabbing edges/corners.
 -->
 <script lang="ts">
-  import CellCanvas from "./CellCanvas.svelte";
+  import CellCanvas from "$lib/shared/media-composition/components/ArrangementCellCanvas.svelte";
   import CellResizeHandles from "./CellResizeHandles.svelte";
   import CellContextMenuHost from "./cell-editor/context-menu/CellContextMenuHost.svelte";
   import type { CellContextMenuCallbacks } from "./cell-editor/context-menu/cell-context-menu-builder";
   import {
-    arrangeGridState,
+    getArrangeGridState,
     type GridCell,
   } from "../../state/arrange-grid-state.svelte";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
+
+  const arrangeGridState = getArrangeGridState();
 
   interface GridBoundsInfo {
     minRow: number;

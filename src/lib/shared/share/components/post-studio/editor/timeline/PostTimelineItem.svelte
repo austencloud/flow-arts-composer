@@ -57,6 +57,7 @@
 
   const KIND_ICON: Record<PostItemKind, string> = {
     video: "fa-solid fa-film",
+    arrangement: "fa-solid fa-table-cells-large",
     image: "fa-solid fa-image",
     card: "fa-solid fa-id-card",
     animation: "fa-solid fa-wand-magic-sparkles",

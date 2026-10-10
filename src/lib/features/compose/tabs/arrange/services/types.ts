@@ -38,6 +38,8 @@ export interface ArrangeGridSnapshot {
   cells: GridCell[];
   gridRows: number;
   gridCols: number;
+  bpm: number;
+  skipStartPlacement: boolean;
 }
 
 /**

@@ -15,6 +15,7 @@
   } from "./post-qr-image-appearance";
   import type { TunnelHook } from "$lib/shared/media-composition/domain/tunnel-hook";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
+  import PostStudioArrangementLayer from "./PostStudioArrangementLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
   import PostStudioMandalaLayer from "./PostStudioMandalaLayer.svelte";
@@ -708,7 +709,12 @@
   data-render-mode={binding.renderMode ?? "external-media"}
   oncontextmenu={handleContextMenu}
 >
-  {#if binding.renderMode === "sequence-animation" && sequencePosition !== undefined}
+  {#if binding.renderMode === "arrangement" && binding.arrangementSnapshot}
+    <PostStudioArrangementLayer
+      snapshot={binding.arrangementSnapshot}
+      {sourceTimeSeconds}
+    />
+  {:else if binding.renderMode === "sequence-animation" && sequencePosition !== undefined}
     <PostStudioSequenceAnimationLayer
       {sequence}
       {sequencePosition}

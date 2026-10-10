@@ -4,8 +4,7 @@ import { auth, getFirestoreInstance } from "$lib/shared/auth/firebase";
 import { firestoreGetDetailed, firestoreList } from "$lib/shared/firestore";
 import { awaitAuthSettled } from "$lib/shared/auth/state/auth-state.svelte";
 import { PostProjectSchema, type PostProject } from "$lib/shared/media-composition/domain/post-project";
-import { loadDiskPostDraft, loadPostDraft, savePostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";
-import { projectDraftRecord } from "$lib/shared/media-composition/services/post-project-backup";
+import { loadDiskPostDraft, loadPostDraft, postDraftArchiveRecord, savePostDraftRecords } from "$lib/shared/media-composition/services/post-draft-storage";
 import { accountPostProjectKeys, claimLegacyPosts, legacyPostOwner, loadPostProject, savePostProject } from "$lib/shared/media-composition/services/post-project-store";
 import { listPostProjects, type PostProjectChoice } from "./post-workspace-projects";
 import { loadPostPlan } from "$lib/shared/media-composition/services/post-plan-store";
@@ -148,9 +147,10 @@ export async function listSyncedPostProjects(): Promise<{ projects: PostProjectC
   }
   let legacyChoices: PostProjectChoice[] = [];
   const owner = legacyPostOwner();
-  if (!owner) {
+  {
     const legacy = await listPostProjects();
-    legacyChoices = legacy.projects.filter((choice) => choice.hasDraft);
+    legacyChoices = legacy.projects.filter((choice) =>
+      choice.hasDraft && (!owner || choice.sequenceId.startsWith("studio-arrangement:")));
     if (legacy.error) errors.push(legacy.error);
     for (const choice of legacyChoices) {
         const draft = await loadPostDraft(choice.sequenceId);
@@ -170,7 +170,7 @@ export async function listSyncedPostProjects(): Promise<{ projects: PostProjectC
         if (saved.ok) local.set(choice.sequenceId, project);
         else errors.push(saved.error);
     }
-    if (errors.length === 0) claimLegacyPosts(uid);
+    if (!owner && errors.length === 0) claimLegacyPosts(uid);
   }
   let cloud: PostProject[] = [];
   let cloudListed = false;
@@ -284,7 +284,7 @@ const cloudRetries = new Map<string, { timer: ReturnType<typeof setTimeout>; att
 /** Keeps a copy in the dev server's draft folder, where there is one. */
 function keepOnDisk(project: PostProject): void {
   if (!import.meta.env.DEV) return;
-  void savePostDraftRecords([projectDraftRecord(project)]).catch((cause) =>
+  void savePostDraftRecords([postDraftArchiveRecord(project)]).catch((cause) =>
     console.warn("[Post] The disk copy was not written:", cause)
   );
 }

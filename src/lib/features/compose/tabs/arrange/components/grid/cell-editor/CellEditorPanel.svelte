@@ -151,7 +151,6 @@
   const displaySummary = $derived(
     cell?.mediaType === "choreo-card" ? "Card" : "Anim"
   );
-  const exportSummary = $derived("1080p · 30fps");
 
   const effortAccent = $derived.by(() => {
     if (!cell?.effort || cell.effort === "none") return "#94a3b8";
@@ -192,7 +191,7 @@
         summary: playbackSummary,
       },
       display: { icon: "fa-eye", label: "DISPLAY", summary: displaySummary },
-      export: { icon: "fa-download", label: "EXPORT", summary: exportSummary },
+
     })
   );
 
@@ -405,13 +404,6 @@
               layerCount={cell.layers.length}
               onMediaTypeChange={(type) => p.onMediaTypeChange(type)}
             />
-          {:else if panelState.activePill === "export"}
-            <div class="export-section">
-              <button class="download-btn" type="button">
-                <i class="fas fa-download" aria-hidden="true"></i>
-                Download Arrangement
-              </button>
-            </div>
           {/if}
         </div>
 

@@ -1,5 +1,6 @@
 import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import type { PostTake } from "$lib/shared/media-composition/domain/post-plan";
 import { takeRole } from "$lib/shared/media-composition/domain/post-plan-compiler";
@@ -19,6 +20,7 @@ import {
 } from "$lib/shared/media-composition/domain/post-project";
 import {
   addOverlayItem,
+  addArrangementItem,
   addTitlesItem,
   addTake,
   addTunnelHook as addProjectTunnelHook,
@@ -1208,6 +1210,17 @@ export function createPostEditorState(deps: PostEditorDeps) {
     return result.itemId;
   }
 
+  function addArrangement(
+    snapshot: ArrangementSnapshot,
+    at: number
+  ): string | null {
+    if (gestureBase) return null;
+    const result = addArrangementItem(project, snapshot, at, context());
+    if (!commit(result.project)) return null;
+    selectedItemId = result.itemId;
+    return result.itemId;
+  }
+
   /** Titles go over the opening tunnel when the post has one, else at `at`. */
   function addTitles(at: number): string | null {
     if (gestureBase) return null;
@@ -1670,6 +1683,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     deleteSelected,
     duplicateSelected,
     addOverlay,
+    addArrangement,
     addTitles,
     addCard,
     addTunnelHook,

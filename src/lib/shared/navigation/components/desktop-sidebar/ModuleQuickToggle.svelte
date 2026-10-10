@@ -64,7 +64,9 @@
 
   // Get all main modules (for showing in the UI)
   const allMainModules = $derived.by(() => {
-    return MODULE_DEFINITIONS.filter((module) => module.isMain);
+    return MODULE_DEFINITIONS.filter(
+      (module) => module.isMain && module.id !== "compose"
+    );
   });
 
   // Get modules that are NOT visible in the sidebar but COULD be enabled

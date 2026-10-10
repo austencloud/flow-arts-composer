@@ -737,7 +737,44 @@ async function drawRegionLayer(
   context.globalAlpha = layer.opacity;
 
   const renderMode = layerElement.dataset.renderMode;
-  if (renderMode === "sequence-animation") {
+  if (renderMode === "arrangement") {
+    const surface = layerElement.querySelector<HTMLElement>(
+      "[data-arrangement-surface]"
+    );
+    if (!surface) throw new Error("Arrangement export surface is missing");
+    const bounds = surface.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0)
+      throw new Error("Arrangement export surface has no size");
+    const scale = Math.max(
+      1,
+      regionPixels.width / bounds.width,
+      regionPixels.height / bounds.height
+    );
+    const image = input.pictographCapture
+      ? await input.pictographCapture.capture(
+          surface,
+          bounds.width,
+          bounds.height,
+          scale
+        )
+      : await (
+          await import("modern-screenshot")
+        ).domToCanvas(surface, {
+          width: bounds.width,
+          height: bounds.height,
+          scale,
+          ...POST_STUDIO_DOM_CAPTURE_OPTIONS,
+        });
+    const geometry = resolveFrameLayerGeometry({
+      preset: input.preset,
+      region: { ...region, fit: "fill" },
+      sourceWidth: image.width,
+      sourceHeight: image.height,
+      transform: layer.transform,
+    });
+    applyLayerTransform(context, geometry);
+    drawSource(context, image, geometry);
+  } else if (renderMode === "sequence-animation") {
     // The preview lays this surface out to fill its region box, and a DOM
     // surface has no footage size to fit. Fitting a 1x1 stand-in with the
     // region's own "contain" drew the capture as a centred square, so a

@@ -13,8 +13,8 @@ import {
   getDefaultTrailSettings, getTunnelLayerColors, } from "$lib/shared/animation-engine/domain/compose-types";
 import type { CellMediaType } from "$lib/shared/animation-engine/domain/compose-types";
 import type { TunnelLayerConfig } from "$lib/shared/animation-engine/domain/compose-types";
-import {
-  type GridCell, createInitialGrid, generateCellId, } from "../state/arrange-grid-state.svelte";
+import type { GridCell } from "../state/arrange-grid-state.svelte";
+import { validateArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
 import type { GridStateSnapshot } from "./types";
 
 /**
@@ -108,7 +108,7 @@ function cellConfigToGridCell(
 
   return {
     ...backingCell,
-    id: generateCellId(row, col),
+    id: `cell-${row}-${col}`,
     row,
     col,
     layers,
@@ -148,6 +148,7 @@ export function gridCellsToComposition(
     name,
     layout: { rows: gridRows, cols: gridCols },
     cells: cellConfigs,
+    arrangement: validateArrangementSnapshot({ schemaVersion: 1, ...snapshot }),
     createdAt: now,
     updatedAt: now,
     creator: "austen",
@@ -156,7 +157,18 @@ export function gridCellsToComposition(
 }
 
 export function compositionToGridState(composition: Composition): GridStateSnapshot {
-  const cells = createInitialGrid();
+  if (composition.arrangement) {
+    const snapshot = validateArrangementSnapshot(composition.arrangement);
+    return { cells: snapshot.cells, gridRows: snapshot.gridRows, gridCols: snapshot.gridCols,
+      bpm: snapshot.bpm, skipStartPlacement: snapshot.skipStartPlacement };
+  }
+  const cells: GridCell[] = [];
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      cells.push({ id: `cell-${row}-${col}`, row, col, layers: [], beatOffset: 0,
+        colSpan: 1, rowSpan: 1, mediaType: "animation" });
+    }
+  }
   const { rows, cols } = composition.layout;
 
   for (const cellConfig of composition.cells) {

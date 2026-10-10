@@ -1,4 +1,5 @@
 import type { MediaSourceKind } from "$lib/shared/media-composition/domain/media-source-schema";
+import type { ArrangementSnapshot } from "$lib/shared/media-composition/domain/arrangement";
 import type { MediaCompositionPreset } from "$lib/shared/media-composition/domain/media-composition-preset-schema";
 import type {
   ClipTransform,
@@ -64,6 +65,7 @@ export interface CompositionSourceBinding {
   renderMode?: PostStudioRenderMode;
   /** Draws a `painted` source; preview and export call the same one. */
   painter?: PostStudioLayerPainter;
+  arrangementSnapshot?: ArrangementSnapshot;
   durationSeconds?: number;
   /** Original dimensions remain authoritative when a smaller playback copy is used. */
   sourceWidth?: number;

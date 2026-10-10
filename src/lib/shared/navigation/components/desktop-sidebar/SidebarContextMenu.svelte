@@ -83,6 +83,7 @@
     return MODULE_DEFINITIONS.filter(
       (m) =>
         m.isMain &&
+        m.id !== "compose" &&
         !CORE_MODULES.includes(m.id) &&
         isModuleEnabledInEnvironment(m.id)
     ).map((m) => ({

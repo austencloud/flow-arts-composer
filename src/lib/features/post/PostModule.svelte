@@ -1,4 +1,5 @@
 <script lang="ts">
+  import StudioArrangements from "./components/StudioArrangements.svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import { isTkaWord, simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
@@ -104,6 +105,7 @@
     if (!authState.initialized) return;
     authState.user?.uid;
     const project = page.url.searchParams.get("project");
+    const library = page.url.searchParams.get("library") === "1";
     const feature = import.meta.env.DEV
       ? page.url.searchParams.get("feature")
       : null;
@@ -113,12 +115,13 @@
       previousFeature = feature;
       if (feature) void state.openFeature(feature);
       else {
-        const target = project || state.lastSelectedId();
+        const target = project || (!library && state.lastSelectedId());
         if (target) void state.open(target);
       }
       return;
     }
-    if (feature && feature !== previousFeature) void state.openFeature(feature);
+    if (library) state.showProjects();
+    else if (feature && feature !== previousFeature) void state.openFeature(feature);
     else if (project && project !== previousParam) void state.open(project);
     previousParam = project;
     previousFeature = feature;
@@ -149,15 +152,16 @@
   }
 </script>
 
-<section class="post-module" aria-label="Post">
+<section class="post-module" aria-label="Studio">
   {#if !canAccessPostStudio() && !featureMode}
-    <div class="editor-status" role="status">Post is in early access.</div>
+    <div class="editor-status" role="status">Studio is in early access.</div>
   {:else}
     <div class="project-list" hidden={!state.showingProjects}>
       <header class="list-header">
         <h1>Projects</h1>
-        <p>Open a saved post or choose Edit in Post from a sequence.</p>
+        <p>Arrange sequences and edit videos in one project.</p>
       </header>
+      <StudioArrangements onopen={openProject} />
       {#if authState.user && !authState.user.isAnonymous}<p class="notice">Saved edits sync with your account. You need to select this device’s videos again on another device.</p>{/if}
       {#if state.catalogError}<p class="notice" role="status">
           {state.catalogError}
@@ -166,7 +170,7 @@
           Loading projects…
         </p>
       {:else if state.projects.length === 0}<p class="list-status">
-          No post projects yet. Open a sequence and choose Edit in Post.
+          Your Studio projects will appear here. Start an arrangement or open Studio from a sequence.
         </p>
       {:else}
         <ul>
@@ -274,7 +278,7 @@
         </div>
       </div>
       {#if state.loadingProject}<div class="editor-status" role="status">
-          Opening post…
+          Opening project…
         </div>
       {:else if !state.sequence}<div class="editor-status error" role="alert">
           <p>{state.projectError || "This sequence could not be opened."}</p>
@@ -285,6 +289,7 @@
       {:else}
         {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${state.feature ? featureSelectionId(state.feature.slug) : state.sequence.id}`}
           <PostStudio
+            editArrangementOnOpen={!!state.selectedId?.startsWith("studio-arrangement:")}
             active={visible && !state.showingProjects}
             sequence={state.sequence}
             feature={state.feature ?? undefined}

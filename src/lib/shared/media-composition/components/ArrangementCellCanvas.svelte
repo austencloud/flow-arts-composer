@@ -1,5 +1,5 @@
 <!--
-  CellCanvas.svelte
+  ArrangementCellCanvas.svelte
 
   A single cell in the composition grid.
   Renders based on display mode:
@@ -11,8 +11,8 @@
 
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
-  import { onMount, onDestroy } from "svelte";
-  import type { GridCell } from "../../state/arrange-grid-state.svelte";
+  import { onMount, onDestroy, untrack } from "svelte";
+  import type { ArrangementCell } from "../domain/arrangement";
   import { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
   import { getViewerAnimationPropConfig } from "$lib/shared/animation-engine/get-viewer-animation-prop-config";
   import { AnimationStateManager } from "$lib/shared/animation-engine/services/animation-state-manager";
@@ -33,7 +33,7 @@
     isDragging = false,
     onSelect,
   }: {
-    cell: GridCell;
+    cell: ArrangementCell;
     cellIndex: number;
     currentStep: number;
     isPlaying: boolean;
@@ -57,6 +57,7 @@
 
   // Local state
   let initialized = $state(false);
+  let mounted = $state(false);
   // User-visible init failure (orchestrator construction or sequence load).
   // When set, the cell shows an error overlay with a retry button instead of
   // silently rendering blank.
@@ -70,19 +71,27 @@
   const extraLayers = $derived(cell.layers.slice(1));
   const hasLayers = $derived(cell.layers.length > 0);
   const isAnimationType = $derived(cell.mediaType === "animation");
+  const effectiveTipEffectMap = $derived.by(() => {
+    if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0) return cell.tipEffectMap;
+    return cell.effect ? { "*": { effect: cell.effect } } : undefined;
+  });
 
   // Media type display info
   const mediaTypeInfo = $derived.by(() => {
     switch (cell.mediaType) {
-      case "video": return { icon: "fa-video", label: "Video" };
-      case "image": return { icon: "fa-image", label: "Image" };
+      case "video": return { icon: "fa-video", label: "Video preview unavailable" };
+      case "image": return { icon: "fa-image", label: "Image preview unavailable" };
       case "choreo-card": return { icon: "fa-id-card", label: "Card" };
       default: return null;
     }
   });
 
   // Trail settings
-  const trailSettings = $derived(animationSettings.trail);
+  const trailSettings = $derived(
+    cell.trailMode
+      ? { ...animationSettings.trail, mode: cell.trailMode }
+      : animationSettings.trail
+  );
 
   // Scan tipEffectMap for any assignments of a given effect type.
   // When the user assigns effects per-tip or per-hand via the matrix,
@@ -180,54 +189,66 @@
     });
   });
 
-  // Create per-cell orchestrators. Extracted from onMount so the error
-  // overlay's retry button can re-attempt after a failure.
-  function initializeOrchestrators() {
+  function disposeOrchestrators() {
+    primaryOrchestrator?.dispose();
+    for (const orch of additionalOrchestrators) orch.dispose();
+    for (const state of additionalAnimationStates) state.dispose();
+    primaryOrchestrator = null;
+    additionalOrchestrators = [];
+    additionalAnimationStates = [];
+  }
+
+  // Empty and card cells need no preview engine. A four-layer cell gets four;
+  // changing its layer count rebuilds only that cell's preview.
+  function initializeOrchestrators(layerCount: number) {
     try {
-      // Dispose any partial state left by a previous failed attempt
-      primaryOrchestrator?.dispose();
-      for (const orch of additionalOrchestrators) orch.dispose();
-      for (const state of additionalAnimationStates) state.dispose();
-      primaryOrchestrator = null;
-      additionalOrchestrators = [];
-      additionalAnimationStates = [];
+      initialized = false;
+      disposeOrchestrators();
 
-      // Each orchestrator gets its own AnimationStateManager so they don't
-      // overwrite each other's prop state through the shared singleton.
-      primaryOrchestrator = new SequenceAnimationOrchestrator(
-        new AnimationStateManager(),
-        getViewerAnimationPropConfig
-      );
+      if (layerCount > 0) {
+        // Each layer owns its prop state so one sequence cannot overwrite another.
+        primaryOrchestrator = new SequenceAnimationOrchestrator(
+          new AnimationStateManager(),
+          getViewerAnimationPropConfig
+        );
 
-      // Create orchestrators for up to 3 additional layers
-      for (let i = 0; i < 3; i++) {
-        additionalOrchestrators.push(
+        const nextOrchestrators: SequenceAnimationOrchestrator[] = [];
+        const nextStates: ReturnType<typeof createAnimationPanelState>[] = [];
+        for (let i = 1; i < layerCount; i++) {
+          nextOrchestrators.push(
           new SequenceAnimationOrchestrator(
             new AnimationStateManager(),
             getViewerAnimationPropConfig
           )
-        );
-        additionalAnimationStates.push(createAnimationPanelState());
+          );
+          nextStates.push(createAnimationPanelState());
+        }
+        additionalOrchestrators = nextOrchestrators;
+        additionalAnimationStates = nextStates;
       }
 
       initialized = true;
       initError = null;
     } catch (err) {
+      disposeOrchestrators();
       console.error(`[CellCanvas ${cellIndex}] Failed to initialize:`, err);
       initError = "Preview engine failed to start";
     }
   }
 
-  // Initialize services - create per-cell orchestrators
   onMount(() => {
-    initializeOrchestrators();
+    mounted = true;
+  });
+
+  $effect(() => {
+    if (!mounted) return;
+    const layerCount = isAnimationType ? Math.min(4, cell.layers.length) : 0;
+    untrack(() => initializeOrchestrators(layerCount));
   });
 
   onDestroy(() => {
     primaryAnimationState.dispose();
-    for (const state of additionalAnimationStates) state.dispose();
-    primaryOrchestrator?.dispose();
-    for (const orch of additionalOrchestrators) orch.dispose();
+    disposeOrchestrators();
   });
 
   // Initialize primary orchestrator when layer changes
@@ -318,7 +339,7 @@
   function handleRetry(e: Event) {
     e.stopPropagation();
     initError = null;
-    if (!initialized) initializeOrchestrators();
+    if (!initialized) initializeOrchestrators(isAnimationType ? Math.min(4, cell.layers.length) : 0);
     initAttempt++;
   }
 
@@ -360,7 +381,7 @@
         hideStepNumbers={true}
         fireConfig={(cell.effect || cell.tipEffectMap) ? cellFireConfig : undefined}
         ledConfig={(cell.effect || cell.tipEffectMap) ? cellLedConfig : undefined}
-        tipEffectMap={cell.tipEffectMap}
+        tipEffectMap={effectiveTipEffectMap}
         tipEffortMap={cell.tipEffortMap}
       />
     {:else}

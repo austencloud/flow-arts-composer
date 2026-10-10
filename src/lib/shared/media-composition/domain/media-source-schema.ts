@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SequenceRevisionRefSchema } from "$lib/shared/media-composition/domain/sequence-time-map";
+import { arrangementSnapshotSchema } from "$lib/shared/media-composition/domain/arrangement";
 
 const NonEmptyIdSchema = z.string().trim().min(1);
 const TimestampSchema = z.number().finite().int().nonnegative();
@@ -15,6 +16,7 @@ export const MediaSourceKindSchema = z.enum([
   "beat-carousel",
   "image",
   "audio",
+  "arrangement",
 ]);
 
 /**
@@ -136,12 +138,23 @@ export const AudioMediaSourceSchema = z
   })
   .strict();
 
+export const ArrangementMediaSourceSchema = z
+  .object({
+    id: NonEmptyIdSchema,
+    role: NonEmptyIdSchema.optional(),
+    label: z.string().trim().min(1).optional(),
+    kind: z.literal("arrangement"),
+    snapshot: arrangementSnapshotSchema,
+  })
+  .strict();
+
 export const MediaSourceSchema = z.union([
   VideoMediaSourceSchema,
   SequenceAnimationMediaSourceSchema,
   ChoreoCardMediaSourceSchema,
   ImageMediaSourceSchema,
   AudioMediaSourceSchema,
+  ArrangementMediaSourceSchema,
 ]);
 
 export type MediaSource = z.infer<typeof MediaSourceSchema>;

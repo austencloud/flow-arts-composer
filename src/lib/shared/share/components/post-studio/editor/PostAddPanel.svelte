@@ -17,6 +17,7 @@
     itemKindLabel,
   } from "./post-editor-labels";
   import { newItemStart, overlayAt } from "./post-editor-add";
+  import { createBlankArrangementSnapshot } from "./post-editor-arrangement";
 
   /**
    * Everything a post can hold, one button each. Videos join the end of the
@@ -75,6 +76,18 @@
     if (editor.addCard()) onAdded("card");
   }
 
+  function addArrangement(): void {
+    editor.pause();
+    if (
+      editor.addArrangement(
+        createBlankArrangementSnapshot(),
+        newItemStart(editor.durationSeconds, editor.previewSeconds)
+      )
+    ) {
+      onAdded("arrangement");
+    }
+  }
+
   function addTunnelHook(): void {
     editor.pause();
     if (editor.addTunnelHook()) onAdded("animation");
@@ -88,6 +101,12 @@
   const TEXT_SIZE: PostTextSize = "m";
 
   const ITEMS = $derived([
+    {
+      id: "arrangement",
+      icon: ITEM_KIND_ICON.arrangement,
+      label: "Arrangement",
+      run: addArrangement,
+    },
     {
       id: "animation",
       icon: ITEM_KIND_ICON.animation,
