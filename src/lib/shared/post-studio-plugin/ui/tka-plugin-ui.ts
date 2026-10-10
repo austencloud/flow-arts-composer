@@ -1,12 +1,14 @@
 import type { PluginUi } from "@austencloud/video-editor";
 import { tkaAddItems } from "./tka-add-items";
 import { tkaCropSteps } from "./tka-crop-steps";
+import { currentTkaEditor } from "./tka-editor-context";
 import { NO_FACTS, tkaRow, tkaRowFacts } from "./tka-row";
 import { tkaTimelineJoin } from "./tka-timeline-join";
 import { TKA_TOOLS } from "./tka-tools";
 import TkaItemTools from "./TkaItemTools.svelte";
+import TkaMediaSublayer from "./TkaMediaSublayer.svelte";
 
-/** Tasks 14 to 15b add mediaSublayer, canvasOverlays, modes, panels, createBindings and layerContextMenu. */
+/** Tasks 14 to 15b add canvasOverlays, modes, panels and createBindings. */
 export function createTkaPluginUi(): PluginUi {
   return {
     toolPanel: TkaItemTools,
@@ -16,5 +18,13 @@ export function createTkaPluginUi(): PluginUi {
     addItems: tkaAddItems,
     cropSteps: tkaCropSteps,
     timelineJoin: tkaTimelineJoin,
+    mediaSublayer: {
+      renderModes: ["sequence-animation", "choreo-card", "tunnel", "mandala"],
+      component: TkaMediaSublayer,
+    },
+    // The save menu for the post's sequence, where a media layer was
+    // right-clicked. The contract hands the plugin only the event, so it
+    // reaches the workspace through the editor tka registered last.
+    layerContextMenu: (event) => currentTkaEditor()?.openSaveMenu?.(event),
   };
 }

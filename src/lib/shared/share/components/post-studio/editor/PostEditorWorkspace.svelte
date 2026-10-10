@@ -122,6 +122,7 @@
   import { createPostTimingSession } from "../builder/post-timing-session.svelte";
   import { formatTakeClock } from "./post-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
+  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import {
     qrImageForAppearance,
     qrPayloadForImage,
@@ -330,10 +331,17 @@
     store: featureVideo?.store,
     services: tkaEditorServices(videoLibrary),
   });
+  /** The save menu a right click on a media layer opens; mounted once below. */
+  let saveMenuHost = $state<VisualSequenceSaveContextMenuHost | undefined>();
   registerTkaEditor(editor, {
     wrapper: editor,
     isQrImage: (id) => qrImageIds[id] === true,
     plugin,
+    openSaveMenu: (event) =>
+      saveMenuHost?.openContextMenu(event.clientX, event.clientY),
+    get cardRenderOptions() {
+      return cardRenderOptions ?? null;
+    },
   });
   const services = resolveServices(editor.host);
   provideEditorUi({ editor, host: editor.host, plugin, services });
@@ -678,6 +686,13 @@
     get sequenceBusy() {
       return labeledCard.pending;
     },
+    get sequence() {
+      return displaySequence;
+    },
+    // The canvas was never handed a separate scan record, so a card's QR
+    // opens the sequence the post draws.
+    qrSequence: undefined,
+    bindingFor,
   });
 
   function videoItem(itemId: string): PostVideoItem | null {
@@ -3012,6 +3027,7 @@
                 showStripGuide={editor.selectedItem?.kind === "video"}
                 interactive={!exporting && !sharing && !previewTarget}
                 {exporting}
+                {plugin}
                 crop={cropMode ? crop : null}
                 {cropSourceView}
                 keepSourceCropRatio={cropSourceShape !== "free"}
@@ -3335,6 +3351,12 @@
       : t("share_studio_rendering")}
   onCancel={cancelExport}
   label={t("share_studio_rendering_post")}
+/>
+
+<!-- One save menu for every media layer; its menu and prompt portal out. -->
+<VisualSequenceSaveContextMenuHost
+  bind:this={saveMenuHost}
+  sequence={displaySequence}
 />
 
 {#if showTimingStage && !panelBeside}

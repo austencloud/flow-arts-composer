@@ -10,7 +10,10 @@
   import { LAYOUT_MOTION_EASING } from "$lib/shared/transitions/layout-flip";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { CompositionSourceBinding } from "@austencloud/video-editor";
+  import type {
+    CompositionSourceBinding,
+    VideoEditorPlugin,
+  } from "@austencloud/video-editor";
   import {
     resolvePresetTimePoint,
     fadeBlackOpacityAt,
@@ -36,11 +39,9 @@
     planMusicAudio,
     planProjectAudio,
     segmentGainAt,
-    ANIMATION_OVERLAY_ROLE,
     STRIP_AREA,
     stripModeFromRole,
     POST_STUDIO_ROLE,
-    tunnelHookChromeOpacity,
     POST_MAX_ZOOM,
     POST_MIN_ZOOM,
     POST_TIME_EPSILON,
@@ -59,15 +60,9 @@
     updateItemAt,
   } from "@austencloud/video-editor/core";
   import { itemIdFromStaffEffectRole } from "$lib/shared/post-studio-plugin";
-  import { posterQrAppearance } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
-  import {
-    cardOptionsForItem,
-    animationAppearanceForItem,
-    tunnelHidesMandala,
-  } from "$lib/shared/post-studio-plugin/ui/post-item-render-options";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import PostMusicPreview from "./PostMusicPreview.svelte";
   import {
@@ -164,6 +159,8 @@
      */
     onMusicMissing?: (missing: boolean) => void;
     root?: HTMLElement | null;
+    /** The editor plugin; the media layers draw its sublayer. */
+    plugin: VideoEditorPlugin | null;
   }
 
   let {
@@ -182,6 +179,7 @@
     onSourceSize,
     onMusicMissing,
     root = $bindable(null),
+    plugin,
   }: Props = $props();
 
   type VisualClip = Extract<PresetClip, { kind: "visual" }>;
@@ -296,16 +294,6 @@
     }
     return out;
   });
-
-  // The tunnel carries none of the canvas's notation; grid, glyph and step
-  // number fade in as the item's opening ends and it carries on as the
-  // ordinary animation, on the same canvas.
-  function hookChromeOpacity(regionId: string): number {
-    const item = findItem(editor.project, regionId)?.item;
-    if (item?.kind !== "animation" || !item.tunnelHook) return 1;
-    const introEnd = item.start + (item.tunnelHook.seconds ?? item.duration);
-    return tunnelHookChromeOpacity(editor.previewSeconds - introEnd);
-  }
 
   const playbackVideos = new Map<string, PreviewVideoController>();
   let masterVideoKey: string | null = null;
@@ -487,19 +475,6 @@
     };
   }
 
-  /** Regions whose animation has its beat and letter painted over it. */
-  const paintedLabelRegions = $derived(
-    new Set(
-      bindingFor(ANIMATION_OVERLAY_ROLE)?.status === "ready" && preset
-        ? preset.clips.flatMap((clip) =>
-            clip.kind === "visual" && clip.sourceRole === ANIMATION_OVERLAY_ROLE
-              ? [clip.regionId]
-              : []
-          )
-        : []
-    )
-  );
-
   const stripGuideVisible = $derived(
     showStripGuide &&
       editor.frameLayers.some(
@@ -508,12 +483,6 @@
           layer.sourceRole === POST_STUDIO_ROLE.carousel
       )
   );
-
-  /**
-   * Until its take is mapped, a layer drawn from the sequence holds the
-   * opening pose, the engine's position 1, rather than going blank.
-   */
-  const OPENING_POSITION = 1;
 
   function pct(value: number): string {
     return `${value * 100}%`;
@@ -2402,51 +2371,14 @@
                   sourceTimeSeconds={layer.sourceTimeSeconds}
                   playing={editor.isPlaying && entry.live}
                   {exporting}
-                  {sequence}
-                  cardRenderOptions={cardOptionsForItem(
-                    cardRenderOptions,
-                    sourceItem?.kind === "card" ? sourceItem : null
-                  )}
-                  qrAppearance={sourceItem?.kind === "image"
-                    ? (sourceItem.qrAppearance ??
-                      posterQrAppearance(
-                        cardRenderOptions,
-                        underlyingItem?.kind === "card" ? underlyingItem : null
-                      ))
-                    : undefined}
-                  animationAppearance={animationAppearanceForItem(
-                    sourceItem?.kind === "animation" ||
-                      sourceItem?.kind === "moves"
-                      ? sourceItem
-                      : null,
-                    !!layer.tunnelHook
-                  )}
-                  {qrSequence}
-                  qrUrl={sourceItem?.kind === "card"
-                    ? sourceItem.qrUrl
-                    : undefined}
-                  tunnelHook={layer.tunnelHook ?? null}
-                  chromeOpacity={hookChromeOpacity(region.id)}
-                  mandalaIn={!layer.tunnelHook &&
-                  sourceItem?.kind === "animation" &&
-                  tunnelHidesMandala(sourceItem)
-                    ? hookChromeOpacity(region.id)
-                    : 1}
-                  lookBlend={layer.lookBlend ?? 0}
-                  effectsIn={layer.effectsIn ?? 1}
-                  sequencePosition={layer.sequencePosition ??
-                    (isVideo ? undefined : OPENING_POSITION)}
-                  sequencePassIndex={layer.sequencePassIndex}
-                  sequenceProgress={layer.sequenceFrame?.passBeatProgress}
-                  animationTimeSeconds={layer.animationTimeSeconds ??
-                    (isVideo ? undefined : 0)}
-                  breakdownMotion={sourceItem?.kind === "moves" ||
-                    stripModeFromRole(entry.role) !== null}
-                  breakdownMode={sourceItem?.kind === "moves"
-                    ? sourceItem.mode
-                    : undefined}
-                  labelsPainted={paintedLabelRegions.has(region.id)}
-                  displayedBeatNumber={layer.displayedBeatNumber}
+                  {plugin}
+                  {editor}
+                  {layer}
+                  role={entry.role}
+                  regionId={region.id}
+                  {preset}
+                  sourceItem={sourceItem ?? null}
+                  {underlyingItem}
                   clipId={entry.clip.id}
                   colorGrade={entry.clip.colorGrade}
                   transform={sourceCropping && cropRegion

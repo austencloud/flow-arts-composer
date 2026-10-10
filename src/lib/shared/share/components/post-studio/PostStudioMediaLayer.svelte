@@ -1,27 +1,21 @@
 <script lang="ts">
-  import type { CompositionSourceBinding } from "@austencloud/video-editor";
+  import type {
+    CompositionSourceBinding,
+    VideoEditorPlugin,
+    VideoEditorState,
+  } from "@austencloud/video-editor";
   import type {
     LayoutRegion,
-    TunnelHook,
+    MediaCompositionPreset,
+    PostItem,
   } from "@austencloud/video-editor/core";
   import type {
     EvaluatedFrameLayer,
     PreviewVideoController,
   } from "@austencloud/video-editor/render";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type {
-    PostAnimationItem,
-    PostMovesMode,
-  } from "$lib/shared/post-studio-plugin";
-  import {
-    qrImageForAppearance,
-    type PostQrAppearance,
-  } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
-  import PostStudioSequenceAnimationLayer from "$lib/shared/post-studio-plugin/ui/PostStudioSequenceAnimationLayer.svelte";
-  import PostStudioChoreoLayer from "$lib/shared/post-studio-plugin/ui/PostStudioChoreoLayer.svelte";
-  import PostStudioTunnelLayer from "$lib/shared/post-studio-plugin/ui/PostStudioTunnelLayer.svelte";
-  import PostStudioMandalaLayer from "$lib/shared/post-studio-plugin/ui/PostStudioMandalaLayer.svelte";
+  import { qrImageForAppearance } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
+  import { layerQrAppearance } from "$lib/shared/post-studio-plugin/ui/tka-canvas-layer";
+  import { tkaEditorOf } from "$lib/shared/post-studio-plugin/ui/tka-editor-context";
   import {
     calculateMediaFit,
     calculateSourceCropFit,
@@ -32,7 +26,6 @@
     type FollowLead,
     PreviewVideoFrameRecovery,
   } from "@austencloud/video-editor/render";
-  import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import { onDestroy, untrack } from "svelte";
   import {
     videoColorFilter,
@@ -46,29 +39,17 @@
     sourceTimeSeconds: number;
     playing: boolean;
     exporting?: boolean;
-    sequence: SequenceData;
-    qrSequence?: SequenceData;
-    /** A card's saved scan link, which its QR shows. */
-    qrUrl?: string;
-    cardRenderOptions?: Partial<SequenceExportOptions> | null;
-    qrAppearance?: PostQrAppearance;
-    animationAppearance?: PostAnimationItem["animationAppearance"] | null;
-    tunnelHook?: { hook: TunnelHook; progress: number } | null;
-    chromeOpacity?: number;
-    /** The mandala coming in as the tunnel hands over, 0 to 1. */
-    mandalaIn?: number;
-    /** An animation turning into its square's look on one surface, 0 to 1. */
-    lookBlend?: number;
-    effectsIn?: number;
-    sequencePosition?: number;
-    sequencePassIndex?: number;
-    sequenceProgress?: number;
-    animationTimeSeconds?: number;
-    breakdownMotion?: boolean;
-    breakdownMode?: PostMovesMode;
-    /** The post paints the animation's labels; see the animation layer. */
-    labelsPainted?: boolean;
-    displayedBeatNumber?: number;
+    /** The editor plugin; its sublayer draws the render modes it names. */
+    plugin: VideoEditorPlugin | null;
+    editor: VideoEditorState;
+    /** The evaluated layer this draws, its source role and its region. */
+    layer: EvaluatedFrameLayer;
+    role: string;
+    regionId: string;
+    preset: MediaCompositionPreset | null;
+    /** The item the layer draws, and the main item under it. */
+    sourceItem: PostItem | null;
+    underlyingItem: PostItem | null;
     clipId: string;
     colorGrade?: PostVideoColorGrade;
     transform: EvaluatedFrameLayer["transform"];
@@ -89,25 +70,14 @@
     sourceTimeSeconds,
     playing,
     exporting = false,
-    sequence,
-    qrSequence,
-    qrUrl,
-    cardRenderOptions = null,
-    qrAppearance,
-    animationAppearance = null,
-    tunnelHook = null,
-    chromeOpacity = 1,
-    mandalaIn = 1,
-    lookBlend = 0,
-    effectsIn = 1,
-    sequencePosition,
-    sequencePassIndex,
-    sequenceProgress,
-    animationTimeSeconds,
-    breakdownMotion,
-    breakdownMode,
-    labelsPainted = false,
-    displayedBeatNumber,
+    plugin,
+    editor,
+    layer,
+    role,
+    regionId,
+    preset,
+    sourceItem,
+    underlyingItem,
     clipId,
     colorGrade,
     transform,
@@ -129,6 +99,18 @@
    * the render reads those from the page.
    */
   const releasesDownload = $derived(exporting && binding.kind === "video");
+  /**
+   * A QR image's look: its own, else the poster look of the card under it. It
+   * restyles the generic image below, so it stays here rather than with the
+   * plugin's sublayer.
+   */
+  const qrAppearance = $derived(
+    layerQrAppearance(
+      tkaEditorOf(editor)?.cardRenderOptions ?? null,
+      sourceItem,
+      underlyingItem
+    )
+  );
   let imageSource = $state(binding.previewUrl ?? "");
   $effect(() => {
     const source = binding.previewUrl ?? "";
@@ -172,7 +154,6 @@
   let followLeads: FollowLead[] = [];
   /** Whether the clip plays off its authored speed to keep up with the music. */
   let speedNudged = false;
-  let saveMenuHost: VisualSequenceSaveContextMenuHost | undefined = $state();
 
   /**
    * Pan is resolved here rather than expressed as a percentage of the layer,
@@ -508,8 +489,10 @@
 
   function handleContextMenu(event: MouseEvent): void {
     if (event.defaultPrevented) return;
-    event.preventDefault();
-    saveMenuHost?.openContextMenu(event.clientX, event.clientY);
+    if (plugin?.ui?.layerContextMenu) {
+      event.preventDefault();
+      plugin.ui.layerContextMenu(event);
+    }
   }
 
   function startPlayback(element: HTMLVideoElement): void {
@@ -707,54 +690,19 @@
   data-render-mode={binding.renderMode ?? "external-media"}
   oncontextmenu={handleContextMenu}
 >
-  {#if binding.renderMode === "sequence-animation" && sequencePosition !== undefined}
-    <PostStudioSequenceAnimationLayer
-      {sequence}
-      {sequencePosition}
-      {displayedBeatNumber}
-      {sequencePassIndex}
-      {sequenceProgress}
-      {animationTimeSeconds}
-      {breakdownMotion}
-      {breakdownMode}
-      {labelsPainted}
-      {animationAppearance}
-      {tunnelHook}
-      {chromeOpacity}
-      {mandalaIn}
-      {lookBlend}
-      {effectsIn}
+  {#if binding.renderMode !== undefined && plugin?.ui?.mediaSublayer?.renderModes.includes(binding.renderMode)}
+    {@const Sublayer = plugin.ui.mediaSublayer.component}
+    <Sublayer
+      {editor}
+      {binding}
+      {layer}
+      {role}
+      {regionId}
+      {preset}
+      {sourceItem}
+      {underlyingItem}
       {playing}
-      leftPropType={cardRenderOptions?.leftPropTypeOverride ??
-        cardRenderOptions?.propTypeOverride}
-      rightPropType={cardRenderOptions?.rightPropTypeOverride ??
-        cardRenderOptions?.propTypeOverride}
-    />
-  {:else if binding.renderMode === "choreo-card"}
-    <PostStudioChoreoLayer
-      {sequence}
-      {displayedBeatNumber}
-      {cardRenderOptions}
-      {qrSequence}
-      {qrUrl}
-    />
-  {:else if binding.renderMode === "tunnel"}
-    <PostStudioTunnelLayer
-      {sequence}
-      {playing}
-      bpm={60}
-      leftPropType={cardRenderOptions?.leftPropTypeOverride ??
-        cardRenderOptions?.propTypeOverride}
-      rightPropType={cardRenderOptions?.rightPropTypeOverride ??
-        cardRenderOptions?.propTypeOverride}
-    />
-  {:else if binding.renderMode === "mandala"}
-    <PostStudioMandalaLayer
-      {sequence}
-      leftPropType={cardRenderOptions?.leftPropTypeOverride ??
-        cardRenderOptions?.propTypeOverride}
-      rightPropType={cardRenderOptions?.rightPropTypeOverride ??
-        cardRenderOptions?.propTypeOverride}
+      {exporting}
     />
   {:else if binding.previewType === "video" || binding.kind === "video"}
     <!-- svelte-ignore a11y_media_has_caption -->
@@ -828,8 +776,6 @@
     />
   {/if}
 </div>
-
-<VisualSequenceSaveContextMenuHost bind:this={saveMenuHost} {sequence} />
 
 <style>
   /* The layer used to be pointer-transparent so the slot button underneath got
