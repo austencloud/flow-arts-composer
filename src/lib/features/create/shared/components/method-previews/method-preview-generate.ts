@@ -11,6 +11,9 @@ import { slotWaveBand } from "./method-preview-layout";
 /** Rolls in one turn: a second, different roll shows each tap is fresh. */
 export const GENERATE_ROLLS_PER_TURN = 2;
 
+/** How long a landed roll stays before the next tap, so it reads. */
+export const GENERATE_LOOK_MS = 250;
+
 /** How long the last roll fades before the next washes in. */
 export const GENERATE_CLEAR_MS = 150;
 

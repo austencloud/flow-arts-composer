@@ -33,6 +33,7 @@
   import {
     FIRST_ROLL,
     GENERATE_CLEAR_MS,
+    GENERATE_LOOK_MS,
     GENERATE_READY_WAIT_MS,
     GENERATE_ROLLS_PER_TURN,
     generateCellDelayMs,
@@ -154,6 +155,8 @@
     const dice = cellCenter(box.dice);
     placeGhost(finger, dice.x, dice.y);
     for (let count = 1; count <= GENERATE_ROLLS_PER_TURN; count++) {
+      // A landed roll stays a moment before the next tap replaces it.
+      if (count > 1 && !(await run.wait(GENERATE_LOOK_MS))) return;
       if (!(await tapAt(finger, run, dice.x, dice.y))) return;
       const last = count === GENERATE_ROLLS_PER_TURN;
       if (!(await rollIn(run, box, finger, last))) return;
