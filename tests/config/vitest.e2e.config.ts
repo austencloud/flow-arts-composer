@@ -48,12 +48,14 @@ export default defineConfig({
       ),
     },
 
-    // Vitest 4: poolOptions removed; forks config is top-level.
-    pool: "forks",
-    forks: { singleFork: true },
     // All e2e files share ONE emulator account store and each wipes it in
     // beforeEach. Running files concurrently lets one file's reset clobber
-    // another's accounts mid-test. Force sequential file execution.
+    // another's accounts mid-test. `fileParallelism: false` runs the files one
+    // at a time in a single fork. (Vitest 4 removed `poolOptions` and with it
+    // `singleFork`; the top-level `forks: { singleFork: true }` that used to
+    // sit beside this was an unknown key Vitest ignored without a warning, so
+    // this setting was already doing all the work.)
+    pool: "forks",
     fileParallelism: false,
     testTimeout: 20000,
     hookTimeout: 20000,
