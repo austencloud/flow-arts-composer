@@ -131,8 +131,9 @@
         slot === index ? "entering" : slot === index + 1 ? "choosing" : phase
       );
     }
-    if (!(await run.wait(CONSTRUCT_GROW_MS))) return;
-    settle();
+    // The run ends with the last tap; the turn's end settles the scene. The
+    // last pick keeps growing through that settle, so a wait for it here
+    // could only push the run past the turn and cut it.
   }
 
   playSceneTurns(() => ({ playing, turn }), play, {
@@ -210,10 +211,14 @@
       color-mix(in srgb, var(--accent) 45%, transparent);
   }
 
+  /* A picked choice grows from its spot to fill the box. The grow lives on
+     every state but choosing, so a box that settles mid-grow keeps growing. */
   .art {
     position: absolute;
     inset: 0;
     transform-origin: 0 0;
+    transition: transform var(--construct-grow, 300ms)
+      cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .slot.waiting .art {
@@ -232,13 +237,8 @@
     transition-duration: 120ms;
   }
 
+  /* A box offering its choices shrinks its real step into place at once. */
   .slot.choosing .art {
     transition: opacity 120ms ease-out;
-  }
-
-  /* The picked choice grows from its spot to fill the box. */
-  .slot.entering .art {
-    transition: transform var(--construct-grow, 300ms)
-      cubic-bezier(0.22, 1, 0.36, 1);
   }
 </style>
