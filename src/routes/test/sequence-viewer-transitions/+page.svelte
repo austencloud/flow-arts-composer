@@ -18,7 +18,7 @@
     isWorkspaceReplayCommand,
   } from "./workspace-review-replays";
   import type {
-    TransitionGeometryTrace,
+    TransitionGeometryTrace as TraceData,
     TransitionTraceCommand,
   } from "./transition-geometry-trace";
 
@@ -231,7 +231,7 @@
   let motionPreference = $state<"full" | "reduce">("full");
   let frameElement = $state<HTMLIFrameElement | null>(null);
   let frameMetrics = $state<FrameMetrics | null>(null);
-  let lastTrace = $state<TransitionGeometryTrace | null>(null);
+  let lastTrace = $state<TraceData | null>(null);
   let replayStatus = $state<ReplayStatus>("loading");
   let replayDetail = $state("Loading the production viewer…");
   let frameVersion = $state(0);
@@ -400,9 +400,7 @@
       };
       if (message.source !== "sequence-viewer-transition-frame") return;
       if (message.status === "trace") {
-        const trace = message.trace as
-          | Partial<TransitionGeometryTrace>
-          | undefined;
+        const trace = message.trace as Partial<TraceData> | undefined;
         if (
           trace &&
           (isWorkspaceReplayCommand(trace.command) ||
@@ -426,7 +424,7 @@
           typeof trace.duration === "number" &&
           Array.isArray(trace.samples)
         ) {
-          lastTrace = trace as TransitionGeometryTrace;
+          lastTrace = trace as TraceData;
         }
         return;
       }
