@@ -105,7 +105,7 @@ describe("GooRenderer3D", () => {
     const positions = puddle.geometry.getAttribute("position") as {
       array: Float32Array;
     };
-    const nonzero = Array.from({ length: 72 }, (_, index) => [
+    const nonzero = Array.from({ length: 288 }, (_, index) => [
       positions.array[index * 3]!,
       positions.array[index * 3 + 1]!,
       positions.array[index * 3 + 2]!,
@@ -114,9 +114,9 @@ describe("GooRenderer3D", () => {
       Math.min(...nonzero.map((point) => point[1]!))
     ).toBeGreaterThanOrEqual(-0.7);
     expect(Math.max(...nonzero.map((point) => point[1]!))).toBeLessThan(-0.66);
-    const before = positions.array.slice(0, 72 * 3);
+    const before = positions.array.slice(0, 288 * 3);
     for (let frame = 0; frame < 10; frame++) renderer.update([tip], 0);
-    expect(positions.array.slice(0, 72 * 3)).toEqual(before);
+    expect(positions.array.slice(0, 288 * 3)).toEqual(before);
     expect((parent.children[1] as InstancedMesh).count).toBe(0);
     renderer.clear();
     expect(puddle.visible).toBe(false);
@@ -158,12 +158,17 @@ describe("GooRenderer3D", () => {
     const thickX = (
       thick.geometry.getAttribute("position") as { array: Float32Array }
     ).array;
-    expect(thinX[24 * 3]!).toBeGreaterThan(thickX[24 * 3]!);
+    expect(thinX[32 * 3]!).toBeGreaterThan(thickX[32 * 3]!);
     expect(Math.max(...thinX)).toBeLessThan(3);
     expect(Array.from(thinX).every(Number.isFinite)).toBe(true);
+    expect(
+      Math.min(
+        ...Array.from({ length: 288 }, (_, vertex) => thinX[vertex * 3 + 1]!)
+      )
+    ).toBeGreaterThanOrEqual(-1);
     thin.deposit(1, 2, 1, 0.05, 0, 0.5, color, 0, 1);
     thin.update(0);
-    expect(thinX[72 * 3 + 1]!).toBeGreaterThan(1);
+    expect(thinX[288 * 3 + 1]!).toBeGreaterThan(1);
     thin.clear();
     expect(thin.mesh.visible).toBe(false);
     thin.dispose();
@@ -182,8 +187,8 @@ describe("GooRenderer3D", () => {
     const normals = puddles.geometry.getAttribute("normal");
     expect(positions.getX(0)).toBeCloseTo(positions.getX(1));
     expect(positions.getZ(0)).toBeCloseTo(positions.getZ(1));
-    expect(normals.getY(24)).toBeGreaterThan(0);
-    expect(positions.getX(72)).toBe(0);
+    expect(normals.getY(32)).toBeGreaterThan(0);
+    expect(positions.getX(288)).toBe(0);
     const alpha = puddles.geometry.getAttribute("aAlpha");
     puddles.update(15);
     expect(alpha.getX(0)).toBeLessThan(1);
@@ -191,6 +196,124 @@ describe("GooRenderer3D", () => {
     puddles.update(3);
     expect(puddles.mesh.visible).toBe(false);
     puddles.dispose();
+    material.dispose();
+  });
+
+  it("moves impact waves outward from the actual landing point and damps thick goo sooner", () => {
+    const material = new MeshPhysicalMaterial({ vertexColors: true });
+    const color = new Color("#4389bb");
+    const still = new GooPuddleRenderer3D(material);
+    const thickStill = new GooPuddleRenderer3D(material);
+    const thin = new GooPuddleRenderer3D(material);
+    const thick = new GooPuddleRenderer3D(material);
+    for (const [puddle, viscosity, speed] of [
+      [still, 0, 0],
+      [thickStill, 1, 0],
+      [thin, 0, 4],
+      [thick, 1, 4],
+    ] as const) {
+      puddle.deposit(0, 0, 0, 0.1, viscosity, 0.5, color, 0, 1, 0);
+      puddle.deposit(0.035, 0, 0, 0.1, viscosity, 0.5, color, 0, 1, speed);
+      puddle.update(0);
+    }
+    const wave = (moving: GooPuddleRenderer3D, baseline = still) => {
+      const positions = moving.geometry.getAttribute("position");
+      const flat = baseline.geometry.getAttribute("position");
+      let peak = 0;
+      let distance = 0;
+      for (let vertex = 0; vertex < 288; vertex++) {
+        const displacement = Math.abs(
+          positions.getY(vertex) - flat.getY(vertex)
+        );
+        if (displacement > peak) {
+          peak = displacement;
+          distance = Math.hypot(
+            positions.getX(vertex) - 0.035,
+            positions.getZ(vertex)
+          );
+        }
+      }
+      return { peak, distance };
+    };
+    const initial = wave(thin);
+    expect(initial.peak).toBeGreaterThan(0.001);
+    still.update(0.12);
+    thickStill.update(0.12);
+    thin.update(0.12);
+    thick.update(0.12);
+    const propagated = wave(thin);
+    expect(propagated.distance).toBeGreaterThan(initial.distance + 0.02);
+    expect(propagated.peak).toBeGreaterThan(wave(thick, thickStill).peak * 1.5);
+    still.update(2);
+    thickStill.update(2);
+    thin.update(2);
+    thick.update(2);
+    expect(wave(thin).peak).toBeCloseTo(0, 6);
+    expect(wave(thick, thickStill).peak).toBeCloseTo(0, 6);
+    thin.clear();
+    thin.deposit(0, 0, 0, 0.1, 0, 0.5, color, 0, 1, 0);
+    thin.update(0);
+    expect(thin.mesh.visible).toBe(true);
+    for (const puddle of [still, thickStill, thin, thick]) puddle.dispose();
+    material.dispose();
+  });
+
+  it("keeps a new impact at its world position when neighboring pools coalesce", () => {
+    const material = new MeshPhysicalMaterial({ vertexColors: true });
+    const color = new Color("#4389bb");
+    const still = new GooPuddleRenderer3D(material);
+    const impacted = new GooPuddleRenderer3D(material);
+    for (const puddle of [still, impacted]) {
+      puddle.deposit(0, 0, 0, 0.1, 0, 0.5, color, 0, 1, 0);
+      puddle.deposit(0.28, 0, 0, 0.1, 0, 0.5, color, 0, 1, 0);
+      puddle.update(0.7);
+    }
+    still.deposit(0.28, 0, 0, 0.1, 0, 0.5, color, 0, 1, 0);
+    impacted.deposit(0.28, 0, 0, 0.1, 0, 0.5, color, 0, 1, 4);
+    still.update(0.05);
+    impacted.update(0.05);
+    const flat = still.geometry.getAttribute("position");
+    const moving = impacted.geometry.getAttribute("position");
+    let peakVertex = 0;
+    let peak = 0;
+    for (let vertex = 0; vertex < 288; vertex++) {
+      const displacement = Math.abs(moving.getY(vertex) - flat.getY(vertex));
+      if (displacement > peak) {
+        peak = displacement;
+        peakVertex = vertex;
+      }
+    }
+    expect(peak).toBeGreaterThan(0.001);
+    expect(moving.getX(peakVertex)).toBeGreaterThan(0.2);
+    expect(moving.getX(288)).toBe(0);
+    still.dispose();
+    impacted.dispose();
+    material.dispose();
+  });
+
+  it("shows a small drop ripple on an already grown viscous pool", () => {
+    const material = new MeshPhysicalMaterial({ vertexColors: true });
+    const color = new Color("#4389bb");
+    const still = new GooPuddleRenderer3D(material);
+    const impacted = new GooPuddleRenderer3D(material);
+    for (const puddle of [still, impacted]) {
+      puddle.deposit(0, 0, 0, 0.1, 0.7, 0.7, color, 0, 1, 0);
+      puddle.update(0.3);
+    }
+    still.deposit(0.05, 0, 0, 0.025, 0.7, 0.7, color, 0, 1, 0);
+    impacted.deposit(0.05, 0, 0, 0.025, 0.7, 0.7, color, 0, 1, 2);
+    still.update(0.12);
+    impacted.update(0.12);
+    const flat = still.geometry.getAttribute("position");
+    const moving = impacted.geometry.getAttribute("position");
+    let peak = 0;
+    for (let vertex = 0; vertex < 288; vertex++) {
+      peak = Math.max(peak, Math.abs(moving.getY(vertex) - flat.getY(vertex)));
+      expect(moving.getY(vertex)).toBeGreaterThanOrEqual(0.0015);
+    }
+    expect(peak).toBeGreaterThan(0.002);
+    still.dispose();
+    impacted.dispose();
     material.dispose();
   });
 
