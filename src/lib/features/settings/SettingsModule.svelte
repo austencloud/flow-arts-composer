@@ -258,14 +258,8 @@
       <IOSSkeletonLoader variant="toggle" count={8} />
     </div>
   {:else}
-    <div
-      class="settings-module-body"
-      class:theme-background-active={activeTab === "theme"}
-    >
-      <section
-        class="panel"
-        class:theme-background-active={activeTab === "theme"}
-      >
+    <div class="settings-module-body">
+      <section class="panel">
         {#if activeTab === "profile"}
           <ProfileTab
             currentSettings={settings}
@@ -416,11 +410,6 @@
     border-radius: 3px;
   }
 
-  .settings-module-body.theme-background-active {
-    overflow: hidden;
-    padding: 0;
-  }
-
   /* Panel - content card - fills available space, allows internal scrolling */
   .panel {
     border-radius: 16px;
@@ -434,11 +423,6 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .panel.theme-background-active {
-    padding: 0;
-    border-radius: 0;
   }
 
   /* Loading state */
