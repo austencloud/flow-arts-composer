@@ -1,18 +1,20 @@
 <!--
   PropTypeTab.svelte - Settings > Props.
 
-  Two cards that share the page height:
+  One workspace panel, like the other settings tabs, with two sections
+  opened by header bands:
   - "Your props": the current props drawn large in the performer's colors,
     the color pair, and the ten presets. The drawing takes whatever height
-    the other two leave, so the card fills its column instead of towering
-    over the picker.
-  - "Select prop": the Cat Dog switch and the prop grid, one grid for both
-    hands or one per hand.
+    the other two leave, so the section fills its column instead of
+    towering over the picker.
+  - "Select prop": the Cat Dog switch in the band, then the prop grid, one
+    grid for both hands or one per hand.
 
-  Below 54rem the cards stack and the tab scrolls as one page. From 54rem
-  they sit side by side and each card scrolls on its own only when its
-  content truly outgrows the screen (the open color editor on a short
-  laptop). The layout reads the tab's own width, so it holds in any host.
+  Below 54rem the sections stack and the tab scrolls as one page. From
+  54rem they sit side by side, split by one seam, and each scrolls on its
+  own only when its content truly outgrows the screen (the open color
+  editor on a short laptop). The layout reads the tab's own width, so it
+  holds in any host.
 -->
 <script lang="ts">
   import { onMount } from "svelte";
@@ -44,6 +46,7 @@
   import { showToast } from "#lib/shared/toast/state/toast-state.svelte.js";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import CatDogToggle from "./prop-type/CatDogToggle.svelte";
+  import SettingsSectionHeader from "../SettingsSectionHeader.svelte";
   import PresetChipBar from "./prop-type/PresetChipBar.svelte";
   import PrimaryPropColorSettings from "./prop-type/PrimaryPropColorSettings.svelte";
   import BentoPropGrid from "./prop-type/BentoPropGrid.svelte";
@@ -312,90 +315,102 @@
 </script>
 
 <div class="prop-type-tab" bind:clientWidth={tabWidth}>
-  <div class="tab-grid">
-    <section class="card setup-card" aria-labelledby="{uid}-setup">
-      <h3 class="card-title" id="{uid}-setup">
-        {t("settings_props_your_props")}
-      </h3>
-
-      <figure class="stage">
-        <div class="stage-art" aria-hidden="true">
-          <PropCompositionPreview
-            propType={pair.left}
-            rightPropType={pair.right}
-            size={256}
-            pairedGlyph
-            darkBackground={darkMode}
-            colors={settings.primaryPropColors}
-            leftFlipped={pair.leftFlipped}
-            rightFlipped={pair.rightFlipped}
-          />
-        </div>
-        <figcaption class="stage-caption">
-          <Crossfade key={splitHands ? `${leftName}|${rightName}` : leftName}>
-            {#if splitHands}
-              <span class="hand-names">
-                <span class="hand-name">
-                  <span class="hand-dot" style:background={palette.left}></span>
-                  <span class="visually-hidden"
-                    >{t("settings_props_left_hand")}:</span
-                  >
-                  {leftName}
-                </span>
-                <span class="hand-name">
-                  <span class="hand-dot" style:background={palette.right}
-                  ></span>
-                  <span class="visually-hidden"
-                    >{t("settings_props_right_hand")}:</span
-                  >
-                  {rightName}
-                </span>
-              </span>
-            {:else}
-              <span class="setup-name">{leftName}</span>
-            {/if}
-          </Crossfade>
-        </figcaption>
-      </figure>
-
-      <PrimaryPropColorSettings
-        colors={settings.primaryPropColors}
-        {darkMode}
-        onchange={(value) => onUpdate?.({ key: "primaryPropColors", value })}
+  <div class="props-workspace">
+    <section
+      class="workspace-section setup-section"
+      aria-labelledby="{uid}-setup"
+    >
+      <SettingsSectionHeader
+        icon="fas fa-tags"
+        title={t("settings_props_your_props")}
+        headingId="{uid}-setup"
       />
 
-      <PresetChipBar
-        slots={propPresets}
-        {current}
-        selectedIndex={selectedPresetIndex}
-        colors={settings.primaryPropColors}
-        {darkMode}
-        fanAppearance={settings.fanAppearance}
-        triangleGrip={settings.triangleGrip}
-        showShortcuts={hasKeyboard}
-        onApply={applyPreset}
-        onSave={savePreset}
-        onClear={clearPreset}
-        onResetAll={resetPresets}
-      />
+      <div class="setup-body">
+        <figure class="stage">
+          <div class="stage-art" aria-hidden="true">
+            <PropCompositionPreview
+              propType={pair.left}
+              rightPropType={pair.right}
+              size={256}
+              pairedGlyph
+              darkBackground={darkMode}
+              colors={settings.primaryPropColors}
+              leftFlipped={pair.leftFlipped}
+              rightFlipped={pair.rightFlipped}
+            />
+          </div>
+          <figcaption class="stage-caption">
+            <Crossfade key={splitHands ? `${leftName}|${rightName}` : leftName}>
+              {#if splitHands}
+                <span class="hand-names">
+                  <span class="hand-name">
+                    <span class="hand-dot" style:background={palette.left}
+                    ></span>
+                    <span class="visually-hidden"
+                      >{t("settings_props_left_hand")}:</span
+                    >
+                    {leftName}
+                  </span>
+                  <span class="hand-name">
+                    <span class="hand-dot" style:background={palette.right}
+                    ></span>
+                    <span class="visually-hidden"
+                      >{t("settings_props_right_hand")}:</span
+                    >
+                    {rightName}
+                  </span>
+                </span>
+              {:else}
+                <span class="setup-name">{leftName}</span>
+              {/if}
+            </Crossfade>
+          </figcaption>
+        </figure>
+
+        <PrimaryPropColorSettings
+          colors={settings.primaryPropColors}
+          {darkMode}
+          onchange={(value) => onUpdate?.({ key: "primaryPropColors", value })}
+        />
+
+        <PresetChipBar
+          slots={propPresets}
+          {current}
+          selectedIndex={selectedPresetIndex}
+          colors={settings.primaryPropColors}
+          {darkMode}
+          fanAppearance={settings.fanAppearance}
+          triangleGrip={settings.triangleGrip}
+          showShortcuts={hasKeyboard}
+          onApply={applyPreset}
+          onSave={savePreset}
+          onClear={clearPreset}
+          onResetAll={resetPresets}
+        />
+      </div>
     </section>
 
-    <section class="card picker-card" aria-labelledby="{uid}-picker">
-      <header class="picker-head">
-        <div class="picker-title">
-          <h3 class="card-title" id="{uid}-picker">
-            {t("settings_props_select_prop")}
-          </h3>
-          <span class="mode-hint">
-            <Crossfade key={catDogMode}>
-              {catDogMode
-                ? t("settings_different_props")
-                : t("settings_same_props")}
-            </Crossfade>
-          </span>
-        </div>
-        <CatDogToggle {catDogMode} onToggle={toggleCatDogMode} />
-      </header>
+    <section
+      class="workspace-section picker-section"
+      aria-labelledby="{uid}-picker"
+    >
+      <SettingsSectionHeader
+        icon="fas fa-shapes"
+        title={t("settings_props_select_prop")}
+        headingId="{uid}-picker"
+      >
+        {#snippet details()}
+          <Crossfade key={catDogMode}>
+            {catDogMode
+              ? t("settings_different_props")
+              : t("settings_same_props")}
+          </Crossfade>
+        {/snippet}
+        {#snippet action()}
+          <CatDogToggle {catDogMode} onToggle={toggleCatDogMode} />
+        {/snippet}
+      </SettingsSectionHeader>
 
       {#if catDogMode}
         <div class="hand-switch" transition:growFade>
@@ -471,8 +486,8 @@
 </div>
 
 <style>
-  /* The tab is the page's scroller while the cards stack. Side by side, the
-     grid below fits it exactly and each card owns its own overflow. */
+  /* The tab is the page's scroller while the sections stack. Side by side,
+     the panel below fits it exactly and each section owns its own overflow. */
   .prop-type-tab {
     display: flex;
     flex-direction: column;
@@ -486,34 +501,55 @@
     container: props-tab / inline-size;
   }
 
-  .tab-grid {
+  /* Matches the Preferences and Account panels: one bordered surface,
+     sections opened by header bands and split by hairlines. */
+  .props-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 0.75rem;
-    padding: 0.75rem;
     flex: 0 0 auto;
+    min-width: 0;
+    margin: clamp(0.75em, 1.4cqi, 1.75em) clamp(0.75em, 2cqi, 3em);
+    overflow: hidden;
+    border: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
+    border-radius: 1.25em;
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, rgba(0, 0, 0, 0.88)) 14%,
+      #070b10 86%
+    );
+    box-shadow: var(--theme-panel-shadow, 0 1rem 3rem rgba(0, 0, 0, 0.35));
+    isolation: isolate;
+    --settings-row-inline: 1.15em;
   }
 
-  .card {
+  :global(html[data-theme-luminance="bright"]) .props-workspace {
+    background: color-mix(
+      in srgb,
+      var(--theme-panel-bg, rgba(255, 255, 255, 0.88)) 14%,
+      #f6f7f9 86%
+    );
+  }
+
+  .workspace-section {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: color-mix(in srgb, var(--theme-text) 2%, transparent);
+  }
+
+  .workspace-section + .workspace-section {
+    border-top: 1px solid var(--theme-stroke);
+  }
+
+  /* ── Your props ── */
+
+  .setup-body {
     display: flex;
     flex-direction: column;
     gap: 1rem;
     min-width: 0;
-    padding: 1rem;
-    background: var(--theme-card-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: 16px;
-    box-sizing: border-box;
+    padding: 1rem var(--settings-row-inline);
   }
-
-  .card-title {
-    margin: 0;
-    color: var(--theme-text);
-    font-size: var(--font-size-base, 1rem);
-    font-weight: 600;
-  }
-
-  /* ── Your props ── */
 
   .stage {
     display: flex;
@@ -579,34 +615,12 @@
 
   /* ── Select prop ── */
 
-  .picker-card {
-    padding: 0;
-    gap: 0;
+  .picker-section {
     container: props-picker / inline-size;
   }
 
-  .picker-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 1rem 1rem 0.25rem 1.125rem;
-  }
-
-  .picker-title {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    min-width: 0;
-  }
-
-  .mode-hint {
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-sm, 0.875rem);
-  }
-
   .hand-switch {
-    padding: 0.5rem 1rem 0;
+    padding: 0.75rem var(--settings-row-inline) 0;
   }
 
   .hand-grids {
@@ -622,7 +636,7 @@
   }
 
   /* The left grid takes whatever the right one leaves, so the right grid's
-     width animation reads as the card splitting in two. */
+     width animation reads as the section splitting in two. */
   .hand-grid.left {
     flex: 1 1 0;
   }
@@ -668,26 +682,37 @@
     }
   }
 
+  @container props-tab (max-width: 32rem) {
+    .props-workspace {
+      --settings-row-inline: 0.9rem;
+    }
+  }
+
   /* ── Side by side ── */
 
   @container props-tab (min-width: 54rem) {
-    .tab-grid {
+    .props-workspace {
       flex: 1 1 0;
       min-height: 0;
       grid-template-columns: clamp(22rem, 34cqi, 28rem) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr);
-      gap: 1.25rem;
-      padding: 1rem;
     }
 
-    .card {
+    .workspace-section {
       min-height: 0;
+    }
+
+    .workspace-section + .workspace-section {
+      border-top: 0;
+      border-left: 1px solid var(--theme-stroke);
     }
 
     /* The gutter is always reserved, so a scrollbar appearing never narrows
        the color editor below its two-column width and keeps itself there.
        The inline padding plus a gutter on each side reads as 1.25rem. */
-    .setup-card {
+    .setup-body {
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-width: thin;
@@ -696,9 +721,10 @@
       gap: 1.25rem;
     }
 
-    /* The stage absorbs the card's spare height and gives it back when the
-       color editor opens, down to the art's floor; past that the card
-       scrolls. Art and name stay together, centred in whatever is spare. */
+    /* The stage absorbs the section's spare height and gives it back when
+       the color editor opens, down to the art's floor; past that the
+       section scrolls. Art and name stay together, centred in whatever is
+       spare. */
     .stage {
       flex: 1 1 auto;
     }
@@ -710,20 +736,22 @@
       max-height: 26rem;
     }
 
-    .picker-card {
-      overflow: hidden;
-    }
-
     .hand-grids {
       flex: 1 1 0;
     }
   }
 
   /* Wide enough for the color editor's two-column layout (42rem inside the
-     card's padding and gutters) while the picker keeps eight columns. */
+     section's padding and gutters) while the picker keeps eight columns. */
   @container props-tab (min-width: 97.5rem) {
-    .tab-grid {
+    .props-workspace {
       grid-template-columns: 46rem minmax(0, 1fr);
+    }
+  }
+
+  @media (prefers-contrast: high) {
+    .props-workspace {
+      border-width: 2px;
     }
   }
 </style>
