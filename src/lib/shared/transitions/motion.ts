@@ -36,6 +36,48 @@ export function motionDuration(ms: number): number {
   return reducedMotion() ? 0 : ms;
 }
 
+/** A quiet arrival cue for an instant jump within a mounted content surface. */
+export function createDestinationFade(element: HTMLElement) {
+  let animation: Animation | null = null;
+  const cancel = () => {
+    animation?.cancel();
+    animation = null;
+  };
+  const respectMotionPreference = () => {
+    if (reducedMotion()) cancel();
+  };
+  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  media.addEventListener("change", respectMotionPreference);
+  const observer = new MutationObserver(respectMotionPreference);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-motion-preference"],
+  });
+
+  return {
+    play() {
+      // Repeated navigation continues from the visible frame instead of
+      // flashing back to the beginning or queuing another animation.
+      const opacity = animation ? getComputedStyle(element).opacity : "0.55";
+      cancel();
+      if (reducedMotion()) return;
+      const next = element.animate([{ opacity }, { opacity: 1 }], {
+        duration: DURATION.fast,
+        easing: STANDARD_MOTION_EASING,
+      });
+      animation = next;
+      next.onfinish = () => {
+        if (animation === next) animation = null;
+      };
+    },
+    destroy() {
+      cancel();
+      media.removeEventListener("change", respectMotionPreference);
+      observer.disconnect();
+    },
+  };
+}
+
 /**
  * Sideways drift of a stepped decision screen (Crossfade `motion="step"`).
  * Chrome that leaves or returns with a stepped screen drifts the same way.
