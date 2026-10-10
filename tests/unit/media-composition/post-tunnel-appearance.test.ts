@@ -19,7 +19,7 @@ import { createPostEditorState } from "$lib/shared/media-composition/state/post-
 import {
   animationAppearanceForItem,
   tunnelHidesMandala,
-} from "$lib/shared/share/components/post-studio/post-item-render-options";
+} from "$lib/shared/post-studio-plugin/ui/post-item-render-options";
 import { toolRow } from "$lib/shared/share/components/post-studio/editor/post-editor-tools";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
 

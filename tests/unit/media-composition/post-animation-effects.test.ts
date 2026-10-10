@@ -4,7 +4,7 @@ import { createEffectsConfigState } from "$lib/shared/effects/state/effects-conf
 import {
   copyPostAnimationEffects,
   postAnimationTrailSettings,
-} from "$lib/shared/share/components/post-studio/post-animation-effects.svelte";
+} from "$lib/shared/post-studio-plugin/ui/post-animation-effects.svelte";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrackingMode,

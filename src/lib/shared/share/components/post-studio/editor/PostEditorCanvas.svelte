@@ -59,7 +59,7 @@
     updateItemAt,
   } from "@austencloud/video-editor/core";
   import { itemIdFromStaffEffectRole } from "$lib/shared/post-studio-plugin";
-  import { posterQrAppearance } from "../post-qr-image-appearance";
+  import { posterQrAppearance } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
   import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
   import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
@@ -67,7 +67,7 @@
     cardOptionsForItem,
     animationAppearanceForItem,
     tunnelHidesMandala,
-  } from "../post-item-render-options";
+  } from "$lib/shared/post-studio-plugin/ui/post-item-render-options";
   import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
   import PostMusicPreview from "./PostMusicPreview.svelte";
   import {

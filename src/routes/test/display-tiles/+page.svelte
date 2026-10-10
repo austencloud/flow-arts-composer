@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import DisplayPanel from "$lib/shared/animation-engine/components/settings-panels/DisplayPanel.svelte";
   import PostToolPanel from "$lib/shared/share/components/post-studio/editor/PostToolPanel.svelte";
-  import PostAnimationAppearanceTool from "$lib/shared/share/components/post-studio/editor/PostAnimationAppearanceTool.svelte";
+  import PostAnimationAppearanceTool from "$lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
   import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";

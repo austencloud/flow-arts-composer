@@ -11,19 +11,19 @@ vi.mock(
   () => ({ default: () => ({}) })
 );
 vi.mock(
-  "$lib/shared/share/components/post-studio/PostStudioSequenceAnimationLayer.svelte",
+  "$lib/shared/post-studio-plugin/ui/PostStudioSequenceAnimationLayer.svelte",
   () => ({ default: () => ({}) })
 );
 vi.mock(
-  "$lib/shared/share/components/post-studio/PostStudioChoreoLayer.svelte",
+  "$lib/shared/post-studio-plugin/ui/PostStudioChoreoLayer.svelte",
   () => ({ default: () => ({}) })
 );
 vi.mock(
-  "$lib/shared/share/components/post-studio/PostStudioTunnelLayer.svelte",
+  "$lib/shared/post-studio-plugin/ui/PostStudioTunnelLayer.svelte",
   () => ({ default: () => ({}) })
 );
 vi.mock(
-  "$lib/shared/share/components/post-studio/PostStudioMandalaLayer.svelte",
+  "$lib/shared/post-studio-plugin/ui/PostStudioMandalaLayer.svelte",
   () => ({ default: () => ({}) })
 );
 

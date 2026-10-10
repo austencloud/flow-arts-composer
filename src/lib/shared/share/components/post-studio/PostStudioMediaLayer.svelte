@@ -17,11 +17,11 @@
   import {
     qrImageForAppearance,
     type PostQrAppearance,
-  } from "./post-qr-image-appearance";
-  import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
-  import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
-  import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
-  import PostStudioMandalaLayer from "./PostStudioMandalaLayer.svelte";
+  } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
+  import PostStudioSequenceAnimationLayer from "$lib/shared/post-studio-plugin/ui/PostStudioSequenceAnimationLayer.svelte";
+  import PostStudioChoreoLayer from "$lib/shared/post-studio-plugin/ui/PostStudioChoreoLayer.svelte";
+  import PostStudioTunnelLayer from "$lib/shared/post-studio-plugin/ui/PostStudioTunnelLayer.svelte";
+  import PostStudioMandalaLayer from "$lib/shared/post-studio-plugin/ui/PostStudioMandalaLayer.svelte";
   import {
     calculateMediaFit,
     calculateSourceCropFit,

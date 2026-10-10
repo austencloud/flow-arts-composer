@@ -50,14 +50,14 @@
     PostAnimationItem,
     PostMovesItem,
   } from "$lib/shared/post-studio-plugin";
-  import { layerTimingParts } from "../builder/post-timing-animation";
-  import { itemDisplayLabel } from "./post-editor-labels";
+  import { layerTimingParts } from "$lib/shared/share/components/post-studio/builder/post-timing-animation";
+  import { itemDisplayLabel } from "$lib/shared/share/components/post-studio/editor/post-editor-labels";
   import { updateItem } from "@austencloud/video-editor/core";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import {
     copyPostAnimationEffects,
     postAnimationTrailSettings,
-  } from "../post-animation-effects.svelte";
+  } from "./post-animation-effects.svelte";
 
   let {
     editor,

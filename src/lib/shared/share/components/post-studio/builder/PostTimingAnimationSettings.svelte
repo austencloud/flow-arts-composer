@@ -2,7 +2,7 @@
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PostAnimationAppearanceTool from "../editor/PostAnimationAppearanceTool.svelte";
+  import PostAnimationAppearanceTool from "$lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
   import {
     mappingPreviewAppearance,
     type MappingPreviewAppearance,

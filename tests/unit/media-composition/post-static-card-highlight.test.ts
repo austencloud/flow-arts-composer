@@ -5,7 +5,7 @@ import {
 } from "$lib/shared/post-studio-plugin";
 import { POST_STUDIO_PRESETS } from "@austencloud/video-editor/core";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { postCardHighlightedStepIndex } from "$lib/shared/share/components/post-studio/post-card-highlight";
+import { postCardHighlightedStepIndex } from "$lib/shared/post-studio-plugin/ui/post-card-highlight";
 import { NOW, card, project, video } from "./post-project-fixtures";
 
 describe("post card playback highlight", () => {

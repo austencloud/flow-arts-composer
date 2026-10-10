@@ -121,7 +121,7 @@
   import {
     qrImageForAppearance,
     qrPayloadForImage,
-  } from "../post-qr-image-appearance";
+  } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
   import {
     createTabSync,
     createVideoPreviews,

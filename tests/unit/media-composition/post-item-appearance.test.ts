@@ -6,7 +6,7 @@ import {
   editContext,
 } from "$lib/shared/post-studio-plugin";
 import { findItem, updateItem } from "@austencloud/video-editor/core";
-import { animationAppearanceForItem, cardOptionsForItem } from "$lib/shared/share/components/post-studio/post-item-render-options";
+import { animationAppearanceForItem, cardOptionsForItem } from "$lib/shared/post-studio-plugin/ui/post-item-render-options";
 import { card, overlay, project } from "./post-project-fixtures";
 
 const ctx = editContext(1_700_000_000_001);

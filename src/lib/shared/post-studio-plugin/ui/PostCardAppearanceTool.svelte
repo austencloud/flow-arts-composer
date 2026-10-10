@@ -7,7 +7,7 @@
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
   import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
   import ExportImagePanel from "$lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
-  import { cardOptionsForItem } from "../post-item-render-options";
+  import { cardOptionsForItem } from "./post-item-render-options";
   import {
     cardPresentationFromFooterSettings,
     resolveCardFooter,

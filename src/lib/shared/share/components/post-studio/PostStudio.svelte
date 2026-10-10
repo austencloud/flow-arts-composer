@@ -28,7 +28,7 @@
     type PsSlicePayload,
   } from "$lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice";
   import type { PostStudioShareExport } from "./post-studio-share-export";
-  import { withPostStudioPropType } from "./post-studio-prop-render-options";
+  import { withPostStudioPropType } from "$lib/shared/post-studio-plugin/ui/post-studio-prop-render-options";
   import PostEditorWorkspace from "./editor/PostEditorWorkspace.svelte";
 
   /**

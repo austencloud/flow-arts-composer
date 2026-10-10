@@ -99,14 +99,14 @@
   import type { CropSession, CropShapeKind } from "./post-crop-session.svelte";
   import PostRatioPicker, { type RatioOption } from "./PostRatioPicker.svelte";
   import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
-  import PostStaffEffectsTool from "./PostStaffEffectsTool.svelte";
+  import PostStaffEffectsTool from "$lib/shared/post-studio-plugin/ui/PostStaffEffectsTool.svelte";
   import PostNativeTextTool from "./PostNativeTextTool.svelte";
   import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
   import { sourceCropAtRatio, sourceFillBox } from "./post-source-crop";
-  import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
+  import PostAnimationAppearanceTool from "$lib/shared/post-studio-plugin/ui/PostAnimationAppearanceTool.svelte";
   import { DEFAULT_MANDALA_OVERLAY_CONFIG } from "$lib/shared/mandala/domain/mandala-overlay-types";
-  import PostCardAppearanceTool from "./PostCardAppearanceTool.svelte";
-  import PostSequenceActionsTool from "./PostSequenceActionsTool.svelte";
+  import PostCardAppearanceTool from "$lib/shared/post-studio-plugin/ui/PostCardAppearanceTool.svelte";
+  import PostSequenceActionsTool from "$lib/shared/post-studio-plugin/ui/PostSequenceActionsTool.svelte";
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
 
   /**

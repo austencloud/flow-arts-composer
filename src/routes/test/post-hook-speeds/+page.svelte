@@ -9,7 +9,7 @@
 -->
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import PostStudioSequenceAnimationLayer from "$lib/shared/share/components/post-studio/PostStudioSequenceAnimationLayer.svelte";
+  import PostStudioSequenceAnimationLayer from "$lib/shared/post-studio-plugin/ui/PostStudioSequenceAnimationLayer.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
