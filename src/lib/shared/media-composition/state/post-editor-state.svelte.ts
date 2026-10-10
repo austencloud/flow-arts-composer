@@ -431,7 +431,10 @@ export function createPostEditorState(deps: PostEditorDeps) {
     advance: core.advance,
     togglePlayback: core.togglePlayback,
     pause: core.pause,
-    /** Releases the media. Forwards to the package state's dispose, which calls the extension's dispose hook when it has one; the timing extension has none. */
+    /**
+     * Releases the media. Forwards to the package state's dispose, which calls
+     * the extension's dispose hook when it has one; the timing extension has none.
+     */
     dispose: core.dispose,
   };
 }

@@ -23,7 +23,7 @@ node scripts/post-project.mjs ops --file ops.json        # several edits, one un
 
 `--item` takes an id, `hook` (the animation that opens with the tunnel), `animations` or `all`. The opening tunnel is part of the animation item itself, one canvas from the first frame to the last; a post saved with the tunnel as a separate item is merged into its animation when it opens. `--set key=value` accepts `true`, `false`, `null` (clears the flag), numbers and text. `ops.json` is an array such as `[{"op":"add-hook"},{"op":"hook-speed","speed":"smooth"}]`; a failing edit names its position and nothing is applied. A change that alters nothing returns `unchanged`. The editor tab must be open on the post, because the open editor owns the saved draft: a script never writes the draft file itself.
 
-Ownership: `post-project-ops.ts` maps each named edit onto the existing pure edit, in `core/edit/project-edits.ts` of `@austencloud/video-editor` or, for the titles, tunnel and recovered-PIP edits only tka has, in tka's `post-project-edits.ts`; `queuePostProjectOps` in the bridge applies them to the session snapshot and reuses the manifest queue below.
+Ownership: `post-project-ops.ts` maps each named edit onto the existing pure edit, in `core/edit/project-edits.ts` of `@austencloud/video-editor` (the music ops in `core/edit/music-edits.ts`) or, for the titles and tunnel edits only tka has, in tka's `post-project-edits.ts`; `queuePostProjectOps` in the bridge applies them to the session snapshot and reuses the manifest queue below.
 
 ## Whole-manifest replacement
 
