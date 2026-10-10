@@ -428,6 +428,8 @@
     return { destroy: () => ro.disconnect() };
   }
 
+  let sectionJumpFrame: number | null = null;
+
   onMount(() => {
     scrollMargin = measureScrollMargin();
     createAndSubscribe(
@@ -441,6 +443,8 @@
     if (onGridReady) {
       onGridReady({
         scrollToSectionTitle: (title: string) => {
+          if (sectionJumpFrame !== null) cancelAnimationFrame(sectionJumpFrame);
+          sectionJumpFrame = null;
           const idx = flat.headerIndexByTitle.get(title);
           if (idx == null || !currentVirtualizer) return;
           // Variable-size virtualization: the first jump uses estimates for the
@@ -450,9 +454,12 @@
           const jump = () =>
             currentVirtualizer?.scrollToIndex(idx, { align: "start" });
           jump();
-          requestAnimationFrame(() => {
+          sectionJumpFrame = requestAnimationFrame(() => {
             jump();
-            requestAnimationFrame(() => jump());
+            sectionJumpFrame = requestAnimationFrame(() => {
+              sectionJumpFrame = null;
+              jump();
+            });
           });
         },
       });
@@ -497,6 +504,7 @@
   });
 
   onDestroy(() => {
+    if (sectionJumpFrame !== null) cancelAnimationFrame(sectionJumpFrame);
     storeUnsub?.();
     unregisterMorphStabilizer?.();
     if (remeasureRaf !== null) cancelAnimationFrame(remeasureRaf);
