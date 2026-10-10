@@ -22,6 +22,7 @@ import {
   cachedPostSequence,
   resolvePostSequence,
 } from "./post-workspace-projects.js";
+import { plainCopy } from "./studio-plain-copy.js";
 
 export interface StudioProjectPreview {
   sequence: SequenceData | null;
@@ -241,12 +242,7 @@ async function createIndependentProject(
         : "Software showcase"
   );
   const source = sequence
-    ? (structuredClone({
-        ...sequence,
-        id,
-        name,
-        displayName: name,
-      }) as SequenceData)
+    ? plainCopy<SequenceData>({ ...sequence, id, name, displayName: name })
     : null;
   const now = Date.now();
   const empty = createEmptyPostProject({
@@ -257,10 +253,21 @@ async function createIndependentProject(
   });
   const project = template
     ? PostProjectSchema.parse({
-        ...structuredClone(template),
+        ...plainCopy(template),
         sequenceId: id,
         title: name,
         updatedAt: now,
+        // Each take's beat timing belongs to its project; a copy that kept
+        // the source's id would reopen every take as untapped.
+        ...(template.timings
+          ? {
+              timings: Object.fromEntries(
+                Object.entries(plainCopy(template.timings)).map(
+                  ([takeId, timing]) => [takeId, { ...timing, sequenceId: id }]
+                )
+              ),
+            }
+          : {}),
       })
     : kind === "tutorial"
       ? PostProjectSchema.parse({

@@ -94,6 +94,19 @@ describe("Studio project library", () => {
     expect(sequence.id).toBe("source-1");
   });
 
+  it("creates a tutorial from a picker's reactive sequence", async () => {
+    persistStudioProject.mockClear();
+    // Pickers hand over Svelte state proxies, which structuredClone rejects.
+    const reactive = new Proxy(
+      { ...sequence, steps: new Proxy([{ letter: "A" }], {}) },
+      {}
+    ) as SequenceData;
+    const id = await createStudioTutorial(reactive);
+    const [source] = persistStudioProject.mock.calls[0] as [SequenceData];
+    expect(source).toMatchObject({ id, steps: [{ letter: "A" }] });
+    expect(() => structuredClone(source)).not.toThrow();
+  });
+
   it("creates a named source-free showcase without inventing a sequence", async () => {
     persistStudioProject.mockClear();
     const id = await createSoftwareProject("  Software tour  ");

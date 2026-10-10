@@ -665,12 +665,35 @@ interface DrawnLayer {
   regionPixels: PixelRect;
 }
 
+/**
+ * How long a frame waits for the grid's canvases to be rebuilt at the size the
+ * export lays them out at. One that never catches up, such as a canvas whose
+ * pane is inert, is drawn as it stands rather than failing the file.
+ */
+const ARRANGEMENT_RASTER_GRACE_MS = 3_000;
+
+/** Every cell canvas is rasterized at the square its box now has. */
+function arrangementRastersSettled(surface: HTMLElement): boolean {
+  return Array.from(
+    surface.querySelectorAll<HTMLElement>(".canvas-wrapper")
+  ).every((wrapper) => {
+    const size = Math.min(wrapper.clientWidth, wrapper.clientHeight);
+    return size <= 0 || wrapper.dataset.rasterSize === String(size);
+  });
+}
+
+function nextAnimationFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
 /** The grid mounts canvas engines asynchronously, including on its first export frame. */
 function waitForArrangementSurface(
   layerElement: HTMLElement
 ): Promise<HTMLElement> {
   return new Promise((resolve, reject) => {
     let settled = false;
+    let waitedForRasters = false;
+    let rasterTimer: ReturnType<typeof setTimeout> | null = null;
     const observer = new MutationObserver(check);
     const timeout = setTimeout(
       () =>
@@ -687,8 +710,14 @@ function waitForArrangementSurface(
       settled = true;
       observer.disconnect();
       clearTimeout(timeout);
+      if (rasterTimer) clearTimeout(rasterTimer);
       if (error) reject(error);
-      else resolve(surface!);
+      else if (!waitedForRasters) resolve(surface!);
+      // A rebuilt canvas starts blank; the engines repaint the pose next frame.
+      else
+        void nextAnimationFrame()
+          .then(nextAnimationFrame)
+          .then(() => resolve(surface!));
     }
 
     function check() {
@@ -705,6 +734,16 @@ function waitForArrangementSurface(
       if (Number.isFinite(expected) && cells.length < expected) return;
       if (surface.querySelector('[data-arrangement-cell-ready="false"]'))
         return;
+      if (!arrangementRastersSettled(surface)) {
+        if (!waitedForRasters) {
+          waitedForRasters = true;
+          rasterTimer = setTimeout(
+            () => finish(undefined, surface),
+            ARRANGEMENT_RASTER_GRACE_MS
+          );
+        }
+        return;
+      }
       finish(undefined, surface);
     }
 

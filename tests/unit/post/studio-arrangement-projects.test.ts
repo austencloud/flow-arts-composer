@@ -224,4 +224,22 @@ describe("Studio arrangement projects", () => {
     expect(snapshot.cells[0]?.layers[0]?.sequence.id).toBe("original-sequence");
     expect(fake.backedUp).toHaveLength(1);
   });
+
+  it("creates an arrangement from a picker's reactive sequence", async () => {
+    const plain = composition("source").cells[0]!.sequences[0]!;
+    // Pickers hand over Svelte state proxies, which structuredClone rejects.
+    const reactive = new Proxy(
+      { ...plain, steps: new Proxy([{}], {}) },
+      {}
+    ) as typeof plain;
+    const id = await createStudioArrangement(reactive, "From the picker");
+    expect(id).toMatch(/^studio-arrangement:/);
+    const saved = fake.saved[0] as {
+      snapshot: { cells: { layers: { sequence: { id: string } }[] }[] };
+    };
+    expect(saved.snapshot.cells[0]?.layers[0]?.sequence.id).toBe(
+      "original-sequence"
+    );
+    expect(() => structuredClone(saved)).not.toThrow();
+  });
 });

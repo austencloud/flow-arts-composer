@@ -82,6 +82,8 @@
     type CatalogTakeSource,
     type PostEdit,
   } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import { createLocalFootageVault } from "#lib/shared/media-composition/services/local-footage-vault.js";
+  import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
   import type { PostStudioLayerPainter } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
   import { createBeatCarouselPainter } from "#lib/shared/media-composition/services/beat-carousel-painter.js";
   import { createSequenceStripPainter } from "#lib/shared/media-composition/services/sequence-strip-painter.js";
@@ -327,6 +329,12 @@
     // A feature video keeps its post, timings and undo history apart from
     // this browser's Post Studio storage.
     store: featureVideo?.store,
+    // The Post page opens a new workspace when the account changes.
+    footage: createLocalFootageVault(
+      authState.user && !authState.user.isAnonymous
+        ? `account:${authState.user.uid}`
+        : "guest"
+    ),
   });
 
   let editingArrangementId = $state<string | null>(null);

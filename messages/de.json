@@ -5481,7 +5481,7 @@
   "share_studio_video_unreadable": "Das Video konnte nicht gelesen werden.",
   "share_studio_wrong_file": "Das ist nicht dieselbe Datei. Wähle die Datei aus, aus der diese Aufnahme erstellt wurde.",
   "share_studio_take_name": "Name der Aufnahme",
-  "share_studio_repick_local": "Wähle diese Datei erneut aus. Browser behalten lokale Dateien zwischen Besuchen nicht bei.",
+  "share_studio_repick_local": "Wähle diese Datei erneut aus. Dieser Browser hat keine gespeicherte Kopie davon.",
   "share_studio_video_not_loaded": "Dieses Video konnte nicht geladen werden.",
   "share_studio_map_timing": "Timing zuordnen",
   "share_studio_pick_file_again": "Datei erneut auswählen",

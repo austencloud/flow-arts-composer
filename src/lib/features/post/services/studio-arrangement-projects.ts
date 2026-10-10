@@ -19,6 +19,7 @@ import {
 import { rememberPostSequence } from "./post-workspace-projects";
 import { auth } from "#lib/shared/auth/firebase.js";
 import { loadAccountPostProject } from "./post-account-projects";
+import { plainCopy } from "./studio-plain-copy";
 
 const SOURCE_PREFIX = "studio-arrangement:";
 const SEQUENCE_PREFIX = "tka:post:sequence:v1:";
@@ -148,12 +149,12 @@ export async function openCompositionInStudio(
     throw new Error("This arrangement has no sequence to open in Studio.");
   const name =
     composition.name || sequence.displayName || sequence.name || "Arrangement";
-  const source = structuredClone({
+  const source = plainCopy<SequenceData>({
     ...sequence,
     id: sourceId,
     name,
     displayName: name,
-  }) as SequenceData;
+  });
   const project = createArrangementProject(snapshot, sourceId);
   await persistStudioProject(source, project, uid);
   return sourceId;
@@ -181,7 +182,7 @@ export async function createStudioArrangement(
       index === 0
         ? [
             {
-              sequence: structuredClone(sequence),
+              sequence: plainCopy(sequence),
               beatOffset: 0,
               propColors: getTunnelLayerColors(0),
               transformStack: [],
@@ -201,12 +202,12 @@ export async function createStudioArrangement(
     bpm: 120,
     skipStartPlacement: true,
   });
-  const source = structuredClone({
+  const source = plainCopy<SequenceData>({
     ...sequence,
     id: sourceId,
     name,
     displayName: name,
-  }) as SequenceData;
+  });
   const project = createArrangementProject(snapshot, sourceId);
   await persistStudioProject(source, project, uid);
   return sourceId;

@@ -2418,6 +2418,12 @@
                   sourceTimeSeconds={layer.sourceTimeSeconds}
                   playing={editor.isPlaying && entry.live}
                   {exporting}
+                  exportSize={exporting
+                    ? {
+                        width: rect.width * outputSize.width,
+                        height: rect.height * outputSize.height,
+                      }
+                    : null}
                   {sequence}
                   cardRenderOptions={cardOptionsForItem(
                     cardRenderOptions,
