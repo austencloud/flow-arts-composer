@@ -106,7 +106,6 @@
               validationMessage={startPlacementValidationMessage}
               onNavigateToAdvanced={onStartPlacementNavigateToAdvanced}
               onNavigateToDefault={onStartPlacementNavigateToDefault}
-              {isSideBySideLayout}
               onPlacementSubmitted={onStartPlacementSubmitted}
               heading={startPlacementHeading}
               suppressHeading={constructTutorialState.isActive}

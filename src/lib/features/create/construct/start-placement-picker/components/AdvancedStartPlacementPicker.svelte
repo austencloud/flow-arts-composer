@@ -14,14 +14,12 @@
     selectedPictograph = null,
     currentGridMode,
     onPictographSelect,
-    isSideBySideLayout = () => false,
     gridJoin = null,
   }: {
     pictographDataSet: PictographData[];
     selectedPictograph?: PictographData | null;
     currentGridMode: GridMode;
     onPictographSelect: (pictograph: PictographData) => void;
-    isSideBySideLayout?: () => boolean;
     gridJoin?: GridJoin | null;
   } = $props();
 
@@ -78,11 +76,7 @@
 <div class="advanced-picker-container">
   <!-- Responsive Grid of all 16 start placements -->
   <SimpleGlassScroll variant="primary" height="100%" width="100%">
-    <ResponsivePlacementGrid
-      {isTransitioning}
-      {hasOverflow}
-      {isSideBySideLayout}
-    >
+    <ResponsivePlacementGrid {isTransitioning} {hasOverflow}>
       <!-- Alpha row (4 variations) -->
       <PlacementGroupGrid
         pictographs={placementGroups.alpha}

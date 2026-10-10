@@ -352,14 +352,32 @@ center label opens an anchored popover with all four orientations.
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* The -text hand colors stay readable on the theme; the raw prop navy
+     vanishes against a dark background */
   .orientation-cycler.color-blue {
-    border-color: var(--prop-blue-border, rgba(59, 130, 246, 0.4));
-    background: color-mix(in srgb, var(--prop-blue, #3b82f6) 8%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--prop-blue-text, #818cf8) 45%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--prop-blue-text, #818cf8) 8%,
+      transparent
+    );
   }
 
   .orientation-cycler.color-red {
-    border-color: var(--prop-red-border, rgba(239, 68, 68, 0.4));
-    background: color-mix(in srgb, var(--prop-red, #ef4444) 8%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--prop-red-text, #f87171) 45%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--prop-red-text, #f87171) 8%,
+      transparent
+    );
   }
 
   /* Shared button reset */
@@ -373,7 +391,7 @@ center label opens an anchored popover with all four orientations.
     align-items: center;
     justify-content: center;
     -webkit-tap-highlight-color: transparent;
-    transition: background 0.15s ease;
+    transition: background var(--transition-fast);
   }
 
   .cycle-arrow {
@@ -406,7 +424,7 @@ center label opens an anchored popover with all four orientations.
   .cycle-arrow:active,
   .cycle-center:active {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.12));
-    transition: background var(--duration-instant) ease;
+    transition: background var(--transition-micro);
   }
 
   .cycle-arrow:focus-visible,
@@ -445,14 +463,21 @@ center label opens an anchored popover with all four orientations.
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
   }
 
+  /* The hand's color tints the whole frame, never one edge */
   .orientation-popover.color-blue {
-    border-top: 2px solid
-      color-mix(in srgb, var(--prop-blue, #3b82f6) 50%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--prop-blue-text, #818cf8) 45%,
+      var(--theme-stroke)
+    );
   }
 
   .orientation-popover.color-red {
-    border-top: 2px solid
-      color-mix(in srgb, var(--prop-red, #ef4444) 50%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--prop-red-text, #f87171) 45%,
+      var(--theme-stroke)
+    );
   }
 
   .orientation-options {
@@ -473,8 +498,8 @@ center label opens an anchored popover with all four orientations.
     -webkit-tap-highlight-color: transparent;
     min-height: var(--min-touch-target, 48px);
     transition:
-      background 0.15s ease,
-      border-color 0.15s ease;
+      background var(--transition-fast),
+      border-color var(--transition-fast);
   }
 
   .orientation-option i {
