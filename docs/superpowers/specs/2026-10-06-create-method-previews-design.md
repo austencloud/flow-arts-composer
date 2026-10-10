@@ -238,7 +238,10 @@ shows Fuse's inputs. Each half shows its arrow from the start, as Fuse's
 source cards do, with its prop where the move begins (2026-10-10: arrows that
 appeared only after the halves met read as something new arriving). After they
 merge, the combined steps play once, the props traveling their real paths
-along the arrows already shown (`motionStartData` and `motionProgress`).
+along the arrows already shown (`motionStartData` and `motionProgress`). A hand
+alone is laid out as one hand, and the combined letter can place its arrow or
+prop elsewhere, so while the halves slide, each arrow and prop glides to where
+the combined step draws it instead of snapping there at the merge.
 
 Each turn is a Regenerate (2026-10-10), as Fuse's Regenerate button plays one:
 one hand gets a new path from Fuse's own path maker (`generateSoloLoop` with
