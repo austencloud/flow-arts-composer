@@ -234,8 +234,11 @@ A blue one-hand path and a red one-hand path slide together and play once as a
 two-prop sequence. The paths are the demo sequence's two hands over its fourth
 and fifth steps, just past Construct's, shown one hand
 at a time with `PictographContainer`'s `visibleHand`, as `FuseSourceCard`
-shows Fuse's inputs. After they merge, the combined steps play once with props
-traveling their real paths (`motionStartData` and `motionProgress`).
+shows Fuse's inputs. Each half shows its arrow from the start, as Fuse's
+source cards do, with its prop where the move begins (2026-10-10: arrows that
+appeared only after the halves met read as something new arriving). After they
+merge, the combined steps play once, the props traveling their real paths
+along the arrows already shown (`motionStartData` and `motionProgress`).
 
 Each turn is a Regenerate (2026-10-10), as Fuse's Regenerate button plays one:
 one hand gets a new path from Fuse's own path maker (`generateSoloLoop` with
