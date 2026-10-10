@@ -55,7 +55,11 @@ export function shouldSubmitPostDraft(
   project: PostProject,
   revision: number
 ): boolean {
-  return revision > 0 || !isEmptyPostProject(project);
+  return (
+    revision > 0 ||
+    project.sourceKind === "none" ||
+    !isEmptyPostProject(project)
+  );
 }
 
 function recordsForSequence(

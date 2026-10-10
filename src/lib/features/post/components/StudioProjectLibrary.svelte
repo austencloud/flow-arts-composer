@@ -28,7 +28,7 @@
     error: string | null;
     featureError: string | null;
     unreadableFeatures: string[];
-    onopen: (id: string) => void;
+    onopen: (id: string, footage?: File) => void;
     onfeature: (slug: string) => void;
     onrefresh: () => void;
   } = $props();
@@ -234,8 +234,8 @@
       ><i class="fas fa-cloud" aria-hidden="true"></i>
       {authState.user && !authState.user.isAnonymous
         ? "Edits sync with your account."
-        : "Sequence edits are saved on this device."} Device videos may need to be
-      selected again elsewhere.</span
+        : "Edits are saved on this device."} Device videos may need to be selected
+      again elsewhere.</span
     >
     {#if features.length}<span
         >Software project folders are saved on this computer.</span

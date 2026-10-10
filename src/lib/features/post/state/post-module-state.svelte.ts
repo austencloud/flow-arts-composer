@@ -52,6 +52,11 @@ export function createPostModuleState(services: PostModuleServices) {
   // Raw: the editor needs the sync's getters and closures as they are, not
   // through a deep proxy.
   let feature = $state.raw<FeatureVideoSync | null>(null);
+  const editorReady = $derived(
+    sequence !== null ||
+      draft?.sourceKind === "none" ||
+      feature?.initialProject.sourceKind === "none"
+  );
   let request = 0;
   let catalogRequest = 0;
   let featureRequest = 0;
@@ -98,7 +103,7 @@ export function createPostModuleState(services: PostModuleServices) {
   }
 
   async function open(sequenceId: string): Promise<void> {
-    if (sequenceId === selectedId && sequence) {
+    if (sequenceId === selectedId && editorReady) {
       showingProjects = false;
       selectPostSequence(sequenceId);
       return;
@@ -111,15 +116,17 @@ export function createPostModuleState(services: PostModuleServices) {
     sequence = null;
     draft = null;
     feature = null;
+    diskAvailable = false;
     try {
-      const resolved = await services.resolve(sequenceId);
+      const loaded = await services.loadDraft(sequenceId);
       if (current !== request) return;
-      if (!resolved) {
+      const sourceFree = loaded.project?.sourceKind === "none";
+      const resolved = sourceFree ? null : await services.resolve(sequenceId);
+      if (current !== request) return;
+      if (!sourceFree && !resolved) {
         projectError = `The sequence for this post (${sequenceId}) could not be found. The saved post is still here.`;
         return;
       }
-      const loaded = await services.loadDraft(sequenceId);
-      if (current !== request) return;
       sequence = resolved;
       draft = loaded.project;
       diskAvailable = loaded.diskAvailable;
@@ -143,7 +150,7 @@ export function createPostModuleState(services: PostModuleServices) {
    */
   async function openFeature(slug: string): Promise<void> {
     const id = featureSelectionId(slug);
-    if (id === selectedId && sequence && feature) {
+    if (id === selectedId && editorReady && feature) {
       showingProjects = false;
       return;
     }
@@ -155,6 +162,7 @@ export function createPostModuleState(services: PostModuleServices) {
     sequence = null;
     draft = null;
     feature = null;
+    diskAvailable = false;
     try {
       if (!services.loadFeature) {
         projectError = "Feature videos open only on a dev server.";
@@ -163,9 +171,10 @@ export function createPostModuleState(services: PostModuleServices) {
       const loaded = await services.loadFeature(slug);
       if (current !== request) return;
       const sequenceId = loaded.initialProject.sequenceId;
-      const resolved = await services.resolve(sequenceId);
+      const sourceFree = loaded.initialProject.sourceKind === "none";
+      const resolved = sourceFree ? null : await services.resolve(sequenceId);
       if (current !== request) return;
-      if (!resolved) {
+      if (!sourceFree && !resolved) {
         projectError = `The sequence for this feature video (${sequenceId}) could not be found.`;
         return;
       }
@@ -208,6 +217,9 @@ export function createPostModuleState(services: PostModuleServices) {
     sequence = null;
     draft = null;
     feature = null;
+    loadingProject = false;
+    projectError = null;
+    diskAvailable = false;
     showingProjects = true;
     void refreshProjects();
   }
@@ -230,6 +242,9 @@ export function createPostModuleState(services: PostModuleServices) {
     },
     get sequence() {
       return sequence;
+    },
+    get editorReady() {
+      return editorReady;
     },
     get draft() {
       return draft;

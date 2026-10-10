@@ -32,7 +32,7 @@
     visible?: boolean;
   }
   let { visible = true }: Props = $props();
-  const state = createPostModuleState({
+  const moduleState = createPostModuleState({
     list: listSyncedPostProjects,
     resolve: resolveSyncedPostSequence,
     loadDraft: loadSyncedPostDraft,
@@ -54,29 +54,33 @@
         }
       : {}),
   });
-  setPostModuleContext(state);
+  setPostModuleContext(moduleState);
   /** The editor puts Save, more actions and Export in this header row. */
   const editorHeader = providePostEditorHeader();
   const exportOptions = getExportOptionsState();
   const cardPreview = createCardPreviewState({
-    getSequence: () => state.sequence,
-    getEnabled: () => visible && !state.showingProjects,
+    getSequence: () => moduleState.sequence,
+    getEnabled: () => visible && !moduleState.showingProjects,
     getDarkMode: () => exportOptions.imageDarkMode,
     getResolvedAutoLayout: () => null,
   });
   let previousParam: string | null = null;
   let previousFeature: string | null = null;
   let initialVisit = true;
+  let footageToImport = $state.raw<{ projectId: string; file: File } | null>(
+    null
+  );
   const currentWord = $derived(
-    simplifyRepeatedWord(state.sequence?.word || "")
+    simplifyRepeatedWord(moduleState.sequence?.word || "")
   );
   const currentTitle = $derived(
-    state.feature?.title ??
+    moduleState.feature?.title ??
+      moduleState.draft?.title ??
       simplifyRepeatedWord(
-        state.sequence?.displayName ||
-          state.sequence?.name ||
+        moduleState.sequence?.displayName ||
+          moduleState.sequence?.name ||
           currentWord ||
-          state.selectedId ||
+          moduleState.selectedId ||
           ""
       )
   );
@@ -87,7 +91,7 @@
    */
   const featureMode = $derived(
     import.meta.env.DEV &&
-      (page.url.searchParams.has("feature") || state.feature !== null)
+      (page.url.searchParams.has("feature") || moduleState.feature !== null)
   );
 
   let previousAccount: string | null | undefined = undefined;
@@ -100,7 +104,8 @@
     initialVisit = true;
     previousParam = null;
     previousFeature = null;
-    state.resetForAccount();
+    footageToImport = null;
+    moduleState.resetForAccount();
   });
   $effect(() => {
     if (!authState.initialized) return;
@@ -114,34 +119,39 @@
       initialVisit = false;
       previousParam = project;
       previousFeature = feature;
-      if (feature) void state.openFeature(feature);
+      if (feature) void moduleState.openFeature(feature);
       else {
-        const target = project || (!library && state.lastSelectedId());
-        if (target) void state.open(target);
+        const target = project || (!library && moduleState.lastSelectedId());
+        if (target) void moduleState.open(target);
       }
       return;
     }
-    if (library) state.showProjects();
+    if (library) moduleState.showProjects();
     else if (feature && feature !== previousFeature)
-      void state.openFeature(feature);
-    else if (project && project !== previousParam) void state.open(project);
+      void moduleState.openFeature(feature);
+    else if (project && project !== previousParam)
+      void moduleState.open(project);
     previousParam = project;
     previousFeature = feature;
   });
 
-  function openProject(id: string): void {
-    if (id === state.selectedId && !state.showingProjects) return;
+  function openProject(id: string, footage?: File): void {
+    if (id === moduleState.selectedId && !moduleState.showingProjects) return;
+    footageToImport = footage ? { projectId: id, file: footage } : null;
     void goto(`/post?project=${encodeURIComponent(id)}`);
   }
 
   function openFeature(slug: string): void {
-    if (featureSelectionId(slug) === state.selectedId && !state.showingProjects)
+    if (
+      featureSelectionId(slug) === moduleState.selectedId &&
+      !moduleState.showingProjects
+    )
       return;
     void goto(`/post?feature=${encodeURIComponent(slug)}`);
   }
 
   function showProjects(): void {
-    state.showProjects();
+    moduleState.showProjects();
     void goto("/post", { replace: true });
   }
 
@@ -149,7 +159,7 @@
    * The account save for one sequence, bound when the editor opens: a copy
    * it still holds when another post opens saves with its own sequence.
    */
-  function saveSyncedFor(sequence: SequenceData) {
+  function saveSyncedFor(sequence: SequenceData | null) {
     return (project: PostProject) => saveSyncedPostDraft(project, sequence);
   }
 </script>
@@ -158,24 +168,24 @@
   {#if !canAccessPostStudio() && !featureMode}
     <div class="editor-status" role="status">Studio is in early access.</div>
   {:else}
-    <div class="project-list" hidden={!state.showingProjects}>
-      {#if state.showingProjects}
+    <div class="project-list" hidden={!moduleState.showingProjects}>
+      {#if moduleState.showingProjects}
         {#key authState.user?.uid ?? "guest"}
           <StudioProjectLibrary
-            projects={state.projects}
-            features={state.features}
-            loading={state.loadingCatalog}
-            error={state.catalogError}
-            featureError={state.featureError}
-            unreadableFeatures={state.unreadableFeatures}
+            projects={moduleState.projects}
+            features={moduleState.features}
+            loading={moduleState.loadingCatalog}
+            error={moduleState.catalogError}
+            featureError={moduleState.featureError}
+            unreadableFeatures={moduleState.unreadableFeatures}
             onopen={openProject}
             onfeature={openFeature}
-            onrefresh={() => void state.refreshProjects()}
+            onrefresh={() => void moduleState.refreshProjects()}
           />
         {/key}
       {/if}
     </div>
-    <div class="editor-host" hidden={state.showingProjects}>
+    <div class="editor-host" hidden={moduleState.showingProjects}>
       <div class="project-toolbar">
         <div class="toolbar-row">
           <button
@@ -193,38 +203,47 @@
               {currentTitle}
             {/if}
           </div>
-          {#if editorHeader.actions && !state.loadingProject && state.sequence}{@render editorHeader.actions()}{/if}
+          {#if editorHeader.actions && !moduleState.loadingProject && moduleState.editorReady}{@render editorHeader.actions()}{/if}
         </div>
       </div>
-      {#if state.loadingProject}<div class="editor-status" role="status">
+      {#if moduleState.loadingProject}<div class="editor-status" role="status">
           Opening project…
         </div>
-      {:else if !state.sequence}<div class="editor-status error" role="alert">
-          <p>{state.projectError || "This sequence could not be opened."}</p>
-          <button type="button" onclick={() => void state.retry()}
+      {:else if !moduleState.editorReady}<div
+          class="editor-status error"
+          role="alert"
+        >
+          <p>
+            {moduleState.projectError || "This project could not be opened."}
+          </p>
+          <button type="button" onclick={() => void moduleState.retry()}
             >Try again</button
           >
         </div>
       {:else}
-        {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${state.feature ? featureSelectionId(state.feature.slug) : state.sequence.id}`}
+        {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${moduleState.selectedId}`}
           <PostStudio
-            editArrangementOnOpen={!!state.selectedId?.startsWith(
+            editArrangementOnOpen={!!moduleState.selectedId?.startsWith(
               "studio-arrangement:"
             )}
-            active={visible && !state.showingProjects}
-            sequence={state.sequence}
-            feature={state.feature ?? undefined}
-            initialProject={state.feature
-              ? state.feature.initialProject
-              : (state.draft ?? undefined)}
-            onSaveDraft={state.feature
-              ? state.feature.save
+            active={visible && !moduleState.showingProjects}
+            sequence={moduleState.sequence}
+            initialFootage={footageToImport?.projectId ===
+            moduleState.selectedId
+              ? footageToImport.file
+              : null}
+            feature={moduleState.feature ?? undefined}
+            initialProject={moduleState.feature
+              ? moduleState.feature.initialProject
+              : (moduleState.draft ?? undefined)}
+            onSaveDraft={moduleState.feature
+              ? moduleState.feature.save
               : authState.user && !authState.user.isAnonymous
-                ? saveSyncedFor(state.sequence)
-                : state.diskAvailable
+                ? saveSyncedFor(moduleState.sequence)
+                : moduleState.diskAvailable
                   ? savePostDraft
                   : undefined}
-            draftLoadError={state.projectError}
+            draftLoadError={moduleState.projectError}
             cardPreviewUrl={cardPreview.url}
             cardRenderOptions={cardPreview.renderOptions}
             animationPreviewUrl={null}

@@ -50,7 +50,7 @@
     sourceTimeSeconds: number;
     playing: boolean;
     exporting?: boolean;
-    sequence: SequenceData;
+    sequence: SequenceData | null;
     qrSequence?: SequenceData;
     /** A card's saved scan link, which its QR shows. */
     qrUrl?: string;
@@ -740,7 +740,7 @@
         {exporting}
       />
     {/if}
-  {:else if binding.renderMode === "sequence-animation" && sequencePosition !== undefined}
+  {:else if binding.renderMode === "sequence-animation" && sequence && sequencePosition !== undefined}
     <PostStudioSequenceAnimationLayer
       {sequence}
       {sequencePosition}
@@ -763,7 +763,7 @@
       rightPropType={cardRenderOptions?.rightPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
     />
-  {:else if binding.renderMode === "choreo-card"}
+  {:else if binding.renderMode === "choreo-card" && sequence}
     <PostStudioChoreoLayer
       {sequence}
       {displayedBeatNumber}
@@ -771,7 +771,7 @@
       {qrSequence}
       {qrUrl}
     />
-  {:else if binding.renderMode === "tunnel"}
+  {:else if binding.renderMode === "tunnel" && sequence}
     <PostStudioTunnelLayer
       {sequence}
       {playing}
@@ -781,7 +781,7 @@
       rightPropType={cardRenderOptions?.rightPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
     />
-  {:else if binding.renderMode === "mandala"}
+  {:else if binding.renderMode === "mandala" && sequence}
     <PostStudioMandalaLayer
       {sequence}
       leftPropType={cardRenderOptions?.leftPropTypeOverride ??
@@ -862,7 +862,9 @@
   {/if}
 </div>
 
-<VisualSequenceSaveContextMenuHost bind:this={saveMenuHost} {sequence} />
+{#if sequence}
+  <VisualSequenceSaveContextMenuHost bind:this={saveMenuHost} {sequence} />
+{/if}
 
 <style>
   /* The layer used to be pointer-transparent so the slot button underneath got

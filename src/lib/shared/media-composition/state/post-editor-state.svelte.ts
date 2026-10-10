@@ -131,7 +131,7 @@ type TakeHistoryEntry =
   | { kind: "appearance"; appearance: MappingAppearance | undefined };
 
 export interface PostEditorDeps {
-  getSequence: () => SequenceData;
+  getSequence: () => SequenceData | null;
   /** A recovered full draft to open in place of this browser's saved copy. */
   initialProject?: PostProject;
   /** Catalog videos for the sequence, looked up by id. */
@@ -157,14 +157,18 @@ export function createPostEditorState(deps: PostEditorDeps) {
   const store = deps.store ?? devicePostEditorStore;
   const context = (): EditContext => ({ now: now() });
   const sequence = $derived(deps.getSequence());
-  const moveBeats = $derived(sequence.steps.map((step) => step.duration ?? 1));
+  const sequenceId = deps.initialProject?.sequenceId ?? deps.getSequence()?.id;
+  if (!sequenceId) throw new Error("A Post Studio project needs an identity.");
+  const moveBeats = $derived(
+    sequence?.steps.map((step) => step.duration ?? 1) ?? [1]
+  );
 
   const initialProject = PostProjectSchema.safeParse(deps.initialProject);
   let project = $state.raw<PostProject>(
-    initialProject.success && initialProject.data.sequenceId === sequence.id
+    initialProject.success && initialProject.data.sequenceId === sequenceId
       ? // A post saved with its opening as a separate item opens as one item.
         normalizeProject(initialProject.data)
-      : store.openProject(sequence.id, now())
+      : store.openProject(sequenceId, now())
   );
   // History keeps its original objects; saved copies must still be newer
   // than the edit that undo, session cancellation, or import replaces.
@@ -272,9 +276,10 @@ export function createPostEditorState(deps: PostEditorDeps) {
       compiled.durationSeconds,
       previewSeconds,
       {
-        steps: sequence.steps,
+        steps: sequence?.steps ?? [],
         startPlacementDuration: 1,
-        sequencePeriod: sequence.period ?? sequence.orientationCycleCount ?? 1,
+        sequencePeriod:
+          sequence?.period ?? sequence?.orientationCycleCount ?? 1,
         clocks,
       }
     );
@@ -648,10 +653,10 @@ export function createPostEditorState(deps: PostEditorDeps) {
     legacy?: StepMap,
     sourceProject: PostProject = project
   ): TakeTiming {
-    const saved = store.loadTiming(sequence.id, take.takeKey);
+    const saved = store.loadTiming(sequenceId, take.takeKey);
     const embedded = sourceProject.timings?.[take.id];
     const validEmbedded =
-      embedded?.sequenceId === sequence.id &&
+      embedded?.sequenceId === sequenceId &&
       embedded.takeKey === take.takeKey &&
       TakeTimingSchema.safeParse(embedded).success
         ? embedded
@@ -664,7 +669,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     // A catalog video mapped in the older editor seeds its landings once.
     if (legacy && legacy.stepCount === moveBeats.length) {
       const seeded = takeTimingFromLegacyMarks({
-        sequenceId: sequence.id,
+        sequenceId: sequenceId,
         takeKey: take.takeKey,
         durationSeconds: take.durationSeconds,
         marks: legacy.beatTimestamps,
@@ -679,7 +684,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       }
     }
     return store.openTiming({
-      sequenceId: sequence.id,
+      sequenceId: sequenceId,
       takeKey: take.takeKey,
       durationSeconds: take.durationSeconds,
       movesPerPass: moveBeats.length,
@@ -700,7 +705,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     media = { ...media, [take.id]: { url, owned } };
     if (
       timings[take.id]?.takeKey !== take.takeKey ||
-      timings[take.id]?.sequenceId !== sequence.id
+      timings[take.id]?.sequenceId !== sequenceId
     ) {
       timings = {
         ...timings,
@@ -726,7 +731,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
   function loadSavedMedia(source: PostProject = project): void {
     for (const take of source.takes) {
       const loaded = timings[take.id];
-      if (loaded?.takeKey === take.takeKey && loaded.sequenceId === sequence.id)
+      if (loaded?.takeKey === take.takeKey && loaded.sequenceId === sequenceId)
         continue;
       if (take.ref.kind === "catalog") {
         const video = deps.getCatalogVideo?.(take.ref.videoId);
@@ -735,7 +740,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
         if (video) attach(take, video.url, false, video.legacyStepMap, source);
         else if (
           source.timings?.[take.id] ||
-          store.loadTiming(sequence.id, take.takeKey)
+          store.loadTiming(sequenceId, take.takeKey)
         ) {
           timings = {
             ...timings,
@@ -773,16 +778,22 @@ export function createPostEditorState(deps: PostEditorDeps) {
     const importedTimings = Object.fromEntries(
       Object.entries(next.timings ?? {}).map(([takeId, timing]) => [
         takeId,
-        { ...timing, sequenceId: sequence.id },
+        { ...timing, sequenceId: sequenceId },
       ])
     );
+    // A backup contributes the timeline and assets, not the destination's
+    // source identity. Older backups have no sourceKind or title at all.
+    const { sourceKind: _sourceKind, title: importedTitle, ...content } = next;
+    const title = importedTitle ?? project.title;
     const validated = PostProjectSchema.parse({
-      ...next,
-      sequenceId: sequence.id,
+      ...content,
+      sequenceId: sequenceId,
+      ...(project.sourceKind ? { sourceKind: project.sourceKind } : {}),
+      ...(title ? { title } : {}),
       timings: importedTimings,
     });
     const currentSnapshot = snapshotFor(project);
-    const transfer = resolvePostStudioDraft(sequence.id, [
+    const transfer = resolvePostStudioDraft(sequenceId, [
       projectDraftRecord({
         ...validated,
         updatedAt: Math.max(validated.updatedAt, currentSnapshot.updatedAt + 1),
@@ -805,7 +816,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
       const existing = timings[take.id];
       const imported = parsed.timings?.[take.id];
       if (
-        existing?.sequenceId !== sequence.id ||
+        existing?.sequenceId !== sequenceId ||
         existing.takeKey !== take.takeKey
       )
         continue;

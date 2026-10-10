@@ -219,8 +219,9 @@
    */
   interface Props {
     active: boolean;
-    sequence: SequenceData;
+    sequence: SequenceData | null;
     initialProject?: PostProject;
+    initialFootage?: File | null;
     /** Open a standalone arrangement at its grid on first load. */
     editArrangementOnOpen?: boolean;
     /**
@@ -256,6 +257,7 @@
     active,
     sequence,
     initialProject,
+    initialFootage = null,
     editArrangementOnOpen = false,
     feature,
     onSaveDraft,
@@ -286,8 +288,10 @@
   // The per-sequence catalog, shared with the rest of the app, so a video
   // uploaded elsewhere shows up here without reopening.
   const videoLibrary = untrack(() =>
-    sequence.id ? getSequenceVideosStore(sequence.id) : null
+    sequence?.id ? getSequenceVideosStore(sequence.id) : null
   );
+  const projectId = initialProject?.sequenceId ?? sequence?.id;
+  if (!projectId) throw new Error("A Post Studio project needs an identity.");
   $effect(() => {
     void videoLibrary?.load();
   });
@@ -453,9 +457,9 @@
   const tabSync = featureVideo
     ? null
     : createPostTabSync(
-        sequence.id,
+        projectId,
         (project) => editor.adoptSaved(project),
-        () => loadPostProject(sequence.id)
+        () => loadPostProject(projectId)
       );
 
   // Disk's newer copy replaced the post as one undo step.
@@ -546,7 +550,7 @@
     });
     const result = await downloadBlobToDisk(
       blob,
-      `${sequence.id}-mapped.post-studio.json`
+      `${projectId}-mapped.post-studio.json`
     );
     if (!result.success)
       draftError =
@@ -599,23 +603,27 @@
     }
     return DEFAULT_HAND_LABELING;
   });
-  const labeledCard = createPostSequenceView({
-    getSequence: () => sequence,
-    getLabeling: () => handLabeling,
-    getMirrored: () => editor.project.mirrored ?? false,
-    getActions: () => editor.project.sequenceActions ?? [],
-  });
-  const displaySequence = $derived(labeledCard.sequence);
+  const labeledCard = sequence
+    ? createPostSequenceView({
+        getSequence: () => sequence,
+        getLabeling: () => handLabeling,
+        getMirrored: () => editor.project.mirrored ?? false,
+        getActions: () => editor.project.sequenceActions ?? [],
+      })
+    : null;
+  const displaySequence = $derived(labeledCard?.sequence ?? null);
   /** A notice the top bar shows beside Undo and Redo. */
   const draftNotice = $derived(
-    !!labeledCard.error ||
+    !!labeledCard?.error ||
       (!!(editor.project.mirrored || editor.project.sequenceActions?.length) &&
-        labeledCard.pending)
+        labeledCard?.pending)
   );
 
   // ---- What each layer draws -----------------------------------------------
 
-  const carouselPainter = $derived(createBeatCarouselPainter(displaySequence));
+  const carouselPainter = $derived(
+    displaySequence ? createBeatCarouselPainter(displaySequence) : null
+  );
   const animationVisibility = getAnimationVisibilityManager();
   let progressBarVisible = $state(
     animationVisibility.getVisibility("progressBar")
@@ -629,14 +637,16 @@
   );
   const stripPainters = $derived(
     new Map<StripMode, PostStudioLayerPainter>(
-      (["arrows", "mandala", "alternate"] as const).map((mode) => [
-        mode,
-        createSequenceStripPainter({
-          sequence: displaySequence,
-          mode,
-          showProgressBar: () => progressBarVisible,
-        }),
-      ])
+      displaySequence
+        ? (["arrows", "mandala", "alternate"] as const).map((mode) => [
+            mode,
+            createSequenceStripPainter({
+              sequence: displaySequence,
+              mode,
+              showProgressBar: () => progressBarVisible,
+            }),
+          ])
+        : []
     )
   );
 
@@ -665,7 +675,10 @@
           null,
         () =>
           simplifyRepeatedWord(
-            displaySequence.word || deriveWord(displaySequence)
+            displaySequence?.word ||
+              (displaySequence
+                ? deriveWord(displaySequence)
+                : (editor.project.title ?? ""))
           )
       );
       titlesPainters.set(itemId, painter);
@@ -710,6 +723,11 @@
   let overlayError = $state<string | null>(null);
   $effect(() => {
     const drawn = displaySequence;
+    if (!drawn) {
+      overlayPainter = null;
+      overlaySequence = null;
+      return;
+    }
     const version = ++overlayVersion;
     overlayError = null;
     void loadAnimationOverlayPainter(drawn)
@@ -741,7 +759,7 @@
       previewUrl: null,
       renderMode: "painted",
       painter,
-      status: sequence.steps.length > 0 ? "ready" : "missing",
+      status: (sequence?.steps.length ?? 0) > 0 ? "ready" : "missing",
     };
   }
 
@@ -836,7 +854,7 @@
         label: t("share_studio_deep_moves"),
         previewUrl: null,
         renderMode: "sequence-animation",
-        status: sequence.steps.length > 0 ? "ready" : "missing",
+        status: (sequence?.steps.length ?? 0) > 0 ? "ready" : "missing",
       };
     }
     const strip = stripModeFromRole(role);
@@ -856,18 +874,16 @@
           previewType: animationPreviewType,
           renderMode: "sequence-animation",
           status:
-            sequence.steps.length > 0 || animationPreviewUrl
+            (sequence?.steps.length ?? 0) > 0 || animationPreviewUrl
               ? "ready"
               : isPreparingAnimation
                 ? "preparing"
                 : "missing",
         };
       case POST_STUDIO_ROLE.carousel:
-        return painted(
-          role,
-          t("share_studio_deep_beat_carousel"),
-          carouselPainter
-        );
+        return carouselPainter
+          ? painted(role, t("share_studio_deep_beat_carousel"), carouselPainter)
+          : null;
       case ANIMATION_OVERLAY_ROLE:
         return overlayPainter
           ? painted(
@@ -885,7 +901,7 @@
           previewType: "image",
           renderMode: "choreo-card",
           status:
-            sequence.steps.length > 0 || cardPreviewUrl
+            (sequence?.steps.length ?? 0) > 0 || cardPreviewUrl
               ? "ready"
               : isPreparingCard
                 ? "preparing"
@@ -898,9 +914,9 @@
 
   /** Every painter the post draws, keyed the way the exporter looks them up. */
   function exportPainters(): Map<string, PostStudioLayerPainter> {
-    const painters = new Map<string, PostStudioLayerPainter>([
-      [POST_STUDIO_ROLE.carousel, carouselPainter],
-    ]);
+    const painters = new Map<string, PostStudioLayerPainter>();
+    if (carouselPainter)
+      painters.set(POST_STUDIO_ROLE.carousel, carouselPainter);
     for (const [mode, painter] of stripPainters) {
       painters.set(stripRole(mode), painter);
     }
@@ -1099,12 +1115,17 @@
   );
   /** Tapping beats swaps the post for the take being mapped. */
   const showTimingStage = $derived(
-    editor.mode === "timing" && !sharing && !previewTarget && !exporting
+    sequence !== null &&
+      editor.mode === "timing" &&
+      !sharing &&
+      !previewTarget &&
+      !exporting
   );
   const sequenceName = $derived(
     simplifyRepeatedWord(
-      sequence.displayName ||
-        deriveWord(sequence) ||
+      editor.project.title ||
+        sequence?.displayName ||
+        (sequence ? deriveWord(sequence) : "") ||
         t("post_editor_default_name")
     )
   );
@@ -1115,12 +1136,14 @@
     Boolean(editor.compiled) &&
       editor.durationSeconds > 0 &&
       !exporting &&
-      !labeledCard.pending &&
-      !labeledCard.error &&
+      !labeledCard?.pending &&
+      !labeledCard?.error &&
       (!editor.project.tracks.some((track) =>
         track.items.some((item) => item.kind === "moves")
       ) ||
-        (overlaySequence === displaySequence && !overlayError)) &&
+        (sequence !== null &&
+          overlaySequence === displaySequence &&
+          !overlayError)) &&
       !sharedSurfaces?.moving
   );
 
@@ -1132,7 +1155,9 @@
     return under?.kind === "video" ? under : null;
   });
   const canTapBeats = $derived(
-    beatsClip !== null && Boolean(editor.mediaUrl(beatsClip.takeId))
+    sequence !== null &&
+      beatsClip !== null &&
+      Boolean(editor.mediaUrl(beatsClip.takeId))
   );
 
   // ---- Tools -----------------------------------------------------------------
@@ -1230,7 +1255,11 @@
         findItem(editor.project, item.id)?.trackIndex === 0,
     };
   });
-  const tools = $derived(toolRow(selection));
+  const tools = $derived(
+    toolRow(selection).filter(
+      (id) => sequence !== null || (id !== "look" && id !== "beats")
+    )
+  );
   const rowKey = $derived(`row:${tools.join(" ")}`);
   const shown = $derived(shownPanel(activeTool, selection, panelBeside));
   const appearanceDockOpen = $derived(
@@ -1478,6 +1507,7 @@
 
   /** Opens beat tapping on a clip's footage, starting at its first frame. */
   function openBeats(clip: PostVideoItem): void {
+    if (!sequence) return;
     editor.pause();
     session.openAt(clip.takeId, clip.sourceIn);
     editor.mode = "timing";
@@ -1485,6 +1515,7 @@
 
   /** From the video list: starts where the take's first clip does. */
   function openTakeBeats(takeId: string): void {
+    if (!sequence) return;
     let firstClip: PostVideoItem | null = null;
     for (const track of editor.project.tracks) {
       for (const item of track.items) {
@@ -1713,7 +1744,7 @@
         file.name.endsWith(".post-studio.json")
       );
       const backup = backupFile
-        ? parsePostStudioBackup(await backupFile.text(), sequence.id)
+        ? parsePostStudioBackup(await backupFile.text(), projectId)
         : null;
       if (backup) {
         const files = new Map(selected.map((file) => [file.name, file]));
@@ -1733,7 +1764,7 @@
       }
       const { project, files } = await readInShotRecoveryPackage(
         selected,
-        sequence.id,
+        projectId,
         Date.now()
       );
       editor.importProject(project, files);
@@ -1748,23 +1779,36 @@
     }
   }
 
-  async function addDeviceVideo(event: Event): Promise<void> {
-    const input = event.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) return;
+  let destroyed = false;
+  onDestroy(() => (destroyed = true));
+
+  async function importDeviceVideo(file: File): Promise<void> {
     readingFile = true;
     fileError = "";
     try {
       const duration = await readVideoFile(file);
+      if (destroyed) return;
       editor.pause();
       if (editor.addLocalVideo(file, duration)) itemAdded("video");
     } catch (caught) {
-      fileError = videoFileError(caught);
+      if (!destroyed) fileError = videoFileError(caught);
     } finally {
-      readingFile = false;
+      if (!destroyed) readingFile = false;
     }
   }
+
+  async function addDeviceVideo(event: Event): Promise<void> {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (file) await importDeviceVideo(file);
+  }
+
+  // A newly created footage post follows the same import, placement and
+  // error path as a file selected from the editor's Add video control.
+  onMount(() => {
+    if (initialFootage) void importDeviceVideo(initialFootage);
+  });
 
   /**
    * A timeline drag reports each step between its start and end; a single
@@ -2412,7 +2456,7 @@
   async function renderPost(name?: string): Promise<boolean> {
     if (!canRender) {
       exportError =
-        labeledCard.error ??
+        labeledCard?.error ??
         overlayError ??
         "The animation is still being prepared. Try again in a moment.";
       return false;
@@ -2569,7 +2613,7 @@
       if (exporting) throw new Error("This editor is already rendering.");
       if (Date.now() > deadline)
         throw new Error(
-          labeledCard.error ??
+          labeledCard?.error ??
             overlayError ??
             "The editor was not ready to render after 60 s."
         );
@@ -2618,9 +2662,9 @@
 <svelte:document onvisibilitychange={pauseWhenHidden} />
 
 {#snippet draftStatus()}
-  {#if labeledCard.error}
+  {#if labeledCard?.error}
     <span class="draft-notice" role="alert">{labeledCard.error}</span>
-  {:else if (editor.project.mirrored || editor.project.sequenceActions?.length) && labeledCard.pending}
+  {:else if (editor.project.mirrored || editor.project.sequenceActions?.length) && labeledCard?.pending}
     <span class="draft-notice" role="status"
       >Preparing the changed animation and cards…</span
     >
@@ -2640,7 +2684,7 @@
     locked={showTimingStage || (inHeader && cropMode)}
     onClearPostKeyframes={() => (confirmClearPost = true)}
     clearableKeyframes={clearablePostKeys}
-    onMirror={mirrorWholePost}
+    onMirror={sequence ? mirrorWholePost : undefined}
     mirrored={editor.project.mirrored ?? false}
     onBackup={() => void downloadDraft()}
     onRestore={() => recoveryInput?.click()}
@@ -2747,6 +2791,7 @@
     <PostMediaPanel
       {editor}
       {catalog}
+      hasSequence={sequence !== null}
       catalogLoading={videoLibrary?.loading ?? false}
       catalogError={videoLibrary?.error ?? ""}
       busy={readingFile}
@@ -2757,6 +2802,7 @@
     <PostAddPanel
       {editor}
       {catalog}
+      hasSequence={sequence !== null}
       busy={readingFile}
       onAddDeviceVideo={pickDeviceVideo}
       onAdded={itemAdded}
@@ -2798,7 +2844,7 @@
         ariaLabel={t("post_canvas_background")}
       />
     </div>
-  {:else if tool === "look"}
+  {:else if tool === "look" && displaySequence}
     <AnimationPanel
       layout="sidebar"
       isExporting={false}
@@ -2813,6 +2859,7 @@
   {:else if tool === "export"}
     <PostExportPanel
       {editor}
+      hasSequence={sequence !== null}
       {canRender}
       {exporting}
       {exportPercent}
@@ -2854,8 +2901,8 @@
       onCropSourceControl={() => (cropSourceView = true)}
       {staffTips}
       {cardRenderOptions}
-      stepCount={displaySequence.steps?.length ?? 0}
-      sequenceBusy={labeledCard.pending}
+      stepCount={displaySequence?.steps.length ?? 0}
+      sequenceBusy={labeledCard?.pending ?? false}
       featureMode={!!featureVideo}
     />
   {/if}
@@ -3041,7 +3088,7 @@
       {/if}
 
       <div class="stage-row" bind:this={stageRow}>
-        {#if showTimingStage}
+        {#if showTimingStage && displaySequence}
           <div class="timing-stage" style:--take-ratio={timingRatio}>
             <PostTimingStage
               {session}

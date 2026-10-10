@@ -9,6 +9,7 @@ import {
 import { overlay, project as buildProject } from "./post-project-fixtures";
 import {
   loadAccountPostProject,
+  readAccountPostProjectPreview,
   listSyncedPostProjects,
   loadSyncedPostDraft,
   resolveSyncedPostSequence,
@@ -91,6 +92,57 @@ beforeEach(() => {
 
 describe("account Post writes", () => {
   const source = (id: string) => ({ id, steps: [{}] }) as SequenceData;
+  it("saves and reopens a source-free title with the required empty cloud source", async () => {
+    const project = createEmptyPostProject({
+      sequenceId: "studio-project:showcase:blank",
+      now: 42,
+      sourceKind: "none",
+      title: "Software tour",
+    });
+    await loadAccountPostProject("owner", project.sequenceId);
+    await saveAccountPostProject("owner", project, null);
+    const record = mocks.set.mock.calls.at(-1)![1];
+    expect(record.source).toBe("");
+    mocks.read.mockResolvedValue({
+      status: "found",
+      data: { ...record, id: encodeURIComponent(project.sequenceId) },
+    });
+    expect(await loadAccountPostProject("owner", project.sequenceId)).toEqual(
+      project
+    );
+    expect(
+      await readAccountPostProjectPreview("owner", project.sequenceId)
+    ).toEqual({ project, source: null });
+    expect(mocks.cachedSource).toBeNull();
+  });
+
+  it("requires the explicit source-free marker for nullable cloud saves", async () => {
+    const project = createEmptyPostProject({ sequenceId: "legacy", now: 1 });
+    await expect(
+      saveAccountPostProject("owner", project, null)
+    ).rejects.toThrow("source sequence is missing");
+  });
+
+  it("syncs a local source-free project and keeps it isolated by account", async () => {
+    const project = createEmptyPostProject({
+      sequenceId: "studio-project:showcase:local",
+      now: 42,
+      sourceKind: "none",
+      title: "Local tour",
+    });
+    expect(savePostProject(project).ok).toBe(true);
+    const owner = await listSyncedPostProjects();
+    expect(owner.projects).toEqual([
+      expect.objectContaining({
+        sequenceId: project.sequenceId,
+        title: "Local tour",
+      }),
+    ]);
+    expect(mocks.set.mock.calls.at(-1)?.[1]?.source).toBe("");
+    mocks.auth.currentUser.uid = "other";
+    const other = await listSyncedPostProjects();
+    expect(other.projects).toEqual([]);
+  });
   it("claims an unscoped guest Studio draft and its source into the account", async () => {
     const sequenceId = "studio-arrangement:guest-scene";
     const project = createEmptyPostProject({ sequenceId, now: 42 });
