@@ -763,7 +763,7 @@
           const span = candidate.span(hitItem);
           return (
             span !== null &&
-            span.start <= editor.previewSeconds &&
+            span.start - POST_TIME_EPSILON <= editor.previewSeconds &&
             editor.previewSeconds < span.end - POST_TIME_EPSILON
           );
         })
