@@ -1333,14 +1333,16 @@ export class AnimationRenderLoop {
     // Use virtual time if provided (export mode), otherwise fallback to RAF timestamp
     const effectiveTime = virtualTime ?? currentTime;
 
-    // Real-time trail capture. A grid layout slide pauses it: points taken
-    // mid-slide would streak from the old layout to the new.
+    // Real-time trail capture. A grid layout slide or a transform's pose
+    // glide pauses it: points taken mid-move would streak from the old place
+    // to the new.
     const trailsActive = hasTrailTips(params.tipEffectMap);
     if (
       trailsActive &&
       trailSettings.mode !== TrailMode.OFF &&
       this.TrailCapturer &&
-      !params.gridJoinSlide
+      !params.gridJoinSlide &&
+      !params.poseGlide
     ) {
       const currentStep =
         params.stepData && "stepNumber" in params.stepData
@@ -1408,6 +1410,7 @@ export class AnimationRenderLoop {
       this.needsRender ||
       isPlaying ||
       !!params.gridJoinSlide ||
+      !!params.poseGlide ||
       backgroundTransitioning ||
       mandalaTransitioning ||
       anyEffectActive;
@@ -1753,11 +1756,13 @@ export class AnimationRenderLoop {
           leftPropIdentityChanged ||
           !!params.trailsSuppressedUntilTextureLoad ||
           !!params.gridJoinSlide ||
+          !!params.poseGlide ||
           (this.renderer?.isLeftPropCrossfadeInProgress() ?? false);
         const rightPropSwapSuppressed =
           rightPropIdentityChanged ||
           !!params.trailsSuppressedUntilTextureLoad ||
           !!params.gridJoinSlide ||
+          !!params.poseGlide ||
           (this.renderer?.isRightPropCrossfadeInProgress() ?? false);
 
         trailOverlay.renderFrame({

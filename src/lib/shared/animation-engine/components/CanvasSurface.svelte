@@ -99,6 +99,7 @@ captureEffectDiagnostics to the context menu.
     letter = null,
     stepData = null,
     sequenceData = null,
+    transitionKey = null,
     currentStep = 0,
     isPlaying = false,
     trailSettings: externalTrailSettings = $bindable(),
@@ -172,6 +173,9 @@ captureEffectDiagnostics to the context menu.
     letter?: Letter | null;
     stepData?: StartPlacementData | StepData | null;
     sequenceData?: SequenceData | null;
+    /** Same key across a sequence change glides the props to their new pose
+     *  (a transform); see AnimationEngineProps.transitionKey. */
+    transitionKey?: string | null;
     currentStep?: number;
     isPlaying?: boolean;
     trailSettings?: TrailSettings;
@@ -526,6 +530,7 @@ captureEffectDiagnostics to the context menu.
       letter,
       stepData,
       sequenceData,
+      transitionKey,
       currentStep,
       isPlaying,
       externalTrailSettings,
