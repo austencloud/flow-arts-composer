@@ -139,6 +139,15 @@ describe("Construct preview pick", () => {
     }
   });
 
+  it("steps the pick one spot left per box, keeping the finger's hops short", () => {
+    expect([0, 1, 2, 3].map((slot) => constructPick(slot, 0))).toEqual([
+      0, 2, 1, 0,
+    ]);
+    expect([0, 1, 2, 3].map((slot) => constructPick(slot, 1))).toEqual([
+      1, 0, 2, 1,
+    ]);
+  });
+
   it("moves the first box's pick each turn", () => {
     expect([0, 1, 2, 3].map((play) => constructPick(0, play))).toEqual([
       0, 1, 2, 0,
