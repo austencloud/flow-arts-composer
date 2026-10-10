@@ -782,7 +782,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--theme-shadow, black);
+    background: black;
   }
 
   .video-player {
@@ -804,7 +804,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--theme-shadow) 60%, transparent);
+    background: rgba(0, 0, 0, 0.6);
     border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.15));
     border-radius: 50%;
     color: var(--theme-text, white);
@@ -818,7 +818,7 @@
   }
 
   .back-btn:hover {
-    background: color-mix(in srgb, var(--theme-shadow) 80%, transparent);
+    background: rgba(0, 0, 0, 0.8);
   }
 
   /* Placeholder */

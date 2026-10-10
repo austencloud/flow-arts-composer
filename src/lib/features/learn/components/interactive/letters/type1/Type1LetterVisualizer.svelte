@@ -273,7 +273,6 @@ Shows letters A-V with their start/end placements and prospin/antispin motions
     background: white;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px var(--theme-shadow);
   }
 
   /* Loading state */

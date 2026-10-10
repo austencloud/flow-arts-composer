@@ -310,7 +310,6 @@
     --sheet-filter: blur(20px);
     --sheet-border: none;
     --sheet-radius-large: 0;
-    --sheet-shadow: -2px 0 16px var(--theme-shadow);
   }
 
   /* Desktop right drawer with side-by-side layout - use tracked panel dimensions */
@@ -319,7 +318,6 @@
     --sheet-filter: blur(20px);
     --sheet-border: none;
     --sheet-radius-large: 0;
-    --sheet-shadow: -2px 0 16px var(--theme-shadow);
     /* Let Drawer.css handle positioning via --create-panel-* variables */
   }
 

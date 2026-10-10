@@ -314,14 +314,7 @@ Provides instant visual feedback (correct = green glow, wrong = red shake).
     max-width: 360px;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 16px var(--theme-shadow);
     transition: box-shadow var(--duration-emphasis) ease;
-  }
-
-  .grid-wrapper.feedback-correct {
-    box-shadow:
-      0 4px 16px var(--theme-shadow),
-      0 0 24px color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent);
   }
 
   .quiz-grid {

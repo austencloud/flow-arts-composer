@@ -729,7 +729,7 @@
     --card-text-size: 22px;
     --card-text-weight: 800;
     --card-text-spacing: 0.3px;
-    --card-text-shadow: 0 2px 6px var(--theme-shadow, rgba(0, 0, 0, 0.45));
+    --card-text-shadow: none;
     --element-spacing: 10px;
   }
   .card-grid {
@@ -953,7 +953,6 @@
     font-size: 13px;
     font-weight: 900;
     border-radius: 50%;
-    box-shadow: 0 2px 6px var(--theme-shadow, rgba(0, 0, 0, 0.4));
   }
   .placement-ori-row {
     display: flex;

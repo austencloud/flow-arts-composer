@@ -423,7 +423,6 @@
       box-shadow var(--duration-normal, 200ms) ease,
       transform var(--duration-normal, 200ms) ease;
     border: 1px solid #747775;
-    box-shadow: 0 2px 6px var(--theme-shadow, rgba(0, 0, 0, 0.24));
   }
 
   .social-compact-button :global(.crossfade > .layer) {

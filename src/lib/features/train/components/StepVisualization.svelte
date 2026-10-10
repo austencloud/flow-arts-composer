@@ -113,7 +113,7 @@
     justify-content: center;
     align-items: center;
     min-height: 200px;
-    background: color-mix(in srgb, var(--theme-shadow) 20%, transparent);
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 8px;
     padding: 1rem;
   }

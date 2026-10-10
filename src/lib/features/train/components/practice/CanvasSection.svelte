@@ -240,7 +240,7 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    background: color-mix(in srgb, var(--theme-shadow) 30%, transparent);
+    background: rgba(0, 0, 0, 0.3);
     color: var(--theme-text-dim, var(--theme-text-dim));
     font-size: 0.875rem;
   }

@@ -85,7 +85,6 @@
     padding: 1.5rem;
     background: var(--gradient);
     border-radius: 1rem;
-    box-shadow: 0 4px 6px var(--theme-shadow);
     transition: transform var(--duration-normal);
   }
 

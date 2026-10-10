@@ -151,7 +151,6 @@
     font-weight: 600;
     line-height: 18px;
     text-align: center;
-    box-shadow: 0 2px 4px var(--theme-shadow);
     animation: badgePop var(--duration-emphasis) ease;
     pointer-events: none;
     z-index: 10;

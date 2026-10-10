@@ -209,9 +209,6 @@
     background: var(--theme-card-bg);
     border: 1.5px solid var(--theme-stroke, var(--theme-stroke));
     border-radius: 14px;
-    box-shadow:
-      0 1px 3px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke);
   }
 
   .label {
@@ -242,9 +239,6 @@
     cursor: pointer;
     transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
-    box-shadow:
-      0 1px 3px var(--theme-shadow),
-      inset 0 1px 0 var(--theme-stroke);
   }
 
   @media (hover: hover) and (pointer: fine) {
@@ -253,9 +247,6 @@
       border-color: var(--theme-stroke-strong);
       color: var(--theme-text);
       transform: translateY(-1px);
-      box-shadow:
-        0 2px 8px var(--theme-shadow),
-        inset 0 1px 0 var(--theme-stroke);
     }
   }
 

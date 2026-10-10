@@ -129,7 +129,6 @@
     );
     color: var(--theme-text, white);
     padding: 12px 16px;
-    box-shadow: 0 2px 8px var(--theme-shadow, var(--theme-shadow));
   }
 
   .banner-content {

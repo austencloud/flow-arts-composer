@@ -163,7 +163,6 @@
     border-radius: var(--settings-radius-lg, 0.85rem);
     overflow-y: auto;
     background: var(--theme-panel-bg, #12121a);
-    box-shadow: 0 16px 42px var(--theme-shadow, rgb(0 0 0 / 0.42));
     outline: none;
   }
 

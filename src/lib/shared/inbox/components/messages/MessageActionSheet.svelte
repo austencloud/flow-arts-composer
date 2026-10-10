@@ -245,7 +245,6 @@
   :global(.message-action-sheet) {
     --sheet-bg: var(--theme-panel-bg);
     --sheet-border: 1px solid var(--theme-stroke-strong);
-    --sheet-shadow: 0 -16px 48px var(--theme-shadow);
     --sheet-max-height: min(92dvh, 44rem);
   }
 
