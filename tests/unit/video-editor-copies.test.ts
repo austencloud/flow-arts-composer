@@ -8,9 +8,12 @@ import * as timing from "$lib/shared/animation-engine/domain/constants/timing";
 import * as tkaEase from "$lib/shared/transitions/ws-ease";
 
 describe("values the package copies from tka", () => {
-  it("keeps the playback BPM bounds", () => {
+  it("keeps the playback BPM and speed bounds", () => {
     expect(core.PLAYBACK_MIN_BPM).toBe(timing.PLAYBACK_MIN_BPM);
     expect(core.PLAYBACK_MAX_BPM).toBe(timing.PLAYBACK_MAX_BPM);
+    expect(core.PLAYBACK_BASELINE_BPM).toBe(timing.PLAYBACK_BASELINE_BPM);
+    expect(core.PLAYBACK_MIN_SPEED).toBe(timing.PLAYBACK_MIN_SPEED);
+    expect(core.PLAYBACK_MAX_SPEED).toBe(timing.PLAYBACK_MAX_SPEED);
   });
 });
 

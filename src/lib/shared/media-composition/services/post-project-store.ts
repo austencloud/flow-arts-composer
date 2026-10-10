@@ -62,7 +62,13 @@ export const TKA_DEVICE_KEYS: DeviceStoreKeys = {
 };
 
 export function legacyPostOwner(): string | null {
-  return storage()?.getItem(CLAIM_KEY) ?? null;
+  try {
+    return storage()?.getItem(CLAIM_KEY) ?? null;
+  } catch {
+    // A storage that throws on read counts as no claim, so a signed-out user
+    // can still open and save posts instead of every call throwing.
+    return null;
+  }
 }
 
 export function claimLegacyPosts(uid: string): void {

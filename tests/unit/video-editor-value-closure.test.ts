@@ -1,10 +1,11 @@
 /**
- * Nothing that the plugin's bound.ts reaches by value may import the plugin index.
+ * Nothing that the plugin's bound.ts or surfaces.ts reaches by value may import the plugin index.
  *
  * bound.ts builds the tka plugin as it loads: bound -> create-plugin -> item-kinds,
- * normalize-hooks and everything they import. The plugin index re-exports bound.ts, so a value
- * import of the index anywhere in that closure closes a load-time cycle (index -> bound ->
- * create-plugin -> ... -> index), and whichever module loads second reads `undefined` exports.
+ * normalize-hooks and everything they import. surfaces.ts builds the DOM surfaces from its own
+ * imports. The plugin index re-exports both files, so a value import of the index anywhere in
+ * either closure closes a load-time cycle (index -> bound -> create-plugin -> ... -> index, or
+ * index -> surfaces -> ... -> index), and whichever module loads second reads `undefined` exports.
  *
  * Type-only imports are erased, so they are fine. If this fails, import the value from the
  * plugin file that declares it (`$lib/shared/post-studio-plugin/item-kinds`,
@@ -149,7 +150,7 @@ function valueClosure(): { modules: string[]; indexImports: string[] } {
   return { modules: [...seen].sort(), indexImports };
 }
 
-describe("plugin bound.ts value closure", () => {
+describe("plugin bound.ts and surfaces.ts value closure", () => {
   it("treats a mixed declaration as a value edge and an all-type one as none", () => {
     expect(valueEdges('import { a, type B } from "./x";')).toEqual([
       { specifier: "./x", line: 1 },

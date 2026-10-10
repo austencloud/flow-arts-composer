@@ -263,6 +263,8 @@ describe("split animation export", () => {
       "motion~0",
       "motion~1",
     ]);
+    // The compositor names the layer by its region's label.
+    const label = compiled.preset.regions.find((r) => r.id === "motion")!.label;
 
     const root = document.createElementNS(
       "http://www.w3.org/1999/xhtml",
@@ -315,7 +317,9 @@ describe("split animation export", () => {
         surfaceCache: new Map(),
       })
     ).rejects.toThrow(
-      /^The .+ layer has no surface for its sequence-animation render mode\.$/
+      new Error(
+        `The ${label} layer has no surface for its sequence-animation render mode.`
+      )
     );
     expect(captureMotion).not.toHaveBeenCalled();
   });

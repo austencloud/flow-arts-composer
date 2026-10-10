@@ -4,6 +4,7 @@ import {
 } from "./video-visibility";
 import type { ArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
 import type { HandLabeling } from "./hand-labeling";
+import type { LegacyStepMap } from "@austencloud/video-editor/core";
 
 export type { VideoVisibility } from "./video-visibility";
 export type { HandLabeling } from "./hand-labeling";
@@ -150,6 +151,11 @@ export interface StepMap {
   readonly source: "manual" | "auto-detected" | "hybrid";
   readonly updatedAt: Date;
 }
+
+// StepMap must stay readable by the package's legacy migration.
+type _StepMapIsLegacy = StepMap extends LegacyStepMap ? true : never;
+const _stepMapIsLegacy: _StepMapIsLegacy = true;
+void _stepMapIsLegacy;
 
 export interface CollaborativeVideo {
   readonly id: string;

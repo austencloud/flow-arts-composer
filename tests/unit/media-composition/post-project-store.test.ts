@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  legacyPostOwner,
   loadPostProject,
   openPostProject,
   savePostProject,
@@ -149,5 +150,27 @@ describe("openPostProject", () => {
     expect(opened).toEqual(
       createEmptyPostProject({ sequenceId: "fresh-seq", now: NOW })
     );
+  });
+});
+
+describe("a storage that throws when the owner claim is read", () => {
+  it("counts as no claim, so the post still loads and saves", () => {
+    const saved = normalizeProject(project([video("v1", { sourceOut: 4 })]));
+    savePostProject(saved);
+    const read = Storage.prototype.getItem;
+    const spy = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(function (this: Storage, key: string) {
+        if (key === "tka:post-studio:legacy-owner:v1")
+          throw new Error("storage denied");
+        return read.call(this, key);
+      });
+    try {
+      expect(legacyPostOwner()).toBeNull();
+      expect(loadPostProject(saved.sequenceId)).toEqual(saved);
+      expect(savePostProject(saved)).toEqual({ ok: true });
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

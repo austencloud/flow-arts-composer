@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { t } from "$lib/shared/i18n/i18n.svelte.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { setLocale, t } from "$lib/shared/i18n/i18n.svelte.js";
 import { tkaEditorTranslate } from "$lib/shared/media-composition/state/editor-strings";
+
+afterEach(async () => {
+  await setLocale("en");
+  document.cookie = "PARAGLIDE_LOCALE=; max-age=0; path=/";
+});
 
 describe("tka editor strings", () => {
   it("keeps today's save error", () => {
@@ -24,7 +29,11 @@ describe("tka editor strings", () => {
     );
   });
 
-  it("names a new take with tka's translation", () => {
+  it("names a new take with tka's translation", async () => {
+    // English reads "Take" both from the package and from tka's messages, so
+    // only another language shows the name goes through tka's translator.
+    await setLocale("de");
+    expect(tkaEditorTranslate("editor_default_take")).toBe("Aufnahme");
     expect(tkaEditorTranslate("editor_default_take")).toBe(
       t("post_editor_default_take")
     );

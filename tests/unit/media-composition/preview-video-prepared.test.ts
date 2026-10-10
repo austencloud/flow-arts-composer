@@ -28,8 +28,9 @@ describe("the editing copy beside a take's video", () => {
       )
     ).toBeNull();
     expect(request).toHaveBeenCalledTimes(1);
-    expect(request.mock.calls[0]?.[0]).toBe(
-      "/word-videos/omega-full.edit.json"
+    expect(request).toHaveBeenCalledWith(
+      "/word-videos/omega-full.edit.json",
+      expect.anything()
     );
   });
 });

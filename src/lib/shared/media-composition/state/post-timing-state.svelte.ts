@@ -609,5 +609,3 @@ export function createPostTimingState(deps: PostTimingDeps) {
     },
   };
 }
-
-export type PostTimingState = ReturnType<typeof createPostTimingState>;

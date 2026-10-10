@@ -334,13 +334,17 @@ fields are in `shared/post-studio-plugin/`): a main track of clips and
 cards laid end to end, overlay tracks drawn above it, and anchors that tie an
 overlay to its clip. Searches: post editor, video timeline, clip, split, trim,
 overlay track, layer, look, Tutorial preset, raw take. The package's `core/project/normalize.ts`
-owns layout and runs after every edit. `post-project-edits.ts` owns the pure
-edit operations, and `post-project-looks.ts` owns the dual, breakdown and
+owns layout and runs after every edit. The package's `core/edit/project-edits.ts`
+owns the generic pure edit operations, and tka's `domain/post-project-edits.ts`
+the titles, opening tunnel and recovered-PIP edits only tka has;
+`post-project-looks.ts` owns the dual, breakdown and
 video-only looks plus the Tutorial preset. Looks are ordinary overlay items, so
-each part stays movable. `state/post-editor-state.svelte.ts` owns selection,
-drag gestures and undo steps over those operations;
-`services/post-editor-history-store.ts` keeps those steps in the tab's
-sessionStorage so a reload restores them for the same save.
+each part stays movable. The package's `state/video-editor-state.svelte.ts`
+(`createVideoEditorState`) owns selection, drag gestures and undo steps over
+those operations, and tka's `state/post-editor-state.svelte.ts` wraps it with
+the timing. The package's `store/history-storage.ts` keeps those steps in the
+tab's sessionStorage so a reload restores them for the same save; tka's
+`services/post-editor-history-store.ts` gives it tka's key and timing effect.
 The package's `core/compile/compiler.ts` feeds the renderer, and `post-project-migration.ts` converts saved v1 act
 plans. `timingVideoAt` in the package's `core/project/schema.ts` owns overlap clock selection: anchored
 layers keep their own take while it covers them; unanchored layers follow the
@@ -350,8 +354,10 @@ its ruler is the shared `shared/timeline/TimeRuler.svelte`. Ctrl+Z and Ctrl+Y
 reach the editor through `data-edit-history-shortcut-scope` and
 `registerEditHistoryShortcuts`; do not bind them locally.
 
-Local development manifest edits use `state/post-editor-state.svelte.ts` for
-schema validation, normalization, undo and persistence. The dev-only
+Local development manifest edits go through `replaceManifestFromDev` in
+`state/post-editor-state.svelte.ts` for schema validation and normalization;
+the package state it wraps commits them, so undo and persistence are the
+package's. The dev-only
 `server/post-project-dev-bridge.ts` queues exact-session replacements and
 archives the previous snapshot; `services/post-project-dev-client.ts` polls
 from the open editor. `domain/post-project-ops.ts` maps named CLI edits
@@ -380,7 +386,7 @@ A feature video's music is one file under the whole post. In
 `@austencloud/video-editor`, `core/music/post-music.ts` owns its schema,
 `core/music/music-grid.ts` bars, beats and the times that name a bar, and
 `core/music/audio-plan.ts` plans its sound with `planMusicAudio` for the export
-and the preview alike; tka's `domain/post-music-edits.ts` owns its edits.
+and the preview alike, and `core/edit/music-edits.ts` owns its edits.
 The package's `render/music-preview-sync.ts` and tka's `PostMusicPreview.svelte`
 keep the preview's player and clock on the music; the timeline lane is
 `timeline/PostTimelineMusicLane.svelte` and its panel `PostMusicTool.svelte`.
@@ -396,7 +402,8 @@ the one runner for them. It starts a private headless Chrome per recording
 `scripts/demo-capture/encode-frames.py` owns the encode, and
 `scripts/feature-video/capture-files.mjs` owns recording names. The project
 changes only through `post-project.mjs link-capture`, which sends
-`relink-take` (`relinkTake` in `domain/post-project-edits.ts`) or `add-take`.
+`relink-take` (`relinkTake` in the package's `core/edit/project-edits.ts`) or
+`add-take`.
 Scripts read a feature video media URL with `featureMediaUrlParts` in
 `align-take.mjs`. Do not add a second recorder; extend these.
 
@@ -480,8 +487,8 @@ surface, video to canvas, frame copy.
 
 A Post Studio clip opens out only over footage its take's file holds:
 `trimItem` stops at the file's first and last frames, so a clip linked to a
-pre-cut file has nothing to reveal. `replaceTakeMedia` in
-`post-project-edits.ts` points a take at a longer copy of its video, such as the
+pre-cut file has nothing to reveal. `replaceTakeMedia` in the
+package's `core/edit/project-edits.ts` points a take at a longer copy of its video, such as the
 whole recording the clip was cut from, and moves every clip's source points,
 its keyframes and the take's timing (`shiftTakeTiming` in `take-timing.ts`) by
 the offset, so the post plays the same and each edge can then be dragged out.
