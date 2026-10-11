@@ -3,8 +3,9 @@ import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import {
   copyPostAnimationEffects,
+  postAnimationEffectsConfig,
   postAnimationTrailSettings,
-} from "#lib/shared/share/components/post-studio/post-animation-effects.svelte.js";
+} from "#lib/shared/media-composition/domain/post-animation-effects.svelte.js";
 import {
   DEFAULT_TRAIL_SETTINGS,
   TrackingMode,
@@ -97,5 +98,51 @@ describe("post animation effects", () => {
       tailLength: 75,
     });
     expect(viewer.mode).toBe(TrailMode.OFF);
+  });
+});
+
+describe("postAnimationEffectsConfig", () => {
+  const TRAIL = {
+    enabled: true,
+    trackingMode: TrackingMode.BOTH_ENDS,
+    thickness: 7,
+    brightness: 0.5,
+    tailLength: 12,
+    leftColor: "#111111",
+    rightColor: "#222222",
+  };
+
+  it("copies the appearance's own effects and leaves the source alone", () => {
+    const effects = { ...DEFAULT_EFFECTS_CONFIG, activeEffect: "fire" as const };
+    const config = postAnimationEffectsConfig({ effects }, DEFAULT_EFFECTS_CONFIG);
+    expect(config).toEqual(effects);
+    expect(config).not.toBe(effects);
+    expect(config.trails).not.toBe(effects.trails);
+  });
+
+  it("folds a trail look over the fallback when the appearance has no effects of its own", () => {
+    const config = postAnimationEffectsConfig(
+      { trail: TRAIL },
+      DEFAULT_EFFECTS_CONFIG
+    );
+    expect(config.activeEffect).toBe("trails");
+    expect(config.tipEffectMap).toEqual({ "*": { effect: "trails" } });
+    expect(config.trails).toMatchObject({
+      thickness: 7,
+      brightness: 0.5,
+      leftColor: "#111111",
+    });
+    const off = postAnimationEffectsConfig(
+      { trail: { ...TRAIL, enabled: false } },
+      DEFAULT_EFFECTS_CONFIG
+    );
+    expect(off.activeEffect).toBe("none");
+    expect(off.tipEffectMap).toEqual({});
+  });
+
+  it("gives back a copy of the fallback for no appearance", () => {
+    const config = postAnimationEffectsConfig(null, DEFAULT_EFFECTS_CONFIG);
+    expect(config).toEqual(DEFAULT_EFFECTS_CONFIG);
+    expect(config).not.toBe(DEFAULT_EFFECTS_CONFIG);
   });
 });
