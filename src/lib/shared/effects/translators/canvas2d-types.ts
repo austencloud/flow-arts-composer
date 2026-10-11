@@ -203,21 +203,12 @@ export interface Smoke2DParams extends SmokeIntent {
 
 export interface Ink2DParams extends InkIntent {
   /**
-   * Resolved palette (pigment + edge + splatter + pool + behavior flags).
-   * Renderer reads `pigment`, `edge`, and the `watercolor`/`emissive`
-   * flags in sprint 1; splatterTint + poolTint are sprint-2 consumers.
+   * Resolved palette. The renderer reads `pigment`, `edge`, `splatterTint`
+   * (droplets), and the `watercolor`/`emissive` flags. Each material branch
+   * picks its own composite ops from those flags: neon draws additively,
+   * every other palette is opaque pigment.
    */
   resolvedPalette: InkPalette;
-  /**
-   * Canvas composite op.
-   *   - `source-over` for india/sumi/watercolor/blood/acid/custom (opaque
-   *     pigment - THE #1 differentiator from trails).
-   *   - `lighter` when palette.emissive is true (neon only).
-   * Sprint 1 renderer computes the final composite from palette.emissive
-   * rather than honoring this field; kept for documentation of the
-   * intended mapping.
-   */
-  blendMode?: GlobalCompositeOperation;
   /**
    * Resolved ambient emission after the motion-dominant hard cap.
    * `effectiveAmbient = min(intent.ambientEmission, 0.3)`. Renderer
@@ -225,22 +216,19 @@ export interface Ink2DParams extends InkIntent {
    * time.
    */
   effectiveAmbient: number;
-  /** Strokes-points/sec at `effectiveAmbient=1`. Spec AMBIENT_BASE_RATE=2. */
+  /** Stroke points/sec at `effectiveAmbient=1`. */
   ambientSpawnRate: number;
-  /** Strokes-points/sec at full velocity * `motionEmission=1`. Spec MOTION_BASE_RATE=15. */
+  /** Stroke points/sec at full velocity * `motionEmission=1`. */
   motionSpawnRate: number;
-  /** World units/s that maps to full motion scalar. Spec MOTION_REFERENCE_SPEED=3.0. */
+  /** World units/s that maps to full motion scalar. */
   motionReferenceSpeed: number;
   /** Min stroke width (px) - reached at high tip speed (brush lifting). */
   strokeWidthMin: number;
-  /**
-   * Max stroke width (px) - reached at low tip speed (brush pressing).
-   * Watercolor palette doubles this in the renderer (wide bleed).
-   */
+  /** Max stroke width (px) - reached at low tip speed (brush pressing). */
   strokeWidthMax: number;
   /**
-   * Max alpha at peak (0-1). Watercolor palette caps this at 0.4 - that's
-   * why the palette reads translucent vs the rest of the ink family.
+   * Max alpha at peak (0-1). Watercolor resolves to 0.68 - that's why the
+   * palette reads translucent vs the rest of the ink family.
    */
   opacityMax: number;
   /** Seconds - maximum age of a stroke point before its local fade completes. */
@@ -249,10 +237,6 @@ export interface Ink2DParams extends InkIntent {
   maxPointsPerTip: number;
   /** Maximum recorded stroke length in reference-canvas pixels. */
   strokeLengthPx: number;
-  /** Min stamp scale factor - reached at high tip speed (brush lifting). */
-  stampScaleMin: number;
-  /** Max stamp scale factor - reached at low tip speed (brush pressing). */
-  stampScaleMax: number;
   /** Gravity acceleration in px/s² for detached droplets. */
   gravityPx: number;
   /** Gravity acceleration in px/s² for the attached painted strand. */

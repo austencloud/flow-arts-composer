@@ -284,7 +284,7 @@ export const EFFECT_CONTROLS: Record<EffectId, ControlDescriptor[]> = {
       { value: "neon", label: "Neon" }, { value: "blood", label: "Blood" }, { value: "acid", label: "Acid" }, { value: "custom", label: "Custom" },
     ]),
     slider("ink", "intensity", "Intensity", { tier: "primary" }),
-    slider("ink", "ambientEmission", "Ambient", { tier: "primary" }),
+    slider("ink", "ambientEmission", "Ambient", { tier: "primary", view: "3d" }),
     slider("ink", "motionEmission", "Motion", { tier: "primary" }),
     { id: "ink-track", label: "Track", type: "segmented", field: "trackingMode", options: TRACK_OPTS, tier: "tracking" },
     slider("ink", "viscosity", "Viscosity", { tier: "advanced" }),

@@ -269,4 +269,28 @@ describe("NotificationPreferencesPanel", () => {
       })
     );
   });
+
+  it("redraws a revisit from the last loaded values while it refreshes", async () => {
+    mocks.getPreferences.mockResolvedValue({
+      ...DEFAULT_NOTIFICATION_PREFERENCES,
+      pushEnabled: true,
+      messageReceived: false,
+    });
+    const first = render(NotificationPreferencesPanel);
+    await expect
+      .element(page.getByRole("switch", { name: "New Message" }))
+      .toHaveAttribute("aria-checked", "false");
+    first.unmount();
+
+    // The refresh never answers, so only the remembered values can show.
+    mocks.getPreferences.mockReturnValue(new Promise(() => {}));
+    render(NotificationPreferencesPanel);
+
+    const row = page.getByRole("switch", { name: "New Message" });
+    await expect.element(row).toHaveAttribute("aria-checked", "false");
+    await expect.element(row).toBeEnabled();
+    await expect
+      .element(page.getByText("Set up", { exact: true }))
+      .toBeVisible();
+  });
 });
