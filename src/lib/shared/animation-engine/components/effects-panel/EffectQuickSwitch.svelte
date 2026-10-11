@@ -10,8 +10,9 @@
   The picker composes EffectSelector (the tiles, their selection and prewarm)
   and EffectPresetThumbnail (the same pictures as the Effects panel, from
   effectCatalogLooks). effect-quick-picker-fit decides where it goes: beside
-  the player where its bounds have room, otherwise as one scrolling row
-  under the player's controls or docked along the bottom of its bounds.
+  the player where its bounds have room (two across, scrolling, where that
+  room is narrow), otherwise as one scrolling row under the player's
+  controls or docked along the bottom of its bounds.
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
@@ -159,14 +160,18 @@
     if (isEffectId(effectId)) effectsConfigState.requestPrewarm(effectId);
   }
 
-  /** Bring the selected effect into the middle of the strip. */
+  /** Bring the selected effect into the middle of the strip, or of a narrow
+   *  side panel's scrolling grid. */
   function centerSelected() {
     const tile = scrollerEl?.querySelector<HTMLElement>(
       '[role="radio"][aria-checked="true"]'
     );
     if (!scrollerEl || !tile) return;
-    scrollerEl.scrollLeft =
-      tile.offsetLeft - (scrollerEl.clientWidth - tile.offsetWidth) / 2;
+    const view = scrollerEl.getBoundingClientRect();
+    const box = tile.getBoundingClientRect();
+    scrollerEl.scrollLeft +=
+      box.left - view.left - (view.width - box.width) / 2;
+    scrollerEl.scrollTop += box.top - view.top - (view.height - box.height) / 2;
   }
 
   // Focus the effect that is on (or Off), not the first control, so arrow
@@ -325,6 +330,9 @@
               style:width={fit.arrangement === "side"
                 ? `${fit.width}px`
                 : "var(--bits-popover-anchor-width)"}
+              style:height={fit.arrangement === "side" && fit.height
+                ? `${fit.height}px`
+                : undefined}
               style:min-height={fit.arrangement === "strip"
                 ? `${fit.height}px`
                 : undefined}
@@ -342,25 +350,35 @@
               {#if fit.arrangement === "side"}
                 <div class="fx-quick-head">
                   <span class="fx-quick-title">{t("effect_deep_effects")}</span>
+                  <!-- A narrow panel has no room for "Turn off Bubbles":
+                       it shows Off and keeps the full name for assistive
+                       technology. -->
                   <button
                     type="button"
                     class="fx-quick-off"
                     class:active={!effectOn}
                     aria-pressed={!effectOn}
+                    aria-label={fit.height ? offLabel : undefined}
                     data-quick-off
                     onclick={turnOff}
                   >
                     <i class="fas fa-power-off" aria-hidden="true"></i>
-                    <span>{offLabel}</span>
+                    <span>{fit.height ? t("effect_deep_off") : offLabel}</span>
                   </button>
                 </div>
-                <EffectSelector
-                  {activeEffect}
-                  onSelect={select}
-                  onPrewarm={prewarm}
-                  catalog={fit.catalog}
-                  {portrait}
-                />
+                <div
+                  class="fx-quick-grid"
+                  class:scrolls={fit.height !== null}
+                  bind:this={scrollerEl}
+                >
+                  <EffectSelector
+                    {activeEffect}
+                    onSelect={select}
+                    onPrewarm={prewarm}
+                    catalog={fit.catalog}
+                    {portrait}
+                  />
+                </div>
               {:else}
                 {@const tileHeight = pictureTileHeight(fit.catalog.portrait)}
                 <button
@@ -560,6 +578,19 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* A narrow panel is the player's height and only its tiles scroll, under
+     the title row. The padding keeps a tile's focus ring inside the scroll
+     box, which would otherwise clip it. */
+  .fx-quick-grid.scrolls {
+    flex: 1 1 0;
+    min-height: 0;
+    margin: -4px;
+    padding: 4px;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
   }
 
   /* ── Strip: one row resting on the scrubber ── */

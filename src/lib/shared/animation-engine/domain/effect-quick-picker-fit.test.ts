@@ -3,6 +3,7 @@ import {
   fitEffectQuickPicker,
   QUICK_PICKER_EDGE,
   QUICK_PICKER_MAX_SIDE_WIDTH,
+  QUICK_PICKER_MIN_NARROW_SIDE_WIDTH,
   QUICK_PICKER_OFF_WIDTH,
   QUICK_PICKER_OFFSET,
   QUICK_PICKER_STRIP_PAD,
@@ -19,10 +20,10 @@ import {
 const COUNT = 20;
 const INSET = CATALOG_TILE_PAD + CATALOG_TILE_BORDER;
 
-// Measured on /create/generate at 1440x900 while playing: the playback area
-// (right of the 64px sidebar, between the toolbars) and the player in it.
+// Measured on /create/generate at 1440x900 while playing: the content area
+// (right of the 64px sidebar) and the player in it.
 const laptop = {
-  bounds: { left: 65, top: 77, width: 1365, height: 774 },
+  bounds: { left: 64, top: 0, width: 1366, height: 900 },
   player: { left: 440, top: 81, width: 614, height: 658 },
   count: COUNT,
 };
@@ -90,6 +91,38 @@ describe("fitEffectQuickPicker", () => {
     expect(sidePanelHeight(null, COUNT)).toBeLessThanOrEqual(
       412 - 2 * QUICK_PICKER_EDGE
     );
+  });
+
+  // Measured on /create/generate while playing: a small square player with
+  // too little room beside it for four pictures across.
+  it.each([
+    [
+      "landscape phone (844x390)",
+      { left: 72, top: 0, width: 762, height: 390 },
+      { left: 351, top: 81, width: 205, height: 249 },
+    ],
+    [
+      "laptop at 200% zoom (720x450)",
+      { left: 0, top: 0, width: 720, height: 405 },
+      { left: 252, top: 81, width: 216, height: 260 },
+    ],
+  ])("scrolls two pictures across beside a %s player", (_, bounds, player) => {
+    // Too little room under the controls for a strip there: before this
+    // panel, the strip covered the animation's bottom edge.
+    const fit = fitEffectQuickPicker({
+      bounds,
+      player,
+      roomBelow: 8,
+      count: COUNT,
+    });
+    expect(fit.arrangement).toBe("side");
+    if (fit.arrangement !== "side") return;
+    expect(fit.catalog?.cols).toBe(2);
+    expect(fit.width).toBeGreaterThanOrEqual(
+      QUICK_PICKER_MIN_NARROW_SIDE_WIDTH
+    );
+    expect(fit.height).toBe(player.height);
+    expect(sidePanelHeight(fit.catalog, COUNT)).toBeGreaterThan(player.height);
   });
 
   it.each([

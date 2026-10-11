@@ -7,14 +7,18 @@
  *   picker is a panel beside the player holding every effect four across, as
  *   a picture of its look when the panel is tall enough for five rows of them
  *   and as the icon and name otherwise. The panel grows with the player, so
- *   a 4K player does not get a postage-stamp picker.
+ *   a 4K player does not get a postage-stamp picker. Where the room beside
+ *   the player is too narrow for four across (a landscape phone, or a
+ *   laptop at 200% zoom), the panel is the player's height and holds two
+ *   pictures across that scroll inside it.
  * - `strip`: where the player fills the width (phone and tablet portrait),
  *   one scrolling row of pictures, placed so the whole animation stays in
  *   view: hanging from the player's controls where the room under them
  *   holds it, otherwise docked along the bottom of its bounds over the
  *   toolbar there (idle while the picker is open), and over the animation's
- *   bottom edge only when neither fits. The pictures are sized so the last
- *   one in view is cut about in half, which shows the row scrolls.
+ *   bottom edge only when neither of those nor the narrow side panel fits. The
+ *   pictures are sized so the last one in view is cut about in half, which
+ *   shows the row scrolls.
  *
  * Pure arithmetic over the picture tiles' own metrics (effect-catalog-fit),
  * so the CSS that draws the tiles and the fit cannot drift apart.
@@ -58,6 +62,9 @@ export type EffectQuickPickerFit =
       width: number;
       /** Picture tiles, or null for the icon tiles. */
       catalog: EffectCatalogFit | null;
+      /** The panel's outer height in px where its tiles scroll inside it,
+       *  null where it takes the height they need. */
+      height: number | null;
     }
   | {
       arrangement: "strip";
@@ -86,6 +93,9 @@ export const QUICK_PICKER_SIDE_WIDTH = 374;
 /** Four icon tiles across keep every name whole down to this width. */
 export const QUICK_PICKER_MIN_SIDE_WIDTH = 300;
 export const QUICK_PICKER_MAX_SIDE_WIDTH = 520;
+/** Two pictures across, scrolling, down to this width. */
+export const QUICK_PICKER_MIN_NARROW_SIDE_WIDTH = 200;
+const NARROW_SIDE_COLUMNS = 2;
 /** The side panel's width as a share of the player's height. */
 const SIDE_WIDTH_PER_PLAYER_HEIGHT = 0.3;
 /** EffectSelector's icon tile: 48px tall, 6px apart. */
@@ -179,10 +189,51 @@ export function fitEffectQuickPicker({
       side,
       width,
       catalog: fitsTall ? pictures : null,
+      height: null,
     };
   }
 
-  return fitStrip(bounds, player, roomBelow, count);
+  const strip = fitStrip(bounds, player, roomBelow, count);
+  if (strip.arrangement === "strip" && strip.side === "below") return strip;
+  return fitNarrowSide(bounds, player, side, width, count) ?? strip;
+}
+
+/** Two pictures across in a panel the player's height, scrolling, which keeps
+ *  the whole animation in view where a strip would cover its bottom edge. Null
+ *  where the room beside the player is too narrow for two, or the player too
+ *  short to show a row and a half of them. */
+function fitNarrowSide(
+  bounds: QuickPickerRect,
+  player: QuickPickerRect,
+  side: "left" | "right",
+  width: number,
+  count: number
+): EffectQuickPickerFit | null {
+  if (width < QUICK_PICKER_MIN_NARROW_SIDE_WIDTH) return null;
+  const pictures = fitEffectRoster({
+    width: width - 2 * QUICK_PICKER_PAD,
+    count,
+    columns: NARROW_SIDE_COLUMNS,
+  });
+  if (!pictures) return null;
+  const height = Math.floor(
+    Math.min(player.height, bounds.height - 2 * QUICK_PICKER_EDGE)
+  );
+  // The cut row under the last whole one shows that the grid scrolls.
+  const least =
+    2 * QUICK_PICKER_PAD +
+    QUICK_PICKER_HEAD +
+    QUICK_PICKER_HEAD_GAP +
+    1.5 * pictureTileHeight(pictures.portrait) +
+    pictures.gap;
+  if (height < least) return null;
+  return {
+    arrangement: "side",
+    side,
+    width,
+    catalog: pictures,
+    height: sidePanelHeight(pictures, count) > height ? height : null,
+  };
 }
 
 function fitStrip(
