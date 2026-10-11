@@ -31,8 +31,11 @@ const CANONICAL_PROP_SOURCE_HASHES = {
   // Stick: Prop3D stretches the stick the same way, and swaps in the entry's
   // rightHandModelUrl for the red hand. createRegistryWorkerProp makes both
   // choices from STRETCHED_PROP_TYPES and its own rightHandModelUrl.
+  // Conjoined grid scale (0221d35856): Prop3D wraps the prop in a uniform
+  // geometryScale group and hands children length / geometryScale.
+  // createWorkerPropVisual divides length and scales its root the same way.
   "Prop3D.svelte":
-    "6823e39d2150183267bd41b51bb6bc404b3d578dfeb2aa86887a80018e380a69",
+    "c12bf6c1d3236e4d6c43cfc8250d7f0692fdce534842b5be03c9dc8dfd9addf5",
   // Hand colors (d11b2ce06c): the component re-clones when the hand palette
   // changes. The worker recolors from the same live PROP_COLORS object and
   // rebuilds a performer whose snapshot handColors differ, so it already
