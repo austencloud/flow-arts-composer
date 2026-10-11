@@ -315,6 +315,10 @@ export function buildPlacementTransition(
         input.gridMode
       )
     : null;
+  const motions: PictographData["motions"] = {
+    [input.movingColor]: movingMotion,
+  };
+  if (partnerMotion) motions[partnerColor] = partnerMotion;
 
   const base = input.previewPictographData;
   const stepBase = base && "stepNumber" in base ? base : null;
@@ -326,10 +330,7 @@ export function buildPlacementTransition(
     endPlacement: base?.endPlacement ?? null,
     gridMode: input.gridMode,
     betaSwapped: input.betaSwapped,
-    motions: {
-      [input.movingColor]: movingMotion,
-      ...(partnerMotion ? { [partnerColor]: partnerMotion } : {}),
-    },
+    motions,
     // The container only computes motion overrides for StepData ("stepNumber"
     // narrowing), so guarantee the beat fields even without a preview step.
     stepNumber: stepBase?.stepNumber ?? 0,
