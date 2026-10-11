@@ -18,6 +18,11 @@
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { Orientation } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+  import {
+    BUILD_BEAT_PAUSE_MS,
+    createBuildSequence,
+    whenOnScreen,
+  } from "#lib/shared/transitions/build-sequence.js";
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import { aabbWordSteps } from "../level-1/_data/aabb-word";
@@ -30,8 +35,6 @@
   const startData = startStep as unknown as PictographData;
 
   type Phase = "grid" | "hands" | "arrows" | "travel" | "done";
-  // Pauses between beats, long enough to read each one.
-  const BEAT_PAUSE_MS = 650;
 
   let mounted = $state(false);
   let phase = $state<Phase>("grid");
@@ -41,8 +44,7 @@
   let ready = false;
   let onScreen = false;
   let host: HTMLDivElement;
-  let timer = 0;
-  let frame = 0;
+  const sequence = createBuildSequence();
 
   const travelling = $derived(phase !== "done");
 
@@ -52,63 +54,34 @@
     arrowOpacity = 1;
   }
 
-  function after(ms: number, next: () => void) {
-    timer = window.setTimeout(next, ms);
-  }
-
-  function animate(ms: number, step: (t: number) => void, done: () => void) {
-    const startedAt = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - startedAt) / ms);
-      step(t);
-      if (t < 1) frame = requestAnimationFrame(tick);
-      else done();
-    };
-    frame = requestAnimationFrame(tick);
-  }
-
   function play() {
     if (started || !ready || !onScreen) return;
     started = true;
-    if (reducedMotion()) return finish();
-    after(BEAT_PAUSE_MS, () => {
-      phase = "hands";
-      after(BEAT_PAUSE_MS, () => {
-        phase = "arrows";
-        animate(
-          DURATION.emphasis,
-          (t) => (arrowOpacity = t),
-          () =>
-            after(BEAT_PAUSE_MS, () => {
-              phase = "travel";
-              animate(
-                DURATION.scene,
-                (t) => (progress = cubicInOut(t)),
-                finish
-              );
-            })
-        );
-      });
-    });
+    sequence.play(
+      [
+        { pause: BUILD_BEAT_PAUSE_MS },
+        { act: () => (phase = "hands") },
+        { pause: BUILD_BEAT_PAUSE_MS },
+        { act: () => (phase = "arrows") },
+        { tween: DURATION.emphasis, step: (t) => (arrowOpacity = t) },
+        { pause: BUILD_BEAT_PAUSE_MS },
+        { act: () => (phase = "travel") },
+        { tween: DURATION.scene, step: (t) => (progress = cubicInOut(t)) },
+      ],
+      finish
+    );
   }
 
   onMount(() => {
     if (reducedMotion()) finish();
     mounted = true;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) return;
-        onScreen = true;
-        observer.disconnect();
-        play();
-      },
-      { threshold: 0.6 }
-    );
-    observer.observe(host);
+    const stopWatching = whenOnScreen(host, () => {
+      onScreen = true;
+      play();
+    });
     return () => {
-      observer.disconnect();
-      window.clearTimeout(timer);
-      cancelAnimationFrame(frame);
+      stopWatching();
+      sequence.cancel();
     };
   });
 </script>
