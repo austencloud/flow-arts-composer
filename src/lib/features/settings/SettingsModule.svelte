@@ -463,20 +463,37 @@
       view-transition-name: settings-surface;
     }
 
+    /* The morphing box is the panel itself: it carries the surface fill,
+       border and shadow while it reshapes, and clips both snapshots to its
+       rounded corners. Tabs differ in height far more than in width, so the
+       snapshots keep their own height and only the box grows or shrinks
+       around them; stretching them to fit made the outgoing tab swell or
+       shrink as it faded. */
     :global(html:has(.settings-module))::view-transition-group(
       settings-surface
     ) {
+      overflow: clip;
+      border-radius: 1.25em;
+      outline: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
+      outline-offset: -1px;
+      background: color-mix(
+        in srgb,
+        var(--theme-panel-bg, rgba(0, 0, 0, 0.88)) 14%,
+        #070b10 86%
+      );
+      box-shadow: var(--theme-panel-shadow, 0 1rem 3rem rgba(0, 0, 0, 0.35));
       animation-duration: var(--duration-emphasis);
       animation-timing-function: var(--ease-out);
     }
 
-    /* Both snapshots fill the reshaping box at their own proportions, so
-       text scales a touch instead of stretching. */
-    :global(html:has(.settings-module))::view-transition-old(settings-surface),
-    :global(html:has(.settings-module))::view-transition-new(settings-surface) {
-      height: 100%;
-      object-fit: cover;
-      object-position: top;
+    :global(
+        html[data-theme-luminance="bright"]:has(.settings-module)
+      )::view-transition-group(settings-surface) {
+      background: color-mix(
+        in srgb,
+        var(--theme-panel-bg, rgba(255, 255, 255, 0.88)) 14%,
+        #f6f7f9 86%
+      );
     }
   }
 

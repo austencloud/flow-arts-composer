@@ -36,6 +36,7 @@
   } from "#lib/shared/auth/state/auth-state.svelte.js";
   import { getFirestoreInstance } from "#lib/shared/auth/firebase.js";
   import { hasInstagramAccount } from "#lib/shared/auth/services/instagram-auth.js";
+  import { knownAccountProfile } from "#lib/shared/auth/state/account-profile-snapshot.js";
   import {
     userPreviewState,
     loadPreviewSection,
@@ -112,10 +113,17 @@
   let displayNameEditRequest = $state(0);
   let hapticService = $state<HapticFeedback | null>(null);
   let accountManager = $state<AccountManager | null>(null);
+  // On a first open, start from what sign-in read; the load below still
+  // refreshes it and adds the Instagram link.
+  const signInProfile = knownAccountProfile(authState.user?.uid);
   const knownDetails =
     accountDetailsCache?.userId === authState.user?.uid
       ? accountDetailsCache
-      : null;
+      : signInProfile && {
+          ...signInProfile,
+          profileColor: signInProfile.profileColor ?? "#8b5cf6",
+          instagramLinked: false,
+        };
   let userPronouns = $state(knownDetails?.pronouns ?? "");
   let userUsername = $state(knownDetails?.username ?? "");
   let profileColor = $state(knownDetails?.profileColor ?? "#8b5cf6");
