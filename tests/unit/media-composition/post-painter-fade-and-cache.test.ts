@@ -66,7 +66,7 @@ import {
   paintSizeBucket,
   type PaintFrame,
 } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
-import { PostAnimationOverlayPainter } from "#lib/features/compose/services/post-animation-overlay-painter.js";
+import { PostAnimationOverlayPainter } from "#lib/shared/media-composition/services/post-animation-overlay-painter.js";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
 const BEATS = [1, 1];

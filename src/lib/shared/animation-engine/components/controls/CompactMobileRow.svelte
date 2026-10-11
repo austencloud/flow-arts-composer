@@ -7,8 +7,8 @@
   - Expand toggle (right)
 -->
 <script lang="ts">
-  import MobileToolViewToggle from "../inputs/MobileToolViewToggle.svelte";
-  import ExpandToggleButton from "../inputs/ExpandToggleButton.svelte";
+  import MobileToolViewToggle from "./MobileToolViewToggle.svelte";
+  import ExpandToggleButton from "./ExpandToggleButton.svelte";
 
   type MobileToolView = "controls" | "step-grid";
 

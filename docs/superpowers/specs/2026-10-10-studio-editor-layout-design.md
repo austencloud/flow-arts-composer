@@ -32,6 +32,10 @@ timeline on every screen. CapCut and InShot are the models.
   and lock, no names) is 111 of the 412 pixels on every row. The main track
   is 65 tall and each other layer 52, so four rows fill the timeline area.
   Short text clips read "A N" and "A I".
+- (2026-10-11, same project, 2560 by 1350) The portrait preview is 462 by
+  821 inside a 1246-wide area, so about 780 pixels beside it are empty. Its
+  size is bound by height: under it sit the transport, a 64-tall tool row
+  and a 280-tall timeline.
 
 ## 1. Layout tiers
 
@@ -148,6 +152,13 @@ selection has more than six. Each group stacks the existing panels it holds.
   main track opens the Videos tab.
 - Desktop keeps a free playhead: click the ruler to seek, drag clips with the
   mouse, zoom controls at the right of the tool row.
+- Desktop and medium give height to the preview first (Austen,
+  2026-10-11). The timeline opens just tall enough for its tracks (ruler
+  plus rows; about 210 for a four-track project), and the tool row joins
+  the timeline's top edge as a 40-tall strip. On a 2560 by 1350 window a
+  portrait preview grows from 821 to about 925 tall; at 1920 by 1080 from
+  about 550 to 655. Dragging the timeline's top edge gives it more room,
+  and Studio remembers that height on the device.
 - A video clip whose landings are tapped shows tick marks at each landing.
 
 ## 5. Sync moves screen
