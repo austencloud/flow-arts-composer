@@ -17,7 +17,7 @@ const sequence = {
 } as unknown as SequenceData;
 
 const blank: ArrangementSnapshot = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   cells: [],
   gridRows: 1,
   gridCols: 1,

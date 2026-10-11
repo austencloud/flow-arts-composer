@@ -54,7 +54,7 @@ describe("Arrange grid undo", () => {
     const state = createArrangeGridState({ persist: false });
     const first = state.captureSnapshot().cells[0]!;
     state.restoreSnapshot({
-      schemaVersion: 1,
+      schemaVersion: 2,
       cells: [first],
       gridRows: 2,
       gridCols: 2,

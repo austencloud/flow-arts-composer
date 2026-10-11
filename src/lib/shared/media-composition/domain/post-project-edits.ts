@@ -64,6 +64,19 @@ import {
   type ArrangementSnapshot,
 } from "#lib/shared/media-composition/domain/arrangement.js";
 import {
+  clearCell,
+  moveCell,
+  resizeCell,
+  setCellAppearance,
+  setCellLayers,
+  setCellOffset,
+  setGrid,
+  setSkipStartPlacement,
+  staggerCells,
+  type ArrangementCellOffset,
+} from "#lib/shared/media-composition/domain/arrangement-edits.js";
+import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
+import {
   clampShapeRatio,
   postCanvasOf,
 } from "#lib/shared/media-composition/domain/post-canvas.js";
@@ -181,6 +194,133 @@ export function setArrangementSnapshot(
       duration: (sourceOut - sourceIn) / located.item.speed,
     }),
     ctx
+  );
+}
+
+/** One grid edit on an arrangement item; the clip's length follows through `setArrangementSnapshot`. */
+function editArrangement(
+  project: PostProject,
+  itemId: string,
+  ctx: EditContext,
+  edit: (snapshot: ArrangementSnapshot) => ArrangementSnapshot
+): PostProject {
+  const located = findItem(project, itemId);
+  if (located?.item.kind !== "arrangement") return project;
+  const next = edit(located.item.snapshot);
+  return next === located.item.snapshot
+    ? project
+    : setArrangementSnapshot(project, itemId, next, ctx);
+}
+
+/** Rows × cols of the visible grid, clamped to 1..8; see `setGrid`. */
+export function setArrangementGrid(
+  project: PostProject,
+  itemId: string,
+  rows: number,
+  cols: number,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setGrid(snapshot, rows, cols)
+  );
+}
+
+export function setArrangementSkipStartPlacement(
+  project: PostProject,
+  itemId: string,
+  skipStartPlacement: boolean,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setSkipStartPlacement(snapshot, skipStartPlacement)
+  );
+}
+
+/** Swaps a cell with the one at `row`,`col`; an invalid drop changes nothing. */
+export function moveArrangementCell(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  row: number,
+  col: number,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    moveCell(snapshot, cellId, row, col)
+  );
+}
+
+/** Spans clamped to the grid and to empty neighbours; see `resizeCell`. */
+export function resizeArrangementCell(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  colSpan: number,
+  rowSpan: number,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    resizeCell(snapshot, cellId, colSpan, rowSpan)
+  );
+}
+
+export function setArrangementCellLayers(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  layers: TunnelLayerConfig[],
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellLayers(snapshot, cellId, layers)
+  );
+}
+
+export function setArrangementCellOffset(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  offset: ArrangementCellOffset,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellOffset(snapshot, cellId, offset)
+  );
+}
+
+/** A cell's look, or the grid's when `cellId` is null. */
+export function setArrangementCellAppearance(
+  project: PostProject,
+  itemId: string,
+  cellId: string | null,
+  appearance: PostAnimationAppearance | undefined,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellAppearance(snapshot, cellId, appearance)
+  );
+}
+
+export function clearArrangementCell(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    clearCell(snapshot, cellId)
+  );
+}
+
+/** Offsets the filled cells by `beatsPerCell` each, in reading order. */
+export function staggerArrangement(
+  project: PostProject,
+  itemId: string,
+  beatsPerCell: number,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    staggerCells(snapshot, beatsPerCell)
   );
 }
 

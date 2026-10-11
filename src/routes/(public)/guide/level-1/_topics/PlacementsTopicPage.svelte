@@ -15,6 +15,7 @@
     placementsTopicText,
   } from "#lib/shared/guide-topics/placements-topic.js";
   import GuidePictograph from "../_components/GuidePictograph.svelte";
+  import TopicHeader from "./TopicHeader.svelte";
   import type { TopicPageProps } from "./topic-pages";
 
   let { darkMode, kicker, lessonHref }: TopicPageProps = $props();
@@ -23,13 +24,13 @@
 </script>
 
 <article class="placements-topic">
-  <header class="topic-head">
-    <p class="kicker">{kicker}</p>
-    <h1>{placementsTopicText("title")}</h1>
-    <p class="lede">{placementsTopicText("tagline")}</p>
-  </header>
+  <TopicHeader
+    {kicker}
+    title={placementsTopicText("title")}
+    lede={placementsTopicText("tagline")}
+  />
 
-  <section class="intro" aria-label={t("verified_level1_hand_placements")}>
+  <div class="intro">
     <p>
       {placementsTopicText("combine")}
       {placementsTopicText("transform")}
@@ -46,8 +47,7 @@
         )}</span
       >
     </p>
-    <p class="first-three">{placementsTopicText("firstThree")}</p>
-  </section>
+  </div>
 
   <div class="families-wrap">
     <div class="families">
@@ -61,7 +61,7 @@
             <img class="glyph" src={family.glyph} alt="" aria-hidden="true" />
             <h2 id="placement-{family.kind}">{t(family.name)}</h2>
           </header>
-          <p class="definition">{t(family.definition)}</p>
+          <p class="definition">{t(family.brief)}</p>
           <div class="cells" style:--cols={placements.length > 4 ? 4 : 2}>
             {#each placements as placement, n (placement.id ?? n)}
               <div class="cell">
@@ -108,40 +108,6 @@
     color: var(--ink, #1a1a1a);
     font-weight: 400;
   }
-  .topic-head {
-    display: grid;
-    gap: 0.5rem;
-    justify-items: center;
-    max-width: 46rem;
-    margin: 0 auto;
-    text-align: center;
-  }
-  .kicker {
-    margin: 0;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--ink-dim, #555);
-  }
-  .placements-topic h1 {
-    grid-column: auto;
-    margin: 0;
-    padding: 0;
-    text-align: center;
-    color: var(--ink, #1a1a1a);
-    font-size: clamp(2.1rem, 4.6cqw, 3.4rem);
-    font-weight: 750;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    text-wrap: balance;
-  }
-  .lede {
-    margin: 0;
-    font-size: clamp(1.05rem, 1.6cqw, 1.25rem);
-    line-height: 1.55;
-    text-wrap: balance;
-  }
   /* The intro reads as one short centered passage; the color key sits in it
      as the line the pictographs below depend on. */
   .intro {
@@ -184,9 +150,6 @@
   }
   .dot.left {
     background: #2e3192;
-  }
-  .intro .first-three {
-    font-weight: 600;
   }
 
   /* One cell size for every pictograph on the page, worked out from the
@@ -233,9 +196,8 @@
   .placements-topic .family h2 {
     margin: 0;
     color: var(--ink, #1a1a1a);
-    font-size: clamp(1.35rem, 2.2cqw, 1.7rem);
+    font-size: clamp(1.4rem, 2.6cqw, 1.9rem);
     font-weight: 700;
-    letter-spacing: -0.01em;
   }
   .definition {
     margin: 0;
