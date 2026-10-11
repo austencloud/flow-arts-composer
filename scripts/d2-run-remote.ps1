@@ -57,18 +57,7 @@ if ($r.ReturnValue -ne 0) { throw "Win32_Process Create failed ($($r.ReturnValue
 Set-Content (Join-Path $JobDir 'meta.txt') "sha=$Sha`nworktree=$wt`npid=$($r.ProcessId)`nstarted=$(Get-Date -Format o)"
 "[d2-run] started pid $($r.ProcessId) in $wt"
 
-# Prune old run-* worktrees (keep the newest $keep, never the one in use, never one with a linked node_modules).
-Get-ChildItem $root -Directory -Filter 'run-*' |
-  Where-Object { $_.FullName -ne $wt } |
-  Sort-Object LastWriteTime -Descending |
-  Select-Object -Skip ($keep - 1) |
-  ForEach-Object {
-    if (Test-Link (Join-Path $_.FullName 'node_modules')) { return }
-    git -C $primary worktree remove --force $_.FullName 2>$null
-    if ($LASTEXITCODE -eq 0) { "[d2-run] pruned $($_.Name)" }
-  }
-Get-ChildItem 'C:\Users\Austen\d2-jobs' -Directory | Sort-Object LastWriteTime -Descending | Select-Object -Skip 30 | Remove-Item -Recurse -Force
-# The push refs only carry commits over; detached worktrees keep what they need.
-git -C $primary for-each-ref --format='%(refname)' refs/heads/d2-run |
-  Where-Object { $_ -notlike "*/$($Sha.Substring(0, 10))" } |
-  ForEach-Object { git -C $primary update-ref -d $_ }
+# This helper deletes nothing. Old run-* worktrees are mostly hard links into the
+# pnpm store; report the count so cleanup can be a separate, deliberate step.
+$runs = @(Get-ChildItem $root -Directory -Filter 'run-*').Count
+if ($runs -gt $keep) { "[d2-run] note: $runs scratch worktrees in $root" }
