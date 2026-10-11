@@ -2,7 +2,8 @@
  * The Construct preview scene reports ready once every slot it shows has
  * drawn, including through a resize before the last one reported (the card
  * would otherwise rest on its tint). On a turn, each picked step plays its
- * move from the pose before it, one after the other, inside the turn.
+ * move from the pose before it, one after the other, inside the turn, and
+ * the finger is gone before the last one plays.
  */
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -124,13 +125,20 @@ describe("Construct scene turn", () => {
     /** When each slot was first seen mid-move, and when it reached the end. */
     const started: (number | null)[] = [null, null, null];
     const finished: (number | null)[] = [null, null, null];
+    let fingerSeen = false;
+    let fingerOnLastMove = false;
     for (let at = 0; at < METHOD_PREVIEW_TIMING.turnMs; at += frameMs) {
       await vi.advanceTimersByTimeAsync(frameMs);
       flushSync();
+      const fingerShown = host.querySelector(".ghost.visible") !== null;
+      fingerSeen ||= fingerShown;
       for (const [slot, value] of progress().entries()) {
         const travel = Number(value);
         if (started[slot] === null && travel > 0 && travel < 1) {
           started[slot] = at;
+        }
+        if (slot === 2 && travel > 0 && travel < 1 && fingerShown) {
+          fingerOnLastMove = true;
         }
         if (started[slot] !== null && finished[slot] === null && travel >= 1) {
           finished[slot] = at;
@@ -143,6 +151,9 @@ describe("Construct scene turn", () => {
     expect(started[2]).toBeGreaterThan(started[1]!);
     expect(finished[1]).not.toBeNull();
     expect(finished[2]).not.toBeNull();
+    // The finger taps, then lifts away before the last move plays.
+    expect(fingerSeen).toBe(true);
+    expect(fingerOnLastMove).toBe(false);
 
     // When the turn ends, each step rests on its move's last frame.
     scene.stop();
