@@ -36,17 +36,17 @@ page can start a request but nothing can approve it.
 
 ## The package
 
-`E:/shared-packages/packages/phone-sign-in`, published to npm as
+`E:/shared-packages/packages/phone-sign-in`, named
 `@austencloud/phone-sign-in`. Ringmaster's modules move in with their tests.
 Everything a module read from Ringmaster directly (its Firestore client, its
 auth check, its environment, its name) becomes configuration.
 
-| Entry | Contents |
-| --- | --- |
-| `@austencloud/phone-sign-in` | Browser and server alike: the auto-approval message, `formatCode`, device, place and site descriptions, the approve page's tap rules, request clock and automatic-approval rules, the done-screen wording, and the `next` path helpers. |
+| Entry                               | Contents                                                                                                                                                                                                                                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@austencloud/phone-sign-in`        | Browser and server alike: the auto-approval message, `formatCode`, device, place and site descriptions, the approve page's tap rules, request clock and automatic-approval rules, the done-screen wording, and the `next` path helpers.                                                                 |
 | `@austencloud/phone-sign-in/server` | `createPhoneSignInServer(config)`, which returns one handler per route, plus the parts it is built from: network scope, server keys, the request lifecycle, trusted phones, session revocation, the custom token claims and signer, the capped body reader, and the public and requester address rules. |
-| `@austencloud/phone-sign-in/client` | `createPhoneSignInClient(config)` with the browser's calls to every route, and the trusted phone key kept in IndexedDB. |
-| `@austencloud/phone-sign-in/svelte` | `QrCode.svelte`. |
+| `@austencloud/phone-sign-in/client` | `createPhoneSignInClient(config)` with the browser's calls to every route, and the trusted phone key kept in IndexedDB.                                                                                                                                                                                 |
+| `@austencloud/phone-sign-in/svelte` | `QrCode.svelte`.                                                                                                                                                                                                                                                                                        |
 
 Handlers take a standard `Request` plus `{ id, clientAddress, cf }` and return
 a standard `Response`, so an app route is a one-line wrapper. An auth refusal
@@ -123,13 +123,23 @@ would mean restyling one app. Every rule the screens follow is in the package.
 
 ## Delivery
 
-1. The package: tests pass in its own worktree. Version 0.1.0 is published to
-   npm after Austen says yes; both apps need it from npm.
+1. The package: tests pass in its own worktree. Each app keeps a packed copy,
+   `vendor/austencloud-phone-sign-in-0.1.0.tgz`, and installs it from there, so
+   nothing is published to npm. A new version means packing it again and
+   replacing the copy in both apps.
 2. Ringmaster: its tests pass on the package; merged to cirque-aflame's local
    main. It changes on the live site only when Austen ships Ringmaster.
 3. Flow Arts Composer: tests pass and the computer page and approve page are
    checked in a browser on a preview; merged to local main. The scan works only
    after Austen ships, because the QR opens the live site.
+
+A request made on a local copy is approved and collected through the live
+site's server, and the request's secrets are keyed from the service account's
+private key. The local copy and the live site must therefore use the same
+service account key. Both name `firebase-adminsdk-fbsvc@the-kinetic-alphabet`,
+but only the first real scan from a local copy proves they hold the same key.
+If it fails with an unknown or expired request while a live-site scan works,
+the keys differ.
 
 ## Testing
 

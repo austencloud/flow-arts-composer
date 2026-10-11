@@ -43,6 +43,8 @@ declare global {
   namespace Cloudflare {
     interface Env {
       FIREBASE_SERVICE_ACCOUNT_JSON?: string;
+      /** "1" or "true" turns phone sign-in off without a deploy. */
+      PHONE_SIGN_IN_DISABLED?: string;
       QR_VIDEOS: R2Bucket;
       TKA_ASSETS: R2Bucket;
       R2_PUBLIC_URL: string;
