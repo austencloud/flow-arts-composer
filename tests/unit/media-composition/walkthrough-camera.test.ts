@@ -9,6 +9,7 @@ import {
   cameraSampler,
   framingForRegion,
   framingForView,
+  needsFocus,
   planShots,
   scheduleMoves,
   splitKeyframes,
@@ -153,6 +154,51 @@ describe("planShots", () => {
     expect(pulled.map((shot) => shot.kind)).toEqual(["close", "wide", "close"]);
   });
 
+  it("stays on a close shot for a click it already shows", () => {
+    const shots = planShots(
+      [
+        { kind: "close", time: 10, region: level(1300) },
+        { kind: "see", time: 12, region: level(1470) },
+      ],
+      2
+    );
+    expect(shots.map((shot) => shot.kind)).toEqual(["close"]);
+  });
+
+  it("pulls out to land before a click the close shot does not show", () => {
+    const shots = planShots(
+      [
+        { kind: "close", time: 10, region: level(1300) },
+        { kind: "see", time: 12, region: generateButton },
+      ],
+      2
+    );
+    expect(shots.map((shot) => shot.kind)).toEqual(["close", "wide"]);
+    const wide = shots[1]!;
+    expect(wide.kind === "wide" && wide.startAt).toBeCloseTo(12 - 0.3 - 0.8);
+    expect(wide.kind === "wide" && wide.due).toBe(12);
+  });
+
+  it("does not move for a click while wide", () => {
+    expect(
+      planShots([{ kind: "see", time: 5, region: generateButton }], 2)
+    ).toEqual([]);
+  });
+
+  it("keeps a click it showed in view when the next one would join the shot", () => {
+    // Inside the first view, outside the view of the three buttons together.
+    const left = { x: 900 / W, y: 34 / H, width: 40 / W, height: 30 / H };
+    const shots = planShots(
+      [
+        { kind: "close", time: 10, region: level(1300) },
+        { kind: "see", time: 11, region: left },
+        { kind: "close", time: 12, region: level(1640) },
+      ],
+      2
+    );
+    expect(shots).toHaveLength(2);
+  });
+
   it("merges back-to-back pull outs", () => {
     const shots = planShots(
       [
@@ -162,6 +208,21 @@ describe("planShots", () => {
       2
     );
     expect(shots).toHaveLength(1);
+  });
+});
+
+describe("needsFocus", () => {
+  it("moves in on a small control and not on one that fills a strip of the frame", () => {
+    expect(needsFocus(level(1300))).toBe(true);
+    // Generate in the real take: 763 x 167 px of 1920 x 1080.
+    expect(
+      needsFocus({
+        x: 1067 / W,
+        y: 766 / H,
+        width: 763 / W,
+        height: 167 / H,
+      })
+    ).toBe(false);
   });
 });
 
