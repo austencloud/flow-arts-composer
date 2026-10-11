@@ -55,9 +55,9 @@
   import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
   import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
   import {
-    copyPostAnimationEffects,
+    postAnimationEffectsConfig,
     postAnimationTrailSettings,
-  } from "../post-animation-effects.svelte";
+  } from "#lib/shared/media-composition/domain/post-animation-effects.svelte";
 
   let {
     editor,
@@ -311,23 +311,10 @@
           appearance?.propLook ?? getSettings().propArtwork
         );
         effectsWereEdited = !!appearance?.effects || !!trail;
-        const nextEffects = copyPostAnimationEffects(
-          appearance?.effects ?? initialEffects
+        const nextEffects = postAnimationEffectsConfig(
+          appearance,
+          initialEffects
         );
-        if (trail && !appearance?.effects) {
-          nextEffects.trails = {
-            ...nextEffects.trails,
-            trackingMode: trail.trackingMode,
-            thickness: trail.thickness,
-            brightness: trail.brightness,
-            leftColor: trail.leftColor,
-            rightColor: trail.rightColor,
-          };
-          nextEffects.activeEffect = trail.enabled ? "trails" : "none";
-          nextEffects.tipEffectMap = trail.enabled
-            ? { "*": { effect: "trails" } }
-            : {};
-        }
         trailSettings.updateSettings({
           trail: postAnimationTrailSettings(initialTrail, nextEffects, trail),
         });

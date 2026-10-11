@@ -150,6 +150,7 @@ Last audit: 2025-12-27
     onEffectError = undefined,
     onAdditionalLayerTextureStatusChange = undefined,
     visibilityManagerOverride = undefined,
+    motionVisibility = undefined,
     effectsConfigState = undefined,
     externalToggleDisassemble = undefined,
     externalDisassembled = false,
@@ -284,6 +285,8 @@ Last audit: 2025-12-27
      * manager instead of the global singleton. Enables multiple canvases to have
      * independent visibility/effect settings (e.g. landing page with two players). */
     visibilityManagerOverride?: AnimationVisibilityStateManager;
+    /** This canvas's own hands to draw. Set, it replaces the viewer's Blue/Red toggles. */
+    motionVisibility?: { left: boolean; right: boolean };
     /** Live EffectsConfigState (single source of truth for per-effect intents -
      *  zap, sparkles, motion, bloom today; fire/led/charcoal in later phases).
      *  The engine reads from this each frame to pick up slider changes from
@@ -951,6 +954,7 @@ Last audit: 2025-12-27
       {suppress2DOverlays}
       {resizePaused}
       {visibilityManagerOverride}
+      {motionVisibility}
       {effectsConfigState}
       {prewarmEffects}
       {initialQualityTier}
