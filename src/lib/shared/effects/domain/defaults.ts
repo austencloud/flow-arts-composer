@@ -50,7 +50,7 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
     rightColor: "#a25bff",
     frequency: 6,
     mode: "arc",
-    branching: 0.45,
+    branching: 0.1,
     style: "branching",
     wobbleRate: 0.3,
     wobbleAmount: 0.45,

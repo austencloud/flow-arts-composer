@@ -54,7 +54,7 @@ export const ZAP_PRESETS: EffectPreset<"zap">[] = [
       leftColor: "#22d3ee",
       rightColor: "#ec4899",
       frequency: 10,
-      branching: 0.25,
+      branching: 0.05,
       style: "web",
       mode: "arc",
       wobbleRate: 0.3,

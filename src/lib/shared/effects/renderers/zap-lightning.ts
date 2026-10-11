@@ -60,6 +60,8 @@ const MAX_STROKES = 9;
 const FLASH_DECAY = 0.05;
 /** At most this many strikes share one channel; the oldest goes first. */
 export const MAX_LIVE_STRIKES = 4;
+/** Seconds an earlier strike takes to fade once a new one fires. */
+const RETIRE_FADE = 0.06;
 
 export function clamp01(value: number): number {
   return value < 0 ? 0 : value > 1 ? 1 : value;
@@ -247,8 +249,10 @@ export function cutChannel(
     shape.depthAxis
   );
   const strokes: BoltStroke[] = [{ points: main, depth: 0 }];
+  // Branching 0 is one clean channel; a fast swing forks more only when
+  // Branching asks for forks at all.
   const forkChance =
-    0.015 + clamp01(shape.branching) * 0.09 + clamp01(shape.energy) * 0.05;
+    clamp01(shape.branching) * (0.09 + clamp01(shape.energy) * 0.06);
   const count = main.length / 3;
   for (let i = 3; i < count - 4 && strokes.length < MAX_STROKES; i++) {
     if (rng() >= forkChance) continue;
@@ -355,6 +359,11 @@ export class DischargeChannel {
       life: onset + 0.16 + rng() * 0.1,
       age,
     };
+    // One channel at a time: the strike before fades out within 60 ms, so the
+    // bolt between the ends reads as one line rather than a tangle.
+    for (const earlier of this.strikes) {
+      earlier.life = Math.min(earlier.life, earlier.age + RETIRE_FADE);
+    }
     this.strikes.push(strike);
     this.born++;
     if (this.strikes.length > MAX_LIVE_STRIKES) this.strikes.shift();
@@ -385,7 +394,7 @@ export function writePlasmaFilament(
   shape: PlasmaShape
 ): void {
   const n = out.length / 3;
-  const sway = 0.06 + clamp01(shape.sway) * 0.3;
+  const sway = 0.03 + clamp01(shape.sway) * 0.14;
   const crawl = 0.025 + clamp01(shape.crawl) * 0.07;
   const swayV = noise.noise3D(seed * 0.73, phase * 0.3, 0.5) * sway;
   const swayW = shape.depthAxis

@@ -545,9 +545,10 @@ export class ZapDischarge3D {
       this.plasma.set(key, pair);
     }
     const energy = this.energy(a, b);
+    // A braid of a few threads that stays one line between the ends.
     const want = Math.max(
-      2,
-      Math.min(6, Math.round(2 + params.intensity * 2 + energy * 2))
+      1,
+      Math.min(3, Math.round(1.4 + params.intensity + energy))
     );
     while (pair.filaments.length < want)
       pair.filaments.push({ seed: this.rng() * 100, flash: 0.6 });

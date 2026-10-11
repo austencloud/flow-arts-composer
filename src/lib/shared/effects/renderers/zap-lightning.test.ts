@@ -75,6 +75,18 @@ describe("cutChannel", () => {
   });
 });
 
+describe("cutChannel at Branching 0", () => {
+  it("draws one clean channel even on a fast swing", () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const strokes = cutChannel(
+        mulberry32(seed),
+        shape({ branching: 0, energy: 1 })
+      );
+      expect(strokes).toHaveLength(1);
+    }
+  });
+});
+
 describe("strikeLight", () => {
   const strike = (pulses: number[], life = 0.3): Strike => ({
     strokes: [],
@@ -120,6 +132,17 @@ describe("DischargeChannel", () => {
     expect(at30).toBeGreaterThan(14);
     expect(at30).toBeLessThan(34);
     expect(Math.abs(at30 - at120)).toBeLessThanOrEqual(1);
+  });
+
+  it("lets the earlier strike fade quickly once a new one fires", () => {
+    const channel = new DischargeChannel(8);
+    let most = 0;
+    for (let i = 0; i < 240; i++) {
+      channel.step(1 / 60, 12, shape());
+      const lit = channel.strikes.filter((s) => s.age < s.life - 0.061).length;
+      most = Math.max(most, lit);
+    }
+    expect(most).toBe(1);
   });
 
   it("retires strikes once they go dark", () => {
