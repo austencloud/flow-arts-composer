@@ -10,9 +10,11 @@ import {
   CATALOG_TILE_PAD,
   fitEffectCatalog,
   fitEffectRoster,
+  holdEffectRoster,
   MAX_LIST_ROW,
   MIN_CATALOG_PORTRAIT,
   MIN_LIST_ROW,
+  ROSTER_HOLD_WIDTH,
   type EffectCatalogFit,
 } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
 
@@ -117,6 +119,60 @@ describe("fitEffectRoster", () => {
         expect(fit.portrait).toBeLessThanOrEqual(innerW);
         expect(CATALOG_NAME_WIDTH).toBeLessThanOrEqual(innerW);
         expect(fit.cols * fit.rows).toBeGreaterThanOrEqual(COUNT);
+      }
+    }
+  });
+});
+
+describe("holdEffectRoster", () => {
+  /** The narrowest grid that shows pictures from icons. */
+  function pictureThreshold(columns: 2 | 3 | 4) {
+    let width = 1;
+    while (!fitEffectRoster({ width, count: COUNT, columns })) width++;
+    return width;
+  }
+
+  it("keeps the pictures when their own scrollbar narrows the card", () => {
+    // The effect tuner's column: pictures put a thin scrollbar on it, which
+    // took the grid back under the threshold and the icons took it away again.
+    const threshold = pictureThreshold(4);
+    for (const scrollbar of [11, 15, 17]) {
+      const width = threshold - scrollbar;
+      expect(fitEffectRoster({ width, count: COUNT })).toBe(null);
+      const held = holdEffectRoster({ width, count: COUNT });
+      expect(held).toMatchObject({ cols: 4, rows: 4, orientation: "stack" });
+    }
+  });
+
+  it("lets the pictures go once the card loses more than a scrollbar", () => {
+    const width = pictureThreshold(4) - ROSTER_HOLD_WIDTH - 1;
+    expect(holdEffectRoster({ width, count: COUNT })).toBe(null);
+  });
+
+  it("is the plain fit wherever pictures fit anyway", () => {
+    for (const width of [345, 504, 900]) {
+      expect(holdEffectRoster({ width, count: COUNT })).toEqual(
+        fitEffectRoster({ width, count: COUNT })
+      );
+    }
+  });
+
+  it("shrinks held pictures to their column instead of spilling out", () => {
+    for (const columns of [2, 3, 4] as const) {
+      const threshold = pictureThreshold(columns);
+      for (
+        let width = threshold - ROSTER_HOLD_WIDTH;
+        width < threshold;
+        width++
+      ) {
+        const fit = holdEffectRoster({ width, count: COUNT, columns });
+        // The studio's four columns hold across the whole band.
+        if (columns === 4) expect(fit).not.toBe(null);
+        if (!fit) continue;
+        const { innerW } = tile(fit, width, 0);
+        expect(fit.portrait).toBeGreaterThan(0);
+        expect(fit.portrait).toBeLessThanOrEqual(innerW);
+        expect(CATALOG_NAME_WIDTH).toBeLessThanOrEqual(innerW);
       }
     }
   });

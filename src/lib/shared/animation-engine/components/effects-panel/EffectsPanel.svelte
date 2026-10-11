@@ -18,6 +18,7 @@
   import {
     fitEffectCatalog,
     fitEffectRoster,
+    holdEffectRoster,
   } from "#lib/shared/animation-engine/domain/effect-catalog-fit.js";
   import {
     matchPresetId,
@@ -193,11 +194,21 @@
   const catalogFit = $derived(
     activeEffect === "none" ? restingCatalogFit : null
   );
-  const rosterFit = $derived(
-    pictureHost
-      ? fitEffectRoster({ width: rosterWidth, count: rosterCount })
-      : null
-  );
+  // Pictures that are showing keep showing until the card loses more than a
+  // scrollbar's width (holdEffectRoster). In a scrolling host such as the
+  // effect tuner's column, their extra height brings in the scrollbar that
+  // would otherwise turn them back into icons, and the grid would flicker.
+  let rosterShowsPictures = false;
+  const rosterFit = $derived.by(() => {
+    const box = { width: rosterWidth, count: rosterCount };
+    const fit = !pictureHost
+      ? null
+      : rosterShowsPictures
+        ? holdEffectRoster(box)
+        : fitEffectRoster(box);
+    rosterShowsPictures = fit !== null;
+    return fit;
+  });
 
   /** The look each tile shows (effect-catalog-looks). The list arrangement
    *  has names only. */
