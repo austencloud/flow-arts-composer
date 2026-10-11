@@ -1034,6 +1034,7 @@
     border-top: 1px solid var(--theme-stroke);
   }
   .credit p {
+    max-width: 44rem;
     margin-bottom: 1rem;
   }
   .related-modes {
