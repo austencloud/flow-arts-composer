@@ -406,9 +406,6 @@
   }
   let tabContentRect = $state<DOMRectReadOnly>();
   let tabContentElement = $state<HTMLDivElement>();
-  // Tall inspectors give the grid previews room to grow. Short sheets keep
-  // one scrolling page so the source controls and all nine choices stay reachable.
-  const fillGridPanel = $derived((tabContentRect?.height ?? 0) >= 560);
 
   function chooseSequence(sequenceData: SequenceData): void {
     const previous = sequenceWord ?? null;
@@ -460,7 +457,7 @@
 
   <div
     class="tab-content"
-    class:fill-grid={activeTab === "grid" && fillGridPanel}
+    class:fill-grid={activeTab === "grid"}
     bind:this={tabContentElement}
     bind:contentRect={tabContentRect}
   >
@@ -549,7 +546,7 @@
           aria-labelledby="hub-tab-grid"
         >
           <PerformerGridPanel
-            fill={fillGridPanel}
+            fill
             performers={selectedPerformers}
             onChange={(join) =>
               writeParameter({ field: "gridJoin", value: join }, () =>
@@ -811,6 +808,16 @@
   .fill-grid .tab-pane {
     display: flex;
     flex-direction: column;
+  }
+
+  .tab-content.fill-grid {
+    overflow: visible;
+  }
+
+  @container (max-width: 360px) {
+    .tab-content.fill-grid {
+      padding: 8px 6px;
+    }
   }
 
   .fill-grid .scoped-panes,
