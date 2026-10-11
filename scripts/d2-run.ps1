@@ -1,9 +1,9 @@
 # Runs a heavy check (full vitest suite, full build, verify:* gates) on d2, the
 # office desktop, so it stops competing with agents on d1.
 #
-#   pwsh scripts/d2-run.ps1 "pnpm vitest run"
+#   pwsh scripts/d2-run.ps1 "pnpm run test:ci"
 #   pwsh scripts/d2-run.ps1 -Ref 26299bc380 -Name ship -Command "pnpm run build && pnpm run verify:offline"
-#   pwsh scripts/d2-run.ps1 -NoWait -Name suite -Command "pnpm vitest run"   # returns the job id
+#   pwsh scripts/d2-run.ps1 -NoWait -Name suite -Command "pnpm run test:ci"   # returns the job id
 #   pwsh scripts/d2-run.ps1 -Job suite-26299bc380-171502                    # status + log tail
 #
 # The commit is pushed to d2 as refs/heads/d2-run/<sha>, checked out in a

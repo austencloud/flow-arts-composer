@@ -29,12 +29,12 @@ and stop after the evidence required by `AGENTS.md` passes.
 
 ## Heavy Checks Run on d2
 
-On d1, send a full Vitest suite, full build, `check:full`, or a `verify:*` gate
-to d2, the office desktop, instead of running it locally. Commit first: only
-committed content runs there.
+On d1, send a full Vitest suite (`pnpm run test:ci`), full build, `check:full`,
+or a `verify:*` gate to d2, the office desktop, instead of running it locally.
+Commit first: only committed content runs there.
 
 ```powershell
-pwsh scripts/d2-run.ps1 "pnpm vitest run"
+pwsh scripts/d2-run.ps1 "pnpm run test:ci"
 pwsh scripts/d2-run.ps1 -Ref <sha> -Name build "pnpm run build"
 pwsh scripts/d2-run.ps1 -NoWait "pnpm run check:full"   # prints a job id
 pwsh scripts/d2-run.ps1 -Job <id>                      # waits, then log tail
