@@ -155,8 +155,8 @@
 
   /**
    * Slides each grid between its own place and the picture's, growing to the
-   * picture's size, while the picture dissolves in (or out). Under reduced
-   * motion the swap is instant.
+   * picture's size, while the picture dissolves in (or out). Only the slide
+   * eases; the fades are even. Under reduced motion the swap is instant.
    */
   function fly(joining: boolean) {
     cancelFlight();
@@ -171,38 +171,35 @@
       const dy =
         picture.top + picture.height / 2 - (place.top + place.height / 2);
       const met = `translate(${dx}px, ${dy}px) scale(${picture.width / place.width})`;
-      const keyframes: Keyframe[] = [
-        { transform: "none", opacity: 1, offset: 0 },
-        { transform: met, opacity: 1, offset: 0.5 },
-        { transform: met, opacity: 0, offset: 0.8 },
-        { transform: met, opacity: 0, offset: 1 },
-      ];
-      flight.push(
-        half.animate(joining ? keyframes : reverse(keyframes), {
-          duration: SLIDE_MS,
-          easing: EASE,
-        })
-      );
+      const keyframes: Keyframe[] = joining
+        ? [
+            { transform: "none", opacity: 1, offset: 0, easing: EASE },
+            { transform: met, opacity: 1, offset: 0.5 },
+            { transform: met, opacity: 0, offset: 0.8 },
+            { transform: met, opacity: 0, offset: 1 },
+          ]
+        : [
+            { transform: met, opacity: 0, offset: 0 },
+            { transform: met, opacity: 0, offset: 0.2 },
+            { transform: met, opacity: 1, offset: 0.5, easing: EASE },
+            { transform: "none", opacity: 1, offset: 1 },
+          ];
+      flight.push(half.animate(keyframes, SLIDE_MS));
     }
-    const dissolve: Keyframe[] = [
-      { opacity: 0, offset: 0 },
-      { opacity: 0, offset: 0.45 },
-      { opacity: 1, offset: 0.85 },
-      { opacity: 1, offset: 1 },
-    ];
-    flight.push(
-      fusedFrame.animate(joining ? dissolve : reverse(dissolve), {
-        duration: SLIDE_MS,
-        easing: EASE,
-      })
-    );
-  }
-
-  /** The same keyframes played backwards. */
-  function reverse(keyframes: Keyframe[]): Keyframe[] {
-    return keyframes
-      .map((frame) => ({ ...frame, offset: 1 - (frame.offset ?? 0) }))
-      .reverse();
+    const dissolve: Keyframe[] = joining
+      ? [
+          { opacity: 0, offset: 0 },
+          { opacity: 0, offset: 0.45 },
+          { opacity: 1, offset: 0.85 },
+          { opacity: 1, offset: 1 },
+        ]
+      : [
+          { opacity: 1, offset: 0 },
+          { opacity: 1, offset: 0.15 },
+          { opacity: 0, offset: 0.55 },
+          { opacity: 0, offset: 1 },
+        ];
+    flight.push(fusedFrame.animate(dissolve, SLIDE_MS));
   }
 
   /**
