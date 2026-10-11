@@ -67,3 +67,46 @@ export function resolvePulsePalette(intent: PulseIntent): PulsePalette {
   if (intent.palette === "custom") return deriveCustomPalette(intent.customColor);
   return PALETTE_REGISTRY[intent.palette] ?? PALETTE_REGISTRY.sonar!;
 }
+
+/** Color fields the ring resolvers read; both resolved param shapes carry them. */
+interface PulseColorSource {
+  colorMode: PulseIntent["colorMode"];
+  colorPalette: readonly string[];
+  resolvedPalette: PulsePalette;
+}
+
+/**
+ * The ring color for one tip. Solid draws the selected palette's ring; Prop
+ * follows the tip's own prop color; Palette deals the multicolor list across
+ * tips; Rainbow walks the hue wheel over time, offset per tip.
+ */
+export function resolvePulseRingColor(
+  params: PulseColorSource,
+  tipColor: string,
+  slot: number,
+  clock: number
+): string {
+  switch (params.colorMode) {
+    case "prop-matched":
+      return tipColor || params.resolvedPalette.ring;
+    case "rainbow":
+      return hslToHex(((((clock * 60 + slot * 53) % 360) + 360) % 360) / 360, 0.85, 0.62);
+    case "palette": {
+      const list = params.colorPalette;
+      return list.length > 0 ? list[slot % list.length]! : params.resolvedPalette.ring;
+    }
+    default:
+      return params.resolvedPalette.ring;
+  }
+}
+
+/**
+ * The trailing wake color behind a ring. Solid uses the palette's own fade;
+ * every other mode darkens the ring color so each hand keeps its hue.
+ */
+export function resolvePulseWakeColor(params: PulseColorSource, ring: string): string {
+  if (params.colorMode === "solid") return params.resolvedPalette.fade;
+  if (!/^#[0-9a-f]{6}$/i.test(ring)) return params.resolvedPalette.fade;
+  const { h, s, l } = hexToHsl(ring);
+  return hslToHex(h, clamp01(s * 1.1), clamp01(l * 0.45));
+}

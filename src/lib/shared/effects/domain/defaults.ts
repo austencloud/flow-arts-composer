@@ -210,8 +210,7 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
     thickness: 0.3,
     palette: "sonar",
     customColor: "#38bdf8",
-    colorMode: "solid",
-    color: "#38bdf8",
+    colorMode: "prop-matched",
     colorPalette: ["#38bdf8", "#a855f7", "#22d3ee", "#f472b6", "#fbbf24"],
     trackingMode: "both_ends",
     velocityScale: 0.5,
@@ -219,6 +218,7 @@ export const DEFAULT_EFFECTS_CONFIG: EffectsConfig = {
     chromatic: 0.3,
     flash: 0.5,
     harmonics: 0.3,
+    charge: 0.6,
   },
 
   activePresets: {

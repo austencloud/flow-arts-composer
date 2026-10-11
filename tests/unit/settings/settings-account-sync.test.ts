@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BackgroundType } from "@austencloud/backgrounds";
 
 type RemoteSettings = Record<string, unknown>;
@@ -49,6 +49,16 @@ vi.mock(
 vi.mock("#lib/shared/analytics/services/posthog-activity-logger.js", () => ({
   logSettingChange: vi.fn(async () => {}),
 }));
+// A bare package name resolves the same on every machine, so even a real
+// logger never pulls the full posthog-js bundle into this file. Any property
+// path is a callable no-op (never a thenable), so a real logger cannot throw.
+vi.mock("posthog-js", () => {
+  const noop: unknown = new Proxy(() => undefined, {
+    get: (_target, key) => (key === "then" ? undefined : noop),
+    apply: () => undefined,
+  });
+  return { default: noop };
+});
 vi.mock("#lib/shared/utils/debug-logger.js", () => ({
   createComponentLogger: () => ({
     info: () => {},
@@ -69,10 +79,11 @@ async function loadSettingsService() {
 }
 
 describe("account settings synchronization", () => {
-  // The stub above did not take on CI on 2026-10-10: the real logger and
-  // posthog-js were still loading at teardown, and Vitest failed the run with
-  // every test green. Waiting for the same import settles it either way.
-  afterAll(async () => {
+  // The logger stub above did not take on CI on 2026-10-10: the real logger
+  // and posthog-js were still loading at teardown, and Vitest failed the run
+  // with every test green. Each test resets modules and fires its own import,
+  // so wait for it before the next reset; that settles it either way.
+  afterEach(async () => {
     await import("#lib/shared/analytics/services/posthog-activity-logger.js");
   });
 

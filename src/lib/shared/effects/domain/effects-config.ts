@@ -15,7 +15,7 @@ import type {
 } from "#lib/shared/animation-engine/domain/types/fire-types.js";
 import type { LedSimulatorConfig } from "#lib/shared/animation-engine/domain/types/led-types.js";
 
-export const EFFECTS_CONFIG_VERSION = 39;
+export const EFFECTS_CONFIG_VERSION = 40;
 
 /** User-facing 2D Fire look. The renderer translates this into its internal profile. */
 export type FireRenderingStyle = "natural" | "liquid";
@@ -483,33 +483,35 @@ export interface PulseIntent {
   intensity: number;
   /** 0-1. Max ring expansion radius. Maps to 20-200px. */
   reach: number;
-  /** 0.2-3.0 seconds. Ring lifetime from birth to full fade. */
+  /** 0.2-3.0 beats. Ring lifetime from birth to full fade, counted in beats
+   *  so every playback speed draws the same picture. */
   lifetime: number;
-  /** "beat" = on beat onsets, "velocity" = on acceleration threshold, "continuous" = steady emission amplified by beats. */
+  /** "beat" = a ring on each beat, "velocity" = a ring at the fastest point
+   *  of each swing, "continuous" = a steady stream that quickens with speed,
+   *  with a full ring on each beat. */
   trigger: "beat" | "velocity" | "continuous";
   /** "stroke" = thin expanding outlines, "glow" = gradient-filled halos with bright leading edge. */
   style: "stroke" | "glow";
   /** 1-8. Beat interval for beat trigger. */
   beatInterval: number;
-  /** 0-1. Velocity threshold for velocity trigger. */
+  /** 0-1. How fast a swing must be to fire the velocity trigger. */
   velocityThreshold: number;
   /** 0-1. Ring stroke width or gradient band thickness. */
   thickness: number;
-  /** Named palette. "custom" uses customColor. */
+  /** Named palette used by the solid color mode. "custom" uses customColor. */
   palette: "sonar" | "ripple" | "aurora" | "neon" | "ember" | "void" | "custom";
   /** Hex string. Used only when palette === "custom". */
   customColor: string;
-  /** Color selection mode. */
+  /** Color selection mode. "solid" draws the selected palette. */
   colorMode: "solid" | "prop-matched" | "rainbow" | "palette";
-  /** Hex - when colorMode === "solid". */
-  color: string;
   /** Multicolor palette (3-5 hex) - when colorMode === "palette". */
   colorPalette: string[];
   /** Which staff end(s) emit rings. */
   trackingMode: "left_end" | "right_end" | "both_ends";
   /** 0-1. How much birth tip-speed drives ring size + brightness. */
   velocityScale: number;
-  /** 0-1. Mach-cone deform strength (renderer adds a base directional floor). */
+  /** 0-1. How much of the tip's momentum a ring carries, and how hard its
+   *  leading side burns. */
   asymmetry: number;
   /** 0-1. RGB fringe split on high-energy rings. */
   chromatic: number;
@@ -517,6 +519,9 @@ export interface PulseIntent {
   flash: number;
   /** 0-1. Trailing overtone-ring count (maps to round(·*3)). */
   harmonics: number;
+  /** 0-1. Beat trigger only: how strongly the next ring gathers at the tip
+   *  before its beat. */
+  charge: number;
 }
 
 export interface EffectsConfig {
