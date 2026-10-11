@@ -7,6 +7,7 @@ import {
   faLayerGroup,
   faPalette,
   faPenToSquare,
+  faPersonRunning,
   faShapes,
   faShuffle,
   faSliders,
@@ -20,14 +21,15 @@ import { tkaEditorOf } from "./tka-editor-context";
  * tka's own tools on the row, with the names and icons the row shows today
  * (the package's ui/editor/post-editor-labels.ts, `toolLabel` and
  * `TOOL_ICON`). Beats and Clear act at once; the rest open a panel. Grid and
- * Edit arrangement are an arrangement's; Layers, Offset and Clear belong to
- * its cell in hand.
+ * Edit arrangement are an arrangement's; Layers, Offset, Effort and Clear
+ * belong to its cell in hand. Look is an arrangement's own look there, else
+ * the post's animation defaults.
  */
 export const TKA_TOOLS: readonly PluginTool[] = [
   {
     id: "look",
     type: "panel",
-    label: () => "Animation defaults",
+    label: (_t, kind) => (kind === "arrangement" ? "Look" : "Animation defaults"),
     icon: faPalette,
   },
   {
@@ -97,6 +99,12 @@ export const TKA_TOOLS: readonly PluginTool[] = [
     type: "panel",
     label: () => "Offset",
     icon: faStopwatch,
+  },
+  {
+    id: "effort",
+    type: "panel",
+    label: () => "Effort",
+    icon: faPersonRunning,
   },
   {
     id: "clear",

@@ -15,13 +15,31 @@ import {
   type FluidSplat,
 } from "../fluid/web-gl-fluid-solver-2d";
 import { VERTEX_SHADER } from "../fluid/fluid-shader-sources";
-import { SMOKE_DISPLAY_FRAG } from "./smoke-shader-sources";
+import {
+  SMOKE_DISPLAY_FRAG,
+  SMOKE_EDGE_SPONGE_FRAG,
+} from "./smoke-shader-sources";
 
 const MAX_DPR = 2;
 const MAX_SUBSTEP = 1 / 45;
 
+/**
+ * Edge sponge: per-second decay at the pane wall. The top band is wider
+ * because buoyant smoke heads there; it should leave the frame, not pool.
+ */
+export const SMOKE_EDGE_SPONGE = {
+  rate: 5,
+  sideBand: 0.1,
+  topBand: 0.24,
+} as const;
+
+/** How hard the tip drags the surrounding air, as a share of its speed. */
+const TIP_DRAG = 0.12;
+
+type SmokeProgramKey = FluidProgramKey | "display" | "sponge";
+
 interface PendingProgram {
-  key: FluidProgramKey | "display";
+  key: SmokeProgramKey;
   program: WebGLProgram;
   fragmentShader: WebGLShader;
   uniforms: string[];
@@ -75,7 +93,7 @@ export function computeSmokeEmitterMetrics(
 ): SmokeEmitterMetrics {
   const scale = computeEffectScale(width, height);
   const splatRadius =
-    (params.baseRadius * scale * (0.72 + params.intensity * 0.88)) /
+    (params.baseRadius * scale * (0.44 + params.intensity * 0.5)) /
     Math.max(width, height, 1);
   const riseGridVelocity =
     ((params.resolvedRiseSpeed * scale) / Math.max(height, 1)) * gridHeight;
@@ -84,6 +102,20 @@ export function computeSmokeEmitterMetrics(
     params.motionReferenceSpeed * 60 * scale
   );
   return { splatRadius, riseGridVelocity, motionReferenceSpeedPx };
+}
+
+/**
+ * Buoyancy for the warm air that carries the smoke. The rise slider sets a
+ * terminal speed (grid cells per second) with a floor so even Fog drifts, and
+ * the lift is strong enough to reach it within about half a second of warm
+ * air, so smoke climbs out of the frame instead of loitering at the props.
+ */
+export function computeSmokeLift(riseGridVelocity: number): {
+  buoyancy: number;
+  terminalVelocity: number;
+} {
+  const terminalVelocity = 10 + Math.max(0, riseGridVelocity) * 1.6;
+  return { buoyancy: terminalVelocity * 5, terminalVelocity };
 }
 
 export function hexToLinearRgb(hex: string): readonly [number, number, number] {
@@ -113,6 +145,7 @@ export class WebGLSmokeRenderer {
   private density: FluidField | null = null;
   private temperature: FluidField | null = null;
   private displayProgram: FluidProgram | null = null;
+  private spongeProgram: FluidProgram | null = null;
   private pending: PendingProgram[] = [];
   private vertexShader: WebGLShader | null = null;
   private parallelCompile: { COMPLETION_STATUS_KHR: number } | null = null;
@@ -224,12 +257,12 @@ export class WebGLSmokeRenderer {
     const densityDissipation = computeSmokeDensityDissipation(
       params.lifetimeSeconds
     );
-    const thermalLifetime = Math.max(0.45, params.lifetimeSeconds * 0.42);
+    const thermalLifetime = Math.max(0.45, params.lifetimeSeconds * 0.85);
     const thermalDissipation = Math.exp(-3 / (60 * thermalLifetime));
     const instanceCount = getActiveFluidInstanceCount();
     const useMacCormack = shouldUseFluidMacCormack(instanceCount);
     const iterations = computeFluidJacobiIterations(instanceCount);
-    const riseGridVelocity = metrics.riseGridVelocity;
+    const lift = computeSmokeLift(metrics.riseGridVelocity);
     for (let index = 0; index < substeps; index++) {
       this.solver.advect(
         this.solver.velocity,
@@ -237,18 +270,20 @@ export class WebGLSmokeRenderer {
         0.985,
         stepDt
       );
+      // Confinement past this point carves grid-sized ridges into thin
+      // smoke; Curl and the noise below supply the curls instead.
       this.solver.applyVorticity(
         stepDt,
-        5 + params.resolvedCurlStrength * 16,
+        1.5 + params.resolvedCurlStrength * 5,
         this.clock
       );
       this.solver.applyBuoyancy({
         temperature: this.temperature.read,
         density: this.density.read,
         dt: stepDt,
-        buoyancy: riseGridVelocity * 1.2,
+        buoyancy: lift.buoyancy,
         densityWeight: 0.055,
-        terminalVelocity: Math.max(8, riseGridVelocity),
+        terminalVelocity: lift.terminalVelocity,
       });
       this.solver.applyCurlNoise(
         this.density.read,
@@ -257,37 +292,34 @@ export class WebGLSmokeRenderer {
         this.clock
       );
       this.solver.project(0.82, iterations);
+      const densitySource = this.density.read;
       if (useMacCormack) {
-        const densitySource = this.density.read;
         this.solver.advectMacCormack(
           this.density,
           densitySource,
           densityDissipation,
-          stepDt
-        );
-        const temperatureSource = this.temperature.read;
-        this.solver.advectMacCormack(
-          this.temperature,
-          temperatureSource,
-          thermalDissipation,
           stepDt
         );
       } else {
-        const densitySource = this.density.read;
         this.solver.advect(
           this.density,
           densitySource,
           densityDissipation,
           stepDt
         );
-        const temperatureSource = this.temperature.read;
-        this.solver.advect(
-          this.temperature,
-          temperatureSource,
-          thermalDissipation,
-          stepDt
-        );
       }
+      // Warm air stays on the diffusive advection on purpose: a sharp
+      // temperature field gives every grid cell its own lift and the plume
+      // shreds into vertical streaks.
+      const temperatureSource = this.temperature.read;
+      this.solver.advect(
+        this.temperature,
+        temperatureSource,
+        thermalDissipation,
+        stepDt
+      );
+      this.applyEdgeSponge(this.density, stepDt);
+      this.applyEdgeSponge(this.temperature, stepDt);
     }
     this.display(params);
   }
@@ -356,8 +388,8 @@ export class WebGLSmokeRenderer {
           y,
           radius: radius * 1.15,
           value: [
-            ((vx / Math.max(this.width, 1)) * sim.width * 0.28) / count,
-            ((-vy / Math.max(this.height, 1)) * sim.height * 0.28) / count,
+            ((vx / Math.max(this.width, 1)) * sim.width * TIP_DRAG) / count,
+            ((-vy / Math.max(this.height, 1)) * sim.height * TIP_DRAG) / count,
             0,
           ],
         });
@@ -368,6 +400,25 @@ export class WebGLSmokeRenderer {
     sim.splat(this.density!, densitySplats);
     sim.splat(this.temperature!, thermalSplats);
     sim.splat(sim.velocity, velocitySplats);
+  }
+
+  private applyEdgeSponge(field: FluidField, dt: number): void {
+    const gl = this.gl!;
+    const program = this.spongeProgram!;
+    gl.useProgram(program.program);
+    this.bindTexture(program, "u_source", field.read.texture, 0);
+    gl.uniform1f(program.uniforms.get("u_dt")!, dt);
+    gl.uniform1f(program.uniforms.get("u_rate")!, SMOKE_EDGE_SPONGE.rate);
+    gl.uniform1f(
+      program.uniforms.get("u_sideBand")!,
+      SMOKE_EDGE_SPONGE.sideBand
+    );
+    gl.uniform1f(program.uniforms.get("u_topBand")!, SMOKE_EDGE_SPONGE.topBand);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, field.write.fbo);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    const read = field.read;
+    field.read = field.write;
+    field.write = read;
   }
 
   private display(params: Smoke2DParams): void {
@@ -399,6 +450,11 @@ export class WebGLSmokeRenderer {
     gl.uniform1f(
       program.uniforms.get("u_hueShift")!,
       params.resolvedPalette.hueShift ? 1 : 0
+    );
+    gl.uniform2f(
+      program.uniforms.get("u_texelSize")!,
+      1 / this.solver!.width,
+      1 / this.solver!.height
     );
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
@@ -459,6 +515,7 @@ export class WebGLSmokeRenderer {
       }
       if (this.vertexShader) gl.deleteShader(this.vertexShader);
       if (this.displayProgram) gl.deleteProgram(this.displayProgram.program);
+      if (this.spongeProgram) gl.deleteProgram(this.spongeProgram.program);
     }
     this.canvas?.remove?.();
     this.canvas = null;
@@ -467,6 +524,7 @@ export class WebGLSmokeRenderer {
     this.density = null;
     this.temperature = null;
     this.displayProgram = null;
+    this.spongeProgram = null;
     this.pending = [];
     this.vertexShader = null;
     this.tipState.clear();
@@ -500,7 +558,13 @@ export class WebGLSmokeRenderer {
           "u_intensity",
           "u_time",
           "u_hueShift",
+          "u_texelSize",
         ],
+      },
+      {
+        key: "sponge" as const,
+        fragment: SMOKE_EDGE_SPONGE_FRAG,
+        uniforms: ["u_source", "u_dt", "u_rate", "u_sideBand", "u_topBand"],
       },
     ];
     this.pending = definitions.map((definition) => {
@@ -558,6 +622,7 @@ export class WebGLSmokeRenderer {
       }
       const wrapped = { program: item.program, uniforms };
       if (item.key === "display") this.displayProgram = wrapped;
+      else if (item.key === "sponge") this.spongeProgram = wrapped;
       else fluidPrograms[item.key] = wrapped;
       gl.detachShader(item.program, this.vertexShader!);
       gl.detachShader(item.program, item.fragmentShader);

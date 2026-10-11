@@ -1,0 +1,162 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Bubbles tiles</title>
+<link rel="stylesheet" href="tiles.css"></head>
+<body>
+<h1>Bubbles · six looks</h1>
+<p class="lede">A field of bubbles rising off the tip's last sweep. Each one is the renderer's bubble: a clear film that brightens toward the edge, a hairline rim, a thin-film sheen on the shadowed side, a specular up-left and a soft bounce down-right. Sizes follow the renderer's power law (mostly small, a few big), the big ones have risen furthest, and a couple have just popped into film slivers. Intensity sets size, size jitter adds the big ones, buoyancy lifts the field, emission sets the count. Oil rims shift magenta → cyan → gold with age.</p>
+<div id="root"></div>
+<script type="module">
+import { W, H, lcg, ground, blob, hexToRgb, css } from './kit.js';
+
+const PAL = {
+  soap:      { rim: '#c8e0ff', highlight: '#ffffff', fill: [200,224,255], fillA: 0.22, pop: '#e8f4ff' },
+  champagne: { rim: '#f4e8c8', highlight: '#ffffff', fill: [244,232,200], fillA: 0.26, pop: '#fff8e0' },
+  oil:       { rim: '#ff80d0', highlight: '#ffffff', fill: [200,160,240], fillA: 0.24, pop: '#c080ff', iridescent: true },
+  acid:      { rim: '#b8ff6f', highlight: '#e8ffc0', fill: [184,255,111], fillA: 0.20, pop: '#98e860' },
+  spirit:    { rim: '#c0fff4', highlight: '#ffffff', fill: [192,255,244], fillA: 0.18, pop: '#a0f8e0' },
+};
+const PRESETS = [
+  { name: 'Classic',    patch: { palette: 'soap',      ambientEmission: 0.3,  motionEmission: 0.55, intensity: 0.42, sizeJitter: 0.45, buoyancy: 0.5 } },
+  { name: 'Fizz',       patch: { palette: 'champagne', ambientEmission: 0.85, motionEmission: 0.6,  intensity: 0.25, sizeJitter: 0.15, buoyancy: 0.95 } },
+  { name: 'Dream',      patch: { palette: 'soap',      ambientEmission: 0.32, motionEmission: 0.2,  intensity: 0.68, sizeJitter: 0.85, buoyancy: 0.2 } },
+  { name: 'Iridescent', patch: { palette: 'oil',       ambientEmission: 0.35, motionEmission: 0.45, intensity: 0.5,  sizeJitter: 0.6,  buoyancy: 0.45 } },
+  { name: 'Acid Fizz',  patch: { palette: 'acid',      ambientEmission: 0.7,  motionEmission: 0.7,  intensity: 0.28, sizeJitter: 0.25, buoyancy: 0.85 } },
+  { name: 'Spirit',     patch: { palette: 'spirit',    ambientEmission: 0.45, motionEmission: 0.3,  intensity: 0.4,  sizeJitter: 0.7,  buoyancy: 0.28 } },
+];
+
+const SCALE = 2.4;
+const TAU = Math.PI * 2;
+// The sweep the tip just made: tail lower-left, head upper-right. Lower in
+// the frame than the other tiles so the field has room to rise.
+const ARC = { x0: 70, y0: 240, cx: 330, cy: 150, x1: 650, y1: 215 };
+function arcAt(t) { const u = 1 - t; return { x: u*u*ARC.x0 + 2*u*t*ARC.cx + t*t*ARC.x1, y: u*u*ARC.y0 + 2*u*t*ARC.cy + t*t*ARC.y1 }; }
+
+/** The renderer's oil sampler: magenta → cyan → green-gold over life (shortest hue path). */
+function oilRim(t) {
+  const stops = [[0, 320], [0.5, 210], [1, 80]];
+  let a = stops[0], b = stops[2];
+  for (let i = 0; i < 2; i++) if (t >= stops[i][0] && t <= stops[i + 1][0]) { a = stops[i]; b = stops[i + 1]; break; }
+  const k = (t - a[0]) / (b[0] - a[0]);
+  let d = b[1] - a[1]; if (d > 180) d -= 360; if (d < -180) d += 360;
+  return `hsl(${((a[1] + d * k) + 360) % 360}, 100%, 75%)`;
+}
+
+function field(p, rand) {
+  const baseR = 6 * SCALE * (0.7 + 0.9 * p.intensity) * 1.35;   // tile reads 2.4x smaller than drawn
+  const spread = 0.42 + p.sizeJitter * 1.55;
+  const lifeMult = (p.palette === 'champagne' || p.palette === 'acid') ? 0.55 : 1.0;
+  const life = (1.0 + p.intensity * 2.0) * lifeMult;
+  const count = Math.round(14 + p.ambientEmission * 30 + p.motionEmission * 26);
+  const pops = Math.round(1 + (1 - lifeMult) * 3 + p.ambientEmission * 2);
+  const out = [];
+  for (let i = 0; i < count + pops; i++) {
+    const popping = i >= count;
+    const sizeMul = 0.34 + Math.pow(rand(), 2.0) * spread;
+    const r = baseR * sizeMul;
+    const t = 0.08 + rand() * 0.9;                  // where along the sweep it was born
+    const o = arcAt(t);
+    const lifeT = popping ? 1 : rand();            // 0 just born at the tip, 1 about to pop
+    const age = lifeT * life * (0.7 + rand() * 0.6);
+    const up = (16 + p.buoyancy * 92) * (0.55 + sizeMul * 0.75) * SCALE * 0.5;
+    const wobble = Math.sin(age * (1.4 + rand() * 1.9) + rand() * TAU) * (1.6 + rand() * 2.6) * SCALE * (1.3 - sizeMul * 0.5);
+    const drift = (rand() - 0.5) * 22 * SCALE * 0.5 * Math.min(1, age);
+    const fadeIn = lifeT < 0.12 ? lifeT / 0.12 : 1, fadeOut = lifeT > 0.8 ? 1 - (lifeT - 0.8) / 0.2 : 1;
+    out.push({
+      x: o.x + wobble + drift, y: Math.max(36, o.y - up * age), r: r * (1 + 0.08 * lifeT * lifeT),
+      lifeT, alpha: (popping ? 1 : fadeIn * fadeOut) * 0.92, filmPhase: rand(), popping, popT: popping ? 0.35 + rand() * 0.4 : 0,
+    });
+  }
+  // Big ones in front: draw small first.
+  out.sort((a, b) => a.r - b.r);
+  return out;
+}
+
+function drawBubble(ctx, b, pal) {
+  pal.glow ??= 1;
+  const { x, y, r, alpha } = b;
+  const rim = pal.iridescent ? oilRim(b.lifeT) : pal.rim;
+  const rimWidth = Math.min(1.9, Math.max(0.65, r * 0.055 / SCALE)) * SCALE * 0.8;
+  ctx.lineCap = 'round';
+  if (b.popping) {
+    // The film relaxing into a flattened ring, slivers flying off.
+    const t = b.popT;
+    ctx.globalAlpha = alpha * Math.pow(1 - t, 1.6);
+    ctx.lineWidth = rimWidth * 1.45; ctx.strokeStyle = rim;
+    const pr = r * (1 + 0.18 * (1 - Math.pow(1 - t, 2)));
+    ctx.beginPath(); ctx.ellipse(x, y, pr * (1 + t * 0.12), pr * Math.max(0.16, 1 - t * 0.84), 0, 0, TAU); ctx.stroke();
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = pal.iridescent ? oilRim(b.lifeT) : pal.pop;
+    const n = 6, sizeK = Math.min(2, r / (6 * SCALE));
+    for (let i = 0; i < n; i++) {
+      const th = (i / n) * TAU + b.filmPhase * 0.4, mag = r * (0.9 + ((i * 7) % 5) / 5 * 0.9) * (0.6 + sizeK * 0.5);
+      const fr = (0.6 + ((i * 3) % 4) / 4 * 0.7) * (0.5 + sizeK) * SCALE * 0.9;
+      ctx.globalAlpha = alpha * (1 - t) * 0.9;
+      ctx.beginPath(); ctx.ellipse(x + Math.cos(th) * mag, y + Math.sin(th) * mag, fr * 1.65, fr * 0.34, th + b.filmPhase * 5, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+    return;
+  }
+  if (r > 5 * SCALE) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    blob(ctx, x, y, r * 1.6, r * 1.6, pal.fill.map(v => v / 255), 0.1 * alpha * pal.glow);
+    ctx.restore();
+  }
+  // Interior film: clear through the middle, brightening into a band at the edge.
+  const [fr, fg, fb] = pal.fill, fa = pal.fillA;
+  const body = ctx.createRadialGradient(x, y, 0, x, y, r);
+  body.addColorStop(0, `rgba(${fr},${fg},${fb},0)`);
+  body.addColorStop(0.6, `rgba(${fr},${fg},${fb},${fa * 0.1})`);
+  body.addColorStop(0.9, `rgba(${fr},${fg},${fb},${Math.min(1, fa * 1.1)})`);
+  body.addColorStop(1, `rgba(${fr},${fg},${fb},${fa * 0.18})`);
+  ctx.globalAlpha = alpha; ctx.fillStyle = body;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+  // Hairline rim.
+  ctx.lineWidth = rimWidth; ctx.strokeStyle = rim;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
+  // Thin-film sheen on the shadowed arc, opposite the specular.
+  if (r > 2 * SCALE) {
+    const sheenT = (b.filmPhase + b.lifeT * 0.35) % 1;
+    ctx.globalAlpha = alpha * (pal.iridescent ? 0.65 : 0.3);
+    ctx.lineWidth = rimWidth * 1.5; ctx.strokeStyle = oilRim(sheenT);
+    ctx.beginPath(); ctx.arc(x, y, r * 0.92, TAU * 0.06, TAU * 0.42); ctx.stroke();
+  }
+  // Specular up-left, bounce down-right.
+  const hi = hexToRgb(pal.highlight);
+  const spec = ctx.createRadialGradient(x - r * 0.4, y - r * 0.44, 0, x - r * 0.4, y - r * 0.44, r * 0.2);
+  spec.addColorStop(0, css(hi, 1)); spec.addColorStop(0.45, css(hi, 0.55)); spec.addColorStop(1, css(hi, 0));
+  ctx.globalAlpha = alpha * 0.9; ctx.fillStyle = spec;
+  ctx.beginPath(); ctx.arc(x - r * 0.4, y - r * 0.44, r * 0.2, 0, TAU); ctx.fill();
+  if (r > 3 * SCALE) {
+    const bo = ctx.createRadialGradient(x + r * 0.36, y + r * 0.42, 0, x + r * 0.36, y + r * 0.42, r * 0.3);
+    bo.addColorStop(0, css(hi, 0.4)); bo.addColorStop(1, css(hi, 0));
+    ctx.globalAlpha = alpha * 0.32; ctx.fillStyle = bo;
+    ctx.beginPath(); ctx.arc(x + r * 0.36, y + r * 0.42, r * 0.3, 0, TAU); ctx.fill();
+  }
+}
+
+function draw(ctx, p, rand) {
+  const pal = PAL[p.palette];
+  ground(ctx, [0.03, 0.03, 0.055]);
+  // A soft wash in the film color where the field is densest, so the
+  // clear bubbles have something to catch.
+  const head = arcAt(0.85);
+  blob(ctx, head.x - 80, head.y - 70, 340, 170, pal.fill.map(v => v / 255), 0.16 * (0.6 + p.intensity));
+  blob(ctx, 200, 170, 280, 140, pal.fill.map(v => v / 255), 0.1 * (0.6 + p.intensity));
+  ctx.save();
+  for (const b of field(p, rand)) drawBubble(ctx, b, pal);
+  ctx.restore();
+}
+
+const root = document.getElementById('root');
+for (const preset of PRESETS) {
+  const p = preset.patch;
+  const row = document.createElement('div'); row.className = 'card';
+  row.innerHTML = `<h3>${preset.name} <small>${p.palette} · size ${p.intensity} · jitter ${p.sizeJitter} · rise ${p.buoyancy}</small></h3><div class="row"></div>`;
+  for (const cls of ['small', 'large']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H; c.className = cls;
+    draw(c.getContext('2d'), p, lcg(0xb0b + preset.name.length * 613));
+    row.querySelector('.row').appendChild(c);
+  }
+  root.appendChild(row);
+}
+</script>
+</body></html>

@@ -13,13 +13,6 @@ import {
 } from "./method-preview-demo";
 import { slotWaveBand } from "./method-preview-layout";
 
-/**
- * How many of a roll's opening steps play their moves once it lands, one at
- * a time, as Play steps through a sequence: every step most boxes show.
- * Generate's turn runs long enough for three.
- */
-export const GENERATE_PLAYED_STEPS = 3;
-
 /** How long the last roll fades before the next washes in. */
 export const GENERATE_CLEAR_MS = 150;
 
@@ -83,12 +76,10 @@ export function nextRoll(
 
 /**
  * When cell `index` starts entering: its wave band times the step grid's
- * stagger. The dice holds slot 0, so cell `index` sits in slot `index + 1`.
+ * stagger. The first step leads, so the wave starts with it.
  */
 export function generateCellDelayMs(index: number, columns: number): number {
-  return (
-    slotWaveBand(index + 1, columns) * DEFAULT_ANIMATION_TIMING.waveBandDelay
-  );
+  return slotWaveBand(index, columns) * DEFAULT_ANIMATION_TIMING.waveBandDelay;
 }
 
 /** From the start of the wash until its first cell has landed. */

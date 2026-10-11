@@ -8,6 +8,7 @@ import { layerQrAppearance } from "./tka-canvas-layer";
 import { tkaCropSteps } from "./tka-crop-steps";
 import { tkaEditorOf } from "./tka-editor-context";
 import { createTkaBindings } from "./tka-painters.svelte";
+import { TKA_ARRANGEMENT_LANES } from "./tka-arrangement-lanes";
 import { NO_FACTS, tkaRow, tkaRowFacts } from "./tka-row";
 import { tkaTimelineJoin } from "./tka-timeline-join";
 import { TKA_TIMING_MODE } from "./tka-timing-mode";
@@ -30,7 +31,10 @@ function subjectName(editor: VideoEditorState): string | null {
   return name ? simplifyRepeatedWord(name) : null;
 }
 
-/** Tools that need the post's sequence: its look and beat tapping. */
+/**
+ * Tools that need the post's sequence: its look and beat tapping. An
+ * arrangement's Look is its own, so it stays without one.
+ */
 const SEQUENCE_TOOLS = new Set(["look", "beats"]);
 
 /** tka's editor UI: its tools and panels, the timing mode and its backup. */
@@ -40,10 +44,15 @@ export function createTkaPluginUi(): PluginUi {
     tools: TKA_TOOLS,
     toolRow: (item, core, editor) => {
       const row = tkaRow(item, core, item ? tkaRowFacts(item, editor) : NO_FACTS);
-      return tkaEditorOf(editor)?.sequence === null
+      return tkaEditorOf(editor)?.sequence === null &&
+        item?.kind !== "arrangement"
         ? row.filter((id) => !SEQUENCE_TOOLS.has(id))
         : row;
     },
+    // An arrangement takes a transition, but not while a cell is in hand.
+    transitionOffered: (item, editor) =>
+      item.kind !== "arrangement" || !tkaEditorOf(editor)?.wrapper.selectedCell,
+    itemLanes: TKA_ARRANGEMENT_LANES,
     addItems: tkaAddItems,
     cropSteps: tkaCropSteps,
     timelineJoin: tkaTimelineJoin,

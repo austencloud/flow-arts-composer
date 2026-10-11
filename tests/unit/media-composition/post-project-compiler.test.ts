@@ -815,6 +815,17 @@ describe("compilePostProject", () => {
       expect(region.fit).toBe("fill");
     });
 
+    it("passes a callout's point through to the painter", () => {
+      const result = compilePostProject(
+        project(
+          [card("c1", 5)],
+          [[text("t1", 1, 2, { text: "Here", callout: { x: 0.4, y: 0.2 } })]]
+        ),
+        ctx
+      )!;
+      expect(result.texts[0]?.callout).toEqual({ x: 0.4, y: 0.2 });
+    });
+
     it("skips a blank text item", () => {
       const result = compilePostProject(
         project([card("c1", 5)], [[text("t1", 1, 2, { text: "   " })]]),

@@ -13,8 +13,10 @@
     type ArrangementCell,
   } from "#lib/shared/media-composition/domain/arrangement.js";
   import {
+    ARRANGEMENT_MAX_BPM,
     ARRANGEMENT_MAX_CELL_SPEED,
     ARRANGEMENT_MAX_LAYERS,
+    ARRANGEMENT_MIN_BPM,
     ARRANGEMENT_MIN_CELL_SPEED,
     visibleCells,
     type ArrangementCellOffset,
@@ -22,13 +24,45 @@
   import { calculateArrangementCellBeats } from "#lib/shared/media-composition/domain/arrangement-timing.js";
   import type { PostArrangementItem } from "#lib/shared/post-studio-plugin/index.js";
   import {
+    POST_MAX_SPEED,
+    POST_MIN_SPEED,
+    hasGrid,
+  } from "@austencloud/video-editor/core";
+  import {
+    setArrangementBpm,
+    setArrangementCellAppearance,
     setArrangementCellLayers,
+    setArrangementCellMotionVisibility,
     setArrangementCellOffset,
+    setArrangementCellTipEffects,
+    setArrangementCellTipEfforts,
     setArrangementGrid,
     setArrangementSkipStartPlacement,
+    setArrangementSpeed,
     staggerArrangement,
   } from "#lib/shared/media-composition/domain/post-project-edits.js";
-  import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import type {
+    PostEdit,
+    PostEditorState,
+  } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
+  import {
+    arrangementCellLook,
+    arrangementLookOverride,
+  } from "#lib/shared/media-composition/domain/arrangement-look.js";
+  import type { PostAnimationAppearance } from "#lib/shared/media-composition/domain/post-animation-appearance.js";
+  import type {
+    EffectType,
+    TipEffectMap,
+    TipEffortMap,
+  } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+  import { getTipPoints } from "#lib/shared/animation-engine/domain/types/prop-tip-points.js";
+  import { getTipLabel } from "#lib/shared/animation-engine/domain/tip-label.js";
+  import { EFFECT_LABELS } from "#lib/shared/effects/domain/effect-meta.js";
+  import { effectUiLabel } from "#lib/shared/animation-engine/components/effects-panel/effect-ui-label.js";
+  import EffectSelector from "#lib/shared/animation-engine/components/effects-panel/EffectSelector.svelte";
+  import { EFFORTS, type EffortId } from "#lib/shared/effort/domain/effort-types.js";
+  import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
+  import { untrack } from "svelte";
   import { applyTransform } from "#lib/features/compose/tabs/arrange/services/arrange-layer-transformer.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
@@ -38,26 +72,48 @@
   import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
   import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import { formatPostSpeed } from "@austencloud/video-editor/ui";
+  import { arrangementLayerName } from "./arrangement-labels";
+  import PostAnimationAppearanceTool from "./PostAnimationAppearanceTool.svelte";
 
   /**
-   * The panels of a selected arrangement. Grid is the item's own: its shape,
-   * whether the start placement plays, and how its cells are staggered. The
-   * other three belong to the cell in hand: which sequences it holds, how each
-   * layer looks and is turned, and when the cell starts and how fast it runs.
-   * Every change is an ordinary edit, so undo takes it back.
+   * The panels of a selected arrangement. Grid and Speed are the item's own:
+   * its shape, whether the start placement plays, how its cells are staggered,
+   * and how fast the whole clip plays. Look and Effects edit the grid's default
+   * look, or the cell's own over it when a cell is in hand; Effort is the
+   * cell's. Sequence, Layers and Offset belong to the cell: which sequences it
+   * holds, how each layer looks and is turned, and when the cell starts and how
+   * fast it runs. Every change is an ordinary edit, so undo takes it back.
    */
   interface Props {
     editor: PostEditorState;
     item: PostArrangementItem;
-    tool: "grid" | "sequence" | "layers" | "offset";
+    tool:
+      | "grid"
+      | "sequence"
+      | "layers"
+      | "offset"
+      | "look"
+      | "effects"
+      | "effort"
+      | "speed";
     /** The cell in hand; the Grid panel has none. */
     cell: ArrangementCell | null;
     locked: boolean;
     /** The post's own sequence, offered to a cell when its length fits. */
     sequence: SequenceData | null;
+    /** Fit the editor's bounded side column. */
+    fill?: boolean;
   }
 
-  let { editor, item, tool, cell, locked, sequence }: Props = $props();
+  let {
+    editor,
+    item,
+    tool,
+    cell,
+    locked,
+    sequence,
+    fill = false,
+  }: Props = $props();
 
   const snapshot = $derived(item.snapshot);
   /** Visible cells that hold a sequence, in reading order. */
@@ -86,6 +142,11 @@
   );
   const layers = $derived(cell?.layers ?? []);
   const full = $derived(layers.length >= ARRANGEMENT_MAX_LAYERS);
+  /** The music grid's tempo, offered as a copy; null without a grid. */
+  const musicBpm = $derived.by((): number | null => {
+    const music = editor.project.music;
+    return music && hasGrid(music) ? music.grid.bpm : null;
+  });
 
   const COLOR_NAMES = ["Blue / Red", "Purple / Orange", "Green / Pink", "Cyan / Yellow"];
   const TRANSFORM_NAMES: Partial<Record<TransformType, string>> = {
@@ -112,6 +173,17 @@
     editor.edit((project, ctx) =>
       setArrangementSkipStartPlacement(project, item.id, skip, ctx)
     );
+  }
+
+  function setBpm(bpm: number): void {
+    if (locked) return;
+    editor.edit((project, ctx) =>
+      setArrangementBpm(project, item.id, bpm, ctx)
+    );
+  }
+
+  function formatBpm(bpm: number): string {
+    return Number.isInteger(bpm) ? String(bpm) : bpm.toFixed(1);
   }
 
   function stagger(beatsPerCell: number): void {
@@ -190,7 +262,7 @@
   }
 
   function layerName(layer: TunnelLayerConfig): string {
-    return layer.sequence.word || layer.sequence.name || "Sequence";
+    return arrangementLayerName(layer);
   }
 
   function beatsOf(chosen: SequenceData): string {
@@ -292,6 +364,153 @@
   function speedLabel(stop: number): string {
     return formatPostSpeed(2 ** stop);
   }
+
+  // ---- Look, effects and effort --------------------------------------------
+
+  type LookTool = "look" | "effects" | "effort";
+  const LOOK_SECTIONS: Record<
+    LookTool,
+    readonly ("props" | "effects" | "efforts" | "display")[]
+  > = {
+    look: ["props", "display"],
+    effects: ["effects"],
+    effort: ["efforts"],
+  };
+  /** What the panel shows: the cell's look over the grid's, or the grid's own. */
+  const look = $derived(
+    cell
+      ? arrangementCellLook(snapshot.appearance, cell)
+      : (snapshot.appearance ?? null)
+  );
+  const lookKey = $derived(`${item.id}:${cell?.id ?? "grid"}`);
+  const scopeName = $derived(
+    cell ? `Cell ${cell.row * snapshot.gridCols + cell.col + 1}` : "Grid"
+  );
+  const leftShown = $derived(cell?.leftMotionVisible ?? true);
+  const rightShown = $derived(cell?.rightMotionVisible ?? true);
+
+  /** A cell keeps only the flags a change moved; the grid keeps the whole look. */
+  function saveLook(
+    next: PostAnimationAppearance,
+    settingKey: string | undefined,
+    changed: (keyof PostAnimationAppearance)[]
+  ): void {
+    if (locked) return;
+    const target = cell;
+    if (target && changed.length === 0) return;
+    const cellId = target?.id ?? null;
+    const appearance = target
+      ? arrangementLookOverride(target.appearance, next, changed)
+      : next;
+    const change: PostEdit = (project, ctx) =>
+      setArrangementCellAppearance(project, item.id, cellId, appearance, ctx);
+    if (settingKey) editor.editSetting(`${lookKey}:look:${settingKey}`, change);
+    else editor.edit(change);
+  }
+
+  function showHand(hand: "left" | "right", shown: boolean): void {
+    if (!cell || locked) return;
+    const id = cell.id;
+    const visible = hand === "left" ? { left: shown } : { right: shown };
+    editor.edit((project, ctx) =>
+      setArrangementCellMotionVisibility(project, item.id, id, visible, ctx)
+    );
+  }
+
+  type Scope = "cell" | "left" | "right" | "tips";
+  const SCOPES: { id: Scope; label: string }[] = [
+    { id: "cell", label: "Cell" },
+    { id: "left", label: "Left" },
+    { id: "right", label: "Right" },
+    { id: "tips", label: "Tips" },
+  ];
+  let scope = $state<Scope>("cell");
+  let tipKey = $state("0-0");
+  $effect(() => {
+    void cell?.id;
+    untrack(() => {
+      scope = "cell";
+      tipKey = "0-0";
+    });
+  });
+  /** The map key the scope edits: a hand, a tip, or none for the cell itself. */
+  const scopeKey = $derived(
+    scope === "left"
+      ? "0"
+      : scope === "right"
+        ? "1"
+        : scope === "tips"
+          ? tipKey
+          : null
+  );
+  const scopePropType = $derived(look?.propType ?? PropType.STAFF);
+  const tipTargets = $derived.by(() => {
+    const count = getTipPoints(scopePropType).points.length;
+    const targets: { key: string; label: string }[] = [];
+    for (const hand of [0, 1] as const)
+      for (let tip = 0; tip < count; tip++)
+        targets.push({
+          key: `${hand}-${tip}`,
+          label: `${hand === 0 ? "Left" : "Right"} ${getTipLabel(scopePropType, tip)}`,
+        });
+    return targets;
+  });
+  const scopeEffect = $derived(
+    scopeKey ? (cell?.tipEffectMap?.[scopeKey]?.effect ?? null) : null
+  );
+  const scopeEffort = $derived(
+    scopeKey ? (cell?.tipEffortMap?.[scopeKey]?.effort ?? null) : null
+  );
+  const scopeEffectHint = $derived(
+    scopeEffect === null
+      ? "Follows the cell's effect."
+      : scopeEffect === "none"
+        ? "No effect here."
+        : `${effectUiLabel(EFFECT_LABELS[scopeEffect] ?? scopeEffect)} here. Pick it again to turn it off.`
+  );
+  const scopeEffortHint = $derived(
+    scopeEffort === null
+      ? "Follows the cell's effort."
+      : `${EFFORTS.find((effort) => effort.id === scopeEffort)?.label ?? scopeEffort} here.`
+  );
+
+  /** Sets one scope's effect, turns it off (the active pick again) or clears it to follow the cell. */
+  function pickScopeEffect(effect: string | null): void {
+    if (!cell || locked || !scopeKey) return;
+    const id = cell.id;
+    const key = scopeKey;
+    const next: TipEffectMap = { ...cell.tipEffectMap };
+    if (effect === null) delete next[key];
+    else
+      next[key] = {
+        effect: (scopeEffect === effect ? "none" : effect) as EffectType,
+      };
+    editor.edit((project, ctx) =>
+      setArrangementCellTipEffects(project, item.id, id, next, ctx)
+    );
+  }
+
+  function pickScopeEffort(effort: EffortId | null): void {
+    if (!cell || locked || !scopeKey) return;
+    const id = cell.id;
+    const key = scopeKey;
+    const next: TipEffortMap = { ...cell.tipEffortMap };
+    if (effort === null) delete next[key];
+    else next[key] = { effort };
+    editor.edit((project, ctx) =>
+      setArrangementCellTipEfforts(project, item.id, id, next, ctx)
+    );
+  }
+
+  // ---- Speed ---------------------------------------------------------------
+
+  function setItemSpeedStop(stop: number): void {
+    if (locked) return;
+    const speed = Number((2 ** stop).toFixed(3));
+    editor.editSetting(`arrangement-speed:${item.id}`, (project, ctx) =>
+      setArrangementSpeed(project, item.id, speed, ctx)
+    );
+  }
 </script>
 
 {#snippet pair(colors: PropColors)}
@@ -381,6 +600,43 @@
         ariaLabel="Start placement"
       />
     </div>
+    <div class="stepper">
+      <span class="stepper-name">Tempo</span>
+      <PanelButton
+        ariaLabel="One BPM slower"
+        disabled={locked || snapshot.bpm <= ARRANGEMENT_MIN_BPM}
+        onclick={() => setBpm(Math.ceil(snapshot.bpm) - 1)}
+      >
+        <i class="fa-solid fa-minus" aria-hidden="true"></i>
+      </PanelButton>
+      <TypeableValue
+        label="Tempo"
+        text={formatBpm(snapshot.bpm)}
+        unit="BPM"
+        sizer={String(ARRANGEMENT_MAX_BPM)}
+        disabled={locked}
+        oncommit={(value) => setBpm(value)}
+      />
+      <PanelButton
+        ariaLabel="One BPM faster"
+        disabled={locked || snapshot.bpm >= ARRANGEMENT_MAX_BPM}
+        onclick={() => setBpm(Math.floor(snapshot.bpm) + 1)}
+      >
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+      </PanelButton>
+    </div>
+    {#if musicBpm !== null}
+      {@const bpm = musicBpm}
+      <div class="actions">
+        <PanelButton disabled={locked || bpm === snapshot.bpm} onclick={() => setBpm(bpm)}>
+          Use music tempo ({formatBpm(bpm)} BPM)
+        </PanelButton>
+      </div>
+    {/if}
+    <p class="hint">
+      A new tempo keeps the clip on the same beats, so it grows or shrinks on
+      the timeline.
+    </p>
     <div class="group" role="group" aria-label="Stagger">
       <span class="group-name">Stagger</span>
       <div class="actions">
@@ -593,6 +849,136 @@
       disabled={locked}
       onchange={setSpeedStop}
     />
+  {:else if tool === "speed"}
+    <ValueSlider
+      label="Speed"
+      value={Math.log2(item.speed)}
+      min={Math.log2(POST_MIN_SPEED)}
+      max={Math.log2(POST_MAX_SPEED)}
+      step={SPEED_STEP}
+      origin={0}
+      marks={SPEED_MARKS}
+      onmark={setItemSpeedStop}
+      markLabel={speedLabel}
+      format={speedLabel}
+      fromTyped={Math.log2}
+      disabled={locked}
+      onchange={setItemSpeedStop}
+    />
+    <p class="hint">
+      Speed plays the whole grid faster or slower. Each cell keeps its own
+      speed inside it.
+    </p>
+  {:else if tool === "look" || tool === "effects" || tool === "effort"}
+    {#if tool === "look" && cell}
+      <div class="group" role="group" aria-label="Hands shown">
+        <span class="group-name">Hands</span>
+        <div class="chips">
+          <FilterChipBase
+            mode="toggle"
+            emphasis="solid"
+            label="Left"
+            ariaLabel="Show the left hand"
+            active={leftShown}
+            disabled={locked}
+            onclick={() => showHand("left", !leftShown)}
+          />
+          <FilterChipBase
+            mode="toggle"
+            emphasis="solid"
+            label="Right"
+            ariaLabel="Show the right hand"
+            active={rightShown}
+            disabled={locked}
+            onclick={() => showHand("right", !rightShown)}
+          />
+        </div>
+      </div>
+    {/if}
+    {#if tool !== "look" && cell}
+      <div class="group" role="group" aria-label="Applies to">
+        <span class="group-name">Applies to</span>
+        <div class="chips">
+          {#each SCOPES as entry (entry.id)}
+            <FilterChipBase
+              mode="toggle"
+              emphasis="solid"
+              label={entry.label}
+              active={scope === entry.id}
+              disabled={locked}
+              onclick={() => (scope = entry.id)}
+            />
+          {/each}
+        </div>
+        {#if scope === "tips"}
+          <div class="chips">
+            {#each tipTargets as target (target.key)}
+              <FilterChipBase
+                mode="toggle"
+                emphasis="solid"
+                label={target.label}
+                active={tipKey === target.key}
+                disabled={locked}
+                onclick={() => (tipKey = target.key)}
+              />
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/if}
+    {#if tool === "look" || scopeKey === null}
+      {#key `${tool}:${lookKey}`}
+        <PostAnimationAppearanceTool
+          {editor}
+          appearanceOverride={look}
+          onAppearanceChange={saveLook}
+          appearanceKey={lookKey}
+          scopeLabel={scopeName}
+          {locked}
+          {fill}
+          sections={LOOK_SECTIONS[tool]}
+        />
+      {/key}
+    {:else if tool === "effects"}
+      <p class="hint">{scopeEffectHint}</p>
+      <div class="chips">
+        <FilterChipBase
+          mode="toggle"
+          emphasis="solid"
+          label="Follow the cell"
+          active={scopeEffect === null}
+          disabled={locked}
+          onclick={() => pickScopeEffect(null)}
+        />
+      </div>
+      <EffectSelector
+        activeEffect={scopeEffect ?? "none"}
+        onSelect={pickScopeEffect}
+        disabled={locked}
+      />
+    {:else}
+      <p class="hint">{scopeEffortHint}</p>
+      <div class="chips">
+        <FilterChipBase
+          mode="toggle"
+          emphasis="solid"
+          label="Follow the cell"
+          active={scopeEffort === null}
+          disabled={locked}
+          onclick={() => pickScopeEffort(null)}
+        />
+        {#each EFFORTS as effort (effort.id)}
+          <FilterChipBase
+            mode="toggle"
+            emphasis="solid"
+            label={effort.label}
+            active={scopeEffort === effort.id}
+            disabled={locked}
+            onclick={() => pickScopeEffort(effort.id)}
+          />
+        {/each}
+      </div>
+    {/if}
   {/if}
 </div>
 

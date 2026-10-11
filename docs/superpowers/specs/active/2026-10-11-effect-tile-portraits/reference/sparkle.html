@@ -1,0 +1,109 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Sparkle tiles</title>
+<link rel="stylesheet" href="tiles.css"></head>
+<body>
+<h1>Sparkle · six looks</h1>
+<p class="lede">A prop tip has just swept an arc left-to-right; the glints are what it left behind. Rate sets how many, size sets the arm length, gravity pulls the older ones down, lifetime stretches the tail, spread scatters them, mode decides whether they stream out, cling to the path, or pop in clumps. Color follows the preset: solid, a palette, or the live rainbow hue drift.</p>
+<div id="root"></div>
+<script type="module">
+import { W, H, lcg, ground, terminal, blob, hexToRgb, css } from './kit.js';
+
+const PRESETS = [
+  { name: 'Fairy Dust', patch: { rate: 0.55, size: 0.16, lifetime: 1.8, color: '#fde047', colorMode: 'solid', spread: 5, gravity: 0.05, mode: 'stream' } },
+  { name: 'Confetti', patch: { rate: 0.92, size: 0.12, lifetime: 1.5, colorMode: 'palette', palette: ['#ec4899', '#22d3ee', '#fbbf24', '#4ade80', '#a855f7'], spread: 5, gravity: 0.5, mode: 'stream' } },
+  { name: 'Prism', patch: { rate: 0.65, size: 0.15, lifetime: 1.5, colorMode: 'rainbow', spread: 6, gravity: 0.18, mode: 'stream' } },
+  { name: 'Starfall', patch: { rate: 0.6, size: 0.2, lifetime: 1.3, color: '#bfdbfe', colorMode: 'solid', spread: 4, gravity: 0.9, mode: 'trail' } },
+  { name: 'Glitter', patch: { rate: 1.0, size: 0.07, lifetime: 0.9, color: '#f1f5f9', colorMode: 'solid', spread: 3, gravity: 0.02, mode: 'stream' } },
+  { name: 'Aurora', patch: { rate: 0.42, size: 0.42, lifetime: 2.6, colorMode: 'palette', palette: ['#67e8f9', '#5eead4', '#c4b5fd'], spread: 5, gravity: 0.04, mode: 'stream' } },
+];
+
+// The swept arc: tail at lower-left, head (the tip now) at upper-right.
+const ARC = { x0: 90, y0: 205, cx: 330, cy: 0, x1: 610, y1: 105 };
+function arcAt(t) {
+  const u = 1 - t;
+  return { x: u * u * ARC.x0 + 2 * u * t * ARC.cx + t * t * ARC.x1, y: u * u * ARC.y0 + 2 * u * t * ARC.cy + t * t * ARC.y1 };
+}
+
+function colorFor(p, t, i, rand) {
+  if (p.colorMode === 'rainbow') return `hsl(${Math.round((i * 47) % 360)}, 85%, 65%)`;
+  if (p.colorMode === 'palette') return p.palette[i % p.palette.length];
+  return p.color;
+}
+
+/** The renderer's glint: glow bed, four long arms, four short diagonals, white heart. */
+function glint(ctx, x, y, arm, rot, color, alpha, bed = 1) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot);
+  ctx.globalCompositeOperation = 'lighter';
+  const d = arm * 2.8;
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, d);
+  g.addColorStop(0, css(hexOrHsl(color), alpha * 0.8 * bed));
+  g.addColorStop(0.35, css(hexOrHsl(color), alpha * 0.3 * bed));
+  g.addColorStop(1, css(hexOrHsl(color), 0));
+  ctx.fillStyle = g; ctx.fillRect(-d, -d, d * 2, d * 2);
+  ctx.strokeStyle = color; ctx.lineCap = 'round';
+  ctx.globalAlpha = alpha; ctx.lineWidth = Math.max(1, arm * 0.22);
+  ctx.beginPath(); ctx.moveTo(-arm, 0); ctx.lineTo(arm, 0); ctx.moveTo(0, -arm); ctx.lineTo(0, arm); ctx.stroke();
+  const dg = arm * 0.55;
+  ctx.globalAlpha = alpha * 0.7; ctx.lineWidth = Math.max(0.6, arm * 0.12);
+  ctx.beginPath(); ctx.moveTo(-dg, -dg); ctx.lineTo(dg, dg); ctx.moveTo(-dg, dg); ctx.lineTo(dg, -dg); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.globalAlpha = alpha;
+  ctx.beginPath(); ctx.arc(0, 0, Math.max(0.8, arm * 0.18), 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function hexOrHsl(c) {
+  if (c.startsWith('#')) return hexToRgb(c);
+  const m = /hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/.exec(c);
+  const h = +m[1] / 360, s = +m[2] / 100, l = +m[3] / 100;
+  const f = n => { const k = (n + h * 12) % 12; const a = s * Math.min(l, 1 - l); return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); };
+  return [f(0), f(8), f(4)];
+}
+
+function draw(ctx, p, rand) {
+  // Dial → arm length: the dial maps onto a 0.25–0.65 base scale and the
+  // renderer draws a star ~5x that in reference px; at tile scale that is
+  // roughly 7px at size 0.07 and 30px at size 0.42.
+  const arm = (0.25 + p.size * 0.95) * 5 * 2.4 * 1.9;
+  const count = Math.round(18 + p.rate * 70);
+  const tail = 0.35 + Math.min(1, p.lifetime / 2.6) * 0.65; // how far back along the arc glints survive
+  const scatter = (6 + p.spread * 9) * 2.4 * 0.5;
+  const drop = p.gravity * 150;
+  const burst = p.mode === 'burst', trail = p.mode === 'trail';
+  const cling = trail ? 0.35 : 1;
+
+  for (let i = 0; i < count; i++) {
+    // Age 0 = just spawned at the head; 1 = oldest surviving glint.
+    const age = burst ? rand() : Math.pow(rand(), 1.5);
+    const t = 1 - age * tail;
+    const base = arcAt(Math.max(0, t));
+    const spreadNow = scatter * cling * (0.3 + age);
+    const x = base.x + (rand() - 0.5) * 2 * spreadNow;
+    // Stream glints drift outward and sag with gravity as they age; trail glints hug the path and then fall straight.
+    const y = base.y + (rand() - 0.5) * 2 * spreadNow * 0.8 + drop * age * (0.4 + age);
+    const r = arm * (0.7 + rand() * 0.6);
+    const alpha = (0.45 + (1 - age) * 0.55) * (0.7 + rand() * 0.3);
+    glint(ctx, x, y, r, rand() * Math.PI, colorFor(p, t, i, rand), alpha, Math.min(1, 38 / count));
+  }
+  // The tip itself: a small hot point at the head of the sweep.
+  const head = arcAt(1);
+  terminal(ctx, head.x, head.y, 36, p.colorMode === 'rainbow' ? '#fff' : (p.colorMode === 'palette' ? p.palette[0] : p.color), 0.9);
+}
+
+const root = document.getElementById('root');
+for (const preset of PRESETS) {
+  const p = preset.patch;
+  const row = document.createElement('div'); row.className = 'card';
+  row.innerHTML = `<h3>${preset.name} <small>${p.mode} · ${p.colorMode} · size ${p.size} · gravity ${p.gravity}</small></h3><div class="row"></div>`;
+  for (const cls of ['small', 'large']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H; c.className = cls;
+    const ctx = c.getContext('2d');
+    ground(ctx, [0.03, 0.03, 0.06]);
+    const wash = p.colorMode === 'rainbow' ? [0.6, 0.5, 0.8] : hexToRgb(p.colorMode === 'palette' ? p.palette[0] : p.color);
+    blob(ctx, 400, 120, 260, 150, wash, 0.08);
+    draw(ctx, p, lcg(0x5a3c + preset.name.length * 131));
+    row.querySelector('.row').appendChild(c);
+  }
+  root.appendChild(row);
+}
+</script>
+</body></html>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Silk tiles</title>
+<link rel="stylesheet" href="tiles.css"></head>
+<body>
+<h1>Silk · six looks</h1>
+<p class="lede">One ribbon of cloth attached to the tip at the head (upper right), trailing back through a spiral; duration sets how far back the tail reaches (60% of the gesture at the shortest, all of it at the longest). It is drawn by the renderer's own ribbon routine: samples every 4 px of path, the length clipped to what <em>duration</em> allows, the width envelope that opens from the free tail and gathers into the prop, <em>tautness</em> narrowing the cloth where the tip moved fast, <em>flutter</em> displacing the free end with the two sine waves and billowing the hem, gravity sag on the loose tail, the fold wave that pushes one hem over the other, and the material profile (body fill, blurred shadow band, sheen band, two selvedge lines; ember adds an aura). Satin takes most of its color from the prop, so Classic shows the hand's own blue.</p>
+<div id="root"></div>
+<script type="module">
+import { W, H, lcg } from './kit.js';
+import { draw, PRESETS } from './silk-draw.js';
+
+const root = document.getElementById('root');
+for (const preset of PRESETS) {
+  const p = preset.patch;
+  const row = document.createElement('div'); row.className = 'card';
+  row.innerHTML = `<h3>${preset.name} <small>${p.palette} · width ${p.width} · duration ${p.duration} · flutter ${p.flutter} · taut ${p.tautness}</small></h3><div class="row"></div>`;
+  for (const cls of ['small', 'large']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H; c.className = cls;
+    draw(c.getContext('2d'), p, lcg(0x51e4 + preset.name.length * 557));
+    row.querySelector('.row').appendChild(c);
+  }
+  root.appendChild(row);
+}
+</script>
+</body></html>

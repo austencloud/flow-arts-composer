@@ -3,7 +3,9 @@ import {
   DEFAULT_TUNNEL_HOOK_SECONDS,
   MAIN_TRACK_INDEX,
   POST_MIN_BOX_SIZE,
+  POST_MAX_SPEED,
   POST_MIN_ITEM_SECONDS,
+  POST_MIN_SPEED,
   POST_TIME_EPSILON,
   addOverlayItem,
   appendToMain,
@@ -51,15 +53,23 @@ import {
   clearCell,
   moveCell,
   resizeCell,
+  setBpm,
   setCellAppearance,
   setCellLayers,
+  setCellMotionVisibility,
   setCellOffset,
+  setCellTipEffects,
+  setCellTipEfforts,
   setGrid,
   setSkipStartPlacement,
   staggerCells,
   type ArrangementCellOffset,
 } from "#lib/shared/media-composition/domain/arrangement-edits.js";
 import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
+import type {
+  TipEffectMap,
+  TipEffortMap,
+} from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 
 /**
  * tka's own timeline edits: the titles clip, the opening tunnel hook and the
@@ -653,6 +663,45 @@ export function setArrangementSnapshot(
   );
 }
 
+/**
+ * A new tempo for an arrangement, keeping the clip on the same beats: its
+ * trimmed-in and trimmed-out points scale by old ÷ new, so a clip cut at bar
+ * four still ends at bar four, and its length on the timeline follows. Not
+ * `setArrangementSnapshot`, which keeps source seconds instead.
+ */
+export function setArrangementBpm(
+  project: PostProject,
+  itemId: string,
+  bpm: number,
+  ctx: EditContext
+): PostProject {
+  const located = findItem(project, itemId);
+  if (located?.item.kind !== "arrangement") return project;
+  const item = located.item;
+  const snapshot = setBpm(item.snapshot, bpm);
+  if (snapshot === item.snapshot) return project;
+  const factor = item.snapshot.bpm / snapshot.bpm;
+  const total = arrangementDurationSeconds(snapshot);
+  const sourceOut = Math.min(
+    total,
+    Math.max(POST_MIN_ITEM_SECONDS, item.sourceOut * factor)
+  );
+  const sourceIn = Math.max(
+    0,
+    Math.min(item.sourceIn * factor, sourceOut - POST_MIN_ITEM_SECONDS)
+  );
+  return finish(
+    replaceItem(project, itemId, {
+      ...item,
+      snapshot,
+      sourceIn,
+      sourceOut,
+      duration: (sourceOut - sourceIn) / item.speed,
+    }),
+    ctx
+  );
+}
+
 /** One grid edit on an arrangement item; the clip's length follows through `setArrangementSnapshot`. */
 function editArrangement(
   project: PostProject,
@@ -754,6 +803,65 @@ export function setArrangementCellAppearance(
 ): PostProject {
   return editArrangement(project, itemId, ctx, (snapshot) =>
     setCellAppearance(snapshot, cellId, appearance)
+  );
+}
+
+export function setArrangementCellTipEffects(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  map: TipEffectMap | undefined,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellTipEffects(snapshot, cellId, map)
+  );
+}
+
+export function setArrangementCellTipEfforts(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  map: TipEffortMap | undefined,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellTipEfforts(snapshot, cellId, map)
+  );
+}
+
+export function setArrangementCellMotionVisibility(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  visible: { left?: boolean; right?: boolean },
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellMotionVisibility(snapshot, cellId, visible)
+  );
+}
+
+/** The clip's playback speed; its source span stays and its length follows, as a video's does. */
+export function setArrangementSpeed(
+  project: PostProject,
+  itemId: string,
+  speed: number,
+  ctx: EditContext
+): PostProject {
+  const located = findItem(project, itemId);
+  if (located?.item.kind !== "arrangement" || !Number.isFinite(speed))
+    return project;
+  const item = located.item;
+  const next = Math.min(POST_MAX_SPEED, Math.max(POST_MIN_SPEED, speed));
+  if (next === item.speed) return project;
+  return finish(
+    replaceItem(project, itemId, {
+      ...item,
+      speed: next,
+      duration: (item.sourceOut - item.sourceIn) / next,
+    }),
+    ctx
   );
 }
 

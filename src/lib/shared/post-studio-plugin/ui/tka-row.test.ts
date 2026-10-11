@@ -124,6 +124,31 @@ describe("tka tool rows are today's rows", () => {
       ...TAIL,
     ]);
   });
+  it("arrangement: Grid, Edit arrangement, Speed and the look tools; a cell's own tools", () => {
+    expect(row("arrangement")).toEqual([
+      "back",
+      "grid",
+      "arrangement",
+      "split",
+      "speed",
+      "look",
+      "effects",
+      "timing",
+      ...TAIL,
+    ]);
+    expect(row("arrangement", { cell: true })).toEqual([
+      "back",
+      "sequence",
+      "layers",
+      "offset",
+      "look",
+      "effects",
+      "effort",
+      "clear",
+    ]);
+    expect(isPanelTool("effort", TKA_TOOLS)).toBe(true);
+    expect(isPanelTool("clear", TKA_TOOLS)).toBe(false);
+  });
   it("the add panel keeps today's order", () => {
     expect(tkaAddOrder(["text", "card"])).toEqual([
       "arrangement",

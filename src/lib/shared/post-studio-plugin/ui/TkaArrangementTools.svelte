@@ -6,10 +6,11 @@
 
   /**
    * An arrangement's panels. Edit arrangement opens the whole grid editor
-   * over the workspace; Grid is the item's own; Sequence, Layers and Offset
-   * belong to the cell in hand.
+   * over the workspace; Grid and Speed are the item's own; Look and Effects
+   * are the grid's, or the cell's over it when one is in hand; Sequence,
+   * Layers, Offset and Effort belong to the cell in hand.
    */
-  let { item, tool, locked }: ToolPanelProps = $props();
+  let { item, tool, locked, appearanceFill = false }: ToolPanelProps = $props();
   const tka = useTkaEditor();
   const editor = tka.editor;
 </script>
@@ -28,7 +29,7 @@
         Edit arrangement
       </PanelButton>
     </div>
-  {:else if tool === "grid" || tool === "layers" || tool === "offset" || (tool === "sequence" && editor.selectedCell !== null)}
+  {:else if tool === "grid" || tool === "speed" || tool === "look" || tool === "effects" || tool === "effort" || tool === "layers" || tool === "offset" || (tool === "sequence" && editor.selectedCell !== null)}
     <PostArrangementTool
       {editor}
       item={arrangement}
@@ -36,6 +37,7 @@
       cell={editor.selectedCell}
       {locked}
       sequence={tka.displaySequence}
+      fill={appearanceFill}
     />
   {/if}
 {/if}

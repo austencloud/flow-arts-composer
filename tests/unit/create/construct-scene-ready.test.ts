@@ -2,8 +2,9 @@
  * The Construct preview scene reports ready once every slot it shows has
  * drawn, including through a resize before the last one reported (the card
  * would otherwise rest on its tint). On a turn, each picked step plays its
- * move from the pose before it, one after the other, inside the turn, and
- * the finger is gone before the last one plays.
+ * move from the pose before it, one after the other, inside the turn, its
+ * arrows fading in as it travels, and the finger is gone before the last
+ * one plays.
  */
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -98,6 +99,7 @@ describe("Construct scene turn", () => {
     ...host.querySelectorAll<HTMLElement>(".slot .art .fake-pictograph"),
   ];
   const progress = () => steps().map((cell) => cell.dataset.motionProgress);
+  const arrows = () => steps().map((cell) => cell.dataset.arrowOpacity);
 
   it("moves each step's props from the pose before it", () => {
     scene = mountConstructScene(host, STRIP, vi.fn());
@@ -107,9 +109,10 @@ describe("Construct scene turn", () => {
       "M",
     ]);
     expect(progress()).toEqual(["null", "null", "null"]);
+    expect(arrows()).toEqual(["1", "1", "1"]);
   });
 
-  it("plays the two moves one after the other, both inside the turn", async () => {
+  it("plays the two moves one after the other, both inside the turn, each one's arrows fading in with it", async () => {
     vi.useFakeTimers({
       toFake: [
         "setTimeout",
@@ -127,11 +130,19 @@ describe("Construct scene turn", () => {
     const finished: (number | null)[] = [null, null, null];
     let fingerSeen = false;
     let fingerOnLastMove = false;
+    /** The faintest arrows each slot showed. */
+    const faintest = [1, 1, 1];
     for (let at = 0; at < METHOD_PREVIEW_TIMING.turnMs; at += frameMs) {
       await vi.advanceTimersByTimeAsync(frameMs);
       flushSync();
       const fingerShown = host.querySelector(".ghost.visible") !== null;
       fingerSeen ||= fingerShown;
+      // A step's arrows track its move; a still one shows them all.
+      const shown = arrows();
+      for (const [slot, value] of progress().entries()) {
+        expect(shown[slot]).toBe(value === "null" ? "1" : value);
+        faintest[slot] = Math.min(faintest[slot]!, Number(shown[slot]));
+      }
       for (const [slot, value] of progress().entries()) {
         const travel = Number(value);
         if (started[slot] === null && travel > 0 && travel < 1) {
@@ -151,6 +162,11 @@ describe("Construct scene turn", () => {
     expect(started[2]).toBeGreaterThan(started[1]!);
     expect(finished[1]).not.toBeNull();
     expect(finished[2]).not.toBeNull();
+    // Each picked step lands without its arrows, here within a frame of its
+    // move's start; the start position keeps its own.
+    expect(faintest[0]).toBe(1);
+    expect(faintest[1]).toBeLessThan(0.05);
+    expect(faintest[2]).toBeLessThan(0.05);
     // The finger taps, then lifts away before the last move plays.
     expect(fingerSeen).toBe(true);
     expect(fingerOnLastMove).toBe(false);
@@ -158,5 +174,6 @@ describe("Construct scene turn", () => {
     // When the turn ends, each step rests on its move's last frame.
     scene.stop();
     expect(progress()).toEqual(["null", "1", "1"]);
+    expect(arrows()).toEqual(["1", "1", "1"]);
   });
 });

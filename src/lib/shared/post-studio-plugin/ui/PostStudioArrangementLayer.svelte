@@ -114,6 +114,7 @@
           animationPlaying={playing && !exporting}
           virtualTimeMs={sourceTimeSeconds * 1000}
           skipStartPlacement={snapshot.skipStartPlacement}
+          gridAppearance={snapshot.appearance}
           onSelect={() => undefined}
         />
         {#if selected}

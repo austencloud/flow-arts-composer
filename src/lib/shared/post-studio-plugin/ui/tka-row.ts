@@ -111,8 +111,28 @@ export function tkaRow(
     case "titles":
       return ["back", "titles", "timing", ...TAIL];
     case "arrangement":
-      if (facts.cell) return ["back", "sequence", "layers", "offset", "clear"];
-      return ["back", "grid", "arrangement", "split", "timing", ...TAIL];
+      if (facts.cell)
+        return [
+          "back",
+          "sequence",
+          "layers",
+          "offset",
+          "look",
+          "effects",
+          "effort",
+          "clear",
+        ];
+      return [
+        "back",
+        "grid",
+        "arrangement",
+        "split",
+        "speed",
+        "look",
+        "effects",
+        "timing",
+        ...TAIL,
+      ];
     default:
       return core;
   }

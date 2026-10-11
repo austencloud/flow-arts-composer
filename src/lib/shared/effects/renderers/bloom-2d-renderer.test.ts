@@ -1,102 +1,63 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { Bloom2DRenderer, type BloomTipInput } from "./bloom-2d-renderer";
 import type { Bloom2DParams } from "../translators/canvas2d-types";
 import { BLOOM_PRESETS } from "#lib/shared/animation-engine/components/effects-panel/presets/bloom-presets.js";
 
-interface GradientStop {
-  offset: number;
-  color: string;
-}
-
 interface FakeGradient {
   kind: "radial" | "linear";
-  stops: GradientStop[];
+  args: number[];
+  stops: Array<{ offset: number; color: string }>;
   addColorStop: (offset: number, color: string) => void;
 }
 
-function makeGradient(kind: "radial" | "linear"): FakeGradient {
-  const stops: GradientStop[] = [];
-  return {
-    kind,
-    stops,
-    addColorStop(offset: number, color: string) {
-      stops.push({ offset, color });
-    },
-  };
-}
-
-/**
- * Fake Canvas2D context with no `canvas` property, so the renderer can't
- * allocate an offscreen accumulation buffer and takes its direct-draw fallback
- * - the same lens-bloom layers minus the persistent afterglow. That's also the
- * path jsdom exercises in CI (no 2D backend for an offscreen canvas).
- */
+/** Fake Canvas2D context that records every gradient and transform. */
 function makeCtx() {
   const radial: FakeGradient[] = [];
   const linear: FakeGradient[] = [];
-  const fillRects: Array<{
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-    fill: unknown;
-  }> = [];
+  const fillRects: Array<{ x: number; y: number; w: number; h: number }> = [];
   const calls = {
-    translate: 0,
-    rotate: 0,
-    rotations: [] as number[],
-    scale: 0,
-    stroke: 0,
+    save: 0,
+    restore: 0,
     fill: 0,
-    drawImage: 0,
+    scale: 0,
+    rotations: [] as number[],
+  };
+  const gradient = (kind: FakeGradient["kind"], args: number[]) => {
+    const g: FakeGradient = {
+      kind,
+      args,
+      stops: [],
+      addColorStop(offset, color) {
+        g.stops.push({ offset, color });
+      },
+    };
+    (kind === "radial" ? radial : linear).push(g);
+    return g;
   };
 
   const ctx: any = {
+    canvas: { width: 500, height: 500 },
     globalCompositeOperation: "source-over",
     globalAlpha: 1,
     fillStyle: "",
-    strokeStyle: "",
-    lineWidth: 1,
-    lineCap: "butt",
-    save: vi.fn(),
-    restore: vi.fn(),
-    clearRect: vi.fn(),
+    save: vi.fn(() => calls.save++),
+    restore: vi.fn(() => calls.restore++),
     beginPath: vi.fn(),
-    arc: vi.fn(),
     moveTo: vi.fn(),
     lineTo: vi.fn(),
     closePath: vi.fn(),
-    translate: vi.fn(() => {
-      calls.translate++;
-    }),
-    rotate: vi.fn((angle: number) => {
-      calls.rotate++;
-      calls.rotations.push(angle);
-    }),
-    scale: vi.fn(() => {
-      calls.scale++;
-    }),
-    stroke: vi.fn(() => {
-      calls.stroke++;
-    }),
-    fill: vi.fn(() => {
-      calls.fill++;
-    }),
-    drawImage: vi.fn(() => {
-      calls.drawImage++;
-    }),
-    createRadialGradient: vi.fn(() => {
-      const g = makeGradient("radial");
-      radial.push(g);
-      return g;
-    }),
-    createLinearGradient: vi.fn(() => {
-      const g = makeGradient("linear");
-      linear.push(g);
-      return g;
-    }),
+    translate: vi.fn(),
+    rotate: vi.fn((angle: number) => calls.rotations.push(angle)),
+    scale: vi.fn(() => calls.scale++),
+    fill: vi.fn(() => calls.fill++),
+    createRadialGradient: vi.fn((...args: number[]) =>
+      gradient("radial", args)
+    ),
+    createLinearGradient: vi.fn((...args: number[]) =>
+      gradient("linear", args)
+    ),
     fillRect: vi.fn((x: number, y: number, w: number, h: number) => {
-      fillRects.push({ x, y, w, h, fill: ctx.fillStyle });
+      fillRects.push({ x, y, w, h });
     }),
   };
   return {
@@ -112,7 +73,7 @@ function makeParams(overrides: Partial<Bloom2DParams> = {}): Bloom2DParams {
   return {
     intensity: 0.8,
     coreStrength: 0.45,
-    radius: 90,
+    radius: 40,
     color: "#f472b6",
     palette: ["#f472b6", "#fbbf24", "#22d3ee"],
     colorMode: "solid",
@@ -138,321 +99,469 @@ function makeTip(overrides: Partial<BloomTipInput> = {}): BloomTipInput {
   };
 }
 
-describe("Bloom2DRenderer (lens bloom)", () => {
-  let nowSpy: ReturnType<typeof vi.spyOn>;
+const DT = 1 / 60;
 
-  beforeEach(() => {
-    nowSpy = vi.spyOn(performance, "now").mockReturnValue(0);
-  });
-  afterEach(() => {
-    nowSpy.mockRestore();
-  });
+/** Alpha of an `rgba(r, g, b, a)` stop. */
+function alphaOf(color: string): number {
+  const m = /,\s*([\d.e-]+)\)\s*$/.exec(color);
+  return m ? parseFloat(m[1]!) : NaN;
+}
 
-  it("does not draw when tips array is empty", () => {
-    const r = new Bloom2DRenderer();
-    const { ctx, fillRects } = makeCtx();
-    r.render(ctx, makeParams(), []);
+/** Sweep one tip along a horizontal line at `speed` px/s for `frames` frames. */
+function sweep(
+  renderer: Bloom2DRenderer,
+  params: Bloom2DParams,
+  frames: number,
+  speed = 600,
+  tip: Partial<BloomTipInput> = {}
+) {
+  let last = makeCtx();
+  for (let f = 0; f < frames; f++) {
+    last = makeCtx();
+    renderer.render(
+      last.ctx,
+      params,
+      [makeTip({ x: 60 + f * speed * DT, ...tip })],
+      DT
+    );
+  }
+  return last;
+}
+
+describe("Bloom2DRenderer", () => {
+  it("draws nothing for an empty frame", () => {
+    const { ctx, fillRects, calls } = makeCtx();
+    new Bloom2DRenderer().render(ctx, makeParams(), [], DT);
     expect(fillRects).toHaveLength(0);
+    expect(calls.fill).toBe(0);
   });
 
-  it("draws a colored halo + white core per tip (2 radial gradients each)", () => {
-    const r = new Bloom2DRenderer();
-    const { ctx, radial } = makeCtx();
-    // The two gradients are the colored halo and its white source.
-    r.render(ctx, makeParams({ spikes: 0 }), [makeTip()]);
+  it("lights a still tip with a colored halo and a white-hot core", () => {
+    const { ctx, radial, linear } = makeCtx();
+    new Bloom2DRenderer().render(
+      ctx,
+      makeParams({ spikes: 0 }),
+      [makeTip()],
+      DT
+    );
     expect(radial).toHaveLength(2);
+    expect(linear).toHaveLength(0);
+    // The core is the tip color pushed most of the way to white.
+    const core = radial[1]!.stops[0]!.color;
+    expect(core).toMatch(/rgba\(2[2-5]\d, 2[2-5]\d, 2[2-5]\d,/);
   });
 
-  it("can remove the white source without removing the colored halo", () => {
-    const r = new Bloom2DRenderer();
+  it("can remove the white core without removing the halo", () => {
     const { ctx, radial } = makeCtx();
-    r.render(ctx, makeParams({ coreStrength: 0, spikes: 0 }), [makeTip()]);
+    new Bloom2DRenderer().render(
+      ctx,
+      makeParams({ coreStrength: 0, spikes: 0 }),
+      [makeTip()],
+      DT
+    );
     expect(radial).toHaveLength(1);
   });
 
-  it("keeps stationary light and the white core out of afterglow history", () => {
-    const r = new Bloom2DRenderer();
-    const main = makeCtx();
-    const accumulation = makeCtx();
-    (
-      main.ctx as unknown as {
-        canvas: { width: number; height: number };
-      }
-    ).canvas = {
-      width: 400,
-      height: 300,
-    };
-    class FakeOffscreenCanvas {
-      constructor(
-        public width: number,
-        public height: number
-      ) {}
-      getContext() {
-        return accumulation.ctx;
-      }
-    }
-    vi.stubGlobal("OffscreenCanvas", FakeOffscreenCanvas);
-
-    try {
-      const params = makeParams({
-        afterglow: 0.9,
-        streak: 0,
-        spikes: 0,
-      });
-      r.render(main.ctx, params, [makeTip()]);
-      r.render(main.ctx, params, [makeTip()]);
-
-      expect(accumulation.radial).toHaveLength(0);
-      expect(main.radial).toHaveLength(4);
-      expect(main.calls.drawImage).toBe(2);
-    } finally {
-      vi.unstubAllGlobals();
-    }
-  });
-
-  it("stores one moving colored halo in history, never a white core", () => {
-    const r = new Bloom2DRenderer();
-    const main = makeCtx();
-    const accumulation = makeCtx();
-    (
-      main.ctx as unknown as {
-        canvas: { width: number; height: number };
-      }
-    ).canvas = {
-      width: 400,
-      height: 300,
-    };
-    class FakeOffscreenCanvas {
-      constructor(
-        public width: number,
-        public height: number
-      ) {}
-      getContext() {
-        return accumulation.ctx;
-      }
-    }
-    vi.stubGlobal("OffscreenCanvas", FakeOffscreenCanvas);
-
-    try {
-      const params = makeParams({
-        afterglow: 0.9,
-        streak: 0,
-        spikes: 0,
-      });
-      r.render(main.ctx, params, [makeTip({ x: 100 })]);
-      r.render(main.ctx, params, [makeTip({ x: 140 })]);
-
-      expect(accumulation.radial).toHaveLength(1);
-      expect(main.radial).toHaveLength(4);
-    } finally {
-      vi.unstubAllGlobals();
-    }
-  });
-
-  describe("falloff strategies (halo is the first radial gradient)", () => {
-    it("smooth halo has stops at 0, 0.4, 1", () => {
+  describe("light path", () => {
+    it("leaves no history behind a tip that holds still", () => {
       const r = new Bloom2DRenderer();
-      const { ctx, radial } = makeCtx();
-      r.render(ctx, makeParams({ falloff: "smooth", spikes: 0 }), [makeTip()]);
-      expect(radial[0]!.stops.map((s) => s.offset)).toEqual([0, 0.4, 1]);
+      let frame = makeCtx();
+      for (let i = 0; i < 30; i++) {
+        frame = makeCtx();
+        r.render(
+          frame.ctx,
+          makeParams({ afterglow: 1, spikes: 0 }),
+          [makeTip()],
+          DT
+        );
+      }
+      expect(frame.linear).toHaveLength(0);
+      expect(frame.calls.fill).toBe(0);
     });
 
-    it("sharp halo has stops at 0, 0.15, 0.6, 1", () => {
+    it("traces a moving tip with a ribbon that dims and narrows with age", () => {
+      const frame = sweep(new Bloom2DRenderer(), makeParams({ spikes: 0 }), 20);
+      expect(frame.linear.length).toBeGreaterThan(5);
+      const width = (g: FakeGradient) =>
+        Math.hypot(g.args[2]! - g.args[0]!, g.args[3]! - g.args[1]!);
+      const center = (g: FakeGradient) =>
+        alphaOf(g.stops.find((s) => s.offset === 0.5)!.color);
+      const newest = frame.linear[0]!;
+      const oldest = frame.linear[frame.linear.length - 1]!;
+      expect(center(newest)).toBeGreaterThan(center(oldest));
+      expect(width(newest)).toBeGreaterThan(width(oldest));
+    });
+
+    it("has no history when afterglow is off", () => {
+      const frame = sweep(
+        new Bloom2DRenderer(),
+        makeParams({ afterglow: 0 }),
+        20
+      );
+      expect(frame.linear).toHaveLength(0);
+    });
+
+    it("expires after the afterglow lifetime once the tip stops", () => {
       const r = new Bloom2DRenderer();
+      const params = makeParams({ afterglow: 0.5, spikes: 0 });
+      sweep(r, params, 20);
+      // Lifetime at 0.5 is 0.555 s; hold still for longer than that.
+      let frame = makeCtx();
+      for (let i = 0; i < 40; i++) {
+        frame = makeCtx();
+        r.render(frame.ctx, params, [makeTip({ x: 60 + 19 * 600 * DT })], DT);
+      }
+      expect(frame.linear).toHaveLength(0);
+    });
+
+    it("lasts longer with more afterglow", () => {
+      const count = (afterglow: number) =>
+        sweep(
+          new Bloom2DRenderer(),
+          makeParams({ afterglow, spikes: 0 }),
+          50,
+          300
+        ).linear.length;
+      expect(count(0.9)).toBeGreaterThan(count(0.2));
+    });
+
+    it("keeps fading a lifted tip's path instead of cutting it off", () => {
+      const r = new Bloom2DRenderer();
+      const params = makeParams({ spikes: 0 });
+      sweep(r, params, 20);
+      const lifted = makeCtx();
+      r.render(lifted.ctx, params, [], DT);
+      expect(lifted.linear.length).toBeGreaterThan(0);
+      expect(lifted.radial).toHaveLength(0);
+    });
+
+    it("never draws light across a teleport (seek or loop seam)", () => {
+      const r = new Bloom2DRenderer();
+      const params = makeParams({ spikes: 0 });
+      sweep(r, params, 10);
+      const jumped = makeCtx();
+      r.render(jumped.ctx, params, [makeTip({ x: 480, y: 480 })], DT);
+      expect(jumped.linear).toHaveLength(0);
+    });
+
+    it("never stores the white core in the path", () => {
+      const frame = sweep(
+        new Bloom2DRenderer(),
+        makeParams({ color: "#ff0000", streak: 1, spikes: 0 }),
+        20
+      );
+      for (const g of frame.linear) {
+        for (const stop of g.stops)
+          expect(stop.color).not.toMatch(/rgba\(255, 255, 255/);
+      }
+    });
+
+    it("thins long tunnel paths to a fixed drawing budget", () => {
+      const r = new Bloom2DRenderer();
+      const params = makeParams({ afterglow: 1, spikes: 0 });
+      let frame = makeCtx();
+      for (let f = 0; f < 60; f++) {
+        frame = makeCtx();
+        const tips = Array.from({ length: 24 }, (_, i) =>
+          makeTip({
+            tipIndex: i,
+            propIndex: i >> 1,
+            x: 20 + f * 6,
+            y: 10 + i * 20,
+          })
+        );
+        r.render(frame.ctx, params, tips, DT);
+      }
+      expect(frame.linear.length).toBeLessThanOrEqual(400);
+    });
+  });
+
+  describe("falloff", () => {
+    const haloStops = (falloff: Bloom2DParams["falloff"]) => {
       const { ctx, radial } = makeCtx();
-      r.render(ctx, makeParams({ falloff: "sharp", spikes: 0 }), [makeTip()]);
-      expect(radial[0]!.stops.map((s) => s.offset)).toEqual([0, 0.15, 0.6, 1]);
+      new Bloom2DRenderer().render(
+        ctx,
+        makeParams({ falloff, spikes: 0 }),
+        [makeTip()],
+        DT
+      );
+      return radial[0]!.stops.map((s) => [s.offset, alphaOf(s.color)] as const);
+    };
+
+    it("sharp falls off faster than smooth", () => {
+      const at = (
+        stops: ReadonlyArray<readonly [number, number]>,
+        offset: number
+      ) => stops.filter((s) => s[0] <= offset).pop()![1];
+      expect(at(haloStops("sharp"), 0.5)).toBeLessThan(
+        at(haloStops("smooth"), 0.5)
+      );
     });
 
     it("renders a legacy ring value as the smooth halo", () => {
-      const r = new Bloom2DRenderer();
-      const { ctx, radial } = makeCtx();
-      r.render(ctx, makeParams({ falloff: "ring", spikes: 0 }), [makeTip()]);
-      expect(radial[0]!.stops.map((s) => s.offset)).toEqual([0, 0.4, 1]);
+      expect(haloStops("ring")).toEqual(haloStops("smooth"));
     });
   });
 
   describe("color modes (halo center stop)", () => {
+    const haloColor = (radial: FakeGradient[], i: number) =>
+      radial[i]!.stops[0]!.color;
+
     it("solid uses params.color", () => {
-      const r = new Bloom2DRenderer();
       const { ctx, radial } = makeCtx();
-      r.render(
+      new Bloom2DRenderer().render(
         ctx,
-        makeParams({ colorMode: "solid", color: "#ff0000", spikes: 0 }),
-        [makeTip()]
+        makeParams({ color: "#ff0000", spikes: 0 }),
+        [makeTip()],
+        DT
       );
-      expect(radial[0]!.stops[0]!.color.toLowerCase()).toContain("255, 0, 0");
+      expect(haloColor(radial, 0)).toContain("255, 0, 0");
     });
 
-    it("prop-matched uses each tip's resolved color, incl. tunnel layers (propIndex >= 2)", () => {
-      const r = new Bloom2DRenderer();
+    it("prop-matched uses each tip's resolved color, incl. tunnel layers", () => {
       const { ctx, radial } = makeCtx();
-      r.render(ctx, makeParams({ colorMode: "prop-matched", spikes: 0 }), [
-        makeTip({ propIndex: 0, color: "#0000ff" }),
-        makeTip({ propIndex: 1, color: "#ff0000", x: 50, tipIndex: 1 }),
-        // Tunnel copy: propIndex 2 used to collapse to red via `=== 0`; now its
-        // own resolved color (green) must come through.
-        makeTip({ propIndex: 2, color: "#00ff00", x: 80, tipIndex: 2 }),
-      ]);
-      // each tip → halo+core; halos land at radial[0], radial[2], radial[4].
-      expect(radial[0]!.stops[0]!.color.toLowerCase()).toContain("0, 0, 255");
-      expect(radial[2]!.stops[0]!.color.toLowerCase()).toContain("255, 0, 0");
-      expect(radial[4]!.stops[0]!.color.toLowerCase()).toContain("0, 255, 0");
+      new Bloom2DRenderer().render(
+        ctx,
+        makeParams({ colorMode: "prop-matched", spikes: 0 }),
+        [
+          makeTip({ propIndex: 0, color: "#0000ff" }),
+          makeTip({
+            propIndex: 1,
+            color: "rgb(255, 0, 0)",
+            x: 50,
+            tipIndex: 1,
+          }),
+          makeTip({
+            propIndex: 2,
+            color: "hsl(120, 100%, 50%)",
+            x: 80,
+            tipIndex: 2,
+          }),
+        ],
+        DT
+      );
+      expect(haloColor(radial, 0)).toContain("0, 0, 255");
+      expect(haloColor(radial, 2)).toContain("255, 0, 0");
+      expect(haloColor(radial, 4)).toContain("0, 255, 0");
     });
 
     it("palette cycles by tipIndex", () => {
-      const r = new Bloom2DRenderer();
       const { ctx, radial } = makeCtx();
       const palette = ["#ff0000", "#00ff00", "#0000ff"];
-      r.render(ctx, makeParams({ colorMode: "palette", palette, spikes: 0 }), [
-        makeTip({ tipIndex: 0 }),
-        makeTip({ tipIndex: 1, x: 50 }),
-      ]);
-      expect(radial[0]!.stops[0]!.color.toLowerCase()).toContain("255, 0, 0");
-      expect(radial[2]!.stops[0]!.color.toLowerCase()).toContain("0, 255, 0");
+      new Bloom2DRenderer().render(
+        ctx,
+        makeParams({ colorMode: "palette", palette, spikes: 0 }),
+        [makeTip({ tipIndex: 0 }), makeTip({ tipIndex: 1, x: 50 })],
+        DT
+      );
+      expect(haloColor(radial, 0)).toContain("255, 0, 0");
+      expect(haloColor(radial, 2)).toContain("0, 255, 0");
     });
 
-    it("rainbow produces hsla output", () => {
-      const r = new Bloom2DRenderer();
+    it("rainbow gives every tip its own hue at the same moment", () => {
       const { ctx, radial } = makeCtx();
-      r.render(ctx, makeParams({ colorMode: "rainbow", spikes: 0 }), [
-        makeTip(),
-      ]);
-      expect(radial[0]!.stops[0]!.color.toLowerCase()).toContain("hsla");
+      new Bloom2DRenderer().render(
+        ctx,
+        makeParams({ colorMode: "rainbow", spikes: 0 }),
+        [
+          makeTip({ tipIndex: 0 }),
+          makeTip({ tipIndex: 1, x: 50 }),
+          makeTip({ tipIndex: 2, x: 80 }),
+        ],
+        DT
+      );
+      const hues = new Set(
+        [0, 2, 4].map((i) => haloColor(radial, i).replace(/, [\d.]+\)$/, ""))
+      );
+      expect(hues.size).toBe(3);
     });
   });
 
-  describe("diffraction spikes", () => {
-    it("spikes>0 draws 8 stroked spike lines (linear gradients)", () => {
-      const r = new Bloom2DRenderer();
-      const { ctx, linear, calls } = makeCtx();
-      r.render(ctx, makeParams({ spikes: 0.8 }), [makeTip()]);
-      expect(linear).toHaveLength(8);
-      expect(calls.stroke).toBe(8);
+  describe("lens rays", () => {
+    it("draws four tinted rays when spikes are on", () => {
+      const { ctx, radial, calls } = makeCtx();
+      new Bloom2DRenderer().render(
+        ctx,
+        makeParams({ spikes: 0.8, coreStrength: 0 }),
+        [makeTip()],
+        DT
+      );
+      // halo + four rays
+      expect(radial).toHaveLength(5);
+      expect(calls.scale).toBe(4);
+      expect(radial[1]!.stops[0]!.color).not.toMatch(/rgba\(255, 255, 255/);
     });
 
-    it("spikes=0 draws no spike lines", () => {
+    it("draws no rays when spikes are off", () => {
+      const { ctx, calls } = makeCtx();
+      new Bloom2DRenderer().render(
+        ctx,
+        makeParams({ spikes: 0 }),
+        [makeTip()],
+        DT
+      );
+      expect(calls.scale).toBe(0);
+    });
+
+    it("turn with the direction of travel", () => {
       const r = new Bloom2DRenderer();
-      const { ctx, linear, calls } = makeCtx();
-      r.render(ctx, makeParams({ spikes: 0 }), [makeTip()]);
-      expect(linear).toHaveLength(0);
-      expect(calls.stroke).toBe(0);
+      const params = makeParams({ streak: 0, afterglow: 0 });
+      r.render(makeCtx().ctx, params, [makeTip({ x: 100, y: 100 })], DT);
+      const right = makeCtx();
+      r.render(right.ctx, params, [makeTip({ x: 110, y: 100 })], DT);
+      const down = makeCtx();
+      r.render(down.ctx, params, [makeTip({ x: 110, y: 110 })], DT);
+      expect(right.calls.rotations[0]).toBeCloseTo(0, 5);
+      expect(down.calls.rotations[0]).toBeCloseTo(Math.PI / 2, 5);
     });
   });
 
-  describe("motion reactivity", () => {
-    it("frame 1 (no velocity) draws no streak transform; frame 2 (moved) does", () => {
-      const r = new Bloom2DRenderer();
-      const params = makeParams({ spikes: 0, streak: 0.8 });
+  describe("motion blade", () => {
+    const bladeLength = (frame: ReturnType<typeof makeCtx>) =>
+      (frame.ctx.scale as ReturnType<typeof vi.fn>).mock.calls[0]![0] as number;
 
-      // Frame 1 has no velocity streak.
-      const f1 = makeCtx();
-      r.render(f1.ctx, params, [makeTip({ x: 100, y: 150, tipIndex: 0 })]);
-      expect(f1.calls.scale).toBe(0); // streak uses scale(); none on first frame
-      expect(f1.linear).toHaveLength(0);
+    it("appears only once the tip moves, and grows with speed", () => {
+      const params = makeParams({ spikes: 0, afterglow: 0, streak: 0.8 });
+      const still = makeCtx();
+      new Bloom2DRenderer().render(still.ctx, params, [makeTip()], DT);
+      expect(still.calls.scale).toBe(0);
 
-      // Frame 2: the same tip moved, so the anamorphic streak appears.
-      const f2 = makeCtx();
-      r.render(f2.ctx, params, [makeTip({ x: 180, y: 150, tipIndex: 0 })]);
-      expect(f2.calls.scale).toBeGreaterThan(0); // anamorphic streak fired
-      expect(f2.calls.translate).toBeGreaterThan(0);
-      expect(f2.linear).toHaveLength(0);
+      const slow = bladeLength(sweep(new Bloom2DRenderer(), params, 12, 300));
+      const fast = bladeLength(sweep(new Bloom2DRenderer(), params, 12, 900));
+      expect(slow).toBeGreaterThan(0);
+      expect(fast).toBeGreaterThan(slow);
+    });
+
+    it("reads speed per second, so frame rate does not change it", () => {
+      const params = makeParams({ spikes: 0, afterglow: 0, streak: 0.8 });
+      const lengthAt = (fps: number) => {
+        const r = new Bloom2DRenderer();
+        let frame = makeCtx();
+        for (let f = 0; f < fps; f++) {
+          frame = makeCtx();
+          r.render(
+            frame.ctx,
+            params,
+            [makeTip({ x: 60 + (f * 300) / fps })],
+            1 / fps
+          );
+        }
+        return bladeLength(frame);
+      };
+      expect(lengthAt(30)).toBeCloseTo(lengthAt(120), 0);
     });
   });
 
-  it("renders a different dominant layer structure for every shipped preset", () => {
+  it("gives every shipped preset its own look", () => {
     const signatures = new Map<string, string>();
-
     for (const preset of BLOOM_PRESETS) {
-      const renderer = new Bloom2DRenderer();
-      const params = makeParams(preset.patch ?? {});
-      const initial = makeCtx();
-      renderer.render(initial.ctx, params, [makeTip({ x: 100 })]);
-      const moving = makeCtx();
-      renderer.render(moving.ctx, params, [makeTip({ x: 200 })]);
+      const frame = sweep(
+        new Bloom2DRenderer(),
+        makeParams(preset.patch ?? {}),
+        20
+      );
       signatures.set(
         preset.name,
-        [moving.radial.length, moving.linear.length, moving.calls.scale].join(
+        [frame.radial.length, frame.calls.scale, frame.linear.length > 0].join(
           ":"
         )
       );
     }
-
-    expect(Object.fromEntries(signatures)).toEqual({
-      Supernova: "2:8:0",
-      Comet: "3:0:1",
-      Halo: "2:0:0",
-    });
+    expect(new Set(signatures.values()).size).toBe(BLOOM_PRESETS.length);
+    // Supernova: halo, four rays and a core, no path. Comet: blade and a path.
+    expect(signatures.get("Supernova")).toBe("6:4:false");
+    expect(signatures.get("Comet")).toBe("3:1:true");
+    expect(signatures.get("Halo")).toBe("2:0:false");
   });
 
-  describe("scale parameter", () => {
-    it("halo fillRect side = radius*scale*2", () => {
-      const r = new Bloom2DRenderer();
-      const { ctx, fillRects } = makeCtx();
-      r.render(ctx, makeParams({ radius: 100, spikes: 0 }), [makeTip()], 0.5);
-      // coreR = 100 * 0.5 = 50; halo fillRect side = 100. Halo is the first rect.
-      expect(fillRects[0]!.w).toBe(100);
-      expect(fillRects[0]!.h).toBe(100);
-    });
+  it("honors the canvas scale", () => {
+    const { ctx, fillRects } = makeCtx();
+    new Bloom2DRenderer().render(
+      ctx,
+      makeParams({ radius: 100, spikes: 0 }),
+      [makeTip()],
+      DT,
+      0.5
+    );
+    expect(fillRects[0]!.w).toBe(100);
+    expect(fillRects[0]!.h).toBe(100);
   });
 
-  describe("intensity response curve (perceptual gamma, not linear alpha)", () => {
-    // Halo center stop = withAlpha(color, baseAlpha). Parse the trailing alpha
-    // out of `rgba(r, g, b, a)` to read the rendered brightness.
-    const haloCenterAlpha = (radial: FakeGradient[]): number => {
-      const m = /,\s*([\d.]+)\)\s*$/.exec(radial[0]!.stops[0]!.color);
-      return m ? parseFloat(m[1]!) : NaN;
+  describe("intensity", () => {
+    const haloCenter = (
+      intensity: number,
+      tips: BloomTipInput[] = [makeTip()]
+    ) => {
+      const { ctx, radial } = makeCtx();
+      new Bloom2DRenderer().render(
+        ctx,
+        makeParams({ intensity, spikes: 0 }),
+        tips,
+        DT
+      );
+      return alphaOf(radial[0]!.stops[0]!.color);
     };
 
-    it("midpoint slider renders well below linear (medium ≈ 16%, not 50%)", () => {
-      const r = new Bloom2DRenderer();
-      const { ctx, radial } = makeCtx();
-      r.render(ctx, makeParams({ intensity: 0.5, pulse: 0, spikes: 0 }), [
-        makeTip(),
-      ]);
-      const a = haloCenterAlpha(radial);
-      expect(a).toBeGreaterThan(0.1);
-      expect(a).toBeLessThan(0.25); // the whole point: NOT 0.5
+    it("is monotonic and still blows out at full", () => {
+      expect(haloCenter(0.25)).toBeLessThan(haloCenter(0.5));
+      expect(haloCenter(0.5)).toBeLessThan(haloCenter(1));
+      expect(haloCenter(1)).toBeCloseTo(1, 5);
     });
 
-    it("full slider still reaches full blowout (alpha 1.0)", () => {
-      const r = new Bloom2DRenderer();
-      const { ctx, radial } = makeCtx();
-      r.render(ctx, makeParams({ intensity: 1, pulse: 0, spikes: 0 }), [
-        makeTip(),
-      ]);
-      expect(haloCenterAlpha(radial)).toBeCloseTo(1, 2);
+    it("keeps the middle of the slider well below full", () => {
+      expect(haloCenter(0.5)).toBeGreaterThan(0.3);
+      expect(haloCenter(0.5)).toBeLessThan(0.6);
     });
 
-    it("is monotonic: 25% < 50% < 100%", () => {
-      const read = (intensity: number) => {
-        const r = new Bloom2DRenderer();
-        const { ctx, radial } = makeCtx();
-        r.render(ctx, makeParams({ intensity, pulse: 0, spikes: 0 }), [
-          makeTip(),
-        ]);
-        return haloCenterAlpha(radial);
-      };
-      const lo = read(0.25);
-      const mid = read(0.5);
-      const hi = read(1);
-      expect(lo).toBeLessThan(mid);
-      expect(mid).toBeLessThan(hi);
+    it("shares exposure across props so more props do not wash out", () => {
+      const four = [0, 1, 2, 3].map((i) =>
+        makeTip({ tipIndex: i * 2, propIndex: i })
+      );
+      expect(haloCenter(0.8, four)).toBeLessThan(haloCenter(0.8));
     });
   });
 
-  it("uses additive blend and balances save/restore", () => {
-    const r = new Bloom2DRenderer();
-    const { ctx } = makeCtx();
-    r.render(ctx, makeParams(), [makeTip()]);
-    expect(ctx.save).toHaveBeenCalled();
-    expect(ctx.restore).toHaveBeenCalled();
+  it("is driven by dt, not the wall clock", () => {
+    const run = () => {
+      const r = new Bloom2DRenderer();
+      const stops: string[] = [];
+      for (let f = 0; f < 20; f++) {
+        const frame = makeCtx();
+        r.render(
+          frame.ctx,
+          makeParams({ colorMode: "rainbow", pulse: 0.8 }),
+          [
+            makeTip({ x: 60 + f * 10 }),
+            makeTip({ tipIndex: 1, x: 300 - f * 10 }),
+          ],
+          DT
+        );
+        for (const g of [...frame.radial, ...frame.linear]) {
+          stops.push(...g.stops.map((s) => s.color));
+        }
+      }
+      return stops;
+    };
+    const now = vi.spyOn(performance, "now").mockReturnValue(0);
+    const first = run();
+    now.mockReturnValue(123456);
+    const second = run();
+    now.mockRestore();
+    expect(second).toEqual(first);
   });
 
-  it("dispose clears tracked state without throwing", () => {
+  it("draws additively and balances save/restore", () => {
+    const frame = sweep(new Bloom2DRenderer(), makeParams(), 10);
+    expect(frame.ctx.globalCompositeOperation).toBe("lighter");
+    expect(frame.calls.save).toBe(frame.calls.restore);
+  });
+
+  it("dispose clears tracked state", () => {
     const r = new Bloom2DRenderer();
-    const { ctx } = makeCtx();
-    r.render(ctx, makeParams(), [makeTip()]);
-    expect(() => r.dispose()).not.toThrow();
+    sweep(r, makeParams(), 10);
+    r.dispose();
+    const frame = makeCtx();
+    r.render(frame.ctx, makeParams({ spikes: 0 }), [makeTip({ x: 400 })], DT);
+    expect(frame.linear).toHaveLength(0);
   });
 });
