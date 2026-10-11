@@ -38,8 +38,8 @@ export interface Strike {
   readonly strokes: readonly BoltStroke[];
   /** Return-stroke onsets in seconds after birth; the first is always 0. */
   readonly pulses: readonly number[];
-  /** Seconds until fully dark. */
-  readonly life: number;
+  /** Seconds until fully dark. A newer strike shortens it to retire this one. */
+  life: number;
   /** Seconds since birth. */
   age: number;
 }

@@ -383,3 +383,20 @@ the evidence set before the fourth batch merges.
 - Ghost reflects the user's current prop, not a fixed staff.
 - Silk: spiral gesture. Animal: coil staging. Smoke: staged plume (v6), not a
   replayed sweep. Pulse: both staff ends ring, two beats of history.
+
+## Batch 1 notes (2026-10-11)
+
+- Ghost draws the prop's left (blue-hand) sprite only, through
+  `generateLeftPropSvg`, cached per prop type. The right-hand sprite would add
+  a second decode for a picture that reads the same at tile size.
+- `PortraitTile` reads `animationSettings.currentPropType` when a host passes
+  no `propType`; only `EffectPresetsSection`, `EffectsInspector` and the 3D
+  `EffectsSettingsPanel` thread it explicitly. Checked live: switching the
+  tuner's prop from Double Staff to Club repainted the Ghost tile.
+- `tile-registry.test.ts` fails until Task 8 registers every painter; that
+  is the plan's intended red.
+- Evidence in `2026-10-11-effect-tile-portraits/evidence/`: `zap.png`,
+  `sparkle.png`, `ghost-club-360.jpg`, `quick-switch-strip.png`,
+  `effects-grid.png`, and `kit-before-*` / `kit-after-*` for Fire, Coal and
+  Bloom taken from main (port 5173) and this branch (port 5198) at the same
+  viewport.

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import type { EffectPreset } from "../presets/types";
+  import { type Rgb, blob, css, hexToRgb, lcg, mix, toRgb } from "./tile-paint";
 
   interface Props {
     preset: EffectPreset<"fire">;
@@ -33,36 +34,6 @@
     [1.0, 0.6, 0.0],
     [1.0, 0.95, 0.8],
   ];
-
-  type Rgb = [number, number, number];
-
-  function toRgb(c: readonly number[]): Rgb {
-    return [c[0] ?? 0, c[1] ?? 0, c[2] ?? 0];
-  }
-
-  function css(c: Rgb, alpha = 1): string {
-    const [r, g, b] = c;
-    return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${alpha})`;
-  }
-
-  function mix(a: Rgb, b: Rgb, t: number): Rgb {
-    return [
-      a[0] + (b[0] - a[0]) * t,
-      a[1] + (b[1] - a[1]) * t,
-      a[2] + (b[2] - a[2]) * t,
-    ];
-  }
-
-  function hexToRgb(hex: string): Rgb {
-    let h = hex.replace("#", "");
-    if (h.length === 3)
-      h = h
-        .split("")
-        .map((c) => c + c)
-        .join("");
-    const n = parseInt(h, 16);
-    return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
-  }
 
   /**
    * Cold -> mid -> hot -> core, at the translator's own stop positions. Tinting
@@ -101,37 +72,6 @@
       if (t <= b) return mix(palette[i], palette[i + 1], (t - a) / (b - a));
     }
     return palette[palette.length - 1];
-  }
-
-  /** Stable per-tile variation - a seeded LCG, never Math.random. */
-  function lcg(seed: number): () => number {
-    let s = seed >>> 0;
-    return () => {
-      s = (s * 1664525 + 1013904223) >>> 0;
-      return s / 4294967296;
-    };
-  }
-
-  /** One soft light blob. Everything in the tile is made of these. */
-  function blob(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    rx: number,
-    ry: number,
-    color: Rgb,
-    alpha: number
-  ): void {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(1, ry / rx);
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
-    g.addColorStop(0, css(color, alpha));
-    g.addColorStop(0.45, css(color, alpha * 0.42));
-    g.addColorStop(1, css(color, 0));
-    ctx.fillStyle = g;
-    ctx.fillRect(-rx, -rx, rx * 2, rx * 2);
-    ctx.restore();
   }
 
   /**
@@ -295,7 +235,15 @@
     if (liquid) {
       drawPlume(ctx, WIDTH / 2, baseY, scale, palette, true, 0x5eed);
     } else {
-      drawPlume(ctx, WIDTH / 2 - 128, baseY, scale * 0.9, palette, false, 0x1a7f);
+      drawPlume(
+        ctx,
+        WIDTH / 2 - 128,
+        baseY,
+        scale * 0.9,
+        palette,
+        false,
+        0x1a7f
+      );
       drawPlume(ctx, WIDTH / 2 + 128, baseY, scale, palette, false, 0x93c1);
     }
 

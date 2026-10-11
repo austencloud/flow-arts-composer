@@ -16,7 +16,10 @@ import {
   setBpm,
   setCellAppearance,
   setCellLayers,
+  setCellMotionVisibility,
   setCellOffset,
+  setCellTipEffects,
+  setCellTipEfforts,
   setGrid,
   setSkipStartPlacement,
   staggerCells,
@@ -26,6 +29,7 @@ import { createArrangementProject } from "#lib/shared/media-composition/domain/p
 import {
   clearArrangementCell,
   setArrangementGrid,
+  setArrangementSpeed,
   staggerArrangement,
 } from "#lib/shared/media-composition/domain/post-project-edits.js";
 
@@ -208,6 +212,41 @@ describe("cell content edits", () => {
     expect(setCellAppearance(start, "missing", { props: false })).toBe(start);
   });
 
+  it("keeps per-hand effects and efforts on the cell and drops empty maps", () => {
+    const start = grid(1, 1, [filled(0, 0, 4)]);
+    const withHand = setCellTipEffects(start, "cell-0-0", {
+      "0": { effect: "fire" },
+    });
+    expect(cellAt(withHand, 0, 0)?.tipEffectMap).toEqual({
+      "0": { effect: "fire" },
+    });
+    expect(
+      setCellTipEffects(withHand, "cell-0-0", { "0": { effect: "fire" } })
+    ).toBe(withHand);
+    expect(cellAt(setCellTipEffects(withHand, "cell-0-0", {}), 0, 0)).not.toHaveProperty(
+      "tipEffectMap"
+    );
+    const withEffort = setCellTipEfforts(start, "cell-0-0", {
+      "1": { effort: "bounce" },
+    });
+    expect(cellAt(withEffort, 0, 0)?.tipEffortMap).toEqual({
+      "1": { effort: "bounce" },
+    });
+    expect(setCellTipEffects(start, "missing", { "*": { effect: "led" } })).toBe(start);
+  });
+
+  it("hides a hand with a flag and drops the flag when it shows again", () => {
+    const start = grid(1, 1, [filled(0, 0, 4)]);
+    const hidden = setCellMotionVisibility(start, "cell-0-0", { left: false });
+    expect(cellAt(hidden, 0, 0)).toMatchObject({ leftMotionVisible: false });
+    expect(cellAt(hidden, 0, 0)).not.toHaveProperty("rightMotionVisible");
+    expect(setCellMotionVisibility(hidden, "cell-0-0", { left: false })).toBe(hidden);
+    expect(
+      cellAt(setCellMotionVisibility(hidden, "cell-0-0", { left: true }), 0, 0)
+    ).not.toHaveProperty("leftMotionVisible");
+    expect(setCellMotionVisibility(start, "cell-0-0", { right: true })).toBe(start);
+  });
+
   it("clears layers and offset together", () => {
     const start = grid(1, 1, [filled(0, 0, 4, { beatOffset: 3, colSpan: 1 })]);
     const next = clearCell(start, "cell-0-0");
@@ -274,6 +313,30 @@ describe("arrangement edits on a project", () => {
     const item = staggered.tracks[0]!.items[0]!;
     if (item.kind !== "arrangement") throw new Error("expected an arrangement");
     expect(cellAt(item.snapshot, 1, 1)?.beatOffset).toBe(1);
+  });
+});
+
+describe("setArrangementSpeed", () => {
+  it("scales the clip's length with its speed and keeps its source span", () => {
+    const project = createArrangementProject(
+      grid(1, 1, [filled(0, 0, 4)]),
+      "studio-arrangement:speed",
+      NOW
+    );
+    const item = project.tracks[0]!.items[0]!;
+    if (item.kind !== "arrangement") throw new Error("expected an arrangement");
+    const faster = setArrangementSpeed(project, item.id, 2, { now: NOW + 1 });
+    const next = faster.tracks[0]!.items[0]!;
+    if (next.kind !== "arrangement") throw new Error("expected an arrangement");
+    expect(next).toMatchObject({
+      speed: 2,
+      sourceIn: item.sourceIn,
+      sourceOut: item.sourceOut,
+    });
+    expect(next.duration).toBeCloseTo(item.duration / 2, 6);
+    expect(setArrangementSpeed(faster, item.id, 2, { now: NOW + 2 })).toBe(faster);
+    const clamped = setArrangementSpeed(project, item.id, 100, { now: NOW + 1 });
+    expect(clamped.tracks[0]!.items[0]!.speed).toBe(4);
   });
 });
 

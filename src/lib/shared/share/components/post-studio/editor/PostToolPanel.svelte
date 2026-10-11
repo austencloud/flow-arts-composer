@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import PanelButton from "#lib/shared/components/panel/PanelButton.svelte";
+  import type { PostItemKind } from "#lib/shared/media-composition/domain/post-project.js";
   import type { PostPanelToolId } from "./post-editor-tools";
   import { TOOL_ICON, toolLabel } from "./post-editor-labels";
 
@@ -12,6 +13,8 @@
    */
   interface Props {
     tool: PostPanelToolId;
+    /** The selected item's kind, for the tools whose name depends on it. */
+    kind?: PostItemKind | null;
     /** The selected item's name; nothing for the post's own tools. */
     subject?: string;
     /** Given on a phone, where Done returns to the tool row. */
@@ -30,6 +33,7 @@
 
   let {
     tool,
+    kind = null,
     subject,
     onDone,
     placement,
@@ -52,7 +56,7 @@
   <header class="head" class:sr-only={bare}>
     <i class="fa-solid {TOOL_ICON[tool]} icon" aria-hidden="true"></i>
     <div class="titles">
-      <h3 id="{id}-title" class="title">{toolLabel(tool)}</h3>
+      <h3 id="{id}-title" class="title">{toolLabel(tool, kind)}</h3>
       {#if subject}
         <p class="subject">{subject}</p>
       {/if}

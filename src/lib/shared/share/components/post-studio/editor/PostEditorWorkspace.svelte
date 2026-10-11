@@ -1272,7 +1272,10 @@
   });
   const tools = $derived(
     toolRow(selection).filter(
-      (id) => sequence !== null || (id !== "look" && id !== "beats")
+      (id) =>
+        sequence !== null ||
+        selection.kind === "arrangement" ||
+        (id !== "look" && id !== "beats")
     )
   );
   const rowKey = $derived(`row:${tools.join(" ")}`);
@@ -2785,6 +2788,7 @@
 {#snippet row()}
   <PostToolRow
     {tools}
+    kind={selection.kind}
     shown={panelBeside ? shown : null}
     isDisabled={toolDisabled}
     onpick={pickTool}
@@ -2849,7 +2853,7 @@
       onAddDeviceVideo={pickDeviceVideo}
       onAdded={itemAdded}
     />
-  {:else if (tool === "grid" || tool === "layers" || tool === "offset" || (tool === "sequence" && editor.selectedCell !== null)) && editor.selectedItem?.kind === "arrangement"}
+  {:else if (tool === "grid" || tool === "speed" || tool === "look" || tool === "effects" || tool === "effort" || tool === "layers" || tool === "offset" || (tool === "sequence" && editor.selectedCell !== null)) && editor.selectedItem?.kind === "arrangement"}
     <PostArrangementTool
       {editor}
       item={editor.selectedItem}
@@ -2857,6 +2861,7 @@
       cell={editor.selectedCell}
       locked={!editor.selectionEditable}
       sequence={displaySequence}
+      fill={placement === "side"}
     />
   {:else if tool === "arrangement" && editor.selectedItem?.kind === "arrangement"}
     <div class="arrangement-tool">
@@ -2962,6 +2967,7 @@
 {#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
   <PostToolPanel
     {tool}
+    kind={editor.selectedItem?.kind ?? null}
     subject={tool === "transition" && transitionCut
       ? `${labelFor(transitionCut.outgoing)} → ${labelFor(transitionCut.incoming)}`
       : tool === "music"
