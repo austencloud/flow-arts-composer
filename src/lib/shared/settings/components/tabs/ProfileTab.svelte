@@ -103,7 +103,6 @@
   let profileColor = $state("#8b5cf6");
   let savedGooglePhotoUrl = $state<string | null>(null);
   let instagramLinked = $state(false);
-  let isVisible = $state(false);
   let manageSignInMethods = $state(false);
   let loadedAccountUserId = $state<string | null>(null);
   let setupWasIncomplete = $state(false);
@@ -181,7 +180,6 @@
   onMount(() => {
     hapticService = getHapticFeedback();
     accountManager = getAccountManager();
-    setTimeout(() => (isVisible = true), 30);
   });
 
   async function loadAccountDetails(user: User) {
@@ -380,7 +378,7 @@
   }
 </script>
 
-<div class="profile-tab" class:visible={isVisible}>
+<div class="profile-tab">
   {#if isPreviewMode && userPreviewState.data.profile}
     {@const previewProfile = userPreviewState.data.profile}
     <div class="profile-content">
@@ -652,13 +650,7 @@
     min-height: 100%;
     min-width: 0;
     padding: clamp(0.75em, 1.4cqi, 1.75em) clamp(0.75em, 2cqi, 3em);
-    opacity: 0;
     overflow: visible;
-    transition: opacity var(--duration-normal) ease;
-  }
-
-  .profile-tab.visible {
-    opacity: 1;
   }
 
   .profile-content {

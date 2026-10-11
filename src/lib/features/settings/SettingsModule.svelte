@@ -433,6 +433,53 @@
     view-transition-name: tab-content;
   }
 
+  /* Every tab sits on the same dark surface, so the surface gets its own
+     name: it reshapes from one tab's panel to the next while only its
+     contents crossfade. Fading two dark panels out and in let the
+     background flash through between them. Each tab renders at most one. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.tab-slide-left)
+      .panel
+      :global(
+        :is(
+          .account-workspace,
+          .preferences-workspace,
+          .notification-workspace,
+          .props-workspace,
+          .theme-workspace
+        )
+      ),
+    :global(html.tab-slide-right)
+      .panel
+      :global(
+        :is(
+          .account-workspace,
+          .preferences-workspace,
+          .notification-workspace,
+          .props-workspace,
+          .theme-workspace
+        )
+      ) {
+      view-transition-name: settings-surface;
+    }
+
+    :global(html:has(.settings-module))::view-transition-group(
+      settings-surface
+    ) {
+      animation-duration: var(--duration-emphasis);
+      animation-timing-function: var(--ease-out);
+    }
+
+    /* Both snapshots fill the reshaping box at their own proportions, so
+       text scales a touch instead of stretching. */
+    :global(html:has(.settings-module))::view-transition-old(settings-surface),
+    :global(html:has(.settings-module))::view-transition-new(settings-surface) {
+      height: 100%;
+      object-fit: cover;
+      object-position: top;
+    }
+  }
+
   /* Settings' own take on the shared tab slide: the outgoing tab drifts away
      and fades fast, the incoming one rises from the side of the tab that was
      picked (later tabs from below, earlier from above) with a little depth,
@@ -440,27 +487,27 @@
      modules keep the shared slide once this stylesheet has loaded. */
   @media (prefers-reduced-motion: no-preference) {
     :global(html.tab-slide-left:has(.settings-module))::view-transition-old(
-        tab-content
-      ) {
+      tab-content
+    ) {
       animation: var(--duration-fast) var(--ease-in) both settings-tab-out-up;
     }
 
     :global(html.tab-slide-left:has(.settings-module))::view-transition-new(
-        tab-content
-      ) {
+      tab-content
+    ) {
       animation: var(--duration-emphasis) var(--ease-out)
         calc(var(--duration-fast) / 2) both settings-tab-in-up;
     }
 
     :global(html.tab-slide-right:has(.settings-module))::view-transition-old(
-        tab-content
-      ) {
+      tab-content
+    ) {
       animation: var(--duration-fast) var(--ease-in) both settings-tab-out-down;
     }
 
     :global(html.tab-slide-right:has(.settings-module))::view-transition-new(
-        tab-content
-      ) {
+      tab-content
+    ) {
       animation: var(--duration-emphasis) var(--ease-out)
         calc(var(--duration-fast) / 2) both settings-tab-in-down;
     }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browser } from "$app/env";
-  import { afterNavigate, replaceState } from "$app/navigation";
+  import { afterNavigate } from "$app/navigation";
   import { page } from "$app/state";
   import LearnTab from "../LearnTab.svelte";
   import { getConceptById } from "../domain/concepts";
@@ -16,6 +16,7 @@
   } from "../domain/concept-routes";
   import { getExperiencePersistence } from "../state/experience-persistence.svelte";
   import Seo from "#lib/shared/components/Seo.svelte";
+  import { writeUrl } from "#lib/shared/navigation/services/url-state.js";
   import { LANDING_DOMAIN } from "../../../../config/domains";
   import { getLocale, t, tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
   import { localizedConcept } from "../domain/localized-concept";
@@ -29,14 +30,14 @@
   if (restart) getExperiencePersistence(restart.conceptId).reset();
   afterNavigate(() => {
     const pending = conceptRestartFromUrl(new URL(window.location.href));
-    if (pending) replaceState(pending.cleanHref, page.state);
+    if (pending) writeUrl(pending.cleanHref);
   });
 
   const courseName = $derived(tDynamic("learn_public_course_name"));
   const courseDescription = $derived(tDynamic("learn_public_course_description"));
 
-  // Lesson links inside the course move with shallow routing (pushState and
-  // replaceState). That changes the address bar and page.state, but page.url
+  // Lesson links inside the course move with shallow routing (a shallow
+  // `goto`). That changes the address bar and page.state, but page.url
   // and page.params stay on the last real navigation, so reading page.url
   // would leave the title, description and canonical on the lesson the page
   // first loaded with. SvelteKit reassigns page.state on every shallow push,
