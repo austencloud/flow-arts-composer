@@ -46,6 +46,8 @@
   let playerStage = $state<HTMLElement | null>(null);
   let playbackArea = $state<HTMLElement | null>(null);
   let notationRail = $state<HTMLElement | null>(null);
+  /** Where the open effect picker sits, or null while it is closed. */
+  let effectPickerArrangement = $state<string | null>(null);
   const visibilityManager = getAnimationVisibilityManager();
   let effectsConfigState = $state<EffectsConfigState>(
     visibilityManager.effectsConfigState ?? createEffectsConfigState()
@@ -101,6 +103,7 @@
     player={playerStage}
     bounds={effectPickerBounds}
     roomBelow={effectPickerRoomBelow}
+    onArrange={(arrangement) => (effectPickerArrangement = arrangement)}
   />
 {/snippet}
 
@@ -165,6 +168,7 @@
       </div>
       <div
         class="notation-rail"
+        class:under-picker={effectPickerArrangement === "below"}
         bind:this={notationRail}
         role="group"
         aria-label={t("create_ui_sequence_pictographs")}
@@ -317,6 +321,12 @@
       visibility: visible;
       opacity: 1;
     }
+  }
+  /* The effect picker's row floats over the rail: the rail fades out behind
+     it, so pictographs do not show through the gap around the row. */
+  .notation-rail.under-picker {
+    opacity: 0;
+    pointer-events: none;
   }
   @media (prefers-reduced-motion: reduce) {
     .playback-media,

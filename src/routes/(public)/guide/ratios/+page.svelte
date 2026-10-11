@@ -561,9 +561,9 @@
           </dl>
           <p>
             Each name describes the shape one end of the prop draws. Inspin is
-            another name for prospin;
-            <LinkChip size="inline" href="/guide/prospin-and-inspin">Prospin and Inspin</LinkChip>
-            compares the two.
+            another name for prospin, as
+            <LinkChip size="inline" href="/guide/level-1/staff-motions">Staff Motions</LinkChip>
+            explains.
           </p>
         </div>
 

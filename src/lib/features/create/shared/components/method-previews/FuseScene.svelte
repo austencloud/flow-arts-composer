@@ -57,7 +57,7 @@
     type FuseSource,
   } from "./method-preview-fuse";
   import type { FusePreviewPair } from "./method-preview-fuse-swap";
-  import { waitUntil, type SceneRun } from "./method-preview-run";
+  import { playTravel, waitUntil, type SceneRun } from "./method-preview-run";
   import { playSceneTurns } from "./method-preview-scene-turns.svelte";
   import type { MethodPreviewSceneProps } from "./method-preview-scenes";
 
@@ -266,32 +266,10 @@
 
   /** Play one fused step: its props travel from the pose before it. */
   function travel(run: SceneRun, index: number): Promise<boolean> {
-    return new Promise((resolve) => {
-      if (typeof requestAnimationFrame !== "function") {
-        resolve(true);
-        return;
-      }
-      const startedAt = performance.now();
-      let id = 0;
-      const step = (now: number) => {
-        const value = Math.min(
-          1,
-          Math.max(0, (now - startedAt) / FUSE_PREVIEW_TIMING.stepMs)
-        );
-        progress = progress.map((current, cell) =>
-          cell === index ? value : current
-        );
-        if (value >= 1) {
-          resolve(true);
-          return;
-        }
-        id = requestAnimationFrame(step);
-      };
-      id = requestAnimationFrame(step);
-      run.onAbort(() => {
-        cancelAnimationFrame(id);
-        resolve(false);
-      });
+    return playTravel(run, FUSE_PREVIEW_TIMING.stepMs, (value) => {
+      progress = progress.map((current, cell) =>
+        cell === index ? value : current
+      );
     });
   }
 

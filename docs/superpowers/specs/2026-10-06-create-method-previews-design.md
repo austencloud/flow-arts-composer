@@ -180,8 +180,16 @@ production options pipeline into `method-preview-construct-choices.json`, so
 the front door never loads the pictograph dataset; a test rebuilds them and
 fails on drift.
 
-A short strip holds the start and two or three steps; a roomy strip holds up
-to four. A square shows a 2×2 grid that wraps like the step grid. The finished
+A picked step plays its move as it grows in (2026-10-10), as the step grid's
+arrival plays each new step: its props travel from the pose before it, along
+its arrow, for the arrival's base pace of 0.85 s. The arrival slows moves
+with turns; the preview keeps every move at the base pace so two fit the turn.
+The finger moves on to the next box while a move plays, and lifts away after
+the last tap so it never sits on the last move.
+
+Every shape holds the start and two steps (2026-10-10; it held up to four
+before moves played). A strip lines them up; a square sets the start and the
+first step side by side and centers the second step under them. The finished
 picture is the start position with its steps.
 
 ### Generate
@@ -195,6 +203,14 @@ real sequence from `drawMatrixRealization()`, two kept ready between turns; if
 that source fails, rolls step through the demo sequence instead. The dice is
 drawn as a plain glyph for `GhostPointer` to
 press, never a real button.
+
+Each cell plays its move as the wave reaches it (2026-10-11): its props travel
+from the pose before it (the start position before a sequence's first step),
+along its arrow, at Construct's 0.85 s pace. The real step grid washes a roll
+in still; the preview plays the moves so a roll reads as a sequence. The first
+roll's moves land before the second tap clears them. The run ends as the last
+roll lands and its moves play on into the turn's end, so a slow draw costs
+only the end of a move, never a cut.
 
 Before its first turn, the card rests on the demo sequence half a turn on,
 from its ninth step.
@@ -232,7 +248,7 @@ cache Shape uses, so Shape opens faster afterward.
 
 A blue one-hand path and a red one-hand path slide together and play once as a
 two-prop sequence. The paths are the demo sequence's two hands over its fourth
-and fifth steps, just past Construct's, shown one hand
+and fifth steps, past Construct's, shown one hand
 at a time with `PictographContainer`'s `visibleHand`, as `FuseSourceCard`
 shows Fuse's inputs. Each half shows its arrow from the start, as Fuse's
 source cards do, with its prop where the move begins (2026-10-10: arrows that
