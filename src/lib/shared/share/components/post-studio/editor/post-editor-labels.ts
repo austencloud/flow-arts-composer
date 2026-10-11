@@ -67,7 +67,8 @@ export function itemIcon(item: PostItem): string {
 export const TOOL_ICON: Record<PostToolId, string> = {
   videos: "fa-photo-film",
   add: "fa-plus",
-  arrangement: "fa-table-cells-large",
+  arrangement: "fa-pen-to-square",
+  grid: "fa-table-cells-large",
   canvas: "fa-ruler-combined",
   look: "fa-palette",
   export: "fa-file-export",
@@ -87,6 +88,8 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   appearance: "fa-sliders",
   shows: "fa-shapes",
   sequence: "fa-shuffle",
+  layers: "fa-layer-group",
+  offset: "fa-stopwatch",
   text: "fa-font",
   rename: "fa-pen",
   music: "fa-music",
@@ -95,6 +98,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   beats: "fa-drum",
   duplicate: "fa-clone",
   delete: "fa-trash-can",
+  clear: "fa-eraser",
 };
 
 /** The short name under a tool's icon, also its panel's title. */
@@ -108,6 +112,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_add");
     case "arrangement":
       return "Edit arrangement";
+    case "grid":
+      return "Grid";
     case "canvas":
       return t("post_editor_tool_canvas");
     case "look":
@@ -144,6 +150,10 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_moves_show");
     case "sequence":
       return "Sequence";
+    case "layers":
+      return "Layers";
+    case "offset":
+      return "Offset";
     case "text":
       return t("post_editor_kind_text");
     case "rename":
@@ -160,6 +170,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_duplicate");
     case "delete":
       return t("post_editor_delete");
+    case "clear":
+      return "Clear";
   }
 }
 

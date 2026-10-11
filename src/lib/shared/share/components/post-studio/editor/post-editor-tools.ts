@@ -16,6 +16,7 @@ export type PostPanelToolId =
   | "videos"
   | "add"
   | "arrangement"
+  | "grid"
   | "canvas"
   | "look"
   | "export"
@@ -35,6 +36,8 @@ export type PostPanelToolId =
   | "appearance"
   | "shows"
   | "sequence"
+  | "layers"
+  | "offset"
   | "text"
   | "rename"
   | "music";
@@ -45,7 +48,8 @@ export type PostActionToolId =
   | "split"
   | "beats"
   | "duplicate"
-  | "delete";
+  | "delete"
+  | "clear";
 
 export type PostToolId = PostPanelToolId | PostActionToolId;
 
@@ -68,6 +72,8 @@ export interface PostToolSelection {
   hasBackdrop?: boolean;
   /** The music under the post is selected; it is no item, so `kind` is null. */
   music?: boolean;
+  /** One cell of the selected arrangement is in hand; the row is the cell's. */
+  cell?: boolean;
 }
 
 const ACTION_TOOLS = new Set<PostToolId>([
@@ -76,6 +82,7 @@ const ACTION_TOOLS = new Set<PostToolId>([
   "beats",
   "duplicate",
   "delete",
+  "clear",
 ]);
 
 export function isPanelTool(id: PostToolId): id is PostPanelToolId {
@@ -115,7 +122,9 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
         "delete",
       ];
     case "arrangement":
-      return ["back", "arrangement", "split", "timing", ...ITEM_TAIL];
+      if (selection.cell)
+        return ["back", "sequence", "layers", "offset", "clear"];
+      return ["back", "grid", "arrangement", "split", "timing", ...ITEM_TAIL];
     case "animation":
       if (selection.isTunnel)
         return [
