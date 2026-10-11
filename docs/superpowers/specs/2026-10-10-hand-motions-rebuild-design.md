@@ -37,15 +37,18 @@ Austen called the current lesson "pedantic": it shows one motion at a time.
 One diamond grid. The blue hand rests at West. All three moves are drawn at
 once with the real arrow renderer:
 
-- **Shift:** two float arcs, West to North and West to South;
-- **Dash:** the straight dash arrow, West to East;
+- **Shift:** two arrows, West to North and West to South. The renderer draws
+  hand shifts as straight diagonals across the quadrant, as the book does; the
+  hand itself still travels around the center;
+- **Dash:** the short dash arrow beside the center line, West to East, as in
+  the book;
 - **Static:** no arrow, as in the book. A soft halo on the hand's own point
   marks it. The halo is a figure annotation in the Grid callout style, not
   notation, and Austen judges it in the draft.
 
 The map builds itself once, like the Guide front page: grid, then hand, then
-arrows fade in, then the hand runs each move in turn (shift north, dash, static
-hold), each time lighting its caption beside the figure. Under reduced motion it
+arrows fade in, then the hand runs each move in turn (shift north and back,
+dash and back, static hold), each time lighting its caption beside the figure. Under reduced motion it
 shows the finished map with all arrows drawn.
 
 ### Six combinations (two hands)

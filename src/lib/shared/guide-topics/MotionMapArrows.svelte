@@ -1,6 +1,6 @@
 <!--
   Every move the blue hand can make from one point, drawn at once over the
-  grid: both shift arcs and the dash as real arrows (one arrow-only
+  grid: both shifts and the dash as real arrows (one arrow-only
   pictograph each), plus a soft halo on the hand's own point for static,
   which has no arrow in the book. A lit move stays bright and the others dim.
   When `from` changes, each arrow's pictograph crossfades to its new path

@@ -85,12 +85,13 @@
     align-items: center;
     width: 100%;
   }
+  /* Sized by the window's height so the whole review fits on one screen. */
   .figure {
-    width: min(100%, 34rem);
+    width: min(100%, max(34rem, 72svh));
   }
   @container (min-width: 52rem) {
     .stage {
-      grid-template-columns: minmax(0, 34rem) minmax(0, 20rem);
+      grid-template-columns: minmax(0, max(34rem, 72svh)) minmax(0, 20rem);
       justify-content: center;
     }
   }

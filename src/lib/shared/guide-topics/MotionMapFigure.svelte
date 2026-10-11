@@ -59,6 +59,12 @@
   let host: HTMLDivElement;
   /** The hand's committed point. */
   let handAt = $state<GridLocation>(MOTION_MAP_HOME);
+  /**
+   * Where the demonstration last put the hand. The grid re-seeds from it, so
+   * learner moves stay out of it: a re-seed would clear the grid's own
+   * "moved to" announcement.
+   */
+  let demoAt = $state<GridLocation>(MOTION_MAP_HOME);
   /** The point the drawn moves start from. */
   let mapFrom = $state<GridLocation>(MOTION_MAP_HOME);
   let showHand = $state(false);
@@ -97,6 +103,7 @@
             durationMs: DURATION.scene,
           };
           handAt = to;
+          demoAt = to;
         },
       },
       { pause: DURATION.scene },
@@ -206,7 +213,7 @@
     promptText=""
     renderTray={false}
     showUndo={false}
-    initialLeftLocation={handAt}
+    initialLeftLocation={demoAt}
     initialRightLocation={null}
     {motionMove}
     showProps={showHand}
