@@ -130,13 +130,20 @@ export const GENERATE_LOOP_STEPS = 4;
 
 /**
  * The Generate button's height range. With its word, at least twice the
- * visual canon's 12px floor for supplementary text; a strip is too short
- * for that, so its button shows just the dice.
+ * visual canon's 12px floor for supplementary text.
  */
 export const GENERATE_BUTTON_PX = Object.freeze({
   labelled: Object.freeze({ min: 24, max: 32 }),
   dice: Object.freeze({ min: 14, max: 20 }),
 });
+
+/**
+ * The button carries its word only beside steps at least this large. A
+ * readable word makes the button about 90px wide, wider than two of a
+ * phone card's steps, so smaller boxes and every strip show just the dice
+ * (2026-10-11, seen on the phone and the Fold's landscape grid).
+ */
+export const GENERATE_LABEL_MIN_STEP = 64;
 
 /** Generate's button, under the steps it fills. */
 export interface GenerateButton {
@@ -167,11 +174,11 @@ export function generateLayout(
   const rows = GENERATE_LOOP_STEPS / columns;
   // The button scales with the steps it would sit under, then the steps
   // give up the room it and its gap take.
-  const labelled = shape !== "strip";
+  const unbuttoned = gridCellSize(width, height, columns, rows, gap);
+  const labelled = shape !== "strip" && unbuttoned >= GENERATE_LABEL_MIN_STEP;
   const range = labelled
     ? GENERATE_BUTTON_PX.labelled
     : GENERATE_BUTTON_PX.dice;
-  const unbuttoned = gridCellSize(width, height, columns, rows, gap);
   const buttonHeight = Math.max(
     range.min,
     Math.min(range.max, Math.round(unbuttoned * (labelled ? 0.25 : 0.3)))
