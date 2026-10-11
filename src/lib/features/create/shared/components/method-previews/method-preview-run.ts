@@ -129,6 +129,40 @@ export async function tapAt(
 }
 
 /**
+ * Play a move's travel: `onProgress` hears 0 to 1 over `durationMs`, once a
+ * frame, linear like the step grid's arrival. True when it reached 1, false
+ * when the turn ended first. Without animation frames it resolves at once.
+ */
+export function playTravel(
+  run: SceneRun,
+  durationMs: number,
+  onProgress: (value: number) => void
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame !== "function") {
+      resolve(true);
+      return;
+    }
+    const startedAt = performance.now();
+    let id = 0;
+    const step = (now: number) => {
+      const value = Math.min(1, Math.max(0, (now - startedAt) / durationMs));
+      onProgress(value);
+      if (value >= 1) {
+        resolve(true);
+        return;
+      }
+      id = requestAnimationFrame(step);
+    };
+    id = requestAnimationFrame(step);
+    run.onAbort(() => {
+      cancelAnimationFrame(id);
+      resolve(false);
+    });
+  });
+}
+
+/**
  * Poll `check` every `stepMs` (at least 1) until it holds. True when it held
  * in time, false when `timeoutMs` passed first or the turn ended. The timeout
  * is elapsed time, so throttled timers cannot stretch it. Scenes use it to

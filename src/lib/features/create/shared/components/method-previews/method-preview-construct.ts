@@ -11,11 +11,20 @@
  * file drifts; `vitest -u` on that test rewrites it.
  */
 import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
+import { PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/pictograph-arrival-motion.js";
 import { CONSTRUCT_CHOICE_COUNT } from "./method-preview-compositions";
 import choicesJson from "./method-preview-construct-choices.json";
 
 /** How long a picked choice takes to grow into its box. */
 export const CONSTRUCT_GROW_MS = 300;
+
+/**
+ * How long a picked step's move plays: the base pace of the step grid's
+ * arrival, which plays each new step's move. The arrival slows a move with
+ * turns to at most 360° a second; a turn has room for two moves only at the
+ * base pace, so every move plays at it.
+ */
+export const CONSTRUCT_MOVE_MS = PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS;
 
 /** Each box's other two moves, by slot. */
 export const CONSTRUCT_DECOYS =
