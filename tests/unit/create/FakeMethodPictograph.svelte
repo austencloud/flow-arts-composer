@@ -16,11 +16,13 @@
   let {
     data,
     arrowOpacity = 1,
+    motionStartData = null,
     motionProgress = null,
     onReady,
   }: {
     data: unknown;
     arrowOpacity?: number;
+    motionStartData?: { letter?: string | null } | null;
     motionProgress?: number | null;
     onReady?: () => void;
   } = $props();
@@ -39,5 +41,6 @@
   class="fake-pictograph"
   data-has-data={String(data !== null)}
   data-arrow-opacity={String(arrowOpacity)}
+  data-motion-start={String(motionStartData?.letter ?? null)}
   data-motion-progress={String(motionProgress)}
 ></span>
