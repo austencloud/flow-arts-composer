@@ -13,6 +13,7 @@
   import { onMount, onDestroy, untrack } from "svelte";
   import type { ArrangementCell } from "../domain/arrangement.js";
   import { resolveLegacyCellFields } from "../domain/arrangement-migration.js";
+  import { arrangementLayerStep } from "../domain/arrangement-timing.js";
   import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
   import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
   import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
@@ -153,42 +154,20 @@
   // When per-cell support is added, these derived values should be passed as
   // props to AnimatorCanvas to control per-hand opacity independently.
 
-  // Calculate effective beat for this cell (including cell-level offset and speed)
-  const effectiveBeat = $derived.by(() => {
-    const speed = cell.speedMultiplier ?? 1.0;
-    return (currentStep + cell.beatOffset) * speed;
-  });
+  // Each layer's orchestrator step at this grid beat: the cell's offset
+  // delays it, its speed scales it, and a layer's own offset shifts it. The
+  // orchestrator is 1-based (step 1 = steps[0]); see arrangementLayerStep.
+  const primaryCurrentStep = $derived(
+    primaryLayer
+      ? arrangementLayerStep(currentStep, cell, primaryLayer, skipStartPlacement)
+      : 0
+  );
 
-  // Calculate current step for each layer.
-  // The orchestrator uses 1-based steps: step=1 is beat 1 (steps[0]), step < 1 is start position.
-  // steps.length = number of motion beats (start position is stored separately).
-  //
-  // skipStartPlacement=true (seamless loop):
-  //   actualBeats = stepCount, wrapped ranges 0..stepCount-1, step = wrapped + 1
-  //   So orchestrator sees steps 1..stepCount (all motion beats, no start position)
-  //
-  // skipStartPlacement=false (show start pose):
-  //   actualBeats = stepCount + 1, wrapped ranges 0..stepCount
-  //   step = wrapped (0 = start position, 1..stepCount = motion beats)
-  const primaryCurrentStep = $derived.by(() => {
-    if (!primaryLayer) return 0;
-    const stepCount = primaryLayer.sequence.steps?.length || 1;
-    const actualBeats = skipStartPlacement ? stepCount : stepCount + 1;
-    const layerBeat = effectiveBeat + primaryLayer.beatOffset;
-    const wrapped = layerBeat % actualBeats;
-    return skipStartPlacement ? wrapped + 1 : wrapped;
-  });
-
-  // Current steps for each additional layer
-  const additionalCurrentSteps = $derived.by(() => {
-    return extraLayers.map((layer) => {
-      const stepCount = layer.sequence.steps?.length || 1;
-      const actualBeats = skipStartPlacement ? stepCount : stepCount + 1;
-      const layerBeat = effectiveBeat + layer.beatOffset;
-      const wrapped = layerBeat % actualBeats;
-      return skipStartPlacement ? wrapped + 1 : wrapped;
-    });
-  });
+  const additionalCurrentSteps = $derived(
+    extraLayers.map((layer) =>
+      arrangementLayerStep(currentStep, cell, layer, skipStartPlacement)
+    )
+  );
 
   // Get current step data. The orchestrator step is 1-based (step=1 uses steps[0]),
   // so subtract 1 before indexing into the array.

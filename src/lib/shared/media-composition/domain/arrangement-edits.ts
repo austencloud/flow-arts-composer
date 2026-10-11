@@ -22,6 +22,9 @@ import type { PostAnimationAppearance } from "./post-animation-appearance.js";
 export const ARRANGEMENT_MAX_LAYERS = 4;
 export const ARRANGEMENT_MIN_CELL_SPEED = 0.25;
 export const ARRANGEMENT_MAX_CELL_SPEED = 4;
+/** The tempo range of an arrangement, the same as a music take's. */
+export const ARRANGEMENT_MIN_BPM = 20;
+export const ARRANGEMENT_MAX_BPM = 300;
 
 export interface ArrangementCellOffset {
   /** Beats before this cell starts; floored at 0. */
@@ -379,6 +382,19 @@ export function setCellOffset(
       next = { ...next, speedMultiplier };
   }
   return next === cell ? snapshot : replaceCell(snapshot, cellId, next);
+}
+
+/** The grid's tempo, clamped to 20..300 BPM. The clip rescale lives in `setArrangementBpm`. */
+export function setBpm(
+  snapshot: ArrangementSnapshot,
+  bpm: number
+): ArrangementSnapshot {
+  if (!Number.isFinite(bpm)) return snapshot;
+  const next = Math.max(
+    ARRANGEMENT_MIN_BPM,
+    Math.min(ARRANGEMENT_MAX_BPM, bpm)
+  );
+  return next === snapshot.bpm ? snapshot : { ...snapshot, bpm: next };
 }
 
 /** The look for one cell, or for the grid when `cellId` is null; `undefined` removes it. */

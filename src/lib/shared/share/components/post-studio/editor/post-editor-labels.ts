@@ -1,4 +1,6 @@
+import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
+import type { ArrangementCell } from "#lib/shared/media-composition/domain/arrangement.js";
 import type {
   PostFraming,
   PostItem,
@@ -247,4 +249,14 @@ export function easingPresetLabel(id: PostEasingPresetId): string {
     case "hold":
       return t("post_curve_preset_hold");
   }
+}
+
+/** A layer's words: the sequence's word, else its name, else "Sequence". */
+export function arrangementLayerName(layer: TunnelLayerConfig): string {
+  return layer.sequence.word || layer.sequence.name || "Sequence";
+}
+
+/** A cell's words for a lane or a menu: its layers' words joined with "+". */
+export function arrangementCellLabel(cell: ArrangementCell): string {
+  return cell.layers.map(arrangementLayerName).join(" + ");
 }
