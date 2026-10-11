@@ -1,5 +1,5 @@
 <!--
-  One move of the blue hand, drawn over the grid: a shift or the dash as a
+  One move of one hand (blue unless `hand` says red), drawn over the grid: a shift or the dash as a
   real arrow (one arrow-only pictograph each), or, for static, a soft halo on
   the hand's own point, which has no arrow in the book. Every move from `from`
   stays mounted and hidden, so showing one is a fade, not a fresh render.
@@ -23,23 +23,24 @@
     from: GridLocation;
     /** Where the shown move ends; `from` itself for static, null for none. */
     to: GridLocation | null;
+    hand?: HandSide;
   }
 
-  let { from, to }: Props = $props();
+  let { from, to, hand = HandSide.LEFT }: Props = $props();
 
   const targets = $derived(motionMapTargets(from));
   const handPoints = getPlacementGridPoints(GridMode.DIAMOND);
 </script>
 
-<div class="motion-map-arrows">
+<div class="motion-map-arrows" class:red={hand === HandSide.RIGHT}>
   {#each targets as target (target.slot)}
     <div class="layer" class:shown={target.to === to}>
       <PictographContainer
-        pictographData={motionMapArrowData(from, target)}
+        pictographData={motionMapArrowData(from, target, hand)}
         gridMode={GridMode.DIAMOND}
         leftPropTypeOverride={PropType.HAND}
         rightPropTypeOverride={PropType.HAND}
-        visibleHand={HandSide.LEFT}
+        visibleHand={hand}
         showGrid={false}
         showProps={false}
         transparentBackground={true}
@@ -68,8 +69,12 @@
 
 <style>
   .motion-map-arrows {
+    --hand-color: var(--prop-blue, #3b82f6);
     position: absolute;
     inset: 0;
+  }
+  .motion-map-arrows.red {
+    --hand-color: var(--prop-red, #ef4444);
   }
   .layer {
     position: absolute;
@@ -87,8 +92,8 @@
     opacity: 1;
   }
   .halo circle {
-    fill: color-mix(in srgb, var(--prop-blue, #3b82f6) 14%, transparent);
-    stroke: var(--prop-blue, #3b82f6);
+    fill: color-mix(in srgb, var(--hand-color) 14%, transparent);
+    stroke: var(--hand-color);
     stroke-width: 5;
     stroke-opacity: 0.8;
   }
