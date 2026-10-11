@@ -12,7 +12,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  let { data, onReady }: { data: unknown; onReady?: () => void } = $props();
+  // arrowOpacity and motionProgress default as MethodPreviewPictograph's do.
+  let {
+    data,
+    arrowOpacity = 1,
+    motionProgress = null,
+    onReady,
+  }: {
+    data: unknown;
+    arrowOpacity?: number;
+    motionProgress?: number | null;
+    onReady?: () => void;
+  } = $props();
 
   onMount(() => {
     if (fakePictograph.reportBudget <= 0) {
@@ -24,4 +35,9 @@
   });
 </script>
 
-<span class="fake-pictograph" data-has-data={String(data !== null)}></span>
+<span
+  class="fake-pictograph"
+  data-has-data={String(data !== null)}
+  data-arrow-opacity={String(arrowOpacity)}
+  data-motion-progress={String(motionProgress)}
+></span>

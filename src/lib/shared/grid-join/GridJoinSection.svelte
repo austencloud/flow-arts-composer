@@ -163,7 +163,7 @@
             {darkMode}
             {leftPropType}
             {rightPropType}
-            size={160}
+            size={embedded ? 384 : 160}
           />
         </span>
         <span class="one-text">
@@ -230,7 +230,12 @@
     container-type: inline-size;
   }
 
+  .join-host.embedded.fill {
+    container-type: size;
+  }
+
   .embedded .join-page {
+    --art-max: 100cqw;
     padding: 0;
   }
 
@@ -345,6 +350,29 @@
     width: 4rem;
   }
 
+  /* In the performer panel, one grid is a full-size choice alongside the
+     joined previews. Keep the short standalone tray at its original scale. */
+  .embedded .one-card {
+    gap: clamp(14px, 2cqw, 24px);
+    padding: clamp(10px, 1.5cqw, 18px);
+  }
+
+  .embedded .one-art {
+    width: clamp(5rem, 30cqw, 10rem);
+  }
+
+  .embedded.fill .one-art {
+    width: clamp(5rem, min(30cqw, 22cqh), 24rem);
+  }
+
+  .embedded .one-text {
+    gap: clamp(4px, 0.7cqw, 8px);
+  }
+
+  .embedded .one-card .tile-name {
+    font-size: clamp(1.125rem, 2.5cqw, 1.5rem);
+  }
+
   /* Four tiles across a narrow phone: the name eases down a little rather
      than wrapping onto a second line. */
   .compact .join-tile .tile-name {
@@ -455,7 +483,13 @@
     );
     --art: min(
       var(--art-w),
-      max(5rem, min(14rem, (100cqh - var(--heads)) / 2 - var(--chrome) - 1px))
+      max(
+        5rem,
+        min(
+          var(--art-max, 14rem),
+          (100cqh - var(--heads)) / 2 - var(--chrome) - 1px
+        )
+      )
     );
     grid-template-columns: repeat(
       4,
@@ -478,7 +512,7 @@
         max(
           5rem,
           min(
-            14rem,
+            var(--art-max, 14rem),
             (100cqh - var(--heads) - 2 * var(--tile-gap)) / 4 - var(--chrome) -
               1px
           )

@@ -259,6 +259,8 @@ interface RibbonPoint {
   ny: number;
   width: number;
   fade: number;
+  /** 1 on fresh ink just behind the brush, 0 once it has dried. */
+  wet: number;
   turnLoad: number;
   sequence: number;
   materialSeed: number;
@@ -270,6 +272,8 @@ interface RibbonPassOptions {
   noiseChannel?: number;
   breakThreshold?: number;
   chunkSize?: number;
+  /** Draw only where the ink is still wet (see RibbonPoint.wet). */
+  wetOnly?: boolean;
 }
 
 export interface Ink2DDiagnostics {
@@ -295,6 +299,7 @@ export interface InkFrameBoundary {
 const MOTION_VELOCITY_THRESHOLD_PX = 30;
 const FADE_FRACTION = 0.6;
 const DROPLET_DRIFT_PX = 30;
+const INK_WET_LENGTH_PX = 110;
 const MAX_ROTATION_JITTER = 0.12;
 const MAX_SCALE_JITTER = 0.2;
 
@@ -378,6 +383,44 @@ export function resolveInkTurnLoad(
   const angle = Math.acos(dot);
   const reversalDamping = 1 - smoothstep(Math.PI * 0.72, Math.PI, angle);
   return smoothstep(0.06, 0.72, angle) * reversalDamping;
+}
+
+const NIB_HAIRLINE = 0.16;
+// Mean of |sin| over a turn is 2/pi. Dividing by the mean keeps the ink's
+// average weight where speed pressure put it; the nib only redistributes it.
+const NIB_MEAN = NIB_HAIRLINE + (1 - NIB_HAIRLINE) * (2 / Math.PI);
+const NIB_CENTER_REACH_PX = 28;
+
+/**
+ * Broad-nib width factor. Prop tips orbit at a nearly steady speed, so speed
+ * pressure alone left dense ink a uniform tube. A flat nib swells and thins
+ * with direction instead: wide while the tip sweeps around the stage, a
+ * hairline while it travels toward or away from the center.
+ *
+ * The nib is held relative to the stage center rather than the screen.
+ * Tunnel copies are rotations and mirrors about that center, and the angle
+ * between motion and the radial line survives both, so every copy keeps the
+ * same thick-and-thin rhythm as the prop it reflects. Near the center the
+ * radial line is undefined, so the factor eases back to the average weight.
+ */
+export function resolveInkNibWidth(
+  point: { x: number; y: number },
+  tangentX: number,
+  tangentY: number,
+  center: { x: number; y: number },
+  scale: number = 1
+): number {
+  const radialX = point.x - center.x;
+  const radialY = point.y - center.y;
+  const radius = Math.hypot(radialX, radialY);
+  const tangentLength = Math.hypot(tangentX, tangentY);
+  if (radius < 0.001 || tangentLength < 0.001) return 1;
+  const sweep =
+    Math.abs(radialX * tangentY - radialY * tangentX) /
+    (radius * tangentLength);
+  const nib = (NIB_HAIRLINE + (1 - NIB_HAIRLINE) * sweep) / NIB_MEAN;
+  const reach = smoothstep(0, NIB_CENTER_REACH_PX * scale, radius);
+  return 1 + (nib - 1) * reach;
 }
 
 export class Ink2DRenderer {
@@ -810,10 +853,7 @@ export class Ink2DRenderer {
       return;
 
     const threshold =
-      (1 - params.viscosity) *
-      params.breakStretchMax *
-      scale *
-      (params.resolvedPalette.watercolor ? 1.65 : 1);
+      (1 - params.viscosity) * params.breakStretchMax * scale;
     for (const state of this.tips.values()) {
       state.points = this.applyStrokeBreakup(
         state.points,
@@ -941,9 +981,6 @@ export class Ink2DRenderer {
       params.opacityMax * (0.48 + params.intensity * 0.52),
       1
     );
-    const composite: GlobalCompositeOperation = palette.emissive
-      ? "lighter"
-      : "source-over";
     const needsDarkStageContrast =
       !palette.watercolor && !palette.emissive && isDarkColor(palette.edge);
     const sumiDensity =
@@ -952,6 +989,12 @@ export class Ink2DRenderer {
         : 1;
     const materialScale = scale * sumiDensity;
     const materialPeakAlpha = peakAlpha * (0.45 + sumiDensity * 0.55);
+    // Dense ink is the pen. Sumi has its own brush, and watercolor and neon
+    // read as washes and light, so they keep their even line.
+    const nibCenter =
+      !palette.watercolor && !palette.emissive && palette.id !== "sumi"
+        ? { x: ctx.canvas.width * 0.5, y: ctx.canvas.height * 0.5 }
+        : null;
 
     for (const points of strokes) {
       if (points.length === 0) continue;
@@ -962,7 +1005,12 @@ export class Ink2DRenderer {
               params.strokeLengthPx * sumiDensity * sumiDensity
             )
           : points;
-      const ribbon = this.buildRibbon(visiblePoints, params, materialScale);
+      const ribbon = this.buildRibbon(
+        visiblePoints,
+        params,
+        materialScale,
+        nibCenter
+      );
 
       if (palette.watercolor) {
         // A wash is one thin pigment field with a faint wet margin. Drawing
@@ -975,7 +1023,7 @@ export class Ink2DRenderer {
           palette.edge,
           1.38,
           peakAlpha * 0.18,
-          composite,
+          "source-over",
           18
         );
         this.drawSegmentedRibbonPass(
@@ -984,7 +1032,7 @@ export class Ink2DRenderer {
           palette.pigment,
           0.94,
           peakAlpha * 0.74,
-          composite,
+          "source-over",
           24
         );
         continue;
@@ -1429,18 +1477,22 @@ export class Ink2DRenderer {
       "source-over",
       49
     );
+    // Wet gloss: a light streak rides the fresh ink behind the brush and
+    // goes out as it dries, so the mark reads as liquid laid down and left,
+    // not a glowing trail. Dried ink stays matte.
     this.drawRibbonPass(
       ctx,
       ribbon,
-      mixWithWhite(edge, needsDarkStageContrast ? 0.72 : 0.42),
-      0.05,
-      peakAlpha * (needsDarkStageContrast ? 0.36 : 0.24),
+      mixWithWhite(edge, needsDarkStageContrast ? 0.8 : 0.62),
+      0.16,
+      peakAlpha * (needsDarkStageContrast ? 0.72 : 0.58),
       "screen",
       {
-        offsetFactor: 0.3,
+        offsetFactor: 0.18,
         noiseChannel: 51,
-        breakThreshold: 0.3,
+        breakThreshold: 0.12,
         chunkSize: 3,
+        wetOnly: true,
       }
     );
   }
@@ -1448,7 +1500,8 @@ export class Ink2DRenderer {
   private buildRibbon(
     points: InkPoint[],
     params: Ink2DParams,
-    scale: number
+    scale: number,
+    nibCenter: { x: number; y: number } | null = null
   ): RibbonPoint[] {
     const cumulativeLength = new Array<number>(points.length).fill(0);
     for (let index = 1; index < points.length; index++) {
@@ -1484,6 +1537,27 @@ export class Ink2DRenderer {
       const fade =
         pointFade(point.age, params.lifetimeSeconds) *
         smoothstep(0, tailFadeLength, cumulativeLength[index] ?? 0);
+      // The wider neighbor span keeps sample spacing jitter out of the nib.
+      const nib = nibCenter
+        ? resolveInkNibWidth(
+            point,
+            turnNext.x - turnPrevious.x,
+            turnNext.y - turnPrevious.y,
+            nibCenter,
+            scale
+          )
+        : 1;
+      // Fresh ink holds a gloss behind the brush, then dries matte. Distance
+      // keeps the gloss the same length at any playback speed; age dries ink
+      // the brush has stopped feeding.
+      const wet =
+        (1 -
+          smoothstep(
+            0,
+            INK_WET_LENGTH_PX * scale,
+            totalLength - (cumulativeLength[index] ?? 0)
+          )) *
+        (1 - smoothstep(0.35, 1.1, point.age));
       return {
         x: point.x,
         y: point.y,
@@ -1495,8 +1569,10 @@ export class Ink2DRenderer {
             resolveInkStrokeWidth(params, point.spawnSpeedPx, scale)
           ) *
           widthNoise *
+          nib *
           (1 + turnLoad * (sumi ? 0.64 : 0.42)),
         fade,
+        wet,
         turnLoad,
         sequence: point.sequence,
         materialSeed: point.materialSeed,
@@ -1656,10 +1732,11 @@ export class Ink2DRenderer {
       const noiseChannel = options.noiseChannel ?? 5;
       const breakThreshold = options.breakThreshold ?? 0;
       const chunkSize = Math.max(2, options.chunkSize ?? 8);
+      const wetOnly = options.wetOnly ?? false;
 
       if (ribbon.length === 1) {
         const point = ribbon[0]!;
-        ctx.globalAlpha = alpha * point.fade;
+        ctx.globalAlpha = alpha * point.fade * (wetOnly ? point.wet : 1);
         const centerOffset = point.width * offsetFactor;
         ctx.beginPath();
         ctx.arc(
@@ -1695,7 +1772,8 @@ export class Ink2DRenderer {
         if (grain >= breakThreshold) {
           let localFade = 0;
           for (let index = startIndex; index <= endIndex; index++) {
-            localFade += ribbon[index]!.fade;
+            const point = ribbon[index]!;
+            localFade += point.fade * (wetOnly ? point.wet : 1);
           }
           localFade /= endIndex - startIndex + 1;
           ctx.globalAlpha = alpha * localFade * (0.82 + grain * 0.18);

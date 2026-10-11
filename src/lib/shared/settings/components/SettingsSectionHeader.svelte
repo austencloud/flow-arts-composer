@@ -16,17 +16,22 @@
     description?: string;
     /** Id for the heading, so the section can be labelled by it. */
     headingId?: string;
+    /** Rich description, e.g. a Crossfade when the text follows a switch. */
+    details?: Snippet;
     action?: Snippet;
   }
 
-  let { icon, title, description, headingId, action }: Props = $props();
+  let { icon, title, description, headingId, details, action }: Props =
+    $props();
 </script>
 
-<header class="section-header" class:title-only={!description}>
+<header class="section-header" class:title-only={!description && !details}>
   <span class="section-icon"><i class={icon} aria-hidden="true"></i></span>
   <span class="section-heading">
     <h2 id={headingId}>{title}</h2>
-    {#if description}
+    {#if details}
+      <div class="section-details">{@render details()}</div>
+    {:else if description}
       <p>{description}</p>
     {/if}
   </span>
@@ -83,7 +88,8 @@
     line-height: 1.25;
   }
 
-  p {
+  p,
+  .section-details {
     margin-top: 0.2em;
     color: var(--theme-text-dim);
     font-size: max(0.875rem, var(--font-size-min));

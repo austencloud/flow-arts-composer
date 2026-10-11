@@ -6,14 +6,22 @@ import {
   openSheet,
 } from "#lib/shared/navigation/services/sheet-router.js";
 import { page } from "$app/state";
-import { pushState, replaceState } from "$app/navigation";
+import { goto } from "$app/navigation";
 import { parseInboxRouteIntent } from "#lib/shared/inbox/domain/inbox-route-intent.js";
 
 vi.mock("$app/env", () => ({ browser: true }));
-vi.mock("$app/navigation", () => ({
-  pushState: vi.fn(),
-  replaceState: vi.fn(),
-}));
+vi.mock("$app/navigation", () => ({ goto: vi.fn() }));
+
+/** URL writes made with a shallow `goto`, as [destination, state] pairs. */
+function urlWrites(mode: "push" | "replace") {
+  return vi
+    .mocked(goto)
+    .mock.calls.filter(
+      ([, options]) =>
+        options?.shallow && Boolean(options.replace) === (mode === "replace")
+    )
+    .map(([destination, options]) => [destination, options?.state] as const);
+}
 
 describe("Inbox sheet deep links", () => {
   beforeEach(() => {
@@ -32,7 +40,7 @@ describe("Inbox sheet deep links", () => {
 
     openSheet("inbox");
 
-    const [destination, state] = vi.mocked(pushState).mock.calls[0] ?? [];
+    const [destination, state] = urlWrites("push")[0] ?? [];
     expect(new URL(String(destination)).href).toBe(
       "http://localhost:3000/browse/library?keep=yes&sheet=inbox#saved"
     );
@@ -53,7 +61,7 @@ describe("Inbox sheet deep links", () => {
 
     closeSheet();
 
-    const [destination, state] = vi.mocked(replaceState).mock.calls[0] ?? [];
+    const [destination, state] = urlWrites("replace")[0] ?? [];
     expect(new URL(String(destination)).href).toBe(
       "http://localhost:3000/browse/library"
     );
@@ -79,7 +87,7 @@ describe("Inbox sheet deep links", () => {
 
     closeSheet();
 
-    const [destination] = vi.mocked(replaceState).mock.calls[0] ?? [];
+    const [destination] = urlWrites("replace")[0] ?? [];
     expect(new URL(String(destination)).href).toBe(
       "http://localhost:3000/create/construct?keep=yes"
     );
@@ -97,7 +105,7 @@ describe("Inbox sheet deep links", () => {
     closeSheet();
 
     expect(back).toHaveBeenCalledOnce();
-    expect(replaceState).not.toHaveBeenCalled();
+    expect(urlWrites("replace")).toHaveLength(0);
     back.mockRestore();
   });
 
@@ -116,7 +124,7 @@ describe("Inbox sheet deep links", () => {
 
     openSheet("auth");
 
-    const [destination, state] = vi.mocked(pushState).mock.calls[0] ?? [];
+    const [destination, state] = urlWrites("push")[0] ?? [];
     expect(new URL(String(destination)).search).toBe("?sheet=auth");
     expect(state).toEqual({
       moduleId: "browse",
@@ -141,7 +149,7 @@ describe("Inbox sheet deep links", () => {
 
     closeAll();
 
-    const [, state] = vi.mocked(replaceState).mock.calls[0] ?? [];
+    const [, state] = urlWrites("replace")[0] ?? [];
     expect(state).toEqual({ moduleId: "browse", sectionId: "library" });
   });
 });

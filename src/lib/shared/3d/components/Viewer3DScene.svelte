@@ -19,6 +19,7 @@
   import type { GridMode } from "@austencloud/scene-3d";
   import Grid3D from "./Grid3D.svelte";
   import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
+  import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import type { TipEffectMap } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
   import type { CharacterInstanceState } from "../state/character-instance-state.svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -343,14 +344,18 @@
   // The visibility manager uses an observer pattern (not Svelte runes), so we
   // bridge it into reactive state with $state + registerObserver.
   const visibilityManager = getAnimationVisibilityManager();
-  let globalTipEffectMap = $state<TipEffectMap>(
+  const viewerEffects = getEffectsConfigContext();
+  let legacyTipEffectMap = $state<TipEffectMap>(
     visibilityManager.effectsConfigState?.tipEffectMap ?? {}
+  );
+  const globalTipEffectMap = $derived(
+    viewerEffects?.tipEffectMap ?? legacyTipEffectMap
   );
 
   $effect(() => {
     // Sync on mount and whenever visibility settings change
     const updateMap = () => {
-      globalTipEffectMap =
+      legacyTipEffectMap =
         visibilityManager.effectsConfigState?.tipEffectMap ?? {};
     };
     visibilityManager.registerObserver(updateMap);

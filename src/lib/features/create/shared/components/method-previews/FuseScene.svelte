@@ -8,11 +8,21 @@
    * demo sequence's blue hand and red hand stand apart, slide together, and
    * the fused steps play once through Fuse's motion seam
    * (resolveFusePictographMotionFrame): the props travel from the pose before
-   * each step and the arrows reveal with the motion, as on Fuse's own cards.
+   * each step.
    *
-   * Each source shows its step at the start of its travel, so a blue half and
-   * a red half on one cell make that fused step exactly, and the fused cell
-   * takes over without a jump. Each pictograph paints its own opaque cell, so
+   * Each source shows its step's arrow, as Fuse's source cards do, with its
+   * prop at the start of its travel, so a blue half and a red half on one cell
+   * make that fused step exactly, and the fused cell takes over without a
+   * jump. The arrows stay while the fused steps play, and the props travel
+   * along them (2026-10-10: arrows that appeared only after the halves met
+   * read as something new arriving).
+   *
+   * A hand drawn alone is laid out as one hand (PictographContainer prepares
+   * a visibleHand presentation that way), and the fused letter can lay it out
+   * differently: its arrow on the other side of its point, its prop nudged
+   * off the other hand's. Each half's arrow and prop glide from the one to
+   * the other while the halves slide, so they land where the fused cell
+   * draws them instead of snapping there at the merge. Each pictograph paints its own opaque cell, so
    * the half drawn on top (FuseSource.onTop) keeps only its props and takes
    * its cell backdrop from a ::before that dissolves during the slide: it
    * lands as a floating layer over the other half's cell, and both props
@@ -34,6 +44,7 @@
   import type { FuseSide } from "#lib/features/fuse/state/fuse-shuffle-pool.svelte.js";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
   import { fuseLayout } from "./method-preview-compositions";
+  import { handGlides } from "./method-preview-glide";
   import { DEMO_SEQUENCE } from "./method-preview-demo";
   import {
     FIRST_FUSE_SWAP,
@@ -43,6 +54,7 @@
     fusePreviewFrames,
     fuseSources,
     nextFuseSwap,
+    type FuseSource,
   } from "./method-preview-fuse";
   import type { FusePreviewPair } from "./method-preview-fuse-swap";
   import { waitUntil, type SceneRun } from "./method-preview-run";
@@ -74,7 +86,10 @@
   let phase = $state<"rest" | "fusing">("rest");
   /** True while the halves slide together: the floating half's box dissolves. */
   let sliding = $state(false);
-  /** Each fused step's travel, 0 to 1. Null rests on the finished step. */
+  /**
+   * Each fused step's travel, 0 to 1. Null draws the finished step still,
+   * until the first turn; after a turn each step rests at 1 (see settle).
+   */
   let progress = $state.raw<(number | null)[]>(
     Array.from({ length: FUSE_PREVIEW_STEPS }, () => null)
   );
@@ -210,10 +225,43 @@
   function settle(): void {
     for (const animation of animations) animation.cancel();
     animations = [];
-    progress = fusedFrames.map(() => null);
+    // A step that traveled rests on its travel's last frame. Its prop can end
+    // there a full turn from the still picture's angle (-270° against 90°),
+    // and handing back to the still picture let the prop's own rotation
+    // easing spin it round once as the turn ended (2026-10-10).
+    progress = fusedFrames.map((_, index) =>
+      (progress[index] ?? null) === null ? null : 1
+    );
     sliding = false;
     phase = "rest";
     stageUpcoming();
+  }
+
+  /**
+   * Over the slide, each half's arrow and prop glide from where the hand
+   * alone puts them to where its fused cell draws them. Both pictographs
+   * share one viewBox and the slide lands each half on its cell, so the
+   * fused cell's transforms are the halves' targets as they are.
+   */
+  function glideIntoPlace(
+    halves: { source: FuseSource; piece: HTMLElement }[],
+    fused: HTMLElement
+  ): void {
+    for (const { source, piece } of halves) {
+      const cell = fused.querySelector(`.cell[data-step="${source.step}"]`);
+      if (!cell) continue;
+      for (const { element, keyframes } of handGlides(
+        piece,
+        cell,
+        source.hand
+      )) {
+        track(element, keyframes, {
+          duration: FUSE_PREVIEW_TIMING.slideMs,
+          easing: EASE,
+          fill: "forwards",
+        });
+      }
+    }
   }
 
   /** Play one fused step: its props travel from the pose before it. */
@@ -320,8 +368,12 @@
     }
     if (!(await run.wait(timing.sourcesInMs))) return;
 
-    // They slide together: the blue and red half of each step land on one cell.
+    // They slide together: the blue and red half of each step land on one
+    // cell, their arrows and props gliding to where the fused letter puts
+    // them. A fused row still drawing a new pair has no targets yet, so its
+    // halves keep their own layout and the merge snaps, as it once did.
     sliding = true;
+    if (drawn(true)) glideIntoPlace(halves, fused);
     const slides: Animation[] = [];
     for (const { source, piece } of halves) {
       const slide = track(
@@ -400,6 +452,7 @@
         {#if cell}
           <div
             class="cell"
+            data-step={index}
             style:left="{cell.x}px"
             style:top="{cell.y}px"
             style:width="{cell.size}px"
@@ -409,7 +462,6 @@
               data={frame.step}
               motionStartData={frame.motionStartData}
               motionProgress={progress[index] ?? null}
-              arrowOpacity={progress[index] ?? 1}
               readyEpoch={fusedEpoch}
               onReady={() => handleReady(`fused:${index}`)}
             />
@@ -435,7 +487,6 @@
             transparentBackground={source.onTop}
             motionStartData={frame.motionStartData}
             motionProgress={0}
-            arrowOpacity={0}
             readyEpoch={sourceEpoch}
             onReady={() => handleReady(source.key)}
           />

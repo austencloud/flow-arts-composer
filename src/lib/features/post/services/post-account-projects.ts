@@ -258,6 +258,12 @@ export async function saveAccountPostProject(
   return newer;
 }
 
+const IMPORT_PROBLEM =
+  "A copy from before sign-in could not be added to your account.";
+const MISSING_SOURCE_PROBLEM =
+  "Its source sequence is missing, so it stays on this device.";
+const SYNC_PROBLEM = "It could not sync, so it stays on this device.";
+
 export async function listSyncedPostProjects(): Promise<{
   projects: PostProjectChoice[];
   error: string | null;
@@ -265,6 +271,11 @@ export async function listSyncedPostProjects(): Promise<{
   const uid = await currentPostAccount();
   if (!uid) return listPostProjects();
   const errors: string[] = [];
+  /**
+   * Failures that belong to one project. Each shows on that project's card
+   * when it is listed; one with no card falls back to the page error.
+   */
+  const problems = new Map<string, { card: string; page: string }>();
   const local = new Map<string, PostProject>();
   for (const key of accountPostProjectKeys(uid)) {
     const id = key.slice(`tka:post-studio:project:v2:account:${uid}:`.length);
@@ -288,7 +299,10 @@ export async function listSyncedPostProjects(): Promise<{
         ? await loadUnclaimedStudioDraft(choice.sequenceId)
         : await loadPostDraft(choice.sequenceId);
       if (draft.error) {
-        errors.push(draft.error);
+        problems.set(choice.sequenceId, {
+          card: IMPORT_PROBLEM,
+          page: draft.error,
+        });
         continue;
       }
       const project =
@@ -303,9 +317,10 @@ export async function listSyncedPostProjects(): Promise<{
       if (unclaimedStudio && project.sourceKind !== "none") {
         const source = await resolvePostSequence(choice.sequenceId);
         if (!source) {
-          errors.push(
-            `The source sequence for ${choice.sequenceId} is unavailable. The device draft was kept.`
-          );
+          problems.set(choice.sequenceId, {
+            card: IMPORT_PROBLEM,
+            page: `The source sequence for ${choice.sequenceId} is unavailable. The device draft was kept.`,
+          });
           continue;
         }
         cachePostSequence(source);
@@ -316,7 +331,8 @@ export async function listSyncedPostProjects(): Promise<{
       if (saved.ok) local.set(choice.sequenceId, project);
       else errors.push(saved.error);
     }
-    if (!owner && errors.length === 0) claimLegacyPosts(uid);
+    if (!owner && errors.length === 0 && problems.size === 0)
+      claimLegacyPosts(uid);
   }
   let cloud: PostProject[] = [];
   let cloudListed = false;
@@ -342,19 +358,25 @@ export async function listSyncedPostProjects(): Promise<{
             project.sourceKind === "none"
               ? null
               : await resolvePostSequence(project.sequenceId);
-          if (!source && project.sourceKind !== "none")
-            throw new Error(
-              `The source sequence for ${project.sequenceId} is unavailable. This post was kept on this device.`
-            );
+          if (!source && project.sourceKind !== "none") {
+            problems.set(project.sequenceId, {
+              card: MISSING_SOURCE_PROBLEM,
+              page: `The source sequence for ${project.sequenceId} is unavailable. This post was kept on this device.`,
+            });
+            continue;
+          }
           revisions.set(revisionKey(uid, project.sequenceId), 0);
           await saveAccountPostProject(uid, project, source);
           cloudById.set(project.sequenceId, project);
         } catch (cause) {
-          errors.push(
-            cause instanceof Error
-              ? cause.message
-              : "A local post could not sync."
-          );
+          console.warn(`[Post] ${project.sequenceId} could not sync:`, cause);
+          problems.set(project.sequenceId, {
+            card: SYNC_PROBLEM,
+            page:
+              cause instanceof Error
+                ? cause.message
+                : "A local post could not sync.",
+          });
         }
       } else if (project.updatedAt > remote.updatedAt) {
         // This device has the newer copy; it goes up.
@@ -383,6 +405,11 @@ export async function listSyncedPostProjects(): Promise<{
         updatedAt: project.updatedAt,
         hasDraft: true,
       });
+  }
+  for (const [sequenceId, problem] of problems) {
+    const choice = choices.get(sequenceId);
+    if (choice) choices.set(sequenceId, { ...choice, problem: problem.card });
+    else errors.push(problem.page);
   }
   return {
     projects: [...choices.values()].sort((a, b) => b.updatedAt - a.updatedAt),

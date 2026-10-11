@@ -3,6 +3,7 @@ import {
   resolveTunnelGridOpacity,
   resolveTunnelLayerOpacity,
   resolveTunnelLayerProgress,
+  revealTunnelCopies,
   tunnelLayerPoseDifference,
   TUNNEL_REVEAL_DURATION,
 } from "#lib/shared/sequence-viewer/tunnel/tunnel-layer-reveal.js";
@@ -42,6 +43,38 @@ describe("Tunnel layer reveal", () => {
     expect(Math.min(...opacities)).toBeGreaterThan(0.35);
     expect(opacities[0] - opacities[6]).toBeLessThan(0.15);
     expect(opacities).toEqual([...opacities].sort((a, b) => b - a));
+  });
+
+  it("draws the copies as they are once fully revealed", () => {
+    const layers = [
+      { leftProp: null, rightProp: null },
+      { leftProp: null, rightProp: null },
+    ];
+
+    expect(revealTunnelCopies(layers, 1)).toBe(layers);
+  });
+
+  it("gives each copy its staggered opacity part way through", () => {
+    const layers = Array.from({ length: 3 }, () => ({
+      leftProp: null,
+      rightProp: null,
+    }));
+
+    expect(revealTunnelCopies(layers, 0.4).map((l) => l.opacity)).toEqual(
+      [0, 1, 2].map((index) => resolveTunnelLayerOpacity(0.4, index, 3))
+    );
+    expect(revealTunnelCopies(layers, 0).map((l) => l.opacity)).toEqual([
+      0, 0, 0,
+    ]);
+  });
+
+  it("dims a copy that already had an opacity of its own", () => {
+    const [copy] = revealTunnelCopies(
+      [{ leftProp: null, rightProp: null, opacity: 0.5 }],
+      0.5
+    );
+
+    expect(copy?.opacity).toBe(0.5 * resolveTunnelLayerOpacity(0.5, 0, 1));
   });
 
   it("does not ease the shared reveal clock a second time", () => {

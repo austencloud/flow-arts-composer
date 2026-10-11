@@ -60,6 +60,8 @@ export interface ParticleInstancePoolOptions {
   colorManaged?: boolean;
   /** Opts this pool into two-sided ambient and direct scene lighting. */
   surfaceLighting?: ParticleSurfaceLightingOptions;
+  /** Gives a curved thin surface distinct front and transmitted back lighting. */
+  thinSurfaceLighting?: boolean;
   /** Preserves silhouette separation as the scene behind it changes. */
   contrastAdaptation?: ParticleContrastAdaptationOptions;
 }
@@ -99,6 +101,9 @@ const orientedVertexShader = /* glsl */ `
   varying float vViewDepth;
   varying vec3 vViewNormal;
   varying vec3 vViewPosition;
+  #ifdef USE_PARTICLE_THIN_SURFACE
+    varying vec2 vSurfaceUv;
+  #endif
 
   #include <fog_pars_vertex>
 
@@ -111,6 +116,9 @@ const orientedVertexShader = /* glsl */ `
     vUv = aUvRect.xy + uv * aUvRect.zw;
     vColor = aColor;
     vAlpha = aAlpha;
+    #ifdef USE_PARTICLE_THIN_SURFACE
+      vSurfaceUv = uv;
+    #endif
 
     vec3 local = rotateByQuaternion(position * aScale, aQuaternion);
     vec3 localNormal = rotateByQuaternion(normal, aQuaternion);
@@ -136,6 +144,9 @@ const billboardVertexShader = /* glsl */ `
   varying float vViewDepth;
   varying vec3 vViewNormal;
   varying vec3 vViewPosition;
+  #ifdef USE_PARTICLE_THIN_SURFACE
+    varying vec2 vSurfaceUv;
+  #endif
 
   #include <fog_pars_vertex>
 
@@ -143,6 +154,9 @@ const billboardVertexShader = /* glsl */ `
     vUv = aUvRect.xy + uv * aUvRect.zw;
     vColor = aColor;
     vAlpha = aAlpha;
+    #ifdef USE_PARTICLE_THIN_SURFACE
+      vSurfaceUv = uv;
+    #endif
 
     vec4 mvPosition = modelViewMatrix * vec4(aCenter, 1.0);
     mvPosition.xy += position.xy * aScale.xy;
@@ -163,22 +177,44 @@ const particleLightingFragment = /* glsl */ `
     uniform float uLightingFloor;
     varying vec3 vViewNormal;
     varying vec3 vViewPosition;
+    #ifdef USE_PARTICLE_THIN_SURFACE
+      varying vec2 vSurfaceUv;
+    #endif
 
     float particleDiffuseWeight(vec3 normal, vec3 lightDirection) {
+      #ifdef USE_PARTICLE_THIN_SURFACE
+        float facing = dot(normal, lightDirection);
+        float across = abs(vSurfaceUv.x - 0.5 - 0.035 * (vSurfaceUv.y - 0.5));
+        float thinEdge = smoothstep(0.06, 0.3, across);
+        float thinTip = smoothstep(0.58, 0.82, vSurfaceUv.y);
+        float transmission = 0.11 + 0.23 * thinEdge + 0.05 * thinTip;
+        return 0.04 + 0.88 * max(facing, 0.0) +
+          transmission * max(-facing, 0.0);
+      #else
       // Petals and leaves transmit light through both faces. The wrapped floor
       // keeps edge-on particles readable while rotation still changes their tone.
       return 0.28 + 0.72 * abs(dot(normal, lightDirection));
+      #endif
     }
 
     vec3 resolveParticleLighting() {
       vec3 particleNormal = normalize(vViewNormal);
+      #ifdef USE_PARTICLE_THIN_SURFACE
+        if (!gl_FrontFacing) particleNormal = -particleNormal;
+      #endif
       vec3 irradiance = ambientLightColor;
 
       #if NUM_HEMI_LIGHTS > 0
         for (int index = 0; index < NUM_HEMI_LIGHTS; index++) {
-          float skyWeight = 0.28 + 0.72 * abs(
-            dot(particleNormal, hemisphereLights[index].direction)
-          );
+          #ifdef USE_PARTICLE_THIN_SURFACE
+            float skyWeight = 0.5 + 0.5 * dot(
+              particleNormal, hemisphereLights[index].direction
+            );
+          #else
+            float skyWeight = 0.28 + 0.72 * abs(
+              dot(particleNormal, hemisphereLights[index].direction)
+            );
+          #endif
           irradiance += mix(
             hemisphereLights[index].groundColor,
             hemisphereLights[index].skyColor,
@@ -218,10 +254,21 @@ const particleLightingFragment = /* glsl */ `
         }
       #endif
 
+      #ifdef USE_PARTICLE_THIN_SURFACE
+        // A small fill keeps petals visible in dark scenes without erasing
+        // the light differences across the cup and central fold.
+        irradiance += vec3(uLightingFloor * 0.5);
+      #endif
       float peak = max(max(irradiance.r, irradiance.g), irradiance.b);
       if (peak > 1.35) irradiance *= 1.35 / peak;
-      irradiance = max(irradiance, vec3(uLightingFloor));
-      return mix(vec3(1.0), irradiance, uLightingStrength);
+      #ifdef USE_PARTICLE_THIN_SURFACE
+        return mix(
+          vec3(1.0), irradiance, min(1.0, uLightingStrength + 0.28)
+        );
+      #else
+        irradiance = max(irradiance, vec3(uLightingFloor));
+        return mix(vec3(1.0), irradiance, uLightingStrength);
+      #endif
     }
   #endif
 `;
@@ -297,10 +344,13 @@ const texturedFragmentShader = /* glsl */ `
     float alpha = softenedAlpha * vAlpha * nearFade * farFade;
     if (alpha < 0.004) discard;
     vec3 surfaceColor = sampleColor.rgb * vColor;
+    #if defined(USE_PARTICLE_THIN_SURFACE) && defined(USE_PARTICLE_CONTRAST_ADAPTATION)
+      surfaceColor = adaptParticleContrast(surfaceColor, sampleColor.a);
+    #endif
     #ifdef USE_PARTICLE_SURFACE_LIGHTING
       surfaceColor *= resolveParticleLighting();
     #endif
-    #ifdef USE_PARTICLE_CONTRAST_ADAPTATION
+    #if defined(USE_PARTICLE_CONTRAST_ADAPTATION) && !defined(USE_PARTICLE_THIN_SURFACE)
       surfaceColor = adaptParticleContrast(surfaceColor, sampleColor.a);
     #endif
     gl_FragColor = vec4(surfaceColor, alpha);
@@ -335,10 +385,13 @@ const solidFragmentShader = /* glsl */ `
     float alpha = vAlpha * nearFade * farFade;
     if (alpha < 0.004) discard;
     vec3 surfaceColor = vColor;
+    #if defined(USE_PARTICLE_THIN_SURFACE) && defined(USE_PARTICLE_CONTRAST_ADAPTATION)
+      surfaceColor = adaptParticleContrast(surfaceColor, 1.0);
+    #endif
     #ifdef USE_PARTICLE_SURFACE_LIGHTING
       surfaceColor *= resolveParticleLighting();
     #endif
-    #ifdef USE_PARTICLE_CONTRAST_ADAPTATION
+    #if defined(USE_PARTICLE_CONTRAST_ADAPTATION) && !defined(USE_PARTICLE_THIN_SURFACE)
       surfaceColor = adaptParticleContrast(surfaceColor, 1.0);
     #endif
     gl_FragColor = vec4(surfaceColor, alpha);
@@ -492,6 +545,9 @@ export class ParticleInstancePool3D {
         ? {
             defines: {
               ...(surfaceLighting ? { USE_PARTICLE_SURFACE_LIGHTING: "" } : {}),
+              ...(surfaceLighting && options.thinSurfaceLighting
+                ? { USE_PARTICLE_THIN_SURFACE: "" }
+                : {}),
               ...(options.colorManaged
                 ? { USE_PARTICLE_COLOR_MANAGEMENT: "" }
                 : {}),

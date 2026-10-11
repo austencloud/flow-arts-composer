@@ -366,14 +366,57 @@ export function tunnelLayout(
   };
 }
 
-/** Assemble: the grid, square and centered. */
-export function assembleLayout(width: number, height: number): CellRect | null {
+/** Assemble: the grid, and the two beats its taps write. */
+export interface AssembleLayout {
+  grid: CellRect;
+  beats: CellRect[];
+}
+
+/** A beat's side against the grid's: beside it in a strip, under it in a square. */
+export const ASSEMBLE_BEAT_SCALE = Object.freeze({ strip: 0.75, square: 0.6 });
+
+export function assembleLayout(
+  shape: MethodPreviewShape,
+  width: number,
+  height: number
+): AssembleLayout | null {
   if (!(width > 0) || !(height > 0)) return null;
-  const size = Math.floor(Math.min(width, height));
+  const gap = previewGap(width, height);
+  if (shape === "square") {
+    // The grid on top, the beats in a row under it.
+    const scale = ASSEMBLE_BEAT_SCALE.square;
+    const grid = Math.floor(
+      Math.min(width, (height - gap) / (1 + scale), (width - gap) / (2 * scale))
+    );
+    const beat = Math.floor(grid * scale);
+    if (grid <= 0 || beat <= 0) return null;
+    const top = Math.floor((height - (grid + gap + beat)) / 2);
+    return {
+      grid: { x: Math.floor((width - grid) / 2), y: top, size: grid },
+      beats: centeredRow(2, beat, gap, width, beat).map((cell) => ({
+        ...cell,
+        y: top + grid + gap,
+      })),
+    };
+  }
+  // The grid, then the beats beside it, set a little apart from it.
+  const scale = ASSEMBLE_BEAT_SCALE.strip;
+  const apart = 2 * gap;
+  const grid = Math.floor(
+    Math.min(height, (width - apart - gap) / (1 + 2 * scale))
+  );
+  const beat = Math.floor(grid * scale);
+  if (grid <= 0 || beat <= 0) return null;
+  const left = Math.floor((width - (grid + apart + 2 * beat + gap)) / 2);
+  const beatsLeft = left + grid + apart;
+  const beatTop = Math.floor((height - beat) / 2);
   return {
-    x: Math.floor((width - size) / 2),
-    y: Math.floor((height - size) / 2),
-    size,
+    grid: { x: left, y: Math.floor((height - grid) / 2), size: grid },
+    beats: [0, 1].map((index) => ({
+      x: beatsLeft + index * (beat + gap),
+      y: beatTop,
+      size: beat,
+    })),
   };
 }
 

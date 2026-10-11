@@ -105,6 +105,28 @@ describe("petal art direction", () => {
     expect(worldSize).toBeLessThan(0.08);
   });
 
+  it("makes motion-born 3D petals easier to read than ambient drift", () => {
+    const sample = () => [0, 0];
+    const motionValues = sample();
+    const ambientValues = sample();
+    const motionSize = resolvePetalWorldSize(
+      0.1,
+      0.5,
+      "blossom_petal",
+      false,
+      () => motionValues.shift() ?? 0
+    );
+    const ambientSize = resolvePetalWorldSize(
+      0.1,
+      0.5,
+      "blossom_petal",
+      true,
+      () => ambientValues.shift() ?? 0
+    );
+    expect(motionSize / ambientSize).toBeGreaterThan(1.4);
+    expect(motionSize / ambientSize).toBeLessThan(1.6);
+  });
+
   it("extends the ember halo beyond the ash body without doubling its footprint", () => {
     const radius = 0.08;
     expect(resolveEmberWorldSpan(radius)).toBeGreaterThan(radius * 2);
@@ -130,6 +152,18 @@ describe("petal art direction", () => {
       NEUTRAL_PETAL_ENVIRONMENT_PROFILE.minimumSurfaceLuminance
     );
     expect(forest.opacityScale).toBeGreaterThan(1);
+  });
+
+  it("gives neutral 3D scenes gentle petal contrast", () => {
+    expect(NEUTRAL_PETAL_ENVIRONMENT_PROFILE.contrastStrength).toBeGreaterThan(
+      0
+    );
+    expect(NEUTRAL_PETAL_ENVIRONMENT_PROFILE.contrastStrength).toBeLessThan(
+      0.6
+    );
+    expect(
+      NEUTRAL_PETAL_ENVIRONMENT_PROFILE.minimumSurfaceLuminance
+    ).toBeGreaterThan(0.1);
   });
 
   it("uses inverse contrast direction for pale environments", () => {

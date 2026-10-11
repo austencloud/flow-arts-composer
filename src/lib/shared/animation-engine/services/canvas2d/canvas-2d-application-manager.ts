@@ -11,9 +11,9 @@
  */
 
 // Dark Mode background color (near-black)
-const DARK_MODE_BACKGROUND = "#0a0a0f";
+export const DARK_MODE_BACKGROUND = "#0a0a0f";
 // Light Mode background - 85% off-white to reduce eye strain
-const LIGHT_MODE_BACKGROUND = "#f5f5f5";
+export const LIGHT_MODE_BACKGROUND = "#f5f5f5";
 // Transition duration synced with pictograph transitions (150ms)
 const BACKGROUND_TRANSITION_DURATION = 150;
 

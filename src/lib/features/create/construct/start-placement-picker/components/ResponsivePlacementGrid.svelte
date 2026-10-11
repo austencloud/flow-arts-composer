@@ -17,6 +17,8 @@
   const MIN_TILE = 44;
   // Eight columns may give tiles up to 5% smaller than four and still win
   const EIGHT_COLUMN_TOLERANCE = 0.95;
+  // Extra space between letter groups, as a multiple of the tile gap
+  const GROUP_GAP_SCALE = 2;
 
   let gridWrapperElement: HTMLDivElement | null = null;
   let containerWidth = $state(0);
@@ -25,29 +27,42 @@
   // Gap and padding scale with the container (8px at 800px wide, 4-12px range)
   const responsiveSizing = $derived.by(() => {
     if (containerWidth === 0 || containerHeight === 0) {
-      return { gap: 8, padding: 8 };
+      return { gap: 8, padding: 8, groupGap: 8 * GROUP_GAP_SCALE };
     }
     const scaleFactor = Math.min(Math.max(containerWidth / 800, 0.5), 1.5);
+    const gap = Math.max(Math.round(8 * scaleFactor), 4);
     return {
-      gap: Math.max(Math.round(8 * scaleFactor), 4),
+      gap,
       padding: Math.max(Math.round(8 * scaleFactor), 4),
+      groupGap: gap * GROUP_GAP_SCALE,
     };
   });
 
-  // Largest square tile that fits `columns` across. Eight columns put Alpha and
-  // Beta on one row and Gamma on the next, with one extra gap between them.
+  // Three letter groups: Alpha (4), Beta (4), Gamma (8). Four columns stack
+  // them as rows, Gamma taking two. Eight columns set them side by side as
+  // blocks: Alpha 2x2, Beta 2x2, Gamma 4x2. Either way there are two group
+  // breaks, down the rows in four columns and across the columns in eight.
   function tileSizeFor(columns: number): number {
-    const { gap, padding } = responsiveSizing;
+    const { gap, padding, groupGap } = responsiveSizing;
     const rows = Math.ceil(TOTAL_ITEMS / columns);
-    const groupGap = columns === 8 ? gap : 0;
+    const columnBreaks = columns === 8 ? 2 : 0;
+    const rowBreaks = columns === 8 ? 0 : 2;
     const width =
-      (containerWidth - padding * 2 - gap * (columns - 1)) / columns;
+      (containerWidth -
+        padding * 2 -
+        gap * (columns - 1) -
+        groupGap * columnBreaks) /
+      columns;
     const height =
-      (containerHeight - padding * 2 - gap * (rows - 1) - groupGap) / rows;
+      (containerHeight -
+        padding * 2 -
+        gap * (rows - 1) -
+        groupGap * rowBreaks) /
+      rows;
     return Math.min(width, height);
   }
 
-  // Two rows of eight when that gives bigger tiles than four rows of four.
+  // Eight columns (two rows) when that gives bigger tiles than four.
   // Near a tie (wide panes around 2:1) eight wins because it fits the pane's
   // shape. Tracks are sized to the tile so the block stays compact and
   // centered instead of spreading across the pane.
@@ -102,8 +117,11 @@
     class:eight-column={gridLayout.columns === 8}
     style:--grid-columns={gridLayout.tileSize === null
       ? `repeat(${gridLayout.columns}, 1fr)`
-      : `repeat(${gridLayout.columns}, ${gridLayout.tileSize}px)`}
+      : gridLayout.columns === 8
+        ? `repeat(2, ${gridLayout.tileSize}px) ${gridLayout.tileSize + responsiveSizing.groupGap}px ${gridLayout.tileSize}px ${gridLayout.tileSize + responsiveSizing.groupGap}px repeat(3, ${gridLayout.tileSize}px)`
+        : `repeat(4, ${gridLayout.tileSize}px)`}
     style:--grid-gap={responsiveSizing.gap + "px"}
+    style:--group-gap={responsiveSizing.groupGap + "px"}
     style:--grid-padding={responsiveSizing.padding + "px"}
     style:--max-pictograph-size={gridLayout.tileSize === null
       ? "auto"
@@ -152,8 +170,32 @@
     box-sizing: border-box;
   }
 
-  /* Separate the Alpha/Beta row from the Gamma row in the eight-column layout */
-  .pictograph-grid.eight-column > :global(*:nth-child(n + 9)) {
-    margin-top: var(--grid-gap, 8px);
+  /* Tiles arrive as Alpha 1-4, Beta 5-8, Gamma 9-16 */
+
+  /* Four columns: extra space above the Beta row and the first Gamma row */
+  .pictograph-grid:not(.eight-column)
+    > :global(*:nth-child(n + 5):nth-child(-n + 12)) {
+    margin-top: var(--group-gap, 16px);
+  }
+
+  /* Eight columns: Alpha 2x2 | Beta 2x2 | Gamma 4x2. Each tile is pinned to
+     its row and fills that row's columns in order. */
+  .pictograph-grid.eight-column > :global(*) {
+    grid-row: 2;
+  }
+  .pictograph-grid.eight-column > :global(*:nth-child(-n + 2)),
+  .pictograph-grid.eight-column > :global(*:nth-child(n + 5):nth-child(-n + 6)),
+  .pictograph-grid.eight-column
+    > :global(*:nth-child(n + 9):nth-child(-n + 12)) {
+    grid-row: 1;
+  }
+
+  /* The first track of Beta and of Gamma is widened by the group gutter; its
+     tiles sit at the far edge so the space opens before each block */
+  .pictograph-grid.eight-column
+    > :global(
+      *:is(:nth-child(5), :nth-child(7), :nth-child(9), :nth-child(13))
+    ) {
+    justify-self: end;
   }
 </style>

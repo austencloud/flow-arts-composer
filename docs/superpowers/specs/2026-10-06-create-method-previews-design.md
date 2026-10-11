@@ -234,8 +234,14 @@ A blue one-hand path and a red one-hand path slide together and play once as a
 two-prop sequence. The paths are the demo sequence's two hands over its fourth
 and fifth steps, just past Construct's, shown one hand
 at a time with `PictographContainer`'s `visibleHand`, as `FuseSourceCard`
-shows Fuse's inputs. After they merge, the combined steps play once with props
-traveling their real paths (`motionStartData` and `motionProgress`).
+shows Fuse's inputs. Each half shows its arrow from the start, as Fuse's
+source cards do, with its prop where the move begins (2026-10-10: arrows that
+appeared only after the halves met read as something new arriving). After they
+merge, the combined steps play once, the props traveling their real paths
+along the arrows already shown (`motionStartData` and `motionProgress`). A hand
+alone is laid out as one hand, and the combined letter can place its arrow or
+prop elsewhere, so while the halves slide, each arrow and prop glides to where
+the combined step draws it instead of snapping there at the merge.
 
 Each turn is a Regenerate (2026-10-10), as Fuse's Regenerate button plays one:
 one hand gets a new path from Fuse's own path maker (`generateSoloLoop` with
@@ -252,13 +258,23 @@ pair.
 
 A strip shows two blue and two red steps meeting as two combined steps. A
 square stacks the blue row over the red row and merges them into one. The
-finished picture is the latest pair's combined steps.
+finished picture is the latest pair's combined steps. After a turn, each
+combined step stays on the last frame of its play rather than switching back
+to the still pictograph: a prop can end its play a full turn from the still
+picture's angle, and the switch spun it round once.
 
 ### Tunnel
 
 A tunnel plays. The dice on one performer is pressed, that performer gets a
 new sequence, and the tunnel redraws. In the Tunnel tool, a performer card's
 dice does exactly this.
+
+The redraw shows what a tunnel is (2026-10-10): the copies fold back into the
+one performer, which dips out over its tile and comes back alone with its new
+sequence, and its copies then bloom out around it with the viewer's own bloom
+(`revealTunnelCopies`, `TUNNEL_REVEAL_DURATION`). The tile stays; only the
+performer leaves. Before, the whole tile faded out and back, which read as a
+reload.
 
 The tunnel is drawn by the real `TunnelArtView`: one instance, for this card
 only, with a formation from `TUNNEL_PRESETS` and its trail overlay off. Its
@@ -282,8 +298,18 @@ so they curve as they do in the tool. The points come from the demo sequence's
 hand locations.
 
 `InteractiveGrid` itself is not reused, because it is interactive and needs a
-live Assemble state. The grid sits centered in a strip. The finished picture
-shows both props on their final points, as Assemble does on **Complete**.
+live Assemble state. The finished picture shows both props on their final
+points, as Assemble does on **Complete**.
+
+Beside the grid, or under it in a square box, sit the two beats the taps
+write, because Assemble writes its sequence as you tap. Each blue tap writes a
+beat that has only blue in it. Each red tap fills that beat in: the whole beat,
+letter and all, fades in over it while blue's arrow and prop glide to their
+two-hand places. The beats clear when a turn starts, and the finished picture
+shows both whole beats, N and M. They are the demo's third N and M: each
+other pair shares a step with Construct, Fuse, or Generate's usual cells.
+Only Generate's widest strip and its grid of eight show them too, until
+Generate's first roll (added 2026-10-10).
 
 ## Turns
 

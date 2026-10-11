@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { INK_PALETTES } from "#lib/shared/3d/effects/ink/ink-palettes.js";
 import {
   Ink2DRenderer,
+  resolveInkNibWidth,
   resolveInkStrokeWidth,
   resolveInkTurnLoad,
 } from "#lib/shared/effects/renderers/ink-2d-renderer.js";
@@ -21,7 +22,6 @@ function makeParams(overrides: Partial<Ink2DParams> = {}): Ink2DParams {
     splatterIntensity: 0.1,
     trackingMode: "both_ends",
     resolvedPalette: INK_PALETTES.watercolor,
-    blendMode: "source-over",
     effectiveAmbient: 0,
     ambientSpawnRate: 2,
     motionSpawnRate: 60,
@@ -32,8 +32,6 @@ function makeParams(overrides: Partial<Ink2DParams> = {}): Ink2DParams {
     lifetimeSeconds: 2.2,
     maxPointsPerTip: 84,
     strokeLengthPx: 320,
-    stampScaleMin: 0.3,
-    stampScaleMax: 1.2,
     gravityPx: 36,
     strokeGravityPx: 0,
     breakStretchMax: 80,
@@ -138,6 +136,58 @@ describe("Ink2DRenderer", () => {
     expect(
       resolveInkTurnLoad({ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 0, y: 0 })
     ).toBe(0);
+  });
+
+  // Steady-speed orbits were a uniform tube under speed pressure alone. The
+  // nib must vary with direction, keep the average weight, and match across
+  // tunnel copies (rotations and mirrors about the stage center).
+  it("swells dense ink around the stage and thins it toward the center", () => {
+    const center = { x: 400, y: 400 };
+    const point = { x: 400, y: 200 };
+    const around = resolveInkNibWidth(point, 1, 0, center);
+    const toward = resolveInkNibWidth(point, 0, 1, center);
+    expect(around).toBeGreaterThan(toward * 4);
+
+    let total = 0;
+    const steps = 360;
+    for (let i = 0; i < steps; i++) {
+      const a = (i / steps) * Math.PI * 2;
+      total += resolveInkNibWidth(point, Math.cos(a), Math.sin(a), center);
+    }
+    expect(total / steps).toBeCloseTo(1, 2);
+
+    expect(resolveInkNibWidth(center, 1, 0, center)).toBe(1);
+  });
+
+  it("gives every tunnel copy the same nib width as the prop it reflects", () => {
+    const center = { x: 400, y: 400 };
+    const point = { x: 470, y: 260 };
+    const tangent = { x: 0.6, y: 0.8 };
+    const base = resolveInkNibWidth(point, tangent.x, tangent.y, center);
+    const rotate = (v: { x: number; y: number }, a: number) => ({
+      x: v.x * Math.cos(a) - v.y * Math.sin(a),
+      y: v.x * Math.sin(a) + v.y * Math.cos(a),
+    });
+    for (const a of [Math.PI / 2, Math.PI, 1.1]) {
+      const offset = rotate({ x: point.x - center.x, y: point.y - center.y }, a);
+      const t = rotate(tangent, a);
+      expect(
+        resolveInkNibWidth(
+          { x: center.x + offset.x, y: center.y + offset.y },
+          t.x,
+          t.y,
+          center
+        )
+      ).toBeCloseTo(base, 10);
+    }
+    expect(
+      resolveInkNibWidth(
+        { x: 2 * center.x - point.x, y: point.y },
+        -tangent.x,
+        tangent.y,
+        center
+      )
+    ).toBeCloseTo(base, 10);
   });
 
   it("resolves separate Watercolor mark and droplet physics", () => {
@@ -680,7 +730,7 @@ describe("Ink2DRenderer", () => {
     expect(neon.strokeLengthPx).toBe(220);
     expect(neon.lifetimeSeconds).toBe(1.55);
     expect(neon.strokeGravityPx).toBe(0);
-    expect(neon.blendMode).toBe("lighter");
+    expect(neon.resolvedPalette.emissive).toBe(true);
   });
 
   it("applies attached-mark gravity only to deliberately viscous dense ink", () => {
