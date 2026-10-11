@@ -8,7 +8,7 @@ describe("sparkle tile", () => {
   it("paints every Sparkle preset deterministically", () => {
     const intents: SparkleIntent[] = SPARKLES_PRESET_GROUP.presets.map((p) => ({
       ...DEFAULT_EFFECTS_CONFIG.sparkles,
-      ...(p.patch ?? {}),
+      ...((p.patch ?? {}) as Partial<SparkleIntent>),
     }));
     paintsDeterministically(paintSparkleTile, intents);
   });

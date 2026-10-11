@@ -9,8 +9,10 @@ const NO_TILE = new Set(["frost"]);
 
 describe("tile registry", () => {
   it("has a portrait painter for every effect that is not legacy-tiled or retired", () => {
-    for (const effectType of Object.keys(DEFAULT_EFFECTS_CONFIG)) {
-      if (effectType === "version" || LEGACY_TILES.has(effectType)) continue;
+    // activePresets has exactly one key per effect type; the top-level config
+    // also carries non-effect keys (version, tipEffectMap, overrides).
+    for (const effectType of Object.keys(DEFAULT_EFFECTS_CONFIG.activePresets)) {
+      if (LEGACY_TILES.has(effectType)) continue;
       const painter = tilePainterFor(effectType);
       if (NO_TILE.has(effectType)) expect(painter, effectType).toBeNull();
       else expect(painter, effectType).not.toBeNull();
