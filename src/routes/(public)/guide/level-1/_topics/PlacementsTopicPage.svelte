@@ -204,25 +204,20 @@
     gap: var(--family-gap);
     justify-content: center;
     grid-template-columns: auto;
-    grid-template-areas: "alpha" "beta" "gamma";
   }
+  /* Each family is a three-row subgrid (name, definition, placements), so
+     side-by-side families start their placements on the same line even when
+     one definition wraps to two lines. */
   .family {
     display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
     align-content: start;
     gap: 0.75rem;
     padding: var(--pad);
     border-radius: 1rem;
     border: 1px solid color-mix(in srgb, var(--ink, #1a1a1a) 14%, transparent);
     background: color-mix(in srgb, var(--ink, #1a1a1a) 4%, transparent);
-  }
-  .family.alpha {
-    grid-area: alpha;
-  }
-  .family.beta {
-    grid-area: beta;
-  }
-  .family.gamma {
-    grid-area: gamma;
   }
   .family-head {
     display: flex;
@@ -259,7 +254,11 @@
   .cell {
     width: var(--cell);
   }
-  .cell :global(.pictograph-wrapper) {
+  /* guide.css fixes each GuidePictograph size to a set width and height;
+     here the cell decides, so every placement shares one size. */
+  .cell :global(.guide-pictograph .pictograph-wrapper) {
+    width: 100%;
+    height: auto;
     max-width: none;
     border-radius: 0.6rem;
     overflow: hidden;
@@ -273,10 +272,9 @@
         (100cqw - var(--family-gap) - 4 * var(--pad) - 2 * var(--gap)) / 4
       );
       grid-template-columns: auto auto;
-      grid-template-areas: "alpha beta" "gamma gamma";
     }
     .family.gamma {
-      justify-self: stretch;
+      grid-column: 1 / -1;
     }
     .family.gamma .cells {
       grid-template-columns: repeat(var(--cols), var(--cell));
@@ -290,7 +288,9 @@
         (100cqw - 2 * var(--family-gap) - 6 * var(--pad) - 5 * var(--gap)) / 8
       );
       grid-template-columns: auto auto auto;
-      grid-template-areas: "alpha beta gamma";
+    }
+    .family.gamma {
+      grid-column: auto;
     }
     .family.gamma .definition {
       max-width: calc(4 * var(--cell) + 3 * var(--gap));
