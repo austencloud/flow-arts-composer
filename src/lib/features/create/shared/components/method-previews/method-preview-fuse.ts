@@ -16,6 +16,7 @@ import {
   type FuseLayout,
 } from "./method-preview-compositions";
 import { DEMO_STEP_START } from "./method-preview-demo";
+import { PREVIEW_MOVE_MS } from "./method-preview-run";
 
 /** The scene's beats, in milliseconds, in the order they play. */
 export const FUSE_PREVIEW_TIMING = Object.freeze({
@@ -32,8 +33,11 @@ export const FUSE_PREVIEW_TIMING = Object.freeze({
   slideMs: 520,
   /** The fused cells take over from the halves. */
   mergeMs: 120,
-  /** Each fused step plays. */
-  stepMs: 650,
+  /**
+   * Each fused step plays, at the pace Construct's and Generate's steps move
+   * (2026-10-11; 650 ms before, quick enough to miss).
+   */
+  stepMs: PREVIEW_MOVE_MS,
 });
 
 /**
