@@ -1,7 +1,7 @@
 import type { NavigationBase } from "$app/navigation";
 import { browser } from "$app/env";
-import { pushState, replaceState } from "$app/navigation";
-import { page } from "$app/state";
+import { goto } from "$app/navigation";
+import { navigating, page } from "$app/state";
 
 export type UrlMutationMode = "push" | "replace";
 
@@ -11,14 +11,16 @@ export interface UrlStateOptions {
   removeState?: readonly (keyof App.PageState)[];
 }
 
-// These writes use SvelteKit's `pushState`/`replaceState`, which SvelteKit 3
-// deprecates in favour of `goto(url, { shallow: true })`. The replacement is
-// not equivalent: a shallow `goto` runs the navigation callbacks and takes
-// over SvelteKit's navigation token, so a write landing while a real
-// navigation is still loading aborts that navigation. Most writes here are
-// background syncs (a debounced sequence URL, an overlay closing), and one that
-// fired between a link click and its page load would swallow the click. The
-// deprecated pair still runs no callbacks and leaves navigation alone.
+// These writes use a shallow `goto`, which SvelteKit 3 recommends in place of
+// the deprecated `pushState`/`replaceState`. The two are not equivalent: a
+// shallow `goto` runs the navigation callbacks and takes over SvelteKit's
+// navigation token, so a write landing while a real navigation is still
+// loading would abort that navigation. Most writes here are background syncs
+// (a debounced sequence URL, an overlay closing), and one that fired between a
+// link click and its page load would swallow the click. So a write first waits
+// for any navigation in progress to settle, then lands only if the page it was
+// made for is still showing. Listeners that react to real page changes skip
+// these writes with `isShallowGoto`.
 //
 // SvelteKit flips its internal "router started" flag only after the root
 // component's effects have run, so a URL write issued from a component that
@@ -36,6 +38,8 @@ interface UrlWrite {
   destination: string | URL;
   state: App.PageState;
   mode: UrlMutationMode;
+  /** The page the write was made for, from `currentPage`. */
+  page: string;
 }
 
 // SvelteKit resolves the route before it touches history, so
@@ -45,16 +49,34 @@ interface UrlWrite {
 // overlapping writes can also leave `page.state` from the older one. So the
 // newest requested URL and state are tracked here, later writes build on them,
 // and writes reach SvelteKit one at a time in the order they were made.
-let pending: { href: string; state: App.PageState } | null = null;
+// A pending write only counts while its page is still showing: once a real
+// navigation replaces that page, new writes start from the new address.
+let pending: { href: string; state: App.PageState; page: string } | null = null;
 let latestWrite = 0;
 let inFlight: Promise<void> | null = null;
 
+/**
+ * The page writes are made for. `page.url` moves only on real navigations
+ * (shallow writes leave it alone) and on hash changes, which stay on the page.
+ */
+function currentPage(): string {
+  const url = new URL(page.url.href);
+  url.hash = "";
+  return url.href;
+}
+
+function pendingForPage() {
+  return pending?.page === currentPage() ? pending : null;
+}
+
 function currentHref(): string {
-  return pending?.href ?? window.location.href;
+  return pendingForPage()?.href ?? window.location.href;
 }
 
 function mergePageState(options: UrlStateOptions): App.PageState {
-  const nextState: App.PageState = { ...(pending?.state ?? page.state ?? {}) };
+  const nextState: App.PageState = {
+    ...(pendingForPage()?.state ?? page.state ?? {}),
+  };
 
   for (const key of options.removeState ?? []) {
     delete nextState[key];
@@ -65,11 +87,43 @@ function mergePageState(options: UrlStateOptions): App.PageState {
   return nextState;
 }
 
-/** Resolves false when the router isn't up yet. Any other failure is a real bug. */
+function nextTask(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/**
+ * Waits out any navigation in progress. Resolves false when it is leaving the
+ * app: that navigation never settles, and nothing written now would survive it.
+ */
+async function waitForNavigation(): Promise<boolean> {
+  let settled: Promise<void> | null = null;
+  for (;;) {
+    const complete = navigating.complete;
+    if (!complete || complete === settled) return true;
+    if (navigating.willUnload) return false;
+    await complete.catch(() => {});
+    settled = complete;
+    // A navigation that cut this one short registers a moment later.
+    await nextTask();
+  }
+}
+
+/**
+ * Resolves true once the write is settled, whether it landed or was dropped
+ * because its page is gone, and false when the router isn't up yet. Any other
+ * failure is a real bug.
+ */
 async function commitWrite(write: UrlWrite): Promise<boolean> {
+  // With no navigation running, the write goes out without yielding first.
+  if (navigating.complete && !(await waitForNavigation())) return true;
+  if (currentPage() !== write.page) return true;
+
   try {
-    const historyWrite = write.mode === "replace" ? replaceState : pushState;
-    await historyWrite(write.destination, write.state);
+    await goto(write.destination, {
+      shallow: true,
+      replace: write.mode === "replace",
+      state: write.state,
+    });
     return true;
   } catch (error) {
     if (error instanceof Error && ROUTER_NOT_READY.test(error.message)) {
@@ -77,10 +131,6 @@ async function commitWrite(write: UrlWrite): Promise<boolean> {
     }
     throw error;
   }
-}
-
-function nextTask(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 async function applyWrite(write: UrlWrite, id: number): Promise<void> {
@@ -112,11 +162,11 @@ async function applyWrite(write: UrlWrite, id: number): Promise<void> {
 }
 
 /**
- * True for a URL write made with a shallow `goto`. SvelteKit 3 runs
- * navigation callbacks for those writes; the `pushState` and `replaceState`
- * they replace ran none. Listeners that react to the page changing skip them,
- * so a query parameter or overlay update does not close menus, start a route
- * morph or restart a QR hand-off. (`writeUrl` itself runs no callbacks.)
+ * True for a URL write made with a shallow `goto`, including every `writeUrl`.
+ * SvelteKit 3 runs navigation callbacks for those writes; the `pushState` and
+ * `replaceState` they replace ran none. Listeners that react to the page
+ * changing skip them, so a query parameter or overlay update does not close
+ * menus, start a route morph or restart a QR hand-off.
  */
 export function isShallowGoto(
   navigation: Pick<NavigationBase, "type" | "shallow">
@@ -134,11 +184,13 @@ export function writeUrl(
     destination,
     state: mergePageState(options),
     mode: options.mode === "push" ? "push" : "replace",
+    page: currentPage(),
   };
   const id = ++latestWrite;
   pending = {
     href: new URL(destination, currentHref()).href,
     state: write.state,
+    page: write.page,
   };
 
   // With nothing in flight the write starts now, so SvelteKit sees it in the
