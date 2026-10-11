@@ -31,8 +31,16 @@ describe("mapped step playback", () => {
     vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
     const harness = createPostTimingSessionHarness(resolved);
     const session = harness.session;
-    const video = document.createElement("video");
-    video.currentTime = 0;
+    const video = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "video"
+    ) as HTMLVideoElement;
+    let currentTime = 0;
+    Object.defineProperty(video, "currentTime", {
+      get: () => currentTime,
+      set: (seconds: number) => (currentTime = seconds),
+    });
+    video.load = vi.fn();
     Object.defineProperty(video, "ended", { value: false });
     let paused = true;
     let playCount = 0;

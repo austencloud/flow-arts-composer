@@ -81,6 +81,8 @@ beforeEach(() => {
   ) {
     paused.set(this, true);
   });
+  // jsdom has no load(); a layer calls it as it leaves the page.
+  vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => {});
   vi.spyOn(HTMLVideoElement.prototype, "videoWidth", "get").mockReturnValue(
     406
   );
@@ -231,6 +233,21 @@ describe("Post Studio playback media lifetime", () => {
     h.video.muted = false;
     controller.follow?.(FOLLOW_AHEAD_SECONDS - 0.015);
     expect(h.video.playbackRate).toBe(1);
+  });
+
+  it("lets go of its footage download when it leaves the page", async () => {
+    // A removed video keeps its download open but stops reading it. Over
+    // HTTP/2 a few of those hold the connection's whole receive window, and the
+    // next editor's project fetch gets headers but never a body.
+    const h = mountPlaybackMediaLayer();
+    present(0);
+    await vi.waitFor(() => expect(h.video.paused).toBe(false));
+    await h.destroy();
+    expect(h.video.paused).toBe(true);
+    expect(h.video.hasAttribute("src")).toBe(false);
+    expect(vi.mocked(HTMLMediaElement.prototype.load).mock.contexts).toContain(
+      h.video
+    );
   });
 
   it("keeps the authored speed while footage is held or the post is paused", async () => {
