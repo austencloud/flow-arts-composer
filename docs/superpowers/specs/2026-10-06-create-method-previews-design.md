@@ -204,6 +204,14 @@ that source fails, rolls step through the demo sequence instead. The dice is
 drawn as a plain glyph for `GhostPointer` to
 press, never a real button.
 
+Each cell plays its move as the wave reaches it (2026-10-11): its props travel
+from the pose before it (the start position before a sequence's first step),
+along its arrow, at Construct's 0.85 s pace. The real step grid washes a roll
+in still; the preview plays the moves so a roll reads as a sequence. The first
+roll's moves land before the second tap clears them. The run ends as the last
+roll lands and its moves play on into the turn's end, so a slow draw costs
+only the end of a move, never a cut.
+
 Before its first turn, the card rests on the demo sequence half a turn on,
 from its ninth step.
 After each turn it rests on the latest roll, so its second turn shows a new
