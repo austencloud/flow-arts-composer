@@ -196,21 +196,24 @@ picture is the start position with its steps.
 
 The dice is pressed and the whole strip washes in at once, in the step grid's
 own diagonal wave: each cell's band is its row plus its column, staggered by
-CSS animation delay. Each turn rolls twice (2026-10-10): the finger starts on
-the dice, taps, a real sequence washes in, then it taps again and a different
-one washes in, so the preview shows that every tap is fresh. Each roll is a
-real sequence from `drawMatrixRealization()`, two kept ready between turns; if
-that source fails, rolls step through the demo sequence instead. The dice is
-drawn as a plain glyph for `GhostPointer` to
-press, never a real button.
+CSS animation delay. The finger starts on the dice and taps once; a real
+sequence washes in still, as the step grid shows a roll. Each roll is a real
+sequence from `drawMatrixRealization()`, drawn between turns; if that source
+fails, rolls step through the demo sequence instead. The dice is drawn as a
+plain glyph for `GhostPointer` to press, never a real button.
 
-Each cell plays its move as the wave reaches it (2026-10-11): its props travel
-from the pose before it (the start position before a sequence's first step),
-along its arrow, at Construct's 0.85 s pace. The real step grid washes a roll
-in still; the preview plays the moves so a roll reads as a sequence. The first
-roll's moves land before the second tap clears them. The run ends as the last
-roll lands and its moves play on into the turn's end, so a slow draw costs
-only the end of a move, never a cut.
+Once the first step has landed, the roll's first two steps play their moves
+one at a time (2026-10-11), as the workspace's Play steps through a sequence:
+each step's props travel from the pose before it (the start position before a
+sequence's first step), along its arrow, at Construct's 0.85 s pace. The two
+land with their props at the start of their moves, so neither jumps back to
+start. A turn has room for two moves; the run ends as the last one starts, and
+it plays on into the turn's end, so a slow draw costs only the end of a move,
+never a cut.
+
+Turns rolled twice before (2026-10-10), and for a day each cell played its
+move as the wave reached it. That was dropped: the real tool brings steps in
+one after another and never plays them all at once.
 
 Before its first turn, the card rests on the demo sequence half a turn on,
 from its ninth step.
