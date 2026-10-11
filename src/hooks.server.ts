@@ -86,11 +86,19 @@ export function rejectUnknownAppPath(
  * live in their own server-rendered routes; this keeps the app shells out of
  * the index. A header rather than a meta tag, because with ssr=false the
  * server never renders the page's <svelte:head>.
+ *
+ * The phone sign-in pages are unlisted admin tools, so they stay out too.
  */
+const NOINDEX_ROUTES = new Set([
+  "/[...appPath]",
+  "/phone-sign-in",
+  "/sign-in/[id]",
+]);
+
 export function robotsTagForRoute(
   routeId: string | null | undefined
 ): string | undefined {
-  return routeId === "/[...appPath]" ? "noindex" : undefined;
+  return routeId && NOINDEX_ROUTES.has(routeId) ? "noindex" : undefined;
 }
 
 /**

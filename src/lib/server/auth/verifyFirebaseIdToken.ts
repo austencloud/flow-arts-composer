@@ -24,6 +24,8 @@ export interface VerifiedFirebaseIdToken {
   uid: string;
   email?: string;
   name?: string;
+  /** The token's iat, in seconds: when this ID token was minted. */
+  issuedAt: number;
   authTime: number;
   admin?: boolean;
   isAdmin?: boolean;
@@ -78,7 +80,11 @@ export function createFirebaseIdTokenVerifier(
     ) {
       throw new Error("Firebase ID token has an invalid subject claim.");
     }
-    requiredPastTimestamp(payload.iat, "issued-at", nowSeconds);
+    const issuedAt = requiredPastTimestamp(
+      payload.iat,
+      "issued-at",
+      nowSeconds
+    );
     const authTime = requiredPastTimestamp(
       payload.auth_time,
       "authentication-time",
@@ -106,6 +112,7 @@ export function createFirebaseIdTokenVerifier(
       uid: payload.sub,
       email: typeof payload.email === "string" ? payload.email : undefined,
       name: typeof payload.name === "string" ? payload.name : undefined,
+      issuedAt,
       authTime,
       admin: payload.admin === true ? true : undefined,
       isAdmin: payload.isAdmin === true ? true : undefined,

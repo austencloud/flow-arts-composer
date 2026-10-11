@@ -23,6 +23,7 @@
   import { getViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
   import { tryGetGridJoinContext } from "#lib/shared/grid-join/grid-join-controller.js";
   import { getEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
+  import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   interface Props {
     sequence?: SequenceData | null;
     leftPropType?: string | null;
@@ -38,6 +39,10 @@
     extraItems?: ContextMenuEntry[];
     /** Canvas-scoped manager when this animator does not use the global state. */
     visibilityManager?: AnimationVisibilityStateManager;
+    /** The effects state the canvas draws from. A player that receives its
+     *  state as a prop (the Create preview) has no effects context, and the
+     *  Effects submenu must read and set the state that player renders. */
+    effectsConfigState?: EffectsConfigState | null;
   }
 
   const {
@@ -52,6 +57,7 @@
     onToggle3DView,
     extraItems = [],
     visibilityManager: visibilityManagerOverride,
+    effectsConfigState: effectsConfigStateOverride = null,
   }: Props = $props();
 
   // Try to read the viewer-3d context. When this component is rendered inside
@@ -70,13 +76,17 @@
 
   const visibilityManager =
     visibilityManagerOverride ?? getAnimationVisibilityManager();
-  let effectsConfigState: ReturnType<typeof getEffectsConfigContext> | null =
-    null;
+  let contextEffectsConfigState: ReturnType<
+    typeof getEffectsConfigContext
+  > | null = null;
   try {
-    effectsConfigState = getEffectsConfigContext();
+    contextEffectsConfigState = getEffectsConfigContext();
   } catch {
     // Context not available in some host environments
   }
+  const effectsConfigState = $derived(
+    effectsConfigStateOverride ?? contextEffectsConfigState
+  );
 
   function onSettingsChanged(): void {
     menuItemsVersion++;

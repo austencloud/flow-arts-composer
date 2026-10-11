@@ -31,7 +31,9 @@ function firebaseErrorCode(cause: unknown): string | null {
   return typeof code === "string" && code ? code : null;
 }
 
-export async function requireAdmin(event: RequestEvent): Promise<FirebaseUser> {
+export async function requireAdmin(
+  event: Pick<RequestEvent, "request">
+): Promise<FirebaseUser> {
   const caller = await requireFirebaseUser(event);
   let liveUser;
   try {

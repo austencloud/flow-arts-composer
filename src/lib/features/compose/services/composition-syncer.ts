@@ -39,6 +39,9 @@ import {
 
 export class CompositionSyncer {
   private syncedOwner: string | null = null;
+  // Every load retries a failed pull, so only the first failure per account
+  // shows a toast; a later success re-arms it.
+  private warnedOwner: string | null = null;
 
   private currentOwner(): string {
     return firebaseGetUserId() ?? "local:guest";
@@ -197,6 +200,7 @@ export class CompositionSyncer {
       );
 
       if (cloudCompositions.length === 0 && ownedLocal.length === 0) {
+        this.warnedOwner = null;
         return true;
       }
 
@@ -235,9 +239,12 @@ export class CompositionSyncer {
           await firebaseSaveComposition(localComp, ownerId);
         }
       }
+      this.warnedOwner = null;
       return true;
     } catch (error) {
       console.error("Cloud sync failed, using local data:", error);
+      if (this.warnedOwner === ownerId) return false;
+      this.warnedOwner = ownerId;
       try {
         const errorHandler = getErrorHandler() as ErrorHandler;
         errorHandler.showWarning(

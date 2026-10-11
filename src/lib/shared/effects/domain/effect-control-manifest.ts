@@ -329,19 +329,22 @@ export const EFFECT_CONTROLS: Record<EffectId, ControlDescriptor[]> = {
     slider("animal", "slither", "Slither", { tier: "advanced" }),
   ],
   pulse: [
-    ...paletteColor("pulse", [
-      { value: "sonar", label: "Sonar" }, { value: "ripple", label: "Ripple" }, { value: "aurora", label: "Aurora" },
-      { value: "neon", label: "Neon" }, { value: "ember", label: "Ember" }, { value: "void", label: "Void" }, { value: "custom", label: "Custom" },
-    ]),
+    // Solid draws one named shade; Prop gives each hand its prop's color.
     { id: "pulse-colormode", label: "Color", type: "segmented", field: "colorMode", tier: "primary", options: [
       { value: "solid", label: "Solid" }, { value: "prop-matched", label: "Prop" }, { value: "rainbow", label: "Rainbow" }, { value: "palette", label: "Palette" },
     ] },
-    { id: "pulse-tint-solid", label: "Tint", type: "color", field: "color", tier: "advanced", showWhen: (i) => i.colorMode === "solid" },
+    { id: "pulse-palette", label: "Shade", type: "palette", field: "palette", tier: "primary", showWhen: (i) => i.colorMode === "solid", paletteOptions: [
+      { value: "sonar", label: "Sonar" }, { value: "ripple", label: "Ripple" }, { value: "aurora", label: "Aurora" },
+      { value: "neon", label: "Neon" }, { value: "ember", label: "Ember" }, { value: "void", label: "Void" }, { value: "custom", label: "Custom" },
+    ] },
+    { id: "pulse-tint", label: "Tint", type: "color", field: "customColor", tier: "primary", showWhen: (i) => i.colorMode === "solid" && i.palette === "custom" },
+    { id: "pulse-colors", label: "Palette", type: "paletteSwatches", field: "colorPalette", tier: "advanced", showWhen: (i) => i.colorMode === "palette" },
     slider("pulse", "intensity", "Intensity", { tier: "primary" }),
     { id: "pulse-trigger", label: "Trigger", type: "segmented", field: "trigger", tier: "primary", options: [
       { value: "beat", label: "Beat" }, { value: "velocity", label: "Velocity" }, { value: "continuous", label: "Steady" },
     ] },
     slider("pulse", "beatInterval", "Beat", { min: 1, max: 8, step: 1, pct: false, tier: "primary", showWhen: (i) => i.trigger === "beat" }),
+    slider("pulse", "charge", "Build-up", { tier: "advanced", showWhen: (i) => i.trigger === "beat" }),
     slider("pulse", "velocityThreshold", "Threshold", { tier: "primary", showWhen: (i) => i.trigger === "velocity" }),
     slider("pulse", "reach", "Reach", { tier: "primary" }),
     { id: "pulse-track", label: "Track", type: "segmented", field: "trackingMode", options: TRACK_OPTS, tier: "tracking" },
@@ -351,7 +354,7 @@ export const EFFECT_CONTROLS: Record<EffectId, ControlDescriptor[]> = {
     slider("pulse", "lifetime", "Lifetime", { min: 0.2, max: 3, step: 0.1, pct: false, tier: "advanced" }),
     slider("pulse", "thickness", "Thickness", { tier: "advanced" }),
     slider("pulse", "velocityScale", "Velocity", { tier: "advanced", compact: false }),
-    slider("pulse", "asymmetry", "Asymmetry", { tier: "advanced", compact: false }),
+    slider("pulse", "asymmetry", "Momentum", { tier: "advanced", compact: false }),
     slider("pulse", "chromatic", "Chromatic", { tier: "advanced", compact: false }),
     slider("pulse", "flash", "Flash", { tier: "advanced", compact: false }),
     slider("pulse", "harmonics", "Harmonics", { tier: "advanced", compact: false }),

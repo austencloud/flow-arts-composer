@@ -332,7 +332,12 @@
           };
           break;
         case "petals":
-          source = { ...base, effect, params: resolvedPetals };
+          source = {
+            ...base,
+            effect,
+            params: resolvedPetals,
+            collisionFloorY: userProportionsState.groundY,
+          };
           break;
         case "smoke":
           source = {
@@ -402,6 +407,9 @@
         break;
       case "petals":
         source.params = resolvedPetals;
+        pooledPosition.set(0, userProportionsState.groundY, 0);
+        if (effectsParentRef) effectsParentRef.localToWorld(pooledPosition);
+        source.collisionFloorY = pooledPosition.y;
         break;
       case "smoke":
         source.params = resolvedSmoke;

@@ -153,8 +153,10 @@ describe("handle() wiring", () => {
 });
 
 describe("robotsTagForRoute", () => {
-  it("noindexes only the [...appPath] app shell", () => {
+  it("noindexes the [...appPath] app shell and the phone sign-in pages", () => {
     expect(robotsTagForRoute("/[...appPath]")).toBe("noindex");
+    expect(robotsTagForRoute("/phone-sign-in")).toBe("noindex");
+    expect(robotsTagForRoute("/sign-in/[id]")).toBe("noindex");
     expect(robotsTagForRoute("/(public)/shop/loop-deck")).toBeUndefined();
     expect(robotsTagForRoute("/")).toBeUndefined();
     expect(robotsTagForRoute(null)).toBeUndefined();

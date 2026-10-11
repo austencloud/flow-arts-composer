@@ -68,45 +68,41 @@
       />
 
       <OptionChipRow
-        label="Palette"
-        ariaLabel="Pulse palette"
-        value={state.pulse.palette}
-        options={PALETTES}
-        onChange={(v) => state.updateEffect("pulse", { palette: v })}
-      />
-
-      <!-- Conditional color picker -->
-      {#if state.pulse.palette === "custom" || state.pulse.colorMode === "solid"}
-        <div class="color-row">
-          <span class="color-label">{t("effect_deep_tint")}</span>
-          <div class="color-pickers">
-            <label class="color-picker">
-              <input
-                type="color"
-                value={state.pulse.palette === "custom"
-                  ? state.pulse.customColor
-                  : state.pulse.color}
-                oninput={(e) => {
-                  const val = (e.currentTarget as HTMLInputElement).value;
-                  if (state.pulse.palette === "custom") {
-                    state.updateEffect("pulse", { customColor: val });
-                  } else {
-                    state.updateEffect("pulse", { color: val });
-                  }
-                }}
-              />
-            </label>
-          </div>
-        </div>
-      {/if}
-
-      <OptionChipRow
         label="Color"
         ariaLabel="Pulse color mode"
         value={state.pulse.colorMode}
         options={COLOR_MODES}
         onChange={(v) => state.updateEffect("pulse", { colorMode: v })}
       />
+
+      <!-- Solid draws one named shade; the other modes take their colors elsewhere. -->
+      {#if state.pulse.colorMode === "solid"}
+        <OptionChipRow
+          label="Shade"
+          ariaLabel="Pulse shade"
+          value={state.pulse.palette}
+          options={PALETTES}
+          onChange={(v) => state.updateEffect("pulse", { palette: v })}
+        />
+
+        {#if state.pulse.palette === "custom"}
+          <div class="color-row">
+            <span class="color-label">{t("effect_deep_tint")}</span>
+            <div class="color-pickers">
+              <label class="color-picker">
+                <input
+                  type="color"
+                  value={state.pulse.customColor}
+                  oninput={(e) =>
+                    state.updateEffect("pulse", {
+                      customColor: (e.currentTarget as HTMLInputElement).value,
+                    })}
+                />
+              </label>
+            </div>
+          </div>
+        {/if}
+      {/if}
 
       <OptionChipRow
         label="Tracking"
@@ -135,6 +131,23 @@
               })}
           />
           <span class="slider-value">{state.pulse.beatInterval}</span>
+        </div>
+
+        <div class="slider-row">
+          <label for="pulse-charge">{t("effect_deep_build_up")}</label>
+          <input
+            id="pulse-charge"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={state.pulse.charge}
+            oninput={(e) =>
+              state.updateEffect("pulse", {
+                charge: +(e.currentTarget as HTMLInputElement).value,
+              })}
+          />
+          <span class="slider-value">{Math.round(state.pulse.charge * 100)}%</span>
         </div>
       {/if}
 
@@ -221,7 +234,11 @@
                 lifetime: +(e.currentTarget as HTMLInputElement).value,
               })}
           />
-          <span class="slider-value">{state.pulse.lifetime.toFixed(1)}s</span>
+          <span class="slider-value"
+            >{t("effect_deep_lifetime_beats", {
+              count: state.pulse.lifetime.toFixed(1),
+            })}</span
+          >
         </div>
 
         <div class="slider-row">
