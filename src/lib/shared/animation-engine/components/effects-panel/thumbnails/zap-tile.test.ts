@@ -8,7 +8,7 @@ describe("zap tile", () => {
   it("paints every Zap preset deterministically", () => {
     const intents: ZapIntent[] = ZAP_PRESET_GROUP.presets.map((p) => ({
       ...DEFAULT_EFFECTS_CONFIG.zap,
-      ...(p.patch ?? {}),
+      ...((p.patch ?? {}) as Partial<ZapIntent>),
     }));
     paintsDeterministically(paintZapTile, intents);
   });

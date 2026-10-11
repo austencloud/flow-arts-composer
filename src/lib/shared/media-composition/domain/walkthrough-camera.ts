@@ -41,6 +41,12 @@ export const WIDE: PostFraming = { zoom: 1, panX: 0, panY: 0, rotation: 0 };
 /** A close shot frames its target widened by these shares of the frame. */
 export const SHOT_PAD_X = 0.1;
 export const SHOT_PAD_Y = 0.3;
+/**
+ * A target this big a share of the frame, across or down, stands out without
+ * a zoom: Generate, at 40% of the width, does; a Level button, at 12%, sits in
+ * a row of others and does not.
+ */
+export const FOCUS_SHARE = 0.25;
 /** Close beats share a shot when their union still fits at this share of the zoom cap. */
 export const GROUP_ZOOM_SHARE = 0.8;
 /** ...and the next click comes within this many seconds. */
@@ -143,6 +149,20 @@ export function framingForRegion(
   );
 }
 
+/** Whether a target needs the camera to move in to be picked out. */
+export function needsFocus(region: ShareRect): boolean {
+  return region.width < FOCUS_SHARE && region.height < FOCUS_SHARE;
+}
+
+function containsRect(outer: ShareRect, inner: ShareRect): boolean {
+  return (
+    inner.x >= outer.x - EPSILON &&
+    inner.y >= outer.y - EPSILON &&
+    inner.x + inner.width <= outer.x + outer.width + EPSILON &&
+    inner.y + inner.height <= outer.y + outer.height + EPSILON
+  );
+}
+
 export function sameFraming(a: PostFraming, b: PostFraming): boolean {
   return (
     Math.abs(a.zoom - b.zoom) < EPSILON &&
@@ -156,7 +176,10 @@ export function sameFraming(a: PostFraming, b: PostFraming): boolean {
 // Shots
 // ---------------------------------------------------------------------------
 
-/** A moment the camera should serve: a click seen close, or a pull out. */
+/**
+ * A moment the camera should serve: a click seen close, a click that only
+ * has to be in view, or a pull out.
+ */
 export type CameraBeat =
   | {
       kind: "close";
@@ -165,6 +188,12 @@ export type CameraBeat =
       region: ShareRect;
       /** A chapter's first line starts its own shot. */
       newShot?: boolean;
+    }
+  | {
+      /** The camera stays if it shows the target and pulls out if not. */
+      kind: "see";
+      time: number;
+      region: ShareRect;
     }
   | {
       kind: "wide";
@@ -181,6 +210,8 @@ export type CameraShot =
       time: number;
       lastTime: number;
       region: ShareRect;
+      /** Clicks the shot was kept for, which must stay in view. */
+      seen: ShareRect[];
       framing: PostFraming;
     }
   | {
@@ -211,16 +242,36 @@ export function planShots(
       });
       continue;
     }
+    if (beat.kind === "see") {
+      if (current?.kind !== "close") continue;
+      if (containsRect(viewOfFraming(current.framing), beat.region)) {
+        current.seen.push(beat.region);
+        continue;
+      }
+      shots.push({
+        kind: "wide",
+        time: beat.time,
+        startAt: beat.time - ARRIVE_BEFORE_SECONDS - MOVE_SECONDS,
+        due: beat.time,
+        framing: WIDE,
+      });
+      continue;
+    }
     if (
       current?.kind === "close" &&
       !beat.newShot &&
       beat.time - current.lastTime < GROUP_GAP_SECONDS
     ) {
       const region = unionRect(current.region, beat.region);
-      if (regionZoom(region, maxZoom) >= GROUP_ZOOM_SHARE * maxZoom) {
+      const framing = framingForRegion(region, maxZoom);
+      const view = viewOfFraming(framing);
+      if (
+        regionZoom(region, maxZoom) >= GROUP_ZOOM_SHARE * maxZoom &&
+        current.seen.every((seen) => containsRect(view, seen))
+      ) {
         current.region = region;
         current.lastTime = beat.time;
-        current.framing = framingForRegion(region, maxZoom);
+        current.framing = framing;
         continue;
       }
     }
@@ -229,6 +280,7 @@ export function planShots(
       time: beat.time,
       lastTime: beat.time,
       region: beat.region,
+      seen: [],
       framing: framingForRegion(beat.region, maxZoom),
     });
   }
