@@ -41,7 +41,7 @@ stage's line under it:
 
 > Drag the hand to a point.
 
-> Drag both hands. Find all six.
+> Move the blue hand, then the red hand. Find all six.
 
 > Using these, we can make six combinations, named below.
 
@@ -223,6 +223,11 @@ the lesson does not repeat Water, Earth, Sun, Fire, Air, or Moon as headings.
   non-technical readers: “Using these, we can make six combinations, named
   below.” (German “bilden” for “ableiten”). Relayed by the Guide page session;
   the book key and the printed edition keep “derive.”
+- 2026-10-11 — Austen redesigned the two-hands stage as two grids side by side
+  (blue, then red) that fuse into one picture, and chose the prompt “Move the
+  blue hand, then the red hand. Find all six.” It replaces “Drag both hands.
+  Find all six.” German: “Bewege erst die blaue Hand, dann die rote. Finde
+  alle sechs.”
 
 ## Shared-path Refinement Verification — 2026-09-04
 

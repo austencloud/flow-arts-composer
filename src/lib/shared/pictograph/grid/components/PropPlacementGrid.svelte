@@ -80,8 +80,8 @@
      * on its own grid. Absent or null keeps one grid for both hands.
      */
     gridJoin?: GridJoin | null;
-    /** "left" keeps one blue hand on the grid; the right hand is never placed. */
-    hands?: "both" | "left";
+    /** "left" keeps one blue hand on the grid, "right" one red hand; the other is never placed. */
+    hands?: "both" | "left" | "right";
     /** False hides the hands and shows the grid alone, as a self-building figure starts. */
     showProps?: boolean;
     /** Fires once the pictograph has drawn (PictographContainer onReady). */

@@ -6,9 +6,12 @@
  */
 import {
   classifyHandMove,
+  handMoveDirection,
+  type ComboHand,
   type HandMove,
 } from "#lib/shared/guide-topics/hand-motions-topic.js";
 import type { GridLocation } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+import type { PlacementMotionMove } from "#lib/shared/pictograph/grid/state/prop-placement-motion.svelte.js";
 import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 
 export interface HandPair {
@@ -53,4 +56,64 @@ export function isMirrorPair(first: HandPair, next: HandPair): boolean {
     first.blue === next.red &&
     first.red === next.blue
   );
+}
+
+/** Each hand's move from where the round began, once both have been dropped. */
+export function roundHands(
+  round: PairRound
+): { left: ComboHand; right: ComboHand } | null {
+  const blue = round.moves[HandSide.LEFT];
+  const red = round.moves[HandSide.RIGHT];
+  if (!blue || !red) return null;
+  return {
+    left: { move: blue.move, from: round.start[HandSide.LEFT], to: blue.to },
+    right: { move: red.move, from: round.start[HandSide.RIGHT], to: red.to },
+  };
+}
+
+/**
+ * Both hands' moves played together from the round's start: the hands that
+ * travel, a dash straight through the centre and a shift around it. Null when
+ * both are static.
+ */
+export function roundReplay(
+  round: PairRound,
+  epoch: number,
+  durationMs: number
+): PlacementMotionMove | null {
+  const hands = roundHands(round);
+  if (!hands) return null;
+  const travels = (
+    [
+      [HandSide.LEFT, hands.left],
+      [HandSide.RIGHT, hands.right],
+    ] as const
+  )
+    .filter(([, made]) => made.move !== "static")
+    .map(([hand, made]) => ({
+      hand,
+      from: made.from,
+      to: made.to,
+      direction: handMoveDirection(made.from, made.to),
+      path: made.move === "dash" ? ("dash" as const) : ("arc" as const),
+    }));
+  const [first, second] = travels;
+  if (!first) return null;
+  return {
+    epoch,
+    color: first.hand,
+    from: first.from,
+    to: first.to,
+    direction: first.direction,
+    path: first.path,
+    durationMs,
+    partner: second
+      ? {
+          from: second.from,
+          to: second.to,
+          direction: second.direction,
+          path: second.path,
+        }
+      : undefined,
+  };
 }

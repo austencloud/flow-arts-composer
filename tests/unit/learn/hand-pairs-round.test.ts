@@ -4,7 +4,9 @@ import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-
 import {
   isMirrorPair,
   placeHand,
+  roundHands,
   roundPair,
+  roundReplay,
   startRound,
 } from "../../../src/lib/features/learn/components/interactive/motions/hand-pairs-round";
 
@@ -67,5 +69,57 @@ describe("mirror pairs", () => {
     expect(
       isMirrorPair({ blue: "dash", red: "dash" }, { blue: "dash", red: "dash" })
     ).toBe(false);
+  });
+});
+
+describe("the fused picture", () => {
+  it("draws both moves from where the round began", () => {
+    let round = startRound(W, E);
+    expect(roundHands(round)).toBeNull();
+    round = placeHand(round, BLUE, N);
+    round = placeHand(round, RED, W);
+    expect(roundHands(round)).toEqual({
+      left: { move: "shift", from: W, to: N },
+      right: { move: "dash", from: E, to: W },
+    });
+  });
+
+  it("replays both hands together, a dash straight and a shift around", () => {
+    let round = startRound(W, E);
+    round = placeHand(round, BLUE, N);
+    round = placeHand(round, RED, W);
+    expect(roundReplay(round, 3, 800)).toEqual({
+      epoch: 3,
+      color: BLUE,
+      from: W,
+      to: N,
+      direction: "clockwise",
+      path: "arc",
+      durationMs: 800,
+      partner: { from: E, to: W, direction: "clockwise", path: "dash" },
+    });
+  });
+
+  it("replays only the hand that moves when the other is static", () => {
+    let round = startRound(W, E);
+    round = placeHand(round, BLUE, W);
+    round = placeHand(round, RED, N);
+    expect(roundReplay(round, 1, 800)).toEqual({
+      epoch: 1,
+      color: RED,
+      from: E,
+      to: N,
+      direction: "counterclockwise",
+      path: "arc",
+      durationMs: 800,
+      partner: undefined,
+    });
+  });
+
+  it("has nothing to replay when both hands are static", () => {
+    let round = startRound(W, E);
+    round = placeHand(round, BLUE, W);
+    round = placeHand(round, RED, E);
+    expect(roundReplay(round, 1, 800)).toBeNull();
   });
 });

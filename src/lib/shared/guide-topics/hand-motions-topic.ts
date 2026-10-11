@@ -155,7 +155,8 @@ export function handMoveDirection(
   return steps < 0 ? "counterclockwise" : "clockwise";
 }
 
-interface ComboHand {
+/** One hand's move: from one point to another. */
+export interface ComboHand {
   move: HandMove;
   from: GridLocation;
   to: GridLocation;
@@ -296,17 +297,30 @@ export function combinationNameSegments(
   ];
 }
 
+/** Two hands' moves as one pictograph: blue's move and red's. */
+export function handPairPictographData(
+  left: ComboHand,
+  right: ComboHand,
+  id = `hand-pair-${left.from}-${left.to}-${right.from}-${right.to}`
+): PictographData {
+  return {
+    id,
+    letter: null,
+    gridMode: GridMode.DIAMOND,
+    motions: {
+      [HandSide.LEFT]: handMotion(HandSide.LEFT, left),
+      [HandSide.RIGHT]: handMotion(HandSide.RIGHT, right),
+    },
+  };
+}
+
 /** The combination's two-hand example as a pictograph. */
 export function combinationPictographData(
   combination: HandCombination
 ): PictographData {
-  return {
-    id: `hand-combination-${combination.id}`,
-    letter: null,
-    gridMode: GridMode.DIAMOND,
-    motions: {
-      [HandSide.LEFT]: handMotion(HandSide.LEFT, combination.demo.left),
-      [HandSide.RIGHT]: handMotion(HandSide.RIGHT, combination.demo.right),
-    },
-  };
+  return handPairPictographData(
+    combination.demo.left,
+    combination.demo.right,
+    `hand-combination-${combination.id}`
+  );
 }
