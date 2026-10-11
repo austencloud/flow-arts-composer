@@ -126,34 +126,60 @@ describe("fitEffectQuickPicker", () => {
     }
   );
 
-  // Measured on /create/generate at 375x667 while playing: the content area
-  // above the bottom navigation, and the player with its controls.
+  // Measured on /create/generate while playing: the content area above the
+  // bottom navigation, the player with its controls, and the room under them
+  // before the toolbar (or, on the tablet, the open notation rail).
   const phone = {
     bounds: { left: 0, top: 0, width: 375, height: 623 },
-    player: { left: 12, top: 126, width: 351, height: 387 },
+    player: { left: 13, top: 119, width: 350, height: 394 },
+    roomBelow: 47,
+    count: COUNT,
+  };
+  const tallPhone = {
+    bounds: { left: 0, top: 0, width: 412, height: 871 },
+    player: { left: 13, top: 225, width: 387, height: 431 },
+    roomBelow: 152,
+    count: COUNT,
+  };
+  const tablet = {
+    bounds: { left: 0, top: 0, width: 810, height: 1135 },
+    player: { left: 13, top: 112, width: 785, height: 829 },
+    roomBelow: 104,
     count: COUNT,
   };
 
-  it("hangs the row below the controls where the toolbar leaves room", () => {
-    const fit = fitEffectQuickPicker(phone);
-    expect(fit.arrangement).toBe("strip");
-    if (fit.arrangement !== "strip") return;
+  function strip(box: Parameters<typeof fitEffectQuickPicker>[0]) {
+    const fit = fitEffectQuickPicker(box);
+    if (fit.arrangement !== "strip") throw new Error("expected a strip");
+    return fit;
+  }
+
+  it("hangs the row under the controls where the room there holds it", () => {
+    const fit = strip(tallPhone);
     expect(fit.side).toBe("below");
+    expect(fit.height).toBe(stripHeight(fit.catalog.portrait));
+  });
+
+  it("covers a band under the controls whole instead of cutting it", () => {
+    const fit = strip(tablet);
+    expect(fit.side).toBe("below");
+    expect(fit.height).toBe(tablet.roomBelow);
+  });
+
+  it("docks along the bottom when the room under the controls is short", () => {
+    const fit = strip(phone);
+    expect(fit.side).toBe("dock");
+    expect(fit.height).toBe(stripHeight(fit.catalog.portrait));
     expect(
-      phone.player.top +
-        phone.player.height +
-        stripHeight(fit.catalog.portrait) +
-        QUICK_PICKER_EDGE
+      phone.player.top + phone.player.height + fit.height
     ).toBeLessThanOrEqual(phone.bounds.top + phone.bounds.height);
   });
 
-  it("lifts the row above the controls where nothing below has room", () => {
-    const fit = fitEffectQuickPicker({
+  it("lays the row over the animation only when nothing else fits", () => {
+    const fit = strip({
       ...phone,
       bounds: { ...phone.bounds, height: 540 },
     });
-    expect(fit.arrangement).toBe("strip");
-    if (fit.arrangement !== "strip") return;
     expect(fit.side).toBe("above");
   });
 });

@@ -9,11 +9,12 @@
  *   and as the icon and name otherwise. The panel grows with the player, so
  *   a 4K player does not get a postage-stamp picker.
  * - `strip`: where the player fills the width (phone and tablet portrait),
- *   one scrolling row of pictures hangs from the player's controls. Below
- *   them where there is room, over the toolbar (idle while the picker is
- *   open), so the whole animation stays in view; otherwise above them, over
- *   the animation's bottom edge. The pictures are sized so the last one in
- *   view is cut about in half, which shows the row scrolls.
+ *   one scrolling row of pictures, placed so the whole animation stays in
+ *   view: hanging from the player's controls where the room under them
+ *   holds it, otherwise docked along the bottom of its bounds over the
+ *   toolbar there (idle while the picker is open), and over the animation's
+ *   bottom edge only when neither fits. The pictures are sized so the last
+ *   one in view is cut about in half, which shows the row scrolls.
  *
  * Pure arithmetic over the picture tiles' own metrics (effect-catalog-fit),
  * so the CSS that draws the tiles and the fit cannot drift apart.
@@ -41,6 +42,10 @@ export interface QuickPickerBox {
   bounds: QuickPickerRect;
   /** The player the picker changes, in viewport pixels. */
   player: QuickPickerRect;
+  /** The height under the player's controls the picker may cover: empty
+   *  space down to the next control, or a band such as a notation rail that
+   *  it covers whole. 0 when absent. */
+  roomBelow?: number;
   /** Effects offered. */
   count: number;
 }
@@ -56,8 +61,11 @@ export type EffectQuickPickerFit =
     }
   | {
       arrangement: "strip";
-      /** Which side of the player's controls the row hangs from. */
-      side: "below" | "above";
+      /** Under the player's controls, docked along the bottom of the
+       *  bounds, or over the animation's bottom edge. */
+      side: "below" | "dock" | "above";
+      /** The strip's outer height in px. */
+      height: number;
       /** One row of picture tiles. */
       catalog: EffectCatalogFit;
       /** The width of that row in px, wider than the strip so it scrolls. */
@@ -93,6 +101,9 @@ export const QUICK_PICKER_MAX_STRIP_PORTRAIT = 112;
 /** The strip's pictures as a share of the player's width before the peek
  *  adjustment, so a tablet's row is not a phone's row stretched. */
 const STRIP_PORTRAIT_PER_WIDTH = 0.12;
+/** Room under the controls at most this much taller than the strip is
+ *  covered whole, so the strip never cuts through the band it hangs over. */
+const STRIP_STRETCH = 1.25;
 
 const INSET = CATALOG_TILE_PAD + CATALOG_TILE_BORDER;
 
@@ -130,6 +141,7 @@ export function stripHeight(portrait: number): number {
 export function fitEffectQuickPicker({
   bounds,
   player,
+  roomBelow = 0,
   count,
 }: QuickPickerBox): EffectQuickPickerFit {
   const roomRight =
@@ -170,12 +182,13 @@ export function fitEffectQuickPicker({
     };
   }
 
-  return fitStrip(bounds, player, count);
+  return fitStrip(bounds, player, roomBelow, count);
 }
 
 function fitStrip(
   bounds: QuickPickerRect,
   player: QuickPickerRect,
+  roomBelow: number,
   count: number
 ): EffectQuickPickerFit {
   const { width } = player;
@@ -200,14 +213,14 @@ function fitStrip(
     )
   );
   const tile = portrait + 2 * INSET;
-  const roomBelow =
-    bounds.top +
-    bounds.height -
-    (player.top + player.height) -
-    QUICK_PICKER_EDGE;
+  const natural = stripHeight(portrait);
+  const below = roomBelow >= natural;
+  const docks =
+    bounds.top + bounds.height - (player.top + player.height) >= natural;
   return {
     arrangement: "strip",
-    side: roomBelow >= stripHeight(portrait) ? "below" : "above",
+    side: below ? "below" : docks ? "dock" : "above",
+    height: below && roomBelow <= natural * STRIP_STRETCH ? roomBelow : natural,
     catalog: {
       cols: count,
       rows: 1,

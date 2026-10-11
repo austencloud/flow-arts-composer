@@ -11,7 +11,7 @@
   and EffectPresetThumbnail (the same pictures as the Effects panel, from
   effectCatalogLooks). effect-quick-picker-fit decides where it goes: beside
   the player where its bounds have room, otherwise as one scrolling row
-  hanging from the player's controls.
+  under the player's controls or docked along the bottom of its bounds.
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
@@ -50,15 +50,26 @@
      *  it may cover a panel beside the player but never the app's own
      *  navigation. The viewport when absent. */
     bounds?: HTMLElement | null;
+    /** Reads the height under the player's controls the picker may cover:
+     *  empty space down to the next control, or a band it covers whole. */
+    roomBelow?: () => number;
   }
 
-  const { effectsConfigState, player, bounds = null }: Props = $props();
+  const {
+    effectsConfigState,
+    player,
+    bounds = null,
+    roomBelow,
+  }: Props = $props();
 
   let open = $state(false);
   let fit = $state<EffectQuickPickerFit | null>(null);
   let triggerEl = $state<HTMLElement | null>(null);
   let contentEl = $state<HTMLElement | null>(null);
   let scrollerEl = $state<HTMLElement | null>(null);
+  /** The player's distance from each side of the bounds, so a docked strip
+   *  lines its tiles up under the player. */
+  let dockInset = $state({ left: 0, right: 0 });
 
   const activeEffect = $derived(effectsConfigState.activeEffect);
   const effectOn = $derived(activeEffect !== "none");
@@ -88,16 +99,30 @@
     triggerEl?.closest<HTMLElement>("[data-progress-row]") ?? null
   );
 
+  function boundsRect(): DOMRect {
+    return (
+      bounds?.getBoundingClientRect() ??
+      new DOMRect(0, 0, window.innerWidth, window.innerHeight)
+    );
+  }
+
+  /** The bottom edge of the bounds, which a docked strip stands on. */
+  const boundsFloor = {
+    getBoundingClientRect() {
+      const area = boundsRect();
+      return new DOMRect(area.left, area.bottom, area.width, 0);
+    },
+  };
+
   function measure() {
     if (!player) return;
+    const area = boundsRect();
+    const box = player.getBoundingClientRect();
+    dockInset = { left: box.left - area.left, right: area.right - box.right };
     fit = fitEffectQuickPicker({
-      bounds: bounds?.getBoundingClientRect() ?? {
-        left: 0,
-        top: 0,
-        width: window.innerWidth,
-        height: window.innerHeight,
-      },
-      player: player.getBoundingClientRect(),
+      bounds: area,
+      player: box,
+      roomBelow: roomBelow?.() ?? 0,
       count: EFFECTS.length,
     });
   }
@@ -180,13 +205,20 @@
     return { destroy: () => node.removeEventListener("wheel", onWheel) };
   }
 
-  /** The picker's side of its anchor (the player, or the strip's row). */
+  /** What the picker is placed against, and on which side of it. */
+  const anchor = $derived(
+    fit?.arrangement !== "strip"
+      ? (player ?? null)
+      : fit.side === "dock"
+        ? boundsFloor
+        : row
+  );
   const placement = $derived(
     fit?.arrangement === "side"
       ? fit.side
-      : fit?.side === "above"
-        ? "top"
-        : "bottom"
+      : fit?.side === "below"
+        ? "bottom"
+        : "top"
   );
   /** It slides in from its anchor. */
   const motion = $derived(
@@ -261,7 +293,7 @@
     <Popover.Content
       bind:ref={contentEl}
       forceMount
-      customAnchor={fit?.arrangement === "strip" ? row : (player ?? null)}
+      customAnchor={anchor}
       side={placement}
       align={fit?.arrangement === "side" ? "end" : "center"}
       sideOffset={fit?.arrangement === "side" ? QUICK_PICKER_OFFSET : 0}
@@ -283,11 +315,23 @@
               class:strip={fit.arrangement === "strip"}
               class:above={fit.arrangement === "strip" && fit.side === "above"}
               class:below={fit.arrangement === "strip" && fit.side === "below"}
+              class:dock={fit.arrangement === "strip" && fit.side === "dock"}
               role="dialog"
               aria-label={t("effect_deep_effects")}
               style:width={fit.arrangement === "side"
                 ? `${fit.width}px`
                 : "var(--bits-popover-anchor-width)"}
+              style:min-height={fit.arrangement === "strip"
+                ? `${fit.height}px`
+                : undefined}
+              style:--dock-left={fit.arrangement === "strip" &&
+              fit.side === "dock"
+                ? `${dockInset.left}px`
+                : undefined}
+              style:--dock-right={fit.arrangement === "strip" &&
+              fit.side === "dock"
+                ? `${dockInset.right}px`
+                : undefined}
               in:flyFade={{ ...motion, duration: DURATION.normal }}
               out:flyFade={{ ...motion, duration: DURATION.fast }}
             >
@@ -530,6 +574,12 @@
   .fx-quick-panel.strip.above {
     border-top: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
     border-radius: 12px 12px 0 0;
+  }
+  /* A sheet across the bounds, its tiles lined up under the player. */
+  .fx-quick-panel.strip.dock {
+    padding-inline: calc(var(--dock-left) + 8px) calc(var(--dock-right) + 8px);
+    border-top: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
+    border-radius: 16px 16px 0 0;
   }
 
   .fx-quick-scroller {

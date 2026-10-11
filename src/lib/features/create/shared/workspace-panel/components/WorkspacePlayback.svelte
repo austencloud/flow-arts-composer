@@ -45,6 +45,7 @@
   let loadedRun = $state<number | null>(null);
   let playerStage = $state<HTMLElement | null>(null);
   let playbackArea = $state<HTMLElement | null>(null);
+  let notationRail = $state<HTMLElement | null>(null);
   const visibilityManager = getAnimationVisibilityManager();
   let effectsConfigState = $state<EffectsConfigState>(
     visibilityManager.effectsConfigState ?? createEffectsConfigState()
@@ -57,6 +58,17 @@
   const effectPickerBounds = $derived(
     playbackArea?.closest<HTMLElement>("#main-content") ?? playbackArea
   );
+
+  /** What the effect picker may cover under the player's controls: the
+   *  notation rail when it is open, whole, otherwise the empty space down to
+   *  the workspace's toolbar. */
+  function effectPickerRoomBelow() {
+    if (!playbackArea || !playerStage) return 0;
+    const stageBottom = playerStage.getBoundingClientRect().bottom;
+    const rail = notationRail?.getBoundingClientRect();
+    if (rail && rail.height > 1) return rail.bottom - stageBottom;
+    return playbackArea.getBoundingClientRect().bottom - stageBottom;
+  }
 
   $effect(() => {
     const syncEffectsConfig = () => {
@@ -88,6 +100,7 @@
     {effectsConfigState}
     player={playerStage}
     bounds={effectPickerBounds}
+    roomBelow={effectPickerRoomBelow}
   />
 {/snippet}
 
@@ -152,6 +165,7 @@
       </div>
       <div
         class="notation-rail"
+        bind:this={notationRail}
         role="group"
         aria-label={t("create_ui_sequence_pictographs")}
       >
