@@ -26,8 +26,10 @@ const repoRoot = path.resolve(
 const read = (relative: string) =>
   readFileSync(path.join(repoRoot, relative), "utf8");
 
+// The workspace moved into @austencloud/video-editor (Task 20). Dev loop
+// (extraction steps 1 to 3): the package worktree beside this one.
 const WORKSPACE =
-  "src/lib/shared/share/components/post-studio/editor/PostEditorWorkspace.svelte";
+  "../../shared-packages/video-editor/packages/video-editor/src/ui/editor/PostEditorWorkspace.svelte";
 const POST_MODULE = "src/lib/features/post/PostModule.svelte";
 const TKA_HOST = "src/lib/shared/post-studio-plugin/ui/tka-host.ts";
 

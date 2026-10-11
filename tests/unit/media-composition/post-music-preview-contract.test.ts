@@ -29,7 +29,11 @@ const repoRoot = path.resolve(
 const read = (relative: string) =>
   readFileSync(path.join(repoRoot, relative), "utf8");
 
-const EDITOR = "src/lib/shared/share/components/post-studio/editor";
+// The canvas, workspace and timeline moved into @austencloud/video-editor
+// (Task 20). Dev loop (extraction steps 1 to 3): the package worktree beside
+// this one, whose build the vitest alias reads. The package indents with tabs.
+const EDITOR =
+  "../../shared-packages/video-editor/packages/video-editor/src/ui/editor";
 const CANVAS = `${EDITOR}/PostEditorCanvas.svelte`;
 const WORKSPACE = `${EDITOR}/PostEditorWorkspace.svelte`;
 const TIMELINE = `${EDITOR}/timeline/PostTimeline.svelte`;
@@ -58,9 +62,9 @@ describe("how the Post editor wires its music preview", () => {
   it("the workspace and tka's scope pause both players when the tab is hidden", () => {
     // The workspace pauses the editor; tka's scope pauses its beat-timing
     // session.
-    for (const [file, player] of [
-      [WORKSPACE, "editor.pause()"],
-      [SCOPE, "session.pause()"],
+    for (const [file, player, bodyEnd] of [
+      [WORKSPACE, "editor.pause()", "\n\t}\n"],
+      [SCOPE, "session.pause()", "\n  }\n"],
     ] as const) {
       const source = read(file);
       const handler =
@@ -71,7 +75,7 @@ describe("how the Post editor wires its music preview", () => {
       ).toBeDefined();
       const start = source.indexOf(`function ${handler}(`);
       expect(start, `function ${handler}`).toBeGreaterThanOrEqual(0);
-      const body = source.slice(start, source.indexOf("\n  }\n", start));
+      const body = source.slice(start, source.indexOf(bodyEnd, start));
       expect(body).toContain('document.visibilityState === "hidden"');
       expect(body).toContain(player);
     }
@@ -83,7 +87,7 @@ describe("how the Post editor wires its music preview", () => {
       "onMissing={onMusicMissing}"
     );
     // The prop is read from the canvas's own props, not from thin air.
-    expectIn(source, /\n {4}onMusicMissing,\n/);
+    expectIn(source, /\n\t\tonMusicMissing,\n/);
   });
 
   it("the workspace keeps the flag and passes it to the canvas, the timeline and the panel", () => {
@@ -99,6 +103,6 @@ describe("how the Post editor wires its music preview", () => {
     expect(tagOf(source, "PostTimelineMusicLane")).toContain(
       "missing={musicMissing}"
     );
-    expectIn(source, /\n {4}musicMissing = false,\n/);
+    expectIn(source, /\n\t\tmusicMissing = false,\n/);
   });
 });

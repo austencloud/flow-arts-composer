@@ -1,5 +1,5 @@
 import { flushSync, mount, unmount } from "svelte";
-import PostStudioMediaLayer from "$lib/shared/share/components/post-studio/PostStudioMediaLayer.svelte";
+import { PostStudioMediaLayer } from "@austencloud/video-editor/ui";
 import type { CompositionSourceBinding } from "@austencloud/video-editor";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PreviewVideoController } from "@austencloud/video-editor/render";

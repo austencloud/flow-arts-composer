@@ -59,8 +59,10 @@ const HOSTS: Record<string, string> = {
     "src/lib/shared/shape-matrix/app/components/ShapeMatrixCustomizeWorkspace.svelte",
   "shape matrix focus":
     "src/lib/shared/shape-matrix/app/components/ShapeMatrixFocusWorkspace.svelte",
+  // In @austencloud/video-editor since Task 20. Dev loop (extraction steps 1
+  // to 3): the package worktree beside this one.
   "post studio look panel":
-    "src/lib/shared/share/components/post-studio/editor/PostEditorWorkspace.svelte",
+    "../../shared-packages/video-editor/packages/video-editor/src/ui/editor/PostEditorWorkspace.svelte",
   "motion path explorer":
     "src/routes/(public)/guide/motion-paths/_components/MotionPathExplorer.svelte",
   "landing play with it":

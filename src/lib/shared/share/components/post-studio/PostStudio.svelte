@@ -32,7 +32,7 @@
   import { provideStrings } from "@austencloud/video-editor/strings";
   import "@austencloud/video-editor/css/video-editor-tokens.css";
   import { tkaEditorTranslate } from "$lib/shared/media-composition/state/editor-strings";
-  import PostEditorWorkspace from "./editor/PostEditorWorkspace.svelte";
+  import { PostEditorWorkspace } from "@austencloud/video-editor/ui";
   import TkaEditorScope from "$lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
 
   /**

@@ -33,14 +33,6 @@ vi.mock(
   })
 );
 
-// The canvas renders the card and animation from static art the component
-// test server does not serve. The prop under test lives in the studio itself.
-vi.mock("./editor/PostEditorCanvas.svelte", async () => ({
-  default: (
-    await import("$lib/shared/sequence-viewer/components/__test-stubs__/SequenceViewerDrawerHostChildStub.svelte")
-  ).default,
-}));
-
 // The studio's tempo grid needs at least one step.
 const sequence = createSequenceData({
   id: "post-studio-prop-sync",
