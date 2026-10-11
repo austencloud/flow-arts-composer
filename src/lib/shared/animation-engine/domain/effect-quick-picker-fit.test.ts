@@ -1,14 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   fitEffectQuickPicker,
+  QUICK_PICKER_CLOSE_WIDTH,
   QUICK_PICKER_EDGE,
   QUICK_PICKER_MAX_SIDE_WIDTH,
+  QUICK_PICKER_MAX_STRIP_PORTRAIT,
   QUICK_PICKER_MIN_NARROW_SIDE_WIDTH,
   QUICK_PICKER_OFF_WIDTH,
   QUICK_PICKER_OFFSET,
+  QUICK_PICKER_STRIP_GAP,
   QUICK_PICKER_STRIP_PAD,
+  QUICK_PICKER_STRIP_EDGE_CLEAR,
   sidePanelHeight,
   stripHeight,
+  stripPageTarget,
+  stripTilePitch,
 } from "./effect-quick-picker-fit";
 import {
   CATALOG_GAP,
@@ -128,6 +134,9 @@ describe("fitEffectQuickPicker", () => {
   it.each([
     ["phone", 375, 343],
     ["tablet", 820, 770],
+    // Pictures at their largest: before, the last tile in view showed whole
+    // or nearly so, and the row read as complete.
+    ["wide window", 1180, 1100],
   ])(
     "lays one scrolling row over a %s player that fills the width",
     (_, viewportWidth, playerWidth) => {
@@ -150,7 +159,8 @@ describe("fitEffectQuickPicker", () => {
         playerWidth -
         2 * QUICK_PICKER_STRIP_PAD -
         QUICK_PICKER_OFF_WIDTH -
-        CATALOG_GAP;
+        QUICK_PICKER_CLOSE_WIDTH -
+        2 * CATALOG_GAP;
       const inView = room / (fit.catalog.portrait + 2 * INSET + CATALOG_GAP);
       const peek = inView - Math.floor(inView);
       expect(peek).toBeGreaterThan(0.25);
@@ -187,16 +197,38 @@ describe("fitEffectQuickPicker", () => {
     return fit;
   }
 
-  it("hangs the row under the controls where the room there holds it", () => {
+  it("floats the row under the controls where the room there holds it", () => {
     const fit = strip(tallPhone);
     expect(fit.side).toBe("below");
     expect(fit.height).toBe(stripHeight(fit.catalog.portrait));
+    expect(fit.height + QUICK_PICKER_STRIP_GAP).toBeLessThanOrEqual(
+      tallPhone.roomBelow
+    );
   });
 
-  it("covers a band under the controls whole instead of cutting it", () => {
+  it("floats the row over the notation rail it hides", () => {
     const fit = strip(tablet);
     expect(fit.side).toBe("below");
-    expect(fit.height).toBe(tablet.roomBelow);
+    expect(fit.height + QUICK_PICKER_STRIP_GAP).toBeLessThanOrEqual(
+      tablet.roomBelow
+    );
+  });
+
+  // Measured from a report at a 1050px window: the room under the controls
+  // held the row but not with the gap above it at the pictures' largest.
+  it("shrinks the pictures before it gives up the room under the controls", () => {
+    const box = {
+      bounds: { left: 0, top: 0, width: 1050, height: 1160 },
+      player: { left: 84, top: 83, width: 877, height: 939 },
+      roomBelow: 107,
+      count: COUNT,
+    };
+    const fit = strip(box);
+    expect(fit.side).toBe("below");
+    expect(fit.catalog.portrait).toBeLessThan(QUICK_PICKER_MAX_STRIP_PORTRAIT);
+    expect(fit.height + QUICK_PICKER_STRIP_GAP).toBeLessThanOrEqual(
+      box.roomBelow
+    );
   });
 
   it("docks along the bottom when the room under the controls is short", () => {
@@ -214,5 +246,65 @@ describe("fitEffectQuickPicker", () => {
       bounds: { ...phone.bounds, height: 540 },
     });
     expect(fit.side).toBe("above");
+  });
+});
+
+describe("stripPageTarget", () => {
+  // The 1050x1210 window's row: 108px tiles, 740px of them in view.
+  const portrait = 108 - 2 * INSET;
+  const pitch = stripTilePitch(portrait);
+  const tile = pitch - CATALOG_GAP;
+  const row = {
+    portrait,
+    viewWidth: 740,
+    scrollWidth: 20 * pitch - CATALOG_GAP,
+  };
+  const clear = QUICK_PICKER_STRIP_EDGE_CLEAR;
+
+  it("brings the tile cut at the end to rest clear of the start's fade", () => {
+    const cut = 6; // Ghost: its right edge passes the end's fade.
+    expect(cut * pitch + tile).toBeGreaterThan(row.viewWidth - clear);
+    expect((cut - 1) * pitch + tile).toBeLessThanOrEqual(row.viewWidth - clear);
+    const left = stripPageTarget({ ...row, scrollLeft: 0, direction: 1 });
+    expect(cut * pitch - left).toBe(clear);
+  });
+
+  it("goes back as far as keeps the tile cut at the start in clear view", () => {
+    const first = 12; // The first tile clear of the start's fade.
+    const left = stripPageTarget({
+      ...row,
+      scrollLeft: first * pitch - clear,
+      direction: -1,
+    });
+    const cutRight = (first - 1) * pitch + tile;
+    expect(cutRight - left).toBeLessThanOrEqual(row.viewWidth - clear);
+    // One tile further back would push it under the end's fade.
+    expect(cutRight - (left - pitch)).toBeGreaterThan(row.viewWidth - clear);
+  });
+
+  it("stops where a swipe would settle: a tile clear of the start's fade", () => {
+    for (const direction of [1, -1] as const) {
+      const left = stripPageTarget({
+        ...row,
+        scrollLeft: 8 * pitch - clear,
+        direction,
+      });
+      expect((left + clear) % pitch).toBe(0);
+    }
+  });
+
+  it("stops at either end of the row", () => {
+    const end = row.scrollWidth - row.viewWidth;
+    expect(
+      stripPageTarget({ ...row, scrollLeft: end - 50, direction: 1 })
+    ).toBe(end);
+    expect(stripPageTarget({ ...row, scrollLeft: 50, direction: -1 })).toBe(0);
+  });
+
+  it("moves at least one tile even where the view holds barely one", () => {
+    const narrow = { ...row, viewWidth: 150 };
+    expect(
+      stripPageTarget({ ...narrow, scrollLeft: 0, direction: 1 })
+    ).toBeGreaterThanOrEqual(pitch);
   });
 });

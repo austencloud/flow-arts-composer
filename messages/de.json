@@ -5988,6 +5988,8 @@
   "effect_deep_effects_off": "Effekte aus",
   "effect_deep_turn_off": "{effect} ausschalten",
   "effect_deep_more": "Mehr",
+  "effect_deep_more_effects": "Weitere Effekte",
+  "effect_deep_earlier_effects": "Vorherige Effekte",
   "effect_deep_back_to_effect": "Zurück zu {effect}",
   "effect_deep_back_to_effect_presets": "Zurück zu den Effektvorlagen",
   "effect_deep_more_tuning": "Weitere Einstellungen",
