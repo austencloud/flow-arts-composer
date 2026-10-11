@@ -114,12 +114,22 @@
       : (EFFECT_CELLS.find((cell) => cell.id === focusedEffect) ?? null)
   );
   const sceneCameraPosition: [number, number, number] = $derived(
-    focusedCell ? [0, 2.5, 3.2] : [...cameraPosition]
+    focusedEffect === "petals"
+      ? [0, 3.1, 5.1]
+      : focusedCell
+        ? [0, 2.5, 3.2]
+        : [...cameraPosition]
   );
   const sceneCameraTarget = $derived(
-    focusedCell ? ([0, 1.25, 0] as const) : ([0, 0.6, 1] as const)
+    focusedEffect === "petals"
+      ? ([0, 1, 0] as const)
+      : focusedCell
+        ? ([0, 1.25, 0] as const)
+        : ([0, 0.6, 1] as const)
   );
-  const sceneFov = $derived(focusedCell ? 38 : 50);
+  const sceneFov = $derived(
+    focusedEffect === "petals" ? 42 : focusedCell ? 38 : 50
+  );
 
   const boolOptions = [
     { value: true, label: "On" },

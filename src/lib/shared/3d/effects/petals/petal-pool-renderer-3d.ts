@@ -1,4 +1,4 @@
-import { Euler, Object3D, PlaneGeometry, Quaternion, Vector3 } from "three";
+import { Euler, PlaneGeometry, Quaternion, Vector3, type Object3D } from "three";
 import {
   pickPetalSprite,
   pickPetalTint,
@@ -20,6 +20,7 @@ import {
 } from "./petal-world-art-direction";
 import {
   ParticleInstancePool3D,
+  type ParticleInstancePoolOptions,
   type ParticleInstanceWrite,
 } from "../instancing/particle-instance-pool-3d";
 import {
@@ -36,14 +37,17 @@ import {
 } from "./petal-texture-atlas";
 import { createPetalSurfaceGeometry } from "./petal-surface-geometry";
 import { petalFlightWeight, settlePetalOrientation } from "./petal-orientation";
+import { petalGroundClearance } from "./petal-ground-contact";
 
 const CAPACITY = 2048;
 const EMBER_MAX_AGE = 1.35;
-const FADE_OUT_FRACTION = 0.2;
 const FADE_IN_DURATION = 0.12;
+const GROUND_FADE_DURATION = 1.8;
+const GROUND_BLEND_DURATION = 0.28;
 
 export class PetalPoolRenderer3D {
   private readonly petalPool: ParticleInstancePool3D;
+  private readonly groundPool: ParticleInstancePool3D;
   private readonly emberPool: ParticleInstancePool3D;
   private readonly active = new Uint8Array(CAPACITY);
   private readonly x = new Float32Array(CAPACITY);
@@ -54,6 +58,10 @@ export class PetalPoolRenderer3D {
   private readonly vz = new Float32Array(CAPACITY);
   private readonly age = new Float32Array(CAPACITY);
   private readonly maxAge = new Float32Array(CAPACITY);
+  private readonly groundAge = new Float32Array(CAPACITY);
+  private readonly floorY = new Float32Array(CAPACITY);
+  private readonly groundLayer = new Float32Array(CAPACITY);
+  private readonly groundRock = new Float32Array(CAPACITY);
   private readonly size = new Float32Array(CAPACITY);
   private readonly rotationX = new Float32Array(CAPACITY);
   private readonly rotationY = new Float32Array(CAPACITY);
@@ -114,7 +122,7 @@ export class PetalPoolRenderer3D {
 
   constructor() {
     const atlas = getPetalTextureAtlas();
-    this.petalPool = new ParticleInstancePool3D({
+    const petalOptions: ParticleInstancePoolOptions = {
       capacity: CAPACITY,
       geometry: createPetalSurfaceGeometry(),
       texture: atlas,
@@ -138,6 +146,14 @@ export class PetalPoolRenderer3D {
         strength: NEUTRAL_PETAL_ENVIRONMENT_PROFILE.contrastStrength,
         edgeStrength: NEUTRAL_PETAL_ENVIRONMENT_PROFILE.edgeStrength,
       },
+    };
+    this.petalPool = new ParticleInstancePool3D(petalOptions);
+    this.groundPool = new ParticleInstancePool3D({
+      ...petalOptions,
+      geometry: createPetalSurfaceGeometry(),
+      renderOrder: 102,
+      nearFadeStart: 0,
+      nearFadeEnd: 0.12,
     });
     this.emberPool = new ParticleInstancePool3D({
       capacity: CAPACITY,
@@ -158,12 +174,20 @@ export class PetalPoolRenderer3D {
 
   initialize(parent: Object3D): void {
     this.petalPool.initialize(parent);
+    this.groundPool.initialize(parent);
     this.emberPool.initialize(parent);
   }
 
   setEnvironmentProfile(profile: PetalEnvironmentProfile3D): void {
     this.environmentProfile = profile;
     this.petalPool.setContrastAdaptation({
+      backdropLuminance: profile.backdropLuminance,
+      minimumSurfaceLuminance: profile.minimumSurfaceLuminance,
+      maximumSurfaceLuminance: profile.maximumSurfaceLuminance,
+      strength: profile.contrastStrength,
+      edgeStrength: profile.edgeStrength,
+    });
+    this.groundPool.setContrastAdaptation({
       backdropLuminance: profile.backdropLuminance,
       minimumSurfaceLuminance: profile.minimumSurfaceLuminance,
       maximumSurfaceLuminance: profile.maximumSurfaceLuminance,
@@ -201,110 +225,141 @@ export class PetalPoolRenderer3D {
     if (sources.length > 0) this.emitAmbient(sources, dt);
 
     this.petalPool.beginFrame();
+    this.groundPool.beginFrame();
     this.emberPool.beginFrame();
     for (let index = 0; index < CAPACITY; index++) {
       if (this.active[index] === 0) continue;
-      this.age[index]! += dt;
-      if (this.age[index]! >= this.maxAge[index]!) {
-        this.active[index] = 0;
-        continue;
-      }
-      const oscillation = this.clock * this.swayFrequency[index]! * Math.PI * 2;
-      const swayX =
-        Math.sin(this.phase[index]! + oscillation) * this.swaySpeed[index]!;
-      const swayZ =
-        Math.cos(this.phase[index]! * 1.3 + oscillation) *
-        this.swaySpeed[index]! *
-        0.5;
-      const airflow = samplePetalAirflow3D(
-        this.x[index]!,
-        this.y[index]!,
-        this.z[index]!,
-        this.clock,
-        this.airflow
-      );
-      for (const source of this.wakeSources) {
-        addPetalWake3D(
-          airflow,
+      if (this.active[index] === 1) {
+        this.age[index]! += dt;
+        const oscillation =
+          this.clock * this.swayFrequency[index]! * Math.PI * 2;
+        const swayX =
+          Math.sin(this.phase[index]! + oscillation) * this.swaySpeed[index]!;
+        const swayZ =
+          Math.cos(this.phase[index]! * 1.3 + oscillation) *
+          this.swaySpeed[index]! *
+          0.5;
+        const airflow = samplePetalAirflow3D(
           this.x[index]!,
           this.y[index]!,
           this.z[index]!,
-          source
+          this.clock,
+          this.airflow
         );
-      }
-      const drag = Math.pow(this.dragBase[index]!, dt);
-      const fallEase = 1 - Math.pow(0.2, dt);
-      this.vx[index]! *= drag;
-      this.vz[index]! *= drag;
-      this.vy[index]! +=
-        (this.fallVelocity[index]! - this.vy[index]!) * fallEase;
-      this.x[index]! += (this.vx[index]! + airflow.x + swayX * 0.24) * dt;
-      this.y[index]! += (this.vy[index]! + airflow.y) * dt;
-      this.z[index]! += (this.vz[index]! + airflow.z + swayZ * 0.24) * dt;
-      const flutter = this.flutterPhase[index]! + oscillation * 1.17;
-      this.rotationX[index] =
-        this.baseRotationX[index]! + Math.sin(flutter) * 0.72;
-      this.rotationY[index]! +=
-        (this.rotationVelocityY[index]! + airflow.turn * 0.16) * dt;
-      this.rotationZ[index]! +=
-        (this.rotationVelocityZ[index]! + Math.cos(flutter * 0.71) * 0.32) * dt;
-      this.euler.set(
-        this.rotationX[index]!,
-        this.rotationY[index]!,
-        this.rotationZ[index]!
-      );
-      this.floatingQuaternion.setFromEuler(this.euler);
+        for (const source of this.wakeSources) {
+          addPetalWake3D(
+            airflow,
+            this.x[index]!,
+            this.y[index]!,
+            this.z[index]!,
+            source
+          );
+        }
+        const drag = Math.pow(this.dragBase[index]!, dt);
+        const fallEase = 1 - Math.pow(0.2, dt);
+        this.vx[index]! *= drag;
+        this.vz[index]! *= drag;
+        this.vy[index]! +=
+          (this.fallVelocity[index]! - this.vy[index]!) * fallEase;
+        this.x[index]! += (this.vx[index]! + airflow.x + swayX * 0.24) * dt;
+        this.y[index]! += (this.vy[index]! + airflow.y) * dt;
+        this.z[index]! += (this.vz[index]! + airflow.z + swayZ * 0.24) * dt;
+        const flutter = this.flutterPhase[index]! + oscillation * 1.17;
+        this.rotationX[index] =
+          this.baseRotationX[index]! + Math.sin(flutter) * 0.72;
+        this.rotationY[index]! +=
+          (this.rotationVelocityY[index]! + airflow.turn * 0.16) * dt;
+        this.rotationZ[index]! +=
+          (this.rotationVelocityZ[index]! + Math.cos(flutter * 0.71) * 0.32) *
+          dt;
+        this.euler.set(
+          this.rotationX[index]!,
+          this.rotationY[index]!,
+          this.rotationZ[index]!
+        );
+        this.floatingQuaternion.setFromEuler(this.euler);
 
-      const motionX = this.vx[index]! + airflow.x + swayX * 0.24;
-      const motionY = this.vy[index]! + airflow.y;
-      const motionZ = this.vz[index]! + airflow.z + swayZ * 0.24;
-      const motionLength = Math.hypot(motionX, motionY, motionZ);
-      if (motionLength > 0.0001) {
-        this.flightDirection.set(
-          motionX / motionLength,
-          motionY / motionLength,
-          motionZ / motionLength
+        const motionX = this.vx[index]! + airflow.x + swayX * 0.24;
+        const motionY = this.vy[index]! + airflow.y;
+        const motionZ = this.vz[index]! + airflow.z + swayZ * 0.24;
+        const motionLength = Math.hypot(motionX, motionY, motionZ);
+        if (motionLength > 0.0001) {
+          this.flightDirection.set(
+            motionX / motionLength,
+            motionY / motionLength,
+            motionZ / motionLength
+          );
+          this.flightQuaternion.setFromUnitVectors(
+            this.up,
+            this.flightDirection
+          );
+          this.twistQuaternion.setFromAxisAngle(
+            this.up,
+            this.flutterPhase[index]! + Math.sin(flutter) * 0.24
+          );
+          this.flightQuaternion.multiply(this.twistQuaternion);
+        } else {
+          this.flightQuaternion.copy(this.floatingQuaternion);
+        }
+        this.quaternion.set(
+          this.quaternionX[index]!,
+          this.quaternionY[index]!,
+          this.quaternionZ[index]!,
+          this.quaternionW[index]!
         );
-        this.flightQuaternion.setFromUnitVectors(this.up, this.flightDirection);
-        this.twistQuaternion.setFromAxisAngle(
-          this.up,
-          this.flutterPhase[index]! + Math.sin(flutter) * 0.24
+        settlePetalOrientation(
+          this.quaternion,
+          this.flightQuaternion,
+          this.floatingQuaternion,
+          petalFlightWeight(
+            this.vx[index]!,
+            this.vy[index]!,
+            this.vz[index]!,
+            this.fallVelocity[index]!
+          ),
+          dt,
+          this.targetQuaternion
         );
-        this.flightQuaternion.multiply(this.twistQuaternion);
-      } else {
-        this.flightQuaternion.copy(this.floatingQuaternion);
-      }
-      this.quaternion.set(
-        this.quaternionX[index]!,
-        this.quaternionY[index]!,
-        this.quaternionZ[index]!,
-        this.quaternionW[index]!
-      );
-      settlePetalOrientation(
-        this.quaternion,
-        this.flightQuaternion,
-        this.floatingQuaternion,
-        petalFlightWeight(
-          this.vx[index]!,
-          this.vy[index]!,
-          this.vz[index]!,
-          this.fallVelocity[index]!
-        ),
-        dt,
-        this.targetQuaternion
-      );
-      this.quaternionX[index] = this.quaternion.x;
-      this.quaternionY[index] = this.quaternion.y;
-      this.quaternionZ[index] = this.quaternion.z;
-      this.quaternionW[index] = this.quaternion.w;
+        this.quaternionX[index] = this.quaternion.x;
+        this.quaternionY[index] = this.quaternion.y;
+        this.quaternionZ[index] = this.quaternion.z;
+        this.quaternionW[index] = this.quaternion.w;
 
-      const life = this.age[index]! / this.maxAge[index]!;
+        const clearance = petalGroundClearance(
+          this.size[index]!,
+          this.quaternion
+        );
+        if (this.y[index]! <= this.floorY[index]! + clearance) {
+          this.active[index] = 2;
+          this.groundAge[index] = 0;
+          this.groundRock[index] = Math.min(
+            0.18,
+            Math.abs(this.vy[index]!) * 0.12
+          );
+          this.vx[index] = Math.max(-0.34, Math.min(0.34, this.vx[index]!));
+          this.vz[index] = Math.max(-0.34, Math.min(0.34, this.vz[index]!));
+          this.y[index] =
+            this.floorY[index]! + clearance + this.groundLayer[index]!;
+          this.limitGroundBed(
+            Math.min(CAPACITY, sources[0]?.params.poolSize ?? CAPACITY)
+          );
+        }
+      } else if (!this.updateGrounded(index, dt)) {
+        continue;
+      }
+
       const fadeIn =
         this.age[index]! < FADE_IN_DURATION
           ? this.age[index]! / FADE_IN_DURATION
           : 1;
       const fadeOut =
-        life > 1 - FADE_OUT_FRACTION ? (1 - life) / FADE_OUT_FRACTION : 1;
+        this.active[index] === 2
+          ? Math.min(
+              1,
+              (this.maxAge[index]! - this.groundAge[index]!) /
+                GROUND_FADE_DURATION
+            )
+          : 1;
       const write = this.writeState;
       write.x = this.x[index]!;
       write.y = this.y[index]!;
@@ -312,10 +367,10 @@ export class PetalPoolRenderer3D {
       write.scaleX = this.size[index]! * 2;
       write.scaleY = this.size[index]! * 2;
       write.scaleZ = this.size[index]! * 2;
-      write.quaternionX = this.quaternion.x;
-      write.quaternionY = this.quaternion.y;
-      write.quaternionZ = this.quaternion.z;
-      write.quaternionW = this.quaternion.w;
+      write.quaternionX = this.quaternionX[index]!;
+      write.quaternionY = this.quaternionY[index]!;
+      write.quaternionZ = this.quaternionZ[index]!;
+      write.quaternionW = this.quaternionW[index]!;
       write.right = this.right[index]!;
       write.green = this.green[index]!;
       write.left = this.left[index]!;
@@ -333,9 +388,27 @@ export class PetalPoolRenderer3D {
       write.uvY = this.uvY[index]!;
       write.uvWidth = this.uvWidth[index]!;
       write.uvHeight = this.uvHeight[index]!;
-      this.petalPool.write(write);
+      if (this.active[index] === 2) {
+        const groundShare = Math.min(
+          1,
+          this.groundAge[index]! / GROUND_BLEND_DURATION
+        );
+        const opacity = write.alpha;
+        if (groundShare < 1) {
+          write.alpha = opacity * (1 - groundShare);
+          this.petalPool.write(write);
+        }
+        write.alpha = opacity * groundShare;
+        this.groundPool.write(write);
+      } else {
+        this.petalPool.write(write);
+      }
 
-      if (this.ember[index] === 1 && this.age[index]! < EMBER_MAX_AGE) {
+      if (
+        this.active[index] === 1 &&
+        this.ember[index] === 1 &&
+        this.age[index]! < EMBER_MAX_AGE
+      ) {
         write.scaleX = resolveEmberWorldSpan(this.size[index]!);
         write.scaleY = resolveEmberWorldSpan(this.size[index]!);
         write.right = this.emberRight[index]!;
@@ -351,7 +424,72 @@ export class PetalPoolRenderer3D {
       }
     }
     this.petalPool.commit();
+    this.groundPool.commit();
     this.emberPool.commit();
+  }
+
+  private updateGrounded(index: number, dt: number): boolean {
+    this.age[index]! += dt;
+    this.groundAge[index]! += dt;
+    if (this.groundAge[index]! >= this.maxAge[index]!) {
+      this.active[index] = 0;
+      return false;
+    }
+    const slide = Math.exp(-4.5 * dt);
+    this.vx[index]! *= slide;
+    this.vz[index]! *= slide;
+    this.x[index]! += this.vx[index]! * dt;
+    this.z[index]! += this.vz[index]! * dt;
+    const rock =
+      this.groundRock[index]! * Math.exp(-4 * this.groundAge[index]!);
+    this.euler.set(
+      -Math.PI / 2 +
+        Math.sin(this.groundAge[index]! * 11 + this.phase[index]!) * rock,
+      0,
+      Math.cos(this.groundAge[index]! * 9 + this.phase[index]!) * rock * 0.7
+    );
+    this.floatingQuaternion.setFromEuler(this.euler);
+    this.targetQuaternion
+      .setFromAxisAngle(this.up, this.rotationY[index]!)
+      .multiply(this.floatingQuaternion);
+    this.quaternion.set(
+      this.quaternionX[index]!,
+      this.quaternionY[index]!,
+      this.quaternionZ[index]!,
+      this.quaternionW[index]!
+    );
+    this.quaternion.slerp(this.targetQuaternion, 1 - Math.exp(-10 * dt));
+    this.quaternionX[index] = this.quaternion.x;
+    this.quaternionY[index] = this.quaternion.y;
+    this.quaternionZ[index] = this.quaternion.z;
+    this.quaternionW[index] = this.quaternion.w;
+    this.y[index] =
+      this.floorY[index]! +
+      petalGroundClearance(this.size[index]!, this.quaternion) +
+      this.groundLayer[index]!;
+    return true;
+  }
+
+  private limitGroundBed(limit: number): void {
+    const budget = Math.min(640, Math.max(1, Math.floor(limit * 0.58)));
+    let resting = 0;
+    let oldest = -1;
+    let oldestAge = -1;
+    for (let index = 0; index < limit; index++) {
+      if (
+        this.active[index] !== 2 ||
+        this.groundAge[index]! >= this.maxAge[index]! - GROUND_FADE_DURATION
+      )
+        continue;
+      resting++;
+      if (this.groundAge[index]! > oldestAge) {
+        oldest = index;
+        oldestAge = this.groundAge[index]!;
+      }
+    }
+    if (resting > budget && oldest >= 0) {
+      this.groundAge[oldest] = this.maxAge[oldest]! - GROUND_FADE_DURATION;
+    }
   }
 
   clear(): void {
@@ -360,11 +498,13 @@ export class PetalPoolRenderer3D {
     this.wakeSources.length = 0;
     this.ambientAccumulator = 0;
     this.petalPool.clear();
+    this.groundPool.clear();
     this.emberPool.clear();
   }
 
   dispose(): void {
     this.petalPool.dispose();
+    this.groundPool.dispose();
     this.emberPool.dispose();
   }
 
@@ -390,8 +530,10 @@ export class PetalPoolRenderer3D {
           source.position.z,
           false
         )
-      )
+      ) {
+        accumulator = 1;
         break;
+      }
       accumulator -= 1;
     }
     this.accumulators.set(source.sourceId, accumulator);
@@ -428,7 +570,10 @@ export class PetalPoolRenderer3D {
           : depthBand < 0.74
             ? -0.7 + Math.random() * 1.4
             : 0.82 + Math.random() * 1.48);
-      if (!this.spawn(source, x, y, z, true)) break;
+      if (!this.spawn(source, x, y, z, true)) {
+        this.ambientAccumulator = 1;
+        break;
+      }
       this.ambientAccumulator -= 1;
     }
   }
@@ -463,15 +608,17 @@ export class PetalPoolRenderer3D {
       ? (Math.random() - 0.5) * spread
       : source.velocity.z * params.carry + (Math.random() - 0.5) * spread;
     this.age[slot] = 0;
-    this.maxAge[slot] =
-      params.lifetime *
-      (ambient ? 0.75 + Math.random() * 0.2 : 0.52 + Math.random() * 0.24);
+    this.groundAge[slot] = 0;
+    this.maxAge[slot] = 45 + Math.random() * 15;
+    this.floorY[slot] = source.collisionFloorY;
     this.size[slot] = resolvePetalWorldSize(
       params.baseSize,
       params.intensity,
       shape,
       ambient
     );
+    this.groundLayer[slot] = this.size[slot]! * (0.08 + Math.random() * 0.24);
+    this.groundRock[slot] = 0;
     this.rotationVelocityY[slot] = (Math.random() - 0.5) * 0.7;
     this.rotationVelocityZ[slot] = (Math.random() - 0.5) * 0.55;
     this.rotationX[slot] = (Math.random() - 0.5) * 0.9;
@@ -510,13 +657,20 @@ export class PetalPoolRenderer3D {
   }
 
   private takeSlot(limit: number): number {
+    let oldestGrounded = -1;
+    let oldestAge = -1;
     for (let offset = 0; offset < limit; offset++) {
       const index = (this.cursor + offset) % limit;
       if (this.active[index] === 0) {
         this.cursor = (index + 1) % limit;
         return index;
       }
+      if (this.active[index] === 2 && this.groundAge[index]! > oldestAge) {
+        oldestGrounded = index;
+        oldestAge = this.groundAge[index]!;
+      }
     }
-    return -1;
+    if (oldestGrounded >= 0) this.cursor = (oldestGrounded + 1) % limit;
+    return oldestGrounded;
   }
 }
