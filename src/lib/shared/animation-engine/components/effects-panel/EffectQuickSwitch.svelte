@@ -127,13 +127,17 @@
     });
   }
 
-  // Re-place the picker when the player resizes while it is open: Play grows
-  // the player as it starts, and a picker opened then would keep the
-  // arrangement it had at the start.
+  // Re-place the picker when the player or anything around it resizes while
+  // it is open: Play grows the player as it starts and folds the settings
+  // away, which moves the player without resizing it, and a picker opened
+  // then would keep the arrangement it had at the start.
   $effect(() => {
     if (!open || !player) return;
     const observer = new ResizeObserver(() => measure());
-    observer.observe(player);
+    for (let node: Element | null = player; node; node = node.parentElement) {
+      observer.observe(node);
+      if (node === bounds) break;
+    }
     return () => observer.disconnect();
   });
 
