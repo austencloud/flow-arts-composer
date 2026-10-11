@@ -51,13 +51,31 @@
 
 <div class="performer-grid-panel" class:fill>
   <div class="grid-source">
-    <span class="grid-status" aria-live="polite">
-      {mixed
-        ? "Mixed grids"
-        : followsSequence
-          ? "Using sequence grid"
-          : "Performer grid"}
-    </span>
+    <div class="source-summary">
+      <span class="grid-status" aria-live="polite">
+        {mixed
+          ? "Mixed grids"
+          : followsSequence
+            ? "Using sequence grid"
+            : "Performer grid"}
+      </span>
+      {#if pictograph}
+        <p class="grid-hint">
+          {#if mixed}
+            Choose a grid for the selected performers.
+          {:else if scale < 1}
+            Grids and props use {Math.round(scale * 100)}% of their base size.
+          {:else}
+            Both hands share one grid at full size.
+          {/if}
+        </p>
+        {#if mixedGridModes}
+          <p class="grid-hint">
+            Join directions adapt to each performer’s grid orientation.
+          </p>
+        {/if}
+      {/if}
+    </div>
     <button
       type="button"
       class="reset-grid"
@@ -67,20 +85,6 @@
   </div>
 
   {#if pictograph}
-    <p class="grid-hint">
-      {#if mixed}
-        Choose a grid for the selected performers.
-      {:else if scale < 1}
-        Grids and props use {Math.round(scale * 100)}% of their base size.
-      {:else}
-        Both hands share one grid at full size.
-      {/if}
-    </p>
-    {#if mixedGridModes}
-      <p class="grid-hint">
-        Join directions adapt to each performer’s grid orientation.
-      </p>
-    {/if}
     <GridJoinSection
       {pictograph}
       {gridMode}
@@ -114,8 +118,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px;
+  }
+
+  .source-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
   }
 
   .grid-status {
@@ -125,6 +135,7 @@
   }
 
   .reset-grid {
+    flex: none;
     min-height: 44px;
     padding: 8px 12px;
     border: 1px solid var(--theme-stroke);
@@ -154,7 +165,7 @@
     flex: none;
     margin: 0;
     color: var(--theme-text-dim);
-    font-size: var(--font-size-min, 14px);
+    font-size: var(--font-size-compact, 12px);
     line-height: 1.45;
   }
 </style>

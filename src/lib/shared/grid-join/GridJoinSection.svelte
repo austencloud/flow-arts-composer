@@ -231,7 +231,7 @@
   }
 
   .join-host.embedded.fill {
-    container-type: size;
+    container: performer-grid-choices / size;
   }
 
   .embedded .join-page {
@@ -522,6 +522,155 @@
         2,
         minmax(0, calc(var(--art) + 2 * var(--tile-pad) + 2px))
       );
+    }
+  }
+
+  /* All nine choices share the available panel height. Artwork fits inside
+     its allotted row, so choosing a larger standard grid never hides a join. */
+  .embedded.fill .join-page {
+    display: grid;
+    grid-template-rows: minmax(56px, 1fr) minmax(0, 2.8fr);
+    gap: clamp(8px, 2cqh, 20px);
+  }
+
+  .embedded.fill .one-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    min-height: 0;
+    gap: 14px;
+    padding: clamp(6px, 1cqh, 14px);
+  }
+
+  .embedded.fill .one-art,
+  .embedded.fill .tile-art {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-width: none;
+  }
+
+  .embedded.fill :global(.grid-join-preview) {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .embedded.fill :global(.grid-join-preview img) {
+    object-fit: contain;
+  }
+
+  .embedded.fill .groups {
+    display: grid;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: clamp(10px, 2cqh, 24px);
+    overflow: visible;
+    container-type: normal;
+  }
+
+  .embedded.fill .group {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+    gap: 6px;
+  }
+
+  .embedded.fill .group-head {
+    flex-direction: row;
+    align-items: baseline;
+    text-align: left;
+  }
+
+  .embedded.fill .tile-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .embedded.fill .join-tile {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    justify-items: center;
+    min-height: 0;
+  }
+
+  @container performer-grid-choices (min-height: 700px) and (aspect-ratio < 0.85) {
+    .embedded.fill .tile-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @container performer-grid-choices (max-height: 420px) {
+    .embedded.fill .group-head .hint {
+      display: none;
+    }
+
+    .embedded.fill .join-tile {
+      padding: 4px;
+    }
+
+    .embedded.fill .tile-name {
+      font-size: 14px;
+    }
+  }
+
+  @container performer-grid-choices (max-width: 360px) {
+    .embedded.fill .tile-grid {
+      gap: 4px;
+    }
+
+    .embedded.fill .join-tile .tile-name {
+      white-space: normal;
+      text-align: center;
+    }
+  }
+
+  @container performer-grid-choices (max-height: 340px) and (min-width: 360px) {
+    .embedded.fill .join-page {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+      grid-template-rows: minmax(0, 1fr);
+    }
+
+    .embedded.fill .one-card {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 6px;
+    }
+
+    .embedded.fill .one-text {
+      text-align: center;
+    }
+  }
+
+  @container performer-grid-choices (max-height: 340px) and (360px <= width < 450px) {
+    .embedded.fill .groups {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .embedded.fill .tile-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .embedded.fill .join-tile .tile-name {
+      white-space: normal;
+      text-align: center;
+    }
+  }
+
+  @container performer-grid-choices (max-height: 240px) and (min-width: 450px) {
+    .embedded.fill .join-tile {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+      gap: 4px;
+    }
+
+    .embedded.fill .join-tile .tile-name {
+      white-space: normal;
+      text-align: left;
     }
   }
 
