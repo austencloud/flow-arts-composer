@@ -48,6 +48,10 @@ timeline on every screen. CapCut and InShot are the models.
   playhead where it was: with the playhead at 0:00, selecting the
   "Mirror me!" text shows its settings while the preview shows a moment
   before that text appears.
+- (2026-10-11, same walkthrough, 707 by 772) The portrait preview is 108 by
+  192, a quarter of the height. There is no side panel; the 64-tall tool
+  row and an open keyframe lane push the timeline past the bottom edge, so
+  the main track is cut off.
 
 ## 1. Layout tiers
 
@@ -65,6 +69,9 @@ Medium places its panel beside the preview or below it, whichever leaves the
 larger preview. A portrait project on the Fold inner screen (707 by 772)
 gets the panel beside it; a landscape project on a tall window gets it
 below. The thresholds are starting values, checked at the verification sizes.
+Austen confirmed the Fold inner layout on 2026-10-11: the panel sits beside
+a portrait preview (about 420 by 450) and the timeline keeps the full width
+below, so the preview grows to about 224 by 398 from 108 by 192.
 
 Every tier is a fixed frame. The page never scrolls. Only the media grid,
 the details panel body and the timeline scroll inside their own areas.
