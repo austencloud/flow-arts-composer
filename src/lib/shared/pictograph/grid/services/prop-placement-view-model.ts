@@ -358,7 +358,9 @@ export function buildPlacementTransition(
     motions,
     // The container only computes motion overrides for StepData ("stepNumber"
     // narrowing), so guarantee the beat fields even without a preview step.
-    stepNumber: stepBase?.stepNumber ?? 0,
+    // Without one, -1 (no label): 0 would draw "Start" and the hand key on
+    // every frame of the move, which the resting grid never shows.
+    stepNumber: stepBase?.stepNumber ?? -1,
     duration: stepBase?.duration ?? 1,
     leftReversal: false,
     rightReversal: false,
