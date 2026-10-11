@@ -709,7 +709,7 @@ export class Animal2DRenderer {
  * Body half-width profile along the creature. u = 0 (head) → 1 (tail). Narrow
  * snout ramps to a full-width neck by u≈0.06, then tapers smoothly to a point.
  */
-function bodyWidth(u: number, creature: AnimalIntent["creature"]): number {
+export function bodyWidth(u: number, creature: AnimalIntent["creature"]): number {
   if (creature === "caterpillar") {
     // Plump and near-constant, rounding off at both ends like a grub.
     if (u < 0.08) return 0.62 + (u / 0.08) * 0.38;
@@ -727,7 +727,7 @@ function bodyWidth(u: number, creature: AnimalIntent["creature"]): number {
  * moments after a spawn or a loop seam — the remainder extends straight along
  * the path's last direction, so the creature is always its full length.
  */
-function resampleAlongPath(path: Vec2[], chain: Vec2[], segLen: number): void {
+export function resampleAlongPath(path: Vec2[], chain: Vec2[], segLen: number): void {
   const N = chain.length;
   chain[0]!.x = path[0]!.x;
   chain[0]!.y = path[0]!.y;

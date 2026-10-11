@@ -331,7 +331,7 @@ into a pure function the renderer calls too. Expected export work:
 | `petal-palettes.ts`, `petal-airflow.ts`   | Petals    | already exported                                                                                                                                                                |
 | `smoke-curl-field.ts`                     | Smoke     | `curl2D`, already exported                                                                                                                                                      |
 | `ink-2d-renderer.ts`                      | Ink       | `BrushStampCache`; the ribbon, stamp, bristle and droplet passes are instance-bound, so the tile keeps the reference page's port of them                                        |
-| `silk-2d-renderer.ts`, `ribbon-trace.ts`  | Silk      | already exported (see `silk-entry.ts`)                                                                                                                                          |
+| `silk-2d-renderer.ts`, `ribbon-trace.ts`  | Silk      | already exported (see `silk-entry.ts`); the per-material alphas (`MATERIAL_PROFILES`) stay private, so the tile carries a copy of that table                                    |
 | `animal-2d-renderer.ts`                   | Animal    | `bodyWidth`, `resampleAlongPath`; layer, head and ornament painters are instance-bound, so the tile keeps the reference page's port                                             |
 | `pulse-2d-renderer.ts`, `pulse-rhythm.ts` | Pulse     | `drawPulseRing`, `drawPulseFlash`, `drawPulseCharge` (with a `lineUnit` parameter defaulting to `unit`), `PulseRing`, `ChargeTip`, `rotateHue`; rhythm helpers already exported |
 
@@ -421,3 +421,29 @@ the evidence set before the fourth batch merges.
 - Evidence in `2026-10-11-effect-tile-portraits/evidence/`: `goo.png`,
   `bubbles.png`, `petals.png`, `smoke.png`, the tuner's Looks panel on this
   branch (port 5199) at 800x1100.
+
+## Batch 3 notes (2026-10-11)
+
+- Ink, Silk and Animal are ports of the approved reference pages with the
+  pages' inline palette tables replaced by the repo's resolvers
+  (`resolveInk2D`, `resolveSilkPalette`, `resolveAnimalPalette`). Ink's
+  pressure, turn-load and broad-nib math come from the renderer's exported
+  helpers and its fiber grain from `BrushStampCache`, now exported. Animal's
+  chain uses the renderer's `bodyWidth` and `resampleAlongPath`, now exported.
+  Renderer behavior is unchanged; `animal-2d-renderer.test.ts` still passes.
+- Silk's per-material alphas (`MATERIAL_PROFILES` in `silk-2d-renderer.ts`)
+  are private and the renderer reads them through a closure, so `silk-tile.ts`
+  carries a copy of the six rows (body, glow, edge, fold, sheen alpha, sheen
+  width). Its material colors come from `resolveSilk2DMaterialColors`, which
+  returns `rgb()` strings, so the kit's `cssToRgb` now parses `rgb()` as well
+  as hex and `hsl()`.
+- The picker knows the prop kind but not its colors, so
+  `resolveSilkTilePropColor` dyes every Silk tile toward the default left
+  trail blue (`DEFAULT_EFFECTS_CONFIG.trails.leftColor`); the reference page
+  used a dimmer indigo. Satin, at 82% prop color, reads bluer than the page.
+- `tile-registry.test.ts` stays red on Pulse until batch 4.
+- Two agent-owned Vite servers were already running (ports 5196 and 5197)
+  when this batch was ready, the resource budget's cap, so it had no worktree
+  preview. The three tiles were checked on the primary server after
+  integration; `ink.png`, `silk.png` and `animal.png` are captured there and
+  land with batch 4's evidence set.

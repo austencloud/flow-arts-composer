@@ -5,10 +5,13 @@
  * frame from the merged intent and never reads the preset id.
  */
 import type { EffectConfigMap } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+import { paintAnimalTile } from "./animal-tile";
 import { paintBubblesTile } from "./bubbles-tile";
 import { loadGhostTileSprite, paintGhostTile } from "./ghost-tile";
 import { paintGooTile } from "./goo-tile";
+import { paintInkTile } from "./ink-tile";
 import { paintPetalsTile } from "./petals-tile";
+import { paintSilkTile, resolveSilkTilePropColor } from "./silk-tile";
 import { paintSmokeTile } from "./smoke-tile";
 import { paintSparkleTile } from "./sparkle-tile";
 import { paintZapTile } from "./zap-tile";
@@ -39,6 +42,10 @@ const PAINTERS: Partial<{ [E in keyof EffectConfigMap]: TilePainter<E> }> = {
   bubbles: (ctx, intent) => paintBubblesTile(ctx, intent),
   petals: (ctx, intent) => paintPetalsTile(ctx, intent),
   smoke: (ctx, intent) => paintSmokeTile(ctx, intent),
+  ink: (ctx, intent) => paintInkTile(ctx, intent),
+  silk: (ctx, intent, extras) =>
+    paintSilkTile(ctx, intent, resolveSilkTilePropColor(extras.propType)),
+  animal: (ctx, intent) => paintAnimalTile(ctx, intent),
 };
 
 export function tilePainterFor(effectType: string): TilePainter | null {
