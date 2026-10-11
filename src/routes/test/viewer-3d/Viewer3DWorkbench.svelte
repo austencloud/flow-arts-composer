@@ -170,7 +170,8 @@
 
   onMount(() => {
     if (reviewEffect) {
-      playback.reset();
+      // Persisted isPlaying does not itself schedule an animation frame.
+      playback.pause();
       playback.play();
     }
   });
