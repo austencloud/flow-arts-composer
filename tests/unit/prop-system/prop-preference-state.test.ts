@@ -11,7 +11,10 @@ vi.mock(
   () => persister
 );
 
-import { createPropPreferenceState } from "#lib/shared/community/state/prop-preference-state.svelte.js";
+import {
+  createPropPreferenceState,
+  loadAndRememberPropPreferences,
+} from "#lib/shared/community/state/prop-preference-state.svelte.js";
 
 function deferred() {
   let resolve!: () => void;
@@ -170,5 +173,20 @@ describe("prop preference state", () => {
 
     expect(state.loading).toBe(true);
     expect(state.propsISpinWith).toEqual([]);
+  });
+
+  it("draws preferences the app loaded at sign-in on the first mount", async () => {
+    persister.loadPropPreferences.mockResolvedValueOnce({
+      propsISpinWith: [PropType.FAN],
+      favoriteProp: null,
+      favoriteCatdog: null,
+    });
+    await loadAndRememberPropPreferences("signed-in-user");
+
+    persister.loadPropPreferences.mockReturnValueOnce(new Promise(() => {}));
+    const state = createPropPreferenceState("signed-in-user");
+
+    expect(state.loading).toBe(false);
+    expect(state.propsISpinWith).toEqual([PropType.FAN]);
   });
 });
