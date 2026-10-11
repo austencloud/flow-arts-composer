@@ -43,6 +43,8 @@ export interface PostProjectChoice {
   word: string;
   updatedAt: number;
   hasDraft: boolean;
+  /** A sync problem that belongs to this project alone, shown on its card. */
+  problem?: string;
 }
 
 interface RecentSequence {
