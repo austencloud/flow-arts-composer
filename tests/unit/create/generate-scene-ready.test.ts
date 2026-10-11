@@ -129,12 +129,14 @@ describe("Generate scene turn", () => {
     ...host.querySelectorAll<HTMLElement>(".cell .fake-pictograph"),
   ];
   const progress = () => cells().map((cell) => cell.dataset.motionProgress);
+  const arrows = () => cells().map((cell) => cell.dataset.arrowOpacity);
   const moving = (value: string | undefined) =>
     Number(value) > 0 && Number(value) < 1;
 
   it("holds still before its first turn", () => {
     scene = mountGenerateScene(host, STRIP, vi.fn());
     expect(progress()).toEqual(["null", "null", "null"]);
+    expect(arrows()).toEqual(["1", "1", "1"]);
   });
 
   it("plays the roll's moves one at a time, inside the turn", async () => {
@@ -162,17 +164,30 @@ describe("Generate scene turn", () => {
     /** When each cell started and finished a move. */
     const started: number[][] = [[], [], []];
     const finished: number[][] = [[], [], []];
+    /** Frames where a cell's arrows did not match its move. */
+    const arrowsOff: string[] = [];
+    const arrowsHidden = [false, false, false];
     let before = progress();
     for (let at = 0; at < methodPreviewTurnMs("generate"); at += frameMs) {
       await vi.advanceTimersByTimeAsync(frameMs);
       flushSync();
       const now = progress();
+      const shown = arrows();
       for (const [cell, value] of now.entries()) {
         if (moving(value) && !moving(before[cell])) started[cell]!.push(at);
         if (value === "1" && moving(before[cell])) finished[cell]!.push(at);
+        const expected = value === "null" ? "1" : value;
+        if (shown[cell] !== expected) {
+          arrowsOff.push(`${at} ms cell ${cell}: ${shown[cell]}`);
+        }
+        if (shown[cell] === "0") arrowsHidden[cell] = true;
       }
       before = now;
     }
+    // Each step's arrows come in with its move, as the step grid's arrival
+    // plays one: hidden at its start, all shown once it lands.
+    expect(arrowsOff).toEqual([]);
+    expect(arrowsHidden).toEqual([true, true, true]);
     // Each step moves once, only after the one before it has finished, and
     // each plays out.
     expect(started.map((times) => times.length)).toEqual([1, 1, 1]);
@@ -211,7 +226,9 @@ describe("Generate scene turn", () => {
     }
     // Every move has landed before the turn ends.
     expect(progress()).toEqual(["1", "1", "1"]);
+    expect(arrows()).toEqual(["1", "1", "1"]);
     scene.stop();
     expect(progress()).toEqual(["1", "1", "1"]);
+    expect(arrows()).toEqual(["1", "1", "1"]);
   });
 });

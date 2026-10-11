@@ -16,7 +16,9 @@
    * move (2026-10-11); Generate's turn runs longer to fit them. Turns rolled
    * twice before; moves that rode the wave all at once matched nothing the
    * tool does. The steps that will play land with their props at the start
-   * of their moves, so none jumps back to start.
+   * of their moves, so none jumps back to start, and without their arrows:
+   * each step's arrows come in as its props travel, as the step grid's
+   * arrival (PictographArrivalStage) shows a step picked from the options.
    *
    * Each roll is a real sequence from drawMatrixRealization(), the Firebase-free
    * source behind the home hero, drawn in the background between turns.
@@ -135,6 +137,14 @@
     progress = progress.map((value) => (value === null ? null : 1));
   }
 
+  /**
+   * A step's arrows come in with its move, as PictographArrivalStage plays
+   * one: none at its start, all once it lands. A still step shows them all.
+   */
+  function arrowsShown(index: number): number {
+    return progress[index] ?? 1;
+  }
+
   function setProgress(index: number, value: number): void {
     progress = progress.map((current, cell) =>
       cell === index ? value : current
@@ -251,6 +261,7 @@
           data={rollStep(roll, index)}
           motionStartData={rollPoseBefore(roll, index)}
           motionProgress={progress[index] ?? null}
+          arrowOpacity={arrowsShown(index)}
           readyEpoch={epoch}
           onReady={() => handleCellReady(index)}
         />
