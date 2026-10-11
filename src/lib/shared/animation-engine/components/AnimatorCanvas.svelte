@@ -22,6 +22,7 @@ Last audit: 2025-12-27
 ================================================================================
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
@@ -163,6 +164,7 @@ Last audit: 2025-12-27
     cornerToggle = false,
     cornerToggleAtRest = false,
     showScrubberPlaybackControl = false,
+    progressTrailing = undefined,
     extraContextMenuItems = [],
     beatIndicators = true,
     bpm = undefined,
@@ -335,6 +337,9 @@ Last audit: 2025-12-27
     cornerToggleAtRest?: boolean;
     /** Adds the canonical play/pause action beside the minimal scrubber. */
     showScrubberPlaybackControl?: boolean;
+    /** A control at the far end of the minimal scrubber's row (progressLine
+     *  only), such as the Create preview's effect button. */
+    progressTrailing?: Snippet;
     /** Extra entries injected into the right-click context menu (e.g. "Save
      *  tunnel"). Prepended before the built-in items by CanvasContextMenuHost.
      *  Defaults to [] so existing consumers are unaffected. */
@@ -1013,6 +1018,7 @@ Last audit: 2025-12-27
           onPlaybackToggle={showScrubberPlaybackControl
             ? onPlaybackToggle
             : null}
+          trailing={progressTrailing}
         />
       {:else}
         <SequenceProgressBar
@@ -1108,6 +1114,7 @@ Last audit: 2025-12-27
       {onToggle3DView}
       extraItems={extraContextMenuItems}
       {visibilityManager}
+      {effectsConfigState}
     />
   {/if}
 </div>

@@ -23,6 +23,7 @@ Design:
 - Fully accessible with ARIA labels
 -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { fade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { motionDuration } from "#lib/shared/transitions/motion.js";
@@ -47,6 +48,7 @@ Design:
     showPlaybackControl = false,
     isPlaying = false,
     onPlaybackToggle = null,
+    trailing,
     strip = false,
   }: {
     /** Current beat/step number (can exceed totalSteps for looping sequences) */
@@ -71,6 +73,10 @@ Design:
     showPlaybackControl?: boolean;
     isPlaying?: boolean;
     onPlaybackToggle?: (() => void) | null;
+    /** A control that sits after the scrubber, at the row's far end (the
+     *  Create preview's effect button). The row's end inset shrinks for it the
+     *  way the start inset does for the playback toggle. */
+    trailing?: Snippet;
     /** Display-only: a flush full-width strip along the surface's bottom
      *  edge, sized from the nearest size container's shorter side. */
     strip?: boolean;
@@ -205,7 +211,12 @@ Design:
 </script>
 
 {#if visible && totalSteps > 0}
-  <div class="progress-row" class:with-playback-control={showPlaybackControl}>
+  <div
+    class="progress-row"
+    class:with-playback-control={showPlaybackControl || !!trailing}
+    class:with-trailing={!!trailing}
+    data-progress-row
+  >
     {#if showPlaybackControl && onPlaybackToggle}
       <TransportControls appearance="inline" {isPlaying} {onPlaybackToggle} />
     {/if}
@@ -258,6 +269,9 @@ Design:
           ></div>
         </div>
       </div>
+    {/if}
+    {#if trailing}
+      {@render trailing()}
     {/if}
   </div>
 {/if}
@@ -437,6 +451,10 @@ Design:
     padding-inline: clamp(2px, 1cqw, 4px) clamp(8px, 4cqw, 16px);
     box-sizing: border-box;
     background: var(--theme-panel-bg, rgba(240, 240, 240, 0.98));
+  }
+  /* The trailing control's hit box pads its own glyph too. */
+  .progress-row.with-trailing {
+    padding-inline-end: clamp(2px, 1cqw, 4px);
   }
   .with-playback-control .progress-bar-container,
   .with-playback-control .progress-bar-container.dark-mode,
