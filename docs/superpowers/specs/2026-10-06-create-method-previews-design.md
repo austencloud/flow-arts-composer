@@ -184,7 +184,8 @@ A picked step plays its move as it grows in (2026-10-10), as the step grid's
 arrival plays each new step: its props travel from the pose before it, along
 its arrow, for the arrival's base pace of 0.85 s. The arrival slows moves
 with turns; the preview keeps every move at the base pace so two fit the turn.
-The finger moves on to the next box while a move plays.
+The finger moves on to the next box while a move plays, and lifts away after
+the last tap so it never sits on the last move.
 
 Every shape holds the start and two steps (2026-10-10; it held up to four
 before moves played). A strip lines them up; a square sets the start and the
