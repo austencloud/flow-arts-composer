@@ -148,15 +148,16 @@
     display: grid;
     gap: 0.9rem;
     justify-items: center;
-    max-width: 40rem;
+    max-width: 44rem;
     margin: 0 auto;
     text-align: center;
   }
+  /* Balanced lines: a centered sentence never ends on a stranded word. */
   .intro p {
     margin: 0;
     font-size: clamp(1rem, 1.4cqw, 1.15rem);
     line-height: 1.55;
-    text-wrap: pretty;
+    text-wrap: balance;
   }
   .color-key {
     display: flex;
@@ -241,7 +242,7 @@
     max-width: calc(2 * var(--cell) + var(--gap));
     font-size: 1rem;
     line-height: 1.5;
-    text-wrap: pretty;
+    text-wrap: balance;
   }
   .family.gamma .definition {
     max-width: none;
