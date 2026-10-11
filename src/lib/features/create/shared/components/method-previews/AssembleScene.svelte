@@ -6,8 +6,8 @@
    * to its points and framed like Assemble's builder. The props are the
    * artwork Assemble's grid draws (loadBuilderPropArt: the user's prop type,
    * look and hand colors), and every hop is Assemble's own arc motion
-   * (SvgPropAnimator, one builder hop long). The hops are the demo's N and M
-   * steps, read through Assemble's own sequence loader (assembleHops).
+   * (SvgPropAnimator, one builder hop long). The hops are an N and an M from
+   * the demo, read through Assemble's own sequence loader (assembleHops).
    *
    * Blue adds its points first: the finger taps each point and blue hops to
    * it, glowing like InteractiveGrid's active prop. Then the hands switch:
@@ -18,14 +18,24 @@
    * tap: a turn has room for four taps, not six. Rest poses come from the
    * same animator at zero length, so nothing jumps when a hop lands.
    *
+   * Beside the grid (under it in a square box) are the two beats the taps
+   * write, as Assemble writes its sequence as you tap: each blue tap writes
+   * a blue-only beat, drawn as one hand the way Fuse's source cards draw
+   * one, and each red tap fills that beat in. The whole beat, letter and
+   * all, fades in over the blue-only one while blue's arrow and prop glide
+   * to where the whole beat draws them (handGlides), so blue never jumps.
+   * The beats clear at a turn's start, with the red prop.
+   *
    * InteractiveGrid itself is not reused: it takes taps and needs a live
    * Assemble state.
    *
    * Finished picture: as on Assemble's Complete phase, both props rest on
-   * their final points (blue on east, red on south) at InteractiveGrid's prop
-   * opacity. Long props (600-unit artwork) are clipped at the frame.
+   * their final points (blue on west, red on north) at InteractiveGrid's prop
+   * opacity, beside the two whole beats, N and M. Long props (600-unit
+   * artwork) are clipped at the frame.
    */
   import { onDestroy, untrack } from "svelte";
+  import { SvelteSet } from "svelte/reactivity";
   import { loadBuilderPropArt } from "#lib/features/assemble-lab/services/builder-prop-art.js";
   import {
     BUILDER_HOP_MS,
@@ -39,14 +49,18 @@
   import type { PropRenderData } from "#lib/shared/pictograph/prop/domain/models/prop-render-data.js";
   import { HandSide } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
+  import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
   import {
+    ASSEMBLE_BEAT_TIMING,
     ASSEMBLE_VIEW_BOX,
+    assembleBeats,
     assembleHops,
     assemblePoint,
     standingHop,
   } from "./method-preview-assemble";
   import { assembleLayout } from "./method-preview-compositions";
   import { DEMO_SEQUENCE } from "./method-preview-demo";
+  import { handGlides } from "./method-preview-glide";
   import {
     placeGhost,
     sceneGhost,
@@ -63,6 +77,7 @@
   let {
     playing,
     turn,
+    shape,
     width,
     height,
     accent,
@@ -71,9 +86,15 @@
 
   /** InteractiveGrid's fallback circle, shown when a prop's artwork is missing. */
   const FALLBACK_RADIUS = 28;
+  /** The step grid's entrance easing. */
+  const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+  /** A beat not written yet, written by blue alone, or whole. */
+  type BeatStage = "empty" | "blue" | "whole";
 
   const blueHops = assembleHops(DEMO_SEQUENCE, HandSide.LEFT);
   const redHops = assembleHops(DEMO_SEQUENCE, HandSide.RIGHT);
+  const beatSteps = assembleBeats(DEMO_SEQUENCE);
   const blueAnimator = new SvgPropAnimator();
   const redAnimator = new SvgPropAnimator();
 
@@ -88,11 +109,28 @@
   let redSettled = $state(false);
   let blueGroup = $state<SVGGElement | null>(null);
   let redGroup = $state<SVGGElement | null>(null);
+  let beatStages = $state.raw<BeatStage[]>(beatSteps.map(() => "whole"));
 
-  const layout = $derived(assembleLayout(width, height));
+  const layout = $derived(assembleLayout(shape, width, height));
+
+  /** Beat layers that have drawn, by the keys beatLayers lists. */
+  const readyLayers = new SvelteSet<string>();
+  /** The beat layers the template draws right now. */
+  const beatLayers = $derived(
+    layout
+      ? beatSteps.flatMap((_, index) =>
+          layout.beats[index] ? [`blue:${index}`, `whole:${index}`] : []
+        )
+      : []
+  );
+  const beatsDrawn = $derived(
+    beatLayers.every((layer) => readyLayers.has(layer))
+  );
 
   let running = false;
   let announced = false;
+  /** Beat animations a turn started, so settle can end them. */
+  let animations: Animation[] = [];
 
   onDestroy(() => {
     blueAnimator.cancel();
@@ -158,11 +196,11 @@
   }
 
   // Show the finished picture before the first turn, and again when new
-  // artwork arrives between turns. The card is ready once the grid and both
-  // props are in.
+  // artwork arrives between turns. The card is ready once the grid, both
+  // props, and the beats are in.
   $effect(() => {
     if (!gridLoaded || !blueSettled || !redSettled) return;
-    if (!blueGroup || !redGroup) return;
+    if (!blueGroup || !redGroup || !beatsDrawn) return;
     // Read before the running check, so new artwork reruns this at rest.
     void blueArt;
     void redArt;
@@ -173,23 +211,64 @@
     untrack(() => onready());
   });
 
+  function track(
+    element: Element,
+    keyframes: Keyframe[],
+    options: KeyframeAnimationOptions
+  ): void {
+    const target = element as HTMLElement;
+    if (typeof target.animate !== "function") return;
+    animations.push(target.animate(keyframes, options));
+  }
+
+  function setBeat(index: number, stage: BeatStage): void {
+    beatStages = beatStages.map((current, beat) =>
+      beat === index ? stage : current
+    );
+  }
+
+  /**
+   * A red tap fills its beat in: the whole beat fades in over the blue-only
+   * one, and blue's arrow and prop glide to where the whole beat draws them.
+   */
+  function fillBeat(index: number): void {
+    const beat = root?.querySelector(`.beat[data-beat="${index}"]`);
+    const blueOnly = beat?.querySelector(".layer.blue");
+    const whole = beat?.querySelector(".layer.whole");
+    if (blueOnly && whole) {
+      for (const glide of handGlides(blueOnly, whole, HandSide.LEFT)) {
+        track(glide.element, glide.keyframes, {
+          duration: ASSEMBLE_BEAT_TIMING.fillMs,
+          easing: EASE,
+          fill: "forwards",
+        });
+      }
+    }
+    setBeat(index, "whole");
+  }
+
   function settle(): void {
     blueAnimator.cancel();
     redAnimator.cancel();
+    for (const animation of animations) animation.cancel();
+    animations = [];
     running = false;
     pose = null;
     phase = "rest";
+    beatStages = beatSteps.map(() => "whole");
     placeFinished();
   }
 
   async function play(run: SceneRun): Promise<void> {
-    const box = layout;
+    const box = layout?.grid;
     const blue = blueGroup;
     const red = redGroup;
     if (!box || !blue || !red) return;
     running = true;
-    // The clear: red fades out, and blue stands on its start point.
+    // The clear: red and the beats fade out, and blue stands on its start
+    // point.
     phase = "blue";
+    beatStages = beatSteps.map(() => "empty");
     place(blueAnimator, blue, blueHops, blueArt, "start");
     const finger = sceneGhost(run, () => root);
     pose = finger.ghost;
@@ -197,11 +276,13 @@
     const start = first ? assemblePoint(box, first.startLocation) : null;
     if (start) placeGhost(finger, start.x, start.y);
 
-    // Blue adds its points: each tap sends blue along Assemble's arc.
+    // Blue adds its points: each tap writes a blue-only beat and sends blue
+    // along Assemble's arc.
     let landed: Promise<void> = Promise.resolve();
-    for (const step of blueHops) {
+    for (const [index, step] of blueHops.entries()) {
       const point = assemblePoint(box, step.endLocation);
       if (!point || !(await tapAt(finger, run, point.x, point.y))) return;
+      setBeat(index, "blue");
       landed = blueAnimator.animate({
         ...step,
         element: blue,
@@ -219,13 +300,15 @@
       phase = "red";
     });
 
-    // Red adds its points, and the ghost repeats blue's hop for that beat.
+    // Red adds its points and fills in each beat, and the ghost repeats
+    // blue's hop for that beat.
     let last: Promise<unknown> = switched;
     for (const [index, step] of redHops.entries()) {
       const point = assemblePoint(box, step.endLocation);
       if (!point || !(await tapAt(finger, run, point.x, point.y))) return;
       await switched;
       if (run.aborted) return;
+      fillBeat(index);
       const ghost = blueHops[index];
       last = Promise.all([
         redAnimator.animate({
@@ -256,15 +339,24 @@
   });
 </script>
 
-<div class="scene" bind:this={root} style:--accent={accent} data-phase={phase}>
+<div
+  class="scene"
+  bind:this={root}
+  style:--accent={accent}
+  style:--beat-pop="{ASSEMBLE_BEAT_TIMING.popMs}ms"
+  style:--beat-fill="{ASSEMBLE_BEAT_TIMING.fillMs}ms"
+  style:--beat-clear="{ASSEMBLE_BEAT_TIMING.clearMs}ms"
+  style:--beat-ease={EASE}
+  data-phase={phase}
+>
   {#if layout}
     <svg
       class="grid"
       viewBox={ASSEMBLE_VIEW_BOX}
-      style:left="{layout.x}px"
-      style:top="{layout.y}px"
-      style:width="{layout.size}px"
-      style:height="{layout.size}px"
+      style:left="{layout.grid.x}px"
+      style:top="{layout.grid.y}px"
+      style:width="{layout.grid.size}px"
+      style:height="{layout.grid.size}px"
       aria-hidden="true"
     >
       <GridSvg
@@ -295,6 +387,35 @@
         </g>
       </g>
     </svg>
+    {#each beatSteps as step, index (index)}
+      {@const cell = layout.beats[index]}
+      {#if cell}
+        <div
+          class="beat"
+          data-beat={index}
+          data-stage={beatStages[index]}
+          style:left="{cell.x}px"
+          style:top="{cell.y}px"
+          style:width="{cell.size}px"
+          style:height="{cell.size}px"
+        >
+          <div class="layer blue">
+            <MethodPreviewPictograph
+              data={step}
+              visibleHand={HandSide.LEFT}
+              onReady={() => readyLayers.add(`blue:${index}`)}
+            />
+          </div>
+          <div class="layer whole">
+            <MethodPreviewPictograph
+              data={step}
+              showLetter
+              onReady={() => readyLayers.add(`whole:${index}`)}
+            />
+          </div>
+        </div>
+      {/if}
+    {/each}
   {/if}
   <MethodPreviewFinger {pose} />
 </div>
@@ -361,5 +482,46 @@
 
   .prop.red .fallback {
     fill: var(--prop-red, #ed1c24);
+  }
+
+  .beat {
+    position: absolute;
+  }
+
+  .layer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+
+  /* A blue tap writes a blue-only beat, with a small pop. */
+  .layer.blue {
+    transform: scale(0.9);
+  }
+
+  .beat[data-stage="blue"] .layer.blue {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--beat-pop) ease-out,
+      transform var(--beat-pop) var(--beat-ease);
+  }
+
+  /* A red tap fades the whole beat in over it. The blue-only beat stays
+     under it until it is covered, so the card never shows through two
+     half-faded layers. */
+  .beat[data-stage="whole"] .layer.whole {
+    opacity: 1;
+    transition: opacity var(--beat-fill) ease-out;
+  }
+
+  .beat[data-stage="whole"] .layer.blue {
+    transform: none;
+    transition: opacity 0s linear var(--beat-fill);
+  }
+
+  /* The clear at a turn's start. */
+  .beat[data-stage="empty"] .layer.whole {
+    transition: opacity var(--beat-clear) ease-in;
   }
 </style>

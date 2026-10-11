@@ -16,11 +16,17 @@ export const DEMO_SEQUENCE = demoJson as unknown as SequenceData;
  * by side never show the same pictograph. Construct takes the opening, Fuse
  * the two steps after Construct's, and Generate starts a half turn on.
  * Construct's 0 is fixed: ConstructScene always shows the sequence's opening.
+ *
+ * Assemble writes an N and an M, the only steps where both hands move. Every
+ * such pair is already some card's, so it takes the third, which only
+ * Generate's widest strip and its grid of eight also show, and only until
+ * Generate's first roll.
  */
 export const DEMO_STEP_START = Object.freeze({
   construct: 0,
   fuse: 3,
   generate: 8,
+  assemble: 11,
 });
 
 /** A sequence's start placement, under either field name. */
