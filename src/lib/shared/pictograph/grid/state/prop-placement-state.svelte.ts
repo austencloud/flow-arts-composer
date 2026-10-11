@@ -33,6 +33,8 @@ interface PropPlacementStateInputs {
   getActivePoints: () => PlacementGridPoint[];
   /** "left" keeps one blue hand, "right" one red hand; the other is never asked for. */
   getHands?: () => "both" | "left" | "right";
+  /** A one-hand grid moves its hand to any point pressed, without picking it up first. */
+  getTapToMove?: () => boolean;
 }
 
 interface PropPlacementStateDependencies {
@@ -271,6 +273,15 @@ export function createPropPlacementState(
     },
     get canUndo() {
       return inputs.getShowUndo() && changeCanUndo();
+    },
+    /** The hand a press on any point moves there now; null when presses pick up or place as usual. */
+    get tapHand(): HandSide | null {
+      if (!inputs.getTapToMove?.() || activeHand !== null || !isComplete())
+        return null;
+      if (inputs.getDisabled() || !inputs.getEditAfterCompletion()) return null;
+      if (leftOnly()) return HandSide.LEFT;
+      if (rightOnly()) return HandSide.RIGHT;
+      return null;
     },
     get historyLength() {
       return history.length;

@@ -347,6 +347,7 @@
               disabled={red && !blueMoved}
               editAfterCompletion={true}
               dragLocations={true}
+              tapToMove={true}
               animateContent={true}
               onDragTarget={(target) => aimed(hand, target)}
               onChange={(change) => changed(hand, change)}

@@ -243,6 +243,7 @@
     showProps={showHand}
     editAfterCompletion={interactive}
     dragLocations={interactive}
+    tapToMove={true}
     animateContent={true}
     onReady={() => {
       ready = true;

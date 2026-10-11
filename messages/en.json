@@ -5798,7 +5798,7 @@
   "learn_motion_path_static_name": "Static",
   "learn_motion_path_static_caption": "Remain at the same point",
   "learn_motion_path_aria": "{name}: {caption}",
-  "learn_motion_map_prompt": "Drag the hand to a point.",
+  "learn_motion_map_prompt": "Pick a point to move the hand.",
   "learn_motion_pairs_prompt": "Move the blue hand, then the red hand. Find all six.",
   "learn_motion_pairs_mirror": "Same pair, hands swapped.",
   "learn_motion_combinations_lead": "Using these, we can make six combinations, named below.",
