@@ -3,20 +3,22 @@
   its own grid, side by side, blue starting at West and red at East. It is one
   hand's turn at a time: its grid is framed in its colour, while the other
   grid dims and waits. A press picks the point the hand will move to: its
-  arrow and a ring mark it, and the pick holds for the round. Blue picks
-  first, then red. Once both have picked, the two grids glide together and
-  grow into one larger picture while each hand makes its move, so the pair
-  lands as the combination's own pictograph: both arrows, both hands where
-  they ended. The combination is named and its board cell fills; a pair with
-  the hands swapped lands on the cell it already filled. After a short hold
-  the picture splits back into the two grids, and the next round starts where
-  the hands ended. A tap or Enter ends the hold early. Reduced motion swaps
-  the grids for the picture without the glide or the travel.
+  arrow and a ring mark it, the hand stays put, and the pick holds for the
+  round. Blue picks first, then red. Once both have picked, the two grids
+  glide together and grow into one larger picture, and each arrow settles
+  where the combination's own pictograph draws it. Only then, with the
+  picture still, do both hands follow their arrows. The combination is named
+  and its board cell fills; a pair with the hands swapped lands on the cell
+  it already filled. After a short hold the picture splits back into the two
+  grids, and the next round starts where the hands ended. A tap or Enter ends
+  the hold early. Reduced motion swaps the grids for the picture with the
+  hands already moved.
 
   Austen, 2026-10-11: two grids that fuse into one picture, like Fuse,
   instead of one grid where a hand's arrow could lie over the other hand.
   Then: a pick stays picked, only the hand whose turn it is is lit, and the
-  grids move together and resize while the hands make their moves.
+  grids move together and resize. Then: a pick shows only its arrow, and the
+  hands move once the grids have fused, never while they fuse.
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
@@ -53,11 +55,11 @@
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
-    handTravel,
     isMirrorPair,
     placeHand,
     roundHands,
     roundPair,
+    roundTravel,
     startRound,
     type HandPair,
     type PairRound,
@@ -82,15 +84,20 @@
   const POINTS = getPlacementGridPoints(GridMode.DIAMOND);
   /** Red's arrow shows, so both picks are seen before they play. */
   const LAND_MS = DURATION.dramatic;
-  /** The grids glide together and grow while each hand makes its move. */
+  /**
+   * The grids glide together and grow, and each arrow settles where the
+   * combination's picture draws it.
+   */
   const FLIGHT_MS = DURATION.scene;
-  /** Each arrow and hand settle where the two-hand picture draws them. */
-  const SETTLE_MS = DURATION.emphasis;
   /** The picture takes over from the two grids laid on each other. */
   const MERGE_MS = DURATION.fast;
+  /** The fused picture holds still a moment before the hands move. */
+  const STILL_MS = DURATION.dramatic;
+  /** Both hands follow their arrows. */
+  const MOVE_MS = DURATION.scene;
   /** The picture splits back into the two grids. */
   const SPLIT_MS = DURATION.scene;
-  /** The hands' own travel easing (cubicInOut), so the glide keeps their pace. */
+  /** The same easing as the hands' travel (cubicInOut). */
   const IN_OUT = "cubic-bezier(0.65, 0, 0.35, 1)";
   const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
@@ -108,13 +115,11 @@
   /** Whose pick it is; null while the two hands play together. */
   let turn = $state<HandSide | null>(BLUE);
   let round = $state<PairRound>(startRound(START[BLUE], START[RED]));
-  /** Where each grid's hand stands: the round's start, then where it ended. */
+  /**
+   * Where each grid's hand stands: the round's start, then, once the grids
+   * are hidden under the picture, where the hand ends.
+   */
   let rest = $state<Spots>({ ...START });
-  /** Each grid's own hand travel while the grids glide together. */
-  let travels = $state<Record<HandSide, PlacementMotionMove | null>>({
-    [BLUE]: null,
-    [RED]: null,
-  });
   let arrows = $state<Record<HandSide, Arrow>>({
     [BLUE]: { from: START[BLUE], to: null },
     [RED]: { from: START[RED], to: null },
@@ -123,8 +128,10 @@
   let flying = $state(false);
   /** The two grids are one picture. */
   let together = $state(false);
-  /** Where the picture's hands stand: where the round's moves end. */
+  /** Where the picture's hands stand: the round's start until they move. */
   let fusedAt = $state<Spots>({ ...START });
+  /** Both hands' moves, played on the picture once it has fused. */
+  let fusedMove = $state<PlacementMotionMove | null>(null);
   /** The picture's static hands, which have a halo instead of an arrow. */
   let stillHands = $state<HandSide[]>([]);
   let pairData = $state<PictographData | null>(null);
@@ -137,6 +144,8 @@
   let announcement = $state("");
   let pending: { combination: HandCombination; pair: HandPair } | null = null;
   let holding = false;
+  /** The hands have moved and the pair is named; a tap may end the hold. */
+  let landed = false;
   let travelEpoch = 0;
   let stillHold: ReturnType<typeof setTimeout> | undefined;
   let flight: Animation[] = [];
@@ -200,7 +209,7 @@
     );
   }
 
-  /** Both grids glide onto the picture at the pace of the hands' moves. */
+  /** Both grids glide onto the picture, the hands where they started. */
   function flyTogether() {
     cancelFlight();
     for (const hand of HANDS) {
@@ -219,10 +228,10 @@
   }
 
   /**
-   * A grid lays its one hand out alone, and the picture can lay the same hand
-   * out differently: its arrow on the other side of its point, its hand
-   * nudged off the other hand's on a shared point. Each glides to where the
-   * picture draws it, so the picture takes over without a jump.
+   * A grid lays its one hand out alone, and the picture lays the pair out by
+   * the combination's own placement: an arrow on the other side of its
+   * point, a hand nudged off the other hand's on a shared point. Each glides
+   * there while the grids fly, so the picture takes over without a jump.
    */
   function settleIntoPicture() {
     for (const hand of HANDS) {
@@ -243,8 +252,8 @@
         for (const { element, keyframes } of handGlides(from, to, hand)) {
           flight.push(
             element.animate(keyframes, {
-              duration: SETTLE_MS,
-              easing: EASE,
+              duration: FLIGHT_MS,
+              easing: IN_OUT,
               fill: "forwards",
             })
           );
@@ -329,12 +338,13 @@
     holding = true;
     turn = null;
     pairData = handPairPictographData(hands.left, hands.right);
-    fusedAt = { [BLUE]: hands.left.to, [RED]: hands.right.to };
     stillHands = HANDS.filter((hand) => round.moves[hand]?.move === "static");
-    const ends: Spots = { ...fusedAt };
+    const ends: Spots = { [BLUE]: hands.left.to, [RED]: hands.right.to };
     if (reducedMotion()) {
+      fusedAt = ends;
       rest = ends;
       join();
+      landed = true;
       reveal();
       stillHold = setTimeout(split, BUILD_BEAT_PAUSE_MS * 3);
       return;
@@ -346,23 +356,33 @@
           act: () => {
             flying = true;
             flyTogether();
-            // Each hand travels from the round's start while its grid's rest
-            // moves to the end, so the hand stays there when the travel ends.
-            travels = {
-              [BLUE]: handTravel(round, BLUE, ++travelEpoch, FLIGHT_MS),
-              [RED]: handTravel(round, RED, ++travelEpoch, FLIGHT_MS),
-            };
-            rest = ends;
+            settleIntoPicture();
           },
         },
         { pause: FLIGHT_MS },
-        { act: settleIntoPicture },
-        { pause: SETTLE_MS },
         { act: merge },
         { pause: MERGE_MS },
         {
           act: () => {
             join();
+            // The grids are hidden now, so their hands can stand where the
+            // round ends, ready for the split.
+            rest = ends;
+          },
+        },
+        { pause: STILL_MS },
+        {
+          act: () => {
+            // The hands travel from the round's start while the picture's
+            // spots move to the end, so they stay there when the travel ends.
+            fusedMove = roundTravel(round, ++travelEpoch, MOVE_MS);
+            fusedAt = ends;
+          },
+        },
+        { pause: MOVE_MS },
+        {
+          act: () => {
+            landed = true;
             reveal();
           },
         },
@@ -376,6 +396,7 @@
   function split() {
     if (!holding) return;
     holding = false;
+    landed = false;
     hold.cancel();
     clearTimeout(stillHold);
     reveal();
@@ -388,9 +409,9 @@
     flyApart();
   }
 
-  /** A tap or Enter on the picture ends the hold at once. */
+  /** Once the hands have moved, a tap or Enter ends the hold at once. */
   function takeOver() {
-    if (holding && together) split();
+    if (holding && landed) split();
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -468,7 +489,6 @@
               tapToMove={true}
               onPick={pick}
               transparentBackground={true}
-              motionMove={travels[hand]}
               animateContent={true}
             >
               {#snippet figureLayer()}
@@ -507,6 +527,7 @@
           initialRightLocation={fusedAt[RED]}
           editAfterCompletion={false}
           dragLocations={false}
+          motionMove={fusedMove}
           animateContent={true}
         >
           {#snippet figureLayer()}
