@@ -19,14 +19,16 @@ import { toolPath } from "./media-import.mjs";
 /**
  * Records a scripted pass through the app and puts it in a feature video.
  *
- *   node scripts/feature-video/capture.mjs --feature SLUG --capture ID [--origin URL]
+ *   node scripts/feature-video/capture.mjs --feature SLUG --capture ID [--origin URL] [--profile DIR]
  *
  * The script is `<project folder>/captures/<ID>.capture.mjs`. It default-exports
  * `{ id, url, viewport, ready?, settleMs?, run(director) }`; see
  * docs/development/post-studio-manifest-bridge.md. Each recording gets its own
  * headless Chrome, started at the script's viewport and scale with a fresh,
  * signed-out profile and closed afterwards. It is never your browser and never
- * the shared 9222 browser.
+ * the shared 9222 browser. `--profile DIR` opens a kept profile instead, for a
+ * recording that needs the app signed in: sign that profile in once, with a
+ * test account, and every recording made with it starts signed in.
  *
  * A capture that fails while it records exits with an error, keeps its
  * frames in `<folder>/captures/frames/<ID>/`, writes no video and leaves the
@@ -57,6 +59,9 @@ export function parseCaptureArgs(argv) {
   if (!feature) throw new Error("capture needs --feature SLUG.");
   if (!capture) throw new Error("capture needs --capture ID.");
   const origin = option("origin");
+  const profile = option("profile");
+  if (profile !== undefined && !path.isAbsolute(profile))
+    throw new Error("--profile must be an absolute folder path.");
   const base = new URL(origin ?? "https://localhost:5173");
   if (
     !["http:", "https:"].includes(base.protocol) ||
@@ -68,6 +73,7 @@ export function parseCaptureArgs(argv) {
     capture: assertCaptureId(capture),
     origin: base.origin,
     cliUrl: origin ? base.origin : undefined,
+    profile,
   };
 }
 
@@ -157,7 +163,13 @@ async function cli(cliUrl, ...args) {
   return stdout.trim() ? JSON.parse(stdout) : undefined;
 }
 
-export async function runCapture({ feature, capture, origin, cliUrl }) {
+export async function runCapture({
+  feature,
+  capture,
+  origin,
+  cliUrl,
+  profile,
+}) {
   const info = await cli(cliUrl, "capture-info", "--feature", feature);
   const scriptFile = path.join(
     info.folder,
@@ -184,6 +196,7 @@ export async function runCapture({ feature, capture, origin, cliUrl }) {
     width: script.viewport.width,
     height: script.viewport.height,
     deviceScaleFactor: script.viewport.deviceScaleFactor,
+    profile,
   });
   try {
     const tab = await openTab("about:blank", {
