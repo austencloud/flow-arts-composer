@@ -416,4 +416,66 @@ describe("native 3D full-roster renderers", () => {
     renderer.dispose();
     expect(scene.children).toHaveLength(0);
   });
+
+  it("draws solid Pulse in the chosen shade, not a fixed tint", () => {
+    const scene = new Scene();
+    const renderer = new PulseRenderer3D();
+    renderer.initialize(scene);
+    renderer.update(
+      [
+        {
+          ...base,
+          position: { ...base.position },
+          velocity: { ...base.velocity },
+          effect: "pulse",
+          params: resolvePulse3D({
+            ...DEFAULT_EFFECTS_CONFIG.pulse,
+            colorMode: "solid",
+            palette: "ember",
+            harmonics: 0,
+            chromatic: 0,
+          }),
+        },
+      ],
+      1 / 60
+    );
+    const ring = meshAtRenderOrder(scene, 118);
+    const color = ring.geometry.getAttribute("aColor");
+    expect(ring.count).toBeGreaterThan(0);
+    // Ember's ring is #ff6000.
+    expect(color.getX(0)).toBeCloseTo(1, 1);
+    expect(color.getY(0)).toBeCloseTo(0x60 / 255, 1);
+    expect(color.getZ(0)).toBeCloseTo(0, 1);
+    renderer.dispose();
+  });
+
+  it("gathers a Pulse charge at the tip as the next beat nears", () => {
+    const glowAt = (currentStep: number) => {
+      const scene = new Scene();
+      const renderer = new PulseRenderer3D();
+      renderer.initialize(scene);
+      const source: PulseTipSource3D = {
+        ...base,
+        position: { ...base.position },
+        velocity: { x: 0, y: 0, z: 0 },
+        speed: 0,
+        currentStep,
+        effect: "pulse",
+        params: resolvePulse3D({
+          ...DEFAULT_EFFECTS_CONFIG.pulse,
+          charge: 1,
+          flash: 0,
+          style: "stroke",
+        }),
+      };
+      renderer.update([source], 1 / 60);
+      source.currentStep = currentStep + 0.001;
+      renderer.update([source], 1 / 60);
+      const count = meshAtRenderOrder(scene, 117).count;
+      renderer.dispose();
+      return count;
+    };
+    expect(glowAt(0.2)).toBe(0);
+    expect(glowAt(0.9)).toBeGreaterThan(0);
+  });
 });

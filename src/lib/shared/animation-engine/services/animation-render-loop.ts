@@ -814,6 +814,8 @@ export class AnimationRenderLoop {
     y: number;
     propIndex: number;
     tipIndex: number;
+    /** Which end of the prop (0 or 1); absent on center fallbacks. */
+    end?: number;
     color: string;
     velocityX?: number;
     velocityY?: number;
@@ -830,6 +832,7 @@ export class AnimationRenderLoop {
       y: number;
       propIndex: number;
       tipIndex: number;
+      end?: number;
       color: string;
       velocityX?: number;
       velocityY?: number;
@@ -843,6 +846,7 @@ export class AnimationRenderLoop {
         y: t.y,
         propIndex: t.propIndex,
         tipIndex: globalTipIndex++,
+        end: t.tipIndex,
         velocityX: t.velocityX,
         velocityY: t.velocityY,
         color: AnimationRenderLoop.resolveTipColor(

@@ -37,6 +37,36 @@ export function normalizeLegacyEffectIntentColors<T>(
   return normalized as T;
 }
 
+/** The tint every v39 Pulse shipped with. */
+const PULSE_V39_FACTORY_TINT = "#38bdf8";
+
+/**
+ * Before v40 the solid color mode drew `color`, a tint separate from the
+ * palette chips, so picking Ember still drew sky blue. A tint someone chose
+ * becomes the custom palette. The untouched factory look (Sonar, factory
+ * tint, no look applied) moves to the new Prop default, which colors each
+ * hand's pulses like its prop. A chosen palette or look stays solid and now
+ * draws as picked.
+ */
+function migratePulseSolidTint(value: unknown, lookApplied: boolean): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const pulse: UnknownRecord = { ...(value as UnknownRecord) };
+  const tint = typeof pulse.color === "string" ? pulse.color.toLowerCase() : null;
+  delete pulse.color;
+  // Solid was the v39 default, so a block without colorMode drew solid.
+  if ((pulse.colorMode ?? "solid") !== "solid") return pulse;
+  pulse.colorMode = "solid";
+  const palette = pulse.palette ?? "sonar";
+  if (palette === "custom") return pulse;
+  if (tint && tint !== PULSE_V39_FACTORY_TINT) {
+    pulse.palette = "custom";
+    pulse.customColor = tint;
+  } else if (palette === "sonar" && !lookApplied) {
+    pulse.colorMode = "prop-matched";
+  }
+  return pulse;
+}
+
 /**
  * Migrate an arbitrary stored EffectsConfig up to the current version.
  * Safe to call on a current-version config (returns it unchanged after
@@ -552,6 +582,15 @@ export function migrateEffectsConfig(raw: unknown): EffectsConfig {
   // hand colors (either spelling) no longer mean anything.
   if (version < 39 && input.ghost) {
     input.ghost = normalizeLegacyEffectIntentColors("ghost", input.ghost);
+  }
+
+  // v39 → v40: Pulse's solid mode draws the selected palette instead of a
+  // separate tint that every palette and look ignored.
+  if (version < 40 && input.pulse) {
+    input.pulse = migratePulseSolidTint(
+      input.pulse,
+      Boolean(input.activePresets?.pulse)
+    ) as EffectsConfig["pulse"];
   }
 
   const out: EffectsConfig = {

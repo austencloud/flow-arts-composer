@@ -48,7 +48,10 @@ import { Smoke2DRenderer } from "../renderers/smoke-2d-renderer";
 import { Ink2DRenderer } from "../renderers/ink-2d-renderer";
 import { Silk2DRenderer } from "../renderers/silk-2d-renderer";
 import { Animal2DRenderer } from "../renderers/animal-2d-renderer";
-import { Pulse2DRenderer } from "../renderers/pulse-2d-renderer";
+import {
+  Pulse2DRenderer,
+  type PulseTipInput,
+} from "../renderers/pulse-2d-renderer";
 
 /** Every effect this host can draw. Anything else is not offered. */
 export const CANVAS2D_HOSTED_EFFECTS = [
@@ -86,6 +89,11 @@ type Drawer = (
   scale: number,
   phase: number
 ) => void;
+
+/** Pulse numbers a prop's ends 0 and 1 for its tracking filter. */
+function pulseTip(tip: EmitterTip): PulseTipInput {
+  return { ...tip, end: tip.tipIndex };
+}
 
 function lazily<R>(create: () => R): () => R {
   let instance: R | null = null;
@@ -127,7 +135,14 @@ function makeDrawers(): Record<Canvas2DHostedEffect, Drawer> {
     animal: (ctx, c, tips, dt, scale) =>
       animal().render(ctx, resolveAnimal2D(c.animal), tips, dt, scale),
     pulse: (ctx, c, tips, dt, scale, phase) =>
-      pulse().render(ctx, resolvePulse2D(c.pulse), tips, phase, dt, scale),
+      pulse().render(
+        ctx,
+        resolvePulse2D(c.pulse),
+        tips.map(pulseTip),
+        phase,
+        dt,
+        scale
+      ),
   };
 }
 
