@@ -36,6 +36,10 @@ timeline on every screen. CapCut and InShot are the models.
   821 inside a 1246-wide area, so about 780 pixels beside it are empty. Its
   size is bound by height: under it sit the transport, a 64-tall tool row
   and a 280-tall timeline.
+- The timeline fits the whole project once when it mounts
+  (`fitPixelsPerSecond` in `PostTimeline.svelte`) but never refits when its
+  width changes, so a window or panel resize leaves the project filling
+  part of the width or running off it.
 
 ## 1. Layout tiers
 
@@ -159,6 +163,13 @@ selection has more than six. Each group stacks the existing panels it holds.
   portrait preview grows from 821 to about 925 tall; at 1920 by 1080 from
   about 550 to 655. Dragging the timeline's top edge gives it more room,
   and Studio remembers that height on the device.
+- Zoom on open (Austen, 2026-10-11). Desktop and medium fit the whole
+  project and keep refitting when the timeline's width changes, until the
+  person zooms by hand; after that their zoom stays. Fit returns to the
+  refitting state. Phone opens at about 10 seconds across the timeline
+  (CapCut), since fitting a long project into the half after a centered
+  playhead leaves clips a pixel or two per second. Pinch zooms, and the
+  pinched zoom is remembered per project on the device.
 - A video clip whose landings are tapped shows tick marks at each landing.
 
 ## 5. Sync moves screen
