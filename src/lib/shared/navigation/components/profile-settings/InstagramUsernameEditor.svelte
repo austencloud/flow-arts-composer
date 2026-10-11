@@ -7,24 +7,25 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
-  import type { User } from "firebase/auth";
   import { authState } from "../../../auth/state/auth-state.svelte";
   import { toast } from "../../../toast/state/toast-state.svelte";
-  import { doc, getDoc } from "firebase/firestore";
-  import { getFirestoreInstance } from "../../../auth/firebase";
-  import { onMount, tick } from "svelte";
+  import { tick } from "svelte";
   import InstagramIcon from "#lib/shared/auth/components/icons/InstagramIcon.svelte";
   import AccountValueRow from "./AccountValueRow.svelte";
 
   interface Props {
-    user: User;
+    /** The saved Instagram handle, as Account last read or saved it. */
+    instagramUsername: string;
     hapticService: HapticFeedback | null;
+    onInstagramUsernameChanged?: (username: string) => void;
   }
 
-  let { user, hapticService }: Props = $props();
+  let { instagramUsername, hapticService, onInstagramUsernameChanged }: Props =
+    $props();
 
   // Local state
-  let currentUsername = $state("");
+  // The saved handle comes from Account, which already reads the profile.
+  let currentUsername = $derived(instagramUsername);
   let editedUsername = $state("");
   let isEditing = $state(false);
   let isSaving = $state(false);
@@ -35,20 +36,6 @@
 
   // Instagram username validation: alphanumeric, underscores, periods, 1-30 chars
   const INSTAGRAM_REGEX = /^[a-zA-Z0-9._]{1,30}$/;
-
-  // Load current Instagram username from Firestore on mount
-  onMount(async () => {
-    try {
-      const firestore = await getFirestoreInstance();
-      const userDocRef = doc(firestore, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-      if (userDoc.exists()) {
-        currentUsername = userDoc.data()?.instagramUsername || "";
-      }
-    } catch (err) {
-      console.error("Failed to load Instagram username:", err);
-    }
-  });
 
   // Derived: can save if valid format and changed
   const isSaveDisabled = $derived(
@@ -121,6 +108,7 @@
     try {
       await authState.updateInstagramUsername(trimmedUsername);
       currentUsername = trimmedUsername;
+      onInstagramUsernameChanged?.(trimmedUsername);
       hapticService?.trigger("success");
       toast.success(
         trimmedUsername

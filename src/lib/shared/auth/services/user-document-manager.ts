@@ -311,6 +311,7 @@ export class UserDocumentManager {
         rememberAccountProfile({
           userId: user.uid,
           username: existingUsername || "",
+          instagramUsername: existingData?.instagramUsername || "",
           pronouns: existingData?.pronouns || "",
           profileColor: existingData?.profileColor || null,
           googlePhotoUrl:
