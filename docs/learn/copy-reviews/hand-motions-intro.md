@@ -165,6 +165,18 @@ the lesson does not repeat Water, Earth, Sun, Fire, Air, or Moon as headings.
   for Opposite. Timing captions are “In sync,” “½ cycle apart,” and “¼ cycle
   apart”; direction captions are “Same way” and “Opposite ways.” These are
   implementation choices under the delegated redesign, pending Austen's review.
+- 2026-10-10 — Austen approved the rebuild design
+  (`docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md`): one
+  motion map instead of one player per motion, the six combinations taught in
+  the lesson, and Timing and Direction moved to its own lesson. No new
+  teaching explanation was approved.
+- 2026-10-11 — Austen chose “Remain at the same point” as the Static caption
+  for the lesson, the Guide web page and the handbook (over the book's “Stay at
+  the current point”). The frozen first edition keeps its wording.
+- 2026-10-11 — Austen approved three lesson prompts exactly as written:
+  “Drag the hand to a point.” (motion map), “Drag both hands. Find all six.”
+  (two hands), and “Same pair, hands swapped.” (a mirrored pair lands on a
+  cell it already filled).
 
 ## Shared-path Refinement Verification — 2026-09-04
 

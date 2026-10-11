@@ -5119,6 +5119,7 @@
   "learn_motion_path_static_name": "Static",
   "learn_motion_path_static_caption": "Am selben Punkt bleiben",
   "learn_motion_path_aria": "{name}: {caption}",
+  "learn_motion_map_prompt": "Ziehe die Hand auf einen Punkt.",
   "learn_motion_topic_placement_title": "Platzierung",
   "learn_motion_topic_placement_description": "Wo sich die Elemente befinden. Auch beim Drehen oder Spiegeln bleibt ihre Beziehung gleich.",
   "learn_motion_topic_timing_title": "Timing",

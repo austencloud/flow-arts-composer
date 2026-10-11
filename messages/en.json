@@ -5827,6 +5827,7 @@
   "learn_motion_path_static_name": "Static",
   "learn_motion_path_static_caption": "Remain at the same point",
   "learn_motion_path_aria": "{name}: {caption}",
+  "learn_motion_map_prompt": "Drag the hand to a point.",
   "learn_motion_topic_placement_title": "Placement",
   "learn_motion_topic_placement_description": "Where things are. Rotate or reflect them: the relationship stays the same.",
   "learn_motion_topic_timing_title": "Timing",

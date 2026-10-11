@@ -170,16 +170,19 @@ Everything shown comes from approved copy in `messages/*.json`
 (`verified_level1_hand_motions_*`) and the lesson's approved captions. No new
 teaching explanation is added.
 
-New lesson prompts need Austen's exact approval before they ship (copy gate in
-`docs/learn/copy-reviews/hand-motions-intro.md`). Drafts:
+Austen approved the three new lesson prompts as written on 2026-10-11 (copy
+gate in `docs/learn/copy-reviews/hand-motions-intro.md`):
 
 - Stage 1: "Drag the hand to a point."
 - Stage 2: "Drag both hands. Find all six."
 - Mirror pair: "Same pair, hands swapped."
 
-**Copy conflict to resolve:** the book says "Stay at the current point" for
-Static, and the lesson says "Remain at the same point". The shared record holds
-one sentence. The default is the book's wording.
+**Static caption:** the book says "Stay at the current point" and the lesson
+says "Remain at the same point". On 2026-10-11 Austen chose **"Remain at the
+same point"** for every new view (lesson, Guide web page, handbook). The shared
+record points all three captions at the lesson keys
+(`learn_motion_path_*_caption`). The frozen first edition (`/print`, `/book`)
+keeps its own wording.
 
 ## Build order
 
