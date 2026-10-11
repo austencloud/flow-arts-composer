@@ -13,11 +13,11 @@ import {
 } from "./method-preview-demo";
 import { slotWaveBand } from "./method-preview-layout";
 
-/** Rolls in one turn: a second, different roll shows each tap is fresh. */
-export const GENERATE_ROLLS_PER_TURN = 2;
-
-/** How long a landed roll stays before the next tap, so it reads. */
-export const GENERATE_LOOK_MS = 250;
+/**
+ * How many of a roll's opening steps play their moves once it lands, one at
+ * a time, as Play steps through a sequence. A turn has room for two.
+ */
+export const GENERATE_PLAYED_STEPS = 2;
 
 /** How long the last roll fades before the next washes in. */
 export const GENERATE_CLEAR_MS = 150;
@@ -87,6 +87,13 @@ export function nextRoll(
 export function generateCellDelayMs(index: number, columns: number): number {
   return (
     slotWaveBand(index + 1, columns) * DEFAULT_ANIMATION_TIMING.waveBandDelay
+  );
+}
+
+/** From the start of the wash until its first cell has landed. */
+export function generateFirstLandMs(columns: number): number {
+  return (
+    generateCellDelayMs(0, columns) + DEFAULT_ANIMATION_TIMING.entranceDuration
   );
 }
 
