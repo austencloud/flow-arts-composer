@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import * as core from "@austencloud/video-editor/core";
-// ease.ts is internal to the package and not in the dist exports, so this reaches its source by
-// absolute path. Step 4 removes the path: once the package installs from npm, import
-// cssCubicBezier another way or move this comparison.
-import * as packageEase from "E:/worktrees/shared-packages/video-editor/packages/video-editor/src/core/project/ease";
+// ease.ts is internal to the package and not in its exports map, so this reaches the installed
+// build by path.
+import * as packageEase from "../../node_modules/@austencloud/video-editor/dist/core/project/ease.js";
 import * as timing from "#lib/shared/animation-engine/domain/constants/timing.js";
 import * as tkaEase from "#lib/shared/transitions/ws-ease.js";
 

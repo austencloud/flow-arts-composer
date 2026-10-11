@@ -325,6 +325,7 @@
     "@austencloud/scene-3d": "^0.1.6",
     "@austencloud/sidebar": "file:vendor/austencloud-sidebar-1.1.0.tgz",
     "@austencloud/theme": "^0.1.0",
+    "@austencloud/video-editor": "file:vendor/austencloud-video-editor-0.1.0.tgz",
     "@capacitor-firebase/authentication": "8.3.0",
     "@capacitor/android": "^8.4.2",
     "@capacitor/app": "^8.1.0",

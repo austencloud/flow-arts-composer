@@ -59,11 +59,10 @@ const HOSTS: Record<string, string> = {
     "src/lib/shared/shape-matrix/app/components/ShapeMatrixCustomizeWorkspace.svelte",
   "shape matrix focus":
     "src/lib/shared/shape-matrix/app/components/ShapeMatrixFocusWorkspace.svelte",
-  // In @austencloud/video-editor since Task 20. Dev loop (extraction steps 1
-  // to 3): the package build the vitest alias reads; step 4 swaps this root
-  // with the alias.
+  // In @austencloud/video-editor since Task 20; this reads the installed
+  // package.
   "post studio look panel":
-    "E:/worktrees/shared-packages/video-editor/packages/video-editor/dist/ui/editor/PostEditorWorkspace.svelte",
+    "node_modules/@austencloud/video-editor/dist/ui/editor/PostEditorWorkspace.svelte",
   "motion path explorer":
     "src/routes/(public)/guide/motion-paths/_components/MotionPathExplorer.svelte",
   "landing play with it":

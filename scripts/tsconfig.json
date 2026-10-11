@@ -2,9 +2,6 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "paths": {
-      // Step 4 of the video editor extraction removes these two with the vite.config.ts aliases.
-      "@austencloud/video-editor/*": ["E:/worktrees/shared-packages/video-editor/packages/video-editor/dist/*"],
-      "@austencloud/video-editor": ["E:/worktrees/shared-packages/video-editor/packages/video-editor/dist"],
       "$app/*": ["./mocks/$app/*"],
       "file-saver": ["./mocks/file-saver"]
     }

@@ -30,11 +30,12 @@ const read = (relative: string) =>
   readFileSync(path.resolve(repoRoot, relative), "utf8");
 
 // The canvas, workspace and timeline moved into @austencloud/video-editor
-// (Task 20). Dev loop (extraction steps 1 to 3): the package build the vitest
-// alias reads, whose .svelte files are the source verbatim. Step 4 swaps this
-// root with the alias. The package indents with tabs.
-const EDITOR =
-  "E:/worktrees/shared-packages/video-editor/packages/video-editor/dist/ui/editor";
+// (Task 20). The installed package's .svelte files are its source verbatim.
+// The package indents with tabs.
+const EDITOR = path.resolve(
+  repoRoot,
+  "node_modules/@austencloud/video-editor/dist/ui/editor"
+);
 const CANVAS = `${EDITOR}/PostEditorCanvas.svelte`;
 const WORKSPACE = `${EDITOR}/PostEditorWorkspace.svelte`;
 const TIMELINE = `${EDITOR}/timeline/PostTimeline.svelte`;

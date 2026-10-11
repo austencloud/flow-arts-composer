@@ -26,11 +26,10 @@ const repoRoot = path.resolve(
 const read = (relative: string) =>
   readFileSync(path.resolve(repoRoot, relative), "utf8");
 
-// The workspace moved into @austencloud/video-editor (Task 20). Dev loop
-// (extraction steps 1 to 3): the package build the vitest alias reads; step 4
-// swaps this root with the alias.
+// The workspace moved into @austencloud/video-editor (Task 20); this reads the
+// installed package.
 const WORKSPACE =
-  "E:/worktrees/shared-packages/video-editor/packages/video-editor/dist/ui/editor/PostEditorWorkspace.svelte";
+  "node_modules/@austencloud/video-editor/dist/ui/editor/PostEditorWorkspace.svelte";
 const POST_MODULE = "src/lib/features/post/PostModule.svelte";
 const TKA_HOST = "src/lib/shared/post-studio-plugin/ui/tka-host.ts";
 

@@ -1014,18 +1014,6 @@ function withoutSplatCoveredPrerenders(base: Adapter): Adapter {
 const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
   ...svelteOptions,
 
-  alias: {
-    // @austencloud/video-editor dev loop (extraction steps 0 to 3): resolve
-    // the package from the shared-packages worktree build output. Step 4
-    // replaces these with the published dependency. The css entry sits first
-    // because Vite takes the first matching alias prefix. TypeScript reads
-    // the same paths, and its svelte and zod pins, from tsconfig.json.
-    "@austencloud/video-editor/css":
-      "E:/worktrees/shared-packages/video-editor/packages/video-editor/css",
-    "@austencloud/video-editor":
-      "E:/worktrees/shared-packages/video-editor/packages/video-editor/dist",
-  },
-
   adapter: withoutSplatCoveredPrerenders(
     adapter({ routes: { include: ["/*"], exclude: pagesRouteExcludes } })
   ),

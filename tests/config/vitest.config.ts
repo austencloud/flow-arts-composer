@@ -83,14 +83,6 @@ export default defineConfig({
         projectRoot,
         "packages/render-core/src/index.ts"
       ),
-      // @austencloud/video-editor dev loop (extraction steps 1 to 3): the same
-      // build output vite.config.ts aliases. Step 4 removes these two
-      // entries with the vite.config.ts ones. The css entry sits first
-      // because the first matching alias prefix wins.
-      "@austencloud/video-editor/css":
-        "E:/worktrees/shared-packages/video-editor/packages/video-editor/css",
-      "@austencloud/video-editor":
-        "E:/worktrees/shared-packages/video-editor/packages/video-editor/dist",
     },
 
     // Worker pool. `pool: "forks"` is Vitest 4's default; it stays explicit so
@@ -133,9 +125,8 @@ export default defineConfig({
 
   resolve: {
     conditions: ["browser"],
-    // One copy of each, as in vite.config.ts: the package's dist is outside
-    // node_modules, so it would otherwise load its own zod, dexie, svelte and
-    // mediabunny from the shared-packages pnpm store.
+    // One copy of each, as in vite.config.ts: @austencloud/video-editor
+    // shares the app's svelte, mediabunny, zod and dexie.
     dedupe: ["svelte", "mediabunny", "zod", "dexie"],
   },
 });
