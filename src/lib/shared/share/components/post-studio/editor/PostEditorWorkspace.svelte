@@ -144,6 +144,7 @@
   import PostToolPanel from "./PostToolPanel.svelte";
   import PostTransitionTool from "./PostTransitionTool.svelte";
   import PostItemTool from "./PostItemTool.svelte";
+  import PostArrangementTool from "./PostArrangementTool.svelte";
   import PostMusicTool from "./PostMusicTool.svelte";
   import {
     removeMusic,
@@ -1265,6 +1266,7 @@
       hasLayout:
         item.kind === "video" &&
         findItem(editor.project, item.id)?.trackIndex === 0,
+      cell: item.kind === "arrangement" && editor.selectedCellId !== null,
     };
   });
   const tools = $derived(
@@ -1508,6 +1510,15 @@
         return !editor.selectionEditable;
       case "delete":
         return !musicSelected && !editor.selectionEditable;
+      case "clear": {
+        // Clear has something to do only for a cell with a sequence or an offset.
+        const cell = editor.selectedCell;
+        return (
+          !editor.selectionEditable ||
+          !cell ||
+          (cell.layers.length === 0 && cell.beatOffset === 0)
+        );
+      }
       case "beats":
         return !canTapBeats;
       default:
@@ -1561,8 +1572,19 @@
     }
     switch (id) {
       case "back":
+        // From a cell, Back goes up to its arrangement, not out of it.
+        if (editor.selectedCellId !== null) {
+          editor.selectCell(null);
+          activeTool = null;
+          void focusAfterUpdate({ kind: "row" });
+          return;
+        }
         deselect();
         void focusAfterUpdate({ kind: "row" });
+        return;
+      case "clear":
+        if (editor.clearSelectedCell())
+          void focusAfterUpdate({ kind: "tool", id: "clear" });
         return;
       case "split":
         editor.pause();
@@ -2826,6 +2848,15 @@
       onAddDeviceVideo={pickDeviceVideo}
       onAdded={itemAdded}
     />
+  {:else if (tool === "grid" || tool === "layers" || tool === "offset" || (tool === "sequence" && editor.selectedCell !== null)) && editor.selectedItem?.kind === "arrangement"}
+    <PostArrangementTool
+      {editor}
+      item={editor.selectedItem}
+      {tool}
+      cell={editor.selectedCell}
+      locked={!editor.selectionEditable}
+      sequence={displaySequence}
+    />
   {:else if tool === "arrangement" && editor.selectedItem?.kind === "arrangement"}
     <div class="arrangement-tool">
       <p>Edit this arrangement's grid, sequences, and timing.</p>
@@ -2936,9 +2967,15 @@
         ? editor.project.music?.label
         : editor.selectedPart === "tunnel"
           ? t("post_timeline_tunnel")
-          : editor.selectedItem
-            ? labelFor(editor.selectedItem)
-            : undefined}
+          : editor.selectedItem?.kind === "arrangement" && editor.selectedCell
+            ? `${labelFor(editor.selectedItem)} · Cell ${
+                editor.selectedCell.row * editor.selectedItem.snapshot.gridCols +
+                editor.selectedCell.col +
+                1
+              }`
+            : editor.selectedItem
+              ? labelFor(editor.selectedItem)
+              : undefined}
     onDone={placement === "dock" && !cropMode ? closePanel : undefined}
     {placement}
     bare={(placement === "dock" && cropMode) ||
@@ -3144,6 +3181,7 @@
                   keepSourceCropRatio={cropSourceShape !== "free"}
                   onSourceSize={noteSourceSize}
                   onMusicMissing={(missing) => (musicMissing = missing)}
+                  onOpenArrangementTool={openTool}
                   bind:root={canvasRoot}
                 />
               </div>
