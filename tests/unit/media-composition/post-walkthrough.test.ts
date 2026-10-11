@@ -12,6 +12,10 @@ import {
   type WalkthroughScript,
 } from "#lib/shared/media-composition/domain/post-walkthrough.js";
 import { rectToOutput } from "#lib/shared/media-composition/domain/walkthrough-camera.js";
+import {
+  applyPostProjectOps,
+  type PostProjectOp,
+} from "#lib/shared/media-composition/domain/post-project-ops.js";
 import { NOW, project, take } from "./post-project-fixtures";
 
 const ctx = { now: NOW + 1 };
@@ -289,6 +293,33 @@ describe("buildWalkthrough", () => {
     ).toThrow(/Two lines say/);
     expect(() => build({}, "Level", tutorial("9:16"))).toThrow(
       /recording's shape/
+    );
+  });
+});
+
+describe("build-walkthrough op", () => {
+  const op = (script: unknown, extra: object = {}) =>
+    ({
+      op: "build-walkthrough",
+      take: "t",
+      capture: { ...CAPTURE, id: "generate-tutorial", frames: [] },
+      script,
+      ...extra,
+    }) as PostProjectOp;
+
+  it("builds from the files as the command line sends them", () => {
+    const next = applyPostProjectOps(
+      tutorial(),
+      [op(JSON.parse(JSON.stringify(SCRIPT)), { chapter: "Level" })],
+      ctx
+    );
+    expect(bubblesOf(next)).toHaveLength(4);
+  });
+
+  it("says where a lines file goes wrong", () => {
+    const broken = { lines: [{ ...SCRIPT.lines[0], after: "soon" }] };
+    expect(() => applyPostProjectOps(tutorial(), [op(broken)], ctx)).toThrow(
+      /Edit 1 \(build-walkthrough\): The lines file does not read: lines\.0\.after/
     );
   });
 });
