@@ -209,13 +209,11 @@ describe("createDirector click", () => {
   it("logs the clicked element's box with the click", async () => {
     const made = fakes();
     const box = { x: 1180, y: 30, width: 102, height: 30 };
-    made.page.evaluate = vi.fn(
-      async (fn: () => unknown, arg?: string) => {
-        if (arg === undefined) return { width: 1920, height: 1080 };
-        if (fn.toString().includes(":hover")) return true;
-        return { x: 1246, y: 49, rect: box };
-      }
-    );
+    made.page.evaluate = vi.fn(async (fn: () => unknown, arg?: string) => {
+      if (arg === undefined) return { width: 1920, height: 1080 };
+      if (fn.toString().includes(":hover")) return true;
+      return { x: 1246, y: 49, rect: box };
+    });
     const director = createDirector(made.page, made.cdp, root);
     await director.shot("click", 0.05, async () => {
       await director.click("Level 1: Base Motions");
