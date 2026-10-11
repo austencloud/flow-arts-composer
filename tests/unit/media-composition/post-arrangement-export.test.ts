@@ -10,7 +10,7 @@ import {
 } from "#lib/shared/media-composition/services/post-studio-frame-compositor.js";
 
 const snapshot: ArrangementSnapshot = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   cells: [
     {
       id: "cell-1",

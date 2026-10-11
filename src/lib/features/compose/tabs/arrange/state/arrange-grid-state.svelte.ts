@@ -30,8 +30,10 @@ import type {
 import type { Composition } from "#lib/shared/animation-engine/domain/compose-types.js";
 import {
   validateArrangementSnapshot,
+  type ArrangementCell,
   type ArrangementSnapshot,
 } from "#lib/shared/media-composition/domain/arrangement.js";
+import { resolveLegacyCellFields } from "#lib/shared/media-composition/domain/arrangement-migration.js";
 import type { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import type {
   TipEffectMap,
@@ -66,33 +68,17 @@ export const MAX_GRID_SIZE = 8;
 const MAX_LAYERS_PER_CELL = 4;
 
 /**
- * A single cell in the grid - each cell is a mini-tunnel
+ * A single cell in the grid - each cell is a mini-tunnel.
+ *
+ * The stored shape is `ArrangementCell` (schema v2, with the look in
+ * `appearance`). The three v1 look fields stay here as the editor's working
+ * copy until its panels write `appearance` directly: `restoreSnapshot` fills
+ * them from the stored appearance and `captureSnapshot` folds them back.
  */
-export interface GridCell {
-  id: string;
-  /** Row position (0-7) */
-  row: number;
-  /** Column position (0-7) */
-  col: number;
-  layers: TunnelLayerConfig[];
-  beatOffset: number;
-  /** Number of columns this cell spans (1-8) */
-  colSpan: number;
-  /** Number of rows this cell spans (1-8) */
-  rowSpan: number;
-  /** Media type for this cell (default: animation for tunnel mode) */
-  mediaType: CellMediaType;
-  // Per-cell overrides (undefined = global default)
-  speedMultiplier?: number;
+export interface GridCell extends ArrangementCell {
   effect?: CellEffect;
   trailMode?: TrailMode;
   effort?: string;
-  /** Per-tip effect assignments that override the global TipEffectMap for this cell */
-  tipEffectMap?: TipEffectMap;
-  /** Per-tip effort assignments that override the global TipEffortMap for this cell */
-  tipEffortMap?: TipEffortMap;
-  leftMotionVisible?: boolean;
-  rightMotionVisible?: boolean;
 }
 
 /**
@@ -271,7 +257,10 @@ export function createArrangeGridState(options: { persist?: boolean } = {}) {
         cell.col >= 0 &&
         cell.col < MAX_GRID_SIZE
       )
-        restored[cell.row * MAX_GRID_SIZE + cell.col] = cell;
+        restored[cell.row * MAX_GRID_SIZE + cell.col] = {
+          ...cell,
+          ...resolveLegacyCellFields(cell),
+        };
     }
     cells = restored;
     gridRows = snapshot.gridRows;
@@ -431,7 +420,7 @@ export function createArrangeGridState(options: { persist?: boolean } = {}) {
     },
     captureSnapshot(): ArrangementSnapshot {
       return validateArrangementSnapshot({
-        schemaVersion: 1,
+        schemaVersion: 2,
         cells: deepCloneCells(cells),
         gridRows,
         gridCols,

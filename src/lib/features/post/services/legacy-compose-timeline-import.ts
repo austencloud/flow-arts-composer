@@ -157,7 +157,7 @@ function snapshotForClip(
     (beats * 60 * (clip.outPoint - clip.inPoint)) /
     (segmentSeconds * clip.playbackRate);
   return validateArrangementSnapshot({
-    schemaVersion: 1,
+    schemaVersion: 2,
     cells: [
       {
         id: "cell-0-0",
