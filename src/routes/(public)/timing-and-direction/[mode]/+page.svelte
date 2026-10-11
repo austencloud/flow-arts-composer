@@ -1037,6 +1037,32 @@
     max-width: 44rem;
     margin-bottom: 1rem;
   }
+  /* From the width where the site footer splits into two columns, the credit
+     takes the same shape: heading and source on the left, the text in a
+     right-hand column as wide as the footer's link rows (about 60rem), so it
+     starts where the footer's Explore column does and runs to the edge. */
+  @media (min-width: 1024px) {
+    .credit {
+      display: grid;
+      grid-template-columns: minmax(15rem, 1fr) minmax(0, 60rem);
+      grid-template-rows: auto 1fr;
+      column-gap: clamp(32px, 3.5vw, 84px);
+      align-items: start;
+    }
+    .credit h2 {
+      grid-area: 1 / 1;
+    }
+    .credit p {
+      grid-area: 1 / 2 / 3 / 3;
+      max-width: none;
+      margin: 0;
+    }
+    .credit > :global(a) {
+      grid-area: 2 / 1;
+      justify-self: start;
+      margin-top: 0.5rem;
+    }
+  }
   .related-modes {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
