@@ -1,0 +1,79 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Ghost tile · real prop</title>
+<link rel="stylesheet" href="tiles.css"></head>
+<body>
+<h1>Ghost · the current prop (staff shown)</h1>
+<p class="lede">The tile blits the same prop sprite the engine draws, for whichever prop is selected, at its last poses. In the real tile the sprite comes from the app's prop SVG generator; here it is the staff SVG with the blue hand fill. Ages follow the renderer's curve: glassy body, then frost veil, then pale rim, then gone.</p>
+<div id="root"></div>
+<script type="module">
+import { W, H, ground, blob, hexToRgb, css } from './kit.js';
+
+const CONFIG = { intensity: 0.85, decay: 8, interval: 0.5 };
+const FROST = '#e2f9ff';
+const BLUE = '#2e3192';
+const STAFF = (fill) => `data:image/svg+xml;utf8,` + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252.8 77.8"><path fill="${fill}" stroke="#555" stroke-width="1" d="M251.4,67.7V10.1c0-4.8-4.1-8.7-9.1-8.7s-9.1,3.9-9.1,8.7v19.2H10.3c-4.9,0-8.9,3.8-8.9,8.5V41c0,4.6,4,8.5,8.9,8.5h222.9v18.2c0,4.8,4.1,8.7,9.1,8.7S251.4,72.5,251.4,67.7z"/></svg>`);
+
+function smoothstep(v) { v = Math.max(0, Math.min(1, v)); return v * v * (3 - 2 * v); }
+function ageVisual(age, strength) {
+  const remaining = Math.pow(1 - age, 0.72);
+  const shedding = smoothstep((age - 0.14) / 0.48);
+  const frostPhase = Math.sin(Math.PI * Math.max(0, Math.min(1, (age - 0.04) / 0.82)));
+  return {
+    body: 0.54 * strength * (1 - shedding) * Math.pow(1 - age, 1.15),
+    rim: 0.74 * strength * remaining,
+    frost: 0.34 * strength * Math.max(0, frostPhase) * remaining,
+  };
+}
+
+/** The renderer's treatment layers, cut from the sprite: a frost-white fill and a rim (frost-lifted silhouette, slightly inflated). */
+function treatment(img, w, h) {
+  const pad = 6;
+  const frost = document.createElement('canvas'); frost.width = w + pad * 2; frost.height = h + pad * 2;
+  let c = frost.getContext('2d');
+  c.drawImage(img, pad, pad, w, h);
+  c.globalCompositeOperation = 'source-in'; c.fillStyle = FROST; c.fillRect(0, 0, frost.width, frost.height);
+  const rim = document.createElement('canvas'); rim.width = frost.width; rim.height = frost.height;
+  c = rim.getContext('2d');
+  // Inflated silhouette minus the body = an outline that keeps the prop's shape.
+  c.shadowColor = FROST; c.shadowBlur = 3;
+  for (let i = 0; i < 4; i++) c.drawImage(frost, 0, 0);
+  c.shadowBlur = 0; c.globalCompositeOperation = 'destination-out'; c.drawImage(img, pad + 0.5, pad + 0.5, w - 1, h - 1);
+  return { frost, rim, pad };
+}
+
+function drawCopy(ctx, img, tr, x, y, angle, w, h, v) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+  if (v.body > 0.01) { ctx.globalAlpha = v.body; ctx.drawImage(img, -w / 2, -h / 2, w, h); }
+  if (v.frost > 0.01) { ctx.globalAlpha = v.frost; ctx.drawImage(tr.frost, -w / 2 - tr.pad, -h / 2 - tr.pad); }
+  if (v.rim > 0.01) { ctx.globalAlpha = v.rim; ctx.drawImage(tr.rim, -w / 2 - tr.pad, -h / 2 - tr.pad); }
+  ctx.restore();
+}
+
+async function draw(ctx, c) {
+  const img = new Image(); img.src = STAFF(BLUE); await img.decode();
+  const w = 230, h = w * 77.8 / 252.8;
+  const tr = treatment(img, w, h);
+  ground(ctx, [0.03, 0.035, 0.06]);
+  blob(ctx, 400, 140, 300, 170, hexToRgb(FROST), 0.05);
+  const span = (0.3 + Math.min(1, c.decay / 12) * 0.3) * Math.PI;
+  const copies = Math.round(5 + c.interval * 9);
+  const px = 410, py = 165, headAngle = 0.25;
+  for (let i = copies; i >= 1; i--) {
+    const age = i / copies;
+    drawCopy(ctx, img, tr, px - age * 110, py - age * 25, headAngle - span * age, w, h, ageVisual(age, c.intensity));
+  }
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; blob(ctx, px, py, 120, 70, hexToRgb(BLUE), 0.3); ctx.restore();
+  drawCopy(ctx, img, tr, px, py, headAngle, w, h, { body: 1, rim: 0, frost: 0 });
+}
+
+const root = document.getElementById('root');
+const row = document.createElement('div'); row.className = 'card';
+row.innerHTML = `<h3>Ghost <small>persistence ${CONFIG.decay} · density ${CONFIG.interval} · prop: staff</small></h3><div class="row"></div>`;
+for (const cls of ['small', 'large']) {
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; cv.className = cls;
+  draw(cv.getContext('2d'), CONFIG);
+  row.querySelector('.row').appendChild(cv);
+}
+root.appendChild(row);
+</script>
+</body></html>
