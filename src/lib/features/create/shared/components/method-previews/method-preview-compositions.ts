@@ -66,17 +66,11 @@ function centeredGrid(
   return cells;
 }
 
-/** Construct: the start position, then its steps (plan: Spec Corrections 13). */
-export const CONSTRUCT_STRIP_SLOTS = Object.freeze({ min: 3, max: 4 });
-export const CONSTRUCT_ROOMY_SLOTS = Object.freeze({ min: 4, max: 4 });
-export const CONSTRUCT_SQUARE_GRID = Object.freeze({ columns: 2, rows: 2 });
-
-/** The most slots constructLayout() returns; the scene sizes its data to it. */
-export const CONSTRUCT_MAX_SLOTS = Math.max(
-  CONSTRUCT_STRIP_SLOTS.max,
-  CONSTRUCT_ROOMY_SLOTS.max,
-  CONSTRUCT_SQUARE_GRID.columns * CONSTRUCT_SQUARE_GRID.rows
-);
+/**
+ * Construct: the start position and two steps, in every shape. Each step
+ * plays its move, and a three-second turn has room for two (2026-10-10).
+ */
+export const CONSTRUCT_MAX_SLOTS = 3;
 
 export function constructLayout(
   shape: MethodPreviewShape,
@@ -85,15 +79,24 @@ export function constructLayout(
 ): CellRect[] {
   const gap = previewGap(width, height);
   if (shape === "square") {
-    const { columns, rows } = CONSTRUCT_SQUARE_GRID;
-    const size = gridCellSize(width, height, columns, rows, gap);
-    return size > 0
-      ? centeredGrid(columns, rows, size, gap, width, height)
-      : [];
+    // The step grid's 2×2 wrap, with the last step centered under the two.
+    const size = gridCellSize(width, height, 2, 2, gap);
+    if (size <= 0) return [];
+    const [first, second] = centeredGrid(2, 2, size, gap, width, height);
+    const last = {
+      x: Math.floor((width - size) / 2),
+      y: first!.y + size + gap,
+      size,
+    };
+    return [first!, second!, last];
   }
-  const slots =
-    shape === "roomy" ? CONSTRUCT_ROOMY_SLOTS : CONSTRUCT_STRIP_SLOTS;
-  const { count, size } = rowOfCells(width, height, gap, slots.min, slots.max);
+  const { count, size } = rowOfCells(
+    width,
+    height,
+    gap,
+    CONSTRUCT_MAX_SLOTS,
+    CONSTRUCT_MAX_SLOTS
+  );
   return size > 0 ? centeredRow(count, size, gap, width, height) : [];
 }
 
