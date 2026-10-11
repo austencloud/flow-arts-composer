@@ -426,8 +426,11 @@
   ];
   let scope = $state<Scope>("cell");
   let tipKey = $state("0-0");
+  // Keyed on the id, not the cell object: every edit replaces the object,
+  // and the scope the user picked has to survive the edit it just made.
+  const scopeCellId = $derived(cell?.id ?? null);
   $effect(() => {
-    void cell?.id;
+    void scopeCellId;
     untrack(() => {
       scope = "cell";
       tipKey = "0-0";
