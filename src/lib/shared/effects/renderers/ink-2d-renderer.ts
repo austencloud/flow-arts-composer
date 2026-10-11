@@ -95,7 +95,7 @@ function isDarkColor(hex: string): boolean {
 
 // --- BrushStampCache ---
 
-class BrushStampCache {
+export class BrushStampCache {
   private canvas: OffscreenCanvas | HTMLCanvasElement | null = null;
   private signature = "";
   private readonly noiseSeed = 0x51f15e;
