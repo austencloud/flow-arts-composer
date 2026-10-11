@@ -192,5 +192,16 @@ this editor's state and then its UI into `@austencloud/video-editor` for
 Ringmaster. Step 2B moves the UI files this design rewrites. Building both at
 once in separate branches guarantees heavy conflicts in
 `PostEditorWorkspace.svelte`, and redesigning during the move breaks the
-extraction's verbatim-move parity checks. Austen chooses the order; the
-choice is recorded here when made.
+extraction's verbatim-move parity checks.
+
+Decided by Austen on 2026-10-10: the redesign waits for the move. Once step
+2B lands (`docs/superpowers/plans/2026-10-10-video-editor-step-2b-ui.md` in
+the shared-packages worktree; its plan holds "no restyle" until the move is
+done), this design is built in `@austencloud/video-editor` so Studio and
+Ringmaster both get it. The units above then live in the package's
+`src/ui/`, and the TKA-specific parts arrive through the plugin: the
+Sequence, Cards and Templates tabs through `ui.addItems`, the Sync moves
+screen through `ui.modes` (the timing mode stays in tka's `builder/`), and
+the grouped tabs from the plugin's `ui.toolRow`. Step 3 (Ringmaster) and
+this redesign touch the same files, so the extraction's controller orders
+them. The Studio project library stays in tka and is redesigned separately.
