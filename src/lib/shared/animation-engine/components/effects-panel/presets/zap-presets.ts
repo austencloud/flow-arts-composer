@@ -13,8 +13,9 @@ export const ZAP_PRESETS: EffectPreset<"zap">[] = [
       colorMode: "custom",
       leftColor: "#88ccff",
       rightColor: "#a25bff",
-      frequency: 11,
-      branching: 0.75,
+      // The one forked look; Default, Tesla and Web keep a single line.
+      frequency: 9,
+      branching: 0.5,
       style: "branching",
       mode: "arc",
       wobbleRate: 0.3,
