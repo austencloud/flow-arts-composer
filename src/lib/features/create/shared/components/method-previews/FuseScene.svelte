@@ -401,11 +401,20 @@
       });
     }
 
-    // The fused steps play once.
+    // The fused steps play once, one at a time. The run ends as the last
+    // one starts: a slow draw that ran the turn out would otherwise cut it
+    // through the tint. The scene settles when it lands, or at the turn's end.
+    const last = fusedFrames.length - 1;
     for (const index of fusedFrames.keys()) {
-      if (!(await travel(run, index))) return;
+      const move = travel(run, index);
+      if (index === last) {
+        void move.then((landed) => {
+          if (landed) settle();
+        });
+      } else if (!(await move)) {
+        return;
+      }
     }
-    settle();
   }
 
   playSceneTurns(() => ({ playing, turn }), play, {
