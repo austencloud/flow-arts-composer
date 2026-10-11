@@ -44,6 +44,11 @@
     applyTheme?.(type);
   });
 
+  // Set once the first useful frame has been presented; the live canvas may
+  // load from then on, whenever the current page actually shows the sky.
+  let firstFramesPresented = $state(false);
+  let liveBackgroundRequested = false;
+
   onMount(() => {
     if (isConstrainedConnection()) return;
 
@@ -55,11 +60,7 @@
     // after that first useful frame instead of blocking it.
     const firstFrame = requestAnimationFrame(() => {
       secondFrame = requestAnimationFrame(() => {
-        void import("#lib/shared/background/shared/components/BackgroundHost.svelte").then(
-          ({ default: BackgroundHost }) => {
-            if (mounted) LiveBackground = BackgroundHost;
-          }
-        );
+        if (mounted) firstFramesPresented = true;
 
         void import("#lib/shared/settings/utils/background-theme-calculator.js").then(
           ({ applyThemeForBackground }) => {
@@ -76,16 +77,35 @@
     };
   });
 
+  // The animated canvas only loads for a page that floats on the sky. Under a
+  // page that paints its own opaque surface (the guide book, the archive) it
+  // would be invisible and still burn the GPU for the whole read; it loads the
+  // first time the reader reaches a star-field page instead.
+  $effect(() => {
+    if (!firstFramesPresented || pageOwnsSurface || liveBackgroundRequested)
+      return;
+    liveBackgroundRequested = true;
+    void import("#lib/shared/background/shared/components/BackgroundHost.svelte").then(
+      ({ default: BackgroundHost }) => {
+        LiveBackground = BackgroundHost;
+      }
+    );
+  });
+
   const path = $derived(page.url.pathname);
   const isTimingLesson = $derived(
     path === "/learn/concepts/timing-and-direction"
   );
   // The TnD explorer and articles share one live player through their layout.
+  // Guide topics share one shell: a crossfade per topic would remount it and
+  // reset the contents rail on every click.
   const contentKey = $derived(
     path === "/timing-and-direction" ||
       path.startsWith("/timing-and-direction/")
       ? "/timing-and-direction"
-      : path
+      : path === "/guide" || path.startsWith("/guide/")
+        ? "/guide"
+        : path
   );
   const footerVariant = $derived(
     path === "/" ||
@@ -104,6 +124,7 @@
   // between the two, and its scrim and hairline finish the job of making the
   // bottom of the page look like a different site.
   const footerSurface = $derived(pageSurface(path));
+  const pageOwnsSurface = $derived(footerSurface !== undefined);
 
   // The archive is a single-room research surface on larger viewports. Its
   // header already carries every site destination, while a second navigation
@@ -120,7 +141,7 @@
 <div class="mkt-shell">
   <div class="mkt-fallback" aria-hidden="true"></div>
   <div class="mkt-bg">
-    {#if LiveBackground}
+    {#if LiveBackground && !pageOwnsSurface}
       <LiveBackground backgroundType={marketingBackground.type} />
     {/if}
   </div>
@@ -303,5 +324,19 @@
   .mkt-content {
     grid-area: 1 / 1;
     min-width: 0;
+  }
+
+  /* A page that fixes a rail to the left edge (the guide's contents rail)
+     publishes the width it reserves as --page-rail-reserved on the root, and
+     the footer clears it the same way the page's own content does. */
+  .mkt-layer > :global(.site-footer) {
+    margin-inline-start: var(--page-rail-reserved, 0px);
+    transition: margin-inline-start var(--transition-emphasis);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mkt-layer > :global(.site-footer) {
+      transition: none;
+    }
   }
 </style>

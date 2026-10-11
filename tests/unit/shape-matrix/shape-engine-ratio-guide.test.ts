@@ -69,9 +69,7 @@ describe("Shape Engine ratio guide", () => {
     const about = read(
       "src/lib/shared/shape-matrix/app/components/ShapeMatrixAboutModal.svelte"
     );
-    const sidebar = read(
-      "src/routes/(public)/guide/_components/GuideSidebar.svelte"
-    );
+    const toc = read("src/routes/(public)/guide/_data/guide-toc.ts");
     const sitemap = read("src/routes/sitemap.xml/+server.ts");
 
     expect(page).toContain('path="/guide/ratios"');
@@ -82,7 +80,7 @@ describe("Shape Engine ratio guide", () => {
     expect(about).toContain('href="/guide/ratios"');
     expect(about).toContain("/history#archive-record-vtg");
     expect(about).toContain("/history#archive-record-lorq");
-    expect(sidebar).toContain('href="/guide/ratios"');
+    expect(toc).toContain('href: "/guide/ratios"');
     expect(sitemap).toContain('{ url: "guide/ratios" }');
   });
 });

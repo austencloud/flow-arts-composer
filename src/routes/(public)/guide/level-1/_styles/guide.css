@@ -68,39 +68,37 @@
    ══════════════════════════════════════════ */
 
 /* === Layout ===
-   GuideShell mounts a fixed SiteHeader (64px tall, 56px once scrolled) above
-   this layout - it doesn't push document flow, so the layout clears it with
-   an explicit top offset instead. */
+   The root MarketingChrome mounts a fixed SiteHeader (64px tall, 56px once
+   scrolled) above this layout. It doesn't push document flow, so the layout
+   clears it with an explicit top offset. --guide-canvas comes from GuideShell
+   (page-surface.ts GUIDE_CANVAS, the same color the footer surface uses). */
 .guide-layout {
   display: flex;
   min-height: 100vh;
   padding-top: 64px;
-  background: oklch(0.13 0.015 270);
+  background: var(--guide-canvas, oklch(0.13 0.015 270));
   color: oklch(0.9 0.01 270);
   font-family: "Inter", system-ui, sans-serif;
 }
 
-.guide-sidebar {
-  position: fixed;
-  top: 64px;
-  left: 0;
-  /* 13.75rem == 220px at the 16px root; rem so the rail rides the >=1680px
-     root ramp below instead of freezing at laptop width. */
-  width: 13.75rem;
-  height: calc(100vh - 64px);
-  overflow-y: auto;
-  overflow-x: clip;
-  background: oklch(0.15 0.02 270 / 0.6);
-  border-right: 1px solid oklch(0.3 0.04 270 / 0.3);
-  backdrop-filter: blur(24px);
-  padding: 1.5rem 0;
-  z-index: 10;
+/* === Contents rail space ===
+   Where the desktop rail shows (GuideRail), the content column and the site
+   footer step aside by the width the rail reserves: 64px collapsed, its
+   expanded width once pinned. GuideShell publishes the live value as
+   --guide-rail-reserved; MarketingChrome's footer reads --page-rail-reserved.
+   Same query as the GuideRail host. */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  html:has(.guide-rail-host) {
+    --page-rail-reserved: var(--guide-rail-reserved, 64px);
+  }
 }
 
 /* === Content: Full-bleed grid === */
 .guide-content {
   flex: 1;
-  margin-left: 13.75rem;
+  min-width: 0;
+  margin-inline-start: var(--page-rail-reserved, 0px);
+  transition: margin-inline-start var(--transition-emphasis);
   display: grid;
   grid-template-columns:
     [full-start] minmax(1.5rem, 1fr)
@@ -113,20 +111,14 @@
   position: relative;
 }
 
-.guide-content > * {
-  grid-column: prose;
+@media (prefers-reduced-motion: reduce) {
+  .guide-content {
+    transition: none;
+  }
 }
 
-/* The shared site footer renders BELOW .guide-layout (see GuideShell) so its
-   background bleeds full-width instead of ending at the centered composition's
-   edge. The bleed wrapper continues the guide's dark canvas behind the
-   footer's translucent grounding gradient. */
-.guide-footer-bleed {
-  background: oklch(0.13 0.015 270);
-  /* Contain the footer's own top margin (margin would otherwise collapse
-     through this wrapper and expose a band of body background between the
-     guide canvas and the footer). */
-  display: flow-root;
+.guide-content > * {
+  grid-column: prose;
 }
 
 /* The crawl/flow route (GuidePageHost's <main>) spans the FULL content width so
@@ -504,99 +496,6 @@
   background: none;
 }
 
-.guide-nav {
-  padding: 0 0.75rem;
-}
-
-.guide-nav .nav-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 1.5rem;
-  color: oklch(0.7 0.1 270);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.guide-nav .nav-title a {
-  color: oklch(0.7 0.1 270);
-  text-decoration: none;
-}
-
-.guide-nav .chapter-group {
-  margin-bottom: 0.5rem;
-}
-
-.guide-nav .chapter-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  font-weight: 500;
-  font-size: 0.85rem;
-  padding: 0.55rem 0.75rem;
-  color: oklch(0.55 0.02 270);
-  background: none;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  text-align: left;
-  text-decoration: none;
-  transition: all 150ms ease;
-}
-
-.guide-nav .chapter-title:hover {
-  background: oklch(0.2 0.02 270 / 0.4);
-  color: oklch(0.75 0.04 270);
-}
-
-.guide-nav .chapter-title.active {
-  color: oklch(0.85 0.06 270);
-  background: oklch(0.22 0.03 270 / 0.4);
-}
-
-.guide-nav .section-list {
-  list-style: none;
-  padding: 0;
-  margin: 0.25rem 0 0.5rem;
-}
-
-.guide-nav .section-link {
-  display: block;
-  font-size: 0.78rem;
-  padding: 0.35rem 0.75rem 0.35rem 2.25rem;
-  color: oklch(0.45 0.02 270);
-  text-decoration: none;
-  border-radius: 8px;
-  transition: all 100ms ease;
-  font-weight: 400;
-  position: relative;
-}
-
-.guide-nav .section-link:hover {
-  color: oklch(0.65 0.04 270);
-  background: oklch(0.2 0.02 270 / 0.3);
-}
-
-.guide-nav .section-link.active {
-  color: oklch(0.78 0.1 270);
-  font-weight: 550;
-  background: oklch(0.25 0.04 270 / 0.3);
-}
-
-.guide-nav .section-link.active::before {
-  content: "";
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 14px;
-  background: oklch(0.65 0.18 270);
-  border-radius: 2px;
-}
-
 /* === Fallback indicator (dev only) === */
 .guide-pictograph .fallback-badge {
   font-size: 0.65rem;
@@ -660,25 +559,17 @@
   }
 }
 
-/* === Mobile: collapse sidebar === */
-@media (max-width: 1024px) {
-  .guide-sidebar {
-    display: none;
-  }
-
-  .guide-sidebar.open {
-    display: block;
-    position: fixed;
-    top: 64px;
-    width: 100%;
-    height: calc(100vh - 64px);
-    z-index: 50;
-    background: oklch(0.13 0.015 270);
-    backdrop-filter: blur(24px);
-  }
-
+/* Wide touch screens (tablets in landscape) keep the desktop grid but read
+   under the Contents pill too, since the rail is desktop-pointer only. */
+@media (min-width: 1024px) and (not ((hover: hover) and (pointer: fine))) {
   .guide-content {
-    margin-left: 0;
+    padding-top: 4rem;
+  }
+}
+
+/* === Narrow screens: one column under the Contents pill === */
+@media (max-width: 1023.98px) {
+  .guide-content {
     padding-top: 4rem;
     grid-template-columns:
       [full-start] minmax(1rem, 1fr)
@@ -703,38 +594,13 @@
   .guide-pictograph-grid {
     overflow-x: auto;
   }
-
-  .guide-nav .section-link {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-  }
-
-  .guide-nav .chapter-title {
-    min-height: 44px;
-  }
 }
 
 /* ══════════════════════════════════════════
    4K / large desktop: wider composition
    ══════════════════════════════════════════ */
 @media (min-width: 1680px) {
-  /* Center the sidebar+content composition as ONE unit. The base layout pins
-     the rail to the viewport edge (position: fixed) and floats content in the
-     leftover width - at 4K that reads lopsided: a rail 2000px away from the
-     prose with a giant void on the right. In flow + sticky, the pair centers
-     with symmetric outer margins. */
-  .guide-layout {
-    justify-content: center;
-  }
-  .guide-sidebar {
-    position: sticky;
-    left: auto;
-    flex: 0 0 13.75rem;
-  }
   .guide-content {
-    margin-left: 0;
-    flex: 0 1 118rem;
     /* Same named tracks as the base grid, with a wider breakout budget so
        visual material can ride past the prose measure (see below). */
     grid-template-columns:
@@ -756,17 +622,5 @@
   .guide-section > .guide-pictograph-grid,
   .guide-section > .guide-sequence-player {
     grid-column: breakout;
-  }
-
-  /* Header and footer content match the guide composition width
-     (13.75rem rail + 118rem content) instead of the site's 1720px cap,
-     which reads inset against the wider content between them. The header
-     has no global class of its own; on guide pages the only <header> with
-     an .inner child is SiteHeader's (.topic-hero has none). The exact Guide hub
-     uses MarketingChrome, so excluding .mkt-shell also keeps that persistent
-     header geometrically identical to the homepage snapshot. */
-  html:has(.guide-layout):not(:has(.mkt-shell)) header > .inner,
-  html:has(.guide-layout):not(:has(.mkt-shell)) .site-footer > .inner {
-    max-width: min(131.75rem, 92vw);
   }
 }

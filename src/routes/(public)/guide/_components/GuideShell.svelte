@@ -1,32 +1,28 @@
 <script lang="ts">
   /**
-   * The one guide shell every host renders: the site header, mobile menu
-   * button, the sidebar aside (hosting GuideSidebar directly - no more
-   * per-level GuideNav wrappers, they added nothing once GuideSidebar became
-   * the single TOC source), and the content column with the shared site
-   * footer. Level 1, Level 2, and the guide hub all mount THIS component so
-   * the chrome is identical by construction instead of three copies drifting
-   * apart. See docs/superpowers/specs/2026-07-16-unified-guide-shell-design.md
-   * (G2).
+   * The one guide shell every host renders: the contents rail (desktop), the
+   * contents pill and drawer (phones, tablets, touch screens), and the content
+   * column. Level 1, Level 2, Ratios, Motion paths and the guide hub all
+   * mount THIS component so the guide reads the same on every page.
    *
-   * Deep Guide pages mount SiteHeader directly and run their own theme pipeline.
-   * The /guide hub is the exception: the root MarketingChrome owns its persistent
-   * header/footer so the homepage shared-element morph does not replace chrome.
+   * The site header, footer and theme belong to the root MarketingChrome,
+   * which wraps every /guide page (see MARKETING_SUBTREES in the root layout),
+   * so moving between guide pages and the rest of the public site never
+   * swaps the chrome. Both contents views read one table of contents,
+   * guide-toc.ts.
    *
    * Callers keep their own `<svelte:head>` font/preconnect blocks and their
    * own `setActiveSectionContext` wiring - that's route-specific, not shell
-   * chrome - and pass the resulting `activeSectionId` in here so the sidebar
+   * chrome - and pass the resulting `activeSectionId` in here so the contents
    * can highlight the in-view Level 2 section.
    */
   import type { Snippet } from "svelte";
-  import { onMount, untrack } from "svelte";
-  import { browser } from "$app/env";
-  import { page } from "$app/state";
+  import { untrack } from "svelte";
   import { tDynamic } from "#lib/shared/i18n/i18n.svelte.js";
-  import GuideSidebar from "./GuideSidebar.svelte";
+  import { GUIDE_CANVAS } from "#lib/shared/landing/domain/page-surface.js";
+  import GuideRail from "./GuideRail.svelte";
+  import GuideTocList from "./GuideTocList.svelte";
   import { setGuideChromeContext } from "./guide-chrome-context";
-  import SiteHeader from "#lib/shared/landing/components/SiteHeader.svelte";
-  import SiteFooter from "#lib/shared/landing/components/SiteFooter.svelte";
   import "../level-1/_styles/guide.css";
 
   let {
@@ -37,25 +33,45 @@
     children: Snippet;
   } = $props();
 
-  let sidebarOpen = $state(false);
-  const ownsStandaloneChrome = $derived(page.url.pathname !== "/guide");
+  let drawerOpen = $state(false);
+  let drawerReveal = $state(0);
 
-  function closeSidebar() {
-    sidebarOpen = false;
+  function toggleDrawer() {
+    drawerOpen = !drawerOpen;
+    if (drawerOpen) drawerReveal += 1;
   }
+
+  function closeDrawer() {
+    drawerOpen = false;
+  }
+
+  // The rail's reserved width (64px collapsed, the expanded width when
+  // pinned) is published on the root element: the content column and the
+  // site footer (a MarketingChrome sibling, outside this component) both
+  // step aside by it. guide.css only applies it where the rail shows.
+  let railReserved = $state(0);
+  $effect(() => {
+    const root = document.documentElement;
+    if (railReserved > 0) {
+      root.style.setProperty("--guide-rail-reserved", `${railReserved}px`);
+    } else {
+      root.style.removeProperty("--guide-rail-reserved");
+    }
+    return () => root.style.removeProperty("--guide-rail-reserved");
+  });
 
   // The floating contents pill is fixed over the reading column on narrow
   // screens, where it sat on top of table columns and grid headers at every
-  // scroll position. It now steps out of the way while the reader scrolls
-  // down and returns on the first scroll up, the way a mobile browser bar
-  // does. It always stays while the drawer is open so it can close it.
+  // scroll position. It steps out of the way while the reader scrolls down
+  // and returns on the first scroll up, the way a mobile browser bar does.
+  // It always stays while the drawer is open so it can close it.
   let pillTucked = $state(false);
   let lastScrollY = 0;
   function onScroll() {
     const y = window.scrollY;
     const delta = y - lastScrollY;
     lastScrollY = y;
-    if (sidebarOpen || y < 96) {
+    if (drawerOpen || y < 96) {
       pillTucked = false;
       return;
     }
@@ -79,16 +95,6 @@
       };
     },
   });
-
-  onMount(() => {
-    if (!browser || !ownsStandaloneChrome) return;
-    void (async () => {
-      const { applyThemeForBackground } =
-        await import("#lib/shared/settings/utils/background-theme-calculator.js");
-      const { BackgroundType } = await import("@austencloud/backgrounds");
-      applyThemeForBackground(BackgroundType.COSMIC);
-    })();
-  });
 </script>
 
 <svelte:window onscroll={onScroll} />
@@ -97,31 +103,35 @@
   >{tDynamic("guide_runtime_skip_content")}</a
 >
 
-{#if ownsStandaloneChrome}
-  <SiteHeader />
-{/if}
+<div class="guide-layout" style:--guide-canvas={GUIDE_CANVAS}>
+  <GuideRail
+    {activeSectionId}
+    onReservedWidthChange={(px) => (railReserved = px)}
+  />
 
-<div class="guide-layout">
   <button
     class="mobile-menu-btn"
-    class:tucked={(pillTucked || pillHolds > 0) && !sidebarOpen}
-    onclick={() => (sidebarOpen = !sidebarOpen)}
+    class:tucked={(pillTucked || pillHolds > 0) && !drawerOpen}
+    onclick={toggleDrawer}
     aria-label={tDynamic(
-      sidebarOpen
+      drawerOpen
         ? "guide_runtime_close_contents"
         : "guide_runtime_open_contents"
     )}
-    aria-expanded={sidebarOpen}
+    aria-expanded={drawerOpen}
+    aria-controls="guide-drawer"
   >
-    <i
-      class="fa-solid {sidebarOpen ? 'fa-xmark' : 'fa-list'}"
-      aria-hidden="true"
+    <i class="fa-solid {drawerOpen ? 'fa-xmark' : 'fa-list'}" aria-hidden="true"
     ></i>
     <span>{tDynamic("guide_runtime_contents")}</span>
   </button>
 
-  <aside class="guide-sidebar" class:open={sidebarOpen}>
-    <GuideSidebar {activeSectionId} onLinkClick={closeSidebar} />
+  <aside id="guide-drawer" class="guide-drawer" class:open={drawerOpen}>
+    <GuideTocList
+      {activeSectionId}
+      revealKey={drawerReveal}
+      onLinkClick={closeDrawer}
+    />
   </aside>
 
   <main class="guide-content" id="guide-main" tabindex="-1">
@@ -129,25 +139,9 @@
   </main>
 </div>
 
-<!-- The guide subtree runs its own chrome (SiteHeader above, no
-     MarketingChrome), so it mounts the shared site footer itself - deep
-     guide pages are top Google entry points and need a way back out to the
-     rest of the site. Below .guide-layout (not inside .guide-content): the
-     >=1680px tier centers the sidebar+content composition, and a footer
-     inside that flex pair paints its background as an island ending at the
-     composition edge. Out here it bleeds full-width; its own .inner caps
-     the content (widened to the composition width in guide.css). The bleed
-     wrapper (styled in guide.css) continues the guide navy behind the
-     footer's translucent gradient. -->
-{#if ownsStandaloneChrome}
-  <div class="guide-footer-bleed">
-    <SiteFooter />
-  </div>
-{/if}
-
 <style>
   /* Keyboard and screen reader readers get one jump past the site header and
-     the guide rail. Hidden until focused, then pinned at the top left. */
+     the guide contents. Hidden until focused, then pinned at the top left. */
   .skip-link {
     position: absolute;
     width: 1px;
@@ -164,7 +158,7 @@
     text-decoration: none;
     font-family: Inter, system-ui, sans-serif;
     font-weight: 600;
-    z-index: 100;
+    z-index: 300;
   }
   .skip-link:focus {
     position: fixed;
@@ -186,8 +180,8 @@
   }
 
   /* SiteHeader is a fixed 64px bar (56px once scrolled) that doesn't push
-     document flow - the sidebar/menu-button below clear it explicitly
-     instead of relying on layout push. */
+     document flow - the drawer and pill below clear it explicitly instead of
+     relying on layout push. */
   .mobile-menu-btn {
     display: none;
     position: fixed;
@@ -225,17 +219,39 @@
       visibility 0s linear var(--duration-normal, 200ms);
   }
 
-  @media (max-width: 1024px) {
+  .guide-drawer {
+    display: none;
+  }
+
+  /* Wherever the desktop rail is hidden (narrow screens, and touch screens,
+     where a rail can't hover open) the pill and its drawer take over. Keep
+     in step with the GuideRail host query and guide.css. */
+  @media (max-width: 1023.98px), not ((hover: hover) and (pointer: fine)) {
     .mobile-menu-btn {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
     }
+
+    .guide-drawer.open {
+      display: block;
+      position: fixed;
+      top: 64px;
+      left: 0;
+      width: 100%;
+      height: calc(100dvh - 64px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: calc(44px + 2rem) 0 2rem;
+      z-index: 50;
+      background: var(--guide-canvas);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .mobile-menu-btn {
+    .mobile-menu-btn,
+    .mobile-menu-btn.tucked {
       transition: none;
     }
   }
