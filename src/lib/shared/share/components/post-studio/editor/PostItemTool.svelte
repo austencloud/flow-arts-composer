@@ -72,17 +72,18 @@
     splitRotation,
     sourceCropAtRatio,
     sourceFillBox,
+    PostNativeTextTool,
+    PostSourceGeometryTool,
+    PostVideoColorTool,
+    ToolReadout,
+    ToolStatus,
+    PostRatioPicker,
+    type RatioOption,
   } from "@austencloud/video-editor/ui";
   import type {
     CropSession,
     CropShapeKind,
   } from "@austencloud/video-editor/ui";
-  import PostRatioPicker, { type RatioOption } from "./PostRatioPicker.svelte";
-  import PostNativeTextTool from "./PostNativeTextTool.svelte";
-  import PostSourceGeometryTool from "./PostSourceGeometryTool.svelte";
-  import PostVideoColorTool from "./PostVideoColorTool.svelte";
-  import ToolReadout from "./item-tool/ToolReadout.svelte";
-  import ToolStatus from "./item-tool/ToolStatus.svelte";
   import {
     Icon,
     faArrowRightFromBracket,

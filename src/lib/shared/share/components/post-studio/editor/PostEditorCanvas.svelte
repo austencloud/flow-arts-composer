@@ -104,11 +104,11 @@
     transformPicture,
     type StageFrame,
     type StageTransform,
+    PostStudioBackdrop,
+    PostStudioPaintedLayer,
+    PostMusicPreview,
   } from "@austencloud/video-editor/ui";
-  import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
   import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
-  import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
-  import PostMusicPreview from "./PostMusicPreview.svelte";
   import type { CropSession } from "@austencloud/video-editor/ui";
   import { Icon, faFilm, faRotate } from "@austencloud/video-editor/icons";
 

@@ -98,9 +98,24 @@
     type PostToolId,
     type PostToolSelection,
     loadPostProjectFonts,
+    EditHistoryKeys,
+    PostEditorTopBar,
+    PostEditorActions,
+    PostSaveButton,
+    PostEditorTransport,
+    PostCropTimeline,
+    PostToolRow,
+    PostToolPanel,
+    PostTransitionTool,
+    PostMusicTool,
+    PostKeyframeControls,
+    PostAddPanel,
+    PostMediaPanel,
+    PostExportPanel,
+    PostRatioPicker,
+    PostDraftStatus,
   } from "@austencloud/video-editor/ui";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
-  import EditHistoryKeys from "./EditHistoryKeys.svelte";
   import {
     createDraftAutosave,
     createTabSync,
@@ -110,27 +125,12 @@
     shouldSubmitDraft,
     translatorFor,
   } from "@austencloud/video-editor";
-  import PostEditorTopBar from "./PostEditorTopBar.svelte";
-  import PostEditorActions from "./PostEditorActions.svelte";
-  import PostSaveButton from "./PostSaveButton.svelte";
-  import PostEditorTransport from "./PostEditorTransport.svelte";
-  import PostCropTimeline from "./PostCropTimeline.svelte";
-  import PostToolRow from "./PostToolRow.svelte";
-  import PostToolPanel from "./PostToolPanel.svelte";
-  import PostTransitionTool from "./PostTransitionTool.svelte";
   import PostItemTool from "./PostItemTool.svelte";
-  import PostMusicTool from "./PostMusicTool.svelte";
-  import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
-  import PostAddPanel from "./PostAddPanel.svelte";
-  import PostMediaPanel from "./PostMediaPanel.svelte";
-  import PostExportPanel from "./PostExportPanel.svelte";
-  import PostRatioPicker from "./PostRatioPicker.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import PostTimeline from "./timeline/PostTimeline.svelte";
   import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
-  import PostDraftStatus from "./PostDraftStatus.svelte";
   import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
   import { Icon, faCheck, faDiamond } from "@austencloud/video-editor/icons";
 
