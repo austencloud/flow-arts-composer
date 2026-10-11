@@ -787,7 +787,9 @@ export function createBrowseEngine(config: BrowseEngineConfig): BrowseEngine {
     }
 
     if (config.progressiveLibrary) {
-      unsubscribeLibraryPages?.();
+      // A newer load may have subscribed during the awaits above, so widen
+      // the null this function narrowed it to at its start.
+      (unsubscribeLibraryPages as (() => void) | null)?.();
       const pageLoader = getLibraryPageLoader();
       isLoading = true;
       isLoadingMore = false;
