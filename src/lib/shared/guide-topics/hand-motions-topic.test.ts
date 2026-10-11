@@ -133,17 +133,28 @@ describe("six combinations", () => {
     ]);
   });
 
-  it("names each with the Guide's own words", () => {
+  it("names each with the Guide's own words, every description a full sentence", () => {
+    const plain = (text: string) => text.replace(/\s*<br\s*\/?>\s*/gi, " ");
     expect(
-      HAND_COMBINATIONS.map((c) => [english[c.name], english[c.description]])
+      HAND_COMBINATIONS.map((c) => [
+        english[c.name],
+        plain(english[c.description]),
+      ])
     ).toEqual([
-      ["Dual-Shift", english.verified_level1_hand_motions_78],
-      ["Shift", english.verified_level1_hand_motions_80],
-      ["Cross-Shift", english.verified_level1_hand_motions_82],
-      ["Dash", english.verified_level1_hand_motions_84],
-      ["Dual-Dash", english.verified_level1_hand_motions_86],
+      ["Dual-Shift", plain(english.verified_level1_hand_motions_78)],
+      ["Shift", plain(english.verified_level1_hand_motions_80)],
+      ["Cross-Shift", plain(english.verified_level1_hand_motions_82)],
+      // The book drops these two full stops; the app adds them (Austen, 2026-10-11).
+      ["Dash", `${plain(english.verified_level1_hand_motions_84)}.`],
+      ["Dual-Dash", `${english.verified_level1_hand_motions_86}.`],
       ["Static", english.verified_level1_hand_motions_87],
     ]);
+  });
+
+  it("leads the six with the book's first sentence only", () => {
+    expect(english[HAND_MOTIONS_TOPIC_UNITS.combinationsLead]).toBe(
+      english.verified_level1_hand_motions_76.split("<br>")[0]
+    );
   });
 
   it("gives every one of the nine hand pairs a combination, either way round", () => {

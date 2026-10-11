@@ -39,7 +39,7 @@ export const HAND_MOTIONS_TOPIC_UNITS = {
   mapPrompt: "learn_motion_map_prompt",
   pairsPrompt: "learn_motion_pairs_prompt",
   mirrorPair: "learn_motion_pairs_mirror",
-  combinationsLead: "verified_level1_hand_motions_76",
+  combinationsLead: "learn_motion_combinations_lead",
 } as const satisfies Record<string, TranslationKey>;
 
 export type HandMotionsTopicUnit = keyof typeof HAND_MOTIONS_TOPIC_UNITS;
@@ -207,7 +207,9 @@ const hand = (move: HandMove, from: GridLocation, to: GridLocation) => ({
 /**
  * Two hands, three moves each: nine pairs, six once mirror pairs count as
  * one. They are the six letter types. The examples are the book's
- * (COMBO_DEMOS in HandMotionsPage.svelte, which /print keeps for itself).
+ * (COMBO_DEMOS in HandMotionsPage.svelte, which /print keeps for itself),
+ * except Dash: its static red hand stands at South, clear of the blue dash
+ * arrow (Austen, 2026-10-11).
  */
 export const HAND_COMBINATIONS: readonly HandCombination[] = [
   {
@@ -237,15 +239,15 @@ export const HAND_COMBINATIONS: readonly HandCombination[] = [
   {
     id: "dash",
     name: "verified_level1_hand_motions_83",
-    description: "verified_level1_hand_motions_84",
+    description: "learn_motion_dash_description",
     letterType: LetterType.TYPE4,
     guideSlug: "hm-type56",
-    demo: { left: hand("dash", W, E), right: hand("static", N, N) },
+    demo: { left: hand("dash", W, E), right: hand("static", S, S) },
   },
   {
     id: "dual-dash",
     name: "verified_level1_hand_motions_85",
-    description: "verified_level1_hand_motions_86",
+    description: "learn_motion_dual_dash_description",
     letterType: LetterType.TYPE5,
     guideSlug: "hm-type56",
     demo: { left: hand("dash", W, E), right: hand("dash", E, W) },

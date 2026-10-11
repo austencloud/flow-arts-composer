@@ -44,19 +44,20 @@ stage's line under it:
 > Drag both hands. Find all six.
 
 > Using these, we can derive six combinations, named below.
-> We’ll explore each one individually:
 
-The third is the book's line above its combinations
-(`verified_level1_hand_motions_76`). Open question for Austen: the lesson
-continues to Timing and Direction rather than to one page per combination, so
-“We’ll explore each one individually” may not fit the wrap-up.
+The third is the first sentence of the book's line above its combinations
+(`verified_level1_hand_motions_76`), kept as `learn_motion_combinations_lead`.
+The book goes on “We’ll explore each one individually:”, which the lesson drops
+because it continues to Timing and Direction instead.
 
 Stage 1 lists the three moves with the approved step captions (“Move to an
 adjacent point,” “Move to the opposite point,” “Remain at the same point”).
-Stages 2 and 3 name each combination with the book's name and description,
-verbatim (`verified_level1_hand_motions_77` to `_87`, and `_70` for Static).
-The book's Dash and Dual-Dash descriptions end without a full stop while the
-other four have one; the lesson keeps the book's text unchanged.
+Stages 2 and 3 name each combination with the book's name and description
+(`verified_level1_hand_motions_77` to `_87`, and `_70` for Static). The book's
+Dash and Dual-Dash descriptions end without a full stop; the app adds one
+through its own keys (`learn_motion_dash_description`,
+`learn_motion_dual_dash_description`), so the book's keys and the printed
+edition keep the book's text.
 
 A pair already found with the hands swapped adds:
 
@@ -211,9 +212,12 @@ the lesson does not repeat Water, Earth, Sun, Fire, Air, or Moon as headings.
   cell it already filled).
 - 2026-10-11 — Implemented the three-stage lesson with the approved prompts,
   the book's combination names and descriptions, and the routine label
-  “Continue to Timing and Direction.” The wrap-up line and the book's missing
-  full stops are open for Austen (see Rebuilt Lesson above). The lesson is
-  BUILT pending his hands-on confirmation.
+  “Continue to Timing and Direction.” The lesson is BUILT pending his
+  hands-on confirmation.
+- 2026-10-11 — Austen chose the book's first sentence alone for the wrap-up
+  (“Using these, we can derive six combinations, named below.”) and full
+  stops on the Dash and Dual-Dash descriptions in the app, with the printed
+  first edition unchanged.
 
 ## Shared-path Refinement Verification — 2026-09-04
 

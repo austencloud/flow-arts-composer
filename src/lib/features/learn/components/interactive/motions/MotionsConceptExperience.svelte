@@ -15,7 +15,6 @@
     HAND_COMBINATIONS,
     MOTION_MAP_MOVES,
     handMotionsTopicText,
-    plainTopicText,
     type HandCombinationId,
     type HandMove,
   } from "#lib/shared/guide-topics/hand-motions-topic.js";
@@ -125,7 +124,7 @@
       ? handMotionsTopicText("mapPrompt")
       : stepIndex === PAIRS_STAGE
         ? handMotionsTopicText("pairsPrompt")
-        : plainTopicText("verified_level1_hand_motions_76")
+        : handMotionsTopicText("combinationsLead")
   );
 
   function goToStep(next: number): void {
@@ -244,7 +243,7 @@
           <div class="board-stage">
             <HandCombinationBoard
               showDescriptions
-              label={plainTopicText("verified_level1_hand_motions_76")}
+              label={handMotionsTopicText("combinationsLead")}
             />
           </div>
         {/if}

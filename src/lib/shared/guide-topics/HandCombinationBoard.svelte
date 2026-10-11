@@ -9,7 +9,9 @@
   finding one fills a slot and moves nothing. `lit` marks the combination just
   made. Unfound cells stay out of the accessibility tree; the host announces
   each find. With `namesOnlyWhenNarrow`, a board narrower than 24rem drops the
-  pictures, so a phone keeps the board on screen under the grid.
+  pictures, so a phone keeps the board on screen under the grid. `darkMode`
+  sets the pictures' colors for a page with its own theme switch; left out,
+  they follow the app theme.
 -->
 <script lang="ts">
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -28,6 +30,7 @@
     lit?: HandCombinationId | null;
     showDescriptions?: boolean;
     namesOnlyWhenNarrow?: boolean;
+    darkMode?: boolean;
     label?: string;
   }
 
@@ -36,6 +39,7 @@
     lit = null,
     showDescriptions = false,
     namesOnlyWhenNarrow = false,
+    darkMode = undefined,
     label,
   }: Props = $props();
 
@@ -77,6 +81,7 @@
               showElemental={false}
               showNonRadialPoints={false}
               stepNumberOverride={false}
+              {darkMode}
             />
           </div>
         </div>
