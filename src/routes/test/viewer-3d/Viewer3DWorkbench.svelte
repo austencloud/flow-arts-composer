@@ -162,7 +162,11 @@
   const currentStep = $derived(currentStepBase + playback.progress);
 
   onMount(() => {
-    if (reviewEffect && !playback.isPlaying) playback.togglePlay();
+    if (reviewEffect) {
+      // Persisted isPlaying does not itself schedule an animation frame.
+      playback.pause();
+      playback.play();
+    }
   });
 
   $effect(() => {
