@@ -38,6 +38,7 @@
   import SequenceTransformActions from "#lib/shared/create/components/SequenceTransformActions.svelte";
   import SequencePickerModal from "#lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import { formatPostSpeed } from "../builder/post-builder-format";
+  import { arrangementLayerName } from "./post-editor-labels";
 
   /**
    * The panels of a selected arrangement. Grid is the item's own: its shape,
@@ -190,7 +191,7 @@
   }
 
   function layerName(layer: TunnelLayerConfig): string {
-    return layer.sequence.word || layer.sequence.name || "Sequence";
+    return arrangementLayerName(layer);
   }
 
   function beatsOf(chosen: SequenceData): string {
