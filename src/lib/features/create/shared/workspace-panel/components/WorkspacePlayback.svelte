@@ -51,6 +51,22 @@
   );
   const loadIdentity = $derived(`${sequence.id}:${run}`);
 
+  /** Where the effect picker may sit: across the app's content area, so it
+   *  can cover the settings panel beside the player, but only between this
+   *  workspace's toolbars, and never over the app's sidebar. */
+  function effectPickerBounds() {
+    if (!playbackArea) return null;
+    const area = playbackArea.getBoundingClientRect();
+    const content =
+      playbackArea.closest("#main-content")?.getBoundingClientRect() ?? area;
+    return {
+      left: content.left,
+      top: area.top,
+      width: content.width,
+      height: area.height,
+    };
+  }
+
   $effect(() => {
     const syncEffectsConfig = () => {
       effectsConfigState =
@@ -80,7 +96,7 @@
   <EffectQuickSwitch
     {effectsConfigState}
     player={playerStage}
-    bounds={playbackArea}
+    bounds={effectPickerBounds}
   />
 {/snippet}
 

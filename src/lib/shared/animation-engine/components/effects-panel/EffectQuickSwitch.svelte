@@ -29,6 +29,7 @@
     QUICK_PICKER_EDGE,
     QUICK_PICKER_OFFSET,
     type EffectQuickPickerFit,
+    type QuickPickerRect,
   } from "#lib/shared/animation-engine/domain/effect-quick-picker-fit.js";
   import EffectSelector from "./EffectSelector.svelte";
   import EffectPresetThumbnail from "./EffectPresetThumbnail.svelte";
@@ -46,16 +47,18 @@
     /** The player the picker changes. The picker sits beside it, and a tap on
      *  it while the picker is open only closes the picker. */
     player: HTMLElement | null | undefined;
-    /** The area the picker stays inside, such as the player's workspace, so
-     *  it never covers the app's sidebar or toolbars. The viewport when
-     *  absent. */
-    bounds?: HTMLElement | null;
+    /** Reads the area the picker stays inside, in viewport pixels, each
+     *  time it is placed: a host can let it cover a panel beside the player
+     *  but not the app's sidebar or its own toolbars. The viewport when absent
+     *  or null. */
+    bounds?: () => QuickPickerRect | null;
   }
 
   const { effectsConfigState, player, bounds = null }: Props = $props();
 
   let open = $state(false);
   let fit = $state<EffectQuickPickerFit | null>(null);
+  let area = $state<QuickPickerRect | null>(null);
   let triggerEl = $state<HTMLElement | null>(null);
   let contentEl = $state<HTMLElement | null>(null);
   let scrollerEl = $state<HTMLElement | null>(null);
@@ -90,17 +93,28 @@
 
   function measure() {
     if (!player) return;
+    area = bounds?.() ?? {
+      left: 0,
+      top: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
     fit = fitEffectQuickPicker({
-      bounds: bounds?.getBoundingClientRect() ?? {
-        left: 0,
-        top: 0,
-        width: window.innerWidth,
-        height: window.innerHeight,
-      },
+      bounds: area,
       player: player.getBoundingClientRect(),
       count: EFFECTS.length,
     });
   }
+
+  // Re-place the picker when the player resizes while it is open: Play grows
+  // the player as it starts, and a picker opened then would keep the
+  // arrangement it had at the start.
+  $effect(() => {
+    if (!open || !player) return;
+    const observer = new ResizeObserver(() => measure());
+    observer.observe(player);
+    return () => observer.disconnect();
+  });
 
   function select(effectId: string) {
     if (effectId === activeEffect) {
@@ -244,7 +258,9 @@
       side={fit?.arrangement === "side" ? fit.side : "top"}
       align={fit?.arrangement === "side" ? "end" : "center"}
       sideOffset={fit?.arrangement === "side" ? QUICK_PICKER_OFFSET : 0}
-      collisionBoundary={bounds ?? undefined}
+      collisionBoundary={area
+        ? { x: area.left, y: area.top, width: area.width, height: area.height }
+        : undefined}
       collisionPadding={QUICK_PICKER_EDGE}
       avoidCollisions={fit?.arrangement === "side"}
       onOpenAutoFocus={focusSelected}
