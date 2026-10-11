@@ -699,10 +699,13 @@
     <section class="credit" aria-labelledby="credit-title">
       <h2 id="credit-title">Where the names come from</h2>
       <p>
-        These names come from Noel Yee's Vulcan Tech Gospel. It sorts two-hand
-        patterns by timing, together or split, and by direction, same or
-        opposite.{#if article.timing === "Quarter"}{" "}Quarter time sits
-          between together and split, with the hands a quarter cycle apart.{/if}
+        Timing and direction come from the geometry of two hands sharing a
+        circle. Nobody invented them, and spinners used them long before they
+        had names. Noel Yee's Vulcan Tech Gospel standardized the names used
+        here. It sorts two-hand patterns by timing, together or split, and by
+        direction, same or opposite.{#if article.timing === "Quarter"}{" "}Quarter
+          time sits between together and split, with the hands a quarter cycle
+          apart.{/if}
       </p>
       <LinkChip href={TIMING_DIRECTION_SOURCE.url}
         >{TIMING_DIRECTION_SOURCE.label}</LinkChip
