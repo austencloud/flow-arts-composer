@@ -2,13 +2,20 @@ import { z } from "zod";
 import type {
   TunnelLayerConfig,
   CellMediaType,
-  CellEffect,
 } from "#lib/shared/animation-engine/domain/compose-types.js";
-import type { TrailMode } from "#lib/shared/animation-engine/domain/types/trail-types.js";
 import type {
   TipEffectMap,
   TipEffortMap,
 } from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
+import { migrateArrangementSnapshot } from "./arrangement-migration.js";
+import {
+  PostAnimationAppearanceSchema,
+  type PostAnimationAppearance,
+} from "./post-animation-appearance.js";
+
+export const ARRANGEMENT_SCHEMA_VERSION = 2;
+/** The backing grid is always this many rows and columns; `gridRows × gridCols` of it show. */
+export const ARRANGEMENT_MAX_GRID_SIZE = 8;
 
 export interface ArrangementCell {
   id: string;
@@ -20,9 +27,8 @@ export interface ArrangementCell {
   rowSpan: number;
   mediaType: CellMediaType;
   speedMultiplier?: number;
-  effect?: CellEffect;
-  trailMode?: TrailMode;
-  effort?: string;
+  /** Look and effects for this cell over the grid's `appearance`; set flags only. */
+  appearance?: PostAnimationAppearance;
   tipEffectMap?: TipEffectMap;
   tipEffortMap?: TipEffortMap;
   leftMotionVisible?: boolean;
@@ -30,12 +36,14 @@ export interface ArrangementCell {
 }
 
 export interface ArrangementSnapshot {
-  schemaVersion: 1;
+  schemaVersion: 2;
   cells: ArrangementCell[];
   gridRows: number;
   gridCols: number;
   bpm: number;
   skipStartPlacement: boolean;
+  /** The grid's default look and effects; a cell's `appearance` overrides set flags. */
+  appearance?: PostAnimationAppearance;
 }
 
 const jsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
@@ -69,48 +77,54 @@ const layerSchema = z
   })
   .passthrough();
 
-export const arrangementSnapshotSchema = z.object({
-  schemaVersion: z.literal(1),
-  cells: z.array(
-    z
-      .object({
-        id: z.string(),
-        row: z.number().int().min(0).max(7),
-        col: z.number().int().min(0).max(7),
-        layers: z.array(layerSchema).max(4),
-        beatOffset: z.number().finite(),
-        colSpan: z.number().int().min(1).max(8),
-        rowSpan: z.number().int().min(1).max(8),
-        mediaType: z.enum([
-          "video",
-          "animation",
-          "image",
-          "choreo-card",
-          "viewer-3d",
-          "empty",
-        ]),
-        speedMultiplier: z.number().finite().positive().optional(),
-        effect: z
-          .enum(["none", "fire", "charcoal", "led", "trails"])
-          .optional(),
-        trailMode: z.string().optional(),
-        effort: z.string().optional(),
-        tipEffectMap: z.record(z.string(), jsonValueSchema).optional(),
-        tipEffortMap: z.record(z.string(), jsonValueSchema).optional(),
-        leftMotionVisible: z.boolean().optional(),
-        rightMotionVisible: z.boolean().optional(),
-      })
-      .passthrough()
-  ),
-  gridRows: z.number().int().min(1).max(8),
-  gridCols: z.number().int().min(1).max(8),
+export const arrangementCellSchema = z
+  .object({
+    id: z.string(),
+    row: z.number().int().min(0).max(ARRANGEMENT_MAX_GRID_SIZE - 1),
+    col: z.number().int().min(0).max(ARRANGEMENT_MAX_GRID_SIZE - 1),
+    layers: z.array(layerSchema).max(4),
+    beatOffset: z.number().finite(),
+    colSpan: z.number().int().min(1).max(ARRANGEMENT_MAX_GRID_SIZE),
+    rowSpan: z.number().int().min(1).max(ARRANGEMENT_MAX_GRID_SIZE),
+    mediaType: z.enum([
+      "video",
+      "animation",
+      "image",
+      "choreo-card",
+      "viewer-3d",
+      "empty",
+    ]),
+    speedMultiplier: z.number().finite().positive().optional(),
+    appearance: PostAnimationAppearanceSchema.optional(),
+    tipEffectMap: z.record(z.string(), jsonValueSchema).optional(),
+    tipEffortMap: z.record(z.string(), jsonValueSchema).optional(),
+    leftMotionVisible: z.boolean().optional(),
+    rightMotionVisible: z.boolean().optional(),
+  })
+  .passthrough();
+
+/** A `schemaVersion: 2` snapshot as stored. `arrangementSnapshotSchema` migrates older ones into it. */
+export const arrangementSnapshotV2Schema = z.object({
+  schemaVersion: z.literal(ARRANGEMENT_SCHEMA_VERSION),
+  cells: z.array(arrangementCellSchema),
+  gridRows: z.number().int().min(1).max(ARRANGEMENT_MAX_GRID_SIZE),
+  gridCols: z.number().int().min(1).max(ARRANGEMENT_MAX_GRID_SIZE),
   bpm: z.number().finite().positive(),
   skipStartPlacement: z.boolean(),
+  appearance: PostAnimationAppearanceSchema.optional(),
 });
 
+/** Accepts a v1 or v2 snapshot and parses it as v2. */
+export const arrangementSnapshotSchema = z.preprocess(
+  (value) => migrateArrangementSnapshot(value),
+  arrangementSnapshotV2Schema
+);
+
+/** The snapshot as v2, detached from its input. Throws on anything the schema rejects. */
 export function validateArrangementSnapshot(
   value: unknown
 ): ArrangementSnapshot {
-  arrangementSnapshotSchema.parse(value);
-  return structuredClone(value) as ArrangementSnapshot;
+  return structuredClone(
+    arrangementSnapshotSchema.parse(value)
+  ) as ArrangementSnapshot;
 }
