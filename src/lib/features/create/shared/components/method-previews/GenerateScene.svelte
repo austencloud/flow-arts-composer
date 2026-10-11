@@ -10,12 +10,13 @@
    * the step grid's start position sits.
    *
    * Each turn rolls once, and the roll washes in still, as the step grid
-   * shows it. Once its first step has landed, its opening steps play their
-   * moves one at a time, each from the pose before it, as the workspace's
-   * Play steps through a sequence, at the pace Construct's steps move
-   * (2026-10-11). Turns rolled twice before; moves that rode the wave all at
-   * once matched nothing the tool does. The steps that will play land with
-   * their props at the start of their moves, so none jumps back to start.
+   * shows it. Once its first step has landed, its first three steps play
+   * their moves one at a time, each from the pose before it, as the
+   * workspace's Play steps through a sequence, at the pace Construct's steps
+   * move (2026-10-11); Generate's turn runs longer to fit them. Turns rolled
+   * twice before; moves that rode the wave all at once matched nothing the
+   * tool does. The steps that will play land with their props at the start
+   * of their moves, so none jumps back to start.
    *
    * Each roll is a real sequence from drawMatrixRealization(), the Firebase-free
    * source behind the home hero, drawn in the background between turns.

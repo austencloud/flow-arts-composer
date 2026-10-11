@@ -2,15 +2,15 @@
  * The Generate preview scene reports ready once, when every cell it shows
  * has drawn, including when the box resizes to fewer cells before the last
  * one reported (the card would otherwise rest on its tint). On a turn, one
- * roll lands and its first two steps play their moves one at a time, inside
- * the turn. Its pictographs are stand-ins and its sequence source is
+ * roll lands and its steps play their moves one at a time, inside the
+ * turn. Its pictographs are stand-ins and its sequence source is
  * stubbed, so this checks only the bookkeeping.
  */
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEMO_SEQUENCE } from "#lib/features/create/shared/components/method-previews/method-preview-demo.js";
 import { PREVIEW_MOVE_MS } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
-import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
+import { methodPreviewTurnMs } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 import { fakePictograph } from "./FakeMethodPictograph.svelte";
 import { mountGenerateScene } from "./generate-scene-ready-harness.svelte";
 
@@ -137,7 +137,7 @@ describe("Generate scene turn", () => {
     expect(progress()).toEqual(["null", "null", "null"]);
   });
 
-  it("plays the roll's first two moves one at a time, inside the turn", async () => {
+  it("plays the roll's moves one at a time, inside the turn", async () => {
     vi.useFakeTimers({
       toFake: [
         "setTimeout",
@@ -163,7 +163,7 @@ describe("Generate scene turn", () => {
     const started: number[][] = [[], [], []];
     const finished: number[][] = [[], [], []];
     let before = progress();
-    for (let at = 0; at < METHOD_PREVIEW_TIMING.turnMs; at += frameMs) {
+    for (let at = 0; at < methodPreviewTurnMs("generate"); at += frameMs) {
       await vi.advanceTimersByTimeAsync(frameMs);
       flushSync();
       const now = progress();
@@ -173,12 +173,13 @@ describe("Generate scene turn", () => {
       }
       before = now;
     }
-    // The first two steps move once each, the second only after the first
-    // has finished, and each plays out. The third stays still.
-    expect(started.map((times) => times.length)).toEqual([1, 1, 0]);
-    expect(finished.map((times) => times.length)).toEqual([1, 1, 0]);
+    // Each step moves once, only after the one before it has finished, and
+    // each plays out.
+    expect(started.map((times) => times.length)).toEqual([1, 1, 1]);
+    expect(finished.map((times) => times.length)).toEqual([1, 1, 1]);
     expect(started[1]![0]).toBeGreaterThanOrEqual(finished[0]![0]!);
-    for (const cell of [0, 1]) {
+    expect(started[2]![0]).toBeGreaterThanOrEqual(finished[1]![0]!);
+    for (const cell of [0, 1, 2]) {
       expect(finished[cell]![0]! - started[cell]![0]!).toBeGreaterThanOrEqual(
         PREVIEW_MOVE_MS - 2 * frameMs
       );
@@ -190,8 +191,8 @@ describe("Generate scene turn", () => {
       DEMO_SEQUENCE.steps[11]!.letter,
       DEMO_SEQUENCE.steps[12]!.letter,
     ]);
-    // A move only ever runs forward: the two that play wait at their start,
-    // and nothing, not even for one frame, jumps one to its end and back.
+    // A move only ever runs forward: each waits at its start, and nothing,
+    // not even for one frame, jumps one to its end and back.
     records.push(...changes.takeRecords());
     changes.disconnect();
     expect(records.length).toBeGreaterThan(20);
@@ -208,9 +209,9 @@ describe("Generate scene turn", () => {
         expect(value).toBeGreaterThanOrEqual(previous!);
       }
     }
-    // Both moves have landed before the turn ends.
-    expect(progress()).toEqual(["1", "1", "null"]);
+    // Every move has landed before the turn ends.
+    expect(progress()).toEqual(["1", "1", "1"]);
     scene.stop();
-    expect(progress()).toEqual(["1", "1", "null"]);
+    expect(progress()).toEqual(["1", "1", "1"]);
   });
 });
