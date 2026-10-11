@@ -132,9 +132,9 @@ export async function tapAt(
 /**
  * How long a step's move plays in a preview: the base pace of the step
  * grid's arrival, which plays each new step's move. The arrival slows a move
- * with turns to at most 360° a second; a turn has room for Construct's two
- * moves and Generate's two rolls only at the base pace, so every move plays
- * at it.
+ * with turns to at most 360° a second; a turn has room for two moves, in
+ * Construct and in Generate, only at the base pace, so every move plays at
+ * it.
  */
 export const PREVIEW_MOVE_MS = PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS;
 

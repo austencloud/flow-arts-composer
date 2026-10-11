@@ -1,10 +1,10 @@
 /**
  * The Generate preview scene reports ready once, when every cell it shows
  * has drawn, including when the box resizes to fewer cells before the last
- * one reported (the card would otherwise rest on its tint). On a turn, each
- * cell plays its move as the wave reaches it, on both rolls, and the moves
- * land inside the turn. Its pictographs are stand-ins and its sequence
- * source is stubbed, so this checks only the bookkeeping.
+ * one reported (the card would otherwise rest on its tint). On a turn, one
+ * roll lands and its first two steps play their moves one at a time, inside
+ * the turn. Its pictographs are stand-ins and its sequence source is
+ * stubbed, so this checks only the bookkeeping.
  */
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -137,7 +137,7 @@ describe("Generate scene turn", () => {
     expect(progress()).toEqual(["null", "null", "null"]);
   });
 
-  it("plays each cell's move with the wave, on both rolls, inside the turn", async () => {
+  it("plays the roll's first two moves one at a time, inside the turn", async () => {
     vi.useFakeTimers({
       toFake: [
         "setTimeout",
@@ -159,7 +159,7 @@ describe("Generate scene turn", () => {
     }
     scene.play(1);
     const frameMs = 16;
-    /** When each cell started and finished a move, once per roll. */
+    /** When each cell started and finished a move. */
     const started: number[][] = [[], [], []];
     const finished: number[][] = [[], [], []];
     let before = progress();
@@ -173,31 +173,25 @@ describe("Generate scene turn", () => {
       }
       before = now;
     }
-    // Each cell moves once a roll, in the wave's order, and every move
-    // plays out, the last roll's too.
-    expect(started.map((times) => times.length)).toEqual([2, 2, 2]);
-    expect(finished.map((times) => times.length)).toEqual([2, 2, 2]);
-    for (const roll of [0, 1]) {
-      expect(started[1]![roll]).toBeGreaterThan(started[0]![roll]!);
-      expect(started[2]![roll]).toBeGreaterThan(started[1]![roll]!);
-      for (const cell of [0, 1, 2]) {
-        expect(
-          finished[cell]![roll]! - started[cell]![roll]!
-        ).toBeGreaterThanOrEqual(PREVIEW_MOVE_MS - 2 * frameMs);
-      }
+    // The first two steps move once each, the second only after the first
+    // has finished, and each plays out. The third stays still.
+    expect(started.map((times) => times.length)).toEqual([1, 1, 0]);
+    expect(finished.map((times) => times.length)).toEqual([1, 1, 0]);
+    expect(started[1]![0]).toBeGreaterThanOrEqual(finished[0]![0]!);
+    for (const cell of [0, 1]) {
+      expect(finished[cell]![0]! - started[cell]![0]!).toBeGreaterThanOrEqual(
+        PREVIEW_MOVE_MS - 2 * frameMs
+      );
     }
-    // With no roll drawn, the second roll is the demo from its fifteenth
-    // step, wrapping to its first; each cell moves from the pose before it,
-    // the start position before the first step.
-    const start =
-      DEMO_SEQUENCE.startPlacement ?? DEMO_SEQUENCE.startingPlacement;
+    // With no roll drawn, the roll is the demo from its twelfth step; each
+    // cell moves from the pose before it.
     expect(cells().map((cell) => cell.dataset.motionStart)).toEqual([
-      DEMO_SEQUENCE.steps[13]!.letter,
-      DEMO_SEQUENCE.steps[14]!.letter,
-      start?.letter,
+      DEMO_SEQUENCE.steps[10]!.letter,
+      DEMO_SEQUENCE.steps[11]!.letter,
+      DEMO_SEQUENCE.steps[12]!.letter,
     ]);
-    // A move only ever runs forward. A new roll starts it over at 0; nothing
-    // else, not even for one frame, jumps it to its end and back.
+    // A move only ever runs forward: the two that play wait at their start,
+    // and nothing, not even for one frame, jumps one to its end and back.
     records.push(...changes.takeRecords());
     changes.disconnect();
     expect(records.length).toBeGreaterThan(20);
@@ -214,9 +208,9 @@ describe("Generate scene turn", () => {
         expect(value).toBeGreaterThanOrEqual(previous!);
       }
     }
-    // Every move has landed before the turn ends.
-    expect(progress()).toEqual(["1", "1", "1"]);
+    // Both moves have landed before the turn ends.
+    expect(progress()).toEqual(["1", "1", "null"]);
     scene.stop();
-    expect(progress()).toEqual(["1", "1", "1"]);
+    expect(progress()).toEqual(["1", "1", "null"]);
   });
 });
