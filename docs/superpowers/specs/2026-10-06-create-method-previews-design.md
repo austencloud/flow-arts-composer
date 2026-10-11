@@ -258,7 +258,10 @@ pair.
 
 A strip shows two blue and two red steps meeting as two combined steps. A
 square stacks the blue row over the red row and merges them into one. The
-finished picture is the latest pair's combined steps.
+finished picture is the latest pair's combined steps. After a turn, each
+combined step stays on the last frame of its play rather than switching back
+to the still pictograph: a prop can end its play a full turn from the still
+picture's angle, and the switch spun it round once.
 
 ### Tunnel
 
