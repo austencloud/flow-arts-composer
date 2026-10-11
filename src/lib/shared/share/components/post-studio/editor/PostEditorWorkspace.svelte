@@ -133,6 +133,9 @@
     type PostToolId,
     type PostToolSelection,
   } from "./post-editor-tools";
+  import { Icon, faCheck, faDiamond } from "@austencloud/video-editor/icons";
+
+  const ARROW = String.fromCharCode(8594);
 
   const t = useStrings();
 
@@ -2091,7 +2094,7 @@
       {t("common_cancel")}
     </PanelButton>
     <PanelButton variant="primary" onclick={() => void closeCrop(true)}>
-      <i class="fa-solid fa-check" aria-hidden="true"></i>
+      <Icon icon={faCheck} />
       {t("share_studio_done")}
     </PanelButton>
   </div>
@@ -2246,8 +2249,9 @@
 {#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
   <PostToolPanel
     {tool}
+    pluginTools={plugin?.ui?.tools ?? []}
     subject={tool === "transition" && transitionCut
-      ? `${labelFor(transitionCut.outgoing)} → ${labelFor(transitionCut.incoming)}`
+      ? `${labelFor(transitionCut.outgoing)} ${ARROW} ${labelFor(transitionCut.incoming)}`
       : tool === "music"
         ? editor.project.music?.label
         : editor.selectedPart === "tunnel"
@@ -2284,7 +2288,7 @@
       items={[
         {
           label: t("post_keyframe_remove_all_clip"),
-          icon: "fa-solid fa-diamond",
+          icon: faDiamond,
           disabled:
             editor.isLocked(editor.selectedItem.id) ||
             keyframeCount(editor.selectedItem) === 0,
@@ -2360,7 +2364,7 @@
       {:else}
         <div class="preview-frame">
           <div
-            class="preview-host"
+            class="preview-host ve-portal"
             inert={!!previewTarget}
             use:reparentToInspector={previewTarget}
           >
@@ -2390,7 +2394,7 @@
              top bar with the panel under it, the way desktop editors keep
              Export above the settings. -->
         <aside
-          class="panel-host"
+          class="panel-host ve-portal"
           class:external={layout === "viewer"}
           class:appearance={shown === "appearance" &&
             editor.selectedItem?.kind === "animation"}
@@ -2639,7 +2643,7 @@
   bind:activeSnapPoint={appearanceSnapPoint}
   title="Appearance"
   placement="bottom"
-  class="post-appearance-main-drawer"
+  class="post-appearance-main-drawer ve-portal"
   backdropClass="edit-panel-backdrop"
   snapPoints={appearanceSnapPoints}
   resizeWithSnapPoints
@@ -2705,8 +2709,8 @@
     --sheet-max-height: min(88dvh, 760px);
     --sheet-bg:
       linear-gradient(
-        var(--theme-panel-bg, #0f0f14),
-        var(--theme-panel-bg, #0f0f14)
+        var(--ve-theme-panel-bg, #0f0f14),
+        var(--ve-theme-panel-bg, #0f0f14)
       ),
       var(--sheet-bg-solid, #0f0f14);
     --sheet-filter: none;
@@ -2737,7 +2741,7 @@
     height: 100%;
     min-height: 0;
     overflow-y: auto;
-    background: var(--theme-panel-bg, transparent);
+    background: var(--ve-theme-panel-bg, transparent);
   }
 
   /* A phone stacks the parts in the order they are used: the top bar, the
@@ -2813,13 +2817,13 @@
 
   .file-error {
     margin: 0;
-    color: var(--semantic-warning, #fbbf24);
+    color: var(--ve-semantic-warning, #fbbf24);
     font-size: 0.875rem;
     text-align: center;
   }
 
   .import-differences {
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.8125rem;
     line-height: 1.4;
   }
@@ -2830,7 +2834,7 @@
   }
 
   .import-differences summary:focus-visible {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 2px;
   }
 
@@ -2854,7 +2858,7 @@
     bottom: 0;
     z-index: 1;
     min-width: 0;
-    background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
+    background: var(--ve-theme-panel-bg, rgba(10, 12, 18, 0.92));
   }
 
   /* A phone's tools sit in a dock an open panel takes over. While its place
@@ -2867,8 +2871,8 @@
     margin: auto calc(-1 * var(--post-gap)) calc(-1 * var(--post-gap));
     padding: 0.5rem var(--post-gap)
       max(0.5rem, env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid var(--theme-stroke, #484755);
-    background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
+    border-top: 1px solid var(--ve-theme-stroke, #484755);
+    background: var(--ve-theme-panel-bg, rgba(10, 12, 18, 0.92));
     /* A filter would anchor the appearance drawers to this dock, clipping
        their headers on phones instead of positioning them in the viewport. */
     backdrop-filter: none;
@@ -2888,8 +2892,8 @@
 
   .post-editor[data-mode="timing"][data-layout="wide"] .panel-host {
     padding: 0.5rem 1rem;
-    background: var(--theme-panel-bg);
-    border: 1px solid var(--theme-stroke);
+    background: var(--ve-theme-panel-bg);
+    border: 1px solid var(--ve-theme-stroke);
     border-radius: 0.75rem;
   }
 
@@ -2960,8 +2964,8 @@
   .draft-notice {
     flex-basis: 100%;
     min-width: 0;
-    color: var(--semantic-warning, #fbbf24);
-    font-size: var(--font-size-compact, 0.75rem);
+    color: var(--ve-semantic-warning, #fbbf24);
+    font-size: var(--ve-font-size-compact, 0.75rem);
   }
 
   .stage-row {
@@ -3040,6 +3044,9 @@
       --font-size-sm: 1.125rem;
       --font-size-compact: 1rem;
       --min-touch-target: 3rem;
+      --ve-font-size-sm: 1.125rem;
+      --ve-font-size-compact: 1rem;
+      --ve-min-touch-target: 3rem;
       --post-panel-width: 28rem;
     }
   }

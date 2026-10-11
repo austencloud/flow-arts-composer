@@ -8,6 +8,14 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { formatPostClock } from "./post-format";
   import { readVideoFile, videoFileError } from "./post-editor-files";
+  import {
+    Icon,
+    faDrum,
+    faFilm,
+    faPlus,
+  } from "@austencloud/video-editor/icons";
+
+  const MIDDOT = String.fromCharCode(183);
 
   const t = useStrings();
 
@@ -111,7 +119,7 @@
               editor.renameTake(take.id, event.currentTarget.value)}
           />
           <p class="meta">
-            {formatPostClock(take.durationSeconds)} · {sourceText(take)} ·
+            {formatPostClock(take.durationSeconds)} &middot; {sourceText(take)} &middot;
             {clips === 0
               ? t("post_editor_no_clips")
               : clips === 1
@@ -136,14 +144,14 @@
                 variant={status?.id === "confirmed" ? "secondary" : "primary"}
                 onclick={() => onTapBeats(take.id)}
               >
-                <i class="fa-solid fa-drum" aria-hidden="true"></i>
+                <Icon icon={faDrum} />
                 {t("post_editor_tap_beats")}
               </PanelButton>
               <PanelButton
                 onclick={() => editor.appendTakeClip(take.id)}
                 ariaLabel={t("post_editor_add_clip_of", { take: name })}
               >
-                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <Icon icon={faPlus} />
                 {t("post_editor_add_clip")}
               </PanelButton>
             {:else if take.ref.kind === "local"}
@@ -172,7 +180,7 @@
       disabled={busy}
       ariaBusy={busy}
     >
-      <i class="fa-solid fa-film" aria-hidden="true"></i>
+      <Icon icon={faFilm} />
       {busy
         ? t("share_studio_reading_video")
         : t("share_studio_choose_device_video")}
@@ -192,7 +200,7 @@
               {video.label}
               <span class="meta">
                 {formatPostClock(video.durationSeconds)}{video.detail
-                  ? ` · ${video.detail}`
+                  ? ` ${MIDDOT} ${video.detail}`
                   : ""}
               </span>
             </span>
@@ -248,20 +256,20 @@
 
   .take {
     padding: 0.75rem;
-    border: 1px solid var(--theme-stroke, #484755);
+    border: 1px solid var(--ve-theme-stroke, #484755);
     border-radius: 0.625rem;
-    background: var(--theme-card-bg);
+    background: var(--ve-theme-card-bg);
   }
 
   .name {
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
-    min-height: var(--min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
     padding: 0 0.5rem;
     border: 1px solid transparent;
     border-radius: 0.375rem;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     background: transparent;
     font: inherit;
     font-size: 1rem;
@@ -270,11 +278,11 @@
 
   .name:hover,
   .name:focus {
-    border-color: var(--theme-stroke, #484755);
+    border-color: var(--ve-theme-stroke, #484755);
   }
 
   .name:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 1px;
   }
 
@@ -288,7 +296,7 @@
   .meta,
   .warn {
     margin: 0;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
     line-height: 1.4;
   }
@@ -299,15 +307,15 @@
   }
 
   .warn {
-    color: var(--semantic-warning, #fbbf24);
+    color: var(--ve-semantic-warning, #fbbf24);
   }
 
   .status-confirmed {
-    color: var(--semantic-success, #4ade80);
+    color: var(--ve-semantic-success, #4ade80);
   }
 
   .status-stale {
-    color: var(--semantic-warning, #fbbf24);
+    color: var(--ve-semantic-warning, #fbbf24);
   }
 
   .catalog {
@@ -317,14 +325,14 @@
     gap: 0.75rem;
     min-width: 0;
     padding: 0.5rem 0.75rem;
-    border: 1px solid var(--theme-stroke, #484755);
+    border: 1px solid var(--ve-theme-stroke, #484755);
     border-radius: 0.625rem;
   }
 
   .catalog-name {
     display: grid;
     min-width: 0;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     font-size: 0.875rem;
     overflow-wrap: anywhere;
   }

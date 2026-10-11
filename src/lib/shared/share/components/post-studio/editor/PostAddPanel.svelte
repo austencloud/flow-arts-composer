@@ -11,7 +11,7 @@
     VideoEditorPlugin,
     VideoEditorState,
   } from "@austencloud/video-editor";
-  import { Icon } from "@austencloud/video-editor/icons";
+  import { Icon, faCloud } from "@austencloud/video-editor/icons";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { formatPostClock } from "./post-format";
   import {
@@ -85,11 +85,10 @@
 
   const TEXT_SIZE: PostTextSize = "m";
 
-  /** One button: a core entry draws its Font Awesome class, a plugin's its own icon. */
+  /** One button: a core entry holds its icon, a plugin's brings its own. */
   interface AddEntry {
     id: string;
-    icon: string;
-    svg: PluginAddItem["icon"] | null;
+    icon: PluginAddItem["icon"];
     label: string;
     run: () => void;
   }
@@ -100,7 +99,6 @@
       ? {
           id,
           icon: ITEM_KIND_ICON.text,
-          svg: null,
           label: itemKindLabel(t, "text"),
           run: () =>
             addOverlay({
@@ -112,7 +110,6 @@
       : {
           id,
           icon: ITEM_KIND_ICON.card,
-          svg: null,
           label: t("post_editor_add_card_end"),
           run: addCard,
         };
@@ -125,8 +122,7 @@
             ? [
                 {
                   id: entry.id,
-                  icon: "",
-                  svg: entry.icon,
+                  icon: entry.icon,
                   label: entry.label(translateKey(t)),
                   run: () => {
                     editor.pause();
@@ -148,7 +144,7 @@
       ariaBusy={busy}
       fullWidth
     >
-      <i class="fa-solid {ITEM_KIND_ICON.video}" aria-hidden="true"></i>
+      <Icon icon={ITEM_KIND_ICON.video} />
       {busy
         ? t("share_studio_reading_video")
         : t("post_editor_add_video_device")}
@@ -159,11 +155,11 @@
         ariaLabel={`${t("share_studio_add")} ${video.label}`}
         fullWidth
       >
-        <i class="fa-solid fa-cloud" aria-hidden="true"></i>
+        <Icon icon={faCloud} />
         <span class="saved">
           <span class="saved-name">{video.label}</span>
           <span class="saved-meta">
-            {t("post_editor_saved_video")} · {formatPostClock(
+            {t("post_editor_saved_video")} &middot; {formatPostClock(
               video.durationSeconds
             )}
           </span>
@@ -172,10 +168,7 @@
     {/each}
     {#each ITEMS as item (item.id)}
       <PanelButton onclick={item.run} fullWidth>
-        {#if item.svg}<Icon icon={item.svg} />{:else}<i
-            class="fa-solid {item.icon}"
-            aria-hidden="true"
-          ></i>{/if}
+        <Icon icon={item.icon} />
         {item.label}
       </PanelButton>
     {/each}
@@ -207,7 +200,7 @@
   }
 
   .saved-meta {
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
   }

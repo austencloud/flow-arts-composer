@@ -3,6 +3,18 @@
   import { useStrings } from "@austencloud/video-editor/strings";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
+  import {
+    Icon,
+    faDiamond,
+    faDownload,
+    faFileExport,
+    faFileImport,
+    faRightLeft,
+    faRotate,
+    faSpinner,
+    faTriangleExclamation,
+    faUpload,
+  } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -52,7 +64,7 @@
       ? [
           {
             label: t("post_keyframe_remove_all_post"),
-            icon: "fa-solid fa-diamond",
+            icon: faDiamond,
             action: onClearPostKeyframes,
             disabled: clearableKeyframes === 0,
           },
@@ -62,7 +74,7 @@
       ? [
           {
             label: "Import InShot project",
-            icon: "fa-solid fa-file-import",
+            icon: faFileImport,
             action: onImport,
             disabled: exporting,
           },
@@ -72,7 +84,7 @@
       ? [
           {
             label: "View InShot differences",
-            icon: "fa-solid fa-triangle-exclamation",
+            icon: faTriangleExclamation,
             action: onImportDifferences,
           },
         ]
@@ -81,20 +93,20 @@
       ? [
           {
             label: mirrored ? "Unmirror post" : "Mirror whole post",
-            icon: "fa-solid fa-right-left",
+            icon: faRightLeft,
             action: onMirror,
             disabled: exporting,
           },
         ]
       : []),
     ...(canRetry && onRetry
-      ? [{ label: "Retry save", icon: "fa-solid fa-rotate", action: onRetry }]
+      ? [{ label: "Retry save", icon: faRotate, action: onRetry }]
       : []),
     ...(onBackup
       ? [
           {
             label: "Save backup",
-            icon: "fa-solid fa-download",
+            icon: faDownload,
             action: onBackup,
           },
         ]
@@ -103,7 +115,7 @@
       ? [
           {
             label: "Restore backup",
-            icon: "fa-solid fa-upload",
+            icon: faUpload,
             action: onRestore,
           },
         ]
@@ -128,10 +140,7 @@
       ariaBusy={exporting}
       ariaLabel={t("post_editor_export")}
     >
-      <i
-        class="fa-solid {exporting ? 'fa-spinner fa-spin' : 'fa-file-export'}"
-        aria-hidden="true"
-      ></i>
+      <Icon icon={exporting ? faSpinner : faFileExport} spin={exporting} />
       <span class="export-label">{t("post_editor_export")}</span>
     </PanelButton>
   {/if}
@@ -150,12 +159,6 @@
   @container post-editor-header (max-width: 30rem) {
     .export-label {
       display: none;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .fa-spin {
-      animation: none;
     }
   }
 </style>

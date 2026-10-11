@@ -1,4 +1,4 @@
-import type { VideoEditorPlugin } from "@austencloud/video-editor";
+import type { PluginTool, VideoEditorPlugin } from "@austencloud/video-editor";
 import type { StringKey, Translate } from "@austencloud/video-editor/strings";
 import type {
   PostFraming,
@@ -9,23 +9,54 @@ import type {
   PostChannelValue,
   PostEasingPresetId,
 } from "@austencloud/video-editor/core";
+import {
+  faArrowsLeftRightToLine,
+  faBorderTopLeft,
+  faCircleHalfStroke,
+  faClock,
+  faClone,
+  faCropSimple,
+  faFileExport,
+  faFilm,
+  faFont,
+  faGaugeHigh,
+  faIdCard,
+  faImage,
+  faMusic,
+  faPen,
+  faPhotoFilm,
+  faPlus,
+  faRightLeft,
+  faRulerCombined,
+  faScissors,
+  faTrashCan,
+  faUpDownLeftRight,
+  faVolumeHigh,
+  faWandSparkles,
+  faXmark,
+  type IconDefinition,
+} from "@austencloud/video-editor/icons";
 import type { PostMovesMode } from "$lib/shared/post-studio-plugin";
-import type { PostToolId } from "./post-editor-tools";
+import type {
+  CoreActionToolId,
+  CorePanelToolId,
+  PostToolId,
+} from "./post-editor-tools";
 
-/** The names and icons every part of the editor shows for an item kind. */
+/**
+ * The names and icons every part of the editor shows for an item kind. The
+ * core kinds hold their icons here; a plugin kind draws its own (`ui.icon`).
+ */
 
-export const ITEM_KIND_ICON: Record<PostItemKind, string> = {
-  video: "fa-film",
-  image: "fa-image",
-  card: "fa-id-card",
-  animation: "fa-person-running",
-  moves: "fa-shapes",
-  carousel: "fa-table-cells",
-  text: "fa-font",
-  titles: "fa-heading",
+export const ITEM_KIND_ICON: Pick<
+  Record<PostItemKind, IconDefinition>,
+  "video" | "image" | "card" | "text"
+> = {
+  video: faFilm,
+  image: faImage,
+  card: faIdCard,
+  text: faFont,
 };
-
-export const MANDALA_ICON = "fa-sun";
 
 /** `t` with a plain string key, the shape a plugin's `label(t)` takes. */
 export function translateKey(t: Translate): (key: string) => string {
@@ -59,44 +90,53 @@ export function itemKindLabel(
   }
 }
 
-export function itemIcon(item: PostItem): string {
-  return item.kind === "moves" && item.mode === "mandala"
-    ? MANDALA_ICON
-    : ITEM_KIND_ICON[item.kind];
+/** An item's icon: its core kind's, else the one its plugin gives the kind. */
+export function itemIcon(
+  item: PostItem,
+  plugin: VideoEditorPlugin | null = null
+): IconDefinition | null {
+  const core: Partial<Record<PostItemKind, IconDefinition>> = ITEM_KIND_ICON;
+  if (core[item.kind]) return core[item.kind]!;
+  const ui = plugin?.itemKinds.find((d) => d.kind === item.kind)?.ui;
+  return ui?.iconFor?.(item) ?? ui?.icon ?? null;
 }
 
-/** The tool row's icons, one per tool. */
-export const TOOL_ICON: Record<PostToolId, string> = {
-  videos: "fa-photo-film",
-  add: "fa-plus",
-  canvas: "fa-ruler-combined",
-  look: "fa-palette",
-  export: "fa-file-export",
-  trim: "fa-arrows-left-right-to-line",
-  timing: "fa-clock",
-  crop: "fa-crop-simple",
-  speed: "fa-gauge-high",
-  titles: "fa-heading",
-  volume: "fa-volume-high",
-  layout: "fa-table-cells-large",
-  position: "fa-up-down-left-right",
-  border: "fa-border-top-left",
-  fade: "fa-circle-half-stroke",
-  transition: "fa-right-left",
-  effects: "fa-wand-sparkles",
-  labels: "fa-hashtag",
-  appearance: "fa-sliders",
-  shows: "fa-shapes",
-  sequence: "fa-shuffle",
-  text: "fa-font",
-  rename: "fa-pen",
-  music: "fa-music",
-  back: "fa-xmark",
-  split: "fa-scissors",
-  beats: "fa-drum",
-  duplicate: "fa-clone",
-  delete: "fa-trash-can",
+/** The tool row's icons for the core tools; a plugin tool brings its own. */
+export const TOOL_ICON: Record<
+  CorePanelToolId | CoreActionToolId,
+  IconDefinition
+> = {
+  videos: faPhotoFilm,
+  add: faPlus,
+  canvas: faRulerCombined,
+  export: faFileExport,
+  trim: faArrowsLeftRightToLine,
+  timing: faClock,
+  crop: faCropSimple,
+  speed: faGaugeHigh,
+  volume: faVolumeHigh,
+  position: faUpDownLeftRight,
+  border: faBorderTopLeft,
+  fade: faCircleHalfStroke,
+  transition: faRightLeft,
+  effects: faWandSparkles,
+  text: faFont,
+  rename: faPen,
+  music: faMusic,
+  back: faXmark,
+  split: faScissors,
+  duplicate: faClone,
+  delete: faTrashCan,
 };
+
+/** A tool's icon: a core tool's, else the one the plugin's tool of that id gives it. */
+export function toolIcon(
+  id: PostToolId,
+  pluginTools: readonly PluginTool[] = []
+): IconDefinition | null {
+  const core: Partial<Record<string, IconDefinition>> = TOOL_ICON;
+  return core[id] ?? pluginTools.find((tool) => tool.id === id)?.icon ?? null;
+}
 
 /** The short name under a tool's icon, also its panel's title. */
 export function toolLabel(
@@ -198,7 +238,7 @@ export function itemDisplayLabel(
 }
 
 /** The tool whose panel edits a channel, so a keyframe row shares its name and icon. */
-const CHANNEL_TOOL: Record<PostKeyframeChannel, PostToolId> = {
+const CHANNEL_TOOL: Record<PostKeyframeChannel, CorePanelToolId> = {
   framing: "crop",
   sourceGeometry: "position",
   box: "position",
@@ -212,8 +252,8 @@ export function channelLabel(
   return toolLabel(t, CHANNEL_TOOL[channel]);
 }
 
-export function channelIcon(channel: PostKeyframeChannel): string {
-  return TOOL_ICON[CHANNEL_TOOL[channel]]!;
+export function channelIcon(channel: PostKeyframeChannel): IconDefinition {
+  return TOOL_ICON[CHANNEL_TOOL[channel]];
 }
 
 /** The one number a channel's value reads as: zoom for Crop, opacity for Fade. */

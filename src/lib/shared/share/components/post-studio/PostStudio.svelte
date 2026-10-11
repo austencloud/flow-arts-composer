@@ -30,6 +30,7 @@
   import type { PostStudioShareExport } from "./post-studio-share-export";
   import { withPostStudioPropType } from "$lib/shared/post-studio-plugin/ui/post-studio-prop-render-options";
   import { provideStrings } from "@austencloud/video-editor/strings";
+  import "@austencloud/video-editor/css/video-editor-tokens.css";
   import { tkaEditorTranslate } from "$lib/shared/media-composition/state/editor-strings";
   import PostEditorWorkspace from "./editor/PostEditorWorkspace.svelte";
   import TkaEditorScope from "$lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
@@ -202,43 +203,52 @@
   }
 </script>
 
-{#key sequence.id}
-  <TkaEditorScope
-    {active}
-    {sequence}
-    {initialProject}
-    {feature}
-    {cardPreviewUrl}
-    {animationPreviewUrl}
-    {animationPreviewType}
-    cardRenderOptions={synchronizedCardRenderOptions}
-    {isPreparingCard}
-    {isPreparingAnimation}
-    {selectedPropType}
-    onPropChange={(propType) => {
-      urlPropType = undefined;
-      projectPropType = propType;
-    }}
-    onProjectPropChange={(propType) => (projectPropType = propType)}
-    {onRequestAnimation}
-    {registerExport}
-  >
-    {#snippet children(scope)}
-      <PostEditorWorkspace
-        editor={scope.editor}
-        plugin={scope.plugin}
-        inspectorTarget={scope.inspectorTarget}
-        {active}
-        {onSaveDraft}
-        {draftLoadError}
-        {onExported}
-        {onSharePost}
-        {previewTarget}
-        {sharing}
-        {audioSeed}
-        onAudioChange={setAudio}
-        registerExport={scope.registerExport}
-      />
-    {/snippet}
-  </TkaEditorScope>
-{/key}
+<!-- The editor's --ve-* tokens resolve under this class. The box adds no layout. -->
+<div class="ve-root">
+  {#key sequence.id}
+    <TkaEditorScope
+      {active}
+      {sequence}
+      {initialProject}
+      {feature}
+      {cardPreviewUrl}
+      {animationPreviewUrl}
+      {animationPreviewType}
+      cardRenderOptions={synchronizedCardRenderOptions}
+      {isPreparingCard}
+      {isPreparingAnimation}
+      {selectedPropType}
+      onPropChange={(propType) => {
+        urlPropType = undefined;
+        projectPropType = propType;
+      }}
+      onProjectPropChange={(propType) => (projectPropType = propType)}
+      {onRequestAnimation}
+      {registerExport}
+    >
+      {#snippet children(scope)}
+        <PostEditorWorkspace
+          editor={scope.editor}
+          plugin={scope.plugin}
+          inspectorTarget={scope.inspectorTarget}
+          {active}
+          {onSaveDraft}
+          {draftLoadError}
+          {onExported}
+          {onSharePost}
+          {previewTarget}
+          {sharing}
+          {audioSeed}
+          onAudioChange={setAudio}
+          registerExport={scope.registerExport}
+        />
+      {/snippet}
+    </TkaEditorScope>
+  {/key}
+</div>
+
+<style>
+  .ve-root {
+    display: contents;
+  }
+</style>

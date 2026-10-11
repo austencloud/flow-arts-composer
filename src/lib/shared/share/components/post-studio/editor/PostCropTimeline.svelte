@@ -42,6 +42,15 @@
     secondsToPixels,
     snapToTargets,
   } from "./timeline/post-timeline-geometry";
+  import {
+    Icon,
+    faBackwardFast,
+    faBackwardStep,
+    faForwardFast,
+    faForwardStep,
+    faPause,
+    faPlay,
+  } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -444,7 +453,7 @@
         aria-keyshortcuts="ArrowUp"
         title={t("post_crop_beat_previous")}
       >
-        <i class="fa-solid fa-backward-fast" aria-hidden="true"></i>
+        <Icon icon={faBackwardFast} />
         <span class="step-word" aria-hidden="true">{t("post_crop_beat")}</span>
       </button>
       <button
@@ -456,7 +465,7 @@
         aria-keyshortcuts="ArrowLeft"
         title={t("post_editor_frame_back")}
       >
-        <i class="fa-solid fa-backward-step" aria-hidden="true"></i>
+        <Icon icon={faBackwardStep} />
       </button>
       <button
         type="button"
@@ -467,10 +476,7 @@
           : t("share_studio_deep_play")}
         aria-keyshortcuts="Space"
       >
-        <i
-          class="fa-solid {editor.isPlaying ? 'fa-pause' : 'fa-play'}"
-          aria-hidden="true"
-        ></i>
+        <Icon icon={editor.isPlaying ? faPause : faPlay} />
       </button>
       <button
         type="button"
@@ -481,7 +487,7 @@
         aria-keyshortcuts="ArrowRight"
         title={t("post_editor_frame_forward")}
       >
-        <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
+        <Icon icon={faForwardStep} />
       </button>
       <button
         type="button"
@@ -493,7 +499,7 @@
         title={t("post_crop_beat_next")}
       >
         <span class="step-word" aria-hidden="true">{t("post_crop_beat")}</span>
-        <i class="fa-solid fa-forward-fast" aria-hidden="true"></i>
+        <Icon icon={faForwardFast} />
       </button>
     </div>
     <div class="clock">
@@ -682,18 +688,18 @@
     align-items: center;
     justify-content: center;
     gap: 0.375rem;
-    height: var(--min-touch-target, 44px);
+    height: var(--ve-min-touch-target, 44px);
     flex: none;
-    border: 1px solid var(--theme-stroke, #484755);
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg);
+    border: 1px solid var(--ve-theme-stroke, #484755);
+    color: var(--ve-theme-text, #fff);
+    background: var(--ve-theme-card-bg);
     font: inherit;
     font-size: 0.875rem;
     cursor: pointer;
   }
 
   .round {
-    width: var(--min-touch-target, 44px);
+    width: var(--ve-min-touch-target, 44px);
     padding: 0;
     border-radius: 50%;
   }
@@ -701,7 +707,7 @@
   .play {
     width: 3.25rem;
     height: 3.25rem;
-    border-color: var(--theme-accent, #d4813a);
+    border-color: var(--ve-theme-accent, #d4813a);
   }
 
   .step-btn {
@@ -717,7 +723,7 @@
 
   .round:focus-visible,
   .step-btn:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 2px;
   }
 
@@ -726,8 +732,8 @@
     .step-btn:not(:disabled):hover {
       background: color-mix(
         in srgb,
-        var(--theme-accent, #d4813a) 12%,
-        var(--theme-card-bg)
+        var(--ve-theme-accent, #d4813a) 12%,
+        var(--ve-theme-card-bg)
       );
     }
   }
@@ -738,14 +744,14 @@
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     font-size: 0.9375rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
   .total {
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
   }
 
   .keys {
@@ -762,7 +768,7 @@
      row stays either way, level with the ruler. */
   .head-clock {
     display: none;
-    --typeable-font-size: var(--font-size-compact, 0.75rem);
+    --typeable-font-size: var(--ve-font-size-compact, 0.75rem);
     --typeable-min-width: 0;
   }
 
@@ -771,17 +777,18 @@
     --ruler-height: 28px;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+    border: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.08));
     border-radius: 0.5rem;
     overflow: hidden;
-    background: color-mix(in srgb, var(--theme-bg, #101018) 70%, #000);
+    background: color-mix(in srgb, var(--ve-theme-bg, #101018) 70%, #000);
   }
 
   .heads {
     display: grid;
     align-content: start;
-    border-inline-end: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
-    background: var(--theme-panel-bg, rgba(10, 12, 18, 0.92));
+    border-inline-end: 1px solid
+      var(--ve-theme-stroke, rgba(255, 255, 255, 0.08));
+    background: var(--ve-theme-panel-bg, rgba(10, 12, 18, 0.92));
   }
 
   .head {
@@ -789,9 +796,9 @@
     align-items: center;
     padding-inline: 0.625rem;
     box-sizing: border-box;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
-    color: var(--theme-text-dim, #bbb);
-    font-size: var(--font-size-compact, 0.75rem);
+    border-bottom: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.06));
+    color: var(--ve-theme-text-dim, #bbb);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     font-weight: 600;
     white-space: nowrap;
   }
@@ -810,7 +817,7 @@
     }
 
     .rows {
-      --ruler-height: calc(var(--min-touch-target, 44px) + 1px);
+      --ruler-height: calc(var(--ve-min-touch-target, 44px) + 1px);
     }
 
     .head-clock {
@@ -842,7 +849,7 @@
   .row {
     position: relative;
     box-sizing: border-box;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
+    border-bottom: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.06));
   }
 
   .track {
@@ -854,7 +861,7 @@
   .ruler {
     cursor: ew-resize;
     touch-action: none;
-    background: var(--theme-panel-elevated-bg);
+    background: var(--ve-theme-panel-elevated-bg);
   }
 
   /* Each label starts just after its tick, so the 0:00 label stays in view. */
@@ -868,8 +875,8 @@
     inset: 0 auto 0 0.625rem;
     display: flex;
     align-items: center;
-    color: var(--theme-text-dim, #bbb);
-    font-size: var(--font-size-compact, 0.75rem);
+    color: var(--ve-theme-text-dim, #bbb);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     white-space: nowrap;
     pointer-events: none;
   }
@@ -888,7 +895,7 @@
     border: 0;
     border-radius: 0.25rem;
     background: transparent;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font: inherit;
     transform: translateX(-50%);
     cursor: pointer;
@@ -915,7 +922,7 @@
   }
 
   .step.pass {
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
   }
 
   .step.pass .tick {
@@ -924,7 +931,7 @@
   }
 
   .step.on {
-    color: var(--theme-accent, #d4813a);
+    color: var(--ve-theme-accent, #d4813a);
   }
 
   .step.on .tick {
@@ -933,13 +940,17 @@
 
   @media (hover: hover) {
     .step:hover {
-      color: var(--theme-text, #fff);
-      background: color-mix(in srgb, var(--theme-text, #fff) 8%, transparent);
+      color: var(--ve-theme-text, #fff);
+      background: color-mix(
+        in srgb,
+        var(--ve-theme-text, #fff) 8%,
+        transparent
+      );
     }
   }
 
   .step:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: -2px;
   }
 
@@ -950,7 +961,7 @@
     bottom: 0;
     z-index: 1;
     width: 1px;
-    background: var(--theme-text, #fff);
+    background: var(--ve-theme-text, #fff);
     opacity: 0.14;
     pointer-events: none;
   }
@@ -968,7 +979,7 @@
     z-index: 3;
     width: 2px;
     margin-left: -1px;
-    background: var(--semantic-danger, #ff5d5d);
+    background: var(--ve-semantic-danger, #ff5d5d);
     pointer-events: none;
   }
 
@@ -978,7 +989,7 @@
     bottom: 0;
     z-index: 4;
     width: 1px;
-    background: var(--theme-accent);
+    background: var(--ve-theme-accent);
     opacity: 0.8;
     pointer-events: none;
   }

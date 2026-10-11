@@ -1,4 +1,14 @@
 <script lang="ts">
+  import {
+    Icon,
+    faCircleCheck,
+    faCircleExclamation,
+    faSpinner,
+  } from "@austencloud/video-editor/icons";
+
+  const ELLIPSIS = String.fromCharCode(8230);
+  const MIDDOT = String.fromCharCode(183);
+
   /**
    * Where the post last saved itself, and when. In a header row the text
    * keeps the width of its longest wording so the buttons beside it never
@@ -35,9 +45,9 @@
     error
       ? "Save failed"
       : saving
-        ? "Saving…"
+        ? "Saving" + ELLIPSIS
         : time
-          ? `${place} · ${time}`
+          ? `${place} ${MIDDOT} ${time}`
           : place
   );
 </script>
@@ -49,16 +59,13 @@
   class:error
   class:header
 >
-  <i
-    class="fa-solid {error
-      ? 'fa-circle-exclamation'
-      : saving
-        ? 'fa-spinner fa-spin'
-        : 'fa-circle-check'}"
-    aria-hidden="true"
-  ></i>
+  <Icon
+    icon={error ? faCircleExclamation : saving ? faSpinner : faCircleCheck}
+    spin={!error && saving}
+  />
   <span class="label">
-    {#if header}<span class="ghost" aria-hidden="true">{place} · 12:59 PM</span
+    {#if header}<span class="ghost" aria-hidden="true"
+        >{place} &middot; 12:59 PM</span
       >{/if}<span class="live">{label}</span>
   </span>
 </span>
@@ -70,11 +77,11 @@
     gap: 0.375rem;
     min-width: 0;
     white-space: nowrap;
-    color: var(--theme-text-muted, #b7b7c2);
-    font-size: var(--font-size-compact, 0.75rem);
+    color: var(--ve-theme-text-muted, #b7b7c2);
+    font-size: var(--ve-font-size-compact, 0.75rem);
   }
 
-  i {
+  .draft-status :global(.ve-icon) {
     flex: none;
   }
 
@@ -98,7 +105,7 @@
   }
 
   .error {
-    color: var(--semantic-error, #ffb4b4);
+    color: var(--ve-semantic-error, #ffb4b4);
   }
 
   /* A narrow header keeps the icon; the words stay for screen readers. */
@@ -120,12 +127,6 @@
       height: 1px;
       overflow: hidden;
       clip-path: inset(50%);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .fa-spin {
-      animation: none;
     }
   }
 </style>

@@ -3,6 +3,8 @@
   import type { PostSourceGeometry } from "@austencloud/video-editor/core";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
 
+  const DEGREE = String.fromCharCode(176);
+
   const t = useStrings();
 
   interface Props {
@@ -92,7 +94,7 @@
       <span class="name" aria-hidden="true">{t("post_editor_box_turn")}</span>
       <TypeableValue
         label={t("post_editor_box_turn")}
-        text={`${Number(geometry.rotation.toFixed(1))}°`}
+        text={`${Number(geometry.rotation.toFixed(1))}${DEGREE}`}
         signed
         disabled={locked || frozen}
         oncommit={(degrees) =>
@@ -131,12 +133,12 @@
     gap: 0.5rem 0.625rem;
   }
   .name {
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
   }
   .hint {
     margin: 0;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
   }
 </style>

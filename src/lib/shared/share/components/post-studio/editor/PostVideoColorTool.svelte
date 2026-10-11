@@ -2,6 +2,10 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
   import type { PostVideoColorGrade } from "@austencloud/video-editor/core";
+  import { Icon, faWandMagicSparkles } from "@austencloud/video-editor/icons";
+
+  const ELLIPSIS = String.fromCharCode(8230);
+  const DEGREE = String.fromCharCode(176);
 
   interface Props {
     grade?: PostVideoColorGrade;
@@ -17,14 +21,14 @@
     $props();
 
   const percent = (value: number) => `${Math.round(value)}%`;
-  const degrees = (value: number) => `${Math.round(value)}°`;
+  const degrees = (value: number) => `${Math.round(value)}${DEGREE}`;
 </script>
 
 <div class="color-tool">
   <div class="actions">
     <PanelButton onclick={onAuto} disabled={locked || grading}>
-      <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-      {grading ? "Analyzing video…" : "Auto adjust color"}
+      <Icon icon={faWandMagicSparkles} />
+      {grading ? "Analyzing video" + ELLIPSIS : "Auto adjust color"}
     </PanelButton>
     {#if grade}
       <PanelButton onclick={onReset} disabled={locked || grading}>
@@ -94,7 +98,7 @@
 
   .status {
     margin: 0;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
     line-height: 1.4;
   }

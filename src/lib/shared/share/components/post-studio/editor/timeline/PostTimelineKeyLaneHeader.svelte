@@ -4,6 +4,7 @@
   PostKeyframeChannel,
 } from "@austencloud/video-editor/core";
   import { channelIcon, channelLabel } from "../post-editor-labels";
+  import { Icon, faDiamond } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -38,7 +39,7 @@
     aria-label={t("post_timeline_channel_lane", { channel: name })}
     onclick={onFocus}
   >
-    <i class="fa-solid {channelIcon(channel)}" aria-hidden="true"></i>
+    <Icon icon={channelIcon(channel)} />
     <span class="lane-text">
       <span class="lane-label">{name}</span>
       {#if valueText}
@@ -58,19 +59,19 @@
     disabled={!canKey}
     onclick={onToggleKey}
   >
-    <i class="fa-solid fa-diamond" aria-hidden="true"></i>
+    <Icon icon={faDiamond} />
   </button>
 </div>
 
 <style>
   .key-lane-header {
-    --lane-header-bg: color-mix(in srgb, var(--theme-bg, #101018) 70%, #000);
+    --lane-header-bg: color-mix(in srgb, var(--ve-theme-bg, #101018) 70%, #000);
     display: flex;
     box-sizing: border-box;
     align-items: center;
     gap: 0.15rem;
     padding: 0 0.5rem 0 0.4375rem;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
+    border-bottom: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.06));
     background: var(--lane-header-bg);
   }
 
@@ -79,7 +80,7 @@
   .key-lane-header.focused {
     background: color-mix(
       in srgb,
-      var(--theme-accent) 12%,
+      var(--ve-theme-accent) 12%,
       var(--lane-header-bg)
     );
   }
@@ -90,30 +91,30 @@
     align-items: center;
     gap: 0.4rem;
     min-width: 0;
-    min-height: var(--min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
     padding: 0 0.35rem;
     border: 0;
     border-radius: 0.4rem;
     background: transparent;
-    color: var(--theme-text-dim);
+    color: var(--ve-theme-text-dim);
     cursor: pointer;
     font: inherit;
     text-align: left;
   }
 
   .key-lane-header.focused .lane-name {
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
   }
 
-  .lane-name i {
+  .lane-name :global(.ve-icon) {
     flex-shrink: 0;
     width: 1rem;
     font-size: 0.75rem;
     text-align: center;
   }
 
-  .key-lane-header.focused .lane-name i {
-    color: var(--theme-accent);
+  .key-lane-header.focused .lane-name :global(.ve-icon) {
+    color: var(--ve-theme-accent);
   }
 
   .lane-text {
@@ -131,26 +132,26 @@
   }
 
   .lane-label {
-    font-size: var(--font-size-compact, 0.75rem);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     font-weight: 600;
   }
 
   .lane-value {
-    color: var(--theme-text-dim);
+    color: var(--ve-theme-text-dim);
     font-size: 0.6875rem;
     font-variant-numeric: tabular-nums;
   }
 
   @media (hover: hover) {
     .lane-name:hover {
-      background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-      color: var(--theme-text);
+      background: var(--ve-theme-card-hover-bg, rgba(255, 255, 255, 0.08));
+      color: var(--ve-theme-text);
     }
   }
 
   .lane-name:focus-visible,
   .lane-key:focus-visible {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: -2px;
   }
 
@@ -159,29 +160,29 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    min-width: var(--min-touch-target, 44px);
-    min-height: var(--min-touch-target, 44px);
+    min-width: var(--ve-min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
     border: 1px solid transparent;
     border-radius: 0.4rem;
     background: transparent;
-    color: var(--theme-text-dim);
+    color: var(--ve-theme-text-dim);
     cursor: pointer;
     font-size: 0.8rem;
     transition:
-      background-color var(--transition-fast),
-      color var(--transition-fast);
+      background-color var(--ve-transition-fast),
+      color var(--ve-transition-fast);
   }
 
   @media (hover: hover) {
     .lane-key:not(:disabled):hover {
-      background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-      color: var(--theme-text);
+      background: var(--ve-theme-card-hover-bg, rgba(255, 255, 255, 0.08));
+      color: var(--ve-theme-text);
     }
   }
 
   .lane-key.active {
-    background: color-mix(in srgb, var(--theme-accent) 20%, transparent);
-    color: var(--theme-accent);
+    background: color-mix(in srgb, var(--ve-theme-accent) 20%, transparent);
+    color: var(--ve-theme-accent);
   }
 
   .lane-key:disabled {

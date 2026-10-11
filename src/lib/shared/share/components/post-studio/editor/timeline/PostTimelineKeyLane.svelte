@@ -21,6 +21,8 @@
   } from "../post-editor-labels";
   import { secondsToPixels } from "./post-timeline-geometry";
 
+  const ARROW = String.fromCharCode(8594);
+
   const t = useStrings();
 
   /**
@@ -122,7 +124,7 @@
               ? null
               : fromText === toText
                 ? fromText
-                : `${fromText} → ${toText}`,
+                : `${fromText} ${ARROW} ${toText}`,
           label: t("post_timeline_channel_curve", {
             channel: name,
             start: formatTime(segment.fromSeconds),
@@ -268,22 +270,22 @@
   .key-lane {
     position: relative;
     box-sizing: border-box;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
-    background: color-mix(in srgb, var(--theme-bg, #101018) 70%, #000);
+    border-bottom: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.06));
+    background: color-mix(in srgb, var(--ve-theme-bg, #101018) 70%, #000);
   }
 
   .lane-span {
     position: absolute;
     top: 0;
     bottom: 0;
-    background: color-mix(in srgb, var(--theme-accent) 6%, transparent);
+    background: color-mix(in srgb, var(--ve-theme-accent) 6%, transparent);
     border-inline: 1px dashed
-      color-mix(in srgb, var(--theme-accent) 30%, transparent);
+      color-mix(in srgb, var(--ve-theme-accent) 30%, transparent);
     pointer-events: none;
   }
 
   .key-lane.focused .lane-span {
-    background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
+    background: color-mix(in srgb, var(--ve-theme-accent) 12%, transparent);
   }
 
   /* The curve between two keys: a tap opens its easing. It sits under the
@@ -298,31 +300,36 @@
     justify-content: center;
     overflow: hidden;
     padding: 0;
-    border: 1px solid color-mix(in srgb, var(--theme-accent) 25%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--ve-theme-accent) 25%, transparent);
     border-radius: 0.375rem;
-    background: color-mix(in srgb, var(--theme-accent) 10%, transparent);
-    color: color-mix(in srgb, var(--theme-accent) 70%, var(--theme-text, #fff));
+    background: color-mix(in srgb, var(--ve-theme-accent) 10%, transparent);
+    color: color-mix(
+      in srgb,
+      var(--ve-theme-accent) 70%,
+      var(--ve-theme-text, #fff)
+    );
     cursor: pointer;
     font: inherit;
     transition:
-      background-color var(--transition-fast),
-      border-color var(--transition-fast);
+      background-color var(--ve-transition-fast),
+      border-color var(--ve-transition-fast);
   }
 
   .key-lane.focused .curve {
-    border-color: color-mix(in srgb, var(--theme-accent) 45%, transparent);
-    background: color-mix(in srgb, var(--theme-accent) 18%, transparent);
+    border-color: color-mix(in srgb, var(--ve-theme-accent) 45%, transparent);
+    background: color-mix(in srgb, var(--ve-theme-accent) 18%, transparent);
   }
 
   @media (hover: hover) {
     .curve:not(:disabled):hover {
-      border-color: var(--theme-accent);
-      background: color-mix(in srgb, var(--theme-accent) 26%, transparent);
+      border-color: var(--ve-theme-accent);
+      background: color-mix(in srgb, var(--ve-theme-accent) 26%, transparent);
     }
   }
 
   .curve:focus-visible {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 1px;
   }
 
@@ -351,8 +358,12 @@
     position: relative;
     padding: 0.05rem 0.35rem;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--theme-bg, #101018) 80%, transparent);
-    color: var(--theme-text, #fff);
+    background: color-mix(
+      in srgb,
+      var(--ve-theme-bg, #101018) 80%,
+      transparent
+    );
+    color: var(--ve-theme-text, #fff);
     font-size: 0.6875rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
@@ -370,7 +381,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: var(--min-touch-target, 44px);
+    width: var(--ve-min-touch-target, 44px);
     padding: 0;
     transform: translateX(-50%);
     border: 0;
@@ -383,34 +394,34 @@
     box-sizing: border-box;
     width: 14px;
     height: 14px;
-    border: 2px solid var(--theme-bg, #101018);
+    border: 2px solid var(--ve-theme-bg, #101018);
     border-radius: 3px;
-    background: var(--theme-text, #fff);
+    background: var(--ve-theme-text, #fff);
     transform: rotate(45deg);
     transition:
-      background-color var(--transition-fast),
-      transform var(--transition-fast);
+      background-color var(--ve-transition-fast),
+      transform var(--ve-transition-fast);
   }
 
   .key-lane.focused .kf-key-glyph {
-    background: var(--theme-accent, #d4813a);
+    background: var(--ve-theme-accent, #d4813a);
   }
 
   /* The playhead sits on this key, so an edit now changes it. */
   .kf-key.on .kf-key-glyph {
-    box-shadow: 0 0 0 2px var(--theme-text, #fff);
+    box-shadow: 0 0 0 2px var(--ve-theme-text, #fff);
     transform: rotate(45deg) scale(1.2);
   }
 
   @media (hover: hover) {
     .kf-key:hover .kf-key-glyph {
-      background: var(--theme-accent, #d4813a);
+      background: var(--ve-theme-accent, #d4813a);
       transform: rotate(45deg) scale(1.2);
     }
   }
 
   .kf-key:focus-visible .kf-key-glyph {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 3px;
   }
 

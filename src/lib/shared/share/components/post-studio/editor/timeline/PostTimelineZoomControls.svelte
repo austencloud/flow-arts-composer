@@ -1,10 +1,18 @@
 <script lang="ts">
-  import { Popover } from "bits-ui";
+  import { Popover } from "@austencloud/video-editor/ui";
   import { useStrings } from "@austencloud/video-editor/strings";
+  import {
+    Icon,
+    faArrowsLeftRight,
+    faChevronDown,
+    faMagnifyingGlass,
+    faMagnifyingGlassMinus,
+    faMagnifyingGlassPlus,
+  } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
-  /** The −, fit and + cluster that sits above the track headers. */
+  /** The minus, fit and plus cluster that sits above the track headers. */
   interface Props {
     collapseWhenNarrow?: boolean;
     onZoomOut: () => void;
@@ -18,6 +26,9 @@
     onZoomIn,
     onFit,
   }: Props = $props();
+
+  let open = $state(false);
+  let anchor = $state<HTMLElement | null>(null);
 </script>
 
 {#snippet controls()}
@@ -28,7 +39,7 @@
     aria-label={t("post_timeline_zoom_out")}
     title={t("post_timeline_zoom_out")}
   >
-    <i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i>
+    <Icon icon={faMagnifyingGlassMinus} />
   </button>
   <button
     type="button"
@@ -37,7 +48,7 @@
     aria-label={t("post_timeline_zoom_fit")}
     title={t("post_timeline_zoom_fit")}
   >
-    <i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i>
+    <Icon icon={faArrowsLeftRight} />
   </button>
   <button
     type="button"
@@ -46,7 +57,7 @@
     aria-label={t("post_timeline_zoom_in")}
     title={t("post_timeline_zoom_in")}
   >
-    <i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i>
+    <Icon icon={faMagnifyingGlassPlus} />
   </button>
 {/snippet}
 
@@ -56,36 +67,32 @@
 
 {#if collapseWhenNarrow}
   <div class="compact-zoom">
-    <Popover.Root>
-      <Popover.Trigger>
-        {#snippet child({ props })}
-          <button
-            {...props}
-            type="button"
-            class="zoom-btn"
-            aria-label={t("post_editor_zoom")}
-            title={t("post_editor_zoom")}
-          >
-            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-          </button>
-        {/snippet}
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          side="top"
-          align="start"
-          sideOffset={8}
-          collisionPadding={8}
-          class="zoom-popover"
-          aria-label={t("post_editor_zoom")}
-        >
-          <div class="post-timeline-zoom">
-            {@render controls()}
-          </div>
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+    <button
+      bind:this={anchor}
+      type="button"
+      class="zoom-btn"
+      aria-label={t("post_editor_zoom")}
+      title={t("post_editor_zoom")}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      onclick={() => (open = !open)}
+    >
+      <Icon icon={faMagnifyingGlass} />
+      <Icon icon={faChevronDown} />
+    </button>
+    <Popover
+      bind:open
+      {anchor}
+      label={t("post_editor_zoom")}
+      placement="top"
+      offset={8}
+    >
+      <div class="zoom-popover">
+        <div class="post-timeline-zoom">
+          {@render controls()}
+        </div>
+      </div>
+    </Popover>
   </div>
 {/if}
 
@@ -95,14 +102,13 @@
     padding: 0.25rem;
   }
 
-  :global(.zoom-popover) {
-    z-index: var(--z-dropdown, 1000);
-    border: 1px solid var(--theme-stroke-strong, #484755);
+  .zoom-popover {
+    border: 1px solid var(--ve-theme-stroke-strong, #484755);
     border-radius: 0.5rem;
-    background-color: var(--theme-bg-deep, #08080c);
+    background-color: var(--ve-theme-bg-deep, #08080c);
     background-image: linear-gradient(
-      var(--theme-panel-bg, #101014),
-      var(--theme-panel-bg, #101014)
+      var(--ve-theme-panel-bg, #101014),
+      var(--ve-theme-panel-bg, #101014)
     );
   }
 
@@ -128,30 +134,30 @@
     align-items: center;
     justify-content: center;
     gap: 0.375rem;
-    min-width: var(--min-touch-target, 44px);
-    min-height: var(--min-touch-target, 44px);
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
+    min-width: var(--ve-min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
+    border: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.14));
     border-radius: 0.5rem;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    color: var(--theme-text-dim);
+    background: var(--ve-theme-card-bg, rgba(255, 255, 255, 0.04));
+    color: var(--ve-theme-text-dim);
     cursor: pointer;
-    font-size: var(--font-size-compact, 0.75rem);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     transition:
-      background-color var(--duration-fast, 150ms) ease,
-      border-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background-color var(--ve-duration-fast, 150ms) ease,
+      border-color var(--ve-duration-fast, 150ms) ease,
+      color var(--ve-duration-fast, 150ms) ease;
   }
 
   @media (hover: hover) {
     .zoom-btn:hover {
-      border-color: var(--theme-accent);
-      background: color-mix(in srgb, var(--theme-accent) 12%, transparent);
-      color: var(--theme-text);
+      border-color: var(--ve-theme-accent);
+      background: color-mix(in srgb, var(--ve-theme-accent) 12%, transparent);
+      color: var(--ve-theme-text);
     }
   }
 
   .zoom-btn:focus-visible {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 2px;
   }
 

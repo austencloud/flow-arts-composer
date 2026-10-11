@@ -1,6 +1,13 @@
 <script lang="ts">
-  import type { PostItem, PostItemKind } from "@austencloud/video-editor/core";
-  import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
+  import type { PostItem } from "@austencloud/video-editor/core";
+  import {
+    Icon,
+    faDiamond,
+    faLink,
+    faLock,
+    faVolumeXmark,
+    type IconDefinition,
+  } from "@austencloud/video-editor/icons";
   import { formatPostClock, formatPostSpeed } from "../post-format";
   import { useStrings } from "@austencloud/video-editor/strings";
 
@@ -31,6 +38,8 @@
      */
     joinStart?: boolean;
     joinEnd?: boolean;
+    /** The item's kind icon: a core kind's, else the plugin's. */
+    kindIcon?: IconDefinition | null;
     /** The block is a part of the item, which selects on its own (tka: an animation's opening tunnel). */
     part?: { id: string; label: string; icon: IconDefinition } | null;
     /** The stretch this block covers when it shows only part of the item. */
@@ -51,20 +60,10 @@
     animated,
     joinStart = false,
     joinEnd = false,
+    kindIcon = null,
     part = null,
     span,
   }: Props = $props();
-
-  const KIND_ICON: Record<PostItemKind, string> = {
-    video: "fa-solid fa-film",
-    image: "fa-solid fa-image",
-    card: "fa-solid fa-id-card",
-    animation: "fa-solid fa-wand-magic-sparkles",
-    moves: "fa-solid fa-arrows-up-down-left-right",
-    carousel: "fa-solid fa-images",
-    text: "fa-solid fa-font",
-    titles: "fa-solid fa-heading",
-  };
 
   const speedLabel = $derived(
     item.kind === "video" && item.speed !== 1
@@ -127,24 +126,24 @@
 >
   {#if part}
     <Icon icon={part.icon} />
-  {:else}
-    <i class={KIND_ICON[item.kind]} aria-hidden="true"></i>
+  {:else if kindIcon}
+    <Icon icon={kindIcon} />
   {/if}
   <span class="item-label">{labelText}</span>
   {#if speedLabel}
     <span class="item-badge">{speedLabel}</span>
   {/if}
   {#if isMuted}
-    <i class="fa-solid fa-volume-xmark item-glyph" aria-hidden="true"></i>
+    <Icon icon={faVolumeXmark} class="item-glyph" />
   {/if}
   {#if item.fill}
-    <i class="fa-solid fa-link item-glyph" aria-hidden="true"></i>
+    <Icon icon={faLink} class="item-glyph" />
   {/if}
   {#if animated}
-    <i class="fa-solid fa-diamond item-glyph" aria-hidden="true"></i>
+    <Icon icon={faDiamond} class="item-glyph" />
   {/if}
   {#if locked}
-    <i class="fa-solid fa-lock item-glyph" aria-hidden="true"></i>
+    <Icon icon={faLock} class="item-glyph" />
   {/if}
 </button>
 
@@ -183,29 +182,29 @@
     min-width: 0;
     padding: 0 0.5rem;
     overflow: hidden;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
+    border: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.14));
     border-radius: 0.5rem;
     background: color-mix(
       in srgb,
-      var(--kind-tint, var(--theme-accent)) 22%,
-      var(--theme-card-bg, #1c1c26)
+      var(--kind-tint, var(--ve-theme-accent)) 22%,
+      var(--ve-theme-card-bg, #1c1c26)
     );
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     font: inherit;
-    font-size: var(--font-size-compact, 0.75rem);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     text-align: left;
     white-space: nowrap;
     cursor: pointer;
   }
 
   .post-timeline-item.kind-video {
-    --kind-tint: var(--theme-accent);
+    --kind-tint: var(--ve-theme-accent);
   }
   .post-timeline-item.kind-card {
-    --kind-tint: var(--semantic-info, #4f9dff);
+    --kind-tint: var(--ve-semantic-info, #4f9dff);
   }
   .post-timeline-item.kind-animation {
-    --kind-tint: var(--semantic-warning, #f6c85f);
+    --kind-tint: var(--ve-semantic-warning, #f6c85f);
   }
   .post-timeline-item.kind-animation.part {
     --kind-tint: #7cc4fa;
@@ -220,8 +219,7 @@
     --kind-tint: #f28b82;
   }
 
-  .post-timeline-item i:not(.item-glyph),
-  .post-timeline-item :global(.ve-icon) {
+  .post-timeline-item :global(.ve-icon:not(.item-glyph)) {
     flex-shrink: 0;
     font-size: 0.85em;
     opacity: 0.85;
@@ -240,7 +238,7 @@
     border-radius: 999px;
     background: color-mix(
       in srgb,
-      var(--kind-tint, var(--theme-accent)) 45%,
+      var(--kind-tint, var(--ve-theme-accent)) 45%,
       transparent
     );
     font-size: 0.7em;
@@ -248,7 +246,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .item-glyph {
+  .post-timeline-item :global(.item-glyph) {
     flex-shrink: 0;
     font-size: 0.75em;
     opacity: 0.8;
@@ -258,22 +256,22 @@
     .post-timeline-item:hover {
       border-color: color-mix(
         in srgb,
-        var(--kind-tint, var(--theme-accent)) 60%,
-        var(--theme-stroke)
+        var(--kind-tint, var(--ve-theme-accent)) 60%,
+        var(--ve-theme-stroke)
       );
     }
   }
 
   .post-timeline-item:focus-visible {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 2px;
   }
 
   /* A swipe across the timeline scrolls it. Once an item is selected, a
      drag on it moves it instead. */
   .post-timeline-item.selected {
-    border-color: var(--theme-accent);
-    box-shadow: inset 0 0 0 2px var(--theme-accent);
+    border-color: var(--ve-theme-accent);
+    box-shadow: inset 0 0 0 2px var(--ve-theme-accent);
     touch-action: none;
   }
 
@@ -296,16 +294,16 @@
   /* A selected pair reads as one outline, open where the halves meet. */
   .post-timeline-item.selected.join-start {
     box-shadow:
-      inset 0 2px 0 var(--theme-accent),
-      inset 0 -2px 0 var(--theme-accent),
-      inset -2px 0 0 var(--theme-accent);
+      inset 0 2px 0 var(--ve-theme-accent),
+      inset 0 -2px 0 var(--ve-theme-accent),
+      inset -2px 0 0 var(--ve-theme-accent);
   }
 
   .post-timeline-item.selected.join-end {
     box-shadow:
-      inset 0 2px 0 var(--theme-accent),
-      inset 0 -2px 0 var(--theme-accent),
-      inset 2px 0 0 var(--theme-accent);
+      inset 0 2px 0 var(--ve-theme-accent),
+      inset 0 -2px 0 var(--ve-theme-accent),
+      inset 2px 0 0 var(--ve-theme-accent);
   }
 
   .trim-handle {
@@ -335,9 +333,9 @@
     width: 4px;
     height: min(60%, 2rem);
     border-radius: 999px;
-    background: var(--theme-accent);
+    background: var(--ve-theme-accent);
     box-shadow: 0 0 0 1px
-      color-mix(in srgb, var(--theme-text, #fff) 40%, transparent);
+      color-mix(in srgb, var(--ve-theme-text, #fff) 40%, transparent);
   }
 
   /* The ring goes on the grip, not around the wider touch area. */
@@ -346,7 +344,7 @@
   }
 
   .trim-handle:focus-visible .handle-grip {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 2px;
   }
 

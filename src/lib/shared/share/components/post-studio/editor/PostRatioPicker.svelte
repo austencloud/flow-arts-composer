@@ -1,16 +1,19 @@
 <script module lang="ts">
+  import type { IconDefinition } from "@austencloud/video-editor/icons";
+
   export interface RatioOption<V extends string> {
     value: V;
     label: string;
     /** Width over height, drawn as an outline; the icon shows instead when absent. */
     ratio?: number;
-    icon?: string;
+    icon?: IconDefinition;
     disabled?: boolean;
   }
 </script>
 
 <script lang="ts" generics="T extends string">
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { Icon } from "@austencloud/video-editor/icons";
 
   /**
    * One shape picked from a few, each drawn as a small outline of itself
@@ -45,7 +48,7 @@
           style:height="{option.ratio >= 1 ? GLYPH_REM / option.ratio : GLYPH_REM}rem"
         ></span>
       {:else if option?.icon}
-        <i class="fa-solid {option.icon}"></i>
+        <Icon icon={option.icon} />
       {/if}
     </span>
     <span class="ratio-label">{option?.label}</span>

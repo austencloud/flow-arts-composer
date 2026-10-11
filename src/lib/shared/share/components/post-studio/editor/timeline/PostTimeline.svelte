@@ -33,7 +33,11 @@
   import { useStrings } from "@austencloud/video-editor/strings";
   import { growFade } from "$lib/shared/transitions/motion";
   import TimeRuler from "$lib/shared/timeline/TimeRuler.svelte";
-  import { channelValueText, translateKey } from "../post-editor-labels";
+  import {
+    channelValueText,
+    itemIcon,
+    translateKey,
+  } from "../post-editor-labels";
   import PostTimelineItem from "./PostTimelineItem.svelte";
   import PostTimelineKeyLane from "./PostTimelineKeyLane.svelte";
   import PostTimelineKeyLaneHeader from "./PostTimelineKeyLaneHeader.svelte";
@@ -64,6 +68,9 @@
     type KeyLanesBand,
     type OverlayRowHit,
   } from "./post-timeline-geometry";
+  import { Icon, faPlus, faRightLeft } from "@austencloud/video-editor/icons";
+
+  const ARROW = String.fromCharCode(8594);
 
   const t = useStrings();
 
@@ -1590,7 +1597,7 @@
                       class="add-video-btn"
                       onclick={onAddVideo}
                     >
-                      <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                      <Icon icon={faPlus} />
                       {t("post_timeline_add_video")}
                     </button>
                   {/if}
@@ -1618,6 +1625,7 @@
                   dimmed={track.hidden}
                   joinStart={block.joinStart}
                   joinEnd={block.joinEnd}
+                  kindIcon={itemIcon(item, plugin)}
                   part={part
                     ? {
                         id: part.id,
@@ -1659,19 +1667,14 @@
                   class="cut-crossfade"
                   class:active={cut.active}
                   style:left="{secondsToPixels(cut.center, pixelsPerSecond)}px"
-                  aria-label={`${t("post_editor_transition")}${cut.active ? `, ${t(cut.outgoing.transitionOut!.type === "fade-black" ? "post_transition_fade_black" : "post_transition_dissolve")}, ${cut.outgoing.transitionOut!.duration.toFixed(2)} s` : `, ${t("post_transition_cut")}`}: ${labelFor(cut.outgoing)} → ${labelFor(cut.incoming)}`}
-                  title={`${t("post_editor_transition")}${cut.active ? `, ${cut.outgoing.transitionOut!.duration.toFixed(2)} s` : ""}: ${labelFor(cut.outgoing)} → ${labelFor(cut.incoming)}`}
+                  aria-label={`${t("post_editor_transition")}${cut.active ? `, ${t(cut.outgoing.transitionOut!.type === "fade-black" ? "post_transition_fade_black" : "post_transition_dissolve")}, ${cut.outgoing.transitionOut!.duration.toFixed(2)} s` : `, ${t("post_transition_cut")}`}: ${labelFor(cut.outgoing)} ${ARROW} ${labelFor(cut.incoming)}`}
+                  title={`${t("post_editor_transition")}${cut.active ? `, ${cut.outgoing.transitionOut!.duration.toFixed(2)} s` : ""}: ${labelFor(cut.outgoing)} ${ARROW} ${labelFor(cut.incoming)}`}
                   onpointerdown={(event) => event.stopPropagation()}
                   onclick={() =>
                     onOpenCrossfade(cut.outgoing.id, cut.incoming.id)}
                 >
                   <span class="cut-crossfade-marker">
-                    <i
-                      class={cut.active
-                        ? "fa-solid fa-right-left"
-                        : "fa-solid fa-plus"}
-                      aria-hidden="true"
-                    ></i>
+                    <Icon icon={cut.active ? faRightLeft : faPlus} />
                   </span>
                 </button>
               {/each}
@@ -1770,7 +1773,7 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    background: var(--theme-bg, #101018);
+    background: var(--ve-theme-bg, #101018);
     container-type: inline-size;
     container-name: post-timeline;
   }
@@ -1781,7 +1784,7 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+    border-bottom: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.08));
   }
 
   .keyframe-toolbar {
@@ -1825,7 +1828,7 @@
     flex-direction: column;
     width: 16rem;
     overflow: hidden;
-    border-right: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+    border-right: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.08));
     container-type: inline-size;
     container-name: post-timeline-header;
   }
@@ -1855,7 +1858,7 @@
     position: sticky;
     top: 0;
     z-index: 5;
-    background: var(--theme-bg, #101018);
+    background: var(--ve-theme-bg, #101018);
     touch-action: none;
     user-select: none;
   }
@@ -1880,13 +1883,13 @@
   .lane-row {
     position: relative;
     box-sizing: border-box;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.06));
+    border-bottom: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.06));
   }
 
   .lane-row.main-row {
     background: color-mix(
       in srgb,
-      var(--theme-card-bg, #1c1c26) 60%,
+      var(--ve-theme-card-bg, #1c1c26) 60%,
       transparent
     );
   }
@@ -1904,7 +1907,7 @@
     border: 0;
     border-radius: 0.5rem;
     background: transparent;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     cursor: pointer;
     font: inherit;
     font-size: 0.75rem;
@@ -1918,27 +1921,27 @@
     height: 22px;
     box-sizing: border-box;
     padding: 0;
-    border: 1px solid var(--theme-stroke, #484755);
+    border: 1px solid var(--ve-theme-stroke, #484755);
     border-radius: 0.375rem;
-    background: var(--theme-panel-elevated-bg, #1c1c26);
+    background: var(--ve-theme-panel-elevated-bg, #1c1c26);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
   .cut-crossfade:hover .cut-crossfade-marker {
-    border-color: var(--theme-accent);
-    background: var(--theme-panel-bg, #1c1c26);
+    border-color: var(--ve-theme-accent);
+    background: var(--ve-theme-panel-bg, #1c1c26);
   }
 
-  .cut-crossfade.active .cut-crossfade-marker i {
-    color: var(--theme-text, #fff);
+  .cut-crossfade.active .cut-crossfade-marker :global(.ve-icon) {
+    color: var(--ve-theme-text, #fff);
   }
 
   .cut-crossfade.active .cut-crossfade-marker {
     border-color: color-mix(
       in srgb,
-      var(--theme-accent) 45%,
-      var(--theme-stroke)
+      var(--ve-theme-accent) 45%,
+      var(--ve-theme-stroke)
     );
   }
 
@@ -1950,12 +1953,12 @@
     box-sizing: border-box;
     border: 0;
     border-radius: 0.375rem;
-    background: color-mix(in srgb, var(--theme-text, #fff) 6%, transparent);
+    background: color-mix(in srgb, var(--ve-theme-text, #fff) 6%, transparent);
     pointer-events: none;
   }
 
   .cut-crossfade:focus-visible {
-    outline: 2px solid var(--theme-text, #fff);
+    outline: 2px solid var(--ve-theme-text, #fff);
     outline-offset: 2px;
   }
 
@@ -1965,7 +1968,7 @@
     bottom: 0;
     z-index: 3;
     width: 2px;
-    background: var(--semantic-danger, #ff5d5d);
+    background: var(--ve-semantic-danger, #ff5d5d);
     pointer-events: none;
   }
 
@@ -1975,7 +1978,7 @@
     bottom: 0;
     z-index: 4;
     width: 1px;
-    background: var(--theme-accent);
+    background: var(--ve-theme-accent);
     opacity: 0.8;
     pointer-events: none;
   }
@@ -1992,20 +1995,20 @@
     box-sizing: border-box;
     align-items: center;
     justify-content: center;
-    border: 1px dashed var(--theme-stroke, rgba(255, 255, 255, 0.2));
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 0.75rem);
+    border: 1px dashed var(--ve-theme-stroke, rgba(255, 255, 255, 0.2));
+    color: var(--ve-theme-text-dim);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     pointer-events: none;
   }
 
   .new-layer-zone.active {
-    border-color: var(--theme-accent);
+    border-color: var(--ve-theme-accent);
     background: color-mix(
       in srgb,
-      var(--theme-accent) 22%,
-      var(--theme-panel-elevated-bg, #1c1c26)
+      var(--ve-theme-accent) 22%,
+      var(--ve-theme-panel-elevated-bg, #1c1c26)
     );
-    color: var(--theme-text);
+    color: var(--ve-theme-text);
   }
 
   .ghost-block {
@@ -2020,15 +2023,15 @@
     align-items: center;
     overflow: hidden;
     padding: 0 0.5rem;
-    border: 1px solid var(--theme-accent);
+    border: 1px solid var(--ve-theme-accent);
     border-radius: 0.5rem;
     background: color-mix(
       in srgb,
-      var(--theme-accent) 30%,
-      var(--theme-card-bg, #1c1c26)
+      var(--ve-theme-accent) 30%,
+      var(--ve-theme-card-bg, #1c1c26)
     );
-    color: var(--theme-text);
-    font-size: var(--font-size-compact, 0.75rem);
+    color: var(--ve-theme-text);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     white-space: nowrap;
     opacity: 0.85;
   }
@@ -2040,8 +2043,8 @@
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 0.75rem);
+    color: var(--ve-theme-text-dim);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     pointer-events: none;
   }
 
@@ -2049,27 +2052,27 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    min-height: var(--min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
     padding: 0 0.9rem;
-    border: 1px solid var(--theme-accent);
+    border: 1px solid var(--ve-theme-accent);
     border-radius: 0.5rem;
-    background: color-mix(in srgb, var(--theme-accent) 16%, transparent);
-    color: var(--theme-text);
+    background: color-mix(in srgb, var(--ve-theme-accent) 16%, transparent);
+    color: var(--ve-theme-text);
     cursor: pointer;
     font: inherit;
     font-weight: 600;
     pointer-events: auto;
-    transition: background-color var(--duration-fast, 150ms) ease;
+    transition: background-color var(--ve-duration-fast, 150ms) ease;
   }
 
   @media (hover: hover) {
     .add-video-btn:hover {
-      background: color-mix(in srgb, var(--theme-accent) 28%, transparent);
+      background: color-mix(in srgb, var(--ve-theme-accent) 28%, transparent);
     }
   }
 
   .add-video-btn:focus-visible {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 2px;
   }
 

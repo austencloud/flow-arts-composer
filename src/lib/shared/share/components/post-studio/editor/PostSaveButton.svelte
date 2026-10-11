@@ -2,6 +2,15 @@
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import {
+    Icon,
+    faCheck,
+    faCircleExclamation,
+    faFloppyDisk,
+    faSpinner,
+  } from "@austencloud/video-editor/icons";
+
+  const ELLIPSIS = String.fromCharCode(8230);
 
   /**
    * Saves the post now. Edits already save themselves; this is the button
@@ -19,15 +28,15 @@
 
   const LABELS = {
     idle: "Save",
-    saving: "Saving…",
+    saving: "Saving" + ELLIPSIS,
     saved: "Saved",
     failed: "Retry save",
   } as const;
   const ICONS = {
-    idle: "fa-floppy-disk",
-    saving: "fa-spinner fa-spin",
-    saved: "fa-check",
-    failed: "fa-circle-exclamation",
+    idle: faFloppyDisk,
+    saving: faSpinner,
+    saved: faCheck,
+    failed: faCircleExclamation,
   } as const;
 </script>
 
@@ -43,7 +52,7 @@
     class:failed={status === "failed"}
   >
     <Crossfade key={status} duration={DURATION.fast}>
-      <i class="fa-solid {ICONS[status]}" aria-hidden="true"></i>
+      <Icon icon={ICONS[status]} spin={status === "saving"} />
     </Crossfade>
     <span class="label">
       {#each Object.values(LABELS) as word (word)}<span
@@ -59,15 +68,15 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    transition: color var(--transition-fast);
+    transition: color var(--ve-transition-fast);
   }
 
   .saved {
-    color: var(--theme-success, #86efac);
+    color: var(--ve-theme-success, #86efac);
   }
 
   .failed {
-    color: var(--semantic-error, #ffb4b4);
+    color: var(--ve-semantic-error, #ffb4b4);
   }
 
   .label {
@@ -87,10 +96,6 @@
   @media (prefers-reduced-motion: reduce) {
     .save {
       transition: none;
-    }
-
-    .fa-spin {
-      animation: none;
     }
   }
 </style>

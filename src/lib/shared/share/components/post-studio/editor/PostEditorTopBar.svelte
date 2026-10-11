@@ -2,6 +2,11 @@
   import type { Snippet } from "svelte";
   import { useStrings } from "@austencloud/video-editor/strings";
   import type { VideoEditorState } from "@austencloud/video-editor";
+  import {
+    Icon,
+    faRotateLeft,
+    faRotateRight,
+  } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -32,7 +37,7 @@
       aria-keyshortcuts="Control+Z"
       title={t("post_editor_undo")}
     >
-      <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+      <Icon icon={faRotateLeft} />
     </button>
     <button
       type="button"
@@ -44,7 +49,7 @@
       aria-keyshortcuts="Control+Y"
       title={t("post_editor_redo")}
     >
-      <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+      <Icon icon={faRotateRight} />
     </button>
   </div>
   {#if draftStatus}
@@ -100,27 +105,27 @@
   .icon-button {
     display: grid;
     place-items: center;
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    border: 1px solid var(--theme-stroke, #484755);
+    width: var(--ve-min-touch-target, 44px);
+    height: var(--ve-min-touch-target, 44px);
+    border: 1px solid var(--ve-theme-stroke, #484755);
     border-radius: 0.625rem;
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg);
+    color: var(--ve-theme-text, #fff);
+    background: var(--ve-theme-card-bg);
     cursor: pointer;
     transition:
-      background-color var(--transition-fast),
-      border-color var(--transition-fast);
+      background-color var(--ve-transition-fast),
+      border-color var(--ve-transition-fast);
   }
 
   @media (hover: hover) {
     .icon-button:hover:not(:disabled) {
-      border-color: var(--theme-stroke-strong, #6b6a7a);
-      background: var(--theme-card-hover-bg);
+      border-color: var(--ve-theme-stroke-strong, #6b6a7a);
+      background: var(--ve-theme-card-hover-bg);
     }
   }
 
   .icon-button:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 2px;
   }
 

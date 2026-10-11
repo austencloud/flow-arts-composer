@@ -17,6 +17,16 @@
     type MusicPatch,
   } from "@austencloud/video-editor/core";
   import { formatTakeClock, parseClock } from "./post-format";
+  import {
+    Icon,
+    faArrowRightFromBracket,
+    faArrowRightToBracket,
+    faHandPointer,
+    faWaveSquare,
+    type IconDefinition,
+  } from "@austencloud/video-editor/icons";
+
+  const ELLIPSIS = String.fromCharCode(8230);
 
   const t = useStrings();
 
@@ -178,7 +188,7 @@
   name: string,
   value: string,
   typed: (seconds: number) => void,
-  set: { icon: string; disabled: boolean; run: () => void }
+  set: { icon: IconDefinition; disabled: boolean; run: () => void }
 )}
   <div class="readout">
     <div class="readout-text">
@@ -196,7 +206,7 @@
       disabled={set.disabled}
       ariaLabel={`${t("post_editor_set_to_playhead")}: ${name}`}
     >
-      <i class="fa-solid {set.icon}" aria-hidden="true"></i>
+      <Icon icon={set.icon} />
       {t("post_editor_set_to_playhead")}
     </PanelButton>
   </div>
@@ -243,7 +253,7 @@
           onclick={tapFromKeys}
           disabled={!playing}
         >
-          <i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>
+          <Icon icon={faHandPointer} />
           Tap the beat
         </PanelButton>
       </div>
@@ -259,8 +269,8 @@
     {/if}
     <div class="actions">
       <PanelButton onclick={() => void suggestBpm()} disabled={suggesting}>
-        <i class="fa-solid fa-wave-square" aria-hidden="true"></i>
-        {suggesting ? "Listening…" : "Suggest BPM"}
+        <Icon icon={faWaveSquare} />
+        {suggesting ? "Listening" + ELLIPSIS : "Suggest BPM"}
       </PanelButton>
       {#if shownSuggestion}
         <PanelButton onclick={useSuggestion}>
@@ -297,7 +307,7 @@
       formatTakeClock(music.startSeconds),
       (seconds) => onChange("start", { startSeconds: seconds }),
       {
-        icon: "fa-arrow-right-to-bracket",
+        icon: faArrowRightToBracket,
         disabled: false,
         run: () => onChange("start", { startSeconds: playheadSeconds() }),
       }
@@ -307,7 +317,7 @@
       formatTakeClock(music.sourceInSeconds),
       (seconds) => trimToSong("start", seconds),
       {
-        icon: "fa-arrow-right-to-bracket",
+        icon: faArrowRightToBracket,
         disabled: !playheadInside,
         run: () => onTrim("start", playheadSeconds()),
       }
@@ -317,7 +327,7 @@
       formatTakeClock(music.sourceOutSeconds),
       (seconds) => trimToSong("end", seconds),
       {
-        icon: "fa-arrow-right-from-bracket",
+        icon: faArrowRightFromBracket,
         disabled: !playheadInside,
         run: () => onTrim("end", playheadSeconds()),
       }
@@ -411,7 +421,7 @@
 
   .group-title {
     margin: 0;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     font-size: 0.875rem;
     font-weight: 600;
   }
@@ -428,7 +438,7 @@
   }
 
   .pair-name {
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
   }
 
@@ -453,7 +463,7 @@
   }
 
   .readout-name {
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.8125rem;
   }
 
@@ -465,7 +475,7 @@
 
   .status {
     margin: 0;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
     line-height: 1.4;
   }
@@ -481,18 +491,18 @@
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
-    min-height: var(--min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
     padding: 0 0.625rem;
-    border: 1px solid var(--theme-stroke, #484755);
+    border: 1px solid var(--ve-theme-stroke, #484755);
     border-radius: 0.5rem;
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg);
+    color: var(--ve-theme-text, #fff);
+    background: var(--ve-theme-card-bg);
     font: inherit;
     font-size: 1rem;
   }
 
   .field:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 1px;
   }
 </style>

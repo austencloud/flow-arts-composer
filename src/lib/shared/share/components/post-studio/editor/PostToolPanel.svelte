@@ -1,9 +1,11 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import type { PluginTool } from "@austencloud/video-editor";
   import { useStrings } from "@austencloud/video-editor/strings";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import type { PostPanelToolId } from "./post-editor-tools";
-  import { TOOL_ICON, toolLabel } from "./post-editor-labels";
+  import { toolIcon, toolLabel } from "./post-editor-labels";
+  import { Icon, faCheck } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -14,6 +16,8 @@
    */
   interface Props {
     tool: PostPanelToolId;
+    /** The plugin's tools, which bring their own icons. */
+    pluginTools?: readonly PluginTool[];
     /** The selected item's name; nothing for the post's own tools. */
     subject?: string;
     /** Given on a phone, where Done returns to the tool row. */
@@ -32,6 +36,7 @@
 
   let {
     tool,
+    pluginTools = [],
     subject,
     onDone,
     placement,
@@ -41,6 +46,7 @@
   }: Props = $props();
 
   const id = $props.id();
+  const icon = $derived(toolIcon(tool, pluginTools));
 </script>
 
 <section
@@ -52,7 +58,7 @@
   bind:this={element}
 >
   <header class="head" class:sr-only={bare}>
-    <i class="fa-solid {TOOL_ICON[tool]} icon" aria-hidden="true"></i>
+    {#if icon}<Icon {icon} class="icon" />{/if}
     <div class="titles">
       <h3 id="{id}-title" class="title">{toolLabel(t, tool)}</h3>
       {#if subject}
@@ -61,7 +67,7 @@
     </div>
     {#if onDone}
       <PanelButton variant="primary" onclick={onDone}>
-        <i class="fa-solid fa-check" aria-hidden="true"></i>
+        <Icon icon={faCheck} />
         {t("share_studio_done")}
       </PanelButton>
     {/if}
@@ -101,17 +107,17 @@
     min-width: 0;
   }
 
-  .icon {
-    display: grid;
+  .head :global(.icon) {
+    box-sizing: border-box;
     flex: none;
-    place-items: center;
     width: 2.25rem;
     height: 2.25rem;
+    padding: 0.625rem;
     border-radius: 0.5rem;
-    color: var(--theme-accent, #d4813a);
+    color: var(--ve-theme-accent, #d4813a);
     background: color-mix(
       in srgb,
-      var(--theme-accent, #d4813a) 14%,
+      var(--ve-theme-accent, #d4813a) 14%,
       transparent
     );
   }
@@ -125,7 +131,7 @@
 
   .title {
     margin: 0;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     font-size: 1rem;
     font-weight: 600;
   }
@@ -133,7 +139,7 @@
   .subject {
     overflow: hidden;
     margin: 0;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.8125rem;
     text-overflow: ellipsis;
     white-space: nowrap;

@@ -115,6 +115,9 @@
     type StageTransform,
   } from "./post-crop-glide";
   import type { CropSession } from "./post-crop-session.svelte";
+  import { Icon, faFilm, faRotate } from "@austencloud/video-editor/icons";
+
+  const DEGREE = String.fromCharCode(176);
 
   const t = useStrings();
 
@@ -644,7 +647,8 @@
     return (Math.atan2(event.clientY - y, event.clientX - x) * 180) / Math.PI;
   }
 
-  const degreesLabel = (value: number) => `${Number(value.toFixed(1))}°`;
+  const degreesLabel = (value: number) =>
+    `${Number(value.toFixed(1))}${DEGREE}`;
 
   /** The mounted video's own pixel size, or zero until it has loaded. */
   function mountedVideoSize(itemId: string): { width: number; height: number } {
@@ -2411,7 +2415,7 @@
     {/each}
   {:else}
     <div class="empty">
-      <i class="fa-solid fa-film" aria-hidden="true"></i>
+      <Icon icon={faFilm} />
       <span>{t("post_editor_empty_preview")}</span>
     </div>
   {/if}
@@ -2620,7 +2624,7 @@
                     : `${TURN_HANDLE_GAP}px`}
                 onpointerdown={(event) => startTurn(event, selected)}
               >
-                <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                <span class="turn-grip"><Icon icon={faRotate} /></span>
               </span>
             {/if}
           </div>
@@ -2729,7 +2733,7 @@
   .crop-frame {
     position: absolute;
     box-sizing: border-box;
-    border: 2px solid var(--theme-primary, #d4813a);
+    border: 2px solid var(--ve-theme-primary, #d4813a);
     box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.55);
     container-type: size;
   }
@@ -2748,9 +2752,9 @@
     left: 50%;
     width: 12px;
     height: 12px;
-    border: 2px solid var(--theme-primary, #d4813a);
+    border: 2px solid var(--ve-theme-primary, #d4813a);
     border-radius: 3px;
-    background: var(--theme-background, #161616);
+    background: var(--ve-theme-background, #161616);
     box-shadow: 0 1px 5px rgb(0 0 0 / 0.6);
     content: "";
     transform: translate(-50%, -50%);
@@ -2791,9 +2795,9 @@
   .source-crop-corner::after {
     position: absolute;
     inset: 4px;
-    border: 2px solid var(--theme-primary, #d4813a);
+    border: 2px solid var(--ve-theme-primary, #d4813a);
     border-radius: 2px;
-    background: var(--theme-background, #161616);
+    background: var(--ve-theme-background, #161616);
     box-shadow: 0 1px 5px rgb(0 0 0 / 0.6);
     content: "";
   }
@@ -2818,7 +2822,7 @@
     cursor: nwse-resize;
   }
   .crop-frame:focus-visible {
-    outline: 2px solid var(--theme-text, #fff);
+    outline: 2px solid var(--ve-theme-text, #fff);
     outline-offset: 3px;
   }
   .crop-frame.locked {
@@ -2826,7 +2830,7 @@
   }
   .crop-frame .thirds {
     opacity: 0.4;
-    transition: opacity var(--duration-fast, 150ms) ease;
+    transition: opacity var(--ve-duration-fast, 150ms) ease;
   }
   .crop-frame.active .thirds {
     opacity: 1;
@@ -2960,7 +2964,7 @@
   .selection {
     position: absolute;
     box-sizing: border-box;
-    border: 2px solid var(--theme-primary, #d4813a);
+    border: 2px solid var(--ve-theme-primary, #d4813a);
     box-shadow: 0 0 0 1px rgb(0 0 0 / 0.6);
     cursor: move;
   }
@@ -3004,7 +3008,7 @@
     border-bottom-width: 1px;
   }
   .selection:focus-visible {
-    outline: 2px solid var(--theme-text, #fff);
+    outline: 2px solid var(--ve-theme-text, #fff);
     outline-offset: 2px;
   }
   /* Slim marks with a 44px grab area around each. */
@@ -3020,7 +3024,7 @@
     inset: 50%;
     width: 0.75rem;
     height: 0.75rem;
-    border: 2px solid var(--theme-primary, #d4813a);
+    border: 2px solid var(--ve-theme-primary, #d4813a);
     border-radius: 50%;
     background: #fff;
     transform: translate(-50%, -50%);
@@ -3083,12 +3087,12 @@
   .selection.dragging .turn-handle {
     cursor: grabbing;
   }
-  .turn-handle i {
+  .turn-grip {
     display: grid;
     place-items: center;
     width: 1.75rem;
     height: 1.75rem;
-    border: 2px solid var(--theme-primary, #d4813a);
+    border: 2px solid var(--ve-theme-primary, #d4813a);
     border-radius: 50%;
     background: #fff;
     color: #08080c;
@@ -3110,7 +3114,7 @@
   }
   .guide {
     position: absolute;
-    background: var(--theme-primary, #d4813a);
+    background: var(--ve-theme-primary, #d4813a);
     pointer-events: none;
   }
   .guide.vertical {
@@ -3132,7 +3136,7 @@
     inset: 0;
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--transition-fast);
+    transition: opacity var(--ve-transition-fast);
   }
   .drag-grid.shown {
     opacity: 1;
@@ -3146,7 +3150,7 @@
   /* A safe side a box's edge rests on, lit like the centre guides. */
   .snap-line {
     position: absolute;
-    background: var(--theme-primary, #d4813a);
+    background: var(--ve-theme-primary, #d4813a);
   }
   .snap-line.left,
   .snap-line.right {
@@ -3195,11 +3199,11 @@
     justify-items: center;
     gap: 0.75rem;
     padding: 1rem;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
     text-align: center;
   }
-  .empty i {
+  .empty :global(.ve-icon) {
     font-size: 1.75rem;
   }
   .sr-only {

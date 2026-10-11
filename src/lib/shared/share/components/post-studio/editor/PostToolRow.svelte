@@ -6,7 +6,8 @@
     type PostPanelToolId,
     type PostToolId,
   } from "./post-editor-tools";
-  import { TOOL_ICON, toolLabel } from "./post-editor-labels";
+  import { toolIcon, toolLabel } from "./post-editor-labels";
+  import { Icon } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -60,6 +61,7 @@
 
 <div class="tool-row" role="group" aria-label={t("post_editor_tools")}>
   {#each tools as id (id)}
+    {@const icon = toolIcon(id, pluginTools)}
     <button
       type="button"
       class="tool"
@@ -72,7 +74,7 @@
       title={titleFor(id)}
       onclick={() => onpick(id)}
     >
-      <i class="fa-solid {TOOL_ICON[id]}" aria-hidden="true"></i>
+      {#if icon}<Icon {icon} />{/if}
       <span class="label">{toolLabel(t, id)}</span>
     </button>
   {/each}
@@ -102,19 +104,19 @@
     min-width: 3.75rem;
     min-height: 3.5rem;
     padding: 0.375rem 0.5rem;
-    border: 1px solid var(--theme-stroke, #484755);
+    border: 1px solid var(--ve-theme-stroke, #484755);
     border-radius: 0.75rem;
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg);
+    color: var(--ve-theme-text, #fff);
+    background: var(--ve-theme-card-bg);
     font: inherit;
     cursor: pointer;
     transition:
-      background-color var(--transition-fast),
-      border-color var(--transition-fast),
-      box-shadow var(--transition-fast);
+      background-color var(--ve-transition-fast),
+      border-color var(--ve-transition-fast),
+      box-shadow var(--ve-transition-fast);
   }
 
-  .tool i {
+  .tool :global(.ve-icon) {
     font-size: 1.125rem;
     line-height: 1;
   }
@@ -128,28 +130,28 @@
 
   @media (hover: hover) {
     .tool:hover:not(:disabled) {
-      border-color: var(--theme-stroke-strong, #6b6a7a);
-      background: var(--theme-card-hover-bg);
+      border-color: var(--ve-theme-stroke-strong, #6b6a7a);
+      background: var(--ve-theme-card-hover-bg);
     }
   }
 
   /* Pressed reads by a heavier ring and a filled tile, not by hue alone. */
   .tool[aria-pressed="true"] {
-    border-color: var(--theme-accent, #d4813a);
+    border-color: var(--ve-theme-accent, #d4813a);
     background: color-mix(
       in srgb,
-      var(--theme-accent, #d4813a) 22%,
-      var(--theme-card-bg, #1c1b24)
+      var(--ve-theme-accent, #d4813a) 22%,
+      var(--ve-theme-card-bg, #1c1b24)
     );
-    box-shadow: inset 0 0 0 1px var(--theme-accent, #d4813a);
+    box-shadow: inset 0 0 0 1px var(--ve-theme-accent, #d4813a);
   }
 
-  .tool[aria-pressed="true"] i {
-    color: var(--theme-accent, #d4813a);
+  .tool[aria-pressed="true"] :global(.ve-icon) {
+    color: var(--ve-theme-accent, #d4813a);
   }
 
   .tool:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 2px;
   }
 
@@ -170,7 +172,7 @@
       outline-offset: -4px;
     }
 
-    .tool[aria-pressed="true"] i {
+    .tool[aria-pressed="true"] :global(.ve-icon) {
       color: Highlight;
     }
   }

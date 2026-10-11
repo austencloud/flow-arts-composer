@@ -6,6 +6,13 @@
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import {
+    Icon,
+    faCircleHalfStroke,
+    faPlay,
+    faRightLeft,
+    faScissors,
+  } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -31,17 +38,17 @@
     {
       value: "cut" as const,
       label: t("post_transition_cut"),
-      icon: "fa-solid fa-scissors",
+      icon: faScissors,
     },
     {
       value: "crossfade" as const,
       label: t("post_transition_dissolve"),
-      icon: "fa-solid fa-right-left",
+      icon: faRightLeft,
     },
     {
       value: "fade-black" as const,
       label: t("post_transition_fade_black"),
-      icon: "fa-solid fa-circle-half-stroke",
+      icon: faCircleHalfStroke,
     },
   ]);
   const description = $derived(
@@ -106,7 +113,7 @@
     onchange={(duration) => change(choice, duration, true)}
   />
   <PanelButton variant="secondary" fullWidth onclick={preview}>
-    <i class="fa-solid fa-play" aria-hidden="true"></i>
+    <Icon icon={faPlay} />
     {t("post_transition_preview")}
   </PanelButton>
   {#if changeError}
@@ -123,13 +130,13 @@
   .description {
     margin: 0;
     min-height: 2.6em;
-    color: var(--theme-text-muted);
+    color: var(--ve-theme-text-muted);
     font-size: 0.875rem;
     line-height: 1.3;
   }
   .error {
     margin: 0;
-    color: var(--theme-text);
+    color: var(--ve-theme-text);
     font-size: 0.875rem;
     line-height: 1.4;
   }

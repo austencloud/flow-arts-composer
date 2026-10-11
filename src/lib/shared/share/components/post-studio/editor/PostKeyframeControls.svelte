@@ -37,6 +37,15 @@
   import PostCurveEditor from "./PostCurveEditor.svelte";
   import { formatPostClock } from "./post-format";
   import { easingPresetLabel } from "./post-editor-labels";
+  import {
+    Icon,
+    faChevronLeft,
+    faChevronRight,
+    faDiamond,
+    faMinus,
+    faPlus,
+    faWaveSquare,
+  } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -186,7 +195,7 @@
   <div class="keyframe-controls">
     {#if label}
       <span class="kf-label"
-        >{label} · {t("post_keyframe_count", { count })}</span
+        >{label} &middot; {t("post_keyframe_count", { count })}</span
       >
     {/if}
     {#if count > 0}
@@ -209,7 +218,7 @@
           aria-label={t("post_keyframe_previous")}
           title={t("post_keyframe_previous")}
         >
-          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+          <Icon icon={faChevronLeft} />
         </button>
         <button
           class="kf-btn kf-diamond"
@@ -225,11 +234,10 @@
           )}
           onclick={toggleHere}
         >
-          <i class="fa-solid fa-diamond" aria-hidden="true"></i>
-          <i
-            class="kf-badge fa-solid {hasKeyframeHere ? 'fa-minus' : 'fa-plus'}"
-            aria-hidden="true"
-          ></i>
+          <Icon icon={faDiamond} />
+          <span class="kf-badge" aria-hidden="true">
+            <Icon icon={hasKeyframeHere ? faMinus : faPlus} />
+          </span>
         </button>
         <button
           class="kf-btn kf-step"
@@ -239,7 +247,7 @@
           aria-label={t("post_keyframe_next")}
           title={t("post_keyframe_next")}
         >
-          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          <Icon icon={faChevronRight} />
         </button>
       </div>
       {#if segment}
@@ -248,7 +256,7 @@
             mode="dropdown"
             popupRole="dialog"
             popupLabel={curveName}
-            icon="fa-solid fa-wave-square"
+            icon={faWaveSquare}
             label={chipLabel}
             ariaLabel={curveName}
             size="sm"
@@ -299,8 +307,8 @@
   }
 
   .kf-label {
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 0.75rem);
+    color: var(--ve-theme-text-dim);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     font-weight: 600;
     white-space: nowrap;
   }
@@ -308,10 +316,10 @@
   .kf-clear {
     border: 0;
     background: none;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     cursor: pointer;
-    min-height: var(--min-touch-target, 44px);
-    min-width: var(--min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
+    min-width: var(--ve-min-touch-target, 44px);
   }
 
   .kf-clear:disabled {
@@ -319,7 +327,7 @@
     cursor: not-allowed;
   }
   .kf-clear:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
   }
 
   .kf-nav {
@@ -334,33 +342,33 @@
   .kf-btn {
     display: grid;
     place-items: center;
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
+    width: var(--ve-min-touch-target, 44px);
+    height: var(--ve-min-touch-target, 44px);
+    border: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 0.5rem;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    color: var(--theme-text-dim);
+    background: var(--ve-theme-card-bg, rgba(255, 255, 255, 0.04));
+    color: var(--ve-theme-text-dim);
     font-size: 0.9375rem;
     cursor: pointer;
     transition:
-      background var(--transition-fast),
-      color var(--transition-fast),
-      opacity var(--transition-fast);
+      background var(--ve-transition-fast),
+      color var(--ve-transition-fast),
+      opacity var(--ve-transition-fast);
   }
 
   @media (hover: hover) {
     .kf-btn:not(:disabled):hover {
       background: color-mix(
         in srgb,
-        var(--theme-accent, #d4813a) 10%,
+        var(--ve-theme-accent, #d4813a) 10%,
         transparent
       );
-      color: var(--theme-text, #fff);
+      color: var(--ve-theme-text, #fff);
     }
   }
 
   .kf-btn:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 1px;
   }
 
@@ -376,15 +384,15 @@
   .kf-diamond.active {
     border-color: color-mix(
       in srgb,
-      var(--theme-accent, #d4813a) 50%,
+      var(--ve-theme-accent, #d4813a) 50%,
       transparent
     );
     background: color-mix(
       in srgb,
-      var(--theme-accent, #d4813a) 18%,
+      var(--ve-theme-accent, #d4813a) 18%,
       transparent
     );
-    color: var(--theme-accent, #d4813a);
+    color: var(--ve-theme-accent, #d4813a);
   }
 
   /* Plus adds a keyframe here; minus, on a keyframe, takes it away. */
@@ -397,13 +405,13 @@
     width: 15px;
     height: 15px;
     border-radius: 50%;
-    background: var(--theme-text, #fff);
-    color: var(--theme-bg, #101018);
+    background: var(--ve-theme-text, #fff);
+    color: var(--ve-theme-bg, #101018);
     font-size: 0.5625rem;
   }
 
   .kf-diamond.active .kf-badge {
-    background: var(--semantic-danger, #ff5d5d);
+    background: var(--ve-semantic-danger, #ff5d5d);
     color: #fff;
   }
 
@@ -420,7 +428,7 @@
   .curve-range {
     margin: 0;
     padding: 0 0.375rem;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
   }

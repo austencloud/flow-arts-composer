@@ -7,6 +7,13 @@
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import { formatTakeClock, parseClock } from "./post-format";
   import { roundToFrameSeconds } from "./timeline/post-timeline-geometry";
+  import {
+    Icon,
+    faBackwardStep,
+    faForwardStep,
+    faPause,
+    faPlay,
+  } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -49,7 +56,7 @@
     aria-keyshortcuts="ArrowLeft"
     title={t("post_editor_frame_back")}
   >
-    <i class="fa-solid fa-backward-step" aria-hidden="true"></i>
+    <Icon icon={faBackwardStep} />
   </button>
   <button
     type="button"
@@ -61,10 +68,7 @@
       : t("share_studio_deep_play")}
     aria-keyshortcuts="Space"
   >
-    <i
-      class="fa-solid {editor.isPlaying ? 'fa-pause' : 'fa-play'}"
-      aria-hidden="true"
-    ></i>
+    <Icon icon={editor.isPlaying ? faPause : faPlay} />
   </button>
   <button
     type="button"
@@ -75,7 +79,7 @@
     aria-keyshortcuts="ArrowRight"
     title={t("post_editor_frame_forward")}
   >
-    <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
+    <Icon icon={faForwardStep} />
   </button>
   <div class="clock">
     <TypeableValue
@@ -103,20 +107,20 @@
   .round {
     display: grid;
     place-items: center;
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
+    width: var(--ve-min-touch-target, 44px);
+    height: var(--ve-min-touch-target, 44px);
     flex: none;
-    border: 1px solid var(--theme-stroke, #484755);
+    border: 1px solid var(--ve-theme-stroke, #484755);
     border-radius: 50%;
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg);
+    color: var(--ve-theme-text, #fff);
+    background: var(--ve-theme-card-bg);
     cursor: pointer;
   }
 
   .play {
     width: 3.25rem;
     height: 3.25rem;
-    border-color: var(--theme-accent, #d4813a);
+    border-color: var(--ve-theme-accent, #d4813a);
   }
 
   .round:disabled {
@@ -125,7 +129,7 @@
   }
 
   .round:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 2px;
   }
 
@@ -135,13 +139,13 @@
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     font-size: 0.9375rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
   .total {
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
   }
 </style>

@@ -7,10 +7,12 @@
 -->
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
 
   interface MenuItem {
     label: string;
-    icon: string;
+    /** A FontAwesome class, or an icon definition from the video editor package. */
+    icon: string | IconDefinition;
     action: () => void;
     variant?: "danger";
     /** Keep unavailable actions discoverable without making them activatable. */
@@ -142,7 +144,11 @@
             if (!item.disabled) handleItemClick(item);
           }}
         >
-          <i class={item.icon} aria-hidden="true"></i>
+          {#if typeof item.icon === "string"}
+            <i class={item.icon} aria-hidden="true"></i>
+          {:else}
+            <Icon icon={item.icon} />
+          {/if}
           <span class="overflow-item-label">
             {item.label}
             {#if item.hint && item.disabled}<small>{item.hint}</small>{/if}
@@ -304,7 +310,8 @@
     outline-offset: -2px;
   }
 
-  .overflow-item i {
+  .overflow-item i,
+  .overflow-item :global(.ve-icon) {
     width: 18px;
     text-align: center;
     font-size: 14px;

@@ -392,7 +392,7 @@ export const TURN_STEP_DEGREES = 15;
 
 /**
  * How a turn lands: by default it snaps straight or to a quarter turn when
- * near one, in steps holds it to 15° steps, and free leaves it where the
+ * near one, in steps holds it to 15 degree steps, and free leaves it where the
  * pointer is.
  */
 export type TurnMode = "snap" | "step" | "free";

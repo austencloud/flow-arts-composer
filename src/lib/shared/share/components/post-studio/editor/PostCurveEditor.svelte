@@ -317,33 +317,33 @@
   }
 
   .unit-square {
-    fill: color-mix(in srgb, var(--theme-text, #fff) 4%, transparent);
-    stroke: var(--theme-stroke, rgba(255, 255, 255, 0.15));
+    fill: color-mix(in srgb, var(--ve-theme-text, #fff) 4%, transparent);
+    stroke: var(--ve-theme-stroke, rgba(255, 255, 255, 0.15));
     stroke-width: 1;
   }
 
   .diagonal {
-    stroke: var(--theme-stroke, rgba(255, 255, 255, 0.15));
+    stroke: var(--ve-theme-stroke, rgba(255, 255, 255, 0.15));
     stroke-width: 1;
     stroke-dasharray: 2 3;
   }
 
   .guide {
-    stroke: var(--theme-text-secondary, #aaa);
+    stroke: var(--ve-theme-text-secondary, #aaa);
     stroke-width: 1;
     opacity: 0.6;
   }
 
   .curve {
     fill: none;
-    stroke: var(--theme-accent, #d4813a);
+    stroke: var(--ve-theme-accent, #d4813a);
     stroke-width: 2.5;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
 
   .anchor {
-    fill: var(--theme-text-secondary, #aaa);
+    fill: var(--ve-theme-text-secondary, #aaa);
   }
 
   /* The ring below stands in for the focus outline, which would otherwise
@@ -373,12 +373,12 @@
   }
 
   .handle:focus-visible .handle-ring {
-    stroke: var(--theme-text, #fff);
+    stroke: var(--ve-theme-text, #fff);
   }
 
   .handle-dot {
-    fill: var(--theme-accent, #d4813a);
-    stroke: var(--theme-bg, #101018);
+    fill: var(--ve-theme-accent, #d4813a);
+    stroke: var(--ve-theme-bg, #101018);
     stroke-width: 2;
     pointer-events: none;
   }
@@ -413,7 +413,7 @@
     align-self: center;
     margin: 0;
     padding: 0 0.375rem;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.8125rem;
     line-height: 1.4;
   }

@@ -20,6 +20,11 @@
     roundToFrameSeconds,
     snapToTargets,
   } from "./post-timeline-geometry";
+  import {
+    Icon,
+    faMusic,
+    faTriangleExclamation,
+  } from "@austencloud/video-editor/icons";
 
   /**
    * The music's row on the timeline: its waveform, bars and beats, and the
@@ -383,11 +388,11 @@
       onpointerdown={(event) => beginDrag(event, "move")}
       onclick={onSelect}
     >
-      <i class="fa-solid fa-music" aria-hidden="true"></i>
+      <Icon icon={faMusic} />
       <span class="music-label">{music.label}</span>
       {#if missing}
         <span class="music-missing">
-          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <Icon icon={faTriangleExclamation} />
           Can't load file
         </span>
       {/if}
@@ -439,18 +444,18 @@
     top: 3px;
     bottom: 3px;
     overflow: hidden;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.14));
+    border: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.14));
     border-radius: 0.5rem;
     background: color-mix(
       in srgb,
       var(--music-tint) 18%,
-      var(--theme-card-bg, #1c1c26)
+      var(--ve-theme-card-bg, #1c1c26)
     );
   }
 
   .music-clip.selected {
-    border-color: var(--theme-accent);
-    box-shadow: inset 0 0 0 2px var(--theme-accent);
+    border-color: var(--ve-theme-accent);
+    box-shadow: inset 0 0 0 2px var(--ve-theme-accent);
   }
 
   @media (hover: hover) {
@@ -458,14 +463,14 @@
       border-color: color-mix(
         in srgb,
         var(--music-tint) 60%,
-        var(--theme-stroke, rgba(255, 255, 255, 0.14))
+        var(--ve-theme-stroke, rgba(255, 255, 255, 0.14))
       );
     }
   }
 
   /* The video clip's focus ring, outside the selection ring. */
   .music-clip:has(.music-body:focus-visible) {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 2px;
   }
 
@@ -474,7 +479,7 @@
     top: 4px;
     height: 40px;
     transform-origin: 0 50%;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     opacity: 0.45;
     pointer-events: none;
   }
@@ -484,7 +489,7 @@
     top: 0;
     bottom: 0;
     width: 1px;
-    background: color-mix(in srgb, var(--theme-text, #fff) 18%, transparent);
+    background: color-mix(in srgb, var(--ve-theme-text, #fff) 18%, transparent);
     pointer-events: none;
   }
 
@@ -502,7 +507,7 @@
     bottom: 0;
     background: color-mix(
       in srgb,
-      var(--theme-panel-bg, #08080c) 65%,
+      var(--ve-theme-panel-bg, #08080c) 65%,
       transparent
     );
     pointer-events: none;
@@ -518,9 +523,9 @@
     padding: 0.3rem 0.5rem;
     border: 0;
     background: transparent;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     font: inherit;
-    font-size: var(--font-size-compact, 0.75rem);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     text-align: left;
     white-space: nowrap;
     cursor: pointer;
@@ -537,7 +542,7 @@
     outline: none;
   }
 
-  .music-body i {
+  .music-body :global(.ve-icon) {
     flex-shrink: 0;
     font-size: 0.85em;
     opacity: 0.85;
@@ -554,7 +559,7 @@
     border-radius: 0.25rem;
     background: color-mix(
       in srgb,
-      var(--theme-card-bg, #1c1c26) 85%,
+      var(--ve-theme-card-bg, #1c1c26) 85%,
       transparent
     );
     text-overflow: ellipsis;
@@ -584,9 +589,9 @@
     width: 4px;
     height: min(60%, 2rem);
     border-radius: 999px;
-    background: var(--theme-accent);
+    background: var(--ve-theme-accent);
     box-shadow: 0 0 0 1px
-      color-mix(in srgb, var(--theme-text, #fff) 40%, transparent);
+      color-mix(in srgb, var(--ve-theme-text, #fff) 40%, transparent);
   }
 
   /* The ring goes on the grip or the flag, not around the wider touch area. */
@@ -596,7 +601,7 @@
   }
 
   .trim-handle:focus-visible .handle-grip {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 2px;
   }
 
@@ -627,12 +632,12 @@
     border-radius: 0.25rem;
     background: var(--music-tint);
     color: #0b1a10;
-    font-size: var(--font-size-compact, 0.75rem);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     font-weight: 700;
   }
 
   .bar-one:focus-visible .flag {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 2px;
   }
 </style>

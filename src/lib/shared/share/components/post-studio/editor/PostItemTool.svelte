@@ -73,6 +73,22 @@
   import PostVideoColorTool from "./PostVideoColorTool.svelte";
   import ToolReadout from "./item-tool/ToolReadout.svelte";
   import ToolStatus from "./item-tool/ToolStatus.svelte";
+  import {
+    Icon,
+    faArrowRightFromBracket,
+    faArrowRightToBracket,
+    faArrowsRotate,
+    faCropSimple,
+    faExpand,
+    faFilm,
+    faLeftRight,
+    faLocationCrosshairs,
+    faLockOpen,
+    faRotateLeft,
+    faVolumeHigh,
+  } from "@austencloud/video-editor/icons";
+
+  const DEGREE = String.fromCharCode(176);
 
   const t = useStrings();
 
@@ -303,19 +319,19 @@
       {
         value: "fill",
         label: t("post_crop_shape_fill"),
-        icon: "fa-expand",
+        icon: faExpand,
         disabled: off,
       },
       {
         value: "original",
         label: t("post_crop_shape_original"),
-        icon: "fa-film",
+        icon: faFilm,
         disabled: off || !crop?.pose,
       },
       {
         value: "free",
         label: t("post_crop_shape_free"),
-        icon: "fa-crop-simple",
+        icon: faCropSimple,
         disabled: off,
       },
       ...POST_CANVAS_RATIOS.map((name) => ({
@@ -636,11 +652,11 @@
 
   const percent = (value: number) => `${Math.round(value)}%`;
   const pixels = (value: number) => `${Math.round(value)} px`;
-  const fineDegrees = (value: number) => `${Number(value.toFixed(1))}°`;
+  const fineDegrees = (value: number) => `${Number(value.toFixed(1))}${DEGREE}`;
   const fadeSeconds = (value: number) => `${value.toFixed(2)} s`;
 
   /**
-   * Speed slides on a doubling scale: 1× sits in the middle, with the same
+   * Speed slides on a doubling scale: 1x sits in the middle, with the same
    * travel to half speed as to double.
    */
   const SPEED_STEP = 0.05;
@@ -673,14 +689,14 @@
   {#if locked}
     <ToolStatus
       text={t("post_editor_layer_locked")}
-      icon="fa-lock-open"
+      icon={faLockOpen}
       action={t("post_editor_unlock_layer")}
       run={unlock}
     />
   {:else if channel !== null && !withinSpan}
     <ToolStatus
       text={t("post_editor_outside_item")}
-      icon="fa-location-crosshairs"
+      icon={faLocationCrosshairs}
       action={t("post_editor_go_to_item")}
       run={goToItem}
     />
@@ -692,7 +708,7 @@
       value={formatTakeClock(item.sourceIn)}
       typed={(seconds) => trimToSource("start", seconds)}
       set={{
-        icon: "fa-arrow-right-to-bracket",
+        icon: faArrowRightToBracket,
         run: () => trimToPlayhead("start"),
       }}
       {locked}
@@ -703,7 +719,7 @@
       value={formatTakeClock(item.sourceOut)}
       typed={(seconds) => trimToSource("end", seconds)}
       set={{
-        icon: "fa-arrow-right-from-bracket",
+        icon: faArrowRightFromBracket,
         run: () => trimToPlayhead("end"),
       }}
       {locked}
@@ -733,7 +749,7 @@
           value={formatTakeClock(item.start)}
           typed={(seconds) => trimTo("start", seconds)}
           set={{
-            icon: "fa-arrow-right-to-bracket",
+            icon: faArrowRightToBracket,
             run: () => trimToPlayhead("start"),
           }}
           {locked}
@@ -745,7 +761,7 @@
         value={formatTakeClock(itemEnd(item))}
         typed={(seconds) => trimTo("end", seconds)}
         set={{
-          icon: "fa-arrow-right-from-bracket",
+          icon: faArrowRightFromBracket,
           run: () => trimToPlayhead("end"),
         }}
         {locked}
@@ -804,13 +820,13 @@
         disabled={locked || frozen}
         ariaLabel={t("post_crop_rotate_left")}
       >
-        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+        <Icon icon={faRotateLeft} />
         {t("post_crop_rotate")}
       </PanelButton>
       <FilterChipBase
         mode="toggle"
         emphasis="solid"
-        icon="fa-solid fa-left-right"
+        icon={faLeftRight}
         label={t("post_editor_flip")}
         active={item.flip}
         disabled={locked}
@@ -824,7 +840,7 @@
             (!crop.canReset &&
               !(item.sourceGeometry || item.keyframes?.sourceGeometry?.length))}
         >
-          <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+          <Icon icon={faArrowsRotate} />
           {t("post_editor_reset_crop")}
         </PanelButton>
       {/if}
@@ -888,7 +904,7 @@
     {#if editor.project.audio === "silent"}
       <ToolStatus
         text={t("post_editor_post_silent")}
-        icon="fa-volume-high"
+        icon={faVolumeHigh}
         action={t("post_editor_use_video_sound")}
         run={() => editor.setAudio("takes")}
       />
@@ -901,7 +917,7 @@
           onclick={() => placeAt(only.box)}
           disabled={locked || frozen || placementNow === only.id}
         >
-          <i class="fa-solid fa-expand" aria-hidden="true"></i>
+          <Icon icon={faExpand} />
           {only.label}
         </PanelButton>
       </div>
@@ -1146,7 +1162,7 @@
   }
 
   .import-adjustment summary:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 2px;
   }
 
@@ -1193,7 +1209,7 @@
   }
 
   .rect-name {
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
   }
 
@@ -1215,7 +1231,7 @@
 
   .hint {
     margin: 0;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
     line-height: 1.4;
   }
@@ -1224,12 +1240,12 @@
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
-    min-height: var(--min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
     padding: 0 0.625rem;
-    border: 1px solid var(--theme-stroke, #484755);
+    border: 1px solid var(--ve-theme-stroke, #484755);
     border-radius: 0.5rem;
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg);
+    color: var(--ve-theme-text, #fff);
+    background: var(--ve-theme-card-bg);
     font: inherit;
     font-size: 1rem;
   }
@@ -1242,7 +1258,7 @@
   }
 
   .field:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 1px;
   }
 

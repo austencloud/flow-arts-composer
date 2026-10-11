@@ -1,5 +1,12 @@
 <script lang="ts">
   import { useStrings } from "@austencloud/video-editor/strings";
+  import {
+    Icon,
+    faEye,
+    faEyeSlash,
+    faLock,
+    faLockOpen,
+  } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -50,10 +57,7 @@
         )}
         onclick={onToggleHidden}
       >
-        <i
-          class="fa-solid {hidden ? 'fa-eye-slash' : 'fa-eye'}"
-          aria-hidden="true"
-        ></i>
+        <Icon icon={hidden ? faEyeSlash : faEye} />
       </button>
       <button
         type="button"
@@ -66,10 +70,7 @@
         )}
         onclick={onToggleLocked}
       >
-        <i
-          class="fa-solid {locked ? 'fa-lock' : 'fa-lock-open'}"
-          aria-hidden="true"
-        ></i>
+        <Icon icon={locked ? faLock : faLockOpen} />
       </button>
     </div>
   {/if}
@@ -81,16 +82,16 @@
     align-items: center;
     gap: 0.4rem;
     padding: 0 0.5rem;
-    border-bottom: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.03));
+    border-bottom: 1px solid var(--ve-theme-stroke, rgba(255, 255, 255, 0.08));
+    background: var(--ve-theme-card-bg, rgba(255, 255, 255, 0.03));
   }
 
   .track-name {
     overflow: hidden;
     flex: 1;
     min-width: 0;
-    color: var(--theme-text, #fff);
-    font-size: var(--font-size-compact, 0.75rem);
+    color: var(--ve-theme-text, #fff);
+    font-size: var(--ve-font-size-compact, 0.75rem);
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -111,29 +112,29 @@
     border: 1px solid transparent;
     border-radius: 0.4rem;
     background: transparent;
-    color: var(--theme-text-dim);
+    color: var(--ve-theme-text-dim);
     cursor: pointer;
     font-size: 0.8rem;
     transition:
-      background-color var(--duration-fast, 150ms) ease,
-      color var(--duration-fast, 150ms) ease;
+      background-color var(--ve-duration-fast, 150ms) ease,
+      color var(--ve-duration-fast, 150ms) ease;
   }
 
   @media (hover: hover) {
     .track-toggle:hover {
-      background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-      color: var(--theme-text);
+      background: var(--ve-theme-card-hover-bg, rgba(255, 255, 255, 0.08));
+      color: var(--ve-theme-text);
     }
   }
 
   .track-toggle:focus-visible {
-    outline: 2px solid var(--theme-accent);
+    outline: 2px solid var(--ve-theme-accent);
     outline-offset: 2px;
   }
 
   .track-toggle.active {
-    background: color-mix(in srgb, var(--theme-accent) 20%, transparent);
-    color: var(--theme-accent);
+    background: color-mix(in srgb, var(--ve-theme-accent) 20%, transparent);
+    color: var(--ve-theme-accent);
   }
 
   /* A narrow column keeps the hide and lock buttons and drops the name. A

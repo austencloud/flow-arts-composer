@@ -4,6 +4,12 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { formatPostClock } from "./post-format";
+  import {
+    Icon,
+    faDownload,
+    faFileExport,
+    faShare,
+  } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -95,8 +101,8 @@
 <div class="export">
   {#if output && exportDurationSeconds > 0}
     <p class="facts">
-      {formatPostClock(exportDurationSeconds)} · {output.width}×{output.height}
-      · {output.frameRate} fps
+      {formatPostClock(exportDurationSeconds)} &middot; {output.width}&times;{output.height}
+      &middot; {output.frameRate} fps
     </p>
   {/if}
 
@@ -161,7 +167,7 @@
         disabled={!canRender}
         fullWidth
       >
-        <i class="fa-solid fa-file-export" aria-hidden="true"></i>
+        <Icon icon={faFileExport} />
         {exportedUrl
           ? t("share_studio_render_again")
           : t("share_studio_render_post")}
@@ -180,13 +186,13 @@
       <h4>{t("share_studio_done")}</h4>
       <div class="row">
         <a class="download" href={exportedUrl} download={exportFilename}>
-          <i class="fa-solid fa-download" aria-hidden="true"></i>
+          <Icon icon={faDownload} />
           {t("share_download")}
           {exportFilename}
         </a>
         {#if onSharePost}
           <PanelButton onclick={onSharePost}>
-            <i class="fa-solid fa-share" aria-hidden="true"></i>
+            <Icon icon={faShare} />
             {t("share_title")}
           </PanelButton>
         {/if}
@@ -215,13 +221,13 @@
 
   h4 {
     margin: 0;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     font-size: 0.875rem;
   }
 
   .facts {
     margin: 0;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     font-size: 0.9375rem;
     font-variant-numeric: tabular-nums;
   }
@@ -229,18 +235,18 @@
   .help,
   .warn {
     margin: 0;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
     line-height: 1.4;
   }
 
   .warn {
-    color: var(--semantic-warning, #fbbf24);
+    color: var(--ve-semantic-warning, #fbbf24);
   }
 
   .error {
     margin: 0;
-    color: var(--semantic-error, #f87171);
+    color: var(--ve-semantic-error, #f87171);
     font-size: 0.875rem;
   }
 
@@ -253,11 +259,11 @@
   }
 
   .link {
-    min-height: var(--min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
     padding: 0 0.75rem;
-    border: 1px solid var(--semantic-warning, #fbbf24);
+    border: 1px solid var(--ve-semantic-warning, #fbbf24);
     border-radius: 0.5rem;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     background: transparent;
     font: inherit;
     font-size: 0.875rem;
@@ -267,7 +273,7 @@
 
   .link:focus-visible,
   .download:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 2px;
   }
 
@@ -282,24 +288,24 @@
     height: 0.5rem;
     overflow: hidden;
     border-radius: 999px;
-    background: var(--theme-card-bg);
+    background: var(--ve-theme-card-bg);
   }
 
   .progress span {
     display: block;
     height: 100%;
-    background: var(--theme-accent, #d4813a);
+    background: var(--ve-theme-accent, #d4813a);
   }
 
   .download {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    min-height: var(--min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
     padding: 0 1rem;
-    border: 1px solid var(--theme-accent, #d4813a);
+    border: 1px solid var(--ve-theme-accent, #d4813a);
     border-radius: 0.625rem;
-    color: var(--theme-text, #fff);
+    color: var(--ve-theme-text, #fff);
     font-size: 0.875rem;
     text-decoration: none;
     overflow-wrap: anywhere;

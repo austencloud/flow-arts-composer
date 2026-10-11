@@ -3,6 +3,7 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import { parseClock } from "../post-format";
+  import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
 
@@ -14,7 +15,7 @@
     name: string;
     value: string;
     typed: (seconds: number) => void;
-    set: { icon: string; run: () => void } | null;
+    set: { icon: IconDefinition; run: () => void } | null;
     locked: boolean;
     /** Far enough inside that an edge moved to the playhead leaves a piece. */
     playheadInside: boolean;
@@ -41,7 +42,7 @@
       disabled={locked || !playheadInside}
       ariaLabel={`${t("post_editor_set_to_playhead")}: ${name}`}
     >
-      <i class="fa-solid {set.icon}" aria-hidden="true"></i>
+      <Icon icon={set.icon} />
       {t("post_editor_set_to_playhead")}
     </PanelButton>
   {/if}
@@ -67,7 +68,7 @@
   }
 
   .readout-name {
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.8125rem;
   }
 </style>

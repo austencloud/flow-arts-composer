@@ -7,6 +7,8 @@
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
 
+  const TIMES = String.fromCharCode(215);
+
   interface Props {
     style: PostTextStyle;
     animation?: PostTextAnimation;
@@ -85,7 +87,7 @@
     <span class="name" aria-hidden="true">Line spacing</span>
     <TypeableValue
       label="Line spacing"
-      text={`${Number(style.lineSpacing.toFixed(2))} ×`}
+      text={`${Number(style.lineSpacing.toFixed(2))} ${TIMES}`}
       disabled={locked}
       oncommit={(value) => numeric("lineSpacing", value)}
     />
@@ -159,22 +161,22 @@
   .font-label,
   .name,
   .animation-heading {
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.875rem;
   }
   .font-field {
     box-sizing: border-box;
     width: 100%;
-    min-height: var(--min-touch-target, 44px);
+    min-height: var(--ve-min-touch-target, 44px);
     padding: 0 0.625rem;
-    border: 1px solid var(--theme-stroke, #484755);
+    border: 1px solid var(--ve-theme-stroke, #484755);
     border-radius: 0.5rem;
-    color: var(--theme-text, #fff);
-    background: var(--theme-card-bg);
+    color: var(--ve-theme-text, #fff);
+    background: var(--ve-theme-card-bg);
     font: inherit;
   }
   .font-field:focus-visible {
-    outline: 2px solid var(--theme-accent, currentColor);
+    outline: 2px solid var(--ve-theme-accent, currentColor);
     outline-offset: 1px;
   }
   .fields {
@@ -191,7 +193,7 @@
   }
   .hint {
     margin: 0;
-    color: var(--theme-text-secondary, #aaa);
+    color: var(--ve-theme-text-secondary, #aaa);
     font-size: 0.8125rem;
     line-height: 1.4;
   }
