@@ -298,8 +298,18 @@ so they curve as they do in the tool. The points come from the demo sequence's
 hand locations.
 
 `InteractiveGrid` itself is not reused, because it is interactive and needs a
-live Assemble state. The grid sits centered in a strip. The finished picture
-shows both props on their final points, as Assemble does on **Complete**.
+live Assemble state. The finished picture shows both props on their final
+points, as Assemble does on **Complete**.
+
+Beside the grid, or under it in a square box, sit the two beats the taps
+write, because Assemble writes its sequence as you tap. Each blue tap writes a
+beat that has only blue in it. Each red tap fills that beat in: the whole beat,
+letter and all, fades in over it while blue's arrow and prop glide to their
+two-hand places. The beats clear when a turn starts, and the finished picture
+shows both whole beats, N and M. They are the demo's third N and M: each
+other pair shares a step with Construct, Fuse, or Generate's usual cells.
+Only Generate's widest strip and its grid of eight show them too, until
+Generate's first roll (added 2026-10-10).
 
 ## Turns
 
