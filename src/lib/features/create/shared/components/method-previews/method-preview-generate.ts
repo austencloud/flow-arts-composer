@@ -4,8 +4,13 @@
  */
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
 import { DEFAULT_ANIMATION_TIMING } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models.js";
-import { DEMO_SEQUENCE, DEMO_STEP_START } from "./method-preview-demo";
+import {
+  DEMO_SEQUENCE,
+  DEMO_STEP_START,
+  startPictograph,
+} from "./method-preview-demo";
 import { slotWaveBand } from "./method-preview-layout";
 
 /** Rolls in one turn: a second, different roll shows each tap is fresh. */
@@ -40,6 +45,20 @@ export function rollStep(roll: GenerateRoll, index: number): StepData | null {
   const steps = roll.sequence.steps;
   if (steps.length === 0) return null;
   return steps[(roll.offset + index) % steps.length] ?? null;
+}
+
+/**
+ * The pose cell `index` moves from: the step before its own, or the start
+ * position before the sequence's first step.
+ */
+export function rollPoseBefore(
+  roll: GenerateRoll,
+  index: number
+): StepData | PictographData | null {
+  const steps = roll.sequence.steps;
+  if (steps.length === 0) return null;
+  const at = (roll.offset + index) % steps.length;
+  return at === 0 ? startPictograph(roll.sequence) : (steps[at - 1] ?? null);
 }
 
 /**
