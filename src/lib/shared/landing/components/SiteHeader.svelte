@@ -439,44 +439,52 @@
           </a>
         {/if}
       {/each}
-      {#if !authReady}
-        <span class="auth-slot" aria-hidden="true"></span>
-      {:else if isFullAccount}
-        <div class="account" bind:this={accountEl}>
-          <button
-            class="avatar-btn"
-            aria-haspopup="menu"
-            aria-expanded={accountOpen}
-            aria-label={siteCopy("Account menu")}
-            onclick={() => (accountOpen = !accountOpen)}
-          >
-            <RobustAvatar src={photoURL} name={displayName} customSize={32} />
-          </button>
-          {#if accountOpen}
-            <div class="account-menu" role="menu">
-              <div class="acct-identity">
-                <span class="acct-name">{displayName}</span>
-                {#if email}<span class="acct-email">{email}</span>{/if}
-              </div>
-              <button
-                class="acct-signout"
-                role="menuitem"
-                onclick={handleSignOut}
-              >
-                <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-                {siteCopy("Sign out")}
-              </button>
-            </div>
-          {/if}
-        </div>
-      {:else}
-        <button
-          type="button"
-          class="signin auth-slot"
-          onclick={() => openSignIn("header_desktop_signin")}
-          >{siteCopy("Sign in")}</button
+      <!-- One cell sized to the slot's widest state, the "Sign in" label or
+           the avatar's touch target, so resolving the placeholder to either
+           never moves the menu beside it. -->
+      <div class="auth-cell">
+        <span class="signin auth-sizer" aria-hidden="true"
+          >{siteCopy("Sign in")}</span
         >
-      {/if}
+        {#if !authReady}
+          <span class="auth-slot" aria-hidden="true"></span>
+        {:else if isFullAccount}
+          <div class="account" bind:this={accountEl}>
+            <button
+              class="avatar-btn"
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+              aria-label={siteCopy("Account menu")}
+              onclick={() => (accountOpen = !accountOpen)}
+            >
+              <RobustAvatar src={photoURL} name={displayName} customSize={32} />
+            </button>
+            {#if accountOpen}
+              <div class="account-menu" role="menu">
+                <div class="acct-identity">
+                  <span class="acct-name">{displayName}</span>
+                  {#if email}<span class="acct-email">{email}</span>{/if}
+                </div>
+                <button
+                  class="acct-signout"
+                  role="menuitem"
+                  onclick={handleSignOut}
+                >
+                  <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                  {siteCopy("Sign out")}
+                </button>
+              </div>
+            {/if}
+          </div>
+        {:else}
+          <button
+            type="button"
+            class="signin auth-slot"
+            onclick={() => openSignIn("header_desktop_signin")}
+            >{siteCopy("Sign in")}</button
+          >
+        {/if}
+      </div>
       <a
         class="cta"
         href="/create"
@@ -798,12 +806,26 @@
   .signin:focus-visible {
     color: #fff;
   }
-  /* Reserve the auth slot at the avatar's footprint so swapping
-     placeholder → Sign in / avatar never nudges the CTA. */
+  /* The placeholder, Sign in and the avatar share one grid cell. A hidden
+     copy of the Sign in label, at least the avatar's touch target wide, sets
+     its size in every language, so no state change moves the nav. */
+  .auth-cell {
+    display: grid;
+    align-items: center;
+    justify-items: center;
+  }
+  .auth-cell > * {
+    grid-area: 1 / 1;
+  }
+  .auth-sizer {
+    visibility: hidden;
+    min-width: var(--min-touch-target, 44px);
+    text-align: center;
+    pointer-events: none;
+  }
   .auth-slot {
     display: inline-flex;
     align-items: center;
-    min-width: 36px;
     min-height: var(--min-touch-target, 44px);
   }
 
