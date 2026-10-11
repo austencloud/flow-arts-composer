@@ -21,7 +21,7 @@ describe("Placements topic record", () => {
   it("resolves every unit and family message in English and German", () => {
     const keys = [
       ...Object.values(PLACEMENTS_TOPIC_UNITS),
-      ...PLACEMENT_FAMILIES.flatMap((f) => [f.name, f.definition]),
+      ...PLACEMENT_FAMILIES.flatMap((f) => [f.name, f.brief]),
     ];
     for (const key of keys) {
       expect(english[key], key).toBeTruthy();
@@ -40,14 +40,23 @@ describe("Placements topic record", () => {
         "transform",
         "redRight",
         "blueLeft",
-        "firstThree",
       ] as const) {
         expect(paragraph).toContain(catalog[PLACEMENTS_TOPIC_UNITS[unit]]);
       }
     }
-    expect(placementsTopicText("firstThree")).toBe(
-      "In The Kinetic Alphabet, our first three placements are called Alpha, Beta, and Gamma."
+    expect(placementsTopicText("transform")).toBe(
+      "Placements can be rotated or mirrored."
     );
+  });
+
+  it("keeps each brief definition as Austen's sentence minus its lead-in", () => {
+    for (const family of PLACEMENT_FAMILIES) {
+      const name = english[family.name]!;
+      const full = english[`verified_level1_${family.kind}_definition`]!;
+      const brief = english[family.brief]!;
+      const restored = `In ${name}, ${brief[0]!.toLowerCase()}${brief.slice(1)}`;
+      expect(restored).toBe(full);
+    }
   });
 
   it("groups the 16 diamond placements 4/4/8 under the family they belong to", () => {
