@@ -372,7 +372,7 @@ the evidence set before the fourth batch merges.
 - Shared paint kit plus one canvas portrait per effect, over a single generic
   portrait engine or per-effect live renders.
 - Prototype in a browser page, react to the picture, then port. Every page in
-  the prototypes folder was locked by Austen in that loop.
+  the reference folder was locked by Austen in that loop.
 - Ghost reflects the user's current prop, not a fixed staff.
 - Silk: spiral gesture. Animal: coil staging. Smoke: staged plume (v6), not a
   replayed sweep. Pulse: both staff ends ring, two beats of history.
