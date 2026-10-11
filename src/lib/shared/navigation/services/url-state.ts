@@ -25,7 +25,7 @@ export interface UrlStateOptions {
 // SvelteKit flips its internal "router started" flag only after the root
 // component's effects have run, so a URL write issued from a component that
 // mounts during hydration — an onMount, or afterNavigate on the initial load —
-// arrives too early. In dev that rejects with "Cannot call pushState(...)
+// arrives too early. In dev that rejects with "Cannot call goto(...)
 // before router is initialized", and because the failure escapes the mount
 // flush the router never finishes starting: every later shallow-routing call
 // on that page fails too, so one early write kills client-side navigation for
