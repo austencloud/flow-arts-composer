@@ -113,15 +113,18 @@
   }: Props = $props();
 
   const viewer = getViewer3DContext();
+  const viewerEffects = getEffectsConfigContext();
   const effectsConfig =
-    getEffectsConfigContext() ??
-    createEffectsConfigState(undefined, { persist: false });
+    viewerEffects ?? createEffectsConfigState(undefined, { persist: false });
   const visibility = getAnimationVisibilityManager();
   type SettingsService =
     (typeof import("#lib/shared/settings/state/settings-state.svelte.js"))["settingsService"];
   let viewerSettings = $state<SettingsService | null>(null);
-  let globalTipEffectMap = $state<TipEffectMap>(
+  let legacyTipEffectMap = $state<TipEffectMap>(
     visibility.effectsConfigState?.tipEffectMap ?? {}
+  );
+  const globalTipEffectMap = $derived(
+    viewerEffects?.tipEffectMap ?? legacyTipEffectMap
   );
   // These are complete immutable transport snapshots, replaced once per
   // application frame. Keeping them raw matters: a deep Svelte proxy forces
@@ -386,7 +389,7 @@
       }
     );
     const updateMap = () => {
-      globalTipEffectMap = visibility.effectsConfigState?.tipEffectMap ?? {};
+      legacyTipEffectMap = visibility.effectsConfigState?.tipEffectMap ?? {};
     };
     visibility.registerObserver(updateMap);
     updateMap();
