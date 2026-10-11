@@ -67,7 +67,9 @@ describe("production release feature gate", () => {
     const flags = await loadProductionFeatureFlags("true");
 
     expect(flags.getEnabledFeaturesDefineMap().__FEATURE_COVEN__).toBe("true");
-    expect(flags.getClientEmptiedRoutePaths()).not.toContain("src/routes/coven/");
+    expect(flags.getClientEmptiedRoutePaths()).not.toContain(
+      "src/routes/coven/"
+    );
   });
 
   it("keeps the outward-facing /embed route out of every internal list", async () => {
@@ -75,7 +77,9 @@ describe("production release feature gate", () => {
     // it is the one most likely to be swept into a gating list by mistake.
     const flags = await loadProductionFeatureFlags();
 
-    expect(flags.getClientEmptiedRoutePaths()).not.toContain("src/routes/embed/");
+    expect(flags.getClientEmptiedRoutePaths()).not.toContain(
+      "src/routes/embed/"
+    );
     expect(flags.getDisabledRoutePatterns()).not.toContain("src/routes/embed/");
   });
 
@@ -121,6 +125,65 @@ describe("production release feature gate", () => {
     expect(
       load("E:/tka-platform/src/routes/browse/gallery/+page.svelte")
     ).toBeNull();
+  });
+
+  it("gates by build environment when one config builds client and server", async () => {
+    // SvelteKit 3 builds both as environments of one Vite config, so
+    // configResolved sees build.ssr false; the hook's environment decides.
+    const flags = await loadProductionFeatureFlags();
+    const clientPaths = flags.getDisabledFeatureModulePaths();
+    const serverOnlyPath = flags
+      .getSsrStubbedModulePaths()
+      .find(
+        (path) => path.startsWith("features/") && !clientPaths.includes(path)
+      );
+    expect(serverOnlyPath).toBeDefined();
+
+    const { featureGatePlugin } =
+      await import("../../src/config/vite-plugin-feature-gate");
+    const plugin = featureGatePlugin();
+    const configure = plugin.configResolved as (config: {
+      command: string;
+      build: { ssr: boolean };
+    }) => void;
+    configure({ command: "build", build: { ssr: false } });
+
+    const source = `#lib/${serverOnlyPath}Panel.svelte`;
+    const resolve = vi.fn(async () => ({
+      id: `E:/tka-platform/src/lib/${serverOnlyPath}Panel.svelte`,
+    }));
+    const context = (consumer: "client" | "server") => ({
+      resolve,
+      environment: { config: { consumer } },
+    });
+    const resolveId = plugin.resolveId as (
+      this: ReturnType<typeof context>,
+      source: string,
+      importer: string,
+      options: Record<string, never>
+    ) => Promise<string | null>;
+    const load = plugin.load as (
+      this: ReturnType<typeof context>,
+      id: string
+    ) => string | null;
+
+    const importer = "E:/tka-platform/src/routes/+layout.svelte";
+    await expect(
+      resolveId.call(context("server"), source, importer, {})
+    ).resolves.toBe("\0feature-gate-stub.js");
+    await expect(
+      resolveId.call(context("client"), source, importer, {})
+    ).resolves.toBeNull();
+    await expect(
+      resolveId.call(context("server"), "h264-mp4-encoder", importer, {})
+    ).resolves.toBe("\0feature-gate-stub.js");
+    await expect(
+      resolveId.call(context("client"), "h264-mp4-encoder", importer, {})
+    ).resolves.toBeNull();
+
+    const appRoute = "E:/tka-platform/src/routes/app/+page.svelte";
+    expect(load.call(context("server"), appRoute)).toBe("");
+    expect(load.call(context("client"), appRoute)).toBeNull();
   });
 
   it("keeps the public Concepts SSR shell while stubbing its app child", async () => {
