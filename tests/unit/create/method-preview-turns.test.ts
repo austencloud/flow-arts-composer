@@ -91,6 +91,17 @@ describe("method preview turns", () => {
     expect(turns.playingId).toBeNull();
   });
 
+  it("gives a card whose scene needs longer its longer turn", () => {
+    const { turns } = setup({ timing: { ...TIMING, longTurnsMs: { b: 150 } } });
+    turns.start();
+    expect(tick(turns, 400)).toEqual([
+      [5, "a"],
+      [115, "b"],
+      [275, "c"],
+      [385, "a"],
+    ]);
+  });
+
   it("numbers each turn so a scene can tell a new turn from the last", () => {
     const { turns } = setup();
     turns.start();
