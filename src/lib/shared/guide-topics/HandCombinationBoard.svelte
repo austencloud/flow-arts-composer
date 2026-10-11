@@ -11,7 +11,8 @@
   each find. With `namesOnlyWhenNarrow`, a board narrower than 24rem drops the
   pictures, so a phone keeps the board on screen under the grid. `darkMode`
   sets the pictures' colors for a page with its own theme switch; left out,
-  they follow the app theme.
+  they follow the app theme. `printMode` draws them on the white print
+  surface, as the Guide's own pictures are in light mode.
 -->
 <script lang="ts">
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -31,6 +32,7 @@
     showDescriptions?: boolean;
     namesOnlyWhenNarrow?: boolean;
     darkMode?: boolean;
+    printMode?: boolean;
     label?: string;
   }
 
@@ -40,6 +42,7 @@
     showDescriptions = false,
     namesOnlyWhenNarrow = false,
     darkMode = undefined,
+    printMode = false,
     label,
   }: Props = $props();
 
@@ -82,6 +85,7 @@
               showNonRadialPoints={false}
               stepNumberOverride={false}
               {darkMode}
+              {printMode}
             />
           </div>
         </div>
