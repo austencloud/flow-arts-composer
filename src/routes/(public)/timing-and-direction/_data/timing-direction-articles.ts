@@ -27,11 +27,80 @@ export interface TimingDirectionArticle {
   readonly metaDescription: string;
 }
 
+export interface TimingDirectionDiscussion {
+  readonly date: string;
+  readonly title: string;
+  readonly preview: string;
+  readonly href: string;
+}
+
 /** Noel Yee's Vulcan Tech Gospel, where these mode names became standard. */
 export const TIMING_DIRECTION_SOURCE: TimingDirectionSource = {
   label: "Noel Yee: Vulcan Tech Gospel",
   url: "https://noelyee.com/instruction/vulcan-tech-gospel/",
 };
+
+/** Home of Poi threads where spinners worked the terms out, oldest first. */
+export const TIMING_DIRECTION_DISCUSSIONS = [
+  {
+    date: "August 2002",
+    title: "How do you define a weave?",
+    preview:
+      "Spinners compare split and non-split timing, same and opposite direction, and how those combinations show up in weaves and butterflies.",
+    href: "https://www.homeofpoi.com/en/community/forums/topics/120838/How-do-you-define-a-weave",
+  },
+  {
+    date: "November 2002",
+    title: "Quarter-time butterflies",
+    preview:
+      "Jez names quarter-time butterflies in a discussion about concept moves and plane transitions. An early written use of quarter timing.",
+    href: "https://www.homeofpoi.com/en/community/forums/topics/122222/Concept-moves-and-why-make-lists",
+  },
+  {
+    date: "May 2009",
+    title: "Prop transitioning",
+    preview:
+      "Noel Yee separates timing from direction and works through transitions between the four original combinations.",
+    href: "https://www.homeofpoi.com/fr/community/forums/topics/887635/X-Post-Prop-Transitioning-Article",
+  },
+] as const satisfies readonly TimingDirectionDiscussion[];
+
+const [WEAVE_THREAD, QUARTER_THREAD, TRANSITIONS_THREAD] =
+  TIMING_DIRECTION_DISCUSSIONS;
+
+/**
+ * Other people's attempts to sort two-prop patterns by timing and direction,
+ * for the mode guides' reading list. The Vulcan Tech Gospel leads because its
+ * names are the ones these pages use; the rest run oldest first, with the
+ * undated videos and the encyclopedia entry last.
+ */
+export const TIMING_DIRECTION_READING: readonly TimingDirectionSource[] = [
+  {
+    label: `${TIMING_DIRECTION_SOURCE.label} (2010)`,
+    url: TIMING_DIRECTION_SOURCE.url,
+  },
+  {
+    label: "Home of Poi: How do you define a weave? (2002)",
+    url: WEAVE_THREAD.href,
+  },
+  { label: "Jez: Quarter-time butterflies (2002)", url: QUARTER_THREAD.href },
+  {
+    label: "Noel Yee: Prop transitioning (2009)",
+    url: TRANSITIONS_THREAD.href,
+  },
+  {
+    label: "Noel Yee: Timing and Direction video",
+    url: "https://www.youtube.com/watch?v=ybhuyl4UcIc",
+  },
+  {
+    label: "Nick Woolsey: 4 Basic Modes video",
+    url: "https://www.youtube.com/watch?v=HfWtSAvsZaE",
+  },
+  {
+    label: "Wikipedia: Poi timing and direction",
+    url: "https://en.wikipedia.org/wiki/Poi_definitions#Timing_and_direction",
+  },
+];
 
 const ARTICLE_BY_CODE = {
   SS: {

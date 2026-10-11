@@ -33,7 +33,7 @@
   import {
     getTimingDirectionArticle,
     TIMING_DIRECTION_ARTICLES,
-    TIMING_DIRECTION_SOURCE,
+    TIMING_DIRECTION_READING,
   } from "../_data/timing-direction-articles";
   import {
     adjustModeLoops,
@@ -392,11 +392,11 @@
         description: article.metaDescription,
         url: canonical,
         inLanguage: "en-US",
-        citation: {
+        citation: TIMING_DIRECTION_READING.map((source) => ({
           "@type": "CreativeWork",
-          name: TIMING_DIRECTION_SOURCE.label,
-          url: TIMING_DIRECTION_SOURCE.url,
-        },
+          name: source.label,
+          url: source.url,
+        })),
         author: {
           "@type": "Person",
           name: "Austen Cloud",
@@ -697,19 +697,26 @@
 
   <div class="further">
     <section class="credit" aria-labelledby="credit-title">
-      <h2 id="credit-title">Where the names come from</h2>
-      <p>
-        Timing and direction come from the geometry of two hands sharing a
-        circle. Nobody invented them, and spinners used them long before they
-        had names. Noel Yee's Vulcan Tech Gospel standardized the names used
-        here. It sorts two-hand patterns by timing, together or split, and by
-        direction, same or opposite.{#if article.timing === "Quarter"}{" "}Quarter
-          time sits between together and split, with the hands a quarter cycle
-          apart.{/if}
-      </p>
-      <LinkChip href={TIMING_DIRECTION_SOURCE.url}
-        >{TIMING_DIRECTION_SOURCE.label}</LinkChip
-      >
+      <div class="credit-origin">
+        <h2 id="credit-title">Where the names come from</h2>
+        <p>
+          Timing and direction come from the geometry of two hands sharing a
+          circle. Nobody invented them, and spinners used them long before they
+          had names. Noel Yee's Vulcan Tech Gospel standardized the names used
+          here. It sorts two-hand patterns by timing, together or split, and by
+          direction, same or opposite.{#if article.timing === "Quarter"}{" "}Quarter
+            time sits between together and split, with the hands a quarter cycle
+            apart.{/if}
+        </p>
+      </div>
+      <div class="credit-reading">
+        <h3 id="reading-title">Further reading</h3>
+        <ul class="reading-list" aria-labelledby="reading-title">
+          {#each TIMING_DIRECTION_READING as source (source.url)}
+            <li><LinkChip href={source.url} wrap>{source.label}</LinkChip></li>
+          {/each}
+        </ul>
+      </div>
     </section>
 
     <nav class="related" aria-label="Other timing and direction modes">
@@ -1033,9 +1040,10 @@
     padding-top: 1.5rem;
     border-top: 1px solid var(--theme-stroke);
   }
-  /* The heading is a label, set like the footer's column titles (Explore,
-     Learn) that this section lines up with. */
-  .credit h2 {
+  /* The headings are labels, set like the footer's column titles (Explore,
+     Learn); the reading list's chips echo the footer's link rows. */
+  .credit h2,
+  .credit h3 {
     margin: 0 0 12px;
     font-size: 0.8rem;
     font-weight: 600;
@@ -1045,40 +1053,39 @@
   }
   .credit p {
     max-width: 44rem;
-    margin-bottom: 1rem;
+    margin: 0;
   }
-  /* From the width where the site footer splits into two columns, the credit
-     takes the same shape: heading and source on the left, the text on the
-     right, starting where the footer's Explore column does and running to the
-     edge. The footer sizes that column to its longest link row (954.6px) inside
-     a band 1.6px wider each side than this page's, so 59.55rem lands the text's
-     first letter under Explore's. */
+  .credit-reading {
+    margin-top: 1.5rem;
+  }
+  .reading-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Side by side once two columns hold a readable line: the text on the left,
+     the reading list on the right. */
   @media (min-width: 1024px) {
     .credit {
       display: grid;
-      grid-template-columns: minmax(15rem, 1fr) minmax(0, 59.55rem);
-      grid-template-rows: auto 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       column-gap: clamp(32px, 3.5vw, 84px);
       align-items: start;
     }
-    /* The label sits on the text's first line. The text runs larger here,
-       so the wide column holds about 90 characters a line and balances the
-       label and source on the left. */
-    .credit h2 {
-      grid-area: 1 / 1;
-      align-self: baseline;
+    .credit-reading {
+      margin-top: 0;
     }
-    .credit p {
-      grid-area: 1 / 2 / 3 / 3;
-      align-self: baseline;
-      max-width: none;
-      margin: 0;
-      font-size: 1.375rem;
-      line-height: 1.5;
-    }
-    .credit > :global(a) {
-      grid-area: 2 / 1;
-      justify-self: start;
+  }
+  /* Once the left column still holds a comfortable line beside it, the list
+     takes the footer's link column: the footer sizes that column to its
+     longest link row (954.6px) inside a band 1.6px wider each side than this
+     page's, so 59.55rem starts the list where Explore starts. */
+  @media (min-width: 1680px) {
+    .credit {
+      grid-template-columns: minmax(15rem, 1fr) minmax(0, 59.55rem);
     }
   }
   .related-modes {

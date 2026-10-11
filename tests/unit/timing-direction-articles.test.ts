@@ -4,6 +4,8 @@ import {
   getTimingDirectionArticleByPair,
   TIMING_DIRECTION_ARTICLES,
   TIMING_DIRECTION_ARTICLE_SLUGS,
+  TIMING_DIRECTION_DISCUSSIONS,
+  TIMING_DIRECTION_READING,
   TIMING_DIRECTION_SOURCE,
 } from "../../src/routes/(public)/timing-and-direction/_data/timing-direction-articles";
 
@@ -66,5 +68,15 @@ describe("timing and direction article cluster", () => {
   it("credits the Vulcan Tech Gospel as the source of the mode names", () => {
     expect(new URL(TIMING_DIRECTION_SOURCE.url).protocol).toBe("https:");
     expect(TIMING_DIRECTION_SOURCE.label).toContain("Vulcan Tech Gospel");
+  });
+
+  it("leads the reading list with that source and carries the hub's threads", () => {
+    const urls = TIMING_DIRECTION_READING.map(({ url }) => url);
+    expect(urls[0]).toBe(TIMING_DIRECTION_SOURCE.url);
+    expect(new Set(urls).size).toBe(urls.length);
+    for (const url of urls) expect(new URL(url).protocol).toBe("https:");
+    for (const thread of TIMING_DIRECTION_DISCUSSIONS) {
+      expect(urls).toContain(thread.href);
+    }
   });
 });
