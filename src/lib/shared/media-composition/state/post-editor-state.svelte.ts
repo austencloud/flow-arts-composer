@@ -163,8 +163,12 @@ export function createPostEditorState(deps: PostEditorDeps) {
   const store = deps.store ?? devicePostEditorStore;
   const context = (): EditContext => ({ now: now() });
   const sequence = $derived(deps.getSequence());
-  const sequenceId = deps.initialProject?.sequenceId ?? deps.getSequence()?.id;
-  if (!sequenceId) throw new Error("A Post Studio project needs an identity.");
+  const resolvedSequenceId =
+    deps.initialProject?.sequenceId ?? deps.getSequence()?.id;
+  if (!resolvedSequenceId)
+    throw new Error("A Post Studio project needs an identity.");
+  // Typed as string so the closures below keep the check above.
+  const sequenceId: string = resolvedSequenceId;
   const moveBeats = $derived(
     sequence?.steps.map((step) => step.duration ?? 1) ?? [1]
   );
