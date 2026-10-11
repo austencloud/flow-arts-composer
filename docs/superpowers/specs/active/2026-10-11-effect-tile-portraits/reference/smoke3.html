@@ -1,0 +1,146 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Smoke tiles v6</title>
+<link rel="stylesheet" href="tiles.css"></head>
+<body>
+<h1>Smoke · six looks (v6 plume)</h1>
+<p class="lede">A staged plume instead of a replayed simulation. The tip rests low in the frame after a short sweep in from the left; a column of smoke rises from it. The column's spine is bent by the renderer's own curl field (curl strength sets how far it wanders and billows), its height comes from rise speed times the palette's lifetime (fog stays a low blanket, genie shoots up), puffs grow and thin as they climb (the renderer's 2.4x growth and hold-then-fade curve), intensity sets puff size and density, ambient emission feeds the column and motion emission feeds the fainter trail left along the sweep.</p>
+<div id="root"></div>
+<script type="module">
+import { W, H, lcg, ground, blob, hexToRgb, css } from './kit.js';
+import { curl2D } from './smoke-curl-field.js';
+
+const PAL = {
+  incense:  { core: '#d8d8d8', edge: '#f0f0f0', lifetime: 5.0, curlBias: 0.3, riseBias: 0.4 },
+  fog:      { core: '#c0c0c8', edge: '#e0e0e8', lifetime: 6.0, curlBias: 0.5, riseBias: 0.2 },
+  genie:    { core: '#a060ff', edge: '#ffe0ff', lifetime: 2.0, curlBias: 1.0, riseBias: 0.9 },
+  cursed:   { core: '#202020', edge: '#606060', lifetime: 5.0, curlBias: 0.8, riseBias: 0.3 },
+  spirit:   { core: '#80c8ff', edge: '#ffffff', lifetime: 6.0, curlBias: 0.4, riseBias: 0.5 },
+  campfire: { core: '#6e2411', edge: '#dc6b24', lifetime: 4.0, curlBias: 0.6, riseBias: 0.6 },
+};
+const PRESETS = [
+  { name: 'Classic',     patch: { palette: 'incense',  ambientEmission: 0.5, motionEmission: 0.4, intensity: 0.5, curlStrength: 0.5, riseSpeed: 0.5 } },
+  { name: 'Fog Wall',    patch: { palette: 'fog',      ambientEmission: 0.9, motionEmission: 0.2, intensity: 0.8, curlStrength: 0.4, riseSpeed: 0.3 } },
+  { name: 'Genie Burst', patch: { palette: 'genie',    ambientEmission: 0.2, motionEmission: 1.0, intensity: 0.7, curlStrength: 0.9, riseSpeed: 0.8 } },
+  { name: 'Cursed',      patch: { palette: 'cursed',   ambientEmission: 0.4, motionEmission: 0.5, intensity: 0.7, curlStrength: 0.8, riseSpeed: 0.4 } },
+  { name: 'Spirit Veil', patch: { palette: 'spirit',   ambientEmission: 0.6, motionEmission: 0.3, intensity: 0.4, curlStrength: 0.5, riseSpeed: 0.5 } },
+  { name: 'Campfire',    patch: { palette: 'campfire', ambientEmission: 0.5, motionEmission: 0.5, intensity: 0.6, curlStrength: 0.6, riseSpeed: 0.6 } },
+];
+
+const TAU = Math.PI * 2;
+const GROWTH = 2.4, HOLD = 0.4, RISE_BASE_PX = 280;
+const LARGE_EDDY_SCALE = 0.003, SMALL_EDDY_SCALE = 0.012, LARGE_STRENGTH = 140, SMALL_STRENGTH = 45;
+const CLOCK = 11.0;
+const SOURCE = { x: 390, y: 236 };
+// The short sweep in from the left that ended at the source.
+const ARC = { x0: 120, y0: 250, cx: 250, cy: 205, x1: SOURCE.x, y1: SOURCE.y };
+function arcAt(t) { const u = 1 - t; return { x: u*u*ARC.x0 + 2*u*t*ARC.cx + t*t*ARC.x1, y: u*u*ARC.y0 + 2*u*t*ARC.cy + t*t*ARC.y1 }; }
+
+function gauss(rand) { return (rand() + rand() + rand() - 1.5) / 1.5; }
+
+/** Renderer alpha curve: hold for 40% of life, then linear fade. */
+function lifeAlpha(lifeT) { return lifeT > HOLD ? Math.max(0, (1 - lifeT) / (1 - HOLD)) : 1; }
+
+function build(p, rand) {
+  const pal = PAL[p.palette];
+  const curl = p.curlStrength * pal.curlBias;             // 0..1
+  const rise = p.riseSpeed * pal.riseBias;                 // 0..1
+  const risePx = rise * RISE_BASE_PX;                      // px/s before cooling
+  const baseRadius = 14 * (0.7 + 0.9 * p.intensity);
+  const peakAlpha = 0.12 + 0.25 * p.intensity;
+  // How tall the column gets before its puffs have faded: speed x life, cooled.
+  const height = Math.max(95, Math.min(250, risePx * pal.lifetime * 0.7));
+  // Lateral spread per unit height: curl billows it, slow rise lets it pool sideways.
+  const spread = 0.14 + curl * 0.32 + (1 - rise) * 0.3;
+  // Spine: integrate the curl field upward so the column leans and kinks like the renderer's flow.
+  const SEG = 40, spine = [];
+  let sx = SOURCE.x, sy = SOURCE.y;
+  for (let i = 0; i <= SEG; i++) {
+    spine.push({ x: sx, y: sy });
+    const c1 = curl2D(sx * LARGE_EDDY_SCALE, sy * LARGE_EDDY_SCALE, CLOCK);
+    const c2 = curl2D(sx * SMALL_EDDY_SCALE, sy * SMALL_EDDY_SCALE, CLOCK * 1.7);
+    const flow = (c1.vx * LARGE_STRENGTH + c2.vx * SMALL_STRENGTH) * curl;
+    const dy = height / SEG;
+    sx += Math.tanh(flow / (risePx + 80)) * dy * 0.7 + Math.sin(i * 0.5 + CLOCK) * curl * 1.2;
+    sy -= dy;
+  }
+  const spineAt = (s) => { const f = s * SEG, i = Math.min(SEG - 1, Math.floor(f)), k = f - i; return { x: spine[i].x + (spine[i + 1].x - spine[i].x) * k, y: spine[i].y + (spine[i + 1].y - spine[i].y) * k }; };
+
+  const puffs = [];
+  const tangentAt = (s) => { const a = spineAt(Math.max(0, s - 0.03)), b = spineAt(Math.min(1, s + 0.03)); return Math.atan2(b.y - a.y, b.x - a.x); };
+  // Column: fed by ambient emission (plus a floor so every preset has a body).
+  const columnCount = Math.round(220 + p.ambientEmission * 160 + p.intensity * 60);
+  for (let i = 0; i < columnCount; i++) {
+    const s = Math.pow(rand(), 0.9);                        // slightly denser near the source
+    const o = spineAt(s);
+    const w = baseRadius * 0.5 + height * Math.pow(s, 0.8) * spread;
+    const lifeT = s * 0.95;
+    const wisp = rand() < 0.25;
+    const r = baseRadius * (0.7 + rand() * 0.5) * (1 + (GROWTH - 1) * lifeT) * (wisp ? 0.7 : 0.85);
+    const lateral = rand() < 0.7 ? gauss(rand) * w : (rand() - 0.5) * 2 * w;
+    const c = curl2D(o.x * SMALL_EDDY_SCALE, o.y * SMALL_EDDY_SCALE, CLOCK * 1.7);
+    const fadeIn = Math.min(1, s / 0.12);
+    puffs.push({
+      x: o.x + lateral, y: o.y + gauss(rand) * r * 0.6, r,
+      alpha: peakAlpha * lifeAlpha(lifeT) * fadeIn * (wisp ? 0.3 : 0.42) * (0.55 + 0.45 * (1 - s)),
+      order: s, angle: wisp ? tangentAt(s) + c.vx * 1.2 * curl : rand() * TAU,
+      stretch: wisp ? 2.2 + rand() * 1.8 : 0.85 + rand() * 0.3,
+    });
+  }
+  // Trail: motion emission left puffs along the sweep; they are older the farther back they are.
+  const trailCount = Math.round(60 + p.motionEmission * 220);
+  for (let i = 0; i < trailCount; i++) {
+    const t = rand();                                       // 1 = head
+    const o = arcAt(t);
+    const age = (1 - t) * 1.4 + rand() * 0.3;               // seconds since the tip passed
+    const lifeT = Math.min(0.95, age / pal.lifetime + 0.15);
+    const r = baseRadius * (0.7 + rand() * 0.5) * (1 + (GROWTH - 1) * lifeT) * (0.9 + age * 0.35);
+    const lift = risePx * age * 0.4;
+    const c = curl2D(o.x * LARGE_EDDY_SCALE, o.y * LARGE_EDDY_SCALE, CLOCK);
+    puffs.push({
+      x: o.x + c.vx * LARGE_STRENGTH * curl * age * 0.5 + gauss(rand) * (8 + age * 12),
+      y: o.y - lift + gauss(rand) * (10 + age * 26), r,
+      alpha: peakAlpha * lifeAlpha(lifeT) * 0.3 * (0.35 + 0.65 * t), order: 1 + age,
+      angle: rand() * TAU, stretch: 1 + curl * 0.4 + rand() * 0.3,
+    });
+  }
+  puffs.sort((a, b) => b.order - a.order);
+  return { pal, puffs, height };
+}
+
+function draw(ctx, p, rand) {
+  const { pal, puffs } = build(p, rand);
+  const core = hexToRgb(pal.core), edge = hexToRgb(pal.edge);
+  const dark = 0.2126 * edge[0] + 0.7152 * edge[1] + 0.0722 * edge[2] < 0.45;
+  ground(ctx, dark ? [0.27, 0.26, 0.31] : [0.03, 0.03, 0.045]);
+  if (dark) blob(ctx, 390, 120, 380, 230, [0.62, 0.6, 0.68], 0.75);
+  else blob(ctx, SOURCE.x, 150, 300, 200, edge, 0.05 + 0.05 * p.intensity);
+  const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+  grad.addColorStop(0, css(core, 0.8)); grad.addColorStop(0.5, css(edge, 0.38)); grad.addColorStop(1, css(edge, 0));
+  ctx.fillStyle = grad;
+  const boost = dark ? 1.7 : 0.8;
+  for (const q of puffs) {
+    const alpha = q.alpha * boost;
+    if (alpha <= 0.015) continue;
+    const cos = Math.cos(q.angle), sin = Math.sin(q.angle);
+    const sx = q.stretch * q.r, sy = q.r / q.stretch;
+    ctx.setTransform(sx * cos, sx * sin, -sy * sin, sy * cos, q.x, q.y);
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.beginPath(); ctx.arc(0, 0, 1, 0, TAU); ctx.fill();
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+}
+
+const root = document.getElementById('root');
+for (const preset of PRESETS) {
+  const p = preset.patch;
+  const row = document.createElement('div'); row.className = 'card';
+  row.innerHTML = `<h3>${preset.name} <small>${p.palette} · curl ${p.curlStrength} · rise ${p.riseSpeed} · intensity ${p.intensity}</small></h3><div class="row"></div>`;
+  for (const cls of ['small', 'large']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H; c.className = cls;
+    draw(c.getContext('2d'), p, lcg(0x5d0c + preset.name.length * 419));
+    row.querySelector('.row').appendChild(c);
+  }
+  root.appendChild(row);
+}
+</script>
+</body></html>

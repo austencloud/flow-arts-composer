@@ -1,0 +1,112 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Petals tiles</title>
+<link rel="stylesheet" href="tiles.css"></head>
+<body>
+<h1>Petals · six looks</h1>
+<p class="lede">The leaves are the app's own silhouettes, drawn by the same module the renderer calls (maple, oak and ginkgo from the autumn and gold rosters, monstera and banana for jungle, five-lobed blossoms and loose petals for classic, charred flakes with ember rims for ash). They lie along the tip's last sweep under the renderer's airstream rule: each leaf launched with <em>carry</em> of the tip's speed, that motion bleeding off at the <em>streak</em> rate, then easing into its <em>fall</em>. Intensity sets size, emission sets how many, and the face flutter turns some edge-on.</p>
+<div id="root"></div>
+<script type="module">
+import { W, H, lcg, ground, blob, hexToRgb, css } from './kit.js';
+import { PETAL_PALETTES, drawPetalSilhouette, drawPetalEmberRim, pickPetalSprite, pickPetalTint, resolvePetalOpacity, resolvePetalSize, rollEmberFlag } from './petal-palettes.js';
+
+const PRESETS = [
+  { name: 'Classic',      patch: { palette: 'blossom', ambientEmission: 0.16, motionEmission: 0.68, intensity: 0.42, swayAmplitude: 0.6, carry: 0.72, streakLength: 0.6,  fallSpeed: 0.4 } },
+  { name: 'Storm',        patch: { palette: 'autumn',  ambientEmission: 0.3,  motionEmission: 0.8,  intensity: 0.48, swayAmplitude: 0.8, carry: 0.8,  streakLength: 0.7,  fallSpeed: 0.7 } },
+  { name: 'Jungle Drift', patch: { palette: 'jungle',  ambientEmission: 0.14, motionEmission: 0.68, intensity: 0.42, swayAmplitude: 0.5, carry: 0.7,  streakLength: 0.6,  fallSpeed: 0.5 } },
+  { name: 'Ember Ash',    patch: { palette: 'ash',     ambientEmission: 0.12, motionEmission: 0.75, intensity: 0.42, swayAmplitude: 0.7, carry: 0.7,  streakLength: 0.55, fallSpeed: 0.5 } },
+  { name: 'Gilded',       patch: { palette: 'gold',    ambientEmission: 0.2,  motionEmission: 0.55, intensity: 0.46, swayAmplitude: 0.4, carry: 0.6,  streakLength: 0.5,  fallSpeed: 0.25 } },
+  { name: 'Tornado',      patch: { palette: 'autumn',  ambientEmission: 0.24, motionEmission: 0.9,  intensity: 0.45, swayAmplitude: 1.0, carry: 0.95, streakLength: 0.9,  fallSpeed: 0.8 } },
+];
+
+const SCALE = 2.4;
+const TAU = Math.PI * 2;
+const TILE_BOOST = 2.3;   // leaves are 2-4 px at picker size otherwise
+// The sweep: tail lower-left, head (tip now) upper-right.
+const ARC = { x0: 90, y0: 150, cx: 330, cy: -10, x1: 620, y1: 95 };
+function arcAt(t) { const u = 1 - t; return { x: u*u*ARC.x0 + 2*u*t*ARC.cx + t*t*ARC.x1, y: u*u*ARC.y0 + 2*u*t*ARC.cy + t*t*ARC.y1 }; }
+function tangentAt(t) { const d = { x: 2*(1-t)*(ARC.cx-ARC.x0) + 2*t*(ARC.x1-ARC.cx), y: 2*(1-t)*(ARC.cy-ARC.y0) + 2*t*(ARC.y1-ARC.cy) }; const l = Math.hypot(d.x, d.y) || 1; return { x: d.x / l, y: d.y / l }; }
+const SWEEP_SECONDS = 2.6;    // how long the tip took to draw the arc
+const TIP_SPEED = 600 / SWEEP_SECONDS; // px/s along the arc, tile units
+
+function petals(p, rand) {
+  const pal = PETAL_PALETTES[p.palette];
+  const baseSize = 8 * SCALE * TILE_BOOST;
+  const lifeBase = 2.2 + p.intensity * 1.2;
+  const ambientRate = p.ambientEmission * 2, motionRate = p.motionEmission * 34;
+  const ambientShare = ambientRate / (ambientRate + motionRate);
+  const count = Math.round(12 + (ambientRate + motionRate) * 1.8);
+  const decayBase = 0.02 + p.streakLength * 0.5;            // per second
+  const fall = 100 * (0.3 + 0.7 * p.fallSpeed) * SCALE * 0.5; // terminal fall, px/s
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    // Born somewhere along the sweep; the tip was there `age` seconds ago.
+    const t = rand();
+    const age = (1 - t) * SWEEP_SECONDS + rand() * 0.6;
+    const maxAge = lifeBase * (0.8 + rand() * 0.4);
+    // Strong carry throws the whole stream right; slide the sweep left to keep it in frame.
+    const o = arcAt(t), tg = tangentAt(t); o.x -= p.carry * 110;
+    const shape = pickPetalSprite(pal, rand);
+    const size = resolvePetalSize(baseSize, p.intensity, shape, rand);
+    const isAmbient = rand() < ambientShare;
+    const spread = (rand() - 0.5) * 40 * SCALE * 0.5;
+    // Airstream: inherit carry × tip velocity, bleed off at decayBase^t.
+    const vx0 = tg.x * TIP_SPEED * p.carry + spread;
+    const vy0 = tg.y * TIP_SPEED * p.carry + (10 + rand() * 20) * SCALE * 0.5;
+    const lnD = Math.log(decayBase);
+    const dx = vx0 * (Math.pow(decayBase, age) - 1) / lnD;
+    // Vertical eases toward terminal fall at 0.25^t.
+    const lnF = Math.log(0.25);
+    const dy = fall * age + (vy0 - fall) * (Math.pow(0.25, age) - 1) / lnF;
+    const flutter = Math.sin(age * (1.1 + rand() * 2.2) + rand() * TAU) * 3.4 * SCALE * (0.55 + p.swayAmplitude * 0.45) * Math.min(1, age);
+    // The shared air field scatters older leaves; sway sets how far.
+    const airX = (rand() - 0.5) * 2 * 14 * age * (0.5 + p.swayAmplitude), airY = (rand() - 0.5) * 2 * 10 * age * (0.5 + p.swayAmplitude);
+    const lifeT = Math.min(1, age / maxAge);
+    const fadeIn = age < 0.12 ? age / 0.12 : 1, fadeOut = lifeT > 0.8 ? (1 - lifeT) / 0.2 : 1;
+    const face = 0.32 + Math.abs(Math.sin(rand() * TAU)) * 0.68;
+    out.push({
+      x: o.x + dx + flutter + airX, y: o.y + dy + airY, size, shape, tint: pickPetalTint(pal, rand),
+      rot: rand() * TAU + dx * 0.012 * Math.min(1, age), face,
+      alpha: Math.max(0, fadeIn * fadeOut * resolvePetalOpacity(shape, isAmbient)),
+      ember: rollEmberFlag(pal, rand), age,
+    });
+  }
+  return { pal, out };
+}
+
+function draw(ctx, p, rand) {
+  const { pal, out } = petals(p, rand);
+  const tint = hexToRgb(pal.tints[0]);
+  ground(ctx, [0.035, 0.03, 0.04]);
+  // Soft wash in the palette's lead tint along the sweep, and a warm pool
+  // under the head where the newest leaves are.
+  blob(ctx, 300, 110, 330, 150, tint, 0.09);
+  const head = arcAt(1);
+  blob(ctx, head.x - 40 - p.carry * 110, head.y + 10, 150, 110, tint, 0.14);
+  for (const q of out) {
+    if (q.alpha <= 0.02) continue;
+    const cos = Math.cos(q.rot), sin = Math.sin(q.rot);
+    ctx.setTransform(cos * q.face, sin * q.face, -sin, cos, q.x, q.y);
+    ctx.globalAlpha = q.alpha;
+    drawPetalSilhouette(ctx, q.shape, q.size, q.tint);
+    if (q.ember && pal.emberEdge && q.age < 1.35) {
+      const emberAlpha = (1 - q.age / 1.35) * q.alpha * 1.15;
+      if (emberAlpha > 0.02) drawPetalEmberRim(ctx, q.shape, q.size, pal.emberEdge.color, emberAlpha);
+    }
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+}
+
+const root = document.getElementById('root');
+for (const preset of PRESETS) {
+  const p = preset.patch;
+  const row = document.createElement('div'); row.className = 'card';
+  row.innerHTML = `<h3>${preset.name} <small>${p.palette} · carry ${p.carry} · streak ${p.streakLength} · fall ${p.fallSpeed}</small></h3><div class="row"></div>`;
+  for (const cls of ['small', 'large']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H; c.className = cls;
+    draw(c.getContext('2d'), p, lcg(0x9e7a + preset.name.length * 311));
+    row.querySelector('.row').appendChild(c);
+  }
+  root.appendChild(row);
+}
+</script>
+</body></html>

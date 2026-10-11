@@ -1,0 +1,25 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Pulse tiles</title>
+<link rel="stylesheet" href="tiles.css"></head>
+<body>
+<h1>Pulse · four looks</h1>
+<p class="lede">A staff turning half a turn per beat sweeps in from the lower left; both ends ring, as the default both-ends tracking does. The renderer's own ring machine is run over that motion and frozen shortly after the newest primary ring (two beats of history stay on the frame), so each look shows the moment its trigger makes: <em>Sonar</em> and <em>Heartbeat</em> ring on the beat (Heartbeat's charge is closing in on the tips for the next one, and its overtone follows the main ring), <em>Shockwave</em> fires at a swing peak and throws its ring forward with the carry, flash, glint, lead arcs and chromatic fringe, and <em>Ripple</em> streams small rings behind each tip between its beat rings. Radii, bands, flash and drift are the renderer's formulas (reach, lifetime, thickness, asymmetry, chromatic, harmonics, velocity scale); strokes and bands use a fatter line unit so a one-pixel front still reads at 304x114.</p>
+<div id="root"></div>
+<script type="module">
+import { W, H, lcg } from './kit.js';
+import { draw, PRESETS } from './pulse-draw.js?v=4';
+
+const root = document.getElementById('root');
+for (const preset of PRESETS) {
+  const p = preset.patch;
+  const row = document.createElement('div'); row.className = 'card';
+  row.innerHTML = `<h3>${preset.name} <small>${p.trigger} · ${p.palette} · reach ${p.reach} · life ${p.lifetime} · thick ${p.thickness} · flash ${p.flash} · harmonics ${p.harmonics} · charge ${p.charge}</small></h3><div class="row"></div>`;
+  for (const cls of ['small', 'large']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H; c.className = cls;
+    draw(c.getContext('2d'), p, lcg(0x9e1 + preset.name.length * 431));
+    row.querySelector('.row').appendChild(c);
+  }
+  root.appendChild(row);
+}
+</script>
+</body></html>
