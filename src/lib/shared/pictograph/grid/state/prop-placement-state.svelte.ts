@@ -31,6 +31,8 @@ interface PropPlacementStateInputs {
   getLeftNoun: () => string;
   getRightNoun: () => string;
   getActivePoints: () => PlacementGridPoint[];
+  /** "left" keeps one blue hand; the right hand is never asked for. */
+  getHands?: () => "both" | "left";
 }
 
 interface PropPlacementStateDependencies {
@@ -44,7 +46,7 @@ interface PropPlacementStateDependencies {
 }
 
 function buildInitializationKey(inputs: PropPlacementStateInputs): string {
-  return `${inputs.getGridMode()}:${inputs.getShowCenter()}:${inputs.getInitialLeftLocation() ?? ""}:${inputs.getInitialRightLocation() ?? ""}:${inputs.getResetEpoch()}`;
+  return `${inputs.getGridMode()}:${inputs.getShowCenter()}:${inputs.getInitialLeftLocation() ?? ""}:${inputs.getInitialRightLocation() ?? ""}:${inputs.getResetEpoch()}:${inputs.getHands?.() ?? "both"}`;
 }
 
 export type PropPlacementState = ReturnType<typeof createPropPlacementState>;
@@ -53,25 +55,27 @@ export function createPropPlacementState(
   inputs: PropPlacementStateInputs,
   dependencies: PropPlacementStateDependencies
 ) {
+  const leftOnly = () => inputs.getHands?.() === "left";
+
+  function initialActiveHand(): HandSide | null {
+    if (!inputs.getInitialLeftLocation()) return HandSide.LEFT;
+    if (leftOnly() || inputs.getInitialRightLocation()) return null;
+    return HandSide.RIGHT;
+  }
+
   let leftLocation = $state<GridLocation | null>(
     inputs.getInitialLeftLocation()
   );
   let rightLocation = $state<GridLocation | null>(
     inputs.getInitialRightLocation()
   );
-  let activeHand = $state<HandSide | null>(
-    inputs.getInitialLeftLocation()
-      ? inputs.getInitialRightLocation()
-        ? null
-        : HandSide.RIGHT
-      : HandSide.LEFT
-  );
+  let activeHand = $state<HandSide | null>(initialActiveHand());
   let history = $state<PlacementSnapshot[]>([]);
   let liveAnnouncement = $state("");
   let initializationKey = buildInitializationKey(inputs);
 
   function isComplete(): boolean {
-    return leftLocation !== null && rightLocation !== null;
+    return leftLocation !== null && (leftOnly() || rightLocation !== null);
   }
 
   function changeCanUndo(): boolean {
@@ -148,17 +152,21 @@ export function createPropPlacementState(
     color: HandSide | null = activeHand
   ): void {
     if (inputs.getDisabled() || color === null) return;
+    if (color === HandSide.RIGHT && leftOnly()) return;
 
     const label = labelForLocation(location);
     pushHistory();
     normalizePlacedOrientation(color, location);
 
     if (color === HandSide.LEFT) {
+      const previous = leftLocation;
       leftLocation = location;
-      activeHand = rightLocation === null ? HandSide.RIGHT : null;
+      activeHand =
+        rightLocation === null && !leftOnly() ? HandSide.RIGHT : null;
       dependencies.triggerHaptic();
-      liveAnnouncement =
-        rightLocation === null
+      liveAnnouncement = leftOnly()
+        ? `${inputs.getLeftNoun()} ${previous === null ? "placed at" : "moved to"} ${label}.`
+        : rightLocation === null
           ? `${inputs.getLeftNoun()} placed at ${label}. Place the ${inputs.getRightNoun()}.`
           : `${inputs.getLeftNoun()} moved to ${label}. Position ready.`;
     } else {
@@ -228,11 +236,7 @@ export function createPropPlacementState(
       initializationKey = nextInitializationKey;
       leftLocation = inputs.getInitialLeftLocation();
       rightLocation = inputs.getInitialRightLocation();
-      activeHand = inputs.getInitialLeftLocation()
-        ? inputs.getInitialRightLocation()
-          ? null
-          : HandSide.RIGHT
-        : HandSide.LEFT;
+      activeHand = initialActiveHand();
       history = [];
       liveAnnouncement = "";
     });
