@@ -147,7 +147,7 @@ describe("resolvePetals2D - palette resolution + defaults", () => {
     expect(out.resolvedPalette.sprites.length).toBeGreaterThan(0);
     expect(out.poolSize).toBeGreaterThan(0);
     expect(out.ambientSpawnRate).toBeGreaterThan(0);
-    expect(out.motionSpawnRate).toBeGreaterThan(0);
+    expect(out.motionDensity).toBeGreaterThan(0);
     expect(out.fallBaseSpeed).toBeGreaterThan(0);
     // Airstream knobs pass through from intent.
     expect(out.carry).toBe(0.55);
