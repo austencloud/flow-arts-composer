@@ -36,17 +36,13 @@
   const picTheme = $derived(darkMode ? "dark" : "light");
 
   /**
-   * Austen's intro and combinations lead, split into sentences so the first
-   * can be the lede; the words are unchanged. In the combinations lead,
-   * "derive" reads as "make" (Austen, 2026-10-11: plainer for non-technical
-   * readers), and "We'll explore each one individually:" is left off: the
-   * board shows each one right below.
+   * Austen's intro, split into sentences so the first can be the lede; the
+   * words are unchanged. The combinations lead comes from the shared record.
    */
   const COPY = {
     three: "guide_topic_hand_motions_three",
     arrow: "guide_topic_hand_motions_arrow",
     hand: "guide_topic_hand_motions_hand",
-    six: "guide_topic_hand_motions_six",
   } as const satisfies Record<string, TranslationKey>;
 
   /** The book's motion boxes: the blue hand from its resting point. */
@@ -104,9 +100,15 @@
   </div>
 
   <section class="combinations" aria-labelledby="hand-combinations-lead">
-    <p id="hand-combinations-lead" class="lead">{t(COPY.six)}</p>
+    <p id="hand-combinations-lead" class="lead">
+      {handMotionsTopicText("combinationsLead")}
+    </p>
     <div class="board" class:dark={darkMode}>
-      <HandCombinationBoard showDescriptions label={t(COPY.six)} />
+      <HandCombinationBoard
+        showDescriptions
+        {darkMode}
+        label={handMotionsTopicText("combinationsLead")}
+      />
     </div>
   </section>
 
