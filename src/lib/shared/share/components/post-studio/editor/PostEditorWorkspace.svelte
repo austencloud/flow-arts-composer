@@ -1272,7 +1272,10 @@
   });
   const tools = $derived(
     toolRow(selection).filter(
-      (id) => sequence !== null || (id !== "look" && id !== "beats")
+      (id) =>
+        sequence !== null ||
+        selection.kind === "arrangement" ||
+        (id !== "look" && id !== "beats")
     )
   );
   const rowKey = $derived(`row:${tools.join(" ")}`);
@@ -2785,6 +2788,7 @@
 {#snippet row()}
   <PostToolRow
     {tools}
+    kind={selection.kind}
     shown={panelBeside ? shown : null}
     isDisabled={toolDisabled}
     onpick={pickTool}
@@ -2962,6 +2966,7 @@
 {#snippet panel(tool: PostPanelToolId, placement: "dock" | "side")}
   <PostToolPanel
     {tool}
+    kind={editor.selectedItem?.kind ?? null}
     subject={tool === "transition" && transitionCut
       ? `${labelFor(transitionCut.outgoing)} → ${labelFor(transitionCut.incoming)}`
       : tool === "music"

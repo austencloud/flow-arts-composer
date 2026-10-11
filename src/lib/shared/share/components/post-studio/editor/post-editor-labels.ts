@@ -86,6 +86,7 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   fade: "fa-circle-half-stroke",
   transition: "fa-right-left",
   effects: "fa-wand-sparkles",
+  effort: "fa-person-running",
   labels: "fa-hashtag",
   appearance: "fa-sliders",
   shows: "fa-shapes",
@@ -103,8 +104,14 @@ export const TOOL_ICON: Record<PostToolId, string> = {
   clear: "fa-eraser",
 };
 
-/** The short name under a tool's icon, also its panel's title. */
-export function toolLabel(id: PostToolId): string {
+/**
+ * The short name under a tool's icon, also its panel's title. `kind` is the
+ * selected item's, for the few tools whose name depends on it.
+ */
+export function toolLabel(
+  id: PostToolId,
+  kind: PostItemKind | null = null
+): string {
   switch (id) {
     case "transition":
       return t("post_editor_transition");
@@ -119,7 +126,7 @@ export function toolLabel(id: PostToolId): string {
     case "canvas":
       return t("post_editor_tool_canvas");
     case "look":
-      return "Animation defaults";
+      return kind === "arrangement" ? "Look" : "Animation defaults";
     case "export":
       return t("post_editor_export");
     case "trim":
@@ -144,6 +151,8 @@ export function toolLabel(id: PostToolId): string {
       return t("post_editor_tool_fade");
     case "effects":
       return t("post_editor_tool_effects");
+    case "effort":
+      return "Effort";
     case "labels":
       return t("post_editor_tool_labels");
     case "appearance":

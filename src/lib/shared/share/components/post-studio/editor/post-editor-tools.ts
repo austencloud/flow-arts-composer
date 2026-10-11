@@ -32,6 +32,7 @@ export type PostPanelToolId =
   | "fade"
   | "transition"
   | "effects"
+  | "effort"
   | "labels"
   | "appearance"
   | "shows"
@@ -123,8 +124,27 @@ export function toolRow(selection: PostToolSelection): PostToolId[] {
       ];
     case "arrangement":
       if (selection.cell)
-        return ["back", "sequence", "layers", "offset", "clear"];
-      return ["back", "grid", "arrangement", "split", "timing", ...ITEM_TAIL];
+        return [
+          "back",
+          "sequence",
+          "layers",
+          "offset",
+          "look",
+          "effects",
+          "effort",
+          "clear",
+        ];
+      return [
+        "back",
+        "grid",
+        "arrangement",
+        "split",
+        "speed",
+        "look",
+        "effects",
+        "timing",
+        ...ITEM_TAIL,
+      ];
     case "animation":
       if (selection.isTunnel)
         return [
@@ -187,11 +207,16 @@ export function availablePanels(
   const panels = toolRow(selection).filter(isPanelTool);
   if (selection.music) return panels;
   if (selection.kind === null) return [...panels, "export"];
-  return ["video", "image", "card", "animation", "moves", "carousel"].includes(
-    selection.kind
-  )
-    ? [...panels, "transition"]
-    : panels;
+  const cuts = [
+    "video",
+    "image",
+    "card",
+    "animation",
+    "moves",
+    "carousel",
+    "arrangement",
+  ].includes(selection.kind);
+  return cuts && !selection.cell ? [...panels, "transition"] : panels;
 }
 
 /** The first panel tool in the row, which a wide screen shows by default. */
