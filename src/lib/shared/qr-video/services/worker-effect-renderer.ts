@@ -448,6 +448,7 @@ function createQuadTipEffect(
             ctx as unknown as CanvasRenderingContext2D,
             p as any,
             tips,
+            dt,
             scale
           );
           break;

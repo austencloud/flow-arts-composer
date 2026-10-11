@@ -1189,6 +1189,16 @@
     --fx-accent-text: #c5ddff;
   }
 
+  /* On the light theme's panels that blue measures 1.64:1 and its text tint
+     less, so selected chips lost their names. The same blue darkened to
+     normal-text contrast, the way effect-ink.ts darkens the effects' own
+     colors. */
+  :global(html[data-theme-luminance="bright"]) .effects-panel,
+  :global(html[data-theme-luminance="bright"]) .mep {
+    --fx-accent: #0050ad;
+    --fx-accent-text: #0050ad;
+  }
+
   /* Named so the inspector can recompose against the width it actually gets,
      in every host, instead of only inside Post Studio's own container. */
   .effects-panel {

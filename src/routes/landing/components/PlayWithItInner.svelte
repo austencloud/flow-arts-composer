@@ -12,7 +12,7 @@
 -->
 <script lang="ts">
 
-import { createAnimationPlaybackController } from "#lib/features/compose/services/animation-playback-controller-factory.js";
+import { createAnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller-factory.js";
 import { sequenceTransformer } from "#lib/shared/create/services/sequence-transformer.js";
   import { onMount, onDestroy } from "svelte";
   import AnimatorCanvas from "#lib/shared/animation-engine/components/AnimatorCanvas.svelte";

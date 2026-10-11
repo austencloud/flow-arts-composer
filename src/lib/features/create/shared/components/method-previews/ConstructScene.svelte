@@ -33,7 +33,6 @@
   import {
     CONSTRUCT_DECOYS,
     CONSTRUCT_GROW_MS,
-    CONSTRUCT_MOVE_MS,
     constructPick,
     decoySpots,
   } from "./method-preview-construct";
@@ -43,6 +42,7 @@
     startPictograph,
   } from "./method-preview-demo";
   import {
+    PREVIEW_MOVE_MS,
     placeGhost,
     playTravel,
     sceneGhost,
@@ -131,9 +131,7 @@
   /** A picked step plays its move from the pose before it. */
   function playMove(run: SceneRun, index: number): void {
     setProgress(index, 0);
-    void playTravel(run, CONSTRUCT_MOVE_MS, (value) =>
-      setProgress(index, value)
-    );
+    void playTravel(run, PREVIEW_MOVE_MS, (value) => setProgress(index, value));
   }
 
   function settle(): void {

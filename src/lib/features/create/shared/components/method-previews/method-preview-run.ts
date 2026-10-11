@@ -12,6 +12,7 @@ import {
   createAttractGhost,
   type AttractGhost,
 } from "#lib/shared/attract/services/attract-ghost.svelte.js";
+import { PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/pictograph-arrival-motion.js";
 
 export interface SceneRun {
   /** True once the turn ended. A timeline checks it before each step. */
@@ -127,6 +128,15 @@ export async function tapAt(
   pose.pressed = false;
   return pressed;
 }
+
+/**
+ * How long a step's move plays in a preview: the base pace of the step
+ * grid's arrival, which plays each new step's move. The arrival slows a move
+ * with turns to at most 360° a second; a turn has room for two moves, in
+ * Construct and in Generate, only at the base pace, so every move plays at
+ * it.
+ */
+export const PREVIEW_MOVE_MS = PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS;
 
 /**
  * Play a move's travel: `onProgress` hears 0 to 1 over `durationMs`, once a

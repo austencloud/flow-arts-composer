@@ -9,6 +9,7 @@ import type { ZapIntent } from "../../../../src/lib/shared/effects/domain/effect
 // default-merged config (migrations.ts merges DEFAULT_EFFECTS_CONFIG.zap).
 const baseIntent: ZapIntent = {
   intensity: 0.7,
+  colorMode: "custom",
   leftColor: "#88ccff",
   rightColor: "#ff8888",
   frequency: 12,
@@ -27,15 +28,15 @@ describe("resolveZap2D", () => {
     expect(out.intensity).toBe(0.7);
     expect(out.leftColor).toBe("#88ccff");
     expect(out.rightColor).toBe("#ff8888");
-    expect(out.segments).toBeGreaterThanOrEqual(4);
-    expect(out.jitterAmount).toBeGreaterThan(0);
-    expect(out.glowBlur).toBeGreaterThan(0);
-    expect(out.lineWidth).toBeGreaterThan(0);
+    expect(out.coreWidth).toBeGreaterThan(0);
+    expect(out.haloWidth).toBeGreaterThan(out.coreWidth);
+    expect(out.haloAlpha).toBeGreaterThan(0);
+    expect(out.brightness).toBeGreaterThan(0);
   });
 
   it("honours an override", () => {
-    const out = resolveZap2D(baseIntent, { segments: 20 });
-    expect(out.segments).toBe(20);
+    const out = resolveZap2D(baseIntent, { coreWidth: 3 });
+    expect(out.coreWidth).toBe(3);
   });
 });
 
@@ -43,9 +44,20 @@ describe("resolveZap3D (webgl3d-translator)", () => {
   it("passes intent through and derives sensible 3D params", () => {
     const out = resolveZap3D(baseIntent);
     expect(out.intensity).toBe(0.7);
-    expect(out.segments).toBeGreaterThanOrEqual(4);
-    expect(out.jitterAmount).toBeGreaterThan(0);
-    expect(out.pointLightIntensity).toBeGreaterThan(0);
-    expect(out.regenerateEveryFrames).toBeGreaterThanOrEqual(1);
+    // A visible ribbon a few centimetres wide, never the old one-pixel line.
+    expect(out.haloWidth).toBeGreaterThan(0.015);
+    expect(out.haloWidth).toBeLessThan(0.1);
+    expect(out.coreFraction).toBeGreaterThan(0);
+    expect(out.coreFraction).toBeLessThan(1);
+    expect(out.lightIntensity).toBeGreaterThan(0);
+  });
+
+  it("widens the halo with Glow without fattening the core", () => {
+    const tight = resolveZap3D({ ...baseIntent, glow: 0 });
+    const wide = resolveZap3D({ ...baseIntent, glow: 1 });
+    expect(wide.haloWidth).toBeGreaterThan(tight.haloWidth);
+    expect(wide.haloWidth * wide.coreFraction).toBeCloseTo(
+      tight.haloWidth * tight.coreFraction
+    );
   });
 });

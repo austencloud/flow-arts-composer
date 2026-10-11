@@ -457,9 +457,11 @@
     }
   }
 
+  /* Dark mode lets the site's own navy backdrop show through, as the Guide
+     hub does, instead of painting a separate gray page over it. */
   @media (prefers-color-scheme: dark) {
     .guide-page-route {
-      background: #14141b;
+      background: transparent;
       color: #ececf2;
       --ink: #ececf2;
       --ink-dim: #a8a8b4;
@@ -474,7 +476,7 @@
     --glyph-invert: 0;
   }
   :global(:root[data-theme="dark"]) .guide-page-route {
-    background: #14141b;
+    background: transparent;
     color: #ececf2;
     --ink: #ececf2;
     --ink-dim: #a8a8b4;

@@ -1,7 +1,8 @@
 /**
  * The Generate preview's rolls and wave. Each turn shows a new real roll;
  * when none came, turns step through the demo sequence. Cells wash in with
- * the step grid's band and stagger, the dice holding the lead slot.
+ * the step grid's band and stagger, the dice holding the lead slot, and the
+ * roll's opening steps then play their moves inside the turn.
  */
 import { describe, expect, it } from "vitest";
 import { calculateStepWaveBand } from "#lib/shared/create/utils/grid-calculations.js";
@@ -11,15 +12,19 @@ import { DEMO_SEQUENCE } from "#lib/features/create/shared/components/method-pre
 import {
   FIRST_ROLL,
   GENERATE_CLEAR_MS,
-  GENERATE_LOOK_MS,
+  GENERATE_PLAYED_STEPS,
   GENERATE_READY_WAIT_MS,
-  GENERATE_ROLLS_PER_TURN,
   generateCellDelayMs,
+  generateFirstLandMs,
   generateRevealMs,
   nextRoll,
+  rollPoseBefore,
   rollStep,
 } from "#lib/features/create/shared/components/method-previews/method-preview-generate.js";
-import { SCENE_TAP } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
+import {
+  PREVIEW_MOVE_MS,
+  SCENE_TAP,
+} from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
 import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 
 /** A four-step roll cut from the demo sequence, standing in for a fresh draw. */
@@ -42,6 +47,23 @@ describe("Generate rolls", () => {
   it("shows nothing for an empty sequence", () => {
     const empty: SequenceData = { ...DEMO_SEQUENCE, steps: [] };
     expect(rollStep({ sequence: empty, offset: 0 }, 0)).toBeNull();
+    expect(rollPoseBefore({ sequence: empty, offset: 0 }, 0)).toBeNull();
+  });
+
+  it("moves each cell from the pose before it", () => {
+    expect(rollPoseBefore(FIRST_ROLL, 0)).toBe(DEMO_SEQUENCE.steps[7]);
+    expect(rollPoseBefore(FIRST_ROLL, 2)).toBe(DEMO_SEQUENCE.steps[9]);
+  });
+
+  it("moves a sequence's first step from its start position", () => {
+    const start =
+      DEMO_SEQUENCE.startPlacement ?? DEMO_SEQUENCE.startingPlacement;
+    expect(start).toBeTruthy();
+    const roll = { sequence: fresh, offset: 0 };
+    expect(rollPoseBefore(roll, 0)).toBe(start);
+    expect(rollPoseBefore(roll, 1)).toBe(fresh.steps[0]);
+    // A short roll wraps back to its first step, and its start.
+    expect(rollPoseBefore(roll, 4)).toBe(start);
   });
 
   it("shows a fresh roll from its first step", () => {
@@ -95,16 +117,39 @@ describe("the Generate wave", () => {
   });
 });
 
-describe("two rolls a turn", () => {
-  it("fit one turn on the longest wave, with room to wait for a slow draw", () => {
-    // The longest waves: a five-slot strip and a 3×3 grid.
-    const wave = Math.max(generateRevealMs(4, 5), generateRevealMs(8, 3));
-    const roll =
-      SCENE_TAP.considerMs + SCENE_TAP.pressMs + GENERATE_CLEAR_MS + wave;
-    const looks = (GENERATE_ROLLS_PER_TURN - 1) * GENERATE_LOOK_MS;
-    expect(GENERATE_ROLLS_PER_TURN).toBe(2);
-    expect(GENERATE_ROLLS_PER_TURN * roll + looks).toBeLessThanOrEqual(
-      METHOD_PREVIEW_TIMING.turnMs - GENERATE_READY_WAIT_MS
-    );
+describe("a turn's roll and its moves", () => {
+  /** From the turn's start until the first step has landed. */
+  const untilFirstLand = (drawMs: number) =>
+    SCENE_TAP.considerMs +
+    SCENE_TAP.pressMs +
+    GENERATE_CLEAR_MS +
+    drawMs +
+    generateFirstLandMs(5);
+
+  it("lands its first step one band and one entrance into the wash", () => {
+    const landed =
+      DEFAULT_ANIMATION_TIMING.waveBandDelay +
+      DEFAULT_ANIMATION_TIMING.entranceDuration;
+    expect(generateFirstLandMs(4)).toBe(landed);
+    expect(generateFirstLandMs(3)).toBe(landed);
+  });
+
+  it("plays two steps, one at a time", () => {
+    expect(GENERATE_PLAYED_STEPS).toBe(2);
+  });
+
+  it("ends its run inside the turn even after the longest wait for a draw", () => {
+    // The run ends as its last move starts, so a slow draw is never cut.
+    const lastMoveStarts =
+      untilFirstLand(GENERATE_READY_WAIT_MS) +
+      (GENERATE_PLAYED_STEPS - 1) * PREVIEW_MOVE_MS;
+    expect(lastMoveStarts).toBeLessThanOrEqual(METHOD_PREVIEW_TIMING.turnMs);
+  });
+
+  it("plays both moves out inside the turn, with time for the roll to draw", () => {
+    // A phone took about 300 ms to draw a roll.
+    const movesEnd =
+      untilFirstLand(0) + GENERATE_PLAYED_STEPS * PREVIEW_MOVE_MS;
+    expect(METHOD_PREVIEW_TIMING.turnMs - movesEnd).toBeGreaterThanOrEqual(400);
   });
 });

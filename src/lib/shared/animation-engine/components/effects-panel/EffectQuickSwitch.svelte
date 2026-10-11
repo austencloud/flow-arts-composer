@@ -53,6 +53,8 @@
   } from "./effect-registry";
   import { effectUiLabel } from "./effect-ui-label";
   import { effectCatalogLooks } from "./effect-catalog-looks";
+  import { effectInk } from "./effect-ink";
+  import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
 
   interface Props {
     effectsConfigState: EffectsConfigState;
@@ -94,6 +96,10 @@
 
   const activeEffect = $derived(effectsConfigState.activeEffect);
   const effectOn = $derived(activeEffect !== "none");
+  const activeInk = $derived.by(() => {
+    const color = effectOn ? EFFECT_COLORS[activeEffect] : undefined;
+    return color ? effectInk(color, getThemeMode()) : undefined;
+  });
   const activeName = $derived(
     effectOn
       ? effectUiLabel(EFFECT_LABELS[activeEffect] ?? activeEffect)
@@ -364,9 +370,7 @@
         class="fx-quick-trigger"
         class:open
         class:on={effectOn}
-        style:--effect-color={effectOn
-          ? EFFECT_COLORS[activeEffect]
-          : undefined}
+        style:--effect-color={activeInk}
         title={t("effect_deep_select_effect")}
       >
         <span class="sr-only">{t("effect_deep_select_effect")}</span>

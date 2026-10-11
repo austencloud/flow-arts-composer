@@ -1033,34 +1033,52 @@
     padding-top: 1.5rem;
     border-top: 1px solid var(--theme-stroke);
   }
+  /* The heading is a label, set like the footer's column titles (Explore,
+     Learn) that this section lines up with. */
+  .credit h2 {
+    margin: 0 0 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8f8bb0;
+  }
   .credit p {
     max-width: 44rem;
     margin-bottom: 1rem;
   }
   /* From the width where the site footer splits into two columns, the credit
-     takes the same shape: heading and source on the left, the text in a
-     right-hand column as wide as the footer's link rows (about 60rem), so it
-     starts where the footer's Explore column does and runs to the edge. */
+     takes the same shape: heading and source on the left, the text on the
+     right, starting where the footer's Explore column does and running to the
+     edge. The footer sizes that column to its longest link row (954.6px) inside
+     a band 1.6px wider each side than this page's, so 59.55rem lands the text's
+     first letter under Explore's. */
   @media (min-width: 1024px) {
     .credit {
       display: grid;
-      grid-template-columns: minmax(15rem, 1fr) minmax(0, 60rem);
+      grid-template-columns: minmax(15rem, 1fr) minmax(0, 59.55rem);
       grid-template-rows: auto 1fr;
       column-gap: clamp(32px, 3.5vw, 84px);
       align-items: start;
     }
+    /* The label sits on the text's first line. The text runs larger here,
+       so the wide column holds about 90 characters a line and balances the
+       label and source on the left. */
     .credit h2 {
       grid-area: 1 / 1;
+      align-self: baseline;
     }
     .credit p {
       grid-area: 1 / 2 / 3 / 3;
+      align-self: baseline;
       max-width: none;
       margin: 0;
+      font-size: 1.375rem;
+      line-height: 1.5;
     }
     .credit > :global(a) {
       grid-area: 2 / 1;
       justify-self: start;
-      margin-top: 0.5rem;
     }
   }
   .related-modes {

@@ -97,14 +97,14 @@ export interface Charcoal3DParams extends CharcoalIntent {
 }
 
 export interface Zap3DParams extends ZapIntent {
-  /** Segment count along each arc. */
-  segments: number;
-  /** 0-1 world-space jitter displacement per segment. */
-  jitterAmount: number;
-  /** Point light intensity when intensity > 0.5. */
-  pointLightIntensity: number;
-  /** Path regeneration interval in frames. */
-  regenerateEveryFrames: number;
+  /** Metres - half-width of a main channel's ribbon, colored halo included (Glow). */
+  haloWidth: number;
+  /** 0-1 - share of the ribbon that burns white-hot at full flash. */
+  coreFraction: number;
+  /** 0-1.2 - overall brightness multiplier (Intensity). */
+  brightness: number;
+  /** Peak scene-light intensity a strike adds; 0 keeps the scene unlit. */
+  lightIntensity: number;
 }
 
 export interface Sparkles3DParams extends SparklesIntent {

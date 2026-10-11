@@ -2,8 +2,8 @@
  * The next turn's sequence for a scene that shows a fresh one each turn
  * (Generate, Tunnel). It comes from drawMatrixRealization(), the
  * Firebase-free source behind the home hero, drawn in the background between
- * turns. A scene that shows more than one per turn keeps that many ready
- * (Generate rolls twice). When that source fails, it stops asking and the
+ * turns. A scene that shows more than one per turn can keep that many
+ * ready. When that source fails, it stops asking and the
  * scene falls back on its demo.
  *
  * Under reduced motion no turn ever plays, so a request fetches nothing. A
