@@ -1,8 +1,9 @@
 /**
  * The Create front door's Assemble preview: the hops come from Assemble's own
  * sequence loader, the crop keeps every grid point whole, and the finger's
- * taps land on Assemble's own hit targets. The beats fit four taps and the
- * last hop into a turn.
+ * taps land on Assemble's own hit targets. The taps fit four taps and the
+ * last hop into a turn, and the beats they write are the steps the hops
+ * come from.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -18,9 +19,11 @@ import {
 } from "#lib/shared/pictograph/shared/domain/enums/pictograph-enums.js";
 import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 import {
+  ASSEMBLE_BEAT_TIMING,
   ASSEMBLE_CROP,
   ASSEMBLE_STEPS,
   ASSEMBLE_VIEW_BOX,
+  assembleBeats,
   assembleHops,
   assemblePoint,
   standingHop,
@@ -46,19 +49,19 @@ function expectPoint(
 }
 
 describe("Assemble preview hops", () => {
-  it("are the demo's N and M steps, blue then red", () => {
+  it("are an N and an M from the demo, blue then red", () => {
     expect(assembleHops(DEMO_SEQUENCE, HandSide.LEFT)).toEqual([
       {
-        startLocation: GridLocation.EAST,
-        endLocation: GridLocation.NORTH,
+        startLocation: GridLocation.WEST,
+        endLocation: GridLocation.SOUTH,
         rotationDirection: RotationDirection.CLOCKWISE,
         turnCount: 1,
         startOrientation: Orientation.IN,
         endOrientation: Orientation.IN,
       },
       {
-        startLocation: GridLocation.NORTH,
-        endLocation: GridLocation.EAST,
+        startLocation: GridLocation.SOUTH,
+        endLocation: GridLocation.WEST,
         rotationDirection: RotationDirection.CLOCKWISE,
         turnCount: 0,
         startOrientation: Orientation.IN,
@@ -67,16 +70,16 @@ describe("Assemble preview hops", () => {
     ]);
     expect(assembleHops(DEMO_SEQUENCE, HandSide.RIGHT)).toEqual([
       {
-        startLocation: GridLocation.SOUTH,
-        endLocation: GridLocation.WEST,
+        startLocation: GridLocation.NORTH,
+        endLocation: GridLocation.EAST,
         rotationDirection: RotationDirection.COUNTER_CLOCKWISE,
         turnCount: 1,
         startOrientation: Orientation.IN,
         endOrientation: Orientation.IN,
       },
       {
-        startLocation: GridLocation.WEST,
-        endLocation: GridLocation.SOUTH,
+        startLocation: GridLocation.EAST,
+        endLocation: GridLocation.NORTH,
         rotationDirection: RotationDirection.COUNTER_CLOCKWISE,
         turnCount: 1,
         startOrientation: Orientation.IN,
@@ -114,8 +117,8 @@ describe("Assemble preview hops", () => {
     expect(first).toBeDefined();
     const hop = standingHop(first!);
     expect(hop).toMatchObject({
-      startLocation: GridLocation.SOUTH,
-      endLocation: GridLocation.SOUTH,
+      startLocation: GridLocation.NORTH,
+      endLocation: GridLocation.NORTH,
       turnCount: 0,
       startOrientation: Orientation.IN,
       endOrientation: Orientation.IN,
@@ -168,6 +171,30 @@ describe("Assemble preview grid", () => {
 });
 
 describe("Assemble preview beats", () => {
+  it("are the steps the hops come from, N then M", () => {
+    const beats = assembleBeats(DEMO_SEQUENCE);
+    expect(beats.map((step) => step.letter)).toEqual(["N", "M"]);
+    for (const hand of [HandSide.LEFT, HandSide.RIGHT]) {
+      const hops = assembleHops(DEMO_SEQUENCE, hand);
+      expect(beats.map((step) => step.motions[hand]?.startLocation)).toEqual(
+        hops.map((hop) => hop.startLocation)
+      );
+      expect(beats.map((step) => step.motions[hand]?.endLocation)).toEqual(
+        hops.map((hop) => hop.endLocation)
+      );
+    }
+  });
+
+  it("are written before the next tap lands", () => {
+    // A beat pops in or fills in from a tap; the next tap is at least a
+    // glide and a lean away.
+    const nextTap = SHORTEST_GLIDE_MS + SCENE_TAP.considerMs;
+    expect(ASSEMBLE_BEAT_TIMING.popMs).toBeLessThan(nextTap);
+    expect(ASSEMBLE_BEAT_TIMING.fillMs).toBeLessThan(nextTap);
+  });
+});
+
+describe("Assemble preview taps", () => {
   it("lets each hop land before the finger presses again", () => {
     expect(SHORTEST_GLIDE_MS + SCENE_TAP.considerMs).toBeGreaterThanOrEqual(
       BUILDER_HOP_MS
