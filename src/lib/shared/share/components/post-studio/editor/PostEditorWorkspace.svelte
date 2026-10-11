@@ -2853,7 +2853,7 @@
       onAddDeviceVideo={pickDeviceVideo}
       onAdded={itemAdded}
     />
-  {:else if (tool === "grid" || tool === "layers" || tool === "offset" || (tool === "sequence" && editor.selectedCell !== null)) && editor.selectedItem?.kind === "arrangement"}
+  {:else if (tool === "grid" || tool === "speed" || tool === "look" || tool === "effects" || tool === "effort" || tool === "layers" || tool === "offset" || (tool === "sequence" && editor.selectedCell !== null)) && editor.selectedItem?.kind === "arrangement"}
     <PostArrangementTool
       {editor}
       item={editor.selectedItem}
@@ -2861,6 +2861,7 @@
       cell={editor.selectedCell}
       locked={!editor.selectionEditable}
       sequence={displaySequence}
+      fill={placement === "side"}
     />
   {:else if tool === "arrangement" && editor.selectedItem?.kind === "arrangement"}
     <div class="arrangement-tool">
