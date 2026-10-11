@@ -33,6 +33,7 @@
   } from "#lib/shared/media-composition/services/video-preview-seek.js";
   import type { PreviewVideoController } from "#lib/shared/media-composition/services/post-preview-clock.js";
   import { PreviewVideoFrameRecovery } from "#lib/shared/media-composition/services/preview-video-frame-recovery.js";
+  import { releaseMediaDownload } from "#lib/shared/media-composition/services/media-download-release.js";
   import {
     videoColorFilter,
     type PostVideoColorGrade,
@@ -706,6 +707,14 @@
     if (!element || !releasesDownload) return;
     // The src is already gone, but that alone leaves the old download open.
     if (element.networkState !== HTMLMediaElement.NETWORK_EMPTY) element.load();
+  });
+
+  $effect(() => {
+    const element = video;
+    if (!element) return;
+    // A remounted editor would otherwise wait behind the old footage's
+    // download for its project.
+    return () => releaseMediaDownload(element);
   });
 
   onDestroy(() => {
