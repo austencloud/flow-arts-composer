@@ -18,6 +18,8 @@
     customDisabled?: boolean;
     /** Trail's captured custom blue/red for the Custom chip preview (else null). */
     customColors?: { left: string; right: string } | null;
+    /** The prop Ghost and Silk portray; null means the current prop. */
+    propType?: string | null;
     onSelectPreset: (presetId: string) => void;
     onCustomize?: () => void;
     effectLabel: string;
@@ -37,6 +39,7 @@
     customChipId,
     customDisabled = false,
     customColors = null,
+    propType = null,
     onSelectPreset,
     onCustomize,
     effectLabel,
@@ -130,6 +133,7 @@
                 effectType={presetGroup.effectType}
                 preset={item.preset}
                 legacyModel={item.preview}
+                {propType}
                 active={isActive}
               />
             </div>
