@@ -13,7 +13,7 @@
 
 import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createEventBuffer } from "./cdp-event-buffer.mjs";
@@ -327,13 +327,24 @@ export async function openTab(
  * GPU, shows nothing on screen, and starts each run signed out with a fresh
  * profile. The browser rules' "never --force-device-scale-factor" is about the
  * shared verification browser; this one belongs to the recording alone.
+ *
+ * `profile` names a folder to keep instead: a recording that needs a
+ * signed-in app opens a profile signed in once beforehand, and `close` leaves
+ * it in place. Only one Chrome can hold a profile at a time.
  */
 export async function launchHeadlessChrome({
   width,
   height,
   deviceScaleFactor = 1,
+  profile: keptProfile,
 }) {
-  const profile = await mkdtemp(join(tmpdir(), "tka-capture-"));
+  const profile =
+    keptProfile ?? (await mkdtemp(join(tmpdir(), "tka-capture-")));
+  if (keptProfile) {
+    await mkdir(keptProfile, { recursive: true });
+    // The port file from the last run would name a port nobody listens on.
+    await rm(join(keptProfile, "DevToolsActivePort"), { force: true });
+  }
   const chrome = spawn(
     CHROME,
     [
@@ -366,6 +377,7 @@ export async function launchHeadlessChrome({
       chrome.kill();
       await exited;
     }
+    if (keptProfile) return;
     // Chrome's helpers can hold profile files for a moment after it exits.
     // One that stays held is left in the temp folder; the recording is fine.
     await rm(profile, {
