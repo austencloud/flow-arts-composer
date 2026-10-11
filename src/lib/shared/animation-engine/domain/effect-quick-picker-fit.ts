@@ -2,12 +2,12 @@
  * Arrange the quick effect picker that opens from a small player's effect
  * button, so the animation it changes stays in view while you compare looks.
  *
- * - `side`: where the viewport has room beside the player (laptops, desktops,
- *   a short landscape phone whose player is a small square), the picker is a
- *   panel beside it holding every effect four across, as a picture of its look
- *   when the panel is tall enough for five rows of them and as the icon and
- *   name otherwise. The panel grows with the player, so a 4K player does not
- *   get a postage-stamp picker.
+ * - `side`: where the player's workspace has room beside it (laptops,
+ *   desktops, a short landscape phone whose player is a small square), the
+ *   picker is a panel beside the player holding every effect four across, as
+ *   a picture of its look when the panel is tall enough for five rows of them
+ *   and as the icon and name otherwise. The panel grows with the player, so
+ *   a 4K player does not get a postage-stamp picker.
  * - `strip`: where the player fills the width (phone and tablet portrait),
  *   one scrolling row of pictures sits on the player's bottom edge, just above
  *   its controls, and covers only that edge of the animation. The pictures
@@ -35,7 +35,9 @@ export interface QuickPickerRect {
 }
 
 export interface QuickPickerBox {
-  viewport: { width: number; height: number };
+  /** The area the picker stays inside, in viewport pixels: the player's
+   *  workspace, so it never covers the app's sidebar or toolbars. */
+  bounds: QuickPickerRect;
   /** The player the picker changes, in viewport pixels. */
   player: QuickPickerRect;
   /** Effects offered. */
@@ -65,7 +67,7 @@ export const QUICK_PICKER_PAD = 12;
 export const QUICK_PICKER_HEAD = 44;
 export const QUICK_PICKER_HEAD_GAP = 8;
 /** Space between the player and the panel, and between the panel and the
- *  viewport edge. */
+ *  edge of its bounds. */
 export const QUICK_PICKER_OFFSET = 12;
 export const QUICK_PICKER_EDGE = 12;
 /** Four 64px pictures across, the smallest the side panel shows. */
@@ -123,16 +125,18 @@ export function stripHeight(portrait: number): number {
 }
 
 export function fitEffectQuickPicker({
-  viewport,
+  bounds,
   player,
   count,
 }: QuickPickerBox): EffectQuickPickerFit {
   const roomRight =
-    viewport.width -
+    bounds.left +
+    bounds.width -
     (player.left + player.width) -
     QUICK_PICKER_OFFSET -
     QUICK_PICKER_EDGE;
-  const roomLeft = player.left - QUICK_PICKER_OFFSET - QUICK_PICKER_EDGE;
+  const roomLeft =
+    player.left - bounds.left - QUICK_PICKER_OFFSET - QUICK_PICKER_EDGE;
   const target = Math.min(
     QUICK_PICKER_MAX_SIDE_WIDTH,
     Math.max(
@@ -154,8 +158,7 @@ export function fitEffectQuickPicker({
     });
     const fitsTall =
       !!pictures &&
-      sidePanelHeight(pictures, count) <=
-        viewport.height - 2 * QUICK_PICKER_EDGE;
+      sidePanelHeight(pictures, count) <= bounds.height - 2 * QUICK_PICKER_EDGE;
     return {
       arrangement: "side",
       side,

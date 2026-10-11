@@ -4,6 +4,7 @@ import {
   QUICK_PICKER_EDGE,
   QUICK_PICKER_MAX_SIDE_WIDTH,
   QUICK_PICKER_OFF_WIDTH,
+  QUICK_PICKER_OFFSET,
   QUICK_PICKER_STRIP_PAD,
   sidePanelHeight,
 } from "./effect-quick-picker-fit";
@@ -11,15 +12,17 @@ import {
   CATALOG_GAP,
   CATALOG_TILE_BORDER,
   CATALOG_TILE_PAD,
+  MIN_CATALOG_PORTRAIT,
 } from "./effect-catalog-fit";
 
 const COUNT = 20;
 const INSET = CATALOG_TILE_PAD + CATALOG_TILE_BORDER;
 
-// Player rects measured on /create/generate while playing.
+// Measured on /create/generate at 1440x900 while playing: the playback area
+// (right of the 64px sidebar, between the toolbars) and the player in it.
 const laptop = {
-  viewport: { width: 1440, height: 900 },
-  player: { left: 420, top: 140, width: 600, height: 644 },
+  bounds: { left: 65, top: 77, width: 1365, height: 774 },
+  player: { left: 440, top: 81, width: 614, height: 658 },
   count: COUNT,
 };
 
@@ -30,23 +33,39 @@ describe("fitEffectQuickPicker", () => {
     if (fit.arrangement !== "side") return;
     expect(fit.side).toBe("right");
     expect(fit.catalog?.cols).toBe(4);
-    expect(fit.catalog?.portrait).toBeGreaterThanOrEqual(64);
+    expect(fit.catalog?.portrait).toBeGreaterThanOrEqual(MIN_CATALOG_PORTRAIT);
     expect(sidePanelHeight(fit.catalog, COUNT)).toBeLessThanOrEqual(
-      laptop.viewport.height - 2 * QUICK_PICKER_EDGE
+      laptop.bounds.height - 2 * QUICK_PICKER_EDGE
+    );
+  });
+
+  it("measures its room from its bounds, not the viewport", () => {
+    // The left of the viewport holds the app's sidebar: a panel sized from
+    // the viewport's edge covered it.
+    const fit = fitEffectQuickPicker({
+      ...laptop,
+      bounds: { ...laptop.bounds, width: 1300 },
+    });
+    expect(fit.arrangement === "side" && fit.side).toBe("left");
+    expect(fit.arrangement === "side" && fit.width).toBeLessThanOrEqual(
+      laptop.player.left -
+        laptop.bounds.left -
+        QUICK_PICKER_OFFSET -
+        QUICK_PICKER_EDGE
     );
   });
 
   it("opens to the left when only the left has room", () => {
     const fit = fitEffectQuickPicker({
       ...laptop,
-      player: { ...laptop.player, left: 820 },
+      player: { ...laptop.player, left: 780 },
     });
     expect(fit.arrangement === "side" && fit.side).toBe("left");
   });
 
   it("grows with a 4K player instead of staying laptop-sized", () => {
     const fit = fitEffectQuickPicker({
-      viewport: { width: 3840, height: 2160 },
+      bounds: { left: 0, top: 0, width: 3840, height: 2160 },
       player: { left: 1014, top: 150, width: 1866, height: 1910 },
       count: COUNT,
     });
@@ -60,7 +79,7 @@ describe("fitEffectQuickPicker", () => {
 
   it("keeps the icon tiles where five rows of pictures are too tall", () => {
     const fit = fitEffectQuickPicker({
-      viewport: { width: 960, height: 412 },
+      bounds: { left: 0, top: 0, width: 960, height: 412 },
       player: { left: 160, top: 70, width: 156, height: 200 },
       count: COUNT,
     });
@@ -79,7 +98,7 @@ describe("fitEffectQuickPicker", () => {
     "lays one scrolling row over a %s player that fills the width",
     (_, viewportWidth, playerWidth) => {
       const fit = fitEffectQuickPicker({
-        viewport: { width: viewportWidth, height: 1000 },
+        bounds: { left: 0, top: 0, width: viewportWidth, height: 1000 },
         player: {
           left: (viewportWidth - playerWidth) / 2,
           top: 120,

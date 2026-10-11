@@ -10,7 +10,7 @@
   The picker composes EffectSelector (the tiles, their selection and prewarm)
   and EffectPresetThumbnail (the same pictures as the Effects panel, from
   effectCatalogLooks). effect-quick-picker-fit decides where it goes: beside
-  the player where the viewport has room, otherwise as one scrolling row over
+  the player where its bounds have room, otherwise as one scrolling row over
   the player's bottom edge.
 -->
 <script lang="ts">
@@ -46,9 +46,13 @@
     /** The player the picker changes. The picker sits beside it, and a tap on
      *  it while the picker is open only closes the picker. */
     player: HTMLElement | null | undefined;
+    /** The area the picker stays inside, such as the player's workspace, so
+     *  it never covers the app's sidebar or toolbars. The viewport when
+     *  absent. */
+    bounds?: HTMLElement | null;
   }
 
-  const { effectsConfigState, player }: Props = $props();
+  const { effectsConfigState, player, bounds = null }: Props = $props();
 
   let open = $state(false);
   let fit = $state<EffectQuickPickerFit | null>(null);
@@ -87,7 +91,12 @@
   function measure() {
     if (!player) return;
     fit = fitEffectQuickPicker({
-      viewport: { width: window.innerWidth, height: window.innerHeight },
+      bounds: bounds?.getBoundingClientRect() ?? {
+        left: 0,
+        top: 0,
+        width: window.innerWidth,
+        height: window.innerHeight,
+      },
       player: player.getBoundingClientRect(),
       count: EFFECTS.length,
     });
@@ -235,6 +244,7 @@
       side={fit?.arrangement === "side" ? fit.side : "top"}
       align={fit?.arrangement === "side" ? "end" : "center"}
       sideOffset={fit?.arrangement === "side" ? QUICK_PICKER_OFFSET : 0}
+      collisionBoundary={bounds ?? undefined}
       collisionPadding={QUICK_PICKER_EDGE}
       avoidCollisions={fit?.arrangement === "side"}
       onOpenAutoFocus={focusSelected}

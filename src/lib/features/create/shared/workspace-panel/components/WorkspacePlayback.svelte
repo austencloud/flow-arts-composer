@@ -44,6 +44,7 @@
   let canvasInitialized = $state(false);
   let loadedRun = $state<number | null>(null);
   let playerStage = $state<HTMLElement | null>(null);
+  let playbackArea = $state<HTMLElement | null>(null);
   const visibilityManager = getAnimationVisibilityManager();
   let effectsConfigState = $state<EffectsConfigState>(
     visibilityManager.effectsConfigState ?? createEffectsConfigState()
@@ -76,10 +77,18 @@
 </script>
 
 {#snippet effectSwitch()}
-  <EffectQuickSwitch {effectsConfigState} player={playerStage} />
+  <EffectQuickSwitch
+    {effectsConfigState}
+    player={playerStage}
+    bounds={playbackArea}
+  />
 {/snippet}
 
-<div class="workspace-playback" data-testid="workspace-playback">
+<div
+  class="workspace-playback"
+  data-testid="workspace-playback"
+  bind:this={playbackArea}
+>
   <div class="playback-layout">
     <!-- Foreground for the workspace's click-background-to-close: taps here
          pause, seek, or scrub instead. -->
