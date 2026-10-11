@@ -78,7 +78,7 @@
   </div>
 
   <!-- Video player overlay -->
-  {#await import("#lib/features/compose/components/canvas/AnimationVideoPlayer.svelte") then mod}
+  {#await import("#lib/shared/animation-engine/components/canvas/AnimationVideoPlayer.svelte") then mod}
     <mod.default
       {sequenceData}
       {isPlaying}

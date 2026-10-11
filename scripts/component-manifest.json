@@ -28910,23 +28910,6 @@
       "hiddenMonster": false
     },
     {
-      "file": "routes/(public)/guide/prospin-and-inspin/+page.svelte",
-      "total": 239,
-      "scriptLines": 47,
-      "templateLines": 67,
-      "styleLines": 125,
-      "stateCount": 0,
-      "derivedCount": 0,
-      "effectCount": 0,
-      "functionCount": 0,
-      "childComponents": 4,
-      "diseaseScore": 47,
-      "species": "style",
-      "action": "keeper",
-      "reason": "presentational: CSS-dominant with a lean script",
-      "hiddenMonster": false
-    },
-    {
       "file": "lib/features/assemble-lab/components/BuilderHandPicker.svelte",
       "total": 197,
       "scriptLines": 39,

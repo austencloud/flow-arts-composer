@@ -13,12 +13,12 @@
  *   pictures across that scroll inside it.
  * - `strip`: where the player fills the width (phone and tablet portrait),
  *   one scrolling row of pictures, placed so the whole animation stays in
- *   view: hanging from the player's controls where the room under them
- *   holds it, otherwise docked along the bottom of its bounds over the
- *   toolbar there (idle while the picker is open), and over the animation's
- *   bottom edge only when neither of those nor the narrow side panel fits. The
- *   pictures are sized so the last one in view is cut about in half, which
- *   shows the row scrolls.
+ *   view: a tray floating just under the player's controls where the room
+ *   under them holds it (with smaller pictures if need be), otherwise docked
+ *   along the bottom of its bounds over the toolbar there (idle while the
+ *   picker is open), and over the animation's bottom edge only when neither
+ *   of those nor the narrow side panel fits. The pictures are sized so the
+ *   last one in view is cut about in half, which shows the row scrolls.
  *
  * Pure arithmetic over the picture tiles' own metrics (effect-catalog-fit),
  * so the CSS that draws the tiles and the fit cannot drift apart.
@@ -68,8 +68,8 @@ export type EffectQuickPickerFit =
     }
   | {
       arrangement: "strip";
-      /** Under the player's controls, docked along the bottom of the
-       *  bounds, or over the animation's bottom edge. */
+      /** Floating under the player's controls, docked along the bottom of
+       *  the bounds, or over the animation's bottom edge. */
       side: "below" | "dock" | "above";
       /** The strip's outer height in px. */
       height: number;
@@ -103,17 +103,18 @@ export const QUICK_PICKER_ICON_TILE = 48;
 const ICON_GAP = 6;
 const SIDE_COLUMNS = 4;
 
-/** Strip padding and the leading Off tile's width. */
+/** Strip padding, the leading Off tile's width and the trailing close
+ *  button's. */
 export const QUICK_PICKER_STRIP_PAD = 8;
 export const QUICK_PICKER_OFF_WIDTH = 64;
+export const QUICK_PICKER_CLOSE_WIDTH = 44;
+/** Space between the player's controls and the tray floating under them. */
+export const QUICK_PICKER_STRIP_GAP = 8;
 export const QUICK_PICKER_MIN_STRIP_PORTRAIT = 64;
 export const QUICK_PICKER_MAX_STRIP_PORTRAIT = 112;
 /** The strip's pictures as a share of the player's width before the peek
  *  adjustment, so a tablet's row is not a phone's row stretched. */
 const STRIP_PORTRAIT_PER_WIDTH = 0.12;
-/** Room under the controls at most this much taller than the strip is
- *  covered whole, so the strip never cuts through the band it hangs over. */
-const STRIP_STRETCH = 1.25;
 
 const INSET = CATALOG_TILE_PAD + CATALOG_TILE_BORDER;
 
@@ -146,6 +147,61 @@ export function sidePanelHeight(
 /** The strip's outer height for pictures `portrait` px wide. */
 export function stripHeight(portrait: number): number {
   return 2 * QUICK_PICKER_STRIP_PAD + pictureTileHeight(portrait);
+}
+
+/** The distance from one strip tile's start to the next's. */
+export function stripTilePitch(portrait: number): number {
+  return portrait + 2 * INSET + CATALOG_GAP;
+}
+
+/** How far in from a faded end of the strip a tile must start, or stop, to
+ *  be clear of the fade and of the arrow over it. The strip's scroll padding,
+ *  so its snap positions start a tile here too. */
+export const QUICK_PICKER_STRIP_EDGE_CLEAR = 40;
+
+/**
+ * Where an arrow scrolls the strip to. Every stop starts a tile just clear of
+ * the start's fade, the strip's own snap positions, so a swipe and an arrow
+ * settle alike. Forward, the first tile still under the end's fade starts the
+ * new view. Back, the view goes as far as it can while the last tile under
+ * the start's fade stays clear of the end's. Either way the tile that was cut
+ * is fully in view, and the view moves at least one tile.
+ */
+export function stripPageTarget({
+  portrait,
+  scrollLeft,
+  viewWidth,
+  scrollWidth,
+  direction,
+}: {
+  portrait: number;
+  scrollLeft: number;
+  viewWidth: number;
+  scrollWidth: number;
+  direction: 1 | -1;
+}): number {
+  const pitch = stripTilePitch(portrait);
+  const tile = pitch - CATALOG_GAP;
+  const clear = QUICK_PICKER_STRIP_EDGE_CLEAR;
+  /** The scroll that starts tile `index` just clear of the start's fade. */
+  const startAt = (index: number) => index * pitch - clear;
+  let target: number;
+  if (direction > 0) {
+    const cut = Math.floor((scrollLeft + viewWidth - clear - tile) / pitch) + 1;
+    target = Math.max(scrollLeft + pitch, startAt(cut));
+  } else {
+    const cut = Math.ceil((scrollLeft + clear) / pitch) - 1;
+    /** The least scroll that keeps the cut tile clear of the end's fade. */
+    const least = cut * pitch + tile - (viewWidth - clear);
+    target =
+      least <= 0
+        ? 0
+        : Math.min(
+            scrollLeft - pitch,
+            startAt(Math.ceil((least + clear) / pitch))
+          );
+  }
+  return Math.min(Math.max(0, scrollWidth - viewWidth), Math.max(0, target));
 }
 
 export function fitEffectQuickPicker({
@@ -244,7 +300,11 @@ function fitStrip(
 ): EffectQuickPickerFit {
   const { width } = player;
   const room =
-    width - 2 * QUICK_PICKER_STRIP_PAD - QUICK_PICKER_OFF_WIDTH - CATALOG_GAP;
+    width -
+    2 * QUICK_PICKER_STRIP_PAD -
+    QUICK_PICKER_OFF_WIDTH -
+    QUICK_PICKER_CLOSE_WIDTH -
+    2 * CATALOG_GAP;
   const base = Math.min(
     QUICK_PICKER_MAX_STRIP_PORTRAIT,
     Math.max(
@@ -252,26 +312,26 @@ function fitStrip(
       Math.round(width * STRIP_PORTRAIT_PER_WIDTH)
     )
   );
-  const basePitch = base + 2 * INSET + CATALOG_GAP;
-  // Whole tiles in view, leaving about half of one more showing at the edge.
-  const whole = Math.max(1, Math.floor(room / basePitch - 0.5));
-  const pitch = room / (whole + 0.5);
-  const portrait = Math.max(
-    QUICK_PICKER_MIN_STRIP_PORTRAIT,
-    Math.min(
-      QUICK_PICKER_MAX_STRIP_PORTRAIT,
-      Math.floor(pitch - 2 * INSET - CATALOG_GAP)
-    )
+  // The largest pictures the room under the controls holds, with the gap
+  // above the tray.
+  const largestBelow = Math.floor(
+    ((roomBelow - QUICK_PICKER_STRIP_GAP - stripHeight(0)) * 8) / 3
   );
-  const tile = portrait + 2 * INSET;
-  const natural = stripHeight(portrait);
-  const below = roomBelow >= natural;
+  const below = largestBelow >= QUICK_PICKER_MIN_STRIP_PORTRAIT;
+  const portrait = stripPortrait(
+    room,
+    base,
+    below
+      ? Math.min(QUICK_PICKER_MAX_STRIP_PORTRAIT, largestBelow)
+      : QUICK_PICKER_MAX_STRIP_PORTRAIT
+  );
+  const height = stripHeight(portrait);
   const docks =
-    bounds.top + bounds.height - (player.top + player.height) >= natural;
+    bounds.top + bounds.height - (player.top + player.height) >= height;
   return {
     arrangement: "strip",
     side: below ? "below" : docks ? "dock" : "above",
-    height: below && roomBelow <= natural * STRIP_STRETCH ? roomBelow : natural,
+    height,
     catalog: {
       cols: count,
       rows: 1,
@@ -280,6 +340,20 @@ function fitStrip(
       gap: CATALOG_GAP,
       fill: false,
     },
-    trackWidth: count * tile + (count - 1) * CATALOG_GAP,
+    trackWidth: count * (portrait + 2 * INSET) + (count - 1) * CATALOG_GAP,
   };
+}
+
+/** Pictures near `base` px wide, at most `largest`, sized so the tiles in
+ *  `room` end with about half of one more showing at the edge. */
+function stripPortrait(room: number, base: number, largest: number): number {
+  let whole = Math.max(1, Math.floor(room / stripTilePitch(base) - 0.5));
+  // Pictures held to `largest` would show more of the next tile than half,
+  // or all of it: take one more whole tile and make them all smaller.
+  while (room / (whole + 0.5) > stripTilePitch(largest)) whole += 1;
+  const pitch = room / (whole + 0.5);
+  return Math.max(
+    QUICK_PICKER_MIN_STRIP_PORTRAIT,
+    Math.min(largest, Math.floor(pitch - 2 * INSET - CATALOG_GAP))
+  );
 }

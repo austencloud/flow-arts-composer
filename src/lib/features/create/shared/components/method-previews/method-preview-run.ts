@@ -12,6 +12,7 @@ import {
   createAttractGhost,
   type AttractGhost,
 } from "#lib/shared/attract/services/attract-ghost.svelte.js";
+import { PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/pictograph-arrival-motion.js";
 
 export interface SceneRun {
   /** True once the turn ended. A timeline checks it before each step. */
@@ -126,6 +127,49 @@ export async function tapAt(
   const pressed = await run.wait(SCENE_TAP.pressMs);
   pose.pressed = false;
   return pressed;
+}
+
+/**
+ * How long a step's move plays in a preview: the base pace of the step
+ * grid's arrival, which plays each new step's move. The arrival slows a move
+ * with turns to at most 360° a second; a turn has room for Construct's two
+ * moves and Generate's two rolls only at the base pace, so every move plays
+ * at it.
+ */
+export const PREVIEW_MOVE_MS = PICTOGRAPH_ARRIVAL_PROP_MOTION_MIN_MS;
+
+/**
+ * Play a move's travel: `onProgress` hears 0 to 1 over `durationMs`, once a
+ * frame, linear like the step grid's arrival. True when it reached 1, false
+ * when the turn ended first. Without animation frames it resolves at once.
+ */
+export function playTravel(
+  run: SceneRun,
+  durationMs: number,
+  onProgress: (value: number) => void
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame !== "function") {
+      resolve(true);
+      return;
+    }
+    const startedAt = performance.now();
+    let id = 0;
+    const step = (now: number) => {
+      const value = Math.min(1, Math.max(0, (now - startedAt) / durationMs));
+      onProgress(value);
+      if (value >= 1) {
+        resolve(true);
+        return;
+      }
+      id = requestAnimationFrame(step);
+    };
+    id = requestAnimationFrame(step);
+    run.onAbort(() => {
+      cancelAnimationFrame(id);
+      resolve(false);
+    });
+  });
 }
 
 /**

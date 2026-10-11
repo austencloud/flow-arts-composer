@@ -1,5 +1,5 @@
 import { createAnimationPanelState } from "#lib/shared/animation-engine/state/animation-panel-state.svelte.js";
-import { createAnimationPlaybackController } from "#lib/features/compose/services/animation-playback-controller-factory.js";
+import { createAnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller-factory.js";
 import { getVideoExportOrchestrator } from "#lib/shared/animation-engine/get-video-export-orchestrator.js";
 import { getAnimationVisibilityManager } from "#lib/shared/animation-engine/state/animation-visibility-state.svelte.js";
 import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";

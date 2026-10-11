@@ -699,10 +699,13 @@
     <section class="credit" aria-labelledby="credit-title">
       <h2 id="credit-title">Where the names come from</h2>
       <p>
-        These names come from Noel Yee's Vulcan Tech Gospel. It sorts two-hand
-        patterns by timing, together or split, and by direction, same or
-        opposite.{#if article.timing === "Quarter"}{" "}Quarter time sits
-          between together and split, with the hands a quarter cycle apart.{/if}
+        Timing and direction come from the geometry of two hands sharing a
+        circle. Nobody invented them, and spinners used them long before they
+        had names. Noel Yee's Vulcan Tech Gospel standardized the names used
+        here. It sorts two-hand patterns by timing, together or split, and by
+        direction, same or opposite.{#if article.timing === "Quarter"}{" "}Quarter
+          time sits between together and split, with the hands a quarter cycle
+          apart.{/if}
       </p>
       <LinkChip href={TIMING_DIRECTION_SOURCE.url}
         >{TIMING_DIRECTION_SOURCE.label}</LinkChip
@@ -1031,7 +1034,36 @@
     border-top: 1px solid var(--theme-stroke);
   }
   .credit p {
+    max-width: 44rem;
     margin-bottom: 1rem;
+  }
+  /* From the width where the site footer splits into two columns, the credit
+     takes the same shape: heading and source on the left, the text on the
+     right, starting where the footer's Explore column does and running to the
+     edge. The footer sizes that column to its longest link row (954.6px) inside
+     a band 1.6px wider each side than this page's, so 59.55rem lands the text's
+     first letter under Explore's. */
+  @media (min-width: 1024px) {
+    .credit {
+      display: grid;
+      grid-template-columns: minmax(15rem, 1fr) minmax(0, 59.55rem);
+      grid-template-rows: auto 1fr;
+      column-gap: clamp(32px, 3.5vw, 84px);
+      align-items: start;
+    }
+    .credit h2 {
+      grid-area: 1 / 1;
+    }
+    .credit p {
+      grid-area: 1 / 2 / 3 / 3;
+      max-width: none;
+      margin: 0;
+    }
+    .credit > :global(a) {
+      grid-area: 2 / 1;
+      justify-self: start;
+      margin-top: 0.5rem;
+    }
   }
   .related-modes {
     display: grid;
