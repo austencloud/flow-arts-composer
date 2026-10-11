@@ -139,6 +139,7 @@ vi.mock("#lib/shared/library/services/public-sequence-persister.js", () => ({
 
 import { claimUsername } from "#lib/shared/auth/services/username-validator.js";
 import { UserDocumentManager } from "#lib/shared/auth/services/user-document-manager.js";
+import { knownAccountProfile } from "#lib/shared/auth/state/account-profile-snapshot.js";
 import { linkDeviceToUser } from "#lib/shared/auth/services/device-id-service.js";
 import { OnboardingPersister } from "#lib/shared/onboarding/services/onboarding-persister.js";
 
@@ -401,6 +402,29 @@ describe("a signed-in page load for an existing profile", () => {
         },
       },
     ]);
+  });
+
+  it("remembers the profile it read, for this account only, so Account can draw it at once", async () => {
+    holdClaim(UID);
+    fake.docs.set(
+      `users/${UID}`,
+      storedProfile({ pronouns: "they/them", profileColor: "#22c55e" })
+    );
+    fake.docs.set(
+      PRIVATE_PROFILE_PATH,
+      storedPrivateProfile({ googlePhotoURL: "https://photos.example/g.png" })
+    );
+
+    await new UserDocumentManager().createOrUpdateUserDocument(signedInUser());
+
+    expect(knownAccountProfile(UID)).toEqual({
+      userId: UID,
+      username: "matty",
+      pronouns: "they/them",
+      profileColor: "#22c55e",
+      googlePhotoUrl: "https://photos.example/g.png",
+    });
+    expect(knownAccountProfile("someone-else")).toBeNull();
   });
 });
 
