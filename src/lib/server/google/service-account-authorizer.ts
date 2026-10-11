@@ -126,6 +126,17 @@ export class ServiceAccountAuthorizer {
     return request;
   }
 
+  /**
+   * Drops a cached token that Google refused, so the next call mints a fresh
+   * one. A newer token cached for the same scopes is kept.
+   */
+  forgetAccessToken(scopes: string | readonly string[], token: string): void {
+    const scope = normalizeScopes(scopes);
+    if (this.accessTokens.get(scope)?.value === token) {
+      this.accessTokens.delete(scope);
+    }
+  }
+
   private request(input: string, init: RequestInit): Promise<Response> {
     if (this.fetchImpl) {
       // Cloudflare validates the receiver of fetch. Copying an injected fetch

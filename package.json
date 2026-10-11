@@ -321,6 +321,7 @@
     "@austencloud/media-tagging-firebase": "^0.1.0",
     "@austencloud/media-tagging-types": "^0.1.0",
     "@austencloud/media-tagging-ui": "^0.1.0",
+    "@austencloud/phone-sign-in": "file:vendor/austencloud-phone-sign-in-0.1.0.tgz",
     "@austencloud/scene-3d": "^0.1.6",
     "@austencloud/sidebar": "^1.0.1",
     "@austencloud/theme": "^0.1.0",
