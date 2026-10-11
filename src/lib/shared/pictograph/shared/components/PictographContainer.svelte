@@ -702,6 +702,13 @@ with pre-prepared data for better performance.
     });
   });
 
+  // The path-shape glyph marks a step's own override. An in-place travel forces
+  // its path shape to draw the move, and for a moment after it ends the old
+  // travel step is still the one painted, so neither shows the glyph.
+  const showPathShape = $derived(
+    motionProgress === null && appliedPrepareKey === prepareKey
+  );
+
   // Machine-readable notation on the WRAPPER (not just the inner SVG): the inner
   // PictographRenderer's aria-label renders client-side only (gated behind async
   // prepare), so raw crawlable/SSR HTML would otherwise carry no description.
@@ -793,6 +800,7 @@ with pre-prepared data for better performance.
         darkMode={effectiveDarkMode}
         {printMode}
         {transparentBackground}
+        {showPathShape}
         {leftColorOverride}
         {rightColorOverride}
         {leftBuugengFlippedOverride}
@@ -853,6 +861,7 @@ with pre-prepared data for better performance.
             darkMode={effectiveDarkMode}
             {printMode}
             {transparentBackground}
+            {showPathShape}
             {leftColorOverride}
             {rightColorOverride}
             {leftBuugengFlippedOverride}
