@@ -340,6 +340,7 @@ export function createTkaBindings(env: {
     renderStatus,
     prepareRender,
     notice,
+    stageHeldElsewhere: () => tka.viewerActive,
     dispose() {
       animationVisibility.unregisterObserver(syncProgressBarVisibility);
       staffTips.dispose();

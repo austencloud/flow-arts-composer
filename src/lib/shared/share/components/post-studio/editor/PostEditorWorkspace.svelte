@@ -1758,6 +1758,15 @@
     if (activeMode) untrack(() => editor.pause());
   });
 
+  // A hidden editor pauses, unless the plugin's host shows its stage
+  // elsewhere. The shell reads the outgoing play intent before releasing
+  // its loan.
+  $effect(() => {
+    if (!active && !pluginBindings?.stageHeldElsewhere?.()) {
+      untrack(() => editor.pause());
+    }
+  });
+
   // A hidden tab stops animation frames but not the music, so pause the
   // player (a plugin pauses its own, tka's beat-timing session in its scope).
   function pauseWhenHidden(): void {
@@ -2018,10 +2027,10 @@
 <svelte:document onvisibilitychange={pauseWhenHidden} />
 
 {#snippet draftStatus()}
-  {#if pluginNotice}
-    <span class="draft-notice" role={pluginNotice.alert ? "alert" : "status"}
-      >{pluginNotice.message}</span
-    >
+  {#if pluginNotice?.alert}
+    <span class="draft-notice" role="alert">{pluginNotice.message}</span>
+  {:else if pluginNotice}
+    <span class="draft-notice" role="status">{pluginNotice.message}</span>
   {/if}
   {#if !header}
     <PostDraftStatus

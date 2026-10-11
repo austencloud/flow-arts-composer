@@ -420,10 +420,7 @@
   // The shell reads the outgoing play intent before releasing its loan.
   $effect(() => {
     if (!active && !sharedSurfaces?.active) {
-      untrack(() => {
-        editor.pause();
-        session.pause();
-      });
+      untrack(() => session.pause());
     }
   });
 
