@@ -51,21 +51,12 @@
   );
   const loadIdentity = $derived(`${sequence.id}:${run}`);
 
-  /** Where the effect picker may sit: across the app's content area, so it
-   *  can cover the settings panel beside the player, but only between this
-   *  workspace's toolbars, and never over the app's sidebar. */
-  function effectPickerBounds() {
-    if (!playbackArea) return null;
-    const area = playbackArea.getBoundingClientRect();
-    const content =
-      playbackArea.closest("#main-content")?.getBoundingClientRect() ?? area;
-    return {
-      left: content.left,
-      top: area.top,
-      width: content.width,
-      height: area.height,
-    };
-  }
+  /** Where the effect picker may sit: the app's content area, so it can cover
+   *  the settings panel beside the player or the idle toolbar under it, but
+   *  never the app's sidebar or bottom navigation. */
+  const effectPickerBounds = $derived(
+    playbackArea?.closest<HTMLElement>("#main-content") ?? playbackArea
+  );
 
   $effect(() => {
     const syncEffectsConfig = () => {

@@ -9,10 +9,11 @@
  *   and as the icon and name otherwise. The panel grows with the player, so
  *   a 4K player does not get a postage-stamp picker.
  * - `strip`: where the player fills the width (phone and tablet portrait),
- *   one scrolling row of pictures sits on the player's bottom edge, just above
- *   its controls, and covers only that edge of the animation. The pictures
- *   are sized so the last one in view is cut about in half, which shows the
- *   row scrolls.
+ *   one scrolling row of pictures hangs from the player's controls. Below
+ *   them where there is room, over the toolbar (idle while the picker is
+ *   open), so the whole animation stays in view; otherwise above them, over
+ *   the animation's bottom edge. The pictures are sized so the last one in
+ *   view is cut about in half, which shows the row scrolls.
  *
  * Pure arithmetic over the picture tiles' own metrics (effect-catalog-fit),
  * so the CSS that draws the tiles and the fit cannot drift apart.
@@ -35,8 +36,8 @@ export interface QuickPickerRect {
 }
 
 export interface QuickPickerBox {
-  /** The area the picker stays inside, in viewport pixels: the player's
-   *  workspace, so it never covers the app's sidebar or toolbars. */
+  /** The area the picker stays inside, in viewport pixels: the app's
+   *  content area, so it never covers the app's own navigation. */
   bounds: QuickPickerRect;
   /** The player the picker changes, in viewport pixels. */
   player: QuickPickerRect;
@@ -55,6 +56,8 @@ export type EffectQuickPickerFit =
     }
   | {
       arrangement: "strip";
+      /** Which side of the player's controls the row hangs from. */
+      side: "below" | "above";
       /** One row of picture tiles. */
       catalog: EffectCatalogFit;
       /** The width of that row in px, wider than the strip so it scrolls. */
@@ -167,10 +170,15 @@ export function fitEffectQuickPicker({
     };
   }
 
-  return fitStrip(player.width, count);
+  return fitStrip(bounds, player, count);
 }
 
-function fitStrip(width: number, count: number): EffectQuickPickerFit {
+function fitStrip(
+  bounds: QuickPickerRect,
+  player: QuickPickerRect,
+  count: number
+): EffectQuickPickerFit {
+  const { width } = player;
   const room =
     width - 2 * QUICK_PICKER_STRIP_PAD - QUICK_PICKER_OFF_WIDTH - CATALOG_GAP;
   const base = Math.min(
@@ -192,8 +200,14 @@ function fitStrip(width: number, count: number): EffectQuickPickerFit {
     )
   );
   const tile = portrait + 2 * INSET;
+  const roomBelow =
+    bounds.top +
+    bounds.height -
+    (player.top + player.height) -
+    QUICK_PICKER_EDGE;
   return {
     arrangement: "strip",
+    side: roomBelow >= stripHeight(portrait) ? "below" : "above",
     catalog: {
       cols: count,
       rows: 1,

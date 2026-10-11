@@ -10,8 +10,8 @@
   The picker composes EffectSelector (the tiles, their selection and prewarm)
   and EffectPresetThumbnail (the same pictures as the Effects panel, from
   effectCatalogLooks). effect-quick-picker-fit decides where it goes: beside
-  the player where its bounds have room, otherwise as one scrolling row over
-  the player's bottom edge.
+  the player where its bounds have room, otherwise as one scrolling row
+  hanging from the player's controls.
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
@@ -29,7 +29,6 @@
     QUICK_PICKER_EDGE,
     QUICK_PICKER_OFFSET,
     type EffectQuickPickerFit,
-    type QuickPickerRect,
   } from "#lib/shared/animation-engine/domain/effect-quick-picker-fit.js";
   import EffectSelector from "./EffectSelector.svelte";
   import EffectPresetThumbnail from "./EffectPresetThumbnail.svelte";
@@ -47,18 +46,16 @@
     /** The player the picker changes. The picker sits beside it, and a tap on
      *  it while the picker is open only closes the picker. */
     player: HTMLElement | null | undefined;
-    /** Reads the area the picker stays inside, in viewport pixels, each
-     *  time it is placed: a host can let it cover a panel beside the player
-     *  but not the app's sidebar or its own toolbars. The viewport when absent
-     *  or null. */
-    bounds?: () => QuickPickerRect | null;
+    /** The area the picker stays inside, such as the app's content area, so
+     *  it may cover a panel beside the player but never the app's own
+     *  navigation. The viewport when absent. */
+    bounds?: HTMLElement | null;
   }
 
   const { effectsConfigState, player, bounds = null }: Props = $props();
 
   let open = $state(false);
   let fit = $state<EffectQuickPickerFit | null>(null);
-  let area = $state<QuickPickerRect | null>(null);
   let triggerEl = $state<HTMLElement | null>(null);
   let contentEl = $state<HTMLElement | null>(null);
   let scrollerEl = $state<HTMLElement | null>(null);
@@ -93,14 +90,13 @@
 
   function measure() {
     if (!player) return;
-    area = bounds?.() ?? {
-      left: 0,
-      top: 0,
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
     fit = fitEffectQuickPicker({
-      bounds: area,
+      bounds: bounds?.getBoundingClientRect() ?? {
+        left: 0,
+        top: 0,
+        width: window.innerWidth,
+        height: window.innerHeight,
+      },
       player: player.getBoundingClientRect(),
       count: EFFECTS.length,
     });
@@ -184,10 +180,21 @@
     return { destroy: () => node.removeEventListener("wheel", onWheel) };
   }
 
-  const motion = $derived(
+  /** The picker's side of its anchor (the player, or the strip's row). */
+  const placement = $derived(
     fit?.arrangement === "side"
-      ? { x: fit.side === "right" ? -8 : 8, y: 0 }
-      : { x: 0, y: 8 }
+      ? fit.side
+      : fit?.side === "above"
+        ? "top"
+        : "bottom"
+  );
+  /** It slides in from its anchor. */
+  const motion = $derived(
+    placement === "right"
+      ? { x: -8, y: 0 }
+      : placement === "left"
+        ? { x: 8, y: 0 }
+        : { x: 0, y: placement === "top" ? 8 : -8 }
   );
 </script>
 
@@ -255,12 +262,10 @@
       bind:ref={contentEl}
       forceMount
       customAnchor={fit?.arrangement === "strip" ? row : (player ?? null)}
-      side={fit?.arrangement === "side" ? fit.side : "top"}
+      side={placement}
       align={fit?.arrangement === "side" ? "end" : "center"}
       sideOffset={fit?.arrangement === "side" ? QUICK_PICKER_OFFSET : 0}
-      collisionBoundary={area
-        ? { x: area.left, y: area.top, width: area.width, height: area.height }
-        : undefined}
+      collisionBoundary={bounds ?? undefined}
       collisionPadding={QUICK_PICKER_EDGE}
       avoidCollisions={fit?.arrangement === "side"}
       onOpenAutoFocus={focusSelected}
@@ -276,6 +281,8 @@
               class="fx-quick-panel"
               class:side={fit.arrangement === "side"}
               class:strip={fit.arrangement === "strip"}
+              class:above={fit.arrangement === "strip" && fit.side === "above"}
+              class:below={fit.arrangement === "strip" && fit.side === "below"}
               role="dialog"
               aria-label={t("effect_deep_effects")}
               style:width={fit.arrangement === "side"
@@ -513,6 +520,14 @@
     align-items: center;
     gap: 6px;
     padding: 8px;
+  }
+  /* Open on the side that faces the controls it hangs from. */
+  .fx-quick-panel.strip.below {
+    border-bottom: 1px solid
+      var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
+    border-radius: 0 0 12px 12px;
+  }
+  .fx-quick-panel.strip.above {
     border-top: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
     border-radius: 12px 12px 0 0;
   }

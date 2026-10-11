@@ -7,6 +7,7 @@ import {
   QUICK_PICKER_OFFSET,
   QUICK_PICKER_STRIP_PAD,
   sidePanelHeight,
+  stripHeight,
 } from "./effect-quick-picker-fit";
 import {
   CATALOG_GAP,
@@ -124,4 +125,35 @@ describe("fitEffectQuickPicker", () => {
       expect(fit.trackWidth).toBeGreaterThan(room);
     }
   );
+
+  // Measured on /create/generate at 375x667 while playing: the content area
+  // above the bottom navigation, and the player with its controls.
+  const phone = {
+    bounds: { left: 0, top: 0, width: 375, height: 623 },
+    player: { left: 12, top: 126, width: 351, height: 387 },
+    count: COUNT,
+  };
+
+  it("hangs the row below the controls where the toolbar leaves room", () => {
+    const fit = fitEffectQuickPicker(phone);
+    expect(fit.arrangement).toBe("strip");
+    if (fit.arrangement !== "strip") return;
+    expect(fit.side).toBe("below");
+    expect(
+      phone.player.top +
+        phone.player.height +
+        stripHeight(fit.catalog.portrait) +
+        QUICK_PICKER_EDGE
+    ).toBeLessThanOrEqual(phone.bounds.top + phone.bounds.height);
+  });
+
+  it("lifts the row above the controls where nothing below has room", () => {
+    const fit = fitEffectQuickPicker({
+      ...phone,
+      bounds: { ...phone.bounds, height: 540 },
+    });
+    expect(fit.arrangement).toBe("strip");
+    if (fit.arrangement !== "strip") return;
+    expect(fit.side).toBe("above");
+  });
 });
