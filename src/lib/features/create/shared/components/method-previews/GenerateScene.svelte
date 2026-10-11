@@ -9,6 +9,11 @@
    * step grid's stepCascade keyframes. The dice holds the lead slot, where
    * the step grid's start position sits.
    *
+   * Each cell plays its move as the wave reaches it (2026-10-11): its props
+   * travel from the pose before it, along its arrow, at the pace Construct's
+   * steps move. The real step grid washes a roll in still; the preview plays
+   * the moves so a roll reads as a sequence, not a page of pictures.
+   *
    * Each turn rolls twice, so a second tap shows a different sequence. Each
    * roll is a real sequence from drawMatrixRealization(), the Firebase-free
    * source behind the home hero, drawn in the background between turns.
@@ -39,12 +44,15 @@
     generateCellDelayMs,
     generateRevealMs,
     nextRoll,
+    rollPoseBefore,
     rollStep,
     type GenerateRoll,
   } from "./method-preview-generate";
   import { createNextSequenceDraw } from "./method-preview-next-sequence";
   import {
+    PREVIEW_MOVE_MS,
     placeGhost,
+    playTravel,
     sceneGhost,
     tapAt,
     waitUntil,
@@ -72,6 +80,8 @@
   let roll = $state.raw<GenerateRoll>(FIRST_ROLL);
   /** Bumped with each roll, so every cell reports ready for its new step. */
   let epoch = $state(0);
+  /** Each cell's move, 0 to 1. Null draws the cell still. */
+  let progress = $state.raw<(number | null)[]>([]);
 
   const layout = $derived(generateLayout(shape, width, height));
 
@@ -109,10 +119,38 @@
     });
   });
 
-  function settle(): void {
+  /** The turn's rolls have landed. The last roll's moves play on. */
+  function rest(): void {
     pose = null;
     phase = "rest";
     nextRollDraw.request();
+  }
+
+  function settle(): void {
+    rest();
+    // A move the turn cut short lands on its last frame.
+    progress = progress.map((value) => (value === null ? null : 1));
+  }
+
+  /**
+   * Each cell's move starts as the wave reaches it, from the pose before
+   * it. One frame loop plays them all; a roll that replaces this one stops
+   * its moves.
+   */
+  function playMoves(run: SceneRun, box: GenerateLayout): void {
+    const shown = epoch;
+    const delays = box.cells.map((_, index) =>
+      generateCellDelayMs(index, box.columns)
+    );
+    const totalMs = Math.max(...delays) + PREVIEW_MOVE_MS;
+    progress = delays.map(() => 0);
+    void playTravel(run, totalMs, (value) => {
+      if (epoch !== shown) return;
+      const elapsed = value * totalMs;
+      progress = delays.map((delay) =>
+        Math.min(1, Math.max(0, (elapsed - delay) / PREVIEW_MOVE_MS))
+      );
+    });
   }
 
   /**
@@ -139,6 +177,7 @@
     if (run.aborted) return false;
     if (last) finger.ghost.visible = false;
     phase = "entering";
+    playMoves(run, box);
     return run.wait(generateRevealMs(box.cells.length, box.columns));
   }
 
@@ -161,7 +200,10 @@
       const last = count === GENERATE_ROLLS_PER_TURN;
       if (!(await rollIn(run, box, finger, last))) return;
     }
-    settle();
+    // The run ends as the last roll lands; its moves play on into the turn's
+    // end, which settles the scene. A wait for them here could push the run
+    // past the turn and cut it when a slow draw delayed the roll.
+    rest();
   }
 
   playSceneTurns(() => ({ playing, turn }), play, {
@@ -201,6 +243,8 @@
       >
         <MethodPreviewPictograph
           data={rollStep(roll, index)}
+          motionStartData={rollPoseBefore(roll, index)}
+          motionProgress={progress[index] ?? null}
           readyEpoch={epoch}
           onReady={() => handleCellReady(index)}
         />
