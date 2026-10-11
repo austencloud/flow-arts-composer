@@ -21,6 +21,7 @@ import {
   loadPostProject,
   savePostProject,
 } from "#lib/shared/media-composition/services/post-project-store.js";
+import { firestoreList } from "#lib/shared/firestore/index.js";
 
 const mocks = vi.hoisted(() => ({
   auth: { currentUser: { uid: "owner", isAnonymous: false } },
@@ -143,6 +144,89 @@ describe("account Post writes", () => {
     mocks.auth.currentUser.uid = "other";
     const other = await listSyncedPostProjects();
     expect(other.projects).toEqual([]);
+  });
+
+  it("puts a missing source on the project's card, not the page", async () => {
+    const lost = createEmptyPostProject({
+      sequenceId: "lost-source",
+      now: 7,
+      title: "Lost",
+    });
+    expect(savePostProject(lost).ok).toBe(true);
+
+    const listed = await listSyncedPostProjects();
+
+    expect(listed.error).toBeNull();
+    expect(listed.projects).toEqual([
+      expect.objectContaining({
+        sequenceId: "lost-source",
+        problem: "Its source sequence is missing, so it stays on this device.",
+      }),
+    ]);
+    expect(mocks.set).not.toHaveBeenCalled();
+  });
+
+  it("keeps a project whose upload fails on the device with a card problem", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mocks.cachedSource = source("stuck");
+    const stuck = createEmptyPostProject({
+      sequenceId: "stuck",
+      now: 8,
+      title: "Stuck",
+    });
+    expect(savePostProject(stuck).ok).toBe(true);
+    mocks.transaction.mockRejectedValue(new Error("permission-denied"));
+
+    const listed = await listSyncedPostProjects();
+
+    expect(listed.error).toBeNull();
+    expect(listed.projects).toEqual([
+      expect.objectContaining({
+        sequenceId: "stuck",
+        problem: "It could not sync, so it stays on this device.",
+      }),
+    ]);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("still reports a failed cloud listing on the page", async () => {
+    vi.mocked(firestoreList).mockRejectedValueOnce(
+      new Error("Cloud posts could not be listed.")
+    );
+
+    const listed = await listSyncedPostProjects();
+
+    expect(listed.error).toBe("Cloud posts could not be listed.");
+  });
+
+  it("holds the guest claim open and reports a draft it could not import", async () => {
+    const sequenceId = "studio-arrangement:lost-guest";
+    const project = createEmptyPostProject({ sequenceId, now: 44 });
+    localStorage.setItem(
+      `tka:post-studio:project:v2:${sequenceId}`,
+      JSON.stringify(project)
+    );
+    mocks.legacyChoices = [
+      {
+        sequenceId,
+        title: "Lost guest",
+        word: "",
+        updatedAt: 44,
+        hasDraft: true,
+      },
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ records: [] })))
+    );
+
+    const listed = await listSyncedPostProjects();
+
+    expect(localStorage.getItem("tka:post-studio:legacy-owner:v1")).toBeNull();
+    expect(listed.error).toContain(
+      `The source sequence for ${sequenceId} is unavailable.`
+    );
   });
   it("claims an unscoped guest Studio draft and its source into the account", async () => {
     const sequenceId = "studio-arrangement:guest-scene";
