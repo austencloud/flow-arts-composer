@@ -68,6 +68,7 @@
     setProjectBackground,
     setProjectCanvas,
     setTrackFlag,
+    setArrangementCellOffset,
     setArrangementSnapshot,
   } from "#lib/shared/media-composition/domain/post-project-edits.js";
   import type { StripMode } from "#lib/shared/media-composition/domain/strip-view.js";
@@ -3393,6 +3394,22 @@
             onDeleteKey={(itemId, channel, seconds) =>
               editKeys(itemId, (it) => removeKeyframe(it, channel, seconds))}
             onOpenCurve={openKeyCurve}
+            selectedCellId={editor.selectedCellId}
+            onSelectCell={(itemId, cellId) => {
+              musicSelected = false;
+              editor.selectedItemId = itemId;
+              editor.selectCell(cellId);
+            }}
+            onMoveCellOffset={(itemId, cellId, beatOffset) =>
+              editor.edit((project, context) =>
+                setArrangementCellOffset(
+                  project,
+                  itemId,
+                  cellId,
+                  { beatOffset },
+                  context
+                )
+              )}
             toolbarStart={editor.selectedItem && keyChannel
               ? timelineKeys
               : undefined}

@@ -1,11 +1,15 @@
 <script lang="ts">
   import { flushSync, onDestroy, tick, untrack, type Snippet } from "svelte";
   import type {
+    PostArrangementItem,
     PostItem,
     PostKeyframeChannel,
     PostProject,
     PostTrack,
   } from "#lib/shared/media-composition/domain/post-project.js";
+  import type { ArrangementCell } from "#lib/shared/media-composition/domain/arrangement.js";
+  import { visibleCells } from "#lib/shared/media-composition/domain/arrangement-edits.js";
+  import { arrangementCellCycleBeats } from "#lib/shared/media-composition/domain/arrangement-timing.js";
   import {
     MAIN_TRACK_INDEX,
     POST_FRAME_RATE,
@@ -32,7 +36,9 @@
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { growFade } from "#lib/shared/transitions/motion.js";
   import TimeRuler from "#lib/shared/timeline/TimeRuler.svelte";
-  import { channelValueText } from "../post-editor-labels";
+  import { arrangementCellLabel, channelValueText } from "../post-editor-labels";
+  import PostTimelineCellLane from "./PostTimelineCellLane.svelte";
+  import PostTimelineCellLaneHeader from "./PostTimelineCellLaneHeader.svelte";
   import PostTimelineItem from "./PostTimelineItem.svelte";
   import PostTimelineKeyLane from "./PostTimelineKeyLane.svelte";
   import PostTimelineKeyLaneHeader from "./PostTimelineKeyLaneHeader.svelte";
@@ -58,6 +64,12 @@
     roundToFrameSeconds,
     rowsYWithoutKeyLanes,
     rulerTickInterval,
+    arrangementBeatSeconds,
+    arrangementBeatToSeconds,
+    cellLaneSpan,
+    cellOffsetAfterDrag,
+    unionBand,
+    type CellLaneSpan,
     scrollLeftForStableAnchor,
     secondsToPixels,
     snapToTargets,
@@ -141,6 +153,16 @@
       channel: PostKeyframeChannel,
       fromSeconds: number
     ) => void;
+    /** The arrangement cell in hand, whose lane reads as pressed. */
+    selectedCellId?: string | null;
+    /** A cell's lane or its bar was pressed. */
+    onSelectCell?: (itemId: string, cellId: string) => void;
+    /** A cell's bar was dragged: its new beat offset, already snapped. */
+    onMoveCellOffset?: (
+      itemId: string,
+      cellId: string,
+      beatOffset: number
+    ) => void;
     /** Selected clip controls, shown in their own row above the ruler. */
     toolbarStart?: Snippet;
     onAddVideo?: () => void;
@@ -184,6 +206,9 @@
     onMoveKey,
     onDeleteKey,
     onOpenCurve,
+    selectedCellId = null,
+    onSelectCell,
+    onMoveCellOffset,
     toolbarStart,
     onAddVideo,
     pixelsPerSecond = $bindable(POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND),
@@ -404,7 +429,28 @@
     pendingSeconds: number;
   }
 
-  type DragState = TrimDrag | MoveMainDrag | MoveOverlayDrag | KeyframeDrag;
+  /** A cell's bar in hand: its offset previews in the band and commits on release. */
+  interface CellOffsetDrag {
+    kind: "cell-offset";
+    itemId: string;
+    cellId: string;
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    didDrag: boolean;
+    frozenPixelsPerSecond: number;
+    /** Project seconds per grid beat, frozen at the press. */
+    beatSeconds: number;
+    originalOffset: number;
+    pendingOffset: number;
+  }
+
+  type DragState =
+    | TrimDrag
+    | MoveMainDrag
+    | MoveOverlayDrag
+    | KeyframeDrag
+    | CellOffsetDrag;
 
   let dragState = $state<DragState | null>(null);
   let dragExtensionPx = $state(0);
@@ -544,27 +590,101 @@
     // Drawn under the row the clip sits on, which for a joined square is the
     // animation's.
     const rowTrackIndex = rowTrackIndexOf(item.id, trackIndex);
-    let topPx = 0;
-    for (const row of rows) {
-      topPx += row.heightPx;
-      if (row.trackIndex === rowTrackIndex) break;
-    }
     return {
       item,
       trackIndex: rowTrackIndex,
       locked: project.tracks[trackIndex]?.locked ?? false,
       channels,
-      topPx,
+      topPx: rowBottomPx(rowTrackIndex),
       heightPx: channels.length * KEY_LANE_HEIGHT_PX,
     };
   });
 
-  // The keyframe rows sit above the main row whenever the selected clip is
-  // on an overlay track.
+  /** The bottom edge of a track's row in the rows stack, where its lanes begin. */
+  function rowBottomPx(rowTrackIndex: number): number {
+    let topPx = 0;
+    for (const row of rows) {
+      topPx += row.heightPx;
+      if (row.trackIndex === rowTrackIndex) break;
+    }
+    return topPx;
+  }
+
+  interface CellLane {
+    cell: ArrangementCell;
+    label: string;
+    beatOffset: number;
+    span: CellLaneSpan;
+  }
+
+  interface CellLanes extends KeyLanesBand {
+    item: PostArrangementItem;
+    trackIndex: number;
+    locked: boolean;
+    lanes: CellLane[];
+  }
+
+  /**
+   * One lane per cell with layers under the selected arrangement, after its
+   * keyframe rows. A bar being dragged shows its pending offset here, so the
+   * band previews the move before the workspace applies it.
+   */
+  const cellLanes = $derived.by((): CellLanes | null => {
+    if (selectedItemId === null) return null;
+    const located = findItem(project, selectedItemId);
+    if (!located || located.item.kind !== "arrangement") return null;
+    const { item, trackIndex } = located;
+    const cells = visibleCells(item.snapshot).filter(
+      (cell) => cell.layers.length > 0
+    );
+    if (cells.length === 0) return null;
+    const rowTrackIndex = rowTrackIndexOf(item.id, trackIndex);
+    const keys = keyLanes;
+    const topPx =
+      keys && keys.trackIndex === rowTrackIndex
+        ? keys.topPx + keys.heightPx
+        : rowBottomPx(rowTrackIndex);
+    const drag = dragState?.kind === "cell-offset" ? dragState : null;
+    const { bpm, skipStartPlacement } = item.snapshot;
+    const lanes = cells.map((cell) => {
+      const beatOffset =
+        drag && drag.didDrag && drag.cellId === cell.id
+          ? drag.pendingOffset
+          : cell.beatOffset;
+      return {
+        cell,
+        label: arrangementCellLabel(cell),
+        beatOffset,
+        span: cellLaneSpan(
+          item,
+          bpm,
+          beatOffset,
+          arrangementCellCycleBeats(cell, skipStartPlacement)
+        ),
+      };
+    });
+    return {
+      item,
+      trackIndex: rowTrackIndex,
+      locked: project.tracks[trackIndex]?.locked ?? false,
+      lanes,
+      topPx,
+      heightPx: lanes.length * KEY_LANE_HEIGHT_PX,
+    };
+  });
+
+  /** Both bands under the selected clip, for what measures past the rows. */
+  const extraBands = $derived(unionBand(keyLanes, cellLanes));
+  const extraBandsTrackIndex = $derived(
+    cellLanes?.trackIndex ?? keyLanes?.trackIndex ?? null
+  );
+
+  // The lanes sit above the main row whenever the selected clip is on an
+  // overlay track.
   const mainRowTopPx = $derived(
     overlayTrackCount * OVERLAY_ROW_HEIGHT_PX +
-      (keyLanes && keyLanes.trackIndex !== MAIN_TRACK_INDEX
-        ? keyLanes.heightPx
+      (extraBands && extraBandsTrackIndex !== MAIN_TRACK_INDEX
+        ? extraBands.heightPx
         : 0)
   );
   /** Music may run past the post's end; its lane shows all of it. */
@@ -981,6 +1101,41 @@
     onSeek(seconds);
   }
 
+  /** A bar drag ends with a click on the bar, which must not re-select. */
+  let suppressNextCellClick = false;
+
+  function beginCellDrag(
+    event: PointerEvent,
+    lanes: CellLanes,
+    lane: CellLane
+  ): void {
+    if (event.button !== 0 || lanes.locked || !onMoveCellOffset) return;
+    suppressNextCellClick = false;
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    const { item } = lanes;
+    dragState = {
+      kind: "cell-offset",
+      itemId: item.id,
+      cellId: lane.cell.id,
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      didDrag: false,
+      frozenPixelsPerSecond: pixelsPerSecond,
+      beatSeconds: arrangementBeatSeconds(item.snapshot.bpm, item.speed),
+      originalOffset: lane.cell.beatOffset,
+      pendingOffset: lane.cell.beatOffset,
+    };
+  }
+
+  function handleCellBarClick(lanes: CellLanes, lane: CellLane): void {
+    if (suppressNextCellClick) {
+      suppressNextCellClick = false;
+      return;
+    }
+    onSelectCell?.(lanes.item.id, lane.cell.id);
+  }
+
   function handleKeyKeydown(
     event: KeyboardEvent,
     lanes: KeyLanes,
@@ -1062,17 +1217,20 @@
     );
   }
 
-  // Once a clip is picked, scroll its keyframe rows into view if they sit
-  // below the fold, without pushing the clip's own row off the top.
+  // Once a clip is picked, scroll its keyframe and cell rows into view if
+  // they sit below the fold, without pushing the clip's own row off the top.
   let revealedLanesFor: string | null = null;
   $effect(() => {
-    const lanes = keyLanes;
-    const key = lanes ? `${lanes.item.id}:${lanes.channels.length}` : null;
+    const lanes = extraBands;
+    const trackIndex = extraBandsTrackIndex;
+    const key = lanes
+      ? `${selectedItemId}:${keyLanes?.channels.length ?? 0}:${cellLanes?.lanes.length ?? 0}`
+      : null;
     if (key === revealedLanesFor) return;
     revealedLanesFor = key;
     if (!lanes) return;
     const rowHeightPx =
-      lanes.trackIndex === MAIN_TRACK_INDEX
+      trackIndex === MAIN_TRACK_INDEX
         ? MAIN_ROW_HEIGHT_PX
         : OVERLAY_ROW_HEIGHT_PX;
     const rowTopPx = lanes.topPx - rowHeightPx;
@@ -1098,8 +1256,8 @@
     if (hit.kind === "new-layer") return 0;
     const rankFromTop = overlayTrackCount - hit.trackIndex;
     const topPx = rankFromTop * OVERLAY_ROW_HEIGHT_PX;
-    return keyLanes && topPx >= keyLanes.topPx
-      ? topPx + keyLanes.heightPx
+    return extraBands && topPx >= extraBands.topPx
+      ? topPx + extraBands.heightPx
       : topPx;
   }
 
@@ -1281,6 +1439,22 @@
       return;
     }
 
+    if (state.kind === "cell-offset") {
+      // Whole beats, quarter beats with Alt, never before the grid's start.
+      const pending = cellOffsetAfterDrag(
+        state.originalOffset,
+        deltaXPx / state.frozenPixelsPerSecond,
+        state.beatSeconds,
+        event.altKey ? 0.25 : 1
+      );
+      state.pendingOffset = pending;
+      const lanes = cellLanes;
+      snapGuideSeconds = lanes
+        ? arrangementBeatToSeconds(lanes.item, lanes.item.snapshot.bpm, pending)
+        : null;
+      return;
+    }
+
     // move-overlay: the ghost's x is the snapped position (not a raw pixel
     // follow like the main-track ghost), since overlays can land anywhere.
     const placed = placeDraggedOverlay(
@@ -1305,7 +1479,7 @@
     const pointerYPx =
       event.clientY < lanesTopPx
         ? -1
-        : rowsYWithoutKeyLanes(event.clientY - contentOrigin().top, keyLanes);
+        : rowsYWithoutKeyLanes(event.clientY - contentOrigin().top, extraBands);
     const hit = overlayRowAtPointerY(pointerYPx, {
       overlayTrackCount,
       overlayRowHeightPx: OVERLAY_ROW_HEIGHT_PX,
@@ -1330,6 +1504,16 @@
       } else {
         onTrim(state.itemId, state.edge, state.pendingSeconds);
         onGestureEnd();
+      }
+      finishDrag();
+      return;
+    }
+
+    if (state.kind === "cell-offset") {
+      if (state.didDrag) {
+        suppressNextCellClick = true;
+        if (state.pendingOffset !== state.originalOffset)
+          onMoveCellOffset?.(state.itemId, state.cellId, state.pendingOffset);
       }
       finishDrag();
       return;
@@ -1484,6 +1668,19 @@
                     onKeyChannel(channel);
                     onToggleKey(lanes.item.id, channel, playheadSeconds);
                   }}
+                />
+              </div>
+            {/each}
+          {/if}
+          {#if cellLanes && cellLanes.trackIndex === row.trackIndex}
+            {@const band = cellLanes}
+            {#each band.lanes as lane (lane.cell.id)}
+              <div class="key-lane-slot" transition:growFade|global>
+                <PostTimelineCellLaneHeader
+                  label={lane.label}
+                  heightPx={KEY_LANE_HEIGHT_PX}
+                  selected={lane.cell.id === selectedCellId}
+                  onSelect={() => onSelectCell?.(band.item.id, lane.cell.id)}
                 />
               </div>
             {/each}
@@ -1687,6 +1884,29 @@
                       handleKeyKeydown(event, lanes, channel, seconds)}
                     onCurveClick={(fromSeconds) =>
                       onOpenCurve(lanes.item.id, channel, fromSeconds)}
+                  />
+                </div>
+              {/each}
+            {/if}
+            {#if cellLanes && cellLanes.trackIndex === row.trackIndex}
+              {@const band = cellLanes}
+              {#each band.lanes as lane (lane.cell.id)}
+                <div class="key-lane-slot" transition:growFade|global>
+                  <PostTimelineCellLane
+                    item={band.item}
+                    cellId={lane.cell.id}
+                    label={lane.label}
+                    startSeconds={lane.span.startSeconds}
+                    endSeconds={lane.span.endSeconds}
+                    pinned={lane.span.pinned}
+                    beatOffset={lane.beatOffset}
+                    heightPx={KEY_LANE_HEIGHT_PX}
+                    {pixelsPerSecond}
+                    selected={lane.cell.id === selectedCellId}
+                    locked={band.locked}
+                    onSeek={(seconds) => onSeek(seconds)}
+                    onBarPointerDown={(event) => beginCellDrag(event, band, lane)}
+                    onBarClick={() => handleCellBarClick(band, lane)}
                   />
                 </div>
               {/each}
