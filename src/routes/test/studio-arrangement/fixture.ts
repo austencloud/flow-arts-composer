@@ -117,7 +117,7 @@ export function createStudioArrangementFixture() {
     }
   );
   const snapshot: ArrangementSnapshot = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     cells,
     gridRows: 2,
     gridCols: 2,

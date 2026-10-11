@@ -22,6 +22,7 @@ import type { CellMediaType } from "#lib/shared/animation-engine/domain/compose-
 import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
 import type { GridCell } from "../state/arrange-grid-state.svelte";
 import { validateArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
+import { legacyCellFieldsFrom } from "#lib/shared/media-composition/domain/arrangement-migration.js";
 import type { GridStateSnapshot } from "./types";
 
 /**
@@ -157,7 +158,7 @@ export function gridCellsToComposition(
     name,
     layout: { rows: gridRows, cols: gridCols },
     cells: cellConfigs,
-    arrangement: validateArrangementSnapshot({ schemaVersion: 1, ...snapshot }),
+    arrangement: validateArrangementSnapshot({ schemaVersion: 2, ...snapshot }),
     createdAt: now,
     updatedAt: now,
     creator: "austen",
@@ -171,7 +172,10 @@ export function compositionToGridState(
   if (composition.arrangement) {
     const snapshot = validateArrangementSnapshot(composition.arrangement);
     return {
-      cells: snapshot.cells,
+      cells: snapshot.cells.map((cell) => ({
+        ...cell,
+        ...legacyCellFieldsFrom(cell.appearance),
+      })),
       gridRows: snapshot.gridRows,
       gridCols: snapshot.gridCols,
       bpm: snapshot.bpm,

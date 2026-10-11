@@ -141,7 +141,7 @@ export async function openCompositionInStudio(
   if (!composition)
     throw new Error("This arrangement is unavailable for this account.");
   const snapshot = validateArrangementSnapshot({
-    schemaVersion: 1,
+    schemaVersion: 2,
     ...compositionToGridState(composition),
   });
   const sequence = firstPopulatedSequence(snapshot);
@@ -195,7 +195,7 @@ export async function createStudioArrangement(
     mediaType: "animation" as const,
   }));
   const snapshot = validateArrangementSnapshot({
-    schemaVersion: 1,
+    schemaVersion: 2,
     cells,
     gridRows: 2,
     gridCols: 2,

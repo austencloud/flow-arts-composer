@@ -124,7 +124,8 @@ export const arrangementSnapshotSchema = z.preprocess(
 export function validateArrangementSnapshot(
   value: unknown
 ): ArrangementSnapshot {
+  // The parsed shape carries passthrough index signatures, so it is widened before the domain type.
   return structuredClone(
     arrangementSnapshotSchema.parse(value)
-  ) as ArrangementSnapshot;
+  ) as unknown as ArrangementSnapshot;
 }
