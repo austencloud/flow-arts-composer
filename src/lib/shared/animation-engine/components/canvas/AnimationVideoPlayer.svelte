@@ -15,8 +15,8 @@
   import { onMount, onDestroy } from "svelte";
   import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
   import type { VideoRenderProgress, VideoRenderResult } from "#lib/shared/animation-engine/services/video-pre-renderer.js";
-  import { getVideoPlayer } from "../../services/video-player";
-  import { getVideoGenerationCoordinator } from "../../services/video-generation-coordinator";
+  import { getVideoPlayer } from "#lib/shared/animation-engine/services/video-player.js";
+  import { getVideoGenerationCoordinator } from "#lib/shared/animation-engine/services/video-generation-coordinator.js";
   import VideoGenerationStatus from "../video-player/VideoGenerationStatus.svelte";
   import VideoReadyNotification from "../video-player/VideoReadyNotification.svelte";
   import PlaybackModeToggle from "../video-player/PlaybackModeToggle.svelte";

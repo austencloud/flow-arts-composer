@@ -10,11 +10,11 @@ import type {
 } from "#lib/shared/media-composition/services/post-studio-layer-painter.js";
 import { ExportGlyphPrerenderer } from "#lib/shared/animation-engine/services/export-glyph-prerenderer.js";
 import { getSvgImageConverter } from "#lib/shared/foundation/get-svg-image-converter.js";
-import { renderStepNumberToCanvas } from "./canvas-renderer";
+import { renderStepNumberToCanvas } from "#lib/shared/video-export/services/canvas-renderer.js";
 import {
   drawElementalGlyphToCanvas,
   drawPrerenderedGlyphToCanvas,
-} from "./export-frame-compositor";
+} from "#lib/shared/video-export/services/export-frame-compositor.js";
 
 // PostStudioSequenceAnimationLayer always mounts AnimatorCanvas with
 // `previewDarkMode` set (the shorthand for `previewDarkMode={true}`) - Post

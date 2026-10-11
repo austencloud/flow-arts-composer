@@ -8,7 +8,7 @@ import { generationOrchestrator } from "#lib/shared/create/services/generation-o
 import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
 import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
 import { DifficultyLevel } from "#lib/shared/foundation/domain/models/generation/generate-models.js";
-import { isSeamlesslyLoopable } from "#lib/features/compose/services/sequence-loopability-checker.js";
+import { isSeamlesslyLoopable } from "#lib/shared/foundation/services/sequence-loopability-checker.js";
 
 /** Generate one demo loop. The generation prop is irrelevant — the render prop
  *  is set on the canvas; only the motion matters here. */
