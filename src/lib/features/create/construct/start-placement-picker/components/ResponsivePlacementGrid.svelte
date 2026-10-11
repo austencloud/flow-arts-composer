@@ -38,22 +38,31 @@
     };
   });
 
-  // The 16 tiles form four groups of four: Alpha, Beta, and the two mirror
-  // sets of Gamma. Four columns give each group its own row. Eight columns put
-  // Alpha | Beta on top and Gamma | mirrored Gamma below, split by a gutter.
-  // Every row break is a group break, so rows always get the extra gap.
+  // Three letter groups: Alpha (4), Beta (4), Gamma (8). Four columns stack
+  // them as rows, Gamma taking two. Eight columns set them side by side as
+  // blocks: Alpha 2x2, Beta 2x2, Gamma 4x2. Either way there are two group
+  // breaks, down the rows in four columns and across the columns in eight.
   function tileSizeFor(columns: number): number {
     const { gap, padding, groupGap } = responsiveSizing;
     const rows = Math.ceil(TOTAL_ITEMS / columns);
-    const gutter = columns === 8 ? groupGap : 0;
+    const columnBreaks = columns === 8 ? 2 : 0;
+    const rowBreaks = columns === 8 ? 0 : 2;
     const width =
-      (containerWidth - padding * 2 - gap * (columns - 1) - gutter) / columns;
+      (containerWidth -
+        padding * 2 -
+        gap * (columns - 1) -
+        groupGap * columnBreaks) /
+      columns;
     const height =
-      (containerHeight - padding * 2 - (gap + groupGap) * (rows - 1)) / rows;
+      (containerHeight -
+        padding * 2 -
+        gap * (rows - 1) -
+        groupGap * rowBreaks) /
+      rows;
     return Math.min(width, height);
   }
 
-  // Two rows of eight when that gives bigger tiles than four rows of four.
+  // Eight columns (two rows) when that gives bigger tiles than four.
   // Near a tie (wide panes around 2:1) eight wins because it fits the pane's
   // shape. Tracks are sized to the tile so the block stays compact and
   // centered instead of spreading across the pane.
@@ -109,12 +118,10 @@
     style:--grid-columns={gridLayout.tileSize === null
       ? `repeat(${gridLayout.columns}, 1fr)`
       : gridLayout.columns === 8
-        ? `repeat(4, ${gridLayout.tileSize}px) ${gridLayout.tileSize + responsiveSizing.groupGap}px repeat(3, ${gridLayout.tileSize}px)`
+        ? `repeat(2, ${gridLayout.tileSize}px) ${gridLayout.tileSize + responsiveSizing.groupGap}px ${gridLayout.tileSize}px ${gridLayout.tileSize + responsiveSizing.groupGap}px repeat(3, ${gridLayout.tileSize}px)`
         : `repeat(4, ${gridLayout.tileSize}px)`}
     style:--grid-gap={responsiveSizing.gap + "px"}
-    style:--group-row-gap={responsiveSizing.gap +
-      responsiveSizing.groupGap +
-      "px"}
+    style:--group-gap={responsiveSizing.groupGap + "px"}
     style:--grid-padding={responsiveSizing.padding + "px"}
     style:--max-pictograph-size={gridLayout.tileSize === null
       ? "auto"
@@ -143,8 +150,7 @@
     grid-template-columns: var(--grid-columns, repeat(4, 1fr));
     justify-content: center;
     align-content: center;
-    column-gap: var(--grid-gap, 8px);
-    row-gap: var(--group-row-gap, 24px);
+    gap: var(--grid-gap, 8px);
     width: 100%;
     max-width: 100%;
     max-height: 100%;
@@ -164,9 +170,32 @@
     box-sizing: border-box;
   }
 
-  /* The fifth track is widened by the group gutter; its tile sits at the far
-     edge so the space opens between the fourth and fifth tiles */
-  .pictograph-grid.eight-column > :global(*:nth-child(8n + 5)) {
+  /* Tiles arrive as Alpha 1-4, Beta 5-8, Gamma 9-16 */
+
+  /* Four columns: extra space above the Beta row and the first Gamma row */
+  .pictograph-grid:not(.eight-column)
+    > :global(*:nth-child(n + 5):nth-child(-n + 12)) {
+    margin-top: var(--group-gap, 16px);
+  }
+
+  /* Eight columns: Alpha 2x2 | Beta 2x2 | Gamma 4x2. Each tile is pinned to
+     its row and fills that row's columns in order. */
+  .pictograph-grid.eight-column > :global(*) {
+    grid-row: 2;
+  }
+  .pictograph-grid.eight-column > :global(*:nth-child(-n + 2)),
+  .pictograph-grid.eight-column > :global(*:nth-child(n + 5):nth-child(-n + 6)),
+  .pictograph-grid.eight-column
+    > :global(*:nth-child(n + 9):nth-child(-n + 12)) {
+    grid-row: 1;
+  }
+
+  /* The first track of Beta and of Gamma is widened by the group gutter; its
+     tiles sit at the far edge so the space opens before each block */
+  .pictograph-grid.eight-column
+    > :global(
+      *:is(:nth-child(5), :nth-child(7), :nth-child(9), :nth-child(13))
+    ) {
     justify-self: end;
   }
 </style>

@@ -810,10 +810,7 @@ export class Ink2DRenderer {
       return;
 
     const threshold =
-      (1 - params.viscosity) *
-      params.breakStretchMax *
-      scale *
-      (params.resolvedPalette.watercolor ? 1.65 : 1);
+      (1 - params.viscosity) * params.breakStretchMax * scale;
     for (const state of this.tips.values()) {
       state.points = this.applyStrokeBreakup(
         state.points,
@@ -941,9 +938,6 @@ export class Ink2DRenderer {
       params.opacityMax * (0.48 + params.intensity * 0.52),
       1
     );
-    const composite: GlobalCompositeOperation = palette.emissive
-      ? "lighter"
-      : "source-over";
     const needsDarkStageContrast =
       !palette.watercolor && !palette.emissive && isDarkColor(palette.edge);
     const sumiDensity =
@@ -975,7 +969,7 @@ export class Ink2DRenderer {
           palette.edge,
           1.38,
           peakAlpha * 0.18,
-          composite,
+          "source-over",
           18
         );
         this.drawSegmentedRibbonPass(
@@ -984,7 +978,7 @@ export class Ink2DRenderer {
           palette.pigment,
           0.94,
           peakAlpha * 0.74,
-          composite,
+          "source-over",
           24
         );
         continue;

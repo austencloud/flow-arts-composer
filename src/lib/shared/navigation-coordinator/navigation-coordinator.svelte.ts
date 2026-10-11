@@ -445,14 +445,15 @@ const TAB_ORDERS: Record<string, string[]> = {
   train: ["drills", "challenges", "progress"],
   collect: ["achievements", "badges", "stats"],
   feedback: ["submit", "my-feedback", "tracker", "manage"],
+  // The rail's order; Release notes and Keyboard open from Preferences.
   settings: [
     "profile",
-    "release-notes",
-    "notifications",
-    "props",
-    "theme",
     "preferences",
+    "release-notes",
     "keyboard",
+    "theme",
+    "props",
+    "notifications",
   ],
 };
 
