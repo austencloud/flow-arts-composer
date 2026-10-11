@@ -45,20 +45,20 @@ function Wait-D2Job([string]$id) {
     if ($state -like 'EXIT *') { break }
     if ($state -eq 'MISSING') { throw "No job $id on d2." }
     $mins = [math]::Round(((Get-Date) - $started).TotalMinutes, 1)
-    $last = "$(Invoke-D2 "Get-Content '$dir/log.txt' -Tail 1 -ErrorAction SilentlyContinue")".Trim()
+    $last = "$(Invoke-D2 "Get-Content '$dir/log.txt' -Encoding utf8 -Tail 1 -ErrorAction SilentlyContinue")".Trim()
     if ($last.Length -gt 140) { $last = $last.Substring(0, 140) }
     Write-Host "[d2-run] $id running ${mins}m :: $last"
     Start-Sleep -Seconds $PollSeconds
   }
   Write-Host "----- d2 log tail ($id) -----"
-  Invoke-D2 "Get-Content '$dir/log.txt' -Tail $TailLines" | Write-Host
+  Invoke-D2 "Get-Content '$dir/log.txt' -Encoding utf8 -Tail $TailLines" | Write-Host
   $code = [int]($state -replace 'EXIT ', '')
   Write-Host "[d2-run] $id exit $code (full log: d2 $dir/log.txt)"
   exit $code
 }
 
 if ($Job) {
-  if ($NoWait) { Show-Status $Job; Invoke-D2 "Get-Content '$jobsRoot/$Job/log.txt' -Tail $TailLines -ErrorAction SilentlyContinue" ; exit 0 }
+  if ($NoWait) { Show-Status $Job; Invoke-D2 "Get-Content '$jobsRoot/$Job/log.txt' -Encoding utf8 -Tail $TailLines -ErrorAction SilentlyContinue" ; exit 0 }
   Wait-D2Job $Job
 }
 
@@ -68,7 +68,7 @@ if ($Name -notmatch '^[A-Za-z0-9._-]+$') { throw "-Name may only use letters, di
 $sha = (git rev-parse --verify "$Ref^{commit}").Trim()
 $id = "$Name-$($sha.Substring(0, 10))-$(Get-Date -Format HHmmss)"
 Write-Host "[d2-run] pushing $sha to d2"
-git push --quiet d2 "${sha}:refs/heads/d2-run/$($sha.Substring(0, 10))" 2>&1 | Where-Object { $_ -notmatch 'locksverify|Verified \d+ skills' } | Write-Host
+git push --quiet d2 "${sha}:refs/heads/d2-run/$($sha.Substring(0, 10))" 2>&1 | Where-Object { $_ -notmatch 'locksverify|LFS locking API|Verified \d+ skills' } | Write-Host
 if ($LASTEXITCODE -ne 0) { throw 'git push to d2 failed.' }
 
 # The command travels as a file, so quoting inside it never has to survive SSH.

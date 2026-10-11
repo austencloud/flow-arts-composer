@@ -36,6 +36,7 @@ $log = Join-Path $JobDir 'log.txt'
 $exit = Join-Path $JobDir 'exit.txt'
 $runner = @"
 `$ErrorActionPreference = 'Continue'
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
 Set-Location '$wt'
 `$code = 0
 foreach (`$step in 'pnpm install --frozen-lockfile', 'pnpm run build:packages', (Get-Content '$JobDir\command.txt' -Raw)) {
