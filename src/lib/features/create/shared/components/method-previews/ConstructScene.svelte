@@ -9,8 +9,15 @@
    * (method-preview-construct.ts). The finger taps the real one, it grows to
    * fill the box, and the other two fade.
    *
-   * Finished picture: the demo sequence's start position and its first
-   * steps, in a row in a strip and wrapped 2×2 in a square.
+   * A picked step plays its move as it grows in, as the step grid's arrival
+   * (PictographArrivalStage) plays each new step: its props travel from the
+   * pose before it, along its arrow. The finger moves on to the next box
+   * meanwhile, so two moves fit the turn (2026-10-10), and lifts away after
+   * the last tap so it never covers the last move.
+   *
+   * Finished picture: the demo sequence's start position and its first two
+   * steps, in a row in a strip, the last step centered under the two in a
+   * square.
    */
   import { untrack } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
@@ -26,6 +33,7 @@
   import {
     CONSTRUCT_DECOYS,
     CONSTRUCT_GROW_MS,
+    CONSTRUCT_MOVE_MS,
     constructPick,
     decoySpots,
   } from "./method-preview-construct";
@@ -36,6 +44,7 @@
   } from "./method-preview-demo";
   import {
     placeGhost,
+    playTravel,
     sceneGhost,
     tapAt,
     type SceneRun,
@@ -64,6 +73,15 @@
   let phases = $state.raw<SlotPhase[]>([]);
   /** The choice spot holding the real step, per slot, for this run. */
   let picks = $state.raw<number[]>([]);
+  /**
+   * Each slot's move, 0 to 1. Null draws the finished picture still, until
+   * the step's first move; after that it rests at 1, the move's last frame,
+   * as Fuse's steps do: handing back to the still picture can spin a prop
+   * that ends a full turn from the still picture's angle.
+   */
+  let progress = $state.raw<(number | null)[]>(
+    Array.from({ length: CONSTRUCT_MAX_SLOTS }, () => null)
+  );
   /** The other moves mount once the finished picture has drawn. */
   let decoysWanted = $state(false);
   let runs = 0;
@@ -93,8 +111,8 @@
     readySlots.add(index);
   }
 
-  // Ready once every slot now shown has drawn. A resize to fewer slots can
-  // leave the unmounted one unreported, so this re-checks when slots change.
+  // Ready once every slot now shown has drawn. A box that had no room has no
+  // slots yet, so this re-checks when slots change, not only on a report.
   $effect(() => {
     if (slots.length === 0) return;
     if (!slots.every((_, index) => readySlots.has(index))) return;
@@ -104,9 +122,25 @@
     });
   });
 
+  function setProgress(index: number, value: number): void {
+    progress = progress.map((current, slot) =>
+      slot === index ? value : current
+    );
+  }
+
+  /** A picked step plays its move from the pose before it. */
+  function playMove(run: SceneRun, index: number): void {
+    setProgress(index, 0);
+    void playTravel(run, CONSTRUCT_MOVE_MS, (value) =>
+      setProgress(index, value)
+    );
+  }
+
   function settle(): void {
     pose = null;
     phases = [];
+    // A move the turn cut short lands on its last frame.
+    progress = progress.map((value) => (value === null ? null : 1));
   }
 
   async function play(run: SceneRun): Promise<void> {
@@ -126,14 +160,17 @@
       const spot = constructChoiceCells(cell)[picks[index]!];
       const target = cellCenter(spot ?? cell);
       if (!(await tapAt(finger, run, target.x, target.y))) return;
-      // The pick grows in while the next box offers its choices.
+      // The pick grows in, a step playing its move, while the next box
+      // offers its choices.
       phases = phases.map((phase, slot) =>
         slot === index ? "entering" : slot === index + 1 ? "choosing" : phase
       );
+      if (index > 0) playMove(run, index);
     }
+    finger.ghost.visible = false;
     // The run ends with the last tap; the turn's end settles the scene. The
-    // last pick keeps growing through that settle, so a wait for it here
-    // could only push the run past the turn and cut it.
+    // last pick keeps growing and moving into that settle, so a wait for it
+    // here could only push the run past the turn and cut it.
   }
 
   playSceneTurns(() => ({ playing, turn }), play, {
@@ -184,6 +221,8 @@
       >
         <MethodPreviewPictograph
           data={slotData(index)}
+          motionStartData={index > 0 ? slotData(index - 1) : null}
+          motionProgress={progress[index] ?? null}
           onReady={() => handleReady(index)}
         />
       </div>

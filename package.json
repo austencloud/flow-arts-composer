@@ -175,7 +175,7 @@
     "protobufjs": ">=7.5.5",
     "fast-xml-parser": ">=4.5.4",
     "basic-ftp": ">=5.2.0",
-    "devalue": ">=5.6.4",
+    "devalue": "$devalue",
     "three": "$three",
     "zod": "$zod",
     "threlte-postprocessing": {
