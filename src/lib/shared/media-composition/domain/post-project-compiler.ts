@@ -40,6 +40,7 @@ import {
   type PostTextSize,
   type PostTextStyle,
   type PostTextAnimation,
+  type PostCallout,
   type PostVideoItem,
 } from "#lib/shared/media-composition/domain/post-project.js";
 import {
@@ -171,6 +172,8 @@ export interface CompiledTextItem {
   size: PostTextSize;
   style?: PostTextStyle;
   animation?: PostTextAnimation;
+  /** Drawn as a speech bubble aimed at this point; see `callout-layout.ts`. */
+  callout?: PostCallout;
   box: PostBox;
   startSeconds: number;
   endSeconds: number;
@@ -1256,6 +1259,7 @@ export function compilePostProject(
           size: item.size,
           ...(item.style ? { style: item.style } : {}),
           ...(item.animation ? { animation: item.animation } : {}),
+          ...(item.callout ? { callout: item.callout } : {}),
           box,
           startSeconds: item.start,
           endSeconds: itemEnd(item),
