@@ -6,45 +6,48 @@
    * whole sequence, and the step grid (WorkspaceGrid) washes it in with its
    * diagonal wave. Each cell's band is its row plus its column (waveBandAt),
    * staggered by DEFAULT_ANIMATION_TIMING, and every cell enters with the
-   * step grid's stepCascade keyframes. The dice holds the lead slot, where
-   * the step grid's start position sits.
+   * step grid's stepCascade keyframes. Every roll is a closed four-step
+   * loop, so the box shows it whole: a row of four, or a 2×2 in a square.
+   * A small button with the dice and the word sits under the steps, as the
+   * real button sits under its settings (2026-10-11); a dice tile leading
+   * the row outweighed the card's title and read as a control.
    *
    * Each turn rolls once, and the roll washes in still, as the step grid
-   * shows it. Once its first step has landed, its first three steps play
-   * their moves one at a time, each from the pose before it, as the
-   * workspace's Play steps through a sequence, at the pace Construct's steps
-   * move (2026-10-11); Generate's turn runs longer to fit them. Turns rolled
-   * twice before; moves that rode the wave all at once matched nothing the
-   * tool does. The steps that will play land with their props at the start
-   * of their moves, so none jumps back to start, and without their arrows:
-   * each step's arrows come in as its props travel, as the step grid's
-   * arrival (PictographArrivalStage) shows a step picked from the options.
+   * shows it. Once its first step has landed, all four steps play their
+   * moves one at a time, each from the pose before it, as the workspace's
+   * Play steps through a sequence, at the pace Construct's steps move
+   * (2026-10-11), and the loop ends where it began; Generate's turn runs
+   * longer to fit them. Turns rolled twice before; moves that rode the wave
+   * all at once matched nothing the tool does. The steps land with their
+   * props at the start of their moves, so none jumps back to start, and
+   * without their arrows: each step's arrows come in as its props travel,
+   * as the step grid's arrival (PictographArrivalStage) shows a step picked
+   * from the options.
    *
    * Each roll is a real sequence from drawMatrixRealization(), the Firebase-free
    * source behind the home hero, drawn in the background between turns.
    * When that source fails, rolls step through the demo sequence instead.
    *
-   * Finished picture: the dice and the latest roll's opening steps, each at
-   * the end of its move. Before
-   * the first turn, the demo sequence's from Generate's own start
-   * (DEMO_STEP_START), so no other card rests on the same steps.
+   * Finished picture: the button and the latest roll's four steps, each at
+   * the end of its move. Before the first turn, four of the demo sequence's
+   * from Generate's own start (DEMO_STEP_START), so no other card rests on
+   * the same steps.
    */
   import { onDestroy, untrack } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
   import type { GhostState } from "#lib/shared/attract/services/attract-ghost.svelte.js";
   import FontAwesomeIcon from "#lib/shared/foundation/ui/FontAwesomeIcon.svelte";
+  import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import { DEFAULT_ANIMATION_TIMING } from "#lib/features/create/shared/workspace-panel/sequence-display/domain/models/step-grid-display-models.js";
   import MethodPreviewFinger from "./MethodPreviewFinger.svelte";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
   import {
-    cellCenter,
     generateLayout,
     type GenerateLayout,
   } from "./method-preview-compositions";
   import {
     FIRST_ROLL,
     GENERATE_CLEAR_MS,
-    GENERATE_PLAYED_STEPS,
     GENERATE_READY_WAIT_MS,
     generateCellDelayMs,
     generateFirstLandMs,
@@ -163,10 +166,8 @@
     phase = "clearing";
     if (!(await run.wait(GENERATE_CLEAR_MS))) return false;
     roll = nextRoll(roll, nextRollDraw.take(), box.cells.length);
-    // The steps that will play wait at the start of their moves.
-    progress = box.cells.map((_, index) =>
-      index < GENERATE_PLAYED_STEPS ? 0 : null
-    );
+    // Every step waits at the start of its move.
+    progress = box.cells.map(() => 0);
     readyCells.clear();
     epoch += 1;
     // A cell still drawing after the wait washes in when it is ready.
@@ -182,17 +183,17 @@
   }
 
   /**
-   * Once the first step has landed, the opening steps play their moves one
-   * at a time. True once the last one has started: it plays on into the
-   * turn's end, so a wait for it could only push the run past the turn and
-   * cut it when a slow draw delayed the roll.
+   * Once the first step has landed, the steps play their moves one at a
+   * time. True once the last one has started: it plays on into the turn's
+   * end, so a wait for it could only push the run past the turn and cut it
+   * when a slow draw delayed the roll.
    */
   async function playSteps(
     run: SceneRun,
     box: GenerateLayout
   ): Promise<boolean> {
     if (!(await run.wait(generateFirstLandMs(box.columns)))) return false;
-    const count = Math.min(GENERATE_PLAYED_STEPS, box.cells.length);
+    const count = box.cells.length;
     for (let index = 0; index < count; index++) {
       const move = playTravel(run, PREVIEW_MOVE_MS, (value) =>
         setProgress(index, value)
@@ -210,10 +211,10 @@
     nextRollDraw.request();
     const finger = sceneGhost(run, () => root);
     pose = finger.ghost;
-    // The finger starts on the dice, so the turn's time goes to the moves.
-    const dice = cellCenter(box.dice);
-    placeGhost(finger, dice.x, dice.y);
-    if (!(await tapAt(finger, run, dice.x, dice.y))) return;
+    // The finger starts on the button, so the turn's time goes to the moves.
+    const { x, y } = box.button;
+    placeGhost(finger, x, y);
+    if (!(await tapAt(finger, run, x, y))) return;
     if (!(await rollIn(run, box, finger))) return;
     const washed = run.wait(generateRevealMs(box.cells.length, box.columns));
     if (!(await playSteps(run, box))) return;
@@ -237,16 +238,22 @@
   data-phase={phase}
 >
   {#if layout}
+    {@const button = layout.button}
     <span
-      class="dice"
+      class="generate-button"
+      class:labelled={button.labelled}
       class:pressed={pose?.pressed ?? false}
-      style:left="{layout.dice.x}px"
-      style:top="{layout.dice.y}px"
-      style:width="{layout.dice.size}px"
-      style:height="{layout.dice.size}px"
-      style:font-size="{Math.round(layout.dice.size * 0.5)}px"
+      style:left="{button.x}px"
+      style:top="{button.y}px"
+      style:height="{button.height}px"
+      style:width={button.labelled ? null : `${button.height}px`}
+      style:font-size="{Math.round(
+        button.height * (button.labelled ? 0.5 : 0.6)
+      )}px"
+      aria-hidden="true"
     >
       <FontAwesomeIcon icon="dice" style="solid" ariaHidden />
+      {#if button.labelled}<span>{t("generator_button")}</span>{/if}
     </span>
     {#each layout.cells as cell, index (index)}
       <div
@@ -278,23 +285,36 @@
     height: 100%;
   }
 
-  /* The Generate button's dice (GenerateButtonCard): its green, its glyph. */
-  .dice {
+  /* The Generate button (GenerateButtonCard) in small: its green, its dice
+     and its word, centered under the steps. No glow, so it stays quieter
+     than the card's title. */
+  .generate-button {
     position: absolute;
-    display: grid;
-    place-items: center;
-    border-radius: 24%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+    box-sizing: border-box;
+    max-width: 100%;
+    border-radius: 999px;
     color: var(--theme-text, #fff);
     background: var(--semantic-success, #22c55e);
-    box-shadow:
-      0 2px 6px
-        color-mix(in srgb, var(--semantic-success, #22c55e) 40%, transparent),
-      inset 0 1px 0 var(--theme-stroke-strong, rgba(255, 255, 255, 0.24));
+    box-shadow: inset 0 1px 0
+      var(--theme-stroke-strong, rgba(255, 255, 255, 0.24));
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    transform: translate(-50%, -50%);
     transition: transform 140ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .dice.pressed {
-    transform: scale(0.9);
+  .generate-button.labelled {
+    padding: 0 0.85em;
+  }
+
+  .generate-button.pressed {
+    transform: translate(-50%, -50%) scale(0.9);
   }
 
   .cell {
