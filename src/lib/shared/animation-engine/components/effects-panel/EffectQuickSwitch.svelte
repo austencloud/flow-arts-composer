@@ -240,7 +240,10 @@
       onOpenAutoFocus={focusSelected}
     >
       {#snippet child({ open: shown, wrapperProps, props })}
-        <div {...wrapperProps} class="fx-quick-layer">
+        <!-- bits-ui copies the content's z-index onto this wrapper's inline
+             style; the directive overrides it so the picker paints above the
+             workspace. -->
+        <div {...wrapperProps} style:z-index="var(--z-dropdown, 1000)">
           {#if shown && fit}
             <div
               {...props}
@@ -406,10 +409,6 @@
   }
 
   /* ── The picker ── */
-  :global(.fx-quick-layer) {
-    z-index: var(--z-dropdown, 1000);
-  }
-
   .fx-quick-panel {
     box-sizing: border-box;
     /* The panel is translucent in the dark theme. Over a moving animation one
