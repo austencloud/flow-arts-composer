@@ -26,6 +26,11 @@
   import type { PostStudioLayerPainter } from "@austencloud/video-editor/render";
   import type { StaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
   import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
+  import {
+    isSavedFeatureExport,
+    type SavedFeatureExport,
+  } from "$lib/shared/media-composition/domain/feature-video-export";
+  import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
   import { createPostTimingSession } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import { qrPayloadForImage } from "./post-qr-image-appearance";
@@ -70,6 +75,8 @@
     onProjectPropChange: (propType: PropType | undefined) => void;
     /** Asks the host to prepare the animation preview. */
     onRequestAnimation?: () => void;
+    /** The host's share seam; the editor's export controls register through it. */
+    registerExport: (controls: PostStudioShareExport) => () => void;
     children: Snippet<[TkaScopeChildren]>;
   }
 
@@ -88,6 +95,7 @@
     onPropChange,
     onProjectPropChange,
     onRequestAnimation,
+    registerExport: registerHostExport,
     children,
   }: Props = $props();
 
@@ -162,7 +170,7 @@
     // A feature video keeps its post, timings and undo history apart from
     // this browser's Post Studio storage.
     store: featureVideo?.store,
-    services: tkaEditorServices(videoLibrary),
+    services: tkaEditorServices(videoLibrary, featureVideo ?? null),
   });
 
   /** tka's plugin with its editor UI, made once per post. */
@@ -218,6 +226,9 @@
       saveMenuHost?.openContextMenu(event.clientX, event.clientY),
     get cardRenderOptions() {
       return cardRenderOptions ?? null;
+    },
+    get sequence() {
+      return sequence;
     },
   });
 
@@ -349,6 +360,79 @@
     },
   });
 
+  /** The open editor's export controls, for the dev bridge's render. */
+  let exportControls: PostStudioShareExport | null = null;
+
+  /** The host's registerExport, keeping the controls for the dev bridge. */
+  function registerExport(controls: PostStudioShareExport): () => void {
+    exportControls = controls;
+    const release = registerHostExport(controls);
+    return () => {
+      if (exportControls === controls) exportControls = null;
+      release();
+    };
+  }
+
+  /**
+   * `post-project.mjs render` runs the export in this editor and is answered
+   * where the file landed, once it is in the feature video's exports/.
+   */
+  async function bridgeRender(name?: string): Promise<SavedFeatureExport> {
+    const renderTo = exportControls?.renderTo;
+    if (!renderTo) throw new Error("This editor cannot render.");
+    const saved = await renderTo(name);
+    if (!isSavedFeatureExport(saved))
+      throw new Error("The render finished but was not saved.");
+    return saved;
+  }
+
+  onMount(() => {
+    if (!import.meta.env.DEV) return;
+    let disposed = false;
+    let stop: (() => void) | undefined;
+    void import("$lib/shared/media-composition/services/post-project-dev-client")
+      .then(({ startPostProjectDevBridge }) => {
+        if (disposed) return;
+        stop = startPostProjectDevBridge(
+          editor,
+          featureVideo
+            ? {
+                featureSlug: featureVideo.slug,
+                // Another editor, the CLI or a hand edit saved a newer copy.
+                onFeatureRevision: (revision) =>
+                  void featureVideo.checkRevision(revision),
+                // `post-project.mjs render` runs the export in this editor.
+                render: {
+                  run: bridgeRender,
+                  progress: () => exportControls?.progress?.() ?? null,
+                },
+              }
+            : {}
+        );
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+      stop?.();
+    };
+  });
+
+  // The shell reads the outgoing play intent before releasing its loan.
+  $effect(() => {
+    if (!active && !sharedSurfaces?.active) {
+      untrack(() => {
+        editor.pause();
+        session.pause();
+      });
+    }
+  });
+
+  // A hidden tab stops animation frames but not the music. The workspace
+  // pauses the editor; the beat-timing session pauses here.
+  function pauseSessionWhenHidden(): void {
+    if (document.visibilityState === "hidden") session.pause();
+  }
+
   onMount(() => {
     // Standalone sequence pages have no app shortcut coordinator. Reuse its
     // manager and history bindings; both are safe to initialize again in-app.
@@ -379,6 +463,8 @@
   onDestroy(() => editor.dispose());
 </script>
 
+<svelte:document onvisibilitychange={pauseSessionWhenHidden} />
+
 <TkaViewerBridge />
 {@render children({
   editor,
@@ -386,6 +472,7 @@
   get inspectorTarget() {
     return context.inspectorTarget;
   },
+  registerExport,
 })}
 <!-- One save menu for every media layer; its menu and prompt portal out. -->
 <VisualSequenceSaveContextMenuHost

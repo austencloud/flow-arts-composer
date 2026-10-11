@@ -1,12 +1,7 @@
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
-  import { onDestroy, onMount, tick, untrack } from "svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { onDestroy, tick, untrack } from "svelte";
   import { reparentToInspector } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
-  import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
   import {
     mirrorPostProject,
     takeIdFromRole,
@@ -53,6 +48,7 @@
   } from "@austencloud/video-editor/core";
   import type {
     CompositionSourceBinding,
+    KeptExport,
     LibraryTake,
     ToolRunContext,
     VideoEditorPlugin,
@@ -83,15 +79,15 @@
   import { formatTakeClock } from "./post-format";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
   import EditHistoryKeys from "./EditHistoryKeys.svelte";
-  import { qrImageForAppearance } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
   import {
+    createDraftAutosave,
     createTabSync,
     createVideoPreviews,
     provideEditorUi,
     resolveServices,
+    shouldSubmitDraft,
     translatorFor,
   } from "@austencloud/video-editor";
-  import { useTkaEditor } from "$lib/shared/post-studio-plugin/ui/tka-editor-context";
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorActions from "./PostEditorActions.svelte";
   import PostSaveButton from "./PostSaveButton.svelte";
@@ -106,10 +102,6 @@
   import PostKeyframeControls from "./PostKeyframeControls.svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
-  import {
-    showToast,
-    removeToast,
-  } from "$lib/shared/toast/state/toast-state.svelte";
   import PostAddPanel from "./PostAddPanel.svelte";
   import PostMediaPanel from "./PostMediaPanel.svelte";
   import PostExportPanel from "./PostExportPanel.svelte";
@@ -124,13 +116,6 @@
     createCropSession,
     type CropShapeKind,
   } from "./post-crop-session.svelte";
-  import {
-    createPostDraftAutosave,
-    shouldSubmitPostDraft,
-  } from "$lib/shared/media-composition/services/post-draft-storage";
-  import { loadPostProject } from "$lib/shared/media-composition/services/post-project-store";
-  import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
-  import type { SavedFeatureExport } from "$lib/shared/media-composition/domain/feature-video-export";
   import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
   import PostDraftStatus from "./PostDraftStatus.svelte";
   import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
@@ -163,28 +148,13 @@
     /** The post's editor, which TkaEditorScope creates. */
     editor: PostEditorState;
     active: boolean;
-    sequence: SequenceData;
-    /**
-     * A feature video. Its post saves to its folder on this computer, never
-     * to this browser's Post Studio storage; see feature-video-client.ts.
-     */
-    feature?: FeatureVideoSync;
     /** Saves elsewhere too; may hand back a later edit saved somewhere else. */
     onSaveDraft?: (project: PostProject) => Promise<PostProject | null | void>;
     draftLoadError?: string | null;
-    cardPreviewUrl: string | null;
-    animationPreviewUrl: string | null;
-    animationPreviewType: "video" | "image";
-    cardRenderOptions: Partial<SequenceExportOptions>;
-    isPreparingCard: boolean;
-    isPreparingAnimation: boolean;
     onExported?: (blob: Blob) => void;
     onSharePost?: () => void;
     previewTarget: HTMLElement | null;
     sharing: boolean;
-    selectedPropType: PropType;
-    onPropChange: (propType: PropType) => void;
-    onProjectPropChange: (propType: PropType | undefined) => void;
     /** Sound a shared link asked for, applied once on open. */
     audioSeed: "takes" | "silent" | null;
     /** `chosen` is false for the sound a saved project opens with. */
@@ -200,23 +170,12 @@
   let {
     editor,
     active,
-    sequence,
-    feature,
     onSaveDraft,
     draftLoadError = null,
-    cardPreviewUrl,
-    animationPreviewUrl,
-    animationPreviewType,
-    cardRenderOptions,
-    isPreparingCard,
-    isPreparingAnimation,
     onExported,
     onSharePost,
     previewTarget,
     sharing,
-    selectedPropType,
-    onPropChange,
-    onProjectPropChange,
     audioSeed,
     onAudioChange,
     registerExport,
@@ -224,42 +183,10 @@
     inspectorTarget = null,
   }: Props = $props();
 
-  /** tka's side of the post, from TkaEditorScope until Task 15b moves the rest. */
-  const tka = useTkaEditor();
-
-  // Read once: the Post page opens a new workspace for another feature video.
-  const featureVideo = feature;
-
   const services = resolveServices(editor.host);
   provideEditorUi({ editor, host: editor.host, plugin, services });
-
-  onMount(() => {
-    if (!import.meta.env.DEV) return;
-    let disposed = false;
-    let stop: (() => void) | undefined;
-    void import("$lib/shared/media-composition/services/post-project-dev-client")
-      .then(({ startPostProjectDevBridge }) => {
-        if (disposed) return;
-        stop = startPostProjectDevBridge(
-          editor,
-          featureVideo
-            ? {
-                featureSlug: featureVideo.slug,
-                // Another editor, the CLI or a hand edit saved a newer copy.
-                onFeatureRevision: (revision) =>
-                  void featureVideo.checkRevision(revision),
-                // `post-project.mjs render` runs the export in this editor.
-                render: { run: bridgeRender, progress: renderProgress },
-              }
-            : {}
-        );
-      })
-      .catch(() => {});
-    return () => {
-      disposed = true;
-      stop?.();
-    };
-  });
+  /** An outside keeper of the project (tka: a feature video's folder), or null. */
+  const sync = services.sync;
 
   const videoPreviews = createVideoPreviews(
     () =>
@@ -272,9 +199,6 @@
     () => editor.isPlaying,
     services.previewCache
   );
-  // The scope's timing session: the pauses below still stop it.
-  const session = tka.timing;
-
   let draftSaving = $state(false);
   let draftError = $state<string | null>(draftLoadError);
   /** When the last save finished, for the header's saved time. */
@@ -283,12 +207,12 @@
   let saveRequested = $state(false);
   let saveFlash = $state(false);
   let saveFlashTimer: ReturnType<typeof setTimeout> | undefined;
-  // Read once, like `feature`: a copy the autosave still holds when the Post
-  // page opens another post saves where this post came from. Read later,
-  // the prop would give the next post's save.
+  // Read once: a copy the autosave still holds when the Post page opens
+  // another post saves where this post came from. Read later, the prop
+  // would give the next post's save.
   const saveDraft = onSaveDraft;
   const draftAutosave = saveDraft
-    ? createPostDraftAutosave(
+    ? createDraftAutosave(
         async (project) => {
           const newer = await saveDraft(project);
           if (newer) editor.adoptSaved(newer);
@@ -303,32 +227,21 @@
       )
     : null;
 
-  // Every open tab of this post stays on the newest saved copy. For a
-  // feature video, disk does that job, and no tab of the sequence's ordinary
-  // post may reach it: the tab sync is keyed by sequence alone.
-  const tabSync = featureVideo
-    ? null
-    : createTabSync(
-        `tka:post-studio:tabs:${sequence.id}`,
-        (project) => editor.adoptSaved(project),
-        () => loadPostProject(sequence.id)
-      );
+  // Every open tab of this post stays on the newest saved copy. A sync that
+  // keeps every copy current itself (tka: a feature video's disk) turns
+  // this off.
+  const tabSync =
+    sync?.tabSync === false
+      ? null
+      : createTabSync(
+          `video-editor:tabs:${editor.subjectId}`,
+          (project) => editor.adoptSaved(project),
+          () => editor.loadSaved()
+        );
 
-  // Disk's newer copy replaced the post as one undo step.
-  const disconnectFeature = featureVideo?.connect(editor, () => {
+  // The outside copy replaced the post as one undo step.
+  const disconnectSync = sync?.connect(editor, () => {
     draftError = null;
-    const loaded = editor.project;
-    showToast({
-      message: "Loaded the newer copy from disk.",
-      type: "info",
-      duration: 8000,
-      action: {
-        label: t("post_editor_undo"),
-        onClick: () => {
-          if (editor.project === loaded) editor.undo();
-        },
-      },
-    });
   });
 
   $effect(() => {
@@ -337,7 +250,7 @@
     if (draftAutosave)
       untrack(() => {
         const snapshot = editor.snapshot;
-        if (shouldSubmitPostDraft(snapshot, revision))
+        if (shouldSubmitDraft(snapshot, revision))
           draftAutosave.submit(snapshot);
       });
     else if (revision > 0)
@@ -348,7 +261,7 @@
   });
   onDestroy(() => {
     tabSync?.dispose();
-    disconnectFeature?.();
+    disconnectSync?.();
     draftAutosave?.dispose();
     clearTimeout(saveFlashTimer);
   });
@@ -474,13 +387,6 @@
     audioReported = true;
   });
 
-  /** A notice the top bar shows beside Undo and Redo. */
-  const draftNotice = $derived(
-    !!tka.sequenceError ||
-      (!!(editor.project.mirrored || editor.project.sequenceActions?.length) &&
-        tka.sequenceBusy)
-  );
-
   // ---- What each layer draws -----------------------------------------------
 
   /** One painter per text item, reading its words live from the project. */
@@ -501,8 +407,14 @@
       previewUrl: (takeId, url) => videoPreviews.resolve(takeId, url).url,
     }) ?? null;
   onDestroy(() => pluginBindings?.dispose());
-  // The plugin's layers read another role's source through the context.
-  tka.bindingFor = bindingFor;
+  /** The plugin's notice beside Undo and Redo (tka: the changed notation). */
+  const pluginNotice = $derived(pluginBindings?.notice?.() ?? null);
+  /** A notice the top bar shows beside Undo and Redo. */
+  const draftNotice = $derived(pluginNotice !== null);
+  /** Whether the plugin's sources can render now, and why not when one failed. */
+  const pluginRenderStatus = $derived(
+    pluginBindings?.renderStatus?.() ?? { ready: true, error: null }
+  );
 
   function bindingFor(role: string): CompositionSourceBinding | null {
     return coreBindingFor(role) ?? pluginBindings?.bindingFor(role) ?? null;
@@ -742,8 +654,8 @@
   let exportedUrl = $state<string | null>(null);
   let exportCancelled = false;
   let exportAbort: AbortController | null = null;
-  /** A feature video's render, once it is in the project's exports/ folder. */
-  let savedExport = $state<SavedFeatureExport | null>(null);
+  /** A render the sync kept (tka: in a feature video's exports/ folder). */
+  let savedExport = $state<KeptExport | null>(null);
   let saveExportError = $state("");
 
   const exporting = $derived(exportProgress !== null);
@@ -760,27 +672,18 @@
       ? null
       : (plugin?.ui?.modes?.find((mode) => mode.id === editor.mode) ?? null)
   );
-  const sequenceName = $derived(
-    simplifyRepeatedWord(
-      sequence.displayName ||
-        deriveWord(sequence) ||
-        t("post_editor_default_name")
-    )
+  /** What the post is about, for its label (tka: the sequence's word). */
+  const subjectName = $derived(
+    plugin?.ui?.subjectName?.(editor) ?? t("post_editor_default_name")
   );
   const exportFilename = $derived(
-    `${simplifyRepeatedWord(sequenceName || "tka-post")}.mp4`
+    `${plugin?.ui?.exportFileStem?.(editor) ?? subjectName ?? "video"}.mp4`
   );
   const canRender = $derived(
     Boolean(editor.compiled) &&
       editor.durationSeconds > 0 &&
       !exporting &&
-      !tka.sequenceBusy &&
-      !tka.sequenceError &&
-      (!editor.project.tracks.some((track) =>
-        track.items.some((item) => item.kind === "moves")
-      ) ||
-        (tka.overlay.sequence === tka.displaySequence && !tka.overlay.error)) &&
-      !tka.viewerMoving
+      pluginRenderStatus.ready
   );
 
   // ---- Tools -----------------------------------------------------------------
@@ -1269,9 +1172,10 @@
 
   function pickDeviceVideo(): void {
     if (readingFile) return;
-    // A feature video plays only videos in its folder; the CLI copies them in.
-    if (featureVideo) {
-      fileError = `${featureVideo.slug} plays only videos in its folder. Add one with: node scripts/post-project.mjs add-take <file> --feature ${featureVideo.slug}`;
+    // The sync may refuse device videos (tka: a feature video plays only
+    // videos in its folder; the CLI copies them in).
+    if (sync?.devicePickBlocked) {
+      fileError = sync.devicePickBlocked;
       return;
     }
     fileError = "";
@@ -1433,12 +1337,12 @@
     )
   );
   let confirmClearPost = $state(false);
-  let clearToast: { id: string; project: PostProject } | null = null;
+  let clearToast: { dismiss: () => void; project: PostProject } | null = null;
 
   $effect(() => {
     const current = editor.project;
     if (clearToast && current !== clearToast.project) {
-      removeToast(clearToast.id);
+      clearToast.dismiss();
       clearToast = null;
     }
   });
@@ -1446,18 +1350,17 @@
   function reportCleared(count: number, edit: PostEdit): void {
     if (!count || !editor.edit(edit)) return;
     const clearedProject = editor.project;
-    if (clearToast) removeToast(clearToast.id);
-    const id = showToast({
-      message: t("post_keyframe_cleared", { count }),
-      type: "success",
-      action: {
-        label: t("post_editor_undo"),
-        onClick: () => {
-          if (editor.project === clearedProject) editor.undo();
-        },
-      },
-    });
-    clearToast = { id, project: clearedProject };
+    if (clearToast) clearToast.dismiss();
+    const message = t("post_keyframe_cleared", { count });
+    const dismiss = services.notify.undoable
+      ? services.notify.undoable(message, {
+          label: t("post_editor_undo"),
+          run: () => {
+            if (editor.project === clearedProject) editor.undo();
+          },
+        })
+      : (services.notify.success(message), () => {});
+    clearToast = { dismiss, project: clearedProject };
   }
 
   function clearClipKeys(itemId: string): void {
@@ -1561,7 +1464,6 @@
   }
 
   function mirrorWholePost(): void {
-    session.pause();
     editor.pause();
     keyCurveOpen = false;
     editor.edit(mirrorPostProject);
@@ -1856,21 +1758,11 @@
     if (activeMode) untrack(() => editor.pause());
   });
 
-  $effect(() => {
-    // The shell reads the outgoing play intent before releasing its loan.
-    if (!active && !tka.viewerActive) {
-      untrack(() => {
-        editor.pause();
-        session.pause();
-      });
-    }
-  });
-
-  // A hidden tab stops animation frames but not the music, so pause both players.
+  // A hidden tab stops animation frames but not the music, so pause the
+  // player (a plugin pauses its own, tka's beat-timing session in its scope).
   function pauseWhenHidden(): void {
     if (document.visibilityState === "hidden") {
       editor.pause();
-      session.pause();
     }
   }
 
@@ -1934,16 +1826,14 @@
     return new Promise((resolve) => requestAnimationFrame(() => resolve()));
   }
 
-  /** Renders the post; a feature video's render also lands in exports/. */
+  /** Renders the post; the sync may keep the render outside the browser too. */
   async function renderPost(name?: string): Promise<boolean> {
     if (!canRender) {
       exportError =
-        tka.sequenceError ??
-        tka.overlay.error ??
+        pluginRenderStatus.error ??
         "The animation is still being prepared. Try again in a moment.";
       return false;
     }
-    session.pause();
     if (!canvasRoot) {
       // The beat tapper stands where the post is drawn; the render needs the
       // post back on screen.
@@ -1971,19 +1861,7 @@
     let audioUrl: string | null = null;
     try {
       await loadPostProjectFonts(editor.project);
-      await Promise.all(
-        editor.project.tracks.flatMap((track) =>
-          track.items.flatMap((item) => {
-            if (item.kind !== "image") return [];
-            const url = editor.imageUrl(item.imageId);
-            if (!url) return [];
-            return [
-              qrImageForAppearance(url, "light"),
-              qrImageForAppearance(url, "dark"),
-            ];
-          })
-        )
-      );
+      await pluginBindings?.prepareRender?.();
       await tick();
       await nextFrame();
       const takeUrls = new Map<string, string>();
@@ -2038,7 +1916,7 @@
       if (exportedUrl) URL.revokeObjectURL(exportedUrl);
       exportedUrl = URL.createObjectURL(blob);
       onExported?.(blob);
-      if (featureVideo) await keepFeatureExport(blob, name);
+      if (sync?.keepExport) await keepExport(blob, name);
       // A Cancel during the upload stops it; a render saved before the
       // Cancel stays saved.
       return !exportCancelled || savedExport !== null;
@@ -2066,15 +1944,11 @@
     exportAbort?.abort();
   }
 
-  /** Sends a feature video's render to its folder's exports/. */
-  async function keepFeatureExport(blob: Blob, name?: string): Promise<void> {
-    if (!featureVideo) return;
+  /** Hands the render to the sync (tka: a feature video's exports/). */
+  async function keepExport(blob: Blob, name?: string): Promise<void> {
+    if (!sync?.keepExport) return;
     try {
-      savedExport = await featureVideo.saveExport(
-        blob,
-        name,
-        exportAbort?.signal
-      );
+      savedExport = await sync.keepExport(blob, name, exportAbort?.signal);
     } catch (cause) {
       // Cancel stopped the upload, which is no failure to report.
       if (exportCancelled) return;
@@ -2090,14 +1964,13 @@
    * `post-project.mjs render` runs this through the dev bridge: it waits for
    * the editor to be ready, renders, and answers where the file landed.
    */
-  async function bridgeRender(name?: string): Promise<SavedFeatureExport> {
+  async function bridgeRender(name?: string): Promise<KeptExport> {
     const deadline = Date.now() + 60_000;
     while (!canRender) {
       if (exporting) throw new Error("This editor is already rendering.");
       if (Date.now() > deadline)
         throw new Error(
-          tka.sequenceError ??
-            tka.overlay.error ??
+          pluginRenderStatus.error ??
             "The editor was not ready to render after 60 s."
         );
       await new Promise((resolve) => setTimeout(resolve, 250));
@@ -2124,6 +1997,8 @@
   const releaseExport = registerExport({
     render: () => renderPost(),
     cancel: cancelExport,
+    renderTo: bridgeRender,
+    progress: renderProgress,
   });
 
   onDestroy(() => {
@@ -2143,11 +2018,9 @@
 <svelte:document onvisibilitychange={pauseWhenHidden} />
 
 {#snippet draftStatus()}
-  {#if tka.sequenceError}
-    <span class="draft-notice" role="alert">{tka.sequenceError}</span>
-  {:else if (editor.project.mirrored || editor.project.sequenceActions?.length) && tka.sequenceBusy}
-    <span class="draft-notice" role="status"
-      >Preparing the changed animation and cards…</span
+  {#if pluginNotice}
+    <span class="draft-notice" role={pluginNotice.alert ? "alert" : "status"}
+      >{pluginNotice.message}</span
     >
   {/if}
   {#if !header}
@@ -2442,7 +2315,7 @@
   style:--post-ratio={outputSize.width / outputSize.height}
   style:--crop-view={cropView}
   style:--crop-margin="{CROP_STAGE_MARGIN_PX}px"
-  aria-label={t("post_editor_label", { name: sequenceName })}
+  aria-label={t("post_editor_label", { name: subjectName })}
   bind:this={rootElement}
   bind:offsetWidth={editorWidth}
   bind:offsetHeight={editorHeight}
@@ -2991,7 +2864,8 @@
 
   .dock.timing {
     position: static;
-    /* The timing dock is static in its own grid area, so its settings sheet keeps the drawer's z-index above the stage. */
+    /* The timing dock is static in its own grid area, so its settings sheet
+       keeps the drawer's z-index above the stage. */
     z-index: auto;
     margin: 0;
     padding: 0;

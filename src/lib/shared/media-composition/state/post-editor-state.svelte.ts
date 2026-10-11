@@ -466,6 +466,7 @@ export function createPostEditorState(deps: PostEditorDeps) {
     attachLibraryTakes: core.attachLibraryTakes,
     renameTake: core.renameTake,
     adoptSaved: core.adoptSaved,
+    loadSaved: core.loadSaved,
     loadSavedMedia: core.loadSavedMedia,
     /** Removes a take and every clip cut from it; the timing state picks the next take to time. */
     removeTake: core.removeTake,

@@ -30,6 +30,7 @@ import { createStaffEffectPainter } from "$lib/shared/media-composition/services
 import { createTunnelTitlesPainter } from "$lib/shared/media-composition/services/tunnel-titles-painter";
 import { createStaffTipAnalysis } from "$lib/shared/media-composition/state/staff-tip-analysis.svelte";
 import { loadAnimationOverlayPainter } from "$lib/shared/media-composition/services/animation-overlay-painter-registry";
+import { qrImageForAppearance } from "./post-qr-image-appearance";
 import { useTkaEditor } from "./tka-editor-context";
 
 /**
@@ -258,6 +259,58 @@ export function createTkaBindings(env: {
     }
   }
 
+  // tka's layers read another role's source through the context (the media
+  // sublayer asks whether the overlay paints the labels). Only these roles
+  // are asked, and the workspace's core roles never answer them.
+  tka.bindingFor = bindingFor;
+
+  /**
+   * The changed notation and the animation overlay are prepared, and the
+   * viewer's panels are still. A post with moves waits for the overlay of the
+   * sequence on screen.
+   */
+  function renderStatus(): { ready: boolean; error: string | null } {
+    return {
+      ready:
+        !tka.sequenceBusy &&
+        !tka.sequenceError &&
+        (!editor.project.tracks.some((track) =>
+          track.items.some((item) => item.kind === "moves")
+        ) ||
+          (tka.overlay.sequence === tka.displaySequence &&
+            !tka.overlay.error)) &&
+        !tka.viewerMoving,
+      error: tka.sequenceError ?? tka.overlay.error ?? null,
+    };
+  }
+
+  /** Both looks of every image, so a QR image's redraw is ready to capture. */
+  async function prepareRender(): Promise<void> {
+    await Promise.all(
+      editor.project.tracks.flatMap((track) =>
+        track.items.flatMap((item) => {
+          if (item.kind !== "image") return [];
+          const url = editor.imageUrl(item.imageId);
+          if (!url) return [];
+          return [
+            qrImageForAppearance(url, "light"),
+            qrImageForAppearance(url, "dark"),
+          ];
+        })
+      )
+    );
+  }
+
+  /** Beside Undo and Redo: the changed notation failed, or is being prepared. */
+  function notice(): { message: string; alert: boolean } | null {
+    if (tka.sequenceError) return { message: tka.sequenceError, alert: true };
+    return (editor.project.mirrored ||
+      editor.project.sequenceActions?.length) &&
+      tka.sequenceBusy
+      ? { message: "Preparing the changed animation and cards…", alert: false }
+      : null;
+  }
+
   /** Every painter of these roles, keyed the way the exporter looks them up. */
   function exportPainters(): Map<string, PostStudioLayerPainter> {
     const painters = new Map<string, PostStudioLayerPainter>([
@@ -284,6 +337,9 @@ export function createTkaBindings(env: {
   return {
     bindingFor,
     exportPainters,
+    renderStatus,
+    prepareRender,
+    notice,
     dispose() {
       animationVisibility.unregisterObserver(syncProgressBarVisibility);
       staffTips.dispose();

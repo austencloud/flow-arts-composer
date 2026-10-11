@@ -1,13 +1,19 @@
 import { mount, unmount } from "svelte";
 import type {
   EditorShortcuts,
+  EditorSync,
   VideoEditorHost,
 } from "@austencloud/video-editor";
+import { t } from "$lib/shared/i18n/i18n.svelte.js";
 import EditHistoryShortcutBridge from "$lib/shared/keyboard/components/EditHistoryShortcutBridge.svelte";
 import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
 import { getKeyboardShortcutManager } from "$lib/shared/keyboard/get-keyboard-shortcut-manager";
 import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
+import {
+  removeToast,
+  showToast,
+} from "$lib/shared/toast/state/toast-state.svelte";
+import type { FeatureVideoSync } from "$lib/shared/media-composition/services/feature-video-client";
 import type { SequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
 import { createTkaMediaLibrary } from "./tka-media-library.svelte";
 
@@ -44,20 +50,66 @@ const shortcuts: EditorShortcuts = {
 };
 
 /**
- * The services tka hands the editor: its toasts, its shortcut managers, its haptics and, when
- * the post has a sequence, that sequence's saved videos as the media library.
+ * A feature video's folder on this computer keeps its post: disk's newer copy
+ * replaces the post as one undo step, renders land in its exports/, and only
+ * videos in its folder play.
+ */
+function featureSync(featureVideo: FeatureVideoSync): EditorSync {
+  return {
+    connect: (editor, onReplaced) =>
+      featureVideo.connect(editor, () => {
+        onReplaced();
+        const loaded = editor.project;
+        showToast({
+          message: "Loaded the newer copy from disk.",
+          type: "info",
+          duration: 8000,
+          action: {
+            label: t("post_editor_undo"),
+            onClick: () => {
+              if (editor.project === loaded) editor.undo();
+            },
+          },
+        });
+      }),
+    keepExport: (blob, name, signal) =>
+      featureVideo.saveExport(blob, name, signal),
+    devicePickBlocked: `${featureVideo.slug} plays only videos in its folder. Add one with: node scripts/post-project.mjs add-take <file> --feature ${featureVideo.slug}`,
+    // Disk keeps every tab current, and no tab of the sequence's ordinary
+    // post may reach a feature video: the tab sync is keyed by sequence alone.
+    tabSync: false,
+  };
+}
+
+/**
+ * The services tka hands the editor: its toasts, its shortcut managers, its haptics, when
+ * the post has a sequence, that sequence's saved videos as the media library and, for a
+ * feature video, its folder's sync.
  */
 export function tkaEditorServices(
-  library: SequenceVideosStore | null
-): Pick<VideoEditorHost, "notify" | "shortcuts" | "haptics" | "mediaLibrary"> {
+  library: SequenceVideosStore | null,
+  featureVideo: FeatureVideoSync | null = null
+): Pick<
+  VideoEditorHost,
+  "notify" | "shortcuts" | "haptics" | "mediaLibrary" | "sync"
+> {
   return {
     notify: {
       success: (message) => void showToast({ message, type: "success" }),
       error: (message) => void showToast({ message, type: "error" }),
       info: (message) => void showToast({ message, type: "info" }),
+      undoable: (message, action) => {
+        const id = showToast({
+          message,
+          type: "success",
+          action: { label: action.label, onClick: action.run },
+        });
+        return () => removeToast(id);
+      },
     },
     shortcuts,
     haptics: (kind) => getHapticFeedback().trigger(kind),
     ...(library ? { mediaLibrary: createTkaMediaLibrary(library) } : {}),
+    ...(featureVideo ? { sync: featureSync(featureVideo) } : {}),
   };
 }

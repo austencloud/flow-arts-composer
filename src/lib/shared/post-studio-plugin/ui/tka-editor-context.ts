@@ -12,6 +12,7 @@ import type { SequenceExportOptions } from "$lib/shared/render/domain/models/seq
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import type { PostTimingSession } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
+import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
 import type { TimingUi } from "./tka-timing-ui.svelte";
 
 /** What tka's plugin functions need beyond the generic state. */
@@ -32,6 +33,8 @@ export interface TkaEditorFacts {
   openSaveMenu?(event: MouseEvent): void;
   /** The card options a QR image's poster look follows. */
   readonly cardRenderOptions?: Partial<SequenceExportOptions> | null;
+  /** The post's sequence as the host passed it, for the editor's label and the export file name. */
+  readonly sequence: SequenceData;
 }
 
 const FACTS = new WeakMap<object, TkaEditorFacts>();
@@ -74,6 +77,8 @@ export interface TkaScopeChildren {
   editor: PostEditorState;
   plugin: VideoEditorPlugin;
   readonly inspectorTarget: HTMLElement | null;
+  /** The host's registerExport, wrapped so the dev bridge renders through the same controls. */
+  registerExport: (controls: PostStudioShareExport) => () => void;
 }
 
 /** Design H's context, provided by TkaEditorScope. */

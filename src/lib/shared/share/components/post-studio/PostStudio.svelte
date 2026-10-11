@@ -180,6 +180,10 @@
     onRegisterShareExport?.({
       render: () => workspaceExport?.render() ?? Promise.resolve(false),
       cancel: () => workspaceExport?.cancel(),
+      renderTo: (name) =>
+        workspaceExport?.renderTo?.(name) ??
+        Promise.reject(new Error("This editor cannot render.")),
+      progress: () => workspaceExport?.progress?.() ?? null,
     });
     return () => onRegisterShareExport?.(null);
   });
@@ -211,6 +215,7 @@
     }}
     onProjectPropChange={(propType) => (projectPropType = propType)}
     {onRequestAnimation}
+    {registerExport}
   >
     {#snippet children(scope)}
       <PostEditorWorkspace
@@ -218,29 +223,15 @@
         plugin={scope.plugin}
         inspectorTarget={scope.inspectorTarget}
         {active}
-        {sequence}
-        {feature}
         {onSaveDraft}
         {draftLoadError}
-        {cardPreviewUrl}
-        {animationPreviewUrl}
-        {animationPreviewType}
-        cardRenderOptions={synchronizedCardRenderOptions}
-        {isPreparingCard}
-        {isPreparingAnimation}
         {onExported}
         {onSharePost}
         {previewTarget}
         {sharing}
-        {selectedPropType}
-        onPropChange={(propType) => {
-          urlPropType = undefined;
-          projectPropType = propType;
-        }}
-        onProjectPropChange={(propType) => (projectPropType = propType)}
         {audioSeed}
         onAudioChange={setAudio}
-        {registerExport}
+        registerExport={scope.registerExport}
       />
     {/snippet}
   </TkaEditorScope>

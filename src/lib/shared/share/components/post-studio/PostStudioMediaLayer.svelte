@@ -13,9 +13,6 @@
     EvaluatedFrameLayer,
     PreviewVideoController,
   } from "@austencloud/video-editor/render";
-  import { qrImageForAppearance } from "$lib/shared/post-studio-plugin/ui/post-qr-image-appearance";
-  import { layerQrAppearance } from "$lib/shared/post-studio-plugin/ui/tka-canvas-layer";
-  import { tkaEditorOf } from "$lib/shared/post-studio-plugin/ui/tka-editor-context";
   import {
     calculateMediaFit,
     calculateSourceCropFit,
@@ -100,25 +97,23 @@
    */
   const releasesDownload = $derived(exporting && binding.kind === "video");
   /**
-   * A QR image's look: its own, else the poster look of the card under it. It
-   * restyles the generic image below, so it stays here rather than with the
-   * plugin's sublayer.
+   * The plugin's look for this image (tka: a QR image's own look, else the
+   * poster look of the card under it). It restyles the generic image below,
+   * so it stays here rather than with the plugin's sublayer.
    */
-  const qrAppearance = $derived(
-    layerQrAppearance(
-      tkaEditorOf(editor)?.cardRenderOptions ?? null,
-      sourceItem,
-      underlyingItem
-    )
+  const imageLook = $derived(
+    plugin?.ui?.imageRestyle?.look({ editor, sourceItem, underlyingItem }) ??
+      null
   );
   let imageSource = $state(binding.previewUrl ?? "");
   $effect(() => {
     const source = binding.previewUrl ?? "";
-    const appearance = qrAppearance;
+    const look = imageLook;
+    const restyle = plugin?.ui?.imageRestyle;
     imageSource = source;
-    if (!source || !appearance) return;
+    if (!source || !look || !restyle) return;
     let current = true;
-    void qrImageForAppearance(source, appearance).then(
+    void restyle.render(source, look).then(
       (url) => {
         if (current && url) imageSource = url;
       },

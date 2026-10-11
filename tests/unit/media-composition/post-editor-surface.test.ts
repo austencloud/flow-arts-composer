@@ -113,6 +113,7 @@ const SURFACE = [
   "attachLibraryTakes",
   "renameTake",
   "adoptSaved",
+  "loadSaved",
   "loadSavedMedia",
   "seek",
   "advance",
