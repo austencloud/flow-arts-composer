@@ -1,4 +1,18 @@
 <!-- Account settings: identity, sign-in methods, and security. -->
+<script module lang="ts">
+  // The account details this session last loaded. Coming back to Account
+  // draws the username, pronouns and color at once and refreshes quietly,
+  // instead of popping them in when Firestore answers.
+  let accountDetailsCache: {
+    userId: string;
+    pronouns: string;
+    username: string;
+    profileColor: string;
+    googlePhotoUrl: string | null;
+    instagramLinked: boolean;
+  } | null = null;
+</script>
+
 <script lang="ts">
   import { onMount } from "svelte";
   import { doc, getDoc } from "firebase/firestore";
@@ -98,11 +112,18 @@
   let displayNameEditRequest = $state(0);
   let hapticService = $state<HapticFeedback | null>(null);
   let accountManager = $state<AccountManager | null>(null);
-  let userPronouns = $state("");
-  let userUsername = $state("");
-  let profileColor = $state("#8b5cf6");
-  let savedGooglePhotoUrl = $state<string | null>(null);
-  let instagramLinked = $state(false);
+  const knownDetails =
+    accountDetailsCache?.userId === authState.user?.uid
+      ? accountDetailsCache
+      : null;
+  let userPronouns = $state(knownDetails?.pronouns ?? "");
+  let userUsername = $state(knownDetails?.username ?? "");
+  let profileColor = $state(knownDetails?.profileColor ?? "#8b5cf6");
+  let savedGooglePhotoUrl = $state<string | null>(
+    knownDetails?.googlePhotoUrl ?? null
+  );
+  let instagramLinked = $state(knownDetails?.instagramLinked ?? false);
+  let detailsLoadedFor = $state<string | null>(knownDetails?.userId ?? null);
   let manageSignInMethods = $state(false);
   let loadedAccountUserId = $state<string | null>(null);
   let setupWasIncomplete = $state(false);
@@ -177,6 +198,19 @@
     void loadAccountDetails(user);
   });
 
+  // Keeps the cache current with loads and with edits made on this tab.
+  $effect(() => {
+    if (!detailsLoadedFor || detailsLoadedFor !== authState.user?.uid) return;
+    accountDetailsCache = {
+      userId: detailsLoadedFor,
+      pronouns: userPronouns,
+      username: userUsername,
+      profileColor,
+      googlePhotoUrl: savedGooglePhotoUrl,
+      instagramLinked,
+    };
+  });
+
   onMount(() => {
     hapticService = getHapticFeedback();
     accountManager = getAccountManager();
@@ -203,6 +237,7 @@
       if (privateDoc.exists()) {
         savedGooglePhotoUrl = privateDoc.data()?.googlePhotoURL ?? null;
       }
+      detailsLoadedFor = user.uid;
     } catch (error) {
       console.error("Failed to load account details:", error);
     }
