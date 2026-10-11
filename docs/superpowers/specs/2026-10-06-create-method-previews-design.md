@@ -207,7 +207,9 @@ moves one at a time (2026-10-11), as the workspace's Play steps through a
 sequence: each step's props travel from the pose before it (the start position
 before a sequence's first step), along its arrow, at Construct's 0.85 s pace.
 They land with their props at the start of their moves, so none jumps back to
-start. Most boxes show three steps, so every step shown plays; a four-step
+start, and without their arrows: each step's arrows fade in as its props
+travel, as the step grid's arrival shows a step picked from the options
+(2026-10-11). Most boxes show three steps, so every step shown plays; a four-step
 strip or a 3×3 grid plays its first three. Three moves do not fit a
 three-second turn, so Generate's turn runs 3.7 s. The run ends as the last move
 starts, and that move plays on into the turn's end, so a slow draw costs only
