@@ -154,6 +154,33 @@ describe("buildPlacementTransition", () => {
     expect("stepNumber" in transitionStep).toBe(true);
   });
 
+  it("moves the partner too when it has its own move", () => {
+    const { startData, transitionStep } = buildPlacementTransition({
+      ...baseInput,
+      movingColor: HandSide.LEFT,
+      fromLocation: GridLocation.WEST,
+      toLocation: GridLocation.NORTH,
+      direction: "clockwise",
+      leftLocation: GridLocation.NORTH,
+      rightLocation: GridLocation.WEST,
+      partnerMove: {
+        fromLocation: GridLocation.EAST,
+        toLocation: GridLocation.WEST,
+        direction: "clockwise",
+        path: "dash",
+      },
+    });
+
+    const partner = transitionStep.motions.right;
+    expect(partner.motionType).toBe(MotionType.DASH);
+    expect(partner.startLocation).toBe(GridLocation.EAST);
+    expect(partner.endLocation).toBe(GridLocation.WEST);
+    expect(transitionStep.motions.left.motionType).toBe(MotionType.PRO);
+    // Both hands start where the round began.
+    expect(startData.motions.left?.startLocation).toBe(GridLocation.WEST);
+    expect(startData.motions.right?.startLocation).toBe(GridLocation.EAST);
+  });
+
   it("keeps the partner at the shared location when the move departs a beta", () => {
     const { startData, transitionStep } = buildPlacementTransition({
       ...baseInput,

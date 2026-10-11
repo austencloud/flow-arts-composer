@@ -45,6 +45,13 @@ export interface PlacementMotionMove {
   path?: "arc" | "dash";
   /** Travel time; defaults to DURATION.dramatic. A teaching demo uses DURATION.scene. */
   durationMs?: number;
+  /** The other hand's move, when both hands travel together. */
+  partner?: {
+    from: GridLocation;
+    to: GridLocation;
+    direction: "clockwise" | "counterclockwise";
+    path?: "arc" | "dash";
+  };
 }
 
 interface PlacementMotionDeps {
@@ -121,8 +128,13 @@ export function createPropPlacementMotionState(deps?: PlacementMotionDeps) {
     }
 
     const isBlueMoving = move.color === HandSide.LEFT;
-    const leftLocation = isBlueMoving ? move.to : deps.getLeftLocation();
-    const rightLocation = isBlueMoving ? deps.getRightLocation() : move.to;
+    const partner = move.partner;
+    const leftLocation = isBlueMoving
+      ? move.to
+      : (partner?.to ?? deps.getLeftLocation());
+    const rightLocation = isBlueMoving
+      ? (partner?.to ?? deps.getRightLocation())
+      : move.to;
 
     prepare(
       buildPlacementTransition({
@@ -132,6 +144,14 @@ export function createPropPlacementMotionState(deps?: PlacementMotionDeps) {
         toLocation: move.to,
         direction: move.direction,
         path: move.path ?? "arc",
+        partnerMove: partner
+          ? {
+              fromLocation: partner.from,
+              toLocation: partner.to,
+              direction: partner.direction,
+              path: partner.path ?? "arc",
+            }
+          : null,
         leftLocation,
         rightLocation,
         leftOrientation: deps.getLeftOrientation(),

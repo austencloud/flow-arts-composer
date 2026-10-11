@@ -54,4 +54,44 @@ describe("placement motion state", () => {
     vi.advanceTimersByTime(DURATION.scene);
     expect(motion.active).toBe(false);
   });
+
+  it("moves both hands together when the move has a partner", () => {
+    vi.useFakeTimers({
+      toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"],
+    });
+    const move: PlacementMotionMove = {
+      epoch: 1,
+      color: HandSide.LEFT,
+      from: GridLocation.WEST,
+      to: GridLocation.NORTH,
+      direction: "clockwise",
+      partner: {
+        from: GridLocation.EAST,
+        to: GridLocation.SOUTH,
+        direction: "clockwise",
+      },
+    };
+    const motion = createPropPlacementMotionState({
+      getMove: () => move,
+      getGridMode: () => GridMode.DIAMOND,
+      getLeftPropType: () => PropType.HAND,
+      getRightPropType: () => PropType.HAND,
+      getLeftOrientation: () => Orientation.IN,
+      getRightOrientation: () => Orientation.IN,
+      getLeftLocation: () => GridLocation.NORTH,
+      getRightLocation: () => GridLocation.SOUTH,
+      getBetaSwapped: () => false,
+      getPreviewPictographData: () => null,
+    });
+
+    motion.synchronize();
+    expect(motion.step?.motions.right).toMatchObject({
+      motionType: MotionType.PRO,
+      startLocation: GridLocation.EAST,
+      endLocation: GridLocation.SOUTH,
+    });
+    expect(motion.startData?.motions.right?.startLocation).toBe(
+      GridLocation.EAST
+    );
+  });
 });

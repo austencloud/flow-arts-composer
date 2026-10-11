@@ -88,6 +88,20 @@ function createHarness() {
 describe("prop placement state", () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  it("says which hand was just put down, even back on its own point", () => {
+    const { state, onChange } = createHarness();
+    state.selectPoint(GridLocation.WEST);
+    expect(onChange.mock.lastCall?.[0].placedHand).toBe(HandSide.LEFT);
+    state.selectPoint(GridLocation.EAST);
+    expect(onChange.mock.lastCall?.[0].placedHand).toBe(HandSide.RIGHT);
+    state.edit(HandSide.RIGHT);
+    expect(onChange.mock.lastCall?.[0].placedHand).toBeNull();
+    state.selectPoint(GridLocation.EAST);
+    expect(onChange.mock.lastCall?.[0].placedHand).toBe(HandSide.RIGHT);
+    state.undo();
+    expect(onChange.mock.lastCall?.[0].placedHand).toBeNull();
+  });
+
   function dragHarness() {
     vi.stubGlobal(
       "DOMPoint",

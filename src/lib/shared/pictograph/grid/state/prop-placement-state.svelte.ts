@@ -86,11 +86,12 @@ export function createPropPlacementState(
     );
   }
 
-  function publishChange(): void {
+  function publishChange(placedHand: HandSide | null = null): void {
     dependencies.onChange({
       leftLocation,
       rightLocation,
       activeHand,
+      placedHand,
       complete: isComplete(),
       canUndo: changeCanUndo(),
     });
@@ -179,7 +180,7 @@ export function createPropPlacementState(
           : `${inputs.getRightNoun()} placed at ${label}. ${inputs.getLeftNoun()} at ${labelForLocation(leftLocation)}, ${inputs.getRightNoun()} at ${label}. Position ready.`;
     }
 
-    publishChange();
+    publishChange(color);
   }
 
   function edit(color: HandSide): void {
