@@ -1219,7 +1219,8 @@ function hexToRgb(hex: string): Rgb {
   };
 }
 
-function hexToRgbTuple(hex: string): Rgb {
+/** A palette tint as 0-255 channels, for painters that build their own fills. */
+export function hexToRgbTuple(hex: string): Rgb {
   return hexToRgb(hex);
 }
 

@@ -212,10 +212,9 @@ export function resolvePetals2D(
   const defaults: Omit<Petals2DParams, keyof PetalsIntent> = {
     resolvedPalette: resolvePetalPalette(intent),
     poolSize: 1024,
-    baseSize: 8,
-    ambientSpawnRate: 2,
-    motionSpawnRate: 34,
-    motionReferenceSpeed: 3.0,
+    baseSize: 14,
+    ambientSpawnRate: 8,
+    motionDensity: 9,
     fallBaseSpeed: 100,
     blendMode: "source-over",
   };

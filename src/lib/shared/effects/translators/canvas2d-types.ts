@@ -146,12 +146,10 @@ export interface Petals2DParams extends PetalsIntent {
   poolSize: number;
   /** px - base petal half-size before `intensity` multiplier. */
   baseSize: number;
-  /** Petals/sec at `ambientEmission=1`. */
+  /** Petals/sec each still tip sheds at `ambientEmission=1`. */
   ambientSpawnRate: number;
-  /** Petals/sec at full velocity * `motionEmission=1`. */
-  motionSpawnRate: number;
-  /** World units/s that maps to full motion scalar. */
-  motionReferenceSpeed: number;
+  /** Petals shed per 100 px of tip travel at `motionEmission=1`. */
+  motionDensity: number;
   /** px/s - base downward velocity at `fallSpeed=1`. */
   fallBaseSpeed: number;
   /** Canvas composite op - `source-over` for bodies; ember rim uses `lighter` internally. */
