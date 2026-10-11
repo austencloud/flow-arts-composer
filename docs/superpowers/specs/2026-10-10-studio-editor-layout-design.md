@@ -40,6 +40,14 @@ timeline on every screen. CapCut and InShot are the models.
   (`fitPixelsPerSecond` in `PostTimeline.svelte`) but never refits when its
   width changes, so a window or panel resize leaves the project filling
   part of the width or running off it.
+- (2026-10-11, walkthrough in `/test/post-studio?sequence=ΩΛ-XJ`, nothing
+  saved) Selecting a video clip adds a keyframe strip ("Position · 6
+  keyframes") above the timeline, which pushes the main track below the
+  timeline's bottom edge (its label at 1317, the timeline ending at 1306),
+  so the clip just selected leaves view. Selecting a clip leaves the
+  playhead where it was: with the playhead at 0:00, selecting the
+  "Mirror me!" text shows its settings while the preview shows a moment
+  before that text appears.
 
 ## 1. Layout tiers
 
@@ -171,6 +179,14 @@ selection has more than six. Each group stacks the existing panels it holds.
   playhead leaves clips a pixel or two per second. Pinch zooms, and the
   pinched zoom is remembered per project on the device.
 - A video clip whose landings are tapped shows tick marks at each landing.
+- Selecting a clip whose time range does not hold the playhead moves the
+  playhead to the clip's start, so the preview shows what is being edited;
+  a playhead already inside the clip stays (Austen, 2026-10-11). Only the
+  playhead moves, so undo history is unchanged.
+- A selected clip shows its keyframes as small diamonds on the clip itself,
+  at each keyframe's time (CapCut). There is no separate keyframe strip, so
+  selecting never changes the timeline's height or pushes a track out of
+  view (Austen, 2026-10-11).
 
 ## 5. Sync moves screen
 
