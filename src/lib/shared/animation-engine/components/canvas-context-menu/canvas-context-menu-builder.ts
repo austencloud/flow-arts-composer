@@ -42,6 +42,8 @@ import { TrackingMode } from "../../domain/types/trail-types";
 import type { EffectType } from "../../domain/types/tip-effect-types";
 import type { EffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
 import { EFFECTS, getRegistration } from "../effects-panel/effect-registry";
+import { effectInk } from "../effects-panel/effect-ink";
+import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
 import type { GridJoinController } from "#lib/shared/grid-join/grid-join-controller.js";
 import { buildGridJoinMenuItem } from "#lib/shared/grid-join/grid-join-menu.js";
 
@@ -84,7 +86,7 @@ function buildEffectChildren(
       id: `effect-${effect.id}`,
       label: effect.label,
       icon: effect.icon,
-      iconColor: effect.color,
+      iconColor: effectInk(effect.color, getThemeMode()),
       checked: active === effect.id,
       action: () => setEffect(effect.id as EffectType),
     })),
