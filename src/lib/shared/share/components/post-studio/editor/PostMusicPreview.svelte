@@ -11,6 +11,7 @@
     musicSoundsAt,
     shouldSeekMusic,
   } from "#lib/shared/media-composition/services/music-preview-sync.js";
+  import { releaseMediaDownload } from "#lib/shared/media-composition/services/media-download-release.js";
 
   /**
    * Plays the post's music under the preview. The canvas drives it the way
@@ -173,13 +174,7 @@
   $effect(() => {
     const element = audio;
     if (!element) return;
-    return () => {
-      // A removed element keeps playing, and keeps its download open until
-      // its source goes.
-      element.pause();
-      element.removeAttribute("src");
-      element.load();
-    };
+    return () => releaseMediaDownload(element);
   });
 </script>
 
