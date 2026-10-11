@@ -2,6 +2,8 @@ import type { Bloom3DParams } from "#lib/shared/effects/translators/webgl3d-type
 import type { QualityTier } from "../types";
 import { resolveBloomExposure } from "#lib/shared/effects/domain/bloom-optics.js";
 
+export { resolveBloomSourceNormalization } from "#lib/shared/effects/domain/bloom-optics.js";
+
 export interface BloomOpticalFrame3D {
   energy: number;
   coreStrength: number;
@@ -44,11 +46,6 @@ export function resolveBloomOpticalFrame3D(
     streak: params.streak * Math.min(1, motion),
     spikes: params.spikes * (0.55 + Math.min(1, motion) * 0.45),
   };
-}
-
-/** Additive energy grows by perceived prop count, not by raw tip count. */
-export function resolveBloomSourceNormalization(propCount: number): number {
-  return 1 / Math.sqrt(Math.max(1, propCount));
 }
 
 export function resolveBloomHistoryCapacity(tier: QualityTier): number {
