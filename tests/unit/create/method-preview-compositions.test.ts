@@ -128,30 +128,56 @@ describe("Construct slot limit", () => {
 });
 
 describe("Generate", () => {
-  it("puts the dice first in a strip", () => {
-    expect(generateLayout("strip", 146, 48)).toEqual({
-      dice: at(0, 7, 34),
-      cells: [at(37, 7, 34), at(74, 7, 34), at(111, 7, 34)],
-      columns: 4,
-    });
+  it("shows the loop's four steps in a row, its button under them", () => {
     expect(generateLayout("roomy", 308, 96)).toEqual({
-      dice: at(0, 11, 73),
-      cells: [at(78, 11, 73), at(156, 11, 73), at(234, 11, 73)],
+      button: { x: 154, y: 84, height: 24, labelled: true },
+      cells: [at(12, 0, 67), at(84, 0, 67), at(156, 0, 67), at(228, 0, 67)],
       columns: 4,
     });
   });
 
-  it("uses a 3×3 grid only when its cells stay large", () => {
-    expect(generateLayout("square", 144, 144)).toEqual({
-      dice: at(0, 0, 68),
-      cells: [at(75, 0, 68), at(0, 75, 68), at(75, 75, 68)],
+  it("gives a short strip's button just the dice", () => {
+    expect(generateLayout("strip", 146, 48)).toEqual({
+      button: { x: 73, y: 41, height: 14, labelled: false },
+      cells: [at(6, 0, 31), at(40, 0, 31), at(74, 0, 31), at(108, 0, 31)],
+      columns: 4,
+    });
+  });
+
+  it("gives small steps a button with just the dice, so it stays quiet", () => {
+    // A phone's card.
+    expect(generateLayout("roomy", 151, 74)).toEqual({
+      button: { x: 76, y: 56, height: 14, labelled: false },
+      cells: [at(1, 11, 34), at(39, 11, 34), at(77, 11, 34), at(115, 11, 34)],
+      columns: 4,
+    });
+    // The Fold's landscape grid.
+    expect(generateLayout("square", 119, 119)).toEqual({
+      button: { x: 60, y: 111, height: 17, labelled: false },
+      cells: [at(11, 0, 45), at(62, 0, 45), at(11, 51, 45), at(62, 51, 45)],
       columns: 2,
     });
-    const large = generateLayout("square", 200, 200)!;
-    expect(large.columns).toBe(3);
-    expect(large.dice).toEqual(at(0, 0, 61));
-    expect(large.cells).toHaveLength(8);
-    expect(large.cells[7]).toEqual(at(138, 138, 61));
+  });
+
+  it("wraps the four into a 2×2 in a square", () => {
+    expect(generateLayout("square", 144, 144)).toEqual({
+      button: { x: 72, y: 132, height: 24, labelled: true },
+      cells: [at(15, 0, 53), at(75, 0, 53), at(15, 60, 53), at(75, 60, 53)],
+      columns: 2,
+    });
+  });
+
+  it("keeps the button small beside large steps", () => {
+    const large = generateLayout("square", 400, 400)!;
+    expect(large.cells).toHaveLength(4);
+    expect(large.cells[0]!.size).toBe(176);
+    expect(large.button.height).toBe(32);
+    // The steps and the button stay inside the box.
+    const last = large.cells[3]!;
+    expect(last.y + last.size).toBeLessThan(
+      large.button.y - large.button.height / 2
+    );
+    expect(large.button.y + large.button.height / 2).toBeLessThanOrEqual(400);
   });
 });
 

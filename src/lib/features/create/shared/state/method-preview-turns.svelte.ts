@@ -46,13 +46,13 @@ export interface MethodPreviewTiming {
   rounds: number;
 }
 
-/** The one owner of preview timing. Six cards take about 43 seconds. */
+/** The one owner of preview timing. Six cards take about 45 seconds. */
 export const METHOD_PREVIEW_TIMING: Readonly<MethodPreviewTiming> =
   Object.freeze({
     turnMs: 3000,
-    // Generate lands a roll still, then plays three steps' moves one after
-    // another, as Play does (2026-10-11).
-    longTurnsMs: Object.freeze({ generate: 3700 }),
+    // Generate lands a roll still, then plays its four-step loop's moves one
+    // after another, as Play does (2026-10-11).
+    longTurnsMs: Object.freeze({ generate: 4600 }),
     gapMs: 500,
     hoverDelayMs: 350,
     readyWaitMs: 2500,

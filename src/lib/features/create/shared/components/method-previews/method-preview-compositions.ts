@@ -122,16 +122,43 @@ export function constructChoiceCells(box: CellRect): CellRect[] {
   }));
 }
 
-/** Generate: the dice, then the cells it fills. */
-export const GENERATE_STRIP_SLOTS = Object.freeze({ min: 4, max: 5 });
+/**
+ * Generate: the four steps of one loop. Every roll is a closed four-step
+ * loop (drawMatrixRealization), so each box shows it whole (2026-10-11).
+ */
+export const GENERATE_LOOP_STEPS = 4;
 
-/** A square uses a 3×3 grid only while its cells stay at least this large. */
-export const GENERATE_MIN_GRID_CELL = 44;
+/**
+ * The Generate button's height range. With its word, at least twice the
+ * visual canon's 12px floor for supplementary text.
+ */
+export const GENERATE_BUTTON_PX = Object.freeze({
+  labelled: Object.freeze({ min: 24, max: 32 }),
+  dice: Object.freeze({ min: 14, max: 20 }),
+});
+
+/**
+ * The button carries its word only beside steps at least this large. A
+ * readable word makes the button about 90px wide, wider than two of a
+ * phone card's steps, so smaller boxes and every strip show just the dice
+ * (2026-10-11, seen on the phone and the Fold's landscape grid).
+ */
+export const GENERATE_LABEL_MIN_STEP = 64;
+
+/** Generate's button, under the steps it fills. */
+export interface GenerateButton {
+  /** The button's center. */
+  x: number;
+  y: number;
+  height: number;
+  /** False when the button shows just the dice. */
+  labelled: boolean;
+}
 
 export interface GenerateLayout {
-  dice: CellRect;
+  button: GenerateButton;
   cells: CellRect[];
-  /** Columns of the slot grid, dice included, for the wave bands. */
+  /** Columns of the steps, for the wave bands. */
   columns: number;
 }
 
@@ -140,29 +167,46 @@ export function generateLayout(
   width: number,
   height: number
 ): GenerateLayout | null {
+  if (!(width > 0) || !(height > 0)) return null;
   const gap = previewGap(width, height);
-  let slots: CellRect[] = [];
-  let columns = 0;
-  if (shape === "square") {
-    const wide = gridCellSize(width, height, 3, 3, gap);
-    columns = wide >= GENERATE_MIN_GRID_CELL ? 3 : 2;
-    const size = columns === 3 ? wide : gridCellSize(width, height, 2, 2, gap);
-    if (size > 0) {
-      slots = centeredGrid(columns, columns, size, gap, width, height);
-    }
-  } else {
-    const { count, size } = rowOfCells(
-      width,
-      height,
-      gap,
-      GENERATE_STRIP_SLOTS.min,
-      GENERATE_STRIP_SLOTS.max
-    );
-    columns = count;
-    if (size > 0) slots = centeredRow(count, size, gap, width, height);
-  }
-  const [dice, ...cells] = slots;
-  return dice ? { dice, cells, columns } : null;
+  // A row of four, or the step grid's 2×2 wrap in a square.
+  const columns = shape === "square" ? 2 : GENERATE_LOOP_STEPS;
+  const rows = GENERATE_LOOP_STEPS / columns;
+  // The button scales with the steps it would sit under, then the steps
+  // give up the room it and its gap take.
+  const unbuttoned = gridCellSize(width, height, columns, rows, gap);
+  const labelled = shape !== "strip" && unbuttoned >= GENERATE_LABEL_MIN_STEP;
+  const range = labelled
+    ? GENERATE_BUTTON_PX.labelled
+    : GENERATE_BUTTON_PX.dice;
+  const buttonHeight = Math.max(
+    range.min,
+    Math.min(range.max, Math.round(unbuttoned * (labelled ? 0.25 : 0.3)))
+  );
+  const size = gridCellSize(
+    width,
+    height - gap - buttonHeight,
+    columns,
+    rows,
+    gap
+  );
+  if (size <= 0) return null;
+  // The steps and the button sit together in the middle of the box.
+  const stack = rows * (size + gap) + buttonHeight;
+  const y0 = Math.floor((height - stack) / 2);
+  const cells = centeredGrid(columns, rows, size, gap, width, height).map(
+    (cell, index) => ({
+      ...cell,
+      y: y0 + Math.floor(index / columns) * (size + gap),
+    })
+  );
+  const button = {
+    x: Math.round(width / 2),
+    y: y0 + rows * (size + gap) + Math.round(buttonHeight / 2),
+    height: buttonHeight,
+    labelled,
+  };
+  return { button, cells, columns };
 }
 
 /** Shape: a corner of the matrix and the stage its chosen cell grows into. */
