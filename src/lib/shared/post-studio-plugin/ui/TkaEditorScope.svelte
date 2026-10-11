@@ -6,13 +6,33 @@
   import { onDestroy, onMount, untrack, type Snippet } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
+  import {
+    getEffectsConfigContext,
+    setEffectsConfigContext,
+  } from "$lib/shared/effects/state/effects-config-context";
+  import { createEffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import {
+    getAnimationVisibilityContext,
+    setAnimationVisibilityContext,
+  } from "$lib/shared/animation-engine/state/animation-visibility-context";
+  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { tryGetViewerUrlSessionContext } from "$lib/shared/sequence-viewer/services/viewer-url-session";
+  import {
+    capturePsSlice,
+    persistedPsSlice,
+    seedFromPsSlice,
+    type PsSlicePayload,
+  } from "$lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice";
   import { getViewerStudioSurfaces } from "$lib/shared/sequence-viewer/context/viewer-studio-surfaces-context";
   import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
   import { createPostSequenceView } from "$lib/shared/media-composition/services/post-sequence-view.svelte";
   import type {
     PostProject,
     PostVideoItem,
+    SequenceTimeMap,
   } from "@austencloud/video-editor/core";
   import {
     DEFAULT_HAND_LABELING,
@@ -31,9 +51,13 @@
     type SavedFeatureExport,
   } from "$lib/shared/media-composition/domain/feature-video-export";
   import type { PostStudioShareExport } from "@austencloud/video-editor/ui";
+  import { provideStrings } from "@austencloud/video-editor/strings";
+  import "@austencloud/video-editor/css/video-editor-tokens.css";
+  import { tkaEditorTranslate } from "$lib/shared/media-composition/state/editor-strings";
   import { createPostTimingSession } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import { qrPayloadForImage } from "./post-qr-image-appearance";
+  import { withPostStudioPropType } from "./post-studio-prop-render-options";
   import { beatsClipOf } from "./tka-beats";
   import { tkaEditorServices } from "./tka-host";
   import { createTkaEditorPlugin } from "./tka-editor-plugin";
@@ -49,14 +73,16 @@
   import TkaViewerBridge from "./TkaViewerBridge.svelte";
 
   /**
-   * tka's side of one post: it creates the editor for the sequence, the beat
-   * timing session and tka's plugin, provides the TKA context the plugin's
-   * components read, keeps the viewer shell in step, and renders the editor
-   * in `children`.
+   * tka's side of one post: it owns what the host hands the studio (the
+   * prop, the link state and the share seam), creates the editor for the
+   * sequence, the beat timing session and tka's plugin, provides the TKA
+   * context the plugin's components read, keeps the viewer shell in step,
+   * and renders the editor in `children`. A host keys the scope by the
+   * sequence, since a post plan belongs to exactly one.
    */
   interface Props {
     /** Retain the draft while its host is hidden, without running playback. */
-    active: boolean;
+    active?: boolean;
     sequence: SequenceData;
     initialProject?: PostProject;
     /**
@@ -66,38 +92,150 @@
     feature?: FeatureVideoSync;
     cardPreviewUrl: string | null;
     animationPreviewUrl: string | null;
-    animationPreviewType: "video" | "image";
-    cardRenderOptions: Partial<SequenceExportOptions>;
-    isPreparingCard: boolean;
-    isPreparingAnimation: boolean;
-    selectedPropType: PropType;
-    onPropChange: (propType: PropType) => void;
-    onProjectPropChange: (propType: PropType | undefined) => void;
+    animationPreviewType?: "video" | "image";
+    cardRenderOptions?: Partial<SequenceExportOptions> | null;
+    resolvedCardAutoLayout?: ResolvedAutoLayout | null;
+    performanceDurationSeconds?: number;
+    sequenceTimeMap?: SequenceTimeMap | null;
+    isPreparingCard?: boolean;
+    isPreparingAnimation?: boolean;
     /** Asks the host to prepare the animation preview. */
-    onRequestAnimation?: () => void;
+    onRequestAnimation: () => void;
     /** The host's share seam; the editor's export controls register through it. */
-    registerExport: (controls: PostStudioShareExport) => () => void;
+    onRegisterShareExport?: (controls: PostStudioShareExport | null) => void;
     children: Snippet<[TkaScopeChildren]>;
   }
 
   let {
-    active,
+    active = true,
     sequence,
     initialProject,
     feature,
     cardPreviewUrl,
     animationPreviewUrl,
-    animationPreviewType,
-    cardRenderOptions,
-    isPreparingCard,
-    isPreparingAnimation,
-    selectedPropType,
-    onPropChange,
-    onProjectPropChange,
+    animationPreviewType = "video",
+    cardRenderOptions = null,
+    isPreparingCard = false,
+    isPreparingAnimation = false,
     onRequestAnimation,
-    registerExport: registerHostExport,
+    onRegisterShareExport,
     children,
   }: Props = $props();
+
+  const effectsConfig =
+    getEffectsConfigContext() ??
+    createEffectsConfigState(undefined, { persist: false });
+  setEffectsConfigContext(effectsConfig);
+  const animationVisibility =
+    getAnimationVisibilityContext() ?? getAnimationVisibilityManager();
+  setAnimationVisibilityContext(animationVisibility);
+
+  // ps slice: a shared link can carry the prop and the sound. See
+  // `ps-slice.ts`, "Own-link rule": any non-null URL payload is an override.
+  const viewerUrlSession = tryGetViewerUrlSessionContext();
+  const psSeedPayload =
+    (viewerUrlSession?.getSeed("ps") as PsSlicePayload | null) ?? null;
+  const psSeed =
+    psSeedPayload && viewerUrlSession?.isOverride("ps", persistedPsSlice())
+      ? seedFromPsSlice(psSeedPayload)
+      : null;
+
+  // A post keeps its own prop. For older projects, use the first visible
+  // sequence motion before falling back to the viewer's current prop.
+  let urlPropType = $state<PropType | undefined>(psSeed?.propType);
+  let projectPropType = $state<PropType | undefined>(initialProject?.propType);
+  const sequencePropType = $derived(
+    sequence.steps
+      .flatMap((step) => [step.motions.left, step.motions.right])
+      .find((motion) => motion.isVisible)?.propType
+  );
+  const propTypeTouched = $derived(
+    urlPropType !== undefined || projectPropType !== undefined
+  );
+  const selectedPropType = $derived(
+    urlPropType ??
+      projectPropType ??
+      sequencePropType ??
+      settingsService.settings.leftPropType ??
+      PropType.STAFF
+  );
+  const synchronizedCardRenderOptions = $derived(
+    withPostStudioPropType(cardRenderOptions, selectedPropType)
+  );
+
+  /** A pick in the post replaces a link's prop and becomes the post's own. */
+  function onPropChange(propType: PropType): void {
+    urlPropType = undefined;
+    projectPropType = propType;
+  }
+
+  function onProjectPropChange(propType: PropType | undefined): void {
+    projectPropType = propType;
+  }
+
+  /** The ps slice speaks the older names: the take's own sound, or none. */
+  const audioSeed: "takes" | "silent" | null =
+    psSeed?.audioMode === undefined
+      ? null
+      : psSeed.audioMode === "original"
+        ? "takes"
+        : "silent";
+  let audio = $state<"takes" | "silent">(audioSeed ?? "takes");
+  let audioTouched = $state(audioSeed !== null);
+
+  function setAudio(next: "takes" | "silent", chosen = true): void {
+    if (chosen && next !== audio) audioTouched = true;
+    audio = next;
+  }
+
+  const capturePs = (options: { full?: boolean } = {}) =>
+    capturePsSlice(
+      {
+        propType: selectedPropType,
+        propTypeTouched,
+        audioMode: audio === "takes" ? "original" : "instagram",
+        audioModeTouched: audioTouched,
+      },
+      options
+    );
+
+  if (viewerUrlSession) {
+    const unregisterPsSlice = viewerUrlSession.registerSlice("ps", capturePs);
+    onDestroy(unregisterPsSlice);
+  }
+
+  $effect(() => {
+    if (!viewerUrlSession) return;
+    void capturePs();
+    viewerUrlSession.scheduleUrlWrite();
+  });
+
+  // The editor files read their texts through the package context; tka
+  // answers them with its own translations.
+  provideStrings(tkaEditorTranslate);
+
+  // The host holds one stable seam that forwards to the open editor's
+  // controls.
+  let workspaceExport: PostStudioShareExport | null = null;
+
+  onMount(() => {
+    onRegisterShareExport?.({
+      render: () => workspaceExport?.render() ?? Promise.resolve(false),
+      cancel: () => workspaceExport?.cancel(),
+      renderTo: (name) =>
+        workspaceExport?.renderTo?.(name) ??
+        Promise.reject(new Error("This editor cannot render.")),
+      progress: () => workspaceExport?.progress?.() ?? null,
+    });
+    return () => onRegisterShareExport?.(null);
+  });
+
+  function registerHostExport(controls: PostStudioShareExport): () => void {
+    workspaceExport = controls;
+    return () => {
+      if (workspaceExport === controls) workspaceExport = null;
+    };
+  }
 
   const sharedSurfaces = getViewerStudioSurfaces();
 
@@ -225,7 +363,7 @@
     openSaveMenu: (event) =>
       saveMenuHost?.openContextMenu(event.clientX, event.clientY),
     get cardRenderOptions() {
-      return cardRenderOptions ?? null;
+      return synchronizedCardRenderOptions;
     },
     get sequence() {
       return sequence;
@@ -282,7 +420,7 @@
       staffTips = next;
     },
     get cardRenderOptions() {
-      return cardRenderOptions ?? null;
+      return synchronizedCardRenderOptions;
     },
     get featureMode() {
       return !!featureVideo;
@@ -470,6 +608,8 @@
     return context.inspectorTarget;
   },
   registerExport,
+  audioSeed,
+  onAudioChange: setAudio,
 })}
 <!-- One save menu for every media layer; its menu and prompt portal out. -->
 <VisualSequenceSaveContextMenuHost

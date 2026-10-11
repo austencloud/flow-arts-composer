@@ -5,7 +5,7 @@
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
-  import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
+  import TkaEditorScope from "$lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import {
     listSyncedPostProjects,
@@ -24,7 +24,10 @@
   } from "./state/post-module-state.svelte";
   import { setPostModuleContext } from "./context/post-module-context";
   import { canAccessPostStudio } from "$lib/shared/sequence-viewer/services/post-studio-access";
-  import { providePostEditorHeader } from "@austencloud/video-editor/ui";
+  import {
+    providePostEditorHeader,
+    VideoEditor,
+  } from "@austencloud/video-editor/ui";
 
   interface Props {
     visible?: boolean;
@@ -286,20 +289,33 @@
         </div>
       {:else}
         {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${state.feature ? featureSelectionId(state.feature.slug) : state.sequence.id}`}
-          <PostStudio
+          <TkaEditorScope
             active={visible && !state.showingProjects}
             sequence={state.sequence}
             feature={state.feature ?? undefined}
             initialProject={state.feature ? state.feature.initialProject : (state.draft ?? undefined)}
-            onSaveDraft={state.feature ? state.feature.save : authState.user && !authState.user.isAnonymous ? saveSyncedFor(state.sequence) : state.diskAvailable ? savePostDraft : undefined}
-            draftLoadError={state.projectError}
             cardPreviewUrl={cardPreview.url}
             cardRenderOptions={cardPreview.renderOptions}
             animationPreviewUrl={null}
             isPreparingCard={cardPreview.isPreparing}
             isPreparingAnimation={false}
             onRequestAnimation={() => undefined}
-          />
+          >
+            {#snippet children(scope)}
+              <VideoEditor
+                host={scope.editor.host}
+                plugin={scope.plugin}
+                editor={scope.editor}
+                inspectorTarget={scope.inspectorTarget}
+                registerExport={scope.registerExport}
+                audioSeed={scope.audioSeed}
+                onAudioChange={scope.onAudioChange}
+                active={visible && !state.showingProjects}
+                onSaveDraft={state.feature ? state.feature.save : authState.user && !authState.user.isAnonymous ? saveSyncedFor(state.sequence) : state.diskAvailable ? savePostDraft : undefined}
+                draftLoadError={state.projectError}
+              />
+            {/snippet}
+          </TkaEditorScope>
         {/key}
       {/if}
     </div>

@@ -7,7 +7,8 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { setLocale, toLocale } from "$lib/shared/i18n/i18n.svelte.js";
-  import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
+  import TkaEditorScope from "$lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
+  import { VideoEditor } from "@austencloud/video-editor/ui";
   import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { hydrateSequence } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
@@ -226,20 +227,34 @@
       Loading a published sequence…
     </div>
   {:else}
-    <PostStudio
-      {sequence}
-      {initialProject}
-      onSaveDraft={diskDrafts ? savePostDraft : undefined}
-      {draftLoadError}
-      {cardPreviewUrl}
-      {animationPreviewUrl}
-      {animationPreviewType}
-      performanceDurationSeconds={VIDEO_DURATION}
-      {cardRenderOptions}
-      isPreparingCard={!cardPreviewUrl}
-      {isPreparingAnimation}
-      onRequestAnimation={requestAnimation}
-    />
+    {#key sequence.id}
+      <TkaEditorScope
+        {sequence}
+        {initialProject}
+        {cardPreviewUrl}
+        {animationPreviewUrl}
+        {animationPreviewType}
+        performanceDurationSeconds={VIDEO_DURATION}
+        {cardRenderOptions}
+        isPreparingCard={!cardPreviewUrl}
+        {isPreparingAnimation}
+        onRequestAnimation={requestAnimation}
+      >
+        {#snippet children(scope)}
+          <VideoEditor
+            host={scope.editor.host}
+            plugin={scope.plugin}
+            editor={scope.editor}
+            inspectorTarget={scope.inspectorTarget}
+            registerExport={scope.registerExport}
+            audioSeed={scope.audioSeed}
+            onAudioChange={scope.onAudioChange}
+            onSaveDraft={diskDrafts ? savePostDraft : undefined}
+            {draftLoadError}
+          />
+        {/snippet}
+      </TkaEditorScope>
+    {/key}
   {/if}
 </main>
 

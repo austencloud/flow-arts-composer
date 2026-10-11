@@ -79,6 +79,10 @@ export interface TkaScopeChildren {
   readonly inspectorTarget: HTMLElement | null;
   /** The host's registerExport, wrapped so the dev bridge renders through the same controls. */
   registerExport: (controls: PostStudioShareExport) => () => void;
+  /** The audio choice a shared link carries (the ps slice), or null. */
+  audioSeed: "takes" | "silent" | null;
+  /** Keeps the editor's audio choice for the ps slice. */
+  onAudioChange: (audio: "takes" | "silent", chosen: boolean) => void;
 }
 
 /** Design H's context, provided by TkaEditorScope. */

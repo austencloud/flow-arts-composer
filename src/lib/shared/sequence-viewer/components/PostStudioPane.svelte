@@ -3,8 +3,8 @@
   import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
   import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
-  import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
-  import type { ShareExport } from "@austencloud/video-editor/ui";
+  import TkaEditorScope from "$lib/shared/post-studio-plugin/ui/TkaEditorScope.svelte";
+  import { VideoEditor, type ShareExport } from "@austencloud/video-editor/ui";
   import type {
   PostProject,
 } from "@austencloud/video-editor/core";
@@ -90,12 +90,11 @@
 <div class="post-studio-pane">
   {#if draft?.sequenceId === sequence.id}
     {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${sequence.id}`}
-    <PostStudio
+    <!-- The editor's snippet is a function, so it reads `draft` without the {#if}'s narrowing. -->
+    <TkaEditorScope
       {active}
       {sequence}
       initialProject={draft.project ?? undefined}
-      onSaveDraft={authState.user && !authState.user.isAnonymous ? (project) => saveSyncedPostDraft(project, sequence) : draft.diskAvailable ? savePostDraft : undefined}
-      draftLoadError={draft.error}
       cardPreviewUrl={cardPreview.url}
       cardRenderOptions={cardPreview.renderOptions}
       {resolvedCardAutoLayout}
@@ -103,12 +102,27 @@
       isPreparingCard={cardPreview.isPreparing}
       isPreparingAnimation={false}
       onRequestAnimation={() => undefined}
-      {onExported}
-      {onSharePost}
-      {previewTarget}
       {onRegisterShareExport}
-      {sharing}
-    />
+    >
+      {#snippet children(scope)}
+        <VideoEditor
+          host={scope.editor.host}
+          plugin={scope.plugin}
+          editor={scope.editor}
+          inspectorTarget={scope.inspectorTarget}
+          registerExport={scope.registerExport}
+          audioSeed={scope.audioSeed}
+          onAudioChange={scope.onAudioChange}
+          {active}
+          onSaveDraft={authState.user && !authState.user.isAnonymous ? (project) => saveSyncedPostDraft(project, sequence) : draft?.diskAvailable ? savePostDraft : undefined}
+          draftLoadError={draft?.error ?? null}
+          {onExported}
+          {onSharePost}
+          {previewTarget}
+          {sharing}
+        />
+      {/snippet}
+    </TkaEditorScope>
     {/key}
   {:else}
     <div class="draft-loading" role="status">Loading saved post…</div>

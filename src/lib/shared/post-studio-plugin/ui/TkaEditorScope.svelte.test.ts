@@ -12,7 +12,7 @@ import { settingsService } from "$lib/shared/settings/state/settings-state.svelt
 import { createViewerUrlSession } from "$lib/shared/sequence-viewer/services/viewer-url-session";
 import { encodeViewerStateParams } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
 import { createViewerStudioSurfaces } from "$lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte";
-import PostStudioTestHarness from "./PostStudioTestHarness.svelte";
+import TkaEditorTestHarness from "./TkaEditorTestHarness.svelte";
 
 vi.mock("$app/environment", () => ({
   browser: true,
@@ -67,7 +67,7 @@ function mountStudio(
   const session = createViewerUrlSession(url, { writeParams: () => undefined });
   const surfaces = createViewerStudioSurfaces();
   surfaces.enter(0, false, 60);
-  render(PostStudioTestHarness, {
+  render(TkaEditorTestHarness, {
     sequence: studioSequence,
     initialProject,
     session,

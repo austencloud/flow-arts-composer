@@ -14,8 +14,8 @@ import { tkaEditorOf } from "./tka-editor-context";
 
 /**
  * tka's own tools on the row, with the names and icons the row shows today
- * (post-editor-labels.ts, `toolLabel` and `TOOL_ICON`). Beats acts at once;
- * the rest open a panel.
+ * (the package's ui/editor/post-editor-labels.ts, `toolLabel` and
+ * `TOOL_ICON`). Beats acts at once; the rest open a panel.
  */
 export const TKA_TOOLS: readonly PluginTool[] = [
   {
