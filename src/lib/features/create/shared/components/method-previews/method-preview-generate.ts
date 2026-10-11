@@ -15,9 +15,10 @@ import { slotWaveBand } from "./method-preview-layout";
 
 /**
  * How many of a roll's opening steps play their moves once it lands, one at
- * a time, as Play steps through a sequence. A turn has room for two.
+ * a time, as Play steps through a sequence: every step most boxes show.
+ * Generate's turn runs long enough for three.
  */
-export const GENERATE_PLAYED_STEPS = 2;
+export const GENERATE_PLAYED_STEPS = 3;
 
 /** How long the last roll fades before the next washes in. */
 export const GENERATE_CLEAR_MS = 150;

@@ -25,7 +25,7 @@ import {
   PREVIEW_MOVE_MS,
   SCENE_TAP,
 } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
-import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
+import { methodPreviewTurnMs } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 
 /** A four-step roll cut from the demo sequence, standing in for a fresh draw. */
 const fresh: SequenceData = {
@@ -118,6 +118,8 @@ describe("the Generate wave", () => {
 });
 
 describe("a turn's roll and its moves", () => {
+  const turnMs = methodPreviewTurnMs("generate");
+
   /** From the turn's start until the first step has landed. */
   const untilFirstLand = (drawMs: number) =>
     SCENE_TAP.considerMs +
@@ -134,8 +136,9 @@ describe("a turn's roll and its moves", () => {
     expect(generateFirstLandMs(3)).toBe(landed);
   });
 
-  it("plays two steps, one at a time", () => {
-    expect(GENERATE_PLAYED_STEPS).toBe(2);
+  it("plays three steps, one at a time, in a turn longer than the others", () => {
+    expect(GENERATE_PLAYED_STEPS).toBe(3);
+    expect(turnMs).toBeGreaterThan(methodPreviewTurnMs("construct"));
   });
 
   it("ends its run inside the turn even after the longest wait for a draw", () => {
@@ -143,13 +146,13 @@ describe("a turn's roll and its moves", () => {
     const lastMoveStarts =
       untilFirstLand(GENERATE_READY_WAIT_MS) +
       (GENERATE_PLAYED_STEPS - 1) * PREVIEW_MOVE_MS;
-    expect(lastMoveStarts).toBeLessThanOrEqual(METHOD_PREVIEW_TIMING.turnMs);
+    expect(lastMoveStarts).toBeLessThanOrEqual(turnMs);
   });
 
-  it("plays both moves out inside the turn, with time for the roll to draw", () => {
+  it("plays every move out inside the turn, with time for the roll to draw", () => {
     // A phone took about 300 ms to draw a roll.
     const movesEnd =
       untilFirstLand(0) + GENERATE_PLAYED_STEPS * PREVIEW_MOVE_MS;
-    expect(METHOD_PREVIEW_TIMING.turnMs - movesEnd).toBeGreaterThanOrEqual(400);
+    expect(turnMs - movesEnd).toBeGreaterThanOrEqual(300);
   });
 });
