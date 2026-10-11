@@ -15,7 +15,10 @@
   import Viewer3DCanvas from "./Viewer3DCanvas.svelte";
   import type { SceneControlLayout } from "../domain/scene-control-layout";
   import { onMount, type Snippet } from "svelte";
-  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import {
+    createEffectsConfigState,
+    type EffectsConfigState,
+  } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import { setEffectsConfigContext } from "#lib/shared/effects/state/effects-config-context.js";
   import { createScene3DRenderState } from "#lib/shared/3d/scene-features/state/scene-3d-render-state.svelte.js";
   import { setScene3DRenderContext } from "#lib/shared/3d/scene-features/state/scene-3d-render-context.js";
@@ -23,18 +26,14 @@
   import { warmSelectedSceneAssets } from "../scene-boot/scene-prefetch";
   import type { PlaybackMode } from "#lib/shared/timeline/unified-playback-context.js";
 
-  // Canonical effects config - single source of truth for both 2D canvas
-  // and 3D viewer effect parameters. One-time migration from the old VM
-  // localStorage key happens inside createEffectsConfigState.
-  const effectsConfigState = createEffectsConfigState();
-  setEffectsConfigContext(effectsConfigState);
-
   // Scene-wide 3D render modifiers (motion blur + speed lines).
   // Separate from per-tip EffectsConfig because these are whole-scene passes.
   const scene3DRenderState = createScene3DRenderState();
   setScene3DRenderContext(scene3DRenderState);
 
   interface Props {
+    /** Optional host-owned config, e.g. an isolated effect review session. */
+    effectsConfig?: EffectsConfigState;
     sequenceData: SequenceData | null;
     currentStep: number;
     isPlaying: boolean;
@@ -114,6 +113,7 @@
   }
 
   let {
+    effectsConfig,
     sequenceData,
     currentStep,
     isPlaying,
@@ -159,6 +159,11 @@
     showSceneChrome = true,
     onCompactSceneSheetChange,
   }: Props = $props();
+
+  // Canonical config shared by controls and renderer. Review hosts can supply
+  // an isolated instance at mount; ordinary viewers retain persisted settings.
+  const effectsConfigState = effectsConfig ?? createEffectsConfigState();
+  setEffectsConfigContext(effectsConfigState);
 
   let hostEl = $state<HTMLElement | null>(null);
   type SceneControlWorkspaceComponent =
