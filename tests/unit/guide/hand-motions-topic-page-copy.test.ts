@@ -10,7 +10,8 @@ const plain = (html: string) =>
 
 // The Hand Motions Guide page splits Austen's intro into sentences so the
 // first can be the lede, and keeps the first sentence of the combinations
-// lead. Every piece must stay his exact words, in both catalogs.
+// lead with one word changed at his request (2026-10-11: "derive" -> "make";
+// German "ableiten" -> "bilden"). Everything else stays his exact words.
 describe("Hand Motions Guide page copy", () => {
   for (const [lang, catalog] of [
     ["en", en as Record<string, string>],
@@ -26,11 +27,12 @@ describe("Hand Motions Guide page copy", () => {
       ).toBe(plain(catalog.verified_level1_hand_motions_72!));
     });
 
-    it(`keeps the combinations lead's first sentence verbatim (${lang})`, () => {
+    it(`keeps the combinations lead's first sentence, one word plainer (${lang})`, () => {
       expect(
-        plain(catalog.verified_level1_hand_motions_76!).startsWith(
-          `${catalog.guide_topic_hand_motions_six} `
-        )
+        plain(catalog.verified_level1_hand_motions_76!)
+          .replace("derive", "make")
+          .replace("ableiten", "bilden")
+          .startsWith(`${catalog.guide_topic_hand_motions_six} `)
       ).toBe(true);
     });
   }

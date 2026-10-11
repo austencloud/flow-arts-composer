@@ -25,7 +25,6 @@
     handMotionsTopicText,
     motionMapArrowData,
     motionMapTargets,
-    plainTopicText,
     type HandMove,
   } from "#lib/shared/guide-topics/hand-motions-topic.js";
   import GuidePictograph from "../_components/GuidePictograph.svelte";
@@ -38,8 +37,10 @@
 
   /**
    * Austen's intro and combinations lead, split into sentences so the first
-   * can be the lede; the words are unchanged. "We'll explore each one
-   * individually:" is left off: the board shows each one right below.
+   * can be the lede; the words are unchanged. In the combinations lead,
+   * "derive" reads as "make" (Austen, 2026-10-11: plainer for non-technical
+   * readers), and "We'll explore each one individually:" is left off: the
+   * board shows each one right below.
    */
   const COPY = {
     three: "guide_topic_hand_motions_three",
@@ -105,10 +106,7 @@
   <section class="combinations" aria-labelledby="hand-combinations-lead">
     <p id="hand-combinations-lead" class="lead">{t(COPY.six)}</p>
     <div class="board" class:dark={darkMode}>
-      <HandCombinationBoard
-        showDescriptions
-        label={plainTopicText("verified_level1_hand_motions_76")}
-      />
+      <HandCombinationBoard showDescriptions label={t(COPY.six)} />
     </div>
   </section>
 
