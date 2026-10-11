@@ -12,7 +12,8 @@
    * A picked step plays its move as it grows in, as the step grid's arrival
    * (PictographArrivalStage) plays each new step: its props travel from the
    * pose before it, along its arrow. The finger moves on to the next box
-   * meanwhile, so two moves fit the turn (2026-10-10).
+   * meanwhile, so two moves fit the turn (2026-10-10), and lifts away after
+   * the last tap so it never covers the last move.
    *
    * Finished picture: the demo sequence's start position and its first two
    * steps, in a row in a strip, the last step centered under the two in a
@@ -166,6 +167,7 @@
       );
       if (index > 0) playMove(run, index);
     }
+    finger.ghost.visible = false;
     // The run ends with the last tap; the turn's end settles the scene. The
     // last pick keeps growing and moving into that settle, so a wait for it
     // here could only push the run past the turn and cut it.
