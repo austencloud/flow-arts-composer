@@ -59,6 +59,8 @@ export interface BubbleTipSource3D extends SceneEffectTipBase3D {
 export interface PetalTipSource3D extends SceneEffectTipBase3D {
   effect: "petals";
   params: Petals3DParams;
+  /** World-space supporting surface below this performer. */
+  collisionFloorY: number;
 }
 
 export interface SmokeTipSource3D extends SceneEffectTipBase3D {

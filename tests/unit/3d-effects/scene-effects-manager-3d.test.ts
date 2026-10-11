@@ -18,9 +18,9 @@ describe("SceneEffectsManager3D", () => {
     manager.initialize(scene);
 
     // Existing pooled visuals, Goo's strand, drop and puddle meshes, Coal (two
-    // draws), Sparkle's glint layer (d309fe86b1), Fire's four stable lights,
-    // and the four-light scene pool shared by Bloom, Trails, and Zap.
-    expect(scene.children).toHaveLength(33);
+    // draws), Sparkle's glint layer, Petals' grounded layer, Fire's four stable
+    // lights, and the four-light scene pool shared by Bloom, Trails, and Zap.
+    expect(scene.children).toHaveLength(34);
     manager.update(1 / 60);
     manager.dispose();
     expect(scene.children).toHaveLength(0);

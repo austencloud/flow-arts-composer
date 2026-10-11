@@ -140,6 +140,13 @@
         },
   });
   viewer.enter3D(sequence);
+  // The review config supplies effect parameters; the scene reads the
+  // performer's assignment to decide which effect to emit from the prop.
+  if (reviewEffect) {
+    viewer
+      .scopedPerformers()[0]
+      ?.setEffect(reviewEffect, { recordUndo: false });
+  }
   if (!requestedJoin || workerReview) viewer.hideAllPlanes();
   if (
     typeof window !== "undefined" &&

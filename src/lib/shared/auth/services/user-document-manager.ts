@@ -17,6 +17,7 @@ import {
 import { formatUsername } from "../domain/models/username-validation";
 import { isActivityStale } from "../domain/activity-refresh";
 import { retryAuthenticatedFirestoreOperation } from "./retry-authenticated-firestore-operation";
+import { rememberAccountProfile } from "../state/account-profile-snapshot";
 
 import { generateAvatarUrl } from "#lib/shared/foundation/utils/avatar-generator.js";
 import { PUBLIC_PROFILE_VERSION } from "#lib/shared/community/domain/models/public-profile-contract.js";
@@ -306,6 +307,15 @@ export class UserDocumentManager {
         const storedPrivateProfile = privateProfileDoc.exists()
           ? privateProfileDoc.data()
           : undefined;
+
+        rememberAccountProfile({
+          userId: user.uid,
+          username: existingUsername || "",
+          pronouns: existingData?.pronouns || "",
+          profileColor: existingData?.profileColor || null,
+          googlePhotoUrl:
+            googlePhotoURL ?? storedPrivateProfile?.googlePhotoURL ?? null,
+        });
 
         // Only update googlePhotoURL if we have a fresh one from the provider.
         // Don't null it out - the provider's photoURL becomes null after the
