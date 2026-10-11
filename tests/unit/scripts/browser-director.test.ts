@@ -224,6 +224,47 @@ describe("createDirector pick", () => {
     ]);
   });
 
+  it("types into a field a key at a time, then presses Enter", async () => {
+    const { cdp, page, sent } = pickFakes(true);
+    const director = createDirector(page, cdp, root);
+    await director.shot("type", 0.05, async () => {
+      await director.type('input[name="generation-word"]', "CAKE", {
+        perKeyMs: 0,
+        enter: true,
+      });
+    });
+    const keys = sent
+      .filter(([method]) => method === "Input.dispatchKeyEvent")
+      .map(([, params]) => params);
+    expect(keys.filter((event) => event.type === "keyDown")).toEqual([
+      { type: "keyDown", key: "C", text: "C" },
+      { type: "keyDown", key: "A", text: "A" },
+      { type: "keyDown", key: "K", text: "K" },
+      { type: "keyDown", key: "E", text: "E" },
+      {
+        type: "keyDown",
+        key: "Enter",
+        code: "Enter",
+        windowsVirtualKeyCode: 13,
+      },
+    ]);
+    // The field is clicked before the first key goes down.
+    const order = sent.map(([, params]) => params.type);
+    expect(order.indexOf("mouseReleased")).toBeLessThan(
+      order.indexOf("keyDown")
+    );
+    const proof = JSON.parse(
+      await fs.readFile(
+        path.join(root, "production", "frames", "type", "capture.json"),
+        "utf8"
+      )
+    );
+    expect(
+      proof.events.map((event: { action: string }) => event.action)
+    ).toEqual(["click", "type"]);
+    expect(proof.events[1]).toMatchObject({ value: "CAKE", x: 300, y: 400 });
+  });
+
   it("refuses to click when the page's own hover misses the target", async () => {
     const { cdp, page, sent } = pickFakes(false);
     const director = createDirector(page, cdp, root);
