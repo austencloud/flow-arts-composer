@@ -23,6 +23,13 @@
     exportUrl: string | null;
     /** The cell the preview marks as selected, read from the page. */
     readonly selectedCellId: string | null;
+    /** The timeline's cell lanes in order, each with its bar's left edge. */
+    readonly cellLanes: {
+      cellId: string;
+      beatOffset: number;
+      barLeftPx: number;
+      barWidthPx: number;
+    }[];
   };
   const probe: FixtureProbe = {
     initialProject: fixture.project,
@@ -35,6 +42,19 @@
           .querySelector('[data-arrangement-cell-selected="true"]')
           ?.getAttribute("data-arrangement-cell") ?? null
       );
+    },
+    get cellLanes() {
+      return Array.from(
+        document.querySelectorAll<HTMLElement>("[data-cell-lane]")
+      ).map((lane) => {
+        const bar = lane.querySelector<HTMLElement>(".cell-bar");
+        return {
+          cellId: lane.dataset.cellLane ?? "",
+          beatOffset: Number(lane.dataset.beatOffset ?? 0),
+          barLeftPx: bar ? bar.offsetLeft : -1,
+          barWidthPx: bar ? bar.offsetWidth : -1,
+        };
+      });
     },
   };
 

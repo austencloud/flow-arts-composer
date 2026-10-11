@@ -13,15 +13,19 @@
     type ArrangementCell,
   } from "#lib/shared/media-composition/domain/arrangement.js";
   import {
+    ARRANGEMENT_MAX_BPM,
     ARRANGEMENT_MAX_CELL_SPEED,
     ARRANGEMENT_MAX_LAYERS,
+    ARRANGEMENT_MIN_BPM,
     ARRANGEMENT_MIN_CELL_SPEED,
     visibleCells,
     type ArrangementCellOffset,
   } from "#lib/shared/media-composition/domain/arrangement-edits.js";
   import { calculateArrangementCellBeats } from "#lib/shared/media-composition/domain/arrangement-timing.js";
+  import { hasGrid } from "#lib/shared/media-composition/domain/music-grid.js";
   import type { PostArrangementItem } from "#lib/shared/media-composition/domain/post-project.js";
   import {
+    setArrangementBpm,
     setArrangementCellLayers,
     setArrangementCellOffset,
     setArrangementGrid,
@@ -87,6 +91,11 @@
   );
   const layers = $derived(cell?.layers ?? []);
   const full = $derived(layers.length >= ARRANGEMENT_MAX_LAYERS);
+  /** The music grid's tempo, offered as a copy; null without a grid. */
+  const musicBpm = $derived.by((): number | null => {
+    const music = editor.project.music;
+    return music && hasGrid(music) ? music.grid.bpm : null;
+  });
 
   const COLOR_NAMES = ["Blue / Red", "Purple / Orange", "Green / Pink", "Cyan / Yellow"];
   const TRANSFORM_NAMES: Partial<Record<TransformType, string>> = {
@@ -113,6 +122,17 @@
     editor.edit((project, ctx) =>
       setArrangementSkipStartPlacement(project, item.id, skip, ctx)
     );
+  }
+
+  function setBpm(bpm: number): void {
+    if (locked) return;
+    editor.edit((project, ctx) =>
+      setArrangementBpm(project, item.id, bpm, ctx)
+    );
+  }
+
+  function formatBpm(bpm: number): string {
+    return Number.isInteger(bpm) ? String(bpm) : bpm.toFixed(1);
   }
 
   function stagger(beatsPerCell: number): void {
@@ -382,6 +402,43 @@
         ariaLabel="Start placement"
       />
     </div>
+    <div class="stepper">
+      <span class="stepper-name">Tempo</span>
+      <PanelButton
+        ariaLabel="One BPM slower"
+        disabled={locked || snapshot.bpm <= ARRANGEMENT_MIN_BPM}
+        onclick={() => setBpm(Math.ceil(snapshot.bpm) - 1)}
+      >
+        <i class="fa-solid fa-minus" aria-hidden="true"></i>
+      </PanelButton>
+      <TypeableValue
+        label="Tempo"
+        text={formatBpm(snapshot.bpm)}
+        unit="BPM"
+        sizer={String(ARRANGEMENT_MAX_BPM)}
+        disabled={locked}
+        oncommit={(value) => setBpm(value)}
+      />
+      <PanelButton
+        ariaLabel="One BPM faster"
+        disabled={locked || snapshot.bpm >= ARRANGEMENT_MAX_BPM}
+        onclick={() => setBpm(Math.floor(snapshot.bpm) + 1)}
+      >
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+      </PanelButton>
+    </div>
+    {#if musicBpm !== null}
+      {@const bpm = musicBpm}
+      <div class="actions">
+        <PanelButton disabled={locked || bpm === snapshot.bpm} onclick={() => setBpm(bpm)}>
+          Use music tempo ({formatBpm(bpm)} BPM)
+        </PanelButton>
+      </div>
+    {/if}
+    <p class="hint">
+      A new tempo keeps the clip on the same beats, so it grows or shrinks on
+      the timeline.
+    </p>
     <div class="group" role="group" aria-label="Stagger">
       <span class="group-name">Stagger</span>
       <div class="actions">
