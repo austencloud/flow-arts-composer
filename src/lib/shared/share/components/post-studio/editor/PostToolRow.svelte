@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
+  import type { PostItemKind } from "#lib/shared/media-composition/domain/post-project.js";
   import {
     isPanelTool,
     type PostPanelToolId,
@@ -20,11 +21,19 @@
      * open panel takes the row's place.
      */
     shown?: PostPanelToolId | null;
+    /** The selected item's kind, for the tools whose name depends on it. */
+    kind?: PostItemKind | null;
     isDisabled: (id: PostToolId) => boolean;
     onpick: (id: PostToolId) => void;
   }
 
-  let { tools, shown = null, isDisabled, onpick }: Props = $props();
+  let {
+    tools,
+    shown = null,
+    kind = null,
+    isDisabled,
+    onpick,
+  }: Props = $props();
 
   const KEYS: Partial<Record<PostToolId, string>> = {
     back: "Escape",
@@ -36,13 +45,13 @@
   function titleFor(id: PostToolId): string {
     switch (id) {
       case "back":
-        return `${toolLabel(id)} (Esc)`;
+        return `${toolLabel(id, kind)} (Esc)`;
       case "split":
         return t("post_editor_split_hint");
       case "beats":
         return t("post_editor_beats_hint");
       default:
-        return toolLabel(id);
+        return toolLabel(id, kind);
     }
   }
 </script>
@@ -62,7 +71,7 @@
       onclick={() => onpick(id)}
     >
       <i class="fa-solid {TOOL_ICON[id]}" aria-hidden="true"></i>
-      <span class="label">{toolLabel(id)}</span>
+      <span class="label">{toolLabel(id, kind)}</span>
     </button>
   {/each}
 </div>

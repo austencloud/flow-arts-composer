@@ -30,9 +30,9 @@
   } from "#lib/shared/animation-engine/services/step-calculator.js";
   import { createStartPlacementFromBeatStart } from "#lib/shared/create/services/sequence-transforms.js";
   import {
-    copyPostAnimationEffects,
+    postAnimationEffectsConfig,
     postAnimationTrailSettings,
-  } from "./post-animation-effects.svelte";
+  } from "#lib/shared/media-composition/domain/post-animation-effects.svelte";
   import { sequenceArrowLayers } from "#lib/shared/media-composition/domain/sequence-frame.js";
   import {
     tunnelHookCopyOpacity,
@@ -143,28 +143,14 @@
         darkMode: true,
         ...appearance,
       });
-      const trail = appearance.trail;
-      const effectConfig = copyPostAnimationEffects(
-        appearance.effects ?? initialEffects
+      const effectConfig = postAnimationEffectsConfig(
+        appearance,
+        initialEffects
       );
-      if (trail && !appearance.effects) {
-        effectConfig.trails = {
-          ...effectConfig.trails,
-          trackingMode: trail.trackingMode,
-          thickness: trail.thickness,
-          brightness: trail.brightness,
-          leftColor: trail.leftColor,
-          rightColor: trail.rightColor,
-        };
-        effectConfig.activeEffect = trail.enabled ? "trails" : "none";
-        effectConfig.tipEffectMap = trail.enabled
-          ? { "*": { effect: "trails" } }
-          : {};
-      }
       itemTrailSettings = postAnimationTrailSettings(
         animationSettings.snapshot().trail,
         effectConfig,
-        trail
+        appearance.trail
       );
       itemEffects.replace(effectConfig);
     });

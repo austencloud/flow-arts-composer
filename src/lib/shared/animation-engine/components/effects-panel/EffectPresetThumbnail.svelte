@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { EffectConfigMap } from "#lib/shared/effects/state/effects-config-state.svelte.js";
   import type { EffectPreset } from "./presets/types";
   import type { EffectLookPreviewModel } from "./effect-look-preview";
   import EffectLookPreview from "./EffectLookPreview.svelte";
@@ -7,15 +8,25 @@
   import TrailThumbnail from "./thumbnails/TrailThumbnail.svelte";
   import CoalThumbnail from "./thumbnails/CoalThumbnail.svelte";
   import LedThumbnail from "./thumbnails/LedThumbnail.svelte";
+  import PortraitTile from "./thumbnails/PortraitTile.svelte";
+  import { tilePainterFor } from "./thumbnails/tile-registry";
 
   interface Props {
     effectType: string;
     preset: EffectPreset;
     legacyModel: EffectLookPreviewModel;
+    /** The prop Ghost and Silk portray; null means the current prop. */
+    propType?: string | null;
     active?: boolean;
   }
 
-  const { effectType, preset, legacyModel, active = false }: Props = $props();
+  const {
+    effectType,
+    preset,
+    legacyModel,
+    propType = null,
+    active = false,
+  }: Props = $props();
 </script>
 
 {#if effectType === "bloom"}
@@ -34,12 +45,18 @@
        one did: it read as convincing LEDs for weeks while the effect on stage
        was a formless blob. See led-thumbnail-renderer.ts. -->
   <LedThumbnail preset={preset as EffectPreset<"led">} {active} />
+{:else if tilePainterFor(effectType)}
+  <!-- A stylised portrait of the look, composed from the preset's own
+       parameters, exposed so it reads at ~304x114. Each painter lives in
+       thumbnails/<effect>-tile.ts and is registered in tile-registry.ts. -->
+  <PortraitTile
+    effectType={effectType as keyof EffectConfigMap}
+    {preset}
+    {propType}
+    {active}
+  />
 {:else}
-  <!-- Each remaining effect replaces this fallback only after its thumbnail
-       direction has passed the same visual review as Bloom: a stylised portrait
-       of the look, composed from the preset's own parameters, exposed so it
-       reads at ~304x114. Replaying the effect literally was tried for Bloom and
-       lost - at tile size a real render is mostly empty frame. -->
-
+  <!-- Frost is the one effect left on the generic card; it is retired from
+       the strip. Every other effect has a portrait in tile-registry.ts. -->
   <EffectLookPreview model={legacyModel} {active} />
 {/if}

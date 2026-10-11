@@ -138,6 +138,7 @@ captureEffectDiagnostics to the context menu.
     // Engine wiring props
     resizePaused = false,
     visibilityManagerOverride = undefined,
+    motionVisibility = undefined,
     effectsConfigState = undefined,
     prewarmEffects = undefined,
     contextId = undefined,
@@ -217,6 +218,8 @@ captureEffectDiagnostics to the context menu.
     suppress2DOverlays?: boolean;
     resizePaused?: boolean;
     visibilityManagerOverride?: AnimationVisibilityStateManager;
+    /** This canvas's own hands to draw. Set, it replaces the viewer's Blue/Red toggles. */
+    motionVisibility?: { left: boolean; right: boolean };
     effectsConfigState?: EffectsConfigState;
     /** WebGL overlay effects (today: "fire") to warm at engine startup so the
      *  first switch to them never freezes. Omit on memory-sensitive surfaces. */
@@ -338,6 +341,11 @@ captureEffectDiagnostics to the context menu.
       (viewerVisibilityCtx?.rightMotion ?? true)
   );
   $effect(() => {
+    const own = motionVisibility;
+    if (own) {
+      engineInstance.setMotionVisibility(own.left, own.right);
+      return;
+    }
     if (!viewerVisibilityCtx) return;
     engineInstance.setMotionVisibility(
       viewerVisibilityCtx.leftMotion,

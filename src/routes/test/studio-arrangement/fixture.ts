@@ -12,6 +12,7 @@ import {
 } from "#lib/shared/animation-engine/domain/compose-types.js";
 import type { ArrangementSnapshot } from "#lib/shared/media-composition/domain/arrangement.js";
 import { createArrangementProject } from "#lib/shared/media-composition/domain/post-arrangement-item.js";
+import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
 
 type RawStep = {
   stepNumber: number;
@@ -113,6 +114,19 @@ export function createStudioArrangementFixture() {
         colSpan: 1,
         rowSpan: 1,
         mediaType: "animation" as const,
+        // One cell with its own look, so the per-cell path is exercised: the
+        // fourth cell burns while the others follow the grid.
+        ...(row === 1 && col === 1
+          ? {
+              appearance: {
+                effects: {
+                  ...structuredClone(DEFAULT_EFFECTS_CONFIG),
+                  activeEffect: "fire" as const,
+                  tipEffectMap: { "*": { effect: "fire" as const } },
+                },
+              },
+            }
+          : {}),
       };
     }
   );
