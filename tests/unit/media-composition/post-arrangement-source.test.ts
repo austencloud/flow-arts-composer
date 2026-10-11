@@ -40,7 +40,7 @@ function cell(
 }
 
 const snapshot: ArrangementSnapshot = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   cells: [cell("a", 0, 2), cell("b", 1, 3)],
   gridRows: 1,
   gridCols: 2,

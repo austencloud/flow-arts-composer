@@ -21,6 +21,7 @@
   import { BUILT } from "../_data/built-pages";
   import { GUIDE_CONTENT, hasReflowContent } from "../_data/guide-content";
   import { seoForSlug } from "../_data/guide-page-seo";
+  import { taglineInIntro } from "../_data/flow-intro";
   import FlowFrame from "./FlowFrame.svelte";
   import GuidePage from "./GuidePage.svelte";
   import GuideCompanionHost from "../../_components/GuideCompanionHost.svelte";
@@ -39,6 +40,14 @@
   const content = $derived(GUIDE_CONTENT[slug] ?? null);
   const Sheet = $derived(BUILT[slug]);
   const canFlow = $derived(hasReflowContent(slug));
+  // Most taglines open the page's own intro; show the line once, in the intro.
+  const heroTagline = $derived(
+    seo.tagline &&
+      canFlow &&
+      !(content && taglineInIntro(content, seo.tagline) === "contains")
+      ? seo.tagline
+      : null
+  );
   const useFlow = $derived(canFlow);
   const interactiveLesson = $derived(getConceptExperienceForGuideSlug(slug));
   // Topics migrated to the shared-record template render their own page in
@@ -207,8 +216,8 @@
            compact title band so the topic begins without a stack of controls. -->
         <div class="topic-title">
           <h1 class:visually-hidden={!canFlow}>{seo.h1}</h1>
-          {#if seo.tagline && canFlow}<p class="hero-tagline">
-              {seo.tagline}
+          {#if heroTagline}<p class="hero-tagline">
+              {heroTagline}
             </p>{/if}
         </div>
         {#if interactiveLesson}

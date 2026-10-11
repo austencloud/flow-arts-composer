@@ -27,6 +27,7 @@
     PictographRender,
   } from "../_data/guide-content-blocks";
   import { localizeLevel1Block, localizeLevel1Text } from "../_data/localize-level1-content";
+  import { stripHtml, taglineInIntro } from "../_data/flow-intro";
 
   let {
     content,
@@ -44,12 +45,6 @@
   // (dark fill + light grid/props); "light" keeps the print ink-on-white look.
   const picTheme = $derived(darkMode ? "dark" : "light");
 
-  const stripHtml = (html: string) =>
-    html
-      .replace(/<[^>]*>/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-
   // The prose carries hard <br> line-wraps authored for the fixed-width print
   // sheet; in the reflow column they force awkward mid-phrase breaks. Drop them so
   // the text wraps to the column naturally (a flow-only transform - the sheet keeps
@@ -57,20 +52,19 @@
   const flowProse = (html: string) =>
     html.replace(/<br\s*\/?>/gi, " ").replace(/\s{2,}/g, " ");
 
-  // The page title (level-1 heading) and the intro line are already shown by the
-  // host hero (calligraphic title + tagline deck). Drop them here so the flow
-  // column doesn't repeat the title as a section head or the tagline as its first
-  // paragraph. Only the FIRST prose is checked, and only removed on an exact match
-  // - unique intros stay verbatim.
+  // The page title (level-1 heading) is already shown by the host hero, so the
+  // flow column drops it. A first paragraph that is only the tagline goes too;
+  // when the paragraph says more, the hero drops its tagline instead
+  // (flow-intro.ts), so unique intros stay verbatim.
   const rendered = $derived.by(() => {
-    const tag = stripHtml(tagline);
+    const dropIntro = taglineInIntro(content, tagline) === "same";
     const out: GuideBlock[] = [];
     let firstProseSeen = false;
     for (const b of content) {
       if (b.kind === "heading" && b.level === 1) continue;
       if (!firstProseSeen && b.kind === "prose") {
         firstProseSeen = true;
-        if (tag && stripHtml(localizeLevel1Text(b.html)) === tag) continue;
+        if (dropIntro) continue;
       }
       out.push(b);
     }

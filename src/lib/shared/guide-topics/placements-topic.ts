@@ -3,7 +3,8 @@
  * (verified_level1_*) and the 16 diamond placements grouped as Alpha, Beta
  * and Gamma. The Guide web page and the written-guide sheet read from here.
  * The intro is split into its sentences so a view can set them one at a
- * time; the words are unchanged.
+ * time, and each definition has a brief form without its lead-in; the
+ * words are otherwise unchanged.
  * Spec: docs/superpowers/specs/2026-10-10-guide-rethink-design.md
  */
 import { t } from "#lib/shared/i18n/i18n.svelte.js";
@@ -19,7 +20,6 @@ export const PLACEMENTS_TOPIC_UNITS = {
   transform: "guide_topic_placements_transform",
   redRight: "guide_topic_placements_red_right",
   blueLeft: "guide_topic_placements_blue_left",
-  firstThree: "guide_topic_placements_first_three",
 } as const satisfies Record<string, TranslationKey>;
 
 export type PlacementsTopicUnit = keyof typeof PLACEMENTS_TOPIC_UNITS;
@@ -33,7 +33,9 @@ export type PlacementKind = "alpha" | "beta" | "gamma";
 type PlacementFamily = {
   kind: PlacementKind;
   name: TranslationKey;
-  definition: TranslationKey;
+  /** The family's definition without its "In Alpha," lead-in, for a view
+   *  that already titles it with the name. */
+  brief: TranslationKey;
   glyph: string;
 };
 
@@ -41,19 +43,19 @@ export const PLACEMENT_FAMILIES: readonly PlacementFamily[] = [
   {
     kind: "alpha",
     name: "verified_level1_hand_placements_89",
-    definition: "verified_level1_alpha_definition",
+    brief: "guide_topic_placements_alpha_brief",
     glyph: "/images/letters_trimmed/Type6/α.svg",
   },
   {
     kind: "beta",
     name: "verified_level1_hand_placements_91",
-    definition: "verified_level1_beta_definition",
+    brief: "guide_topic_placements_beta_brief",
     glyph: "/images/letters_trimmed/Type6/β.svg",
   },
   {
     kind: "gamma",
     name: "verified_level1_hand_placements_93",
-    definition: "verified_level1_gamma_definition",
+    brief: "guide_topic_placements_gamma_brief",
     glyph: "/images/letters_trimmed/Type6/γ.svg",
   },
 ];

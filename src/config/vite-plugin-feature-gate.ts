@@ -30,12 +30,41 @@ function normalize(p: string): string {
   return p.replace(/\\/g, "/");
 }
 
+interface GateLists {
+  disabledModulePaths: string[];
+  ssrRenderedComponentPaths: string[];
+  stubbedPackages: string[];
+  emptiedRoutePaths: string[];
+}
+
+const EMPTY_GATE: GateLists = {
+  disabledModulePaths: [],
+  ssrRenderedComponentPaths: [],
+  stubbedPackages: [],
+  emptiedRoutePaths: [],
+};
+
+/** The hook context's build environment, when Vite supplies one. */
+type HookContext = { environment?: { config?: { consumer?: string } } };
+
 export function featureGatePlugin(): Plugin {
   let isProductionBuild = false;
-  let disabledModulePaths: string[] = [];
-  let ssrRenderedComponentPaths: string[] = [];
-  let stubbedPackages: string[] = [];
-  let emptiedRoutePaths: string[] = [];
+  let standaloneSsrBuild = false;
+  let clientGate: GateLists = EMPTY_GATE;
+  let serverGate: GateLists = EMPTY_GATE;
+
+  // SvelteKit 3 builds the client and the server as two environments of one
+  // Vite config, so `configResolved` cannot tell them apart: `build.ssr` stays
+  // false for both. Choose the lists per hook call from the environment's
+  // consumer instead. Without this the server build kept every feature module
+  // and browser-only package, and the 2026-10-10 Pages Functions bundle
+  // measured 35.6 MB against Cloudflare's 25 MiB cap.
+  function gateFor(context: HookContext | undefined, ssr?: boolean): GateLists {
+    const consumer = context?.environment?.config?.consumer;
+    const isServer =
+      standaloneSsrBuild || (consumer ? consumer === "server" : ssr === true);
+    return isServer ? serverGate : clientGate;
+  }
 
   return {
     name: "vite-plugin-feature-gate",
@@ -49,35 +78,38 @@ export function featureGatePlugin(): Plugin {
       // renders feature modules — the app shell is CSR-only — so stub every
       // non-core module there. The client build only stubs genuinely-disabled
       // (dev-tier) features so all shipped modules reach users.
-      const isSsrBuild = config.build?.ssr === true;
-      disabledModulePaths = isSsrBuild
-        ? getSsrStubbedModulePaths()
-        : getDisabledFeatureModulePaths();
-      ssrRenderedComponentPaths = isSsrBuild
-        ? getSsrRenderedFeatureComponentPaths()
-        : [];
-      stubbedPackages = isSsrBuild ? getSsrStubbedPackages() : [];
-      emptiedRoutePaths = isSsrBuild
-        ? getSsrEmptiedRoutePaths()
-        : getClientEmptiedRoutePaths();
+      standaloneSsrBuild = config.build?.ssr === true;
+      clientGate = {
+        disabledModulePaths: getDisabledFeatureModulePaths(),
+        ssrRenderedComponentPaths: [],
+        stubbedPackages: [],
+        emptiedRoutePaths: getClientEmptiedRoutePaths(),
+      };
+      serverGate = {
+        disabledModulePaths: getSsrStubbedModulePaths(),
+        ssrRenderedComponentPaths: getSsrRenderedFeatureComponentPaths(),
+        stubbedPackages: getSsrStubbedPackages(),
+        emptiedRoutePaths: getSsrEmptiedRoutePaths(),
+      };
 
-      if (disabledModulePaths.length > 0 || emptiedRoutePaths.length > 0) {
-        console.log(
-          `[feature-gate] Production ${isSsrBuild ? "SSR" : "client"} build: gating ${disabledModulePaths.length} module path(s) and emptying ${emptiedRoutePaths.length} route path(s).`
-        );
-      }
+      const describe = (label: string, gate: GateLists) =>
+        `${label}: gating ${gate.disabledModulePaths.length} module path(s) and emptying ${gate.emptiedRoutePaths.length} route path(s)`;
+      console.log(
+        `[feature-gate] Production build. ${describe("Client", clientGate)}. ${describe("SSR", serverGate)}.`
+      );
     },
 
     async resolveId(source, importer, options) {
       if (!isProductionBuild) return null;
+      const gate = gateFor(this as HookContext, options?.ssr);
 
       // Browser-only npm packages (SSR build only): sever the dynamic-import
       // edge so wrangler doesn't inline the package into _worker.js.
-      if (stubbedPackages.includes(source)) {
+      if (gate.stubbedPackages.includes(source)) {
         return STUB_ID;
       }
 
-      if (!disabledModulePaths.length) return null;
+      if (!gate.disabledModulePaths.length) return null;
 
       const normalizedSource = normalize(source);
       if (!normalizedSource.endsWith(".svelte")) return null;
@@ -86,7 +118,7 @@ export function featureGatePlugin(): Plugin {
       // broadly stubbed. Imports beneath the shell are resolved independently
       // and still hit the normal gate, preserving the server bundle boundary.
       if (
-        ssrRenderedComponentPaths.some((path) =>
+        gate.ssrRenderedComponentPaths.some((path) =>
           normalizedSource.includes(path)
         )
       ) {
@@ -94,7 +126,7 @@ export function featureGatePlugin(): Plugin {
       }
 
       let matched = false;
-      for (const prefix of disabledModulePaths) {
+      for (const prefix of gate.disabledModulePaths) {
         if (normalizedSource.includes(prefix)) {
           matched = true;
           break;
@@ -120,7 +152,7 @@ export function featureGatePlugin(): Plugin {
       return null;
     },
 
-    load(id: string) {
+    load(id: string, options?: { ssr?: boolean }) {
       if (id === STUB_ID) {
         return STUB_EXPORT;
       }
@@ -130,6 +162,7 @@ export function featureGatePlugin(): Plugin {
       // the page components and everything they import do not reach the client.
       // SSR uses the same technique for selected ssr=false routes because
       // build_server_nodes also requires their real filenames in its manifest.
+      const { emptiedRoutePaths } = gateFor(this as HookContext, options?.ssr);
       if (emptiedRoutePaths.length) {
         const bare = normalize(id).split("?")[0]!;
         if (
