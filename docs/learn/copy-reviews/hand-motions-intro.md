@@ -43,10 +43,11 @@ stage's line under it:
 
 > Drag both hands. Find all six.
 
-> Using these, we can derive six combinations, named below.
+> Using these, we can make six combinations, named below.
 
 The third is the first sentence of the book's line above its combinations
-(`verified_level1_hand_motions_76`), kept as `learn_motion_combinations_lead`.
+(`verified_level1_hand_motions_76`), kept as `learn_motion_combinations_lead`
+with “make” for the book's “derive.”
 The book goes on “We’ll explore each one individually:”, which the lesson drops
 because it continues to Timing and Direction instead.
 
@@ -218,6 +219,10 @@ the lesson does not repeat Water, Earth, Sun, Fire, Air, or Moon as headings.
   (“Using these, we can derive six combinations, named below.”) and full
   stops on the Dash and Dual-Dash descriptions in the app, with the printed
   first edition unchanged.
+- 2026-10-11 — Austen replaced “derive” with “make” in that line for
+  non-technical readers: “Using these, we can make six combinations, named
+  below.” (German “bilden” for “ableiten”). Relayed by the Guide page session;
+  the book key and the printed edition keep “derive.”
 
 ## Shared-path Refinement Verification — 2026-09-04
 

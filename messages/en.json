@@ -5801,7 +5801,7 @@
   "learn_motion_map_prompt": "Drag the hand to a point.",
   "learn_motion_pairs_prompt": "Drag both hands. Find all six.",
   "learn_motion_pairs_mirror": "Same pair, hands swapped.",
-  "learn_motion_combinations_lead": "Using these, we can derive six combinations, named below.",
+  "learn_motion_combinations_lead": "Using these, we can make six combinations, named below.",
   "learn_motion_dash_description": "One hand travels to the opposite point and the other hand remains static.",
   "learn_motion_dual_dash_description": "Both hands travel to the opposite point.",
   "learn_motion_topic_placement_title": "Placement",

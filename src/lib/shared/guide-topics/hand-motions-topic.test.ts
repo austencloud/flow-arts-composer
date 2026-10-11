@@ -151,9 +151,12 @@ describe("six combinations", () => {
     ]);
   });
 
-  it("leads the six with the book's first sentence only", () => {
+  it("leads the six with the book's first sentence, in plain words", () => {
+    // "make" for the book's "derive" (Austen, 2026-10-11).
     expect(english[HAND_MOTIONS_TOPIC_UNITS.combinationsLead]).toBe(
-      english.verified_level1_hand_motions_76.split("<br>")[0]
+      english.verified_level1_hand_motions_76
+        .split("<br>")[0]
+        .replace("derive", "make")
     );
   });
 
