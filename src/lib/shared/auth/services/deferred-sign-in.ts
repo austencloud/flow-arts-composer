@@ -6,8 +6,9 @@
  * site header, and prop, color and grip changes that reach their account
  * instead of staying on this device. So the page first checks browser storage
  * for a saved session, which needs no Firebase, and only when one is there
- * does it load the real auth state, at the browser's next idle moment.
- * Signing in that way also attaches settings sync (auth-boot-orchestrator.ts).
+ * does it load the real auth state, at the browser's next idle moment or after
+ * two seconds, whichever comes first. Signing in that way also attaches
+ * settings sync (auth-boot-orchestrator.ts).
  *
  * The site header and the headerless Shape Engine page share this, down to the
  * one storage check (saved-firebase-user.ts), which this module re-exports.
@@ -15,6 +16,13 @@
 import type { authState as AuthStateInstance } from "../state/auth-state.svelte";
 
 export type AuthStateApi = typeof AuthStateInstance;
+
+// The longest sign-in waits for idle time. A page running a looping animation
+// may never go idle, and without a cap a returning visitor's avatar waited
+// over 22 s on the timing mode guides, or never came. Two seconds matches the
+// app's other idle work (composition-root, module-prefetch) and still lets
+// first paint go ahead; only visitors with a saved session reach this.
+const IDLE_TIMEOUT_MS = 2_000;
 
 export { hasSavedFirebaseUser } from "./saved-firebase-user";
 
@@ -44,10 +52,10 @@ export interface DeferredSignInOptions {
 }
 
 /**
- * Sign a returning visitor in at the browser's next idle moment, and only when
- * `hasSession` finds a saved session. A signed-out visitor never loads the
- * sign-in code. Returns a cleanup that cancels a start still waiting for idle
- * time, for a page that unmounts first.
+ * Sign a returning visitor in at the browser's next idle moment, or after two
+ * seconds on a page that stays busy, and only when `hasSession` finds a saved
+ * session. A signed-out visitor never loads the sign-in code. Returns a cleanup
+ * that cancels a start still waiting, for a page that unmounts first.
  */
 export function signInWhenIdle({
   hasSession,
@@ -73,7 +81,7 @@ export function signInWhenIdle({
     };
 
     if (typeof requestIdleCallback !== "undefined") {
-      idleHandle = requestIdleCallback(start);
+      idleHandle = requestIdleCallback(start, { timeout: IDLE_TIMEOUT_MS });
     } else {
       timeoutHandle = setTimeout(start, 0);
     }
