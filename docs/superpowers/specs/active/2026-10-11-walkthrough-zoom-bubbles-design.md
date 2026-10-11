@@ -2,10 +2,10 @@
 status: active
 value: null
 effort: null
-work_state: designed
-remaining: Plan, then build the Level-chapter pilot and send it to Austen.
+work_state: planned
+remaining: Build the Level-chapter pilot and send it to Austen.
 depends_on: "2026-09-26-post-studio-keyframes-design.md"
-plan_path: ""
+plan_path: "docs/superpowers/plans/2026-10-11-walkthrough-zoom-bubbles.md"
 tags: [post-studio, feature-video, tutorial]
 last_triaged: "2026-10-11"
 ---
@@ -143,30 +143,48 @@ to `walkthrough.json` in the feature's folder:
 ```
 
 `click` matches a piece of an event label, in order, as `build_spec.py` does
-today. `sameClick` replaces that script's implicit "same piece, larger offset"
-rule. `shot` is `close` (the default) or `wide`. An empty `text` ends the
-previous bubble without starting one.
+today; every line needs one. `sameClick` replaces that script's implicit
+"same piece, larger offset" rule. `shot` is `close` (the default) or `wide`.
+An empty `text` ends the previous bubble without starting one and does not
+move the camera. A line may add `include`, a box in page pixels for the area
+it talks about when that is not the clicked control: the shot frames it too,
+the bubble keeps clear of it and the tail points at its centre.
+
+The file's top level may also hold `wideAfter`, label pieces whose clicks pull
+the camera out after the press (the Generate button), and `maxZoom`.
 
 **Camera.** Positions are shares of the source frame, from the event pixels
 and the recorded viewport.
 
-- A close shot frames the target box with room for its bubble at up to 2×
-  (1.5× on a 1.5 take). A box too big for that zoom gets the zoom that fits
-  it.
-- Consecutive close lines whose targets fit in one view at 1.6× or more, and
-  whose clicks are under 6 s apart, share one shot. The three Level buttons
-  are one shot, not three pans.
+- Every pointer event in the build moves the camera, not only the captioned
+  ones, so each press is seen up close. A close shot frames the target box
+  with room for its bubble (the box widened by 10% of the frame's width and
+  30% of its height) at up to 2× (1.5× on a 1.5 take). A box too big for that
+  zoom gets the zoom that fits it.
+- Consecutive close beats whose targets fit in one view at 1.6× or more (0.8
+  of the zoom cap), and whose clicks are under 6 s apart, share one shot. The
+  three Level buttons are one shot, not three pans. A wide beat or a chapter's
+  first line starts a new shot.
 - The camera arrives 0.3 s before the click, over a 0.8 s ease-in-out move,
   so the viewer sees the pointer reach the control and press it.
 - A wide line pulls out to the whole frame, starting at its click and
-  arriving 0.8 s later, as the new sequence appears.
+  arriving 0.8 s later, as the new sequence appears. A click matching
+  `wideAfter` is seen close and then pulls out from 0.2 s after the press.
+- A `sameClick` line with its own `shot` or `include` moves the camera at the
+  line's time: a close move arrives 0.3 s before it, a wide one ends 0.1 s
+  before it.
+- Moves run in order. One that would start before the previous one ends
+  starts at that end, takes at least 0.4 s, and warns when it lands after its
+  click.
 - Framing keyframes use the existing video `keyframes.framing` (zoom, panX,
   panY), with `t` in take media seconds. The pan for a wanted view centre is
   worked out from `media-fit.ts` (`calculateMediaFit`, `resolvePanOffset`), the
   same geometry the preview and the export draw with, and a test holds the two
   together.
-- A clip that starts after a cut starts on the framing the previous clip
-  ended on, since the cuts sit where the frames match.
+- The camera is one keyframe list over the whole build. Each kept clip gets
+  the keys inside it plus keys at its own ends, sampled with the engine's
+  `framingAt`, so a clip that starts after a cut starts on the framing the
+  previous clip ended on.
 
 **Bubbles.**
 
@@ -187,9 +205,10 @@ and the recorded viewport.
   bubble. Two lines with the same placeholder text are refused.
 
 **Checks.** The builder refuses a line whose click is missing or falls inside
-a cut, and it warns when a bubble holds under 1.6 s (the same floor as the
-promo renderer's check). It returns the chapter start times in post seconds,
-for the YouTube description.
+a cut, and a project whose canvas is not the recording's shape. It warns when
+a bubble holds under 1.6 s (the same floor as the promo renderer's check).
+The first bubble of each chapter carries the chapter's name as its label, so
+the timeline shows where chapters begin.
 
 ### 4. Running it
 
@@ -199,16 +218,23 @@ through that editor, so one undo takes the whole build back. Otherwise it
 edits the file on disk.
 
 `post-project.mjs walkthrough --feature SLUG --lines walkthrough.json
-[--take ID] [--chapter NAME]` reads the take's `capture.json`, sends the op
-and prints the chapters. `--chapter` builds only that chapter: from 1 s before
-its first click to the start of the next chapter's first camera move. The existing
-`render --feature SLUG --open` exports it.
+[--capture capture.json] [--take ID] [--chapter NAME]` reads the recording's
+`capture.json` (by default the one under `captures/frames/SLUG/`), sends the
+op, then reads the result back and prints the chapter times (1.5 s before
+each chapter's first bubble) and any bubble shorter than 1.6 s. An op cannot
+return extra data through an open editor, so the report reads the project.
+`--chapter` builds only that chapter: from 2 s before its first click, while
+the camera is still wide, to the start of the next chapter's first camera
+move. The existing `render --feature SLUG --open` exports it.
 
 ## Pilot
 
 1. Record take 3 of the Generate tutorial at the new density, signed in as
-   the shared test account, with the director's new boxes. If other sessions'
-   merges reload the page, cut the reloads with `keep` as in take 2.
+   the shared test account, with the director's new boxes. Its waits give
+   every Level line at least 3 s (6.5 s after Level 1, 3.5 s after Level 2
+   and Level 3; take 2 left 1.5 s). The pilot take stops after the first Turn
+   Intensity click; the full re-paced take follows Austen's verdict. If other
+   sessions' merges reload the page, cut the reloads with `keep` as in take 2.
 2. Build the Level chapter only, into the `generate-tutorial` feature project
    (created for this tutorial, empty until now).
 3. Export it with the editor and check it:
