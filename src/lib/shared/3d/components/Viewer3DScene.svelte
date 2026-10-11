@@ -1,7 +1,7 @@
 <script lang="ts">
   import { T, useTask, useThrelte, useScheduler } from "@threlte/core";
   import { layers, type ThrelteLayers } from "@threlte/extras";
-  import { onMount, onDestroy, tick, type Snippet } from "svelte";
+  import { flushSync, onMount, onDestroy, tick, type Snippet } from "svelte";
   import {
     PerformerRig,
     type AvatarGripDiagnostics,
@@ -411,6 +411,12 @@
     if (!viewer3DState.isExporting) {
       performerManager.updateFormationTransition();
     }
+
+    // Props, hand anchors and the rig take their transforms from Svelte
+    // effects, which would otherwise run after this frame is drawn. Effects
+    // and the avatar's hand IK read the new pose in later tasks this frame,
+    // so apply it now or the drawn props trail them by one frame.
+    flushSync();
   });
 
   let performerInteraction = $state<PerformerPointerInteraction | null>(null);
