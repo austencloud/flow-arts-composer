@@ -630,3 +630,21 @@ currentUser, signed-in user, isAdmin, isAuthenticated, whenAuthLoaded, saved
 session, public page Firebase, first download, LazyMount. Decision: extend the two owners; code
 a public page loads at startup uses these readers instead of importing either
 owner.
+
+A figure that builds itself (pause, change state, tween 0 to 1, in order)
+uses `createBuildSequence` in `shared/transitions/build-sequence.ts`, with
+`whenOnScreen` to start it once the figure is on screen and
+`BUILD_BEAT_PAUSE_MS` between beats. Reduced motion jumps to the finished
+picture. The Guide front-page hero (`HubHeroBuild.svelte`) and the Hand
+Motions map (`shared/guide-topics/MotionMapFigure.svelte`) use it. Searches:
+self-build, hero build, build sequence, staged reveal, beats. Decision:
+created on the second use (2026-10-11).
+
+`PropPlacementGrid` also carries one-hand figures: `hands="left"` keeps a
+single blue hand (its placement state never asks for the right hand),
+`showProps` hides the hands while a figure builds, `onReady` reports the first
+draw, and `figureLayer` draws figure art in the grid's own square under the
+touch targets. A `motionMove` with `path: "dash"` travels straight through the
+center (the default is the pro arc), for `durationMs`. Searches: one hand,
+single hand, motion map, dash travel, figure layer, arrow overlay. Decision:
+extend the owner (2026-10-11).
