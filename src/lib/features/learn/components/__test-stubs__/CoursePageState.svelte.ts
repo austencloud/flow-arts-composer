@@ -5,3 +5,12 @@ export const page = $state({
   url: new URL("https://tkaflowarts.test/learn/concepts"),
   state: {} as App.PageState,
 });
+
+export const navigating = {
+  from: null,
+  to: null,
+  type: null,
+  willUnload: null,
+  delta: null,
+  complete: null,
+};

@@ -35,11 +35,12 @@ vi.mock("$app/env", () => ({
   version: "test",
 }));
 vi.mock("$app/navigation", () => ({
-  pushState: (destination: string | URL, state: App.PageState) => {
-    history.pushState(state, "", destination);
-  },
-  replaceState: (destination: string | URL, state: App.PageState) => {
-    history.replaceState(state, "", destination);
+  goto: (
+    destination: string | URL,
+    options: { replace?: boolean; state?: App.PageState } = {}
+  ) => {
+    const write = options.replace ? history.replaceState : history.pushState;
+    write.call(history, options.state ?? {}, "", destination);
   },
 }));
 

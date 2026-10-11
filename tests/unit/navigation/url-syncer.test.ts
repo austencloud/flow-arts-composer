@@ -1,18 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "#lib/shared/foundation/domain/models/sequence-data.js";
 
-const navigation = vi.hoisted(() => ({ replaceState: vi.fn() }));
+const navigation = vi.hoisted(() => ({ goto: vi.fn() }));
 const appPage = vi.hoisted(() => ({
+  url: new URL("http://localhost:3000/create/construct"),
   state: { moduleId: "create", sectionId: "construct" } as App.PageState,
 }));
 const generateShareURL = vi.hoisted(() => vi.fn());
 
 vi.mock("$app/env", () => ({ browser: true }));
-vi.mock("$app/navigation", () => ({
-  pushState: vi.fn(),
-  replaceState: navigation.replaceState,
+vi.mock("$app/navigation", () => navigation);
+vi.mock("$app/state", () => ({
+  page: appPage,
+  navigating: { complete: null, willUnload: null },
 }));
-vi.mock("$app/state", () => ({ page: appPage }));
 vi.mock("#lib/shared/navigation/services/sequence-encoder.js", () => ({
   generateShareURL,
 }));
@@ -43,13 +44,17 @@ describe("URLSyncer", () => {
       immediate: true,
     });
 
-    const [destination, state] = navigation.replaceState.mock.calls[0] ?? [];
+    const [destination, options] = navigation.goto.mock.calls[0] ?? [];
     const nextUrl = new URL(String(destination));
     expect(nextUrl.pathname).toBe("/create/construct");
     expect(nextUrl.searchParams.get("keep")).toBe("yes");
     expect(nextUrl.searchParams.get("open")).toBe("create:new");
     expect(nextUrl.hash).toBe("#workspace");
-    expect(state).toEqual({ moduleId: "create", sectionId: "construct" });
+    expect(options).toEqual({
+      shallow: true,
+      replace: true,
+      state: { moduleId: "create", sectionId: "construct" },
+    });
   });
 
   it("exposes cancellation for caller-owned debouncing", () => {
