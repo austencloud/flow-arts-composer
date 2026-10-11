@@ -4,6 +4,20 @@
   Delivery presentation and topic rows live in focused child components. This
   file owns loading, persistence, device registration, and page composition.
 -->
+<script module lang="ts">
+  import type { PushDeviceRegistrationState as CachedPushState } from "#lib/shared/push/services/fcm-token-manager.js";
+  import type { NotificationPreferences as CachedPreferences } from "#lib/shared/feedback/domain/models/notification-models.js";
+
+  // The last values this account loaded, kept for the session. A revisit then
+  // draws the real page at once (the Settings tab transition snapshots it)
+  // and refreshes it quietly instead of flashing a loading state.
+  let cache: {
+    userId: string;
+    preferences: CachedPreferences;
+    pushState: CachedPushState | null;
+  } | null = null;
+</script>
+
 <script lang="ts">
   import { onMount } from "svelte";
   import { authState } from "#lib/shared/auth/state/auth-state.svelte.js";
@@ -44,15 +58,20 @@
     items: PreferenceItem[];
   };
 
+  const cached =
+    cache && cache.userId === authState.user?.uid ? cache : null;
   let preferences = $state<NotificationPreferences>(
-    DEFAULT_NOTIFICATION_PREFERENCES
+    cached?.preferences ?? DEFAULT_NOTIFICATION_PREFERENCES
   );
-  let isLoading = $state(true);
+  // Only a first visit waits, and it waits on the real layout (see markup).
+  let isLoading = $state(!cached && !!authState.user);
   let bulkBusy = $state<"enable" | "disable" | null>(null);
   let pendingKeys = $state<Set<keyof NotificationPreferences>>(new Set());
   let pushToggleBusy = $state(false);
   let emailToggleBusy = $state(false);
-  let pushDeviceState = $state<PushDeviceRegistrationState>("checking");
+  let pushDeviceState = $state<PushDeviceRegistrationState>(
+    cached?.pushState ?? "checking"
+  );
   let loadError = $state(false);
 
   const isPreviewMode = $derived(userPreviewState.isActive);
@@ -67,6 +86,19 @@
 
   onMount(() => {
     void initializePreferences();
+  });
+
+  $effect(() => {
+    const userId = authState.user?.uid;
+    if (!userId || isLoading || loadError || isPreviewMode) return;
+    cache = {
+      userId,
+      preferences,
+      pushState:
+        pushDeviceState === "checking"
+          ? (cache?.userId === userId ? cache.pushState : null)
+          : pushDeviceState,
+    };
   });
 
   $effect(() => {
@@ -120,7 +152,8 @@
     }
 
     try {
-      isLoading = true;
+      // A revisit keeps showing the cached values while this refreshes.
+      if (!cached) isLoading = true;
       loadError = false;
       preferences = await notificationPreferencesManager.getPreferences(
         user.uid
@@ -150,7 +183,7 @@
 
     const fcmTokenManager = getFCMTokenManager();
     try {
-      pushDeviceState = "checking";
+      if (!cached?.pushState) pushDeviceState = "checking";
       pushDeviceState = preferences.pushEnabled
         ? await fcmTokenManager.getRegistrationState(user.uid)
         : await fcmTokenManager.getSetupState();
@@ -563,12 +596,7 @@
     </div>
   {/if}
 
-  {#if isLoading}
-    <div class="state-surface" role="status">
-      <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-      <p>{t("feedback_loading_prefs")}</p>
-    </div>
-  {:else if loadError}
+  {#if loadError}
     <div class="state-surface error-state" role="alert">
       <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
       <h2>{t("feedback_preferences_load_failed")}</h2>
@@ -578,13 +606,27 @@
         <span>{t("common_retry")}</span>
       </PanelButton>
     </div>
-  {:else if !authState.isAuthenticated}
+  {:else if !isLoading && !authState.isAuthenticated}
     <div class="state-surface">
       <i class="fas fa-user-slash" aria-hidden="true"></i>
       <p>{t("feedback_sign_in_prefs")}</p>
     </div>
   {:else}
-    <div class="notification-workspace" class:has-delivery={!isPreviewMode}>
+    <!-- While a first visit loads, the page keeps its real layout and holds
+         still (inert) instead of swapping a spinner for it, so nothing snaps
+         when the values arrive. -->
+    {#if isLoading}
+      <p class="visually-hidden" role="status">
+        {t("feedback_loading_prefs")}
+      </p>
+    {/if}
+    <div
+      class="notification-workspace"
+      class:has-delivery={!isPreviewMode}
+      class:loading={isLoading}
+      inert={isLoading}
+      aria-busy={isLoading}
+    >
       {#if !isPreviewMode}
         <div class="workspace-column">
           <NotificationDeliverySection
@@ -718,6 +760,15 @@
   .state-surface :global(.panel-btn) {
     width: auto;
     margin-top: 0.35em;
+  }
+
+  /* A first visit shows the real rows dimmed until the saved values arrive. */
+  .notification-workspace > :global(*) {
+    transition: opacity var(--transition-normal);
+  }
+
+  .notification-workspace.loading > :global(*) {
+    opacity: 0.55;
   }
 
   .notification-workspace {
