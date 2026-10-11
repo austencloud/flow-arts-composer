@@ -288,6 +288,8 @@
           >
         </div>
       {:else}
+        <!-- The scope's snippet loses the branch's narrowing; bind it here. -->
+        {@const sequence = state.sequence}
         {#key `${authState.user && !authState.user.isAnonymous ? authState.user.uid : "guest"}:${state.feature ? featureSelectionId(state.feature.slug) : state.sequence.id}`}
           <TkaEditorScope
             active={visible && !state.showingProjects}
@@ -311,7 +313,7 @@
                 audioSeed={scope.audioSeed}
                 onAudioChange={scope.onAudioChange}
                 active={visible && !state.showingProjects}
-                onSaveDraft={state.feature ? state.feature.save : authState.user && !authState.user.isAnonymous ? saveSyncedFor(state.sequence) : state.diskAvailable ? savePostDraft : undefined}
+                onSaveDraft={state.feature ? state.feature.save : authState.user && !authState.user.isAnonymous ? saveSyncedFor(sequence) : state.diskAvailable ? savePostDraft : undefined}
                 draftLoadError={state.projectError}
               />
             {/snippet}

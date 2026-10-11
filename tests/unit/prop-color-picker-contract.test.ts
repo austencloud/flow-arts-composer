@@ -60,9 +60,10 @@ const HOSTS: Record<string, string> = {
   "shape matrix focus":
     "src/lib/shared/shape-matrix/app/components/ShapeMatrixFocusWorkspace.svelte",
   // In @austencloud/video-editor since Task 20. Dev loop (extraction steps 1
-  // to 3): the package worktree beside this one.
+  // to 3): the package build the vitest alias reads; step 4 swaps this root
+  // with the alias.
   "post studio look panel":
-    "../../shared-packages/video-editor/packages/video-editor/src/ui/editor/PostEditorWorkspace.svelte",
+    "E:/worktrees/shared-packages/video-editor/packages/video-editor/dist/ui/editor/PostEditorWorkspace.svelte",
   "motion path explorer":
     "src/routes/(public)/guide/motion-paths/_components/MotionPathExplorer.svelte",
   "landing play with it":
@@ -94,7 +95,7 @@ const NON_HOSTS: Record<string, string> = {
 };
 
 function read(relativePath: string): string {
-  return readFileSync(path.join(repoRoot, relativePath), "utf8");
+  return readFileSync(path.resolve(repoRoot, relativePath), "utf8");
 }
 
 describe("the prop colour control is owned by the prop picker", () => {

@@ -24,12 +24,13 @@ const repoRoot = path.resolve(
   "../.."
 );
 const read = (relative: string) =>
-  readFileSync(path.join(repoRoot, relative), "utf8");
+  readFileSync(path.resolve(repoRoot, relative), "utf8");
 
 // The workspace moved into @austencloud/video-editor (Task 20). Dev loop
-// (extraction steps 1 to 3): the package worktree beside this one.
+// (extraction steps 1 to 3): the package build the vitest alias reads; step 4
+// swaps this root with the alias.
 const WORKSPACE =
-  "../../shared-packages/video-editor/packages/video-editor/src/ui/editor/PostEditorWorkspace.svelte";
+  "E:/worktrees/shared-packages/video-editor/packages/video-editor/dist/ui/editor/PostEditorWorkspace.svelte";
 const POST_MODULE = "src/lib/features/post/PostModule.svelte";
 const TKA_HOST = "src/lib/shared/post-studio-plugin/ui/tka-host.ts";
 
@@ -44,7 +45,10 @@ describe("where a waiting Post save goes", () => {
 
   it("the Post page binds the account save to its sequence", () => {
     const source = read(POST_MODULE);
-    expect(source).toContain("saveSyncedFor(state.sequence)");
+    // The scope's snippet loses the branch's narrowing, so the branch binds
+    // state.sequence to a const the save reads.
+    expect(source).toContain("{@const sequence = state.sequence}");
+    expect(source).toContain("saveSyncedFor(sequence)");
     expect(source).not.toContain("saveSyncedPostDraft(project, state.sequence");
   });
 
