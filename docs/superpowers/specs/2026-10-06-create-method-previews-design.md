@@ -202,14 +202,16 @@ sequence from `drawMatrixRealization()`, drawn between turns; if that source
 fails, rolls step through the demo sequence instead. The dice is drawn as a
 plain glyph for `GhostPointer` to press, never a real button.
 
-Once the first step has landed, the roll's first two steps play their moves
-one at a time (2026-10-11), as the workspace's Play steps through a sequence:
-each step's props travel from the pose before it (the start position before a
-sequence's first step), along its arrow, at Construct's 0.85 s pace. The two
-land with their props at the start of their moves, so neither jumps back to
-start. A turn has room for two moves; the run ends as the last one starts, and
-it plays on into the turn's end, so a slow draw costs only the end of a move,
-never a cut.
+Once the first step has landed, the roll's first three steps play their
+moves one at a time (2026-10-11), as the workspace's Play steps through a
+sequence: each step's props travel from the pose before it (the start position
+before a sequence's first step), along its arrow, at Construct's 0.85 s pace.
+They land with their props at the start of their moves, so none jumps back to
+start. Most boxes show three steps, so every step shown plays; a four-step
+strip or a 3×3 grid plays its first three. Three moves do not fit a
+three-second turn, so Generate's turn runs 3.7 s. The run ends as the last move
+starts, and that move plays on into the turn's end, so a slow draw costs only
+the end of a move, never a cut.
 
 Turns rolled twice before (2026-10-10), and for a day each cell played its
 move as the wave reached it. That was dropped: the real tool brings steps in
@@ -333,7 +335,8 @@ Generate's first roll (added 2026-10-10).
 ## Turns
 
 - Cards take turns in board order. A turn is one scene, about three seconds,
-  then a gap of about half a second before the next card. One constant in the
+  then a gap of about half a second before the next card. Generate's turn runs
+  3.7 s so three steps can play their moves (2026-10-11). One constant in the
   turn coordinator owns these timings, including the hover delay below.
 - Turns begin after the board has painted, the browser is idle, and any
   chooser crossfade has finished, so opening Create is not slowed.
