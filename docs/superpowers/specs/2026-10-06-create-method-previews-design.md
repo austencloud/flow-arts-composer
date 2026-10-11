@@ -258,8 +258,11 @@ at a time with `PictographContainer`'s `visibleHand`, as `FuseSourceCard`
 shows Fuse's inputs. Each half shows its arrow from the start, as Fuse's
 source cards do, with its prop where the move begins (2026-10-10: arrows that
 appeared only after the halves met read as something new arriving). After they
-merge, the combined steps play once, the props traveling their real paths
-along the arrows already shown (`motionStartData` and `motionProgress`). A hand
+merge, the combined steps play once, one at a time, the props traveling their
+real paths along the arrows already shown (`motionStartData` and
+`motionProgress`), at Construct's and Generate's 0.85 s pace (2026-10-11; at
+0.65 s they were quick enough to miss). The run ends as the last step starts,
+so a slow draw costs only the end of its move, never a cut. A hand
 alone is laid out as one hand, and the combined letter can place its arrow or
 prop elsewhere, so while the halves slide, each arrow and prop glides to where
 the combined step draws it instead of snapping there at the merge.
