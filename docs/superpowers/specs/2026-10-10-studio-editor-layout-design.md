@@ -28,6 +28,10 @@ timeline on every screen. CapCut and InShot are the models.
 - `post-editor-tools.ts` already gives each selection its own tool row, and a
   phone already opens one tool's panel in place of the row. That model stays;
   this design changes where the row and panels sit at each size.
+- (2026-10-11, project "ΩΛ-XJ", 412 by 915) The track header column (eye
+  and lock, no names) is 111 of the 412 pixels on every row. The main track
+  is 65 tall and each other layer 52, so four rows fill the timeline area.
+  Short text clips read "A N" and "A I".
 
 ## 1. Layout tiers
 
@@ -119,11 +123,24 @@ selection has more than six. Each group stacks the existing panels it holds.
 
 ## 4. Timeline
 
-- Track headers (name, visibility, lock) stay on the left; phone shrinks them
-  to icons.
+- Desktop and medium keep the track headers (name, visibility, lock) in a
+  fixed column on the left.
+- Phone has no fixed header column (Austen, 2026-10-11). Each track's header
+  (name, hide, lock) sits in the empty space before 0:00 that the centered
+  playhead leaves, and scrolls away with the clips once the playhead moves
+  into the video (CapCut). Clips get the full width while editing.
+- Phone row heights: the main track is 64 tall with its thumbnail strip;
+  every other layer is a 40-tall row (Austen, 2026-10-11). Four tracks take
+  about 190 instead of 300, and the space goes to the preview. More tracks
+  scroll inside the timeline.
 - Main-track clips show a thumbnail strip with the name over it. A clip too
   narrow for its name shows the thumbnail alone and its full name when
   selected or hovered, never a one-letter stub.
+- A layer clip (text, animation, card) too short for its name lets the name
+  run past its end in secondary text when the track is empty up to the next
+  clip, and shows only its kind icon when another clip is in the way
+  (Austen, 2026-10-11). The selected clip's full name also shows in the
+  toolbar or details header. Never a one-letter stub.
 - Phone and medium keep the playhead fixed at the center; the timeline
   slides under it while playing or dragging. Pinch zooms. Holding a clip
   picks it up; the main track shrinks to tiles while it moves (CapCut), and
