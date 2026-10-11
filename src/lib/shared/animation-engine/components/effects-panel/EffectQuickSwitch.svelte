@@ -39,7 +39,7 @@
     QUICK_PICKER_EDGE,
     QUICK_PICKER_OFFSET,
     QUICK_PICKER_STRIP_GAP,
-    stripTilePitch,
+    stripPageTarget,
     type EffectQuickPickerFit,
   } from "#lib/shared/animation-engine/domain/effect-quick-picker-fit.js";
   import EffectSelector from "./EffectSelector.svelte";
@@ -180,14 +180,17 @@
     );
   });
 
-  /** Move the row by the tiles in view, so the next ones start at its edge. */
+  /** Page the row so the tile cut at that end comes fully into view. */
   function scrollStrip(direction: 1 | -1) {
     if (!scrollerEl || fit?.arrangement !== "strip") return;
-    const pitch = stripTilePitch(fit.catalog.portrait);
-    const page =
-      Math.max(1, Math.floor(scrollerEl.clientWidth / pitch)) * pitch;
-    scrollerEl.scrollBy({
-      left: direction * page,
+    scrollerEl.scrollTo({
+      left: stripPageTarget({
+        portrait: fit.catalog.portrait,
+        scrollLeft: scrollerEl.scrollLeft,
+        viewWidth: scrollerEl.clientWidth,
+        scrollWidth: scrollerEl.scrollWidth,
+        direction,
+      }),
       behavior: reducedMotion() ? "auto" : "smooth",
     });
   }

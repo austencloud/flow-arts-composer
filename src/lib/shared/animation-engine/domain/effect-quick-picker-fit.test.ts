@@ -10,8 +10,11 @@ import {
   QUICK_PICKER_OFFSET,
   QUICK_PICKER_STRIP_GAP,
   QUICK_PICKER_STRIP_PAD,
+  QUICK_PICKER_STRIP_EDGE_CLEAR,
   sidePanelHeight,
   stripHeight,
+  stripPageTarget,
+  stripTilePitch,
 } from "./effect-quick-picker-fit";
 import {
   CATALOG_GAP,
@@ -243,5 +246,49 @@ describe("fitEffectQuickPicker", () => {
       bounds: { ...phone.bounds, height: 540 },
     });
     expect(fit.side).toBe("above");
+  });
+});
+
+describe("stripPageTarget", () => {
+  // The 1050x1210 window's row: 108px tiles, 740px of them in view.
+  const portrait = 108 - 2 * INSET;
+  const pitch = stripTilePitch(portrait);
+  const tile = pitch - CATALOG_GAP;
+  const row = {
+    portrait,
+    viewWidth: 740,
+    scrollWidth: 20 * pitch - CATALOG_GAP,
+  };
+  const clear = QUICK_PICKER_STRIP_EDGE_CLEAR;
+
+  it("brings the tile cut at the end to rest clear of the start's fade", () => {
+    const cut = 6; // Ghost: its right edge passes the end's fade.
+    expect(cut * pitch + tile).toBeGreaterThan(row.viewWidth - clear);
+    expect((cut - 1) * pitch + tile).toBeLessThanOrEqual(row.viewWidth - clear);
+    const left = stripPageTarget({ ...row, scrollLeft: 0, direction: 1 });
+    expect(cut * pitch - left).toBe(clear);
+  });
+
+  it("brings the tile cut at the start to rest clear of the end's fade", () => {
+    const first = 12; // The first tile clear of the start's fade.
+    const scrollLeft = first * pitch - clear;
+    const left = stripPageTarget({ ...row, scrollLeft, direction: -1 });
+    const cut = first - 1;
+    expect(cut * pitch + tile - left).toBe(row.viewWidth - clear);
+  });
+
+  it("stops at either end of the row", () => {
+    const end = row.scrollWidth - row.viewWidth;
+    expect(
+      stripPageTarget({ ...row, scrollLeft: end - 50, direction: 1 })
+    ).toBe(end);
+    expect(stripPageTarget({ ...row, scrollLeft: 50, direction: -1 })).toBe(0);
+  });
+
+  it("moves at least one tile even where the view holds barely one", () => {
+    const narrow = { ...row, viewWidth: 150 };
+    expect(
+      stripPageTarget({ ...narrow, scrollLeft: 0, direction: 1 })
+    ).toBeGreaterThanOrEqual(pitch);
   });
 });

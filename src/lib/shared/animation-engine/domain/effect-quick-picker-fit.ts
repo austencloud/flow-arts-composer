@@ -154,6 +154,50 @@ export function stripTilePitch(portrait: number): number {
   return portrait + 2 * INSET + CATALOG_GAP;
 }
 
+/** How far in from a faded end of the strip a tile must start, or stop, to
+ *  be clear of the fade and of the arrow over it. */
+export const QUICK_PICKER_STRIP_EDGE_CLEAR = 40;
+
+/**
+ * Where an arrow scrolls the strip to. Forward, the first tile still under
+ * the end's fade comes to rest just clear of the start's; back, the last tile
+ * under the start's fade comes to rest just clear of the end's. Either way
+ * the tile that was cut is the one fully in view, and the view always moves
+ * at least one tile.
+ */
+export function stripPageTarget({
+  portrait,
+  scrollLeft,
+  viewWidth,
+  scrollWidth,
+  direction,
+}: {
+  portrait: number;
+  scrollLeft: number;
+  viewWidth: number;
+  scrollWidth: number;
+  direction: 1 | -1;
+}): number {
+  const pitch = stripTilePitch(portrait);
+  const tile = pitch - CATALOG_GAP;
+  const clear = QUICK_PICKER_STRIP_EDGE_CLEAR;
+  const target =
+    direction > 0
+      ? Math.max(
+          scrollLeft + pitch,
+          (Math.floor((scrollLeft + viewWidth - clear - tile) / pitch) + 1) *
+            pitch -
+            clear
+        )
+      : Math.min(
+          scrollLeft - pitch,
+          (Math.ceil((scrollLeft + clear) / pitch) - 1) * pitch +
+            tile -
+            (viewWidth - clear)
+        );
+  return Math.min(Math.max(0, scrollWidth - viewWidth), Math.max(0, target));
+}
+
 export function fitEffectQuickPicker({
   bounds,
   player,
