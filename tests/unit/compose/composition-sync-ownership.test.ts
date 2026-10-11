@@ -8,10 +8,14 @@ const fake = vi.hoisted(() => ({
   pulls: [] as string[],
   pushes: [] as { uid: string; id: string; name: string }[],
   failPull: false,
+  failEveryPull: false,
+  warnings: [] as string[],
 }));
 
 vi.mock("#lib/shared/application/get-error-handler.js", () => ({
-  getErrorHandler: () => ({ showWarning: () => {} }),
+  getErrorHandler: () => ({
+    showWarning: (message: string) => fake.warnings.push(message),
+  }),
 }));
 vi.mock("#lib/features/compose/analytics/compose-events.js", () => ({
   trackCompositionDeleted: () => {},
@@ -45,7 +49,7 @@ vi.mock(
     getUserId: () => fake.uid,
     getCompositions: vi.fn(async (uid: string) => {
       fake.pulls.push(uid);
-      if (fake.failPull) {
+      if (fake.failPull || fake.failEveryPull) {
         fake.failPull = false;
         throw new Error("offline");
       }
@@ -86,6 +90,8 @@ beforeEach(() => {
   fake.pulls = [];
   fake.pushes = [];
   fake.failPull = false;
+  fake.failEveryPull = false;
+  fake.warnings = [];
 });
 
 describe("composition sync ownership", () => {
@@ -121,5 +127,23 @@ describe("composition sync ownership", () => {
     await syncer.getCompositions();
     expect(fake.pulls).toEqual(["A", "A"]);
     expect(fake.pushes).toEqual([{ uid: "A", id: "shared", name: "shared" }]);
+  });
+
+  it("warns once while the cloud keeps refusing, and again after it recovers", async () => {
+    fake.uid = "A";
+    fake.failEveryPull = true;
+    const syncer = new CompositionSyncer();
+    await syncer.getCompositions();
+    await syncer.getCompositions();
+    await syncer.getCompositions();
+    expect(fake.pulls).toEqual(["A", "A", "A"]);
+    expect(fake.warnings).toHaveLength(1);
+
+    fake.failEveryPull = false;
+    await syncer.getCompositions();
+    syncer.invalidateSync();
+    fake.failEveryPull = true;
+    await syncer.getCompositions();
+    expect(fake.warnings).toHaveLength(2);
   });
 });
