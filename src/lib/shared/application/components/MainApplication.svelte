@@ -40,7 +40,7 @@
   import { setAccountSetupContext } from "../../onboarding/context/account-setup-context";
   import { getOnboardingPersister } from "../../onboarding/get-onboarding-persister";
   import { migrateLegacyDisplayNameFromSettings } from "../../onboarding/services/legacy-display-name-migrator";
-  import { loadPropPreferences } from "../../community/services/prop-preference-persister";
+  import { loadAndRememberPropPreferences } from "../../community/state/prop-preference-state.svelte";
   import AccountSetupReminder from "../../onboarding/components/account-setup/AccountSetupReminder.svelte";
   import { propDrawerState } from "../../settings/state/prop-drawer-state.svelte";
   import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
@@ -165,7 +165,7 @@
     }),
     loadStatus: () => getOnboardingPersister().loadStatus(),
     saveStatus: (status) => getOnboardingPersister().saveStatus(status),
-    loadPropPreferences,
+    loadPropPreferences: loadAndRememberPropPreferences,
   });
   setAccountSetupContext(accountSetupState);
 
