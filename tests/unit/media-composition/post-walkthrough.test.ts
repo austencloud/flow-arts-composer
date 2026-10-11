@@ -165,7 +165,7 @@ describe("buildWalkthrough", () => {
     expect(chapters[0]!.seconds).toBeCloseTo(bubbles[0]!.start - 1.5);
   });
 
-  it("starts wide, moves in on each click and keeps every key in bounds", () => {
+  it("starts wide, moves in on each line's small control and keeps every key in bounds", () => {
     const clip = clipsOf(build().project)[0]!;
     const keys = clip.keyframes!.framing!;
     expect(keys[0]!.value.zoom).toBe(1);
@@ -209,6 +209,42 @@ describe("buildWalkthrough", () => {
       const aim = rectToOutput(still, share(targets[index]!));
       expect(bubble.callout!.x).toBeCloseTo(aim.x + aim.width / 2);
     });
+  });
+
+  it("stays wide for a click with no line", () => {
+    const { project: built } = build();
+    // Each Generate press in the Level chapter, wide or pulled out in time.
+    for (const time of [33.5, 43.7, 53.9]) {
+      const clip = clipsOf(built)[0]!;
+      const at = clip.start + (time - clip.sourceIn);
+      expect(viewOfFraming(framingAt(clip, at))).toEqual(
+        viewOfFraming({ zoom: 1, panX: 0, panY: 0, rotation: 0 })
+      );
+    }
+  });
+
+  it("leaves a big control wide, unless its line asks to move in", () => {
+    const big = { x: 1067, y: 766, width: 763, height: 167 };
+    const capture = {
+      ...CAPTURE,
+      events: CAPTURE.events.map((entry) =>
+        entry.label.includes("generate")
+          ? { ...entry, ...centre(big), rect: big }
+          : entry
+      ),
+    };
+    const zoomAtPress = (script: WalkthroughScript) => {
+      const clip = clipsOf(build({ capture, script }, "Generate").project)[0]!;
+      return framingAt(clip, clip.start + (6.9 - clip.sourceIn)).zoom;
+    };
+    expect(zoomAtPress(SCRIPT)).toBe(1);
+    const asked = {
+      ...SCRIPT,
+      lines: SCRIPT.lines.map((line, index) =>
+        index === 0 ? { ...line, shot: "close" as const } : line
+      ),
+    };
+    expect(zoomAtPress(asked)).toBeGreaterThan(1);
   });
 
   it("pulls out for a wide line before it shows", () => {
