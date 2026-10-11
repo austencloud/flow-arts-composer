@@ -6,7 +6,7 @@ import {
   placeHand,
   roundHands,
   roundPair,
-  roundReplay,
+  handTravel,
   startRound,
 } from "../../../src/lib/features/learn/components/interactive/motions/hand-pairs-round";
 
@@ -84,11 +84,11 @@ describe("the fused picture", () => {
     });
   });
 
-  it("replays both hands together, a dash straight and a shift around", () => {
+  it("plays each hand's move on its own grid, a dash straight and a shift around", () => {
     let round = startRound(W, E);
     round = placeHand(round, BLUE, N);
     round = placeHand(round, RED, W);
-    expect(roundReplay(round, 3, 800)).toEqual({
+    expect(handTravel(round, BLUE, 3, 800)).toEqual({
       epoch: 3,
       color: BLUE,
       from: W,
@@ -96,30 +96,22 @@ describe("the fused picture", () => {
       direction: "clockwise",
       path: "arc",
       durationMs: 800,
-      partner: { from: E, to: W, direction: "clockwise", path: "dash" },
     });
-  });
-
-  it("replays only the hand that moves when the other is static", () => {
-    let round = startRound(W, E);
-    round = placeHand(round, BLUE, W);
-    round = placeHand(round, RED, N);
-    expect(roundReplay(round, 1, 800)).toEqual({
-      epoch: 1,
+    expect(handTravel(round, RED, 4, 800)).toEqual({
+      epoch: 4,
       color: RED,
       from: E,
-      to: N,
-      direction: "counterclockwise",
-      path: "arc",
+      to: W,
+      direction: "clockwise",
+      path: "dash",
       durationMs: 800,
-      partner: undefined,
     });
   });
 
-  it("has nothing to replay when both hands are static", () => {
+  it("has no travel for a static hand or one not dropped yet", () => {
     let round = startRound(W, E);
+    expect(handTravel(round, BLUE, 1, 800)).toBeNull();
     round = placeHand(round, BLUE, W);
-    round = placeHand(round, RED, E);
-    expect(roundReplay(round, 1, 800)).toBeNull();
+    expect(handTravel(round, BLUE, 1, 800)).toBeNull();
   });
 });

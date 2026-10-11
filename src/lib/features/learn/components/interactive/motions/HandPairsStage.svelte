@@ -1,24 +1,29 @@
 <!--
   Hand Motions, stage 2: two hands find the six combinations. Each hand has
-  its own grid, side by side, blue starting at West and red at East. Blue
-  moves first; red's grid waits until it has. Each arrow is drawn on its own
-  hand's grid, so no arrow lies over the other hand. Once both have moved,
-  the two grids slide together into one larger picture: both arrows, laid out
-  as the pair's own pictograph, and both hands travelling them from the
-  round's start. The combination is named and its board cell fills; a pair
-  with the hands swapped lands on the cell it already filled. After a short
-  hold the picture splits back into the two grids, and the next round starts
-  where the hands ended. A tap or Enter ends the hold early. Reduced motion
-  swaps the grids for the picture without the slide or the travel.
+  its own grid, side by side, blue starting at West and red at East. It is one
+  hand's turn at a time: its grid is framed in its colour, while the other
+  grid dims and waits. A press picks the point the hand will move to: its
+  arrow and a ring mark it, and the pick holds for the round. Blue picks
+  first, then red. Once both have picked, the two grids glide together and
+  grow into one larger picture while each hand makes its move, so the pair
+  lands as the combination's own pictograph: both arrows, both hands where
+  they ended. The combination is named and its board cell fills; a pair with
+  the hands swapped lands on the cell it already filled. After a short hold
+  the picture splits back into the two grids, and the next round starts where
+  the hands ended. A tap or Enter ends the hold early. Reduced motion swaps
+  the grids for the picture without the glide or the travel.
 
   Austen, 2026-10-11: two grids that fuse into one picture, like Fuse,
   instead of one grid where a hand's arrow could lie over the other hand.
+  Then: a pick stays picked, only the hand whose turn it is is lit, and the
+  grids move together and resize while the hands make their moves.
   Spec: docs/superpowers/specs/2026-10-10-hand-motions-rebuild-design.md
 -->
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import Crossfade from "#lib/shared/components/Crossfade.svelte";
+  import { handGlides } from "#lib/features/create/shared/components/method-previews/method-preview-glide.js";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
   import MotionMapArrows from "#lib/shared/guide-topics/MotionMapArrows.svelte";
   import {
@@ -30,11 +35,11 @@
     type HandCombinationId,
   } from "#lib/shared/guide-topics/hand-motions-topic.js";
   import PropPlacementGrid from "#lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
-  import type { PropPlacementChange } from "#lib/shared/pictograph/grid/domain/prop-placement.js";
   import {
     GridLocation,
     GridMode,
   } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
+  import { getPlacementGridPoints } from "#lib/shared/pictograph/grid/services/placement-grid-points.js";
   import type { PlacementMotionMove } from "#lib/shared/pictograph/grid/state/prop-placement-motion.svelte.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -48,11 +53,11 @@
   import { reducedMotion } from "#lib/shared/transitions/motion.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
+    handTravel,
     isMirrorPair,
     placeHand,
     roundHands,
     roundPair,
-    roundReplay,
     startRound,
     type HandPair,
     type PairRound,
@@ -74,8 +79,19 @@
     [BLUE]: GridLocation.WEST,
     [RED]: GridLocation.EAST,
   };
-  /** The two grids sliding together into one picture, or apart again. */
-  const SLIDE_MS = DURATION.scene;
+  const POINTS = getPlacementGridPoints(GridMode.DIAMOND);
+  /** Red's arrow shows, so both picks are seen before they play. */
+  const LAND_MS = DURATION.dramatic;
+  /** The grids glide together and grow while each hand makes its move. */
+  const FLIGHT_MS = DURATION.scene;
+  /** Each arrow and hand settle where the two-hand picture draws them. */
+  const SETTLE_MS = DURATION.emphasis;
+  /** The picture takes over from the two grids laid on each other. */
+  const MERGE_MS = DURATION.fast;
+  /** The picture splits back into the two grids. */
+  const SPLIT_MS = DURATION.scene;
+  /** The hands' own travel easing (cubicInOut), so the glide keeps their pace. */
+  const IN_OUT = "cubic-bezier(0.65, 0, 0.35, 1)";
   const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
   interface Arrow {
@@ -87,19 +103,30 @@
   let halvesBox: HTMLDivElement;
   let fusedFrame: HTMLDivElement;
   const halves: Partial<Record<HandSide, HTMLDivElement>> = {};
+  const backdrops: Partial<Record<HandSide, HTMLDivElement>> = {};
 
-  /** Where each hand stands now; the next round starts there. */
-  const handsAt: Spots = { ...START };
+  /** Whose pick it is; null while the two hands play together. */
+  let turn = $state<HandSide | null>(BLUE);
   let round = $state<PairRound>(startRound(START[BLUE], START[RED]));
+  /** Where each grid's hand stands: the round's start, then where it ended. */
+  let rest = $state<Spots>({ ...START });
+  /** Each grid's own hand travel while the grids glide together. */
+  let travels = $state<Record<HandSide, PlacementMotionMove | null>>({
+    [BLUE]: null,
+    [RED]: null,
+  });
   let arrows = $state<Record<HandSide, Arrow>>({
     [BLUE]: { from: START[BLUE], to: null },
     [RED]: { from: START[RED], to: null },
   });
+  /** The grids are gliding together, and stay laid on each other until the split. */
+  let flying = $state(false);
   /** The two grids are one picture. */
   let together = $state(false);
-  /** Where the picture's hands stand: the round's start, then its end. */
+  /** Where the picture's hands stand: where the round's moves end. */
   let fusedAt = $state<Spots>({ ...START });
-  let fusedMove = $state<PlacementMotionMove | null>(null);
+  /** The picture's static hands, which have a halo instead of an arrow. */
+  let stillHands = $state<HandSide[]>([]);
   let pairData = $state<PictographData | null>(null);
   let shown = $state<{
     combination: HandCombination;
@@ -110,12 +137,11 @@
   let announcement = $state("");
   let pending: { combination: HandCombination; pair: HandPair } | null = null;
   let holding = false;
-  let replayEpoch = 0;
+  let travelEpoch = 0;
   let stillHold: ReturnType<typeof setTimeout> | undefined;
   let flight: Animation[] = [];
 
   const hold = createBuildSequence();
-  const blueMoved = $derived(round.moves[BLUE] !== undefined);
   const foundIds = $derived(new Set(Object.keys(found) as HandCombinationId[]));
   const strip = HAND_COMBINATIONS.map((combination) => ({
     id: combination.id,
@@ -126,8 +152,10 @@
     arrows = { ...arrows, [hand]: arrow };
   }
 
-  function roundArrow(hand: HandSide): Arrow {
-    return { from: round.start[hand], to: round.moves[hand]?.to ?? null };
+  /** The point a hand picked this round, unless it stays where it is. */
+  function pickedPoint(hand: HandSide): GridLocation | null {
+    const to = round.moves[hand]?.to ?? null;
+    return to === round.start[hand] ? null : to;
   }
 
   function reveal() {
@@ -153,53 +181,128 @@
     flight = [];
   }
 
-  /**
-   * Slides each grid between its own place and the picture's, growing to the
-   * picture's size, while the picture dissolves in (or out). Only the slide
-   * eases; the fades are even. Under reduced motion the swap is instant.
-   */
-  function fly(joining: boolean) {
-    cancelFlight();
-    if (reducedMotion()) return;
+  /** From a grid's own place to the picture's: centred on it, at its size. */
+  function landingFor(half: HTMLElement): string | null {
     const picture = fusedFrame.getBoundingClientRect();
+    const place = half.getBoundingClientRect();
+    if (!place.width) return null;
+    const dx =
+      picture.left + picture.width / 2 - (place.left + place.width / 2);
+    const dy =
+      picture.top + picture.height / 2 - (place.top + place.height / 2);
+    return `translate(${dx}px, ${dy}px) scale(${picture.width / place.width})`;
+  }
+
+  /** A grid and the backdrop under it, which travel as one. */
+  function gridLayers(hand: HandSide): HTMLElement[] {
+    return [halves[hand], backdrops[hand]].filter(
+      (layer): layer is HTMLDivElement => layer !== undefined
+    );
+  }
+
+  /** Both grids glide onto the picture at the pace of the hands' moves. */
+  function flyTogether() {
+    cancelFlight();
+    for (const hand of HANDS) {
+      for (const layer of gridLayers(hand)) {
+        const met = landingFor(layer);
+        if (!met) continue;
+        flight.push(
+          layer.animate([{ transform: "none" }, { transform: met }], {
+            duration: FLIGHT_MS,
+            easing: IN_OUT,
+            fill: "forwards",
+          })
+        );
+      }
+    }
+  }
+
+  /**
+   * A grid lays its one hand out alone, and the picture can lay the same hand
+   * out differently: its arrow on the other side of its point, its hand
+   * nudged off the other hand's on a shared point. Each glides to where the
+   * picture draws it, so the picture takes over without a jump.
+   */
+  function settleIntoPicture() {
     for (const hand of HANDS) {
       const half = halves[hand];
-      const place = half?.getBoundingClientRect();
-      if (!half || !place?.width) continue;
-      const dx =
-        picture.left + picture.width / 2 - (place.left + place.width / 2);
-      const dy =
-        picture.top + picture.height / 2 - (place.top + place.height / 2);
-      const met = `translate(${dx}px, ${dy}px) scale(${picture.width / place.width})`;
-      const keyframes: Keyframe[] = joining
-        ? [
-            { transform: "none", opacity: 1, offset: 0, easing: EASE },
-            { transform: met, opacity: 1, offset: 0.5 },
-            { transform: met, opacity: 0, offset: 0.8 },
-            { transform: met, opacity: 0, offset: 1 },
-          ]
-        : [
-            { transform: met, opacity: 0, offset: 0 },
-            { transform: met, opacity: 0, offset: 0.2 },
-            { transform: met, opacity: 1, offset: 0.5, easing: EASE },
-            { transform: "none", opacity: 1, offset: 1 },
-          ];
-      flight.push(half.animate(keyframes, SLIDE_MS));
+      if (!half) continue;
+      const pairs = [
+        [
+          half.querySelector(".pictograph-layer"),
+          fusedFrame.querySelector(".pictograph-layer"),
+        ],
+        [
+          half.querySelector(".motion-map-arrows .layer.shown"),
+          fusedFrame.querySelector(".pair-arrows"),
+        ],
+      ];
+      for (const [from, to] of pairs) {
+        if (!from || !to) continue;
+        for (const { element, keyframes } of handGlides(from, to, hand)) {
+          flight.push(
+            element.animate(keyframes, {
+              duration: SETTLE_MS,
+              easing: EASE,
+              fill: "forwards",
+            })
+          );
+        }
+      }
     }
-    const dissolve: Keyframe[] = joining
-      ? [
-          { opacity: 0, offset: 0 },
-          { opacity: 0, offset: 0.45 },
-          { opacity: 1, offset: 0.85 },
-          { opacity: 1, offset: 1 },
-        ]
-      : [
+  }
+
+  /** The picture fades in over the two grids, which now match it. */
+  function merge() {
+    flight.push(
+      fusedFrame.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: MERGE_MS,
+        easing: "ease-out",
+        fill: "forwards",
+      })
+    );
+  }
+
+  /** The picture splits back into the two grids, which slide to their places. */
+  function flyApart() {
+    cancelFlight();
+    if (reducedMotion()) return;
+    for (const hand of HANDS) {
+      for (const layer of gridLayers(hand)) {
+        const met = landingFor(layer);
+        if (!met) continue;
+        flight.push(
+          layer.animate(
+            [
+              { transform: met, opacity: 0, offset: 0 },
+              { transform: met, opacity: 0, offset: 0.2 },
+              { transform: met, opacity: 1, offset: 0.5, easing: EASE },
+              { transform: "none", opacity: 1, offset: 1 },
+            ],
+            SPLIT_MS
+          )
+        );
+      }
+    }
+    flight.push(
+      fusedFrame.animate(
+        [
           { opacity: 1, offset: 0 },
           { opacity: 1, offset: 0.15 },
           { opacity: 0, offset: 0.55 },
           { opacity: 0, offset: 1 },
-        ];
-    flight.push(fusedFrame.animate(dissolve, SLIDE_MS));
+        ],
+        SPLIT_MS
+      )
+    );
+  }
+
+  async function focusGrid(hand: HandSide) {
+    await tick();
+    halves[hand]
+      ?.querySelector<HTMLElement>('button, [role="button"][tabindex="0"]')
+      ?.focus({ preventScroll: true });
   }
 
   /**
@@ -212,20 +315,10 @@
     together = true;
   }
 
-  async function part() {
+  function part() {
     const refocus = document.activeElement === duo;
     together = false;
-    if (!refocus) return;
-    await tick();
-    halves[BLUE]?.querySelector<HTMLElement>(
-      'button, [role="button"][tabindex="0"]'
-    )?.focus({ preventScroll: true });
-  }
-
-  /** The picture's hands where this round's moves end. */
-  function settle() {
-    const hands = roundHands(round);
-    if (hands) fusedAt = { [BLUE]: hands.left.to, [RED]: hands.right.to };
+    if (refocus) void focusGrid(BLUE);
   }
 
   function fuse() {
@@ -234,35 +327,45 @@
     if (!pair || !hands) return;
     pending = { combination: combinationFor(pair.blue, pair.red), pair };
     holding = true;
+    turn = null;
     pairData = handPairPictographData(hands.left, hands.right);
-    fusedAt = { [BLUE]: hands.left.from, [RED]: hands.right.from };
-    const travel = roundReplay(round, ++replayEpoch, DURATION.scene);
+    fusedAt = { [BLUE]: hands.left.to, [RED]: hands.right.to };
+    stillHands = HANDS.filter((hand) => round.moves[hand]?.move === "static");
+    const ends: Spots = { ...fusedAt };
     if (reducedMotion()) {
+      rest = ends;
       join();
-      settle();
       reveal();
       stillHold = setTimeout(split, BUILD_BEAT_PAUSE_MS * 3);
       return;
     }
     hold.play(
       [
-        // Let the dropped hand land first.
-        { pause: DURATION.normal },
+        { pause: LAND_MS },
+        {
+          act: () => {
+            flying = true;
+            flyTogether();
+            // Each hand travels from the round's start while its grid's rest
+            // moves to the end, so the hand stays there when the travel ends.
+            travels = {
+              [BLUE]: handTravel(round, BLUE, ++travelEpoch, FLIGHT_MS),
+              [RED]: handTravel(round, RED, ++travelEpoch, FLIGHT_MS),
+            };
+            rest = ends;
+          },
+        },
+        { pause: FLIGHT_MS },
+        { act: settleIntoPicture },
+        { pause: SETTLE_MS },
+        { act: merge },
+        { pause: MERGE_MS },
         {
           act: () => {
             join();
-            fly(true);
+            reveal();
           },
         },
-        { pause: SLIDE_MS + DURATION.normal },
-        {
-          act: () => {
-            settle();
-            fusedMove = travel;
-          },
-        },
-        { pause: travel ? DURATION.scene : 0 },
-        { act: reveal },
         { pause: BUILD_BEAT_PAUSE_MS * 2 },
       ],
       split
@@ -276,11 +379,13 @@
     hold.cancel();
     clearTimeout(stillHold);
     reveal();
-    settle();
-    round = startRound(handsAt[BLUE], handsAt[RED]);
-    for (const hand of HANDS) setArrow(hand, { from: handsAt[hand], to: null });
-    void part();
-    fly(false);
+    rest = { ...fusedAt };
+    round = startRound(fusedAt[BLUE], fusedAt[RED]);
+    for (const hand of HANDS) setArrow(hand, { from: fusedAt[hand], to: null });
+    flying = false;
+    turn = BLUE;
+    part();
+    flyApart();
   }
 
   /** A tap or Enter on the picture ends the hold at once. */
@@ -292,24 +397,20 @@
     if (event.key === "Enter" || event.key === " ") takeOver();
   }
 
-  /** A drag aims a hand at a point: draw the move it would make this round. */
-  function aimed(hand: HandSide, target: GridLocation | null) {
-    setArrow(
-      hand,
-      target === null
-        ? roundArrow(hand)
-        : { from: round.start[hand], to: target }
-    );
-  }
-
-  function changed(hand: HandSide, change: PropPlacementChange) {
-    const to = hand === BLUE ? change.leftLocation : change.rightLocation;
-    // Picked up (tap or Enter) but not yet put down.
-    if (change.placedHand !== hand || !to) return;
-    handsAt[hand] = to;
-    round = placeHand(round, hand, to);
-    setArrow(hand, roundArrow(hand));
-    if (roundPair(round)) fuse();
+  /** A hand's pick holds for the round; blue's passes the turn to red. */
+  function pick(hand: HandSide, to: GridLocation) {
+    if (turn !== hand) return;
+    const next = placeHand(round, hand, to);
+    if (!next.moves[hand]) return;
+    round = next;
+    setArrow(hand, { from: round.start[hand], to });
+    if (hand === RED) {
+      fuse();
+      return;
+    }
+    const refocus = halves[BLUE]?.contains(document.activeElement) ?? false;
+    turn = RED;
+    if (refocus) void focusGrid(RED);
   }
 
   onMount(() => {
@@ -327,11 +428,29 @@
 
 <div class="pairs-stage">
   <div class="pairs-layout">
-    <div class="duo" class:together bind:this={duo} tabindex="-1">
+    <div class="duo" class:together class:flying bind:this={duo} tabindex="-1">
+      <!-- The grids draw no backdrop of their own: these lie under both, so
+           while the grids glide onto each other each shows the other's hand. -->
+      <div class="backdrops" aria-hidden="true">
+        {#each HANDS as hand (hand)}
+          <div
+            class="backdrop"
+            class:waiting={turn !== null && turn !== hand}
+            bind:this={backdrops[hand]}
+          ></div>
+        {/each}
+      </div>
       <div class="halves" inert={together} bind:this={halvesBox}>
         {#each HANDS as hand (hand)}
           {@const red = hand === RED}
-          <div class="half" bind:this={halves[hand]}>
+          {@const picked = pickedPoint(hand)}
+          <div
+            class="half"
+            class:red
+            class:turn={turn === hand}
+            class:waiting={turn !== null && turn !== hand}
+            bind:this={halves[hand]}
+          >
             <PropPlacementGrid
               gridMode={GridMode.DIAMOND}
               hands={red ? "right" : "left"}
@@ -342,15 +461,15 @@
               promptText=""
               renderTray={false}
               showUndo={false}
-              initialLeftLocation={red ? null : START[BLUE]}
-              initialRightLocation={red ? START[RED] : null}
-              disabled={red && !blueMoved}
+              initialLeftLocation={red ? null : rest[BLUE]}
+              initialRightLocation={red ? rest[RED] : null}
+              disabled={turn !== hand}
               editAfterCompletion={true}
-              dragLocations={true}
               tapToMove={true}
+              onPick={pick}
+              transparentBackground={true}
+              motionMove={travels[hand]}
               animateContent={true}
-              onDragTarget={(target) => aimed(hand, target)}
-              onChange={(change) => changed(hand, change)}
             >
               {#snippet figureLayer()}
                 <MotionMapArrows
@@ -358,6 +477,16 @@
                   to={arrows[hand].to}
                   {hand}
                 />
+                <svg class="picked" viewBox="0 0 950 950" aria-hidden="true">
+                  {#each POINTS as point (point.location)}
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r="75"
+                      class:shown={point.location === picked && !flying}
+                    />
+                  {/each}
+                </svg>
               {/snippet}
             </PropPlacementGrid>
           </div>
@@ -376,7 +505,6 @@
           showUndo={false}
           initialLeftLocation={fusedAt[BLUE]}
           initialRightLocation={fusedAt[RED]}
-          motionMove={fusedMove}
           editAfterCompletion={false}
           dragLocations={false}
           animateContent={true}
@@ -403,6 +531,9 @@
                 />
               </div>
             {/if}
+            {#each stillHands as hand (hand)}
+              <MotionMapArrows from={fusedAt[hand]} to={fusedAt[hand]} {hand} />
+            {/each}
           {/snippet}
         </PropPlacementGrid>
       </div>
@@ -490,16 +621,82 @@
     outline: none;
   }
 
-  .halves {
+  .halves,
+  .backdrops {
+    grid-area: 1 / 1;
     display: grid;
     grid-template-columns: repeat(2, var(--half));
     gap: var(--half-gap);
   }
 
+  .backdrop {
+    width: var(--half);
+    aspect-ratio: 1;
+    border-radius: 12px;
+    background: var(--dm-pictograph-bg, #0a0a0f);
+    transform-origin: center;
+    transition: opacity var(--transition-normal);
+  }
+
   .half {
+    --hand: var(--dm-motion-blue, var(--prop-blue, #3b82f6));
+    position: relative;
     width: var(--half);
     aspect-ratio: 1;
     transform-origin: center;
+    transition: opacity var(--transition-normal);
+  }
+
+  .half.red {
+    --hand: var(--dm-motion-red, var(--prop-red, #ef4444));
+  }
+
+  /* Whose turn it is: a frame and a glow in the hand's colour. */
+  .half::after {
+    content: "";
+    position: absolute;
+    inset: -0.35rem;
+    border: 2px solid var(--hand);
+    border-radius: 1rem;
+    box-shadow: 0 0 1.25rem color-mix(in srgb, var(--hand) 45%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
+  }
+
+  .half.turn::after {
+    opacity: 1;
+  }
+
+  .half.waiting,
+  .backdrop.waiting {
+    opacity: 0.45;
+  }
+
+  /* The halves dim themselves; the grid's own disabled fade would stack. */
+  .half :global(.placement-grid.disabled) {
+    opacity: 1;
+  }
+
+  .picked {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .picked circle {
+    fill: color-mix(in srgb, var(--hand) 22%, transparent);
+    stroke: var(--hand);
+    stroke-width: 2.5;
+    vector-effect: non-scaling-stroke;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+  }
+
+  .picked circle.shown {
+    opacity: 1;
   }
 
   .fused {
@@ -513,7 +710,8 @@
     pointer-events: none;
   }
 
-  .together .halves {
+  .together .halves,
+  .together .backdrops {
     opacity: 0;
   }
 

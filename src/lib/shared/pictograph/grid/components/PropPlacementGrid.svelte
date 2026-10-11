@@ -87,6 +87,14 @@
      * point wears Assemble's ring so the choices show. Needs editAfterCompletion.
      */
     tapToMove?: boolean;
+    /**
+     * A press picks a point for the hand instead of moving it there: the hand
+     * stays put and the grid reports the pick, for a figure that plays the
+     * move itself later.
+     */
+    onPick?: (hand: HandSide, location: GridLocation) => void;
+    /** No backdrop behind the grid, so a grid laid over another shows both. */
+    transparentBackground?: boolean;
     /** False hides the hands and shows the grid alone, as a self-building figure starts. */
     showProps?: boolean;
     /** Fires once the pictograph has drawn (PictographContainer onReady). */
@@ -134,6 +142,8 @@
     gridJoin = null,
     hands = "both",
     tapToMove = false,
+    onPick,
+    transparentBackground = false,
     showProps = true,
     onReady,
     figureLayer,
@@ -202,9 +212,11 @@
       getActivePoints: () => activePoints,
       getHands: () => hands,
       getTapToMove: () => tapToMove,
+      getPickOnly: () => onPick !== undefined,
     },
     {
       triggerHaptic,
+      onPick: (hand, location) => onPick?.(hand, location),
       onChange: (change) => onChange(change),
       onPlacementComplete: (left, right) => onPlacementComplete?.(left, right),
       onOrientationChange: (color, orientation) =>
@@ -420,6 +432,7 @@
           motionStartData={withJoin(motion.startData)}
           motionProgress={motion.active ? motion.progress : null}
           arrowOpacity={motion.active ? 0 : 1}
+          {transparentBackground}
           {showProps}
           {onReady}
         />

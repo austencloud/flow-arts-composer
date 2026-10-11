@@ -72,48 +72,26 @@ export function roundHands(
 }
 
 /**
- * Both hands' moves played together from the round's start: the hands that
- * travel, a dash straight through the centre and a shift around it. Null when
- * both are static.
+ * One hand's move from where the round began, played on its own grid: a dash
+ * straight through the centre, a shift around it. Null until the hand has
+ * been dropped, and for a static hand, which does not travel.
  */
-export function roundReplay(
+export function handTravel(
   round: PairRound,
+  hand: HandSide,
   epoch: number,
   durationMs: number
 ): PlacementMotionMove | null {
-  const hands = roundHands(round);
-  if (!hands) return null;
-  const travels = (
-    [
-      [HandSide.LEFT, hands.left],
-      [HandSide.RIGHT, hands.right],
-    ] as const
-  )
-    .filter(([, made]) => made.move !== "static")
-    .map(([hand, made]) => ({
-      hand,
-      from: made.from,
-      to: made.to,
-      direction: handMoveDirection(made.from, made.to),
-      path: made.move === "dash" ? ("dash" as const) : ("arc" as const),
-    }));
-  const [first, second] = travels;
-  if (!first) return null;
+  const made = round.moves[hand];
+  if (!made || made.move === "static") return null;
+  const from = round.start[hand];
   return {
     epoch,
-    color: first.hand,
-    from: first.from,
-    to: first.to,
-    direction: first.direction,
-    path: first.path,
+    color: hand,
+    from,
+    to: made.to,
+    direction: handMoveDirection(from, made.to),
+    path: made.move === "dash" ? "dash" : "arc",
     durationMs,
-    partner: second
-      ? {
-          from: second.from,
-          to: second.to,
-          direction: second.direction,
-          path: second.path,
-        }
-      : undefined,
   };
 }

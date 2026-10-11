@@ -29,8 +29,10 @@ function createHarness() {
     canAim: false,
     hands: "both" as "both" | "left" | "right",
     tapToMove: false,
+    pickOnly: false,
   };
   const onChange = vi.fn();
+  const onPick = vi.fn();
   const onPlacementComplete = vi.fn();
   const onOrientationChange = vi.fn();
   const triggerHaptic = vi.fn();
@@ -53,9 +55,11 @@ function createHarness() {
         getPlacementGridPoints(values.gridMode, values.showCenter),
       getHands: () => values.hands,
       getTapToMove: () => values.tapToMove,
+      getPickOnly: () => values.pickOnly,
     },
     {
       triggerHaptic,
+      onPick,
       onChange,
       onPlacementComplete,
       onOrientationChange,
@@ -81,6 +85,7 @@ function createHarness() {
     values,
     state,
     onChange,
+    onPick,
     onPlacementComplete,
     onOrientationChange,
     triggerHaptic,
@@ -455,6 +460,22 @@ describe("tap to move", () => {
     );
     expect(aim.landing?.point.location).toBe(NORTH);
     expect(state.tapHand).toBe(HandSide.LEFT);
+  });
+
+  it("with pick only, reports the point pressed and leaves the hand where it is", () => {
+    const harness = tapGrid("left", WEST);
+    harness.values.pickOnly = true;
+    const { state, aim, onChange, onPick } = harness;
+    aim.handleClick(NORTH);
+    expect(onPick).toHaveBeenCalledExactlyOnceWith(HandSide.LEFT, NORTH);
+    expect(state.leftLocation).toBe(WEST);
+    expect(state.historyLength).toBe(0);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(state.liveAnnouncement).toBe("left prop: North picked.");
+    // Its own point is a pick too: a Static move.
+    aim.handleKeydown(new KeyboardEvent("keydown", { key: "Enter" }), WEST);
+    expect(onPick).toHaveBeenLastCalledWith(HandSide.LEFT, WEST);
+    expect(state.leftLocation).toBe(WEST);
   });
 
   it("keeps the hand where it is when its own point is pressed: a Static move", () => {
