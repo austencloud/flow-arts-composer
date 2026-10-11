@@ -110,12 +110,15 @@ describe("toolRow", () => {
     expect(toolRow(POST)).not.toContain("sequence");
   });
 
-  it("offers Grid first and keeps Edit arrangement for an arrangement", () => {
+  it("offers Grid, Edit arrangement, Speed and the look tools for an arrangement", () => {
     expect(toolRow(ARRANGEMENT)).toEqual([
       "back",
       "grid",
       "arrangement",
       "split",
+      "speed",
+      "look",
+      "effects",
       "timing",
       "position",
       "fade",
@@ -123,17 +126,23 @@ describe("toolRow", () => {
       "duplicate",
       "delete",
     ]);
+    expect(availablePanels(ARRANGEMENT)).toContain("transition");
   });
 
-  it("offers the cell's own tools, ending in Clear, for a cell", () => {
+  it("offers the cell's own tools, Look to Effort, ending in Clear, for a cell", () => {
     expect(toolRow(CELL)).toEqual([
       "back",
       "sequence",
       "layers",
       "offset",
+      "look",
+      "effects",
+      "effort",
       "clear",
     ]);
+    expect(isPanelTool("effort")).toBe(true);
     expect(isPanelTool("clear")).toBe(false);
+    expect(availablePanels(CELL)).not.toContain("transition");
   });
 });
 
@@ -178,7 +187,6 @@ describe("panels", () => {
     expect(shownPanel("layers", ARRANGEMENT, true)).toBe("grid");
     expect(shownPanel("layers", ARRANGEMENT, false)).toBeNull();
     expect(shownPanel("grid", CELL, true)).toBe("sequence");
-    expect(availablePanels(ARRANGEMENT)).not.toContain("transition");
   });
 });
 

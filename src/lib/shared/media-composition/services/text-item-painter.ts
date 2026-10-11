@@ -1,6 +1,22 @@
 import type { CompiledTextItem } from "#lib/shared/media-composition/domain/post-project-compiler.js";
 import { TEXT_BOX_WIDTH } from "#lib/shared/media-composition/domain/post-project.js";
 import {
+  CALLOUT_BORDER,
+  CALLOUT_BORDER_WIDTH,
+  CALLOUT_FILL,
+  CALLOUT_LINE_HEIGHT,
+  CALLOUT_MIN_SCALE,
+  CALLOUT_SHADOW,
+  CALLOUT_SHADOW_BLUR,
+  CALLOUT_SHADOW_OFFSET_Y,
+  CALLOUT_TEXT,
+  calloutFont,
+  calloutGeometry,
+  calloutOverflow,
+  traceCalloutPath,
+} from "#lib/shared/media-composition/domain/callout-layout.js";
+import type { PostCallout } from "#lib/shared/media-composition/domain/post-project.js";
+import {
   CAPTION_LINE_HEIGHT_FRACTION,
   CAPTION_SIZE_FRACTION,
   CAPTION_STROKE_WIDTH_FRACTION,
@@ -87,6 +103,7 @@ class TextItemPainter implements PostStudioLayerPainter {
 
   paintOverflow(target: { width: number; height: number }): PaintInsets {
     const compiled = this.getText();
+    if (compiled?.callout) return calloutOverflow(target, compiled.box);
     if (!compiled?.style || !compiled.animation)
       return { top: 0, right: 0, bottom: 0, left: 0 };
     const frameWidth = target.width / compiled.box.width;
@@ -133,6 +150,10 @@ class TextItemPainter implements PostStudioLayerPainter {
     if (rect.width <= 0 || rect.height <= 0) return;
     const compiled = this.getText();
     if (!compiled) return;
+    if (compiled.callout) {
+      this.paintCallout(context, rect, compiled, compiled.callout);
+      return;
+    }
     const text = compiled.style ? compiled.text : compiled.text.trim();
     if (text.length === 0) return;
 
@@ -268,6 +289,70 @@ class TextItemPainter implements PostStudioLayerPainter {
       });
     });
 
+    context.restore();
+  }
+
+  /**
+   * A speech bubble: the plate and tail as one outline, then the words in
+   * the app's own type, left-aligned, shrinking to fit no further than
+   * CALLOUT_MIN_SCALE. A callout ignores the InShot `style` and `animation`;
+   * it fades with the item's own fades.
+   */
+  private paintCallout(
+    context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+    rect: PaintRect,
+    compiled: CompiledTextItem,
+    callout: PostCallout
+  ): void {
+    const text = compiled.text.trim();
+    if (text.length === 0) return;
+    const geometry = calloutGeometry(
+      rect,
+      compiled.box,
+      callout,
+      compiled.size
+    );
+    context.save();
+    context.shadowColor = CALLOUT_SHADOW;
+    context.shadowBlur = CALLOUT_SHADOW_BLUR * geometry.unit;
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = CALLOUT_SHADOW_OFFSET_Y * geometry.unit;
+    traceCalloutPath(context, rect, geometry);
+    context.fillStyle = CALLOUT_FILL;
+    context.fill();
+    context.shadowColor = "transparent";
+    context.shadowBlur = 0;
+    context.shadowOffsetY = 0;
+    context.strokeStyle = CALLOUT_BORDER;
+    context.lineWidth = CALLOUT_BORDER_WIDTH * geometry.unit;
+    context.stroke();
+
+    const maxWidth = rect.width - 2 * geometry.padX;
+    const maxHeight = rect.height - 2 * geometry.padY;
+    const floor = geometry.fontPx * CALLOUT_MIN_SCALE;
+    const measure = (line: string) => context.measureText(line).width;
+    let fontPx = geometry.fontPx;
+    let lines: string[] = [];
+    for (;;) {
+      context.font = calloutFont(fontPx);
+      lines = wrapCaptionText(text, measure, maxWidth);
+      const fits =
+        lines.length * fontPx * CALLOUT_LINE_HEIGHT <= maxHeight &&
+        lines.every((line) => measure(line) <= maxWidth);
+      if (fits || fontPx <= floor) break;
+      fontPx = Math.max(floor, fontPx - Math.max(1, geometry.unit));
+    }
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+    context.fillStyle = CALLOUT_TEXT;
+    const lineYs = captionLineYPositions(
+      rect.y + rect.height / 2,
+      lines.length,
+      fontPx * CALLOUT_LINE_HEIGHT
+    );
+    lines.forEach((line, index) =>
+      context.fillText(line, rect.x + geometry.padX, lineYs[index]!)
+    );
     context.restore();
   }
 }

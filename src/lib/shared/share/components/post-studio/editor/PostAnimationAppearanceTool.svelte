@@ -55,9 +55,17 @@
   import { updateItem } from "#lib/shared/media-composition/domain/post-project-edits.js";
   import type { PostEditorState } from "#lib/shared/media-composition/state/post-editor-state.svelte.js";
   import {
-    copyPostAnimationEffects,
+    postAnimationEffectsConfig,
     postAnimationTrailSettings,
-  } from "../post-animation-effects.svelte";
+  } from "#lib/shared/media-composition/domain/post-animation-effects.svelte";
+
+  type Section = "props" | "effects" | "efforts" | "display";
+  const ALL_SECTIONS: readonly Section[] = [
+    "props",
+    "effects",
+    "efforts",
+    "display",
+  ];
 
   let {
     editor,
@@ -71,6 +79,7 @@
     locked,
     fill = false,
     defaultPropType = PropType.STAFF,
+    sections = ALL_SECTIONS,
   }: {
     editor: PostEditorState;
     item?: PostAnimationItem | PostMovesItem | null;
@@ -93,11 +102,19 @@
     /** Fit the editor's bounded tool area; mapping accordions stay intrinsic. */
     fill?: boolean;
     defaultPropType?: PropType;
+    /** Which sections to offer, in the rail's order. One section shows without the rail. */
+    sections?: readonly Section[];
   } = $props();
 
-  type Section = "props" | "effects" | "efforts" | "display";
   const id = $props.id();
-  let activeSection = $state<Section>("display");
+  let pickedSection = $state<Section | null>(null);
+  const activeSection = $derived(
+    pickedSection && sections.includes(pickedSection)
+      ? pickedSection
+      : sections.includes("display")
+        ? "display"
+        : (sections[0] ?? "display")
+  );
   let pickedPropType = $state<PropType | undefined>();
   let pickedPropLook = $state<PropLook>("pictograph");
   const DEFAULT_MANDALA_THICKNESS = 2.5;
@@ -236,7 +253,8 @@
     persist: false,
   });
   trailSettings.replaceAll(animationSettings.snapshot());
-  const sections = $derived([
+  const pills = $derived(
+    [
     {
       id: "props" as const,
       label: "Props",
@@ -264,7 +282,8 @@
       icon: "fa-eye",
       accentColor: RAIL_CATEGORY_ACCENTS.display,
     },
-  ]);
+    ].filter((pill) => sections.includes(pill.id))
+  );
   const keys = [
     "gridMode",
     "props",
@@ -311,23 +330,10 @@
           appearance?.propLook ?? getSettings().propArtwork
         );
         effectsWereEdited = !!appearance?.effects || !!trail;
-        const nextEffects = copyPostAnimationEffects(
-          appearance?.effects ?? initialEffects
+        const nextEffects = postAnimationEffectsConfig(
+          appearance,
+          initialEffects
         );
-        if (trail && !appearance?.effects) {
-          nextEffects.trails = {
-            ...nextEffects.trails,
-            trackingMode: trail.trackingMode,
-            thickness: trail.thickness,
-            brightness: trail.brightness,
-            leftColor: trail.leftColor,
-            rightColor: trail.rightColor,
-          };
-          nextEffects.activeEffect = trail.enabled ? "trails" : "none";
-          nextEffects.tipEffectMap = trail.enabled
-            ? { "*": { effect: "trails" } }
-            : {};
-        }
         trailSettings.updateSettings({
           trail: postAnimationTrailSettings(initialTrail, nextEffects, trail),
         });
@@ -421,17 +427,19 @@
   {#if locked}
     <p>Unlock this layer to change its appearance.</p>
   {:else}
-    <div class="section-navigation">
-      <IconRailNav
-        pills={sections}
-        activeId={activeSection}
-        onSelect={(section) => (activeSection = section)}
-        orientation="horizontal"
-        compact
-        panelIdPrefix={id}
-        ariaLabel="Animation appearance"
-      />
-    </div>
+    {#if sections.length > 1}
+      <div class="section-navigation">
+        <IconRailNav
+          {pills}
+          activeId={activeSection}
+          onSelect={(section) => (pickedSection = section)}
+          orientation="horizontal"
+          compact
+          panelIdPrefix={id}
+          ariaLabel="Animation appearance"
+        />
+      </div>
+    {/if}
     <div
       class="section-content"
       class:display={activeSection === "display"}

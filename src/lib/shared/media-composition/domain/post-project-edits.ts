@@ -70,13 +70,20 @@ import {
   setBpm,
   setCellAppearance,
   setCellLayers,
+  setCellMotionVisibility,
   setCellOffset,
+  setCellTipEffects,
+  setCellTipEfforts,
   setGrid,
   setSkipStartPlacement,
   staggerCells,
   type ArrangementCellOffset,
 } from "#lib/shared/media-composition/domain/arrangement-edits.js";
 import type { TunnelLayerConfig } from "#lib/shared/animation-engine/domain/compose-types.js";
+import type {
+  TipEffectMap,
+  TipEffortMap,
+} from "#lib/shared/animation-engine/domain/types/tip-effect-types.js";
 import {
   clampShapeRatio,
   postCanvasOf,
@@ -338,6 +345,65 @@ export function setArrangementCellAppearance(
 ): PostProject {
   return editArrangement(project, itemId, ctx, (snapshot) =>
     setCellAppearance(snapshot, cellId, appearance)
+  );
+}
+
+export function setArrangementCellTipEffects(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  map: TipEffectMap | undefined,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellTipEffects(snapshot, cellId, map)
+  );
+}
+
+export function setArrangementCellTipEfforts(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  map: TipEffortMap | undefined,
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellTipEfforts(snapshot, cellId, map)
+  );
+}
+
+export function setArrangementCellMotionVisibility(
+  project: PostProject,
+  itemId: string,
+  cellId: string,
+  visible: { left?: boolean; right?: boolean },
+  ctx: EditContext
+): PostProject {
+  return editArrangement(project, itemId, ctx, (snapshot) =>
+    setCellMotionVisibility(snapshot, cellId, visible)
+  );
+}
+
+/** The clip's playback speed; its source span stays and its length follows, as a video's does. */
+export function setArrangementSpeed(
+  project: PostProject,
+  itemId: string,
+  speed: number,
+  ctx: EditContext
+): PostProject {
+  const located = findItem(project, itemId);
+  if (located?.item.kind !== "arrangement" || !Number.isFinite(speed))
+    return project;
+  const item = located.item;
+  const next = clamp(speed, POST_MIN_SPEED, POST_MAX_SPEED);
+  if (next === item.speed) return project;
+  return finish(
+    replaceItem(project, itemId, {
+      ...item,
+      speed: next,
+      duration: (item.sourceOut - item.sourceIn) / next,
+    }),
+    ctx
   );
 }
 
@@ -2800,7 +2866,7 @@ function placeOnOrAbove(
 }
 
 /** A fresh clip of a take at speed 1 with its span cut to the take. */
-function newVideoFields(
+export function newVideoFields(
   take: PostTake,
   sourceIn: number,
   sourceOut: number
