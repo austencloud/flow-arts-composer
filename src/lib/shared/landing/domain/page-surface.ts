@@ -20,10 +20,20 @@
 export const ARCHIVE_INK = "oklch(0.115 0.008 270)";
 
 /**
+ * The guide book's canvas. Every deep /guide page paints it edge to edge
+ * (GuideShell publishes it to guide.css as --guide-canvas), and the footer
+ * beneath continues it. The /guide hub is left as it was: it shares the
+ * homepage's chrome for the shared-element morph between the two.
+ */
+export const GUIDE_CANVAS = "oklch(0.13 0.015 270)";
+
+/**
  * The surface the page at `path` runs to the viewport edge, or `undefined`
  * when the page floats on the cosmic background and the footer should keep
  * its scrim.
  */
 export function pageSurface(path: string): string | undefined {
-  return path === "/history" ? ARCHIVE_INK : undefined;
+  if (path === "/history") return ARCHIVE_INK;
+  if (path.startsWith("/guide/")) return GUIDE_CANVAS;
+  return undefined;
 }

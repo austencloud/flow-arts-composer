@@ -254,7 +254,7 @@ describe("landing shared-element contract", () => {
     expect(chrome).not.toContain("MORPH_PATHS.has(path)");
   });
 
-  it("keeps the Guide hub inside persistent root chrome", () => {
+  it("keeps every Guide reading page inside persistent root chrome", () => {
     const layout = readSource("src/routes/+layout.svelte");
     const guidePage = readSource("src/routes/(public)/guide/+page.svelte");
     const guideShell = readSource(
@@ -264,17 +264,23 @@ describe("landing shared-element contract", () => {
       "src/routes/(public)/guide/level-1/_styles/guide.css"
     );
 
-    expect(layout).toMatch(/MARKETING_EXACT[\s\S]*"\/guide"/);
-    expect(guideShell).toContain(
-      'const ownsStandaloneChrome = $derived(page.url.pathname !== "/guide")'
-    );
-    expect(guideShell).toContain("{#if ownsStandaloneChrome}");
+    expect(layout).toMatch(/MARKETING_SUBTREES[\s\S]*"\/guide"/);
+    // Print, book, handbook and cover-lab sheets and the codex viewer keep
+    // their own full-page layouts.
+    expect(layout).toContain("MARKETING_EXCLUDE_PATTERN");
+    // MarketingChrome owns header, footer and theme; the shell owns neither.
+    expect(guideShell).not.toContain("<SiteHeader");
+    expect(guideShell).not.toContain("<SiteFooter");
+    expect(guideShell).not.toContain("applyThemeForBackground");
+    expect(guideShell).toContain("<GuideRail");
+    expect(guideShell).toContain("<GuideTocList");
     expect(guidePage).not.toContain("joinWaitlist");
     // Lesson first: the primary action opens the first lesson from step one.
     expect(guidePage).toContain("buildConceptStartPath(firstLessonId)");
     expect(guidePage).toContain("href={firstLessonHref}");
     expect(readEnglishMessages().guide_hub_start_lesson).toBeTruthy();
-    expect(guideCss).toContain("html:has(.guide-layout):not(:has(.mkt-shell))");
+    expect(guideCss).not.toContain(".guide-sidebar");
+    expect(guideCss).toContain("--page-rail-reserved");
   });
 
   it("keeps development morph probes out of the console POST bridge", () => {
