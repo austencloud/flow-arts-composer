@@ -43,7 +43,10 @@
   // path; tests/unit/effects/effect-orchestrator-mounts-layer.test.ts now
   // guards against that recurring.
   import SparkleEmitter from "./particles/SparkleEmitter.svelte";
-  import ElectricityArc from "./energy/ElectricityArc.svelte";
+  import ZapDischarge3D from "./energy/ZapDischarge3D.svelte";
+  import type { ZapEndpoint3D } from "./energy/zap-discharge-3d";
+  import { getSettings } from "#lib/shared/application/state/app-state.svelte.js";
+  import { resolveTrailColors } from "#lib/shared/animation-engine/domain/resolve-trail-colors.js";
   // PropMotionEffects is the LEGACY per-prop motion blur/speed-line mount
   // driven by configState.motion (the `effects-config-state` next to this
   // file, not the unified one). Phase 3 retires it. Ghost is the unified
@@ -307,6 +310,29 @@
     return calculatePropEnds(rightPropState, rightPropType);
   });
 
+  // Zap's prop colors are the trail's resolved hand colors, the same pair
+  // the 3D trail and the 2D tips draw with.
+  const zapEndpoints = $derived.by((): ZapEndpoint3D[] => {
+    if (!zap3D) return [];
+    const colors = unifiedState
+      ? resolveTrailColors(unifiedState.trails, getSettings().primaryPropColors)
+      : null;
+    const out: ZapEndpoint3D[] = [];
+    const add = (
+      ends: { positive: Vector3; negative: Vector3 | null } | null,
+      prop: 0 | 1,
+      color: string
+    ) => {
+      if (!ends) return;
+      out.push({ position: ends.positive, prop, end: 1, color });
+      if (ends.negative)
+        out.push({ position: ends.negative, prop, end: 0, color });
+    };
+    add(leftEnds, 0, colors?.leftColor ?? zap3D.leftColor);
+    add(rightEnds, 1, colors?.rightColor ?? zap3D.rightColor);
+    return out;
+  });
+
   function vectorFrom(
     value: { x: number; y: number; z: number } | undefined
   ): Vector3 {
@@ -401,41 +427,15 @@
      Electricity / Zap Effects (sourced from unified intent layer via resolveZap3D)
      ============================================================================= -->
 {#if zap3D}
-  {#if leftPropState && rightPropState && leftEnds && rightEnds}
-    <!-- jitterAmount/segments/regenerateEveryFrames have been on Zap3DParams
-         since it was defined and nothing read them; the arc hardcoded a
-         25-metre displacement instead. -->
-    <ElectricityArc
-      start={leftEnds.positive}
-      end={rightEnds.positive}
-      enabled={zapEnabled && isPlaying}
-      intensity={zap3D.intensity}
-      color={zap3D.leftColor}
-      mode={zap3D.mode}
-      displacement={zap3D.jitterAmount}
-      segments={zap3D.segments}
-      regenerateEveryFrames={zap3D.regenerateEveryFrames}
-      {sceneEffectsManager}
-      lightSpaceRoot={effectSpaceRoot}
-    />
-    <!-- The second arc needs a back end on BOTH props. One club in hand and
-         there is nothing to arc between. -->
-    {#if leftEnds.negative && rightEnds.negative}
-      <ElectricityArc
-        start={leftEnds.negative}
-        end={rightEnds.negative}
-        enabled={zapEnabled && isPlaying}
-        intensity={zap3D.intensity}
-        color={zap3D.rightColor}
-        mode={zap3D.mode}
-        displacement={zap3D.jitterAmount}
-        segments={zap3D.segments}
-        regenerateEveryFrames={zap3D.regenerateEveryFrames}
-        {sceneEffectsManager}
-        lightSpaceRoot={effectSpaceRoot}
-      />
-    {/if}
-  {/if}
+  <!-- One mount for every bolt: matching ends of the two props pair up, and a
+       lone end (one prop in hand) crackles on its own. -->
+  <ZapDischarge3D
+    endpoints={zapEndpoints}
+    params={zap3D}
+    enabled={zapEnabled && isPlaying}
+    {sceneEffectsManager}
+    lightSpaceRoot={effectSpaceRoot}
+  />
 {/if}
 
 <!-- =============================================================================

@@ -21,12 +21,21 @@
     savedProject: PostProject | null;
     exportedBlob: Blob | null;
     exportUrl: string | null;
+    /** The cell the preview marks as selected, read from the page. */
+    readonly selectedCellId: string | null;
   };
   const probe: FixtureProbe = {
     initialProject: fixture.project,
     savedProject: null,
     exportedBlob: null,
     exportUrl: null,
+    get selectedCellId() {
+      return (
+        document
+          .querySelector('[data-arrangement-cell-selected="true"]')
+          ?.getAttribute("data-arrangement-cell") ?? null
+      );
+    },
   };
 
   onMount(() => {

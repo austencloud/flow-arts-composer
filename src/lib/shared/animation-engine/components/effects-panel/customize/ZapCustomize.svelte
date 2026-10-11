@@ -17,6 +17,15 @@
     { value: "plasma", label: "Plasma", icon: "fa-fire-flame-simple" },
     { value: "web", label: "Web", icon: "fa-diagram-project" },
   ];
+
+  const COLOR_MODES: {
+    value: ZapIntent["colorMode"];
+    label: string;
+    icon: string;
+  }[] = [
+    { value: "prop", label: "Prop", icon: "fa-palette" },
+    { value: "custom", label: "Custom", icon: "fa-eye-dropper" },
+  ];
 </script>
 
 <div class="customize-view">
@@ -74,38 +83,48 @@
         <span class="slider-value">{state.zap.frequency}/s</span>
       </div>
 
-      <!-- Per-hand color pickers -->
-      <div class="color-row">
-        <span class="color-label">{t("effect_deep_colors")}</span>
-        <div class="color-pickers">
-          <label class="color-picker">
-            <input
-              type="color"
-              value={state.zap.leftColor}
-              oninput={(e) =>
-                state.updateEffect("zap", {
-                  leftColor: (e.currentTarget as HTMLInputElement).value,
-                })}
-            />
-            <span class="color-hand blue">{t("effect_deep_left")}</span>
-          </label>
-          <label class="color-picker">
-            <input
-              type="color"
-              value={state.zap.rightColor}
-              oninput={(e) =>
-                state.updateEffect("zap", {
-                  rightColor: (e.currentTarget as HTMLInputElement).value,
-                })}
-            />
-            <span class="color-hand red">{t("effect_deep_right")}</span>
-          </label>
+      <!-- Prop colors by default; Custom unlocks the per-hand pickers -->
+      <OptionChipRow
+        label="Color"
+        ariaLabel="Zap color"
+        value={state.zap.colorMode}
+        options={COLOR_MODES}
+        onChange={(v) => state.updateEffect("zap", { colorMode: v })}
+      />
+
+      {#if state.zap.colorMode === "custom"}
+        <div class="color-row">
+          <span class="color-label">{t("effect_deep_colors")}</span>
+          <div class="color-pickers">
+            <label class="color-picker">
+              <input
+                type="color"
+                value={state.zap.leftColor}
+                oninput={(e) =>
+                  state.updateEffect("zap", {
+                    leftColor: (e.currentTarget as HTMLInputElement).value,
+                  })}
+              />
+              <span class="color-hand blue">{t("effect_deep_left")}</span>
+            </label>
+            <label class="color-picker">
+              <input
+                type="color"
+                value={state.zap.rightColor}
+                oninput={(e) =>
+                  state.updateEffect("zap", {
+                    rightColor: (e.currentTarget as HTMLInputElement).value,
+                  })}
+              />
+              <span class="color-hand red">{t("effect_deep_right")}</span>
+            </label>
+          </div>
         </div>
-      </div>
+      {/if}
 
       <AdvancedControls count={5}>
-        <!-- Branching (Storm style only) -->
-        {#if state.zap.style === "branching"}
+        <!-- Branching (Storm and Web) -->
+        {#if state.zap.style !== "plasma"}
           <div class="slider-row">
             <label for="zap-branching">{t("effect_deep_branching")}</label>
             <input

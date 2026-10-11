@@ -67,6 +67,51 @@ function migratePulseSolidTint(value: unknown, lookApplied: boolean): unknown {
   return pulse;
 }
 
+/** The v40 factory Zap: the plasma look at one strike a second. */
+const ZAP_V40_FACTORY: Readonly<UnknownRecord> = {
+  intensity: 0.7,
+  frequency: 1,
+  branching: 0.35,
+  style: "plasma",
+  wobbleRate: 0.18,
+  wobbleAmount: 0.5,
+};
+const ZAP_V40_FACTORY_COLOR = "#88ccff";
+
+/**
+ * v41 rebuilt Zap as real lightning colored by the props. Without a look
+ * applied, every field still at its v40 factory value moves to the new
+ * default, so an untouched Zap becomes prop-colored Storm while a value someone
+ * set stays. Colors someone picked, and every look's palette, stay as chosen
+ * under the Custom color mode.
+ */
+function migrateZapLightning(value: unknown, lookApplied: boolean): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const zap: UnknownRecord = { ...(value as UnknownRecord) };
+  if (zap.colorMode === "prop" || zap.colorMode === "custom") return zap;
+  const factory = DEFAULT_EFFECTS_CONFIG.zap as unknown as UnknownRecord;
+  const color = (field: string) =>
+    typeof zap[field] === "string"
+      ? (zap[field] as string).toLowerCase()
+      : ZAP_V40_FACTORY_COLOR;
+  const factoryColors =
+    color("leftColor") === ZAP_V40_FACTORY_COLOR &&
+    color("rightColor") === ZAP_V40_FACTORY_COLOR;
+  if (lookApplied || !factoryColors) {
+    zap.colorMode = "custom";
+  } else {
+    zap.colorMode = "prop";
+    zap.leftColor = factory.leftColor;
+    zap.rightColor = factory.rightColor;
+  }
+  if (!lookApplied) {
+    for (const [field, old] of Object.entries(ZAP_V40_FACTORY)) {
+      if (zap[field] === undefined || zap[field] === old) zap[field] = factory[field];
+    }
+  }
+  return zap;
+}
+
 /**
  * Migrate an arbitrary stored EffectsConfig up to the current version.
  * Safe to call on a current-version config (returns it unchanged after
@@ -591,6 +636,15 @@ export function migrateEffectsConfig(raw: unknown): EffectsConfig {
       input.pulse,
       Boolean(input.activePresets?.pulse)
     ) as EffectsConfig["pulse"];
+  }
+
+  // v40 → v41: Zap is rebuilt as prop-colored lightning; an untouched factory
+  // Zap moves to the new default, chosen colors and looks stay custom.
+  if (version < 41 && input.zap) {
+    input.zap = migrateZapLightning(
+      input.zap,
+      Boolean(input.activePresets?.zap)
+    ) as EffectsConfig["zap"];
   }
 
   const out: EffectsConfig = {

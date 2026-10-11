@@ -49,25 +49,22 @@ describe("Construct", () => {
       at(99, 1, 46),
     ]);
     expect(constructLayout("roomy", 308, 96)).toEqual([
-      at(0, 11, 73),
-      at(78, 11, 73),
-      at(156, 11, 73),
-      at(234, 11, 73),
+      at(5, 0, 96),
+      at(106, 0, 96),
+      at(207, 0, 96),
     ]);
   });
 
-  it("wraps them two by two in a square", () => {
+  it("centers the last step under the first two in a square", () => {
     expect(constructLayout("square", 144, 144)).toEqual([
       at(0, 0, 68),
       at(75, 0, 68),
-      at(0, 75, 68),
-      at(75, 75, 68),
+      at(38, 75, 68),
     ]);
     expect(constructLayout("square", 200, 200)).toEqual([
       at(0, 0, 96),
       at(104, 0, 96),
-      at(0, 104, 96),
-      at(104, 104, 96),
+      at(52, 104, 96),
     ]);
   });
 });

@@ -15,7 +15,10 @@ import {
 } from "./sparkle-texture-atlas-3d";
 
 const CAPACITY = 2048;
-const BASE_SPAWN_RATE = 24;
+// At full rate, a 1.3s Starfall trail retains roughly 66 sharp glints per
+// primary tip (120 × 1.3 × 42%), before lifetime jitter and screen clipping.
+const BASE_SPAWN_RATE = 120;
+const HERO_FRACTION = 0.42;
 const TAU = Math.PI * 2;
 
 export class SparkleRenderer3D {
@@ -230,7 +233,7 @@ export class SparkleRenderer3D {
       this.vz[slot] = (dz / length) * speed;
       this.age[slot] = 0;
       this.maxAge[slot] = params.lifetime * (0.6 + Math.random() * 0.8);
-      this.hero[slot] = Math.random() < 0.28 ? 1 : 0;
+      this.hero[slot] = Math.random() < HERO_FRACTION ? 1 : 0;
       this.diagonal[slot] = Math.random() < 0.5 ? 1 : 0;
       this.size[slot] =
         params.baseRadius *

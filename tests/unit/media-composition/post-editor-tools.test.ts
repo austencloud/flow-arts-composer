@@ -14,6 +14,15 @@ const MAIN_CLIP: PostToolSelection = { kind: "video", hasLayout: true };
 const OVERLAY_CLIP: PostToolSelection = { kind: "video", hasLayout: false };
 const TEXT: PostToolSelection = { kind: "text", hasLayout: false };
 const CARD: PostToolSelection = { kind: "card", hasLayout: false };
+const ARRANGEMENT: PostToolSelection = {
+  kind: "arrangement",
+  hasLayout: false,
+};
+const CELL: PostToolSelection = {
+  kind: "arrangement",
+  hasLayout: false,
+  cell: true,
+};
 
 describe("toolRow", () => {
   it("offers the post's tools when nothing is selected", () => {
@@ -100,6 +109,32 @@ describe("toolRow", () => {
     }
     expect(toolRow(POST)).not.toContain("sequence");
   });
+
+  it("offers Grid first and keeps Edit arrangement for an arrangement", () => {
+    expect(toolRow(ARRANGEMENT)).toEqual([
+      "back",
+      "grid",
+      "arrangement",
+      "split",
+      "timing",
+      "position",
+      "fade",
+      "rename",
+      "duplicate",
+      "delete",
+    ]);
+  });
+
+  it("offers the cell's own tools, ending in Clear, for a cell", () => {
+    expect(toolRow(CELL)).toEqual([
+      "back",
+      "sequence",
+      "layers",
+      "offset",
+      "clear",
+    ]);
+    expect(isPanelTool("clear")).toBe(false);
+  });
 });
 
 describe("panels", () => {
@@ -135,6 +170,15 @@ describe("panels", () => {
     expect(shownPanel("crop", TEXT, false)).toBeNull();
     expect(shownPanel("layout", OVERLAY_CLIP, true)).toBe("trim");
     expect(shownPanel(null, POST, false)).toBeNull();
+  });
+
+  it("swaps the grid's panels for the cell's and back as the cell comes and goes", () => {
+    expect(defaultPanel(ARRANGEMENT)).toBe("grid");
+    expect(defaultPanel(CELL)).toBe("sequence");
+    expect(shownPanel("layers", ARRANGEMENT, true)).toBe("grid");
+    expect(shownPanel("layers", ARRANGEMENT, false)).toBeNull();
+    expect(shownPanel("grid", CELL, true)).toBe("sequence");
+    expect(availablePanels(ARRANGEMENT)).not.toContain("transition");
   });
 });
 

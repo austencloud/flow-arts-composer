@@ -8,8 +8,52 @@ describe("migrateEffectsConfig", () => {
     const v1 = { version: 1 };
     const out = migrateEffectsConfig(v1);
     expect(out.version).toBe(EFFECTS_CONFIG_VERSION);
-    expect(out.zap.leftColor).toBe("#88ccff");
-    expect(out.zap.rightColor).toBe("#88ccff");
+    expect(out.zap.leftColor).toBe(DEFAULT_EFFECTS_CONFIG.zap.leftColor);
+    expect(out.zap.rightColor).toBe(DEFAULT_EFFECTS_CONFIG.zap.rightColor);
+    expect(out.zap.colorMode).toBe("prop");
+  });
+
+  describe("v40 → v41 Zap lightning", () => {
+    const v40Factory = {
+      intensity: 0.7,
+      leftColor: "#88ccff",
+      rightColor: "#88ccff",
+      frequency: 1,
+      mode: "arc",
+      branching: 0.35,
+      style: "plasma",
+      wobbleRate: 0.18,
+      wobbleAmount: 0.5,
+      glow: 0.5,
+      jitter: 0.5,
+    };
+
+    it("moves an untouched factory Zap to the new prop-colored defaults", () => {
+      const out = migrateEffectsConfig({ version: 40, zap: v40Factory });
+      expect(out.zap).toEqual(DEFAULT_EFFECTS_CONFIG.zap);
+    });
+
+    it("keeps a tuned Zap's own values and colors", () => {
+      const out = migrateEffectsConfig({
+        version: 40,
+        zap: { ...v40Factory, leftColor: "#ff0000", frequency: 9 },
+      });
+      expect(out.zap.colorMode).toBe("custom");
+      expect(out.zap.leftColor).toBe("#ff0000");
+      expect(out.zap.rightColor).toBe("#88ccff");
+      expect(out.zap.frequency).toBe(9);
+    });
+
+    it("keeps an applied look's palette", () => {
+      const out = migrateEffectsConfig({
+        version: 40,
+        zap: v40Factory,
+        activePresets: { zap: "storm" },
+      });
+      expect(out.zap.colorMode).toBe("custom");
+      expect(out.zap.style).toBe("plasma");
+      expect(out.zap.leftColor).toBe("#88ccff");
+    });
   });
 
   it("migrates v2 zap.color to v3 zap.leftColor + rightColor", () => {

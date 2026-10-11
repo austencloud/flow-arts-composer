@@ -180,21 +180,42 @@ production options pipeline into `method-preview-construct-choices.json`, so
 the front door never loads the pictograph dataset; a test rebuilds them and
 fails on drift.
 
-A short strip holds the start and two or three steps; a roomy strip holds up
-to four. A square shows a 2×2 grid that wraps like the step grid. The finished
+A picked step plays its move as it grows in (2026-10-10), as the step grid's
+arrival plays each new step: its props travel from the pose before it, along
+its arrow, for the arrival's base pace of 0.85 s. The arrival slows moves
+with turns; the preview keeps every move at the base pace so two fit the turn.
+The finger moves on to the next box while a move plays, and lifts away after
+the last tap so it never sits on the last move.
+
+Every shape holds the start and two steps (2026-10-10; it held up to four
+before moves played). A strip lines them up; a square sets the start and the
+first step side by side and centers the second step under them. The finished
 picture is the start position with its steps.
 
 ### Generate
 
 The dice is pressed and the whole strip washes in at once, in the step grid's
 own diagonal wave: each cell's band is its row plus its column, staggered by
-CSS animation delay. Each turn rolls twice (2026-10-10): the finger starts on
-the dice, taps, a real sequence washes in, then it taps again and a different
-one washes in, so the preview shows that every tap is fresh. Each roll is a
-real sequence from `drawMatrixRealization()`, two kept ready between turns; if
-that source fails, rolls step through the demo sequence instead. The dice is
-drawn as a plain glyph for `GhostPointer` to
-press, never a real button.
+CSS animation delay. The finger starts on the dice and taps once; a real
+sequence washes in still, as the step grid shows a roll. Each roll is a real
+sequence from `drawMatrixRealization()`, drawn between turns; if that source
+fails, rolls step through the demo sequence instead. The dice is drawn as a
+plain glyph for `GhostPointer` to press, never a real button.
+
+Once the first step has landed, the roll's first three steps play their
+moves one at a time (2026-10-11), as the workspace's Play steps through a
+sequence: each step's props travel from the pose before it (the start position
+before a sequence's first step), along its arrow, at Construct's 0.85 s pace.
+They land with their props at the start of their moves, so none jumps back to
+start. Most boxes show three steps, so every step shown plays; a four-step
+strip or a 3×3 grid plays its first three. Three moves do not fit a
+three-second turn, so Generate's turn runs 3.7 s. The run ends as the last move
+starts, and that move plays on into the turn's end, so a slow draw costs only
+the end of a move, never a cut.
+
+Turns rolled twice before (2026-10-10), and for a day each cell played its
+move as the wave reached it. That was dropped: the real tool brings steps in
+one after another and never plays them all at once.
 
 Before its first turn, the card rests on the demo sequence half a turn on,
 from its ninth step.
@@ -232,13 +253,16 @@ cache Shape uses, so Shape opens faster afterward.
 
 A blue one-hand path and a red one-hand path slide together and play once as a
 two-prop sequence. The paths are the demo sequence's two hands over its fourth
-and fifth steps, just past Construct's, shown one hand
+and fifth steps, past Construct's, shown one hand
 at a time with `PictographContainer`'s `visibleHand`, as `FuseSourceCard`
 shows Fuse's inputs. Each half shows its arrow from the start, as Fuse's
 source cards do, with its prop where the move begins (2026-10-10: arrows that
 appeared only after the halves met read as something new arriving). After they
-merge, the combined steps play once, the props traveling their real paths
-along the arrows already shown (`motionStartData` and `motionProgress`). A hand
+merge, the combined steps play once, one at a time, the props traveling their
+real paths along the arrows already shown (`motionStartData` and
+`motionProgress`), at Construct's and Generate's 0.85 s pace (2026-10-11; at
+0.65 s they were quick enough to miss). The run ends as the last step starts,
+so a slow draw costs only the end of its move, never a cut. A hand
 alone is laid out as one hand, and the combined letter can place its arrow or
 prop elsewhere, so while the halves slide, each arrow and prop glides to where
 the combined step draws it instead of snapping there at the merge.
@@ -314,7 +338,8 @@ Generate's first roll (added 2026-10-10).
 ## Turns
 
 - Cards take turns in board order. A turn is one scene, about three seconds,
-  then a gap of about half a second before the next card. One constant in the
+  then a gap of about half a second before the next card. Generate's turn runs
+  3.7 s so three steps can play their moves (2026-10-11). One constant in the
   turn coordinator owns these timings, including the hover delay below.
 - Turns begin after the board has painted, the browser is idle, and any
   chooser crossfade has finished, so opening Create is not slowed.

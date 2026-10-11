@@ -896,13 +896,13 @@ export class AnimationRenderLoop {
 
   /** Dispatch registry — one entry per simple overlay effect. */
   private readonly effectDispatchRegistry: readonly EffectDispatchEntry[] = [
-    // --- Zap: 4-pos, no dt ---
+    // --- Zap: 4-pos, dt ---
     {
       effect: "zap",
       configKey: "zapConfig",
       getRenderer: (l) =>
         (l.renderers.get("zap") ?? null) as EffectRenderer | null,
-      needsDt: false,
+      needsDt: true,
       resetTimeOnInactive: false,
       buildInput: (ctx) =>
         AnimationRenderLoop.buildEmitterTips(
@@ -911,7 +911,7 @@ export class AnimationRenderLoop {
           "zap",
           ctx.params
         ),
-      render: (r, cfg, inp) => r.renderFrame(cfg, inp),
+      render: (r, cfg, inp, dt) => r.renderFrame(cfg, inp, dt),
     },
     // --- Sparkles: 4-pos, dt ---
     {

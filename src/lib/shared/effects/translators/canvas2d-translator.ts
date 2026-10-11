@@ -121,12 +121,10 @@ export function resolveZap2D(
   override: Partial<Zap2DParams> = {}
 ): Zap2DParams {
   const defaults: Omit<Zap2DParams, keyof ZapIntent> = {
-    segments: Math.max(4, Math.round(6 + intent.intensity * 10)),
-    jitterAmount: 6 + intent.intensity * 10,
-    // Glow halo now follows the dedicated `glow` knob (was intensity-derived).
-    // 6 + glow*22 ≈ the old 8 + intensity*12 around the midpoints.
-    glowBlur: 6 + intent.glow * 22,
-    lineWidth: 1.5 + intent.intensity * 1.5,
+    coreWidth: 1 + intent.intensity * 0.8,
+    haloWidth: 5 + intent.glow * 15,
+    haloAlpha: 0.06 + intent.glow * 0.12,
+    brightness: 0.45 + intent.intensity * 0.65,
   };
   return { ...intent, ...defaults, ...override };
 }

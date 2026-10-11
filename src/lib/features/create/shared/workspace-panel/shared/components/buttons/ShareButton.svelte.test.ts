@@ -63,7 +63,7 @@ vi.mock(
 );
 
 vi.mock(
-  "#lib/features/compose/services/animation-playback-controller-factory.js",
+  "#lib/shared/animation-engine/services/animation-playback-controller-factory.js",
   () => ({
     createAnimationPlaybackController: workspaceVideoMocks.createController,
   })

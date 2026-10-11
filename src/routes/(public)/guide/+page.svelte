@@ -2,6 +2,7 @@
   import GuideShell from "./_components/GuideShell.svelte";
   import HubHeroBuild from "./_components/HubHeroBuild.svelte";
   import HubPictograph from "./_components/HubPictograph.svelte";
+  import DifficultyBadge from "#lib/shared/components/DifficultyBadge.svelte";
   import {
     GROUP_TITLES,
     bodyPagesByGroup,
@@ -53,10 +54,6 @@
     {
       key: "ratios",
       href: "/guide/ratios",
-    },
-    {
-      key: "prospin",
-      href: "/guide/prospin-and-inspin",
     },
     {
       key: "codex",
@@ -124,10 +121,13 @@
       </header>
 
       <section class="level-one" aria-labelledby="level-one-heading">
-        <h2 id="level-one-heading">{tDynamic("guide_hub_level1_title")}</h2>
+        <h2 id="level-one-heading" class="level-heading">
+          <DifficultyBadge level={1} size="1.4em" />
+          {tDynamic("guide_hub_level1_title")}
+        </h2>
         <p class="section-lead">{tDynamic("guide_welcome_pictographs")}</p>
         <ol class="stages">
-          {#each levelOne as stage, index (stage.group)}
+          {#each levelOne as stage (stage.group)}
             <li class="stage" class:word-stage={stage.group === "1.2"}>
               <a href={stage.href}>
                 <span class="stage-art" aria-hidden="true">
@@ -146,7 +146,7 @@
                   {/if}
                 </span>
                 <span class="stage-label">
-                  <span class="stage-number">{index + 1}</span>
+                  <span class="stage-number">{stage.group}</span>
                   <strong>{stage.title}</strong>
                   <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                 </span>
@@ -165,7 +165,12 @@
           {#each guideSections as section (section.key)}
             <a class="section-row" href={section.href}>
               <span class="section-copy">
-                <strong>{tDynamic(`guide_hub_${section.key}_title`)}</strong>
+                <strong class:level-heading={section.key === "level2"}>
+                  {#if section.key === "level2"}
+                    <DifficultyBadge level={2} size="1.5em" />
+                  {/if}
+                  {tDynamic(`guide_hub_${section.key}_title`)}
+                </strong>
                 <span>{tDynamic(`guide_hub_${section.key}_description`)}</span>
               </span>
               <span class="section-action">
@@ -337,6 +342,12 @@
     letter-spacing: -0.025em;
   }
 
+  .level-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+
   /* Level 1: the pictographs paragraph, then its three stages as three
      equal squares. The word's four pictographs share their square as a
      two-by-two block, read left to right, top to bottom. */
@@ -406,16 +417,15 @@
     font-size: 0.9rem;
   }
 
+  /* Stages carry their book numbers (1.0, 1.1, 1.2), the same as the
+     sidebar, so they don't read as Levels 1-3. The level itself is the
+     difficulty badge on the heading. */
   .stage-number {
-    display: inline-grid;
     flex: 0 0 auto;
-    place-items: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--guide-accent) 22%, transparent);
-    font-size: 0.875rem;
-    font-weight: 700;
+    color: var(--guide-text-dim);
+    font-size: 0.95rem;
+    font-style: italic;
+    font-variant-numeric: tabular-nums;
   }
 
   .section-index {

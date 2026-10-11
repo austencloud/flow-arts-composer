@@ -12,6 +12,7 @@
   import ChoreoCard from "#lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import { onMount, onDestroy, untrack } from "svelte";
   import type { ArrangementCell } from "../domain/arrangement.js";
+  import { resolveLegacyCellFields } from "../domain/arrangement-migration.js";
   import { SequenceAnimationOrchestrator } from "#lib/shared/animation-engine/services/sequence-animation-orchestrator.js";
   import { getViewerAnimationPropConfig } from "#lib/shared/animation-engine/get-viewer-animation-prop-config.js";
   import { AnimationStateManager } from "#lib/shared/animation-engine/services/animation-state-manager.js";
@@ -78,10 +79,12 @@
   const extraLayers = $derived(cell.layers.slice(1));
   const hasLayers = $derived(cell.layers.length > 0);
   const isAnimationType = $derived(cell.mediaType === "animation");
+  // The cell's look as the v1 fields the renderers below still read; phase 4 reads `appearance` directly.
+  const legacy = $derived(resolveLegacyCellFields(cell));
   const effectiveTipEffectMap = $derived.by(() => {
     if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0)
       return cell.tipEffectMap;
-    return cell.effect ? { "*": { effect: cell.effect } } : undefined;
+    return legacy.effect ? { "*": { effect: legacy.effect } } : undefined;
   });
 
   // Media type display info
@@ -100,26 +103,26 @@
 
   // Trail settings
   const trailSettings = $derived(
-    cell.trailMode
-      ? { ...animationSettings.trail, mode: cell.trailMode }
+    legacy.trailMode
+      ? { ...animationSettings.trail, mode: legacy.trailMode }
       : animationSettings.trail
   );
 
   // Scan tipEffectMap for any assignments of a given effect type.
   // When the user assigns effects per-tip or per-hand via the matrix,
-  // cell.effect stays empty but the renderers still need to be enabled.
+  // legacy.effect stays empty but the renderers still need to be enabled.
   function tipMapHasEffect(effectType: string): boolean {
     const map = cell.tipEffectMap;
     if (!map) return false;
     return Object.values(map).some((v) => v.effect === effectType);
   }
 
-  // Per-cell effect overrides - translate cell.effect AND tipEffectMap into
+  // Per-cell effect overrides - translate legacy.effect AND tipEffectMap into
   // fireConfig/ledConfig. The renderers must be enabled if ANY tip is assigned
-  // the effect, whether via the flat cell.effect or the per-tip matrix.
+  // the effect, whether via the flat legacy.effect or the per-tip matrix.
   const cellFireConfig = $derived.by(
     (): Partial<FireOverlayConfig> | undefined => {
-      const effect = cell.effect;
+      const effect = legacy.effect;
       if (effect === "fire" || tipMapHasEffect("fire")) return {};
       if (effect === "charcoal" || tipMapHasEffect("charcoal"))
         return { charcoalParams: { ...DEFAULT_CHARCOAL_PARAMS } };
@@ -132,7 +135,7 @@
 
   const cellLedConfig = $derived.by(
     (): Partial<LedOverlayConfig> | undefined => {
-      const effect = cell.effect;
+      const effect = legacy.effect;
       if (effect === "led" || tipMapHasEffect("led")) return { enabled: true };
       if (effect && effect !== "none") return { enabled: false };
       if (cell.tipEffectMap && Object.keys(cell.tipEffectMap).length > 0)
@@ -420,10 +423,10 @@
         {trailSettings}
         hideTkaGlyph={true}
         hideStepNumbers={true}
-        fireConfig={cell.effect || cell.tipEffectMap
+        fireConfig={legacy.effect || cell.tipEffectMap
           ? cellFireConfig
           : undefined}
-        ledConfig={cell.effect || cell.tipEffectMap ? cellLedConfig : undefined}
+        ledConfig={legacy.effect || cell.tipEffectMap ? cellLedConfig : undefined}
         tipEffectMap={effectiveTipEffectMap}
         tipEffortMap={cell.tipEffortMap}
       />

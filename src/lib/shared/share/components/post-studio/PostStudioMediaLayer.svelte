@@ -14,6 +14,7 @@
     type PostQrAppearance,
   } from "./post-qr-image-appearance";
   import type { TunnelHook } from "#lib/shared/media-composition/domain/tunnel-hook.js";
+  import type { ArrangementEditingMarks } from "./editor/post-arrangement-hit";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
   import PostStudioTunnelLayer from "./PostStudioTunnelLayer.svelte";
@@ -53,6 +54,8 @@
     exporting?: boolean;
     /** The pixel size this layer fills in the exported file. */
     exportSize?: { width: number; height: number } | null;
+    /** An arrangement's editing marks while its item is in hand; see the canvas. */
+    arrangementEditing?: ArrangementEditingMarks | null;
     sequence: SequenceData | null;
     qrSequence?: SequenceData;
     /** A card's saved scan link, which its QR shows. */
@@ -97,6 +100,7 @@
     playing,
     exporting = false,
     exportSize = null,
+    arrangementEditing = null,
     sequence,
     qrSequence,
     qrUrl,
@@ -751,6 +755,7 @@
         {playing}
         {exporting}
         {exportSize}
+        editing={arrangementEditing}
       />
     {/if}
   {:else if binding.renderMode === "sequence-animation" && sequence && sequencePosition !== undefined}

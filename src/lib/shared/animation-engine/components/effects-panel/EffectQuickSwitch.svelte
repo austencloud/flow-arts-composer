@@ -4,21 +4,30 @@
 
   The button names the effect that is on. The picker changes it in place,
   without leaving the player: tap a look and the animation behind it switches
-  while the picker stays open for the next comparison. Escape, the button, or
-  a tap anywhere else closes it.
+  while the picker stays open for the next comparison. Its close button,
+  Escape, the effect button, or a tap anywhere else closes it.
 
   The picker composes EffectSelector (the tiles, their selection and prewarm)
   and EffectPresetThumbnail (the same pictures as the Effects panel, from
   effectCatalogLooks). effect-quick-picker-fit decides where it goes: beside
   the player where its bounds have room (two across, scrolling, where that
-  room is narrow), otherwise as one scrolling row under the player's
-  controls or docked along the bottom of its bounds.
+  room is narrow), otherwise as one scrolling row floating under the player's
+  controls or docked along the bottom of its bounds. The row fades, and with a
+  mouse offers an arrow, at whichever end has more effects past it.
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import Crossfade from "#lib/shared/components/Crossfade.svelte";
-  import { flyFade } from "#lib/shared/transitions/motion.js";
+  import {
+    flyFade,
+    popIn,
+    reducedMotion,
+  } from "#lib/shared/transitions/motion.js";
+  import {
+    scrollEdges,
+    type ScrollEdges,
+  } from "#lib/shared/ui/scroll-edges.js";
   import { DURATION } from "#lib/shared/transitions/transitions.js";
   import {
     isEffectId,
@@ -29,6 +38,9 @@
     pictureTileHeight,
     QUICK_PICKER_EDGE,
     QUICK_PICKER_OFFSET,
+    QUICK_PICKER_STRIP_EDGE_CLEAR,
+    QUICK_PICKER_STRIP_GAP,
+    stripPageTarget,
     type EffectQuickPickerFit,
   } from "#lib/shared/animation-engine/domain/effect-quick-picker-fit.js";
   import EffectSelector from "./EffectSelector.svelte";
@@ -41,6 +53,8 @@
   } from "./effect-registry";
   import { effectUiLabel } from "./effect-ui-label";
   import { effectCatalogLooks } from "./effect-catalog-looks";
+  import { effectInk } from "./effect-ink";
+  import { getThemeMode } from "#lib/shared/theme/state/theme-mode-state.svelte.js";
 
   interface Props {
     effectsConfigState: EffectsConfigState;
@@ -54,6 +68,11 @@
     /** Reads the height under the player's controls the picker may cover:
      *  empty space down to the next control, or a band it covers whole. */
     roomBelow?: () => number;
+    /** Reports where the open picker sits, or null once it closes, so the
+     *  player can fade what the floating row covers under its controls. */
+    onArrange?: (
+      arrangement: "side" | "below" | "dock" | "above" | null
+    ) => void;
   }
 
   const {
@@ -61,6 +80,7 @@
     player,
     bounds = null,
     roomBelow,
+    onArrange,
   }: Props = $props();
 
   let open = $state(false);
@@ -71,9 +91,15 @@
   /** The player's distance from each side of the bounds, so a docked strip
    *  lines its tiles up under the player. */
   let dockInset = $state({ left: 0, right: 0 });
+  /** Which ends of the row have effects scrolled past them. */
+  let edges = $state<ScrollEdges>({ start: false, end: false });
 
   const activeEffect = $derived(effectsConfigState.activeEffect);
   const effectOn = $derived(activeEffect !== "none");
+  const activeInk = $derived.by(() => {
+    const color = effectOn ? EFFECT_COLORS[activeEffect] : undefined;
+    return color ? effectInk(color, getThemeMode()) : undefined;
+  });
   const activeName = $derived(
     effectOn
       ? effectUiLabel(EFFECT_LABELS[activeEffect] ?? activeEffect)
@@ -155,6 +181,27 @@
     effectsConfigState.setActiveEffect("none");
   }
 
+  $effect(() => {
+    onArrange?.(
+      open && fit ? (fit.arrangement === "side" ? "side" : fit.side) : null
+    );
+  });
+
+  /** Page the row so the tile cut at that end comes fully into view. */
+  function scrollStrip(direction: 1 | -1) {
+    if (!scrollerEl || fit?.arrangement !== "strip") return;
+    scrollerEl.scrollTo({
+      left: stripPageTarget({
+        portrait: fit.catalog.portrait,
+        scrollLeft: scrollerEl.scrollLeft,
+        viewWidth: scrollerEl.clientWidth,
+        scrollWidth: scrollerEl.scrollWidth,
+        direction,
+      }),
+      behavior: reducedMotion() ? "auto" : "smooth",
+    });
+  }
+
   // Warm the effect's renderer on hover or press, before the click commits.
   function prewarm(effectId: string) {
     if (isEffectId(effectId)) effectsConfigState.requestPrewarm(effectId);
@@ -179,6 +226,11 @@
   function focusSelected(event: Event) {
     event.preventDefault();
     centerSelected();
+    // The first open sizes the panel a frame late, once the popover has
+    // measured the room around it: centering against the panel's first,
+    // short height scrolled the top row out of view. The panel is still
+    // transparent then, so the second pass never shows.
+    requestAnimationFrame(centerSelected);
     const target =
       contentEl?.querySelector<HTMLElement>(
         '[role="radio"][aria-checked="true"]'
@@ -246,6 +298,53 @@
   }}
 />
 
+{#snippet closeButton()}
+  <Popover.Close>
+    {#snippet child({ props })}
+      <button
+        {...props}
+        type="button"
+        class="fx-quick-close"
+        aria-label={t("common_close")}
+        title={t("common_close")}
+      >
+        <span class="fx-quick-disc">
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </span>
+      </button>
+    {/snippet}
+  </Popover.Close>
+{/snippet}
+
+<!-- A mouse cannot swipe: these page the row. Out of the Tab order, since Tab
+     already walks the tiles and scrolls each into view. -->
+{#snippet arrow(direction: 1 | -1)}
+  {@const label = t(
+    direction > 0 ? "effect_deep_more_effects" : "effect_deep_earlier_effects"
+  )}
+  <div
+    class="fx-quick-arrow"
+    class:start={direction < 0}
+    class:end={direction > 0}
+    transition:popIn
+  >
+    <button
+      type="button"
+      tabindex="-1"
+      aria-label={label}
+      title={label}
+      onclick={() => scrollStrip(direction)}
+    >
+      <span class="fx-quick-disc">
+        <i
+          class="fas {direction > 0 ? 'fa-chevron-right' : 'fa-chevron-left'}"
+          aria-hidden="true"
+        ></i>
+      </span>
+    </button>
+  </div>
+{/snippet}
+
 {#snippet portrait(effectId: string)}
   {@const look = looks?.get(effectId)}
   {#if look}
@@ -271,9 +370,7 @@
         class="fx-quick-trigger"
         class:open
         class:on={effectOn}
-        style:--effect-color={effectOn
-          ? EFFECT_COLORS[activeEffect]
-          : undefined}
+        style:--effect-color={activeInk}
         title={t("effect_deep_select_effect")}
       >
         <span class="sr-only">{t("effect_deep_select_effect")}</span>
@@ -305,7 +402,11 @@
       customAnchor={anchor}
       side={placement}
       align={fit?.arrangement === "side" ? "end" : "center"}
-      sideOffset={fit?.arrangement === "side" ? QUICK_PICKER_OFFSET : 0}
+      sideOffset={fit?.arrangement === "side"
+        ? QUICK_PICKER_OFFSET
+        : fit?.side === "below"
+          ? QUICK_PICKER_STRIP_GAP
+          : 0}
       collisionBoundary={bounds ?? undefined}
       collisionPadding={QUICK_PICKER_EDGE}
       avoidCollisions={fit?.arrangement === "side"}
@@ -350,21 +451,25 @@
               {#if fit.arrangement === "side"}
                 <div class="fx-quick-head">
                   <span class="fx-quick-title">{t("effect_deep_effects")}</span>
-                  <!-- A narrow panel has no room for "Turn off Bubbles":
-                       it shows Off and keeps the full name for assistive
-                       technology. -->
-                  <button
-                    type="button"
-                    class="fx-quick-off"
-                    class:active={!effectOn}
-                    aria-pressed={!effectOn}
-                    aria-label={fit.height ? offLabel : undefined}
-                    data-quick-off
-                    onclick={turnOff}
-                  >
-                    <i class="fas fa-power-off" aria-hidden="true"></i>
-                    <span>{fit.height ? t("effect_deep_off") : offLabel}</span>
-                  </button>
+                  <div class="fx-quick-head-end">
+                    <!-- A narrow panel has no room for "Turn off Bubbles":
+                         it shows Off, or only the glyph where narrower still,
+                         and keeps the full name for assistive technology. -->
+                    <button
+                      type="button"
+                      class="fx-quick-off"
+                      class:active={!effectOn}
+                      aria-pressed={!effectOn}
+                      aria-label={fit.height ? offLabel : undefined}
+                      data-quick-off
+                      onclick={turnOff}
+                    >
+                      <i class="fas fa-power-off" aria-hidden="true"></i>
+                      <span>{fit.height ? t("effect_deep_off") : offLabel}</span
+                      >
+                    </button>
+                    {@render closeButton()}
+                  </div>
                 </div>
                 <div
                   class="fx-quick-grid"
@@ -394,21 +499,33 @@
                   <i class="fas fa-power-off" aria-hidden="true"></i>
                   <span>{t("effect_deep_off")}</span>
                 </button>
-                <div
-                  class="fx-quick-scroller"
-                  bind:this={scrollerEl}
-                  use:wheelScrollsSideways
-                >
-                  <div class="fx-quick-track" style:width="{fit.trackWidth}px">
-                    <EffectSelector
-                      {activeEffect}
-                      onSelect={select}
-                      onPrewarm={prewarm}
-                      catalog={fit.catalog}
-                      {portrait}
-                    />
+                <div class="fx-quick-scroll">
+                  <div
+                    class="fx-quick-scroller"
+                    class:fade-start={edges.start}
+                    class:fade-end={edges.end}
+                    style:scroll-padding-inline="{QUICK_PICKER_STRIP_EDGE_CLEAR}px"
+                    bind:this={scrollerEl}
+                    use:wheelScrollsSideways
+                    use:scrollEdges={(next) => (edges = next)}
+                  >
+                    <div
+                      class="fx-quick-track"
+                      style:width="{fit.trackWidth}px"
+                    >
+                      <EffectSelector
+                        {activeEffect}
+                        onSelect={select}
+                        onPrewarm={prewarm}
+                        catalog={fit.catalog}
+                        {portrait}
+                      />
+                    </div>
                   </div>
+                  {#if edges.start}{@render arrow(-1)}{/if}
+                  {#if edges.end}{@render arrow(1)}{/if}
                 </div>
+                {@render closeButton()}
               {/if}
             </div>
           {/if}
@@ -420,55 +537,64 @@
 
 <style>
   /* ── The button ── */
-  /* A chip with a value, beside the playback toggle in the scrubber row: the
-     same 44px height, glyph size and hover/press feedback as the toggle, plus
-     a resting tint so it reads as pressable before hover. */
+  /* A chip with a value, beside the playback toggle in the scrubber row: a
+     32px pill inside the toggle's 44px target, set in from the row's end
+     about as far as from its top and bottom, so it never runs into the
+     player's rounded corner. A resting tint makes it read as pressable
+     before hover. */
   .fx-quick-trigger {
     flex: none;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     min-width: var(--min-touch-target, 44px);
     height: var(--min-touch-target, 44px);
-    padding: 0 14px 0 12px;
+    padding: 0 6px 0 2px;
     border: 0;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--theme-text, #fff) 8%, transparent);
+    background: none;
     color: var(--theme-text, #fff);
     font: inherit;
     font-size: var(--font-size-min, 14px);
     font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition:
-      background var(--duration-fast) ease-out,
-      opacity var(--duration-fast) ease-out;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .fx-quick-trigger:hover {
-      background: color-mix(in srgb, var(--theme-text, #fff) 14%, transparent);
-    }
+    transition: opacity var(--duration-fast) ease-out;
   }
   .fx-quick-trigger:active {
     opacity: 0.6;
   }
   .fx-quick-trigger:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: -2px;
+    outline: none;
   }
-  /* Open: the whole chip takes the effect's color, the way the selected tile
+  .fx-quick-trigger:focus-visible .fx-quick-face {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+
+  .fx-quick-face {
+    box-sizing: border-box;
+    display: grid;
+    align-items: center;
+    justify-items: start;
+    height: 32px;
+    padding: 0 12px 0 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-text, #fff) 8%, transparent);
+    transition: background var(--duration-fast) ease-out;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .fx-quick-trigger:hover .fx-quick-face {
+      background: color-mix(in srgb, var(--theme-text, #fff) 14%, transparent);
+    }
+  }
+  /* Open: the whole pill takes the effect's color, the way the selected tile
      in the picker does. */
-  .fx-quick-trigger.open {
+  .fx-quick-trigger.open .fx-quick-face {
     background: color-mix(
       in srgb,
       var(--effect-color, var(--theme-text, #fff)) 18%,
       transparent
     );
-  }
-
-  .fx-quick-face {
-    display: grid;
-    align-items: center;
-    justify-items: start;
   }
   .fx-quick-face > :global(*) {
     grid-area: 1 / 1;
@@ -496,7 +622,11 @@
   @container (max-width: 279px) {
     .fx-quick-trigger {
       padding: 0;
-      justify-content: center;
+    }
+    .fx-quick-face {
+      width: 32px;
+      padding: 0;
+      justify-items: center;
     }
     .fx-quick-name {
       display: none;
@@ -521,6 +651,7 @@
   }
 
   .fx-quick-panel.side {
+    container: fx-quick-side / inline-size;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -552,11 +683,20 @@
     text-transform: uppercase;
   }
 
+  .fx-quick-head-end {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    /* The close button's 44px target pads its 32px disc: reach into the
+       panel's padding so the disc's edge lines up with the tiles'. */
+    margin-inline-end: -6px;
+  }
+
   /* The Effects panel's Off button (EffectsPanel .sb-off-btn). */
   .fx-quick-off {
     min-height: var(--min-touch-target, 44px);
     min-width: 0;
-    max-width: 70%;
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -579,6 +719,71 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  /* The narrowest side panel keeps the title and the close button whole:
+     Off shows only its glyph. */
+  @container fx-quick-side (max-width: 209px) {
+    .fx-quick-off {
+      justify-content: center;
+      min-width: var(--min-touch-target, 44px);
+      padding: 0;
+    }
+    .fx-quick-off span {
+      display: none;
+    }
+  }
+
+  /* ── Close and arrow buttons: a 32px disc in a 44px target ── */
+  .fx-quick-close,
+  .fx-quick-arrow button {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--min-touch-target, 44px);
+    height: var(--min-touch-target, 44px);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.75));
+    font: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fx-quick-disc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--theme-text, #fff) 10%, transparent);
+    font-size: var(--font-size-min, 14px);
+    transition:
+      background var(--duration-fast) ease-out,
+      color var(--duration-fast) ease-out;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .fx-quick-close:hover,
+    .fx-quick-arrow button:hover {
+      color: var(--theme-text, #fff);
+    }
+    .fx-quick-close:hover .fx-quick-disc {
+      background: color-mix(in srgb, var(--theme-text, #fff) 20%, transparent);
+    }
+  }
+  .fx-quick-close:active .fx-quick-disc,
+  .fx-quick-arrow button:active .fx-quick-disc {
+    opacity: 0.6;
+  }
+  .fx-quick-close:focus-visible,
+  .fx-quick-arrow button:focus-visible {
+    outline: none;
+  }
+  .fx-quick-close:focus-visible .fx-quick-disc,
+  .fx-quick-arrow button:focus-visible .fx-quick-disc {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
 
   /* A narrow panel is the player's height and only its tiles scroll, under
      the title row. The padding keeps a tile's focus ring inside the scroll
@@ -600,11 +805,11 @@
     gap: 6px;
     padding: 8px;
   }
-  /* Open on the side that faces the controls it hangs from. */
+  /* A tray floating just under the controls, drawn like the side panel. */
   .fx-quick-panel.strip.below {
-    border-bottom: 1px solid
-      var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
-    border-radius: 0 0 12px 12px;
+    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
+    border-radius: 14px;
+    box-shadow: var(--theme-panel-shadow, 0 12px 28px rgba(0, 0, 0, 0.35));
   }
   .fx-quick-panel.strip.above {
     border-top: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
@@ -617,6 +822,12 @@
     border-radius: 16px 16px 0 0;
   }
 
+  .fx-quick-scroll {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+  }
   .fx-quick-scroller {
     flex: 1 1 0;
     min-width: 0;
@@ -629,8 +840,58 @@
   .fx-quick-scroller::-webkit-scrollbar {
     display: none;
   }
+  /* Only an end with effects past it fades, so a tile fully in view stays
+     crisp and the cut tile there reads as more to come, not as broken. */
+  .fx-quick-scroller.fade-end {
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+  .fx-quick-scroller.fade-start {
+    mask-image: linear-gradient(to right, transparent, #000 28px);
+  }
+  .fx-quick-scroller.fade-start.fade-end {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 28px,
+      #000 calc(100% - 28px),
+      transparent
+    );
+  }
   .fx-quick-track {
     position: relative;
+  }
+
+  /* Over the faded end, centred on the tiles. Touch swipes the row, so only
+     a mouse gets them. */
+  .fx-quick-arrow {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+  }
+  .fx-quick-arrow.start {
+    left: -6px;
+  }
+  .fx-quick-arrow.end {
+    right: -6px;
+  }
+  .fx-quick-arrow button {
+    pointer-events: auto;
+    color: var(--theme-text, #fff);
+  }
+  .fx-quick-arrow .fx-quick-disc {
+    border: 1px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.14));
+    background:
+      linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)),
+      var(--theme-panel-bg);
+    box-shadow: var(--theme-panel-shadow, 0 2px 8px rgba(0, 0, 0, 0.35));
+  }
+  @media not ((hover: hover) and (pointer: fine)) {
+    .fx-quick-arrow {
+      display: none;
+    }
   }
   .fx-quick-track :global(.effect-btn) {
     scroll-snap-align: start;
@@ -690,6 +951,8 @@
 
   @media (prefers-reduced-motion: reduce) {
     .fx-quick-trigger,
+    .fx-quick-face,
+    .fx-quick-disc,
     .fx-quick-off,
     .fx-quick-off-tile {
       transition: none;
