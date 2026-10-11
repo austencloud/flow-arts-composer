@@ -29,24 +29,26 @@ export function resolveBloomExposure(
 }
 
 /**
- * The afterglow buffer stores scattered light, not the live source. Zero means
- * no history at all; higher values extend the exposure without approaching an
- * immortal buffer.
+ * Seconds a tip's light path stays visible behind it. Zero turns the history
+ * off; the longest setting still clears within about a second, so a trail never
+ * outlives the move that drew it.
  */
-export function resolveBloomAfterglowRetention(afterglow: number): number {
-  const amount = clamp01(afterglow);
-  if (amount <= 0) return 0;
-  return 0.72 + amount * 0.27;
+export function resolveBloomHistoryLifetime(afterglow: number): number {
+  return afterglow <= 0.001 ? 0 : 0.08 + clamp01(afterglow) * 0.95;
+}
+
+/** Additive energy grows by perceived prop count, not by raw tip count. */
+export function resolveBloomSourceNormalization(propCount: number): number {
+  return 1 / Math.sqrt(Math.max(1, propCount));
 }
 
 /**
- * Deposit falls as retention rises, so a longer exposure does not become a
- * brighter exposure merely because the same light survives more frames.
+ * Rainbow hue in turns. Every tip starts a quarter-ish turn from its
+ * neighbors, so two props never bloom the same color at the same moment.
  */
-export function resolveBloomHistoryDeposit(afterglow: number): number {
-  const amount = clamp01(afterglow);
-  const retention = resolveBloomAfterglowRetention(amount);
-  if (retention <= 0) return 0;
-  const targetHistoryEnergy = 0.18 + amount * 0.82;
-  return (1 - retention) * targetHistoryEnergy;
+export function resolveBloomRainbowHue(
+  clockSeconds: number,
+  sourceIndex: number
+): number {
+  return (clockSeconds * 0.12 + (Math.abs(sourceIndex) % 4) * 0.23) % 1;
 }

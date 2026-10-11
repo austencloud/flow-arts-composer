@@ -1,0 +1,310 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Ink tiles</title>
+<link rel="stylesheet" href="tiles.css"></head>
+<body>
+<h1>Ink · three looks</h1>
+<p class="lede">One calligraphic swash laid down by the tip: a loop through the middle of the frame, exiting right. The ribbon is built the renderer's way: width from tip speed (brush lifts when fast, presses when slow), the broad nib held to the stage center (wide on the sweep, hairline toward or away from the center), extra load in the turn, a 1.42x cap on width change, the tail collapsing to a point. Dense ink gets the four-pass pigment body with its wet gloss behind the brush, pigment grain stamped source-atop, and dry-bristle cuts; neon draws additively. Splatter bursts fly off the sharp turns, and Toxic's viscosity lets the oldest ink shatter into droplets.</p>
+<div id="root"></div>
+<script type="module">
+import { W, H, lcg, ground, blob, hexToRgb, css, mix } from './kit.js';
+
+const PAL = {
+  acid:  { pigment: '#7fd94a', edge: '#b8ff6f', splatterTint: '#98e860' },
+  neon:  { pigment: '#ff2080', edge: '#ff60a0', splatterTint: '#ff2080', emissive: true },
+  blood: { pigment: '#8f2635', edge: '#d67881', splatterTint: '#a84255' },
+};
+const PRESETS = [
+  { name: 'Toxic',    patch: { palette: 'acid',  ambientEmission: 0.2,  motionEmission: 0.7,  intensity: 0.6,  viscosity: 0.5,  splatterIntensity: 0.6 } },
+  { name: 'Neon Tag', patch: { palette: 'neon',  ambientEmission: 0.1,  motionEmission: 1.0,  intensity: 0.9,  viscosity: 0.2,  splatterIntensity: 0.4 } },
+  { name: 'Splatter', patch: { palette: 'blood', ambientEmission: 0.04, motionEmission: 0.88, intensity: 0.68, viscosity: 0.34, splatterIntensity: 0.34 } },
+];
+
+const TAU = Math.PI * 2;
+const SCALE = 2.6;
+const CENTER = { x: W / 2, y: H / 2 };
+// Renderer constants.
+const NIB_HAIRLINE = 0.16, NIB_MEAN = NIB_HAIRLINE + (1 - NIB_HAIRLINE) * (2 / Math.PI), NIB_CENTER_REACH_PX = 28;
+const FADE_FRACTION = 0.6, INK_WET_LENGTH_PX = 110, DROPLET_DRIFT_PX = 30, GRAVITY = 180;
+const STAMP_SIZE = 64, STAMP_HALF = 32, STAMP_R = STAMP_SIZE * 0.42;
+
+function jitterHash(seed, channel) { let h = ((seed * 1000000) | 0) + channel * 374761393; h = ((h ^ (h >> 13)) * 1103515245) | 0; return (h & 0x7fffffff) / 0x7fffffff; }
+function hashNoise(ix, iy, seed) { let h = (ix * 374761393 + iy * 668265263 + seed * 1274126177) | 0; h = ((h ^ (h >> 13)) * 1103515245) | 0; return (h & 0x7fffffff) / 0x7fffffff; }
+function sampleNoise(x, y, g, seed) { const gx = x / g, gy = y / g, ix = Math.floor(gx), iy = Math.floor(gy), fx = gx - ix, fy = gy - iy; const n00 = hashNoise(ix, iy, seed), n10 = hashNoise(ix + 1, iy, seed), n01 = hashNoise(ix, iy + 1, seed), n11 = hashNoise(ix + 1, iy + 1, seed); const a = n00 + (n10 - n00) * fx, b = n01 + (n11 - n01) * fx; return a + (b - a) * fy; }
+function twoOctaveNoise(x, y, seed) { return sampleNoise(x, y, 8, seed) * 0.6 + sampleNoise(x, y, 4, seed + 7) * 0.4; }
+function smoothstep(e0, e1, v) { if (e1 <= e0) return v >= e1 ? 1 : 0; const t = Math.min(1, Math.max(0, (v - e0) / (e1 - e0))); return t * t * (3 - 2 * t); }
+function pointFade(age, life) { const t = age / life; return t > FADE_FRACTION ? Math.max(0, (1 - t) / (1 - FADE_FRACTION)) : 1; }
+function mixWithWhite(hex, k) { return css(mix(hexToRgb(hex), [1, 1, 1], k), 1); }
+function isDark(hex) { const [r, g, b] = hexToRgb(hex); return r * 0.2126 + g * 0.7152 + b * 0.0722 < 0.22; }
+
+/** Material numbers the translator resolves per palette. */
+function resolveParams(p) {
+  const pal = PAL[p.palette];
+  const neon = !!pal.emissive;
+  return {
+    ...p, pal,
+    strokeWidthMin: 2, strokeWidthMax: neon ? 10 : 14, opacityMax: 1,
+    lifetime: neon ? 1.55 : 2.2, motionReferenceSpeed: 3,
+    peakAlpha: Math.min(1, 1 * (0.48 + p.intensity * 0.52)),
+  };
+}
+function strokeWidth(P, speedPx) {
+  const ref = Math.max(1, P.motionReferenceSpeed * 60 * SCALE * 2);
+  const speedT = Math.min(1, Math.max(0, speedPx / ref));
+  const lift = Math.sqrt(speedT) * 0.72;
+  return (P.strokeWidthMax + (P.strokeWidthMin - P.strokeWidthMax) * lift) * (0.5 + P.intensity * 0.8) * SCALE;
+}
+function nibWidth(pt, tx, ty) {
+  const rx = pt.x - CENTER.x, ry = pt.y - CENTER.y, r = Math.hypot(rx, ry), tl = Math.hypot(tx, ty);
+  if (r < 0.001 || tl < 0.001) return 1;
+  const sweep = Math.abs(rx * ty - ry * tx) / (r * tl);
+  const nib = (NIB_HAIRLINE + (1 - NIB_HAIRLINE) * sweep) / NIB_MEAN;
+  return 1 + (nib - 1) * smoothstep(0, NIB_CENTER_REACH_PX * SCALE, r);
+}
+function turnLoad(a, b, c) {
+  const ix = b.x - a.x, iy = b.y - a.y, ox = c.x - b.x, oy = c.y - b.y;
+  const il = Math.hypot(ix, iy), ol = Math.hypot(ox, oy); if (il < 0.001 || ol < 0.001) return 0;
+  const dot = Math.max(-1, Math.min(1, (ix * ox + iy * oy) / (il * ol)));
+  const ang = Math.acos(dot);
+  return smoothstep(0.06, 0.72, ang) * (1 - smoothstep(Math.PI * 0.72, Math.PI, ang));
+}
+
+// --- The swash: Catmull-Rom through a loop, sampled at the renderer's 60 points/s ---
+const KNOTS = [[60, 215], [150, 175], [250, 85], [360, 110], [370, 205], [290, 225], [265, 150], [330, 75], [470, 60], [600, 95], [680, 150]];
+function catmull(i, t) {
+  const p0 = KNOTS[Math.max(0, i - 1)], p1 = KNOTS[i], p2 = KNOTS[Math.min(KNOTS.length - 1, i + 1)], p3 = KNOTS[Math.min(KNOTS.length - 1, i + 2)];
+  const t2 = t * t, t3 = t2 * t;
+  const f = (a, b, c, d) => 0.5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+  return { x: f(p0[0], p1[0], p2[0], p3[0]), y: f(p0[1], p1[1], p2[1], p3[1]) };
+}
+function densePath() {
+  const out = [];
+  for (let i = 0; i < KNOTS.length - 1; i++) for (let k = 0; k < 40; k++) out.push(catmull(i, k / 40));
+  out.push(catmull(KNOTS.length - 2, 1));
+  return out;
+}
+
+/** Sample the swash as the tip would have been recorded: spacing follows speed, slow in the loop. */
+function recordStroke(P, rand) {
+  const fine = densePath();
+  // Curvature along the fine path, for the speed profile.
+  const curv = fine.map((_, i) => { const a = fine[Math.max(0, i - 6)], b = fine[i], c = fine[Math.min(fine.length - 1, i + 6)]; return turnLoad(a, b, c); });
+  const pts = [];
+  let acc = 0, seq = 0;
+  const baseSpeed = 150 * SCALE;
+  for (let i = 1; i < fine.length; i++) {
+    const d = Math.hypot(fine[i].x - fine[i - 1].x, fine[i].y - fine[i - 1].y);
+    acc += d;
+    const speed = baseSpeed * (1 - curv[i] * 0.62) * (0.9 + 0.2 * Math.sin(i * 0.11));
+    const spacing = speed / 60;
+    if (acc >= spacing || pts.length === 0) {
+      acc = 0;
+      const a = fine[Math.max(0, i - 3)], c = fine[Math.min(fine.length - 1, i + 3)];
+      pts.push({ x: fine[i].x, y: fine[i].y, spawnSpeedPx: speed, tangentAngle: Math.atan2(c.y - a.y, c.x - a.x), sequence: seq++, jitterSeed: rand(), materialSeed: rand(), vy: 0 });
+    }
+  }
+  // Newest at the head (end of the path). Age runs back along the stroke.
+  const n = pts.length;
+  pts.forEach((p, i) => { p.age = (1 - i / (n - 1)) * P.lifetime * 0.78; });
+  return pts;
+}
+
+function buildRibbon(points, P, nibOn) {
+  const cum = [0];
+  for (let i = 1; i < points.length; i++) cum[i] = cum[i - 1] + Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+  const total = cum[cum.length - 1], tailFade = Math.min(72 * SCALE, total * 0.24);
+  const ribbon = points.map((pt, i) => {
+    const prev = points[Math.max(0, i - 1)], next = points[Math.min(points.length - 1, i + 1)];
+    const tp = points[Math.max(0, i - 4)], tn = points[Math.min(points.length - 1, i + 4)];
+    let dx = next.x - prev.x, dy = next.y - prev.y; const l = Math.hypot(dx, dy);
+    if (l < 0.001) { dx = Math.cos(pt.tangentAngle); dy = Math.sin(pt.tangentAngle); } else { dx /= l; dy /= l; }
+    const widthNoise = 0.84 + jitterHash(pt.jitterSeed, 4) * 0.3;
+    const load = turnLoad(tp, pt, tn);
+    const fade = pointFade(pt.age, P.lifetime) * smoothstep(0, tailFade, cum[i]);
+    const nib = nibOn ? nibWidth(pt, tn.x - tp.x, tn.y - tp.y) : 1;
+    const wet = (1 - smoothstep(0, INK_WET_LENGTH_PX * SCALE, total - cum[i])) * (1 - smoothstep(0.35, 1.1, pt.age));
+    return { x: pt.x, y: pt.y, nx: -dy, ny: dx, width: Math.max(0.75 * SCALE, strokeWidth(P, pt.spawnSpeedPx)) * widthNoise * nib * (1 + load * 0.42), fade, wet, sequence: pt.sequence, materialSeed: pt.materialSeed, seed: pt.jitterSeed };
+  });
+  for (let i = 1; i < ribbon.length; i++) { const pw = ribbon[i - 1].width; ribbon[i].width = Math.max(pw / 1.42, Math.min(pw * 1.42, ribbon[i].width)); }
+  for (const r of ribbon) r.width *= Math.sqrt(Math.max(0, r.fade));
+  return ribbon;
+}
+
+function segmentedPass(ctx, ribbon, color, wf, alpha, composite, channel) {
+  ctx.save(); ctx.globalCompositeOperation = composite; ctx.fillStyle = color;
+  for (let i = 0; i < ribbon.length - 1; i++) {
+    const s = ribbon[i], e = ribbon[i + 1], sh = s.width * wf * 0.5, eh = e.width * wf * 0.5;
+    const on = 0.66 + jitterHash((s.seed + e.seed) * 0.5, channel) * 0.42;
+    ctx.globalAlpha = alpha * (s.fade + e.fade) * 0.5 * on; if (ctx.globalAlpha <= 0.003) continue;
+    ctx.beginPath(); ctx.moveTo(s.x + s.nx * sh, s.y + s.ny * sh); ctx.lineTo(e.x + e.nx * eh, e.y + e.ny * eh); ctx.lineTo(e.x - e.nx * eh, e.y - e.ny * eh); ctx.lineTo(s.x - s.nx * sh, s.y - s.ny * sh); ctx.closePath(); ctx.fill();
+  }
+  const nw = ribbon[ribbon.length - 1]; ctx.globalAlpha = alpha * nw.fade * 0.82; ctx.beginPath(); ctx.arc(nw.x, nw.y, nw.width * wf * 0.5, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+function ribbonPass(ctx, ribbon, color, wf, alpha, composite, o = {}) {
+  const offsetFactor = o.offsetFactor ?? 0, channel = o.noiseChannel ?? 5, breakThreshold = o.breakThreshold ?? 0, chunkSize = Math.max(2, o.chunkSize ?? 8), wetOnly = o.wetOnly ?? false;
+  ctx.save(); ctx.globalCompositeOperation = composite; ctx.fillStyle = color;
+  const last = ribbon.length - 1;
+  for (let si = 0; si < last;) {
+    const chunkId = Math.floor(ribbon[si].sequence / chunkSize);
+    let ei = si + 1; while (ei < last && Math.floor(ribbon[ei].sequence / chunkSize) === chunkId) ei++;
+    const s = ribbon[si], e = ribbon[ei];
+    const grain = jitterHash(chunkId + s.materialSeed * 4096, channel);
+    if (grain >= breakThreshold) {
+      let lf = 0; for (let i = si; i <= ei; i++) lf += ribbon[i].fade * (wetOnly ? ribbon[i].wet : 1); lf /= ei - si + 1;
+      ctx.globalAlpha = alpha * lf * (0.82 + grain * 0.18);
+      if (ctx.globalAlpha > 0.003) {
+        const off = (r, sign) => r.width * offsetFactor + sign * r.width * wf * 0.5;
+        ctx.beginPath(); ctx.moveTo(s.x + s.nx * off(s, 1), s.y + s.ny * off(s, 1));
+        for (let i = si + 1; i < ei; i++) { const p = ribbon[i], n = ribbon[i + 1]; const px = p.x + p.nx * off(p, 1), py = p.y + p.ny * off(p, 1), nx = n.x + n.nx * off(n, 1), ny = n.y + n.ny * off(n, 1); ctx.quadraticCurveTo(px, py, (px + nx) * 0.5, (py + ny) * 0.5); }
+        ctx.lineTo(e.x + e.nx * off(e, 1), e.y + e.ny * off(e, 1)); ctx.lineTo(e.x + e.nx * off(e, -1), e.y + e.ny * off(e, -1));
+        for (let i = ei - 1; i > si; i--) { const p = ribbon[i], n = ribbon[i - 1]; const px = p.x + p.nx * off(p, -1), py = p.y + p.ny * off(p, -1), nx = n.x + n.nx * off(n, -1), ny = n.y + n.ny * off(n, -1); ctx.quadraticCurveTo(px, py, (px + nx) * 0.5, (py + ny) * 0.5); }
+        ctx.lineTo(s.x + s.nx * off(s, -1), s.y + s.ny * off(s, -1)); ctx.closePath(); ctx.fill();
+      }
+    }
+    si = ei;
+  }
+  ctx.restore();
+}
+
+function makeStamp(pal, intensity) {
+  const c = document.createElement('canvas'); c.width = c.height = STAMP_SIZE; const ctx = c.getContext('2d');
+  const [pr, pg, pb] = hexToRgb(pal.pigment).map(v => Math.round(v * 255)), [er, eg, eb] = hexToRgb(pal.edge).map(v => Math.round(v * 255));
+  const cx = STAMP_HALF, cy = STAMP_HALF, R = STAMP_R;
+  let g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R); g.addColorStop(0, `rgba(${pr},${pg},${pb},0.95)`); g.addColorStop(0.55, `rgba(${pr},${pg},${pb},0.7)`); g.addColorStop(1, `rgba(${pr},${pg},${pb},0)`); ctx.fillStyle = g; ctx.fillRect(0, 0, STAMP_SIZE, STAMP_SIZE);
+  const ring = pal.emissive ? 0.58 : 0.4;
+  g = ctx.createRadialGradient(cx, cy, R * 0.5, cx, cy, R); g.addColorStop(0, `rgba(${pr},${pg},${pb},0)`); g.addColorStop(0.42, `rgba(${pr},${pg},${pb},${ring * 0.45})`); g.addColorStop(0.72, `rgba(${pr},${pg},${pb},${ring})`); g.addColorStop(1, `rgba(${pr},${pg},${pb},0)`); ctx.fillStyle = g; ctx.fillRect(0, 0, STAMP_SIZE, STAMP_SIZE);
+  g = ctx.createRadialGradient(cx, cy, R * 0.62, cx, cy, R * 1.12); g.addColorStop(0, `rgba(${er},${eg},${eb},0)`); g.addColorStop(0.58, `rgba(${er},${eg},${eb},0.18)`); g.addColorStop(0.82, `rgba(${er},${eg},${eb},0.08)`); g.addColorStop(1, `rgba(${er},${eg},${eb},0)`); ctx.fillStyle = g; ctx.fillRect(0, 0, STAMP_SIZE, STAMP_SIZE);
+  const strength = pal.emissive ? 0.2 : 1.0;
+  const img = ctx.getImageData(0, 0, STAMP_SIZE, STAMP_SIZE), d = img.data;
+  for (let y = 0; y < STAMP_SIZE; y++) for (let x = 0; x < STAMP_SIZE; x++) { const i = (y * STAMP_SIZE + x) * 4; if (!d[i + 3]) continue; const n = twoOctaveNoise(x, y, 0x51f15e); d[i + 3] = Math.round(d[i + 3] * (1 - strength + strength * (0.5 + 0.5 * n))); }
+  ctx.putImageData(img, 0, 0);
+  return c;
+}
+
+function drawGranulation(ctx, P, points, stamp) {
+  ctx.save(); ctx.globalCompositeOperation = 'source-atop';
+  for (let i = 0; i < points.length; i += 2) {
+    const pt = points[i], fade = pointFade(pt.age, P.lifetime); if (fade <= 0.01) continue;
+    const w = strokeWidth(P, pt.spawnSpeedPx), ss = Math.max(0.08, (w / (STAMP_R * 2)) * 1.1) * (1 + (jitterHash(pt.jitterSeed, 6) - 0.5) * 0.2);
+    ctx.globalAlpha = fade * 0.12;
+    ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.tangentAngle + (jitterHash(pt.jitterSeed, 7) - 0.5) * 0.12); ctx.scale(ss * 1.7, ss); ctx.drawImage(stamp, -STAMP_HALF, -STAMP_HALF); ctx.restore();
+  }
+  ctx.restore();
+}
+function drawBristles(ctx, P, points) {
+  ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.strokeStyle = '#000'; ctx.lineCap = ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(0.45, 0.8 * SCALE); ctx.globalAlpha = 0.11;
+  for (let strand = -1; strand <= 1; strand++) {
+    ctx.beginPath();
+    points.forEach((pt, i) => { const w = strokeWidth(P, pt.spawnSpeedPx); const off = strand * w * 0.16 + (jitterHash(pt.jitterSeed, 12 + strand) - 0.5) * w * 0.12; const na = pt.tangentAngle + Math.PI / 2; const x = pt.x + Math.cos(na) * off, y = pt.y + Math.sin(na) * off; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function bloodChip(ctx, radius, stretch, seed) {
+  const tip = (jitterHash(seed, 21) - 0.5) * radius * 0.46, left = radius * (0.58 + jitterHash(seed, 22) * 0.28), right = radius * (0.54 + jitterHash(seed, 23) * 0.32), front = radius * stretch * (1.05 + jitterHash(seed, 24) * 0.24), tail = radius * stretch * (0.72 + jitterHash(seed, 25) * 0.2);
+  ctx.beginPath(); ctx.moveTo(tip, -front); ctx.bezierCurveTo(right * 0.72, -radius * 0.62, right, radius * 0.08, right * 0.52, tail * 0.58); ctx.quadraticCurveTo(0, tail, -left * 0.62, tail * 0.5); ctx.bezierCurveTo(-left, radius * 0.04, -left * 0.68, -radius * 0.58, tip, -front); ctx.closePath(); ctx.fill();
+}
+function drawDroplets(ctx, P, drops) {
+  const pal = P.pal, blood = P.palette === 'blood';
+  ctx.save(); ctx.globalCompositeOperation = pal.emissive ? 'lighter' : 'source-over';
+  for (const d of drops) {
+    const fade = pointFade(d.age, d.maxAge), speed = Math.hypot(d.vx, d.vy), stretch = 1 + Math.min(1.7, speed / 190), rot = Math.atan2(d.vy, d.vx) - Math.PI / 2;
+    ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(rot);
+    ctx.globalAlpha = P.peakAlpha * fade * 0.2; ctx.fillStyle = pal.edge;
+    if (blood) bloodChip(ctx, d.radius * 1.14, stretch * 1.08, d.seed); else { ctx.save(); ctx.scale(1.45, stretch * 1.25); ctx.beginPath(); ctx.arc(0, 0, d.radius, 0, TAU); ctx.fill(); ctx.restore(); }
+    ctx.globalAlpha = P.peakAlpha * fade * (d.kind === 'splatter' ? 0.9 : 0.78); ctx.fillStyle = d.kind === 'splatter' ? pal.splatterTint : pal.pigment;
+    if (blood) bloodChip(ctx, d.radius, stretch, d.seed); else { ctx.scale(0.72, stretch); ctx.beginPath(); ctx.arc(0, 0, d.radius, 0, TAU); ctx.fill(); }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/** Splatter bursts at the sharpest turns, breakup droplets off the oldest ink when viscosity allows. */
+function droplets(P, points, rand) {
+  const out = [];
+  // Bursts: the renderer fires on acceleration spikes. Find the two sharpest turns, at least a cooldown apart.
+  const loads = points.map((_, i) => turnLoad(points[Math.max(0, i - 4)], points[i], points[Math.min(points.length - 1, i + 4)]));
+  const picks = [];
+  for (let i = 4; i < points.length - 4; i++) if (loads[i] > 0.5 && loads[i] >= loads[i - 1] && loads[i] >= loads[i + 1] && picks.every(k => Math.abs(k - i) > 14)) picks.push(i);
+  picks.sort((a, b) => loads[b] - loads[a]);
+  const energy = 0.6 + P.splatterIntensity * 0.4;
+  for (const i of picks.slice(0, 3)) {
+    const pt = points[i], before = points[i - 4], after = points[i + 4];
+    const vbx = (pt.x - before.x) * 15, vby = (pt.y - before.y) * 15, vax = (after.x - pt.x) * 15, vay = (after.y - pt.y) * 15;
+    const fling = Math.atan2(-(vay - vby), -(vax - vbx));
+    const count = Math.max(1, Math.round((2 + P.splatterIntensity * 8) * (0.35 + energy * 0.65)));
+    const cone = 0.45 + P.splatterIntensity * 1.7, burst = (42 + P.splatterIntensity * 150) * SCALE;
+    for (let k = 0; k < count; k++) {
+      const seed = pt.materialSeed + k * 0.17320508075, ang = fling + (jitterHash(seed, 0) - 0.5) * cone, sp = burst * (0.55 + jitterHash(seed, 1) * 0.8);
+      const maxAge = (0.35 + jitterHash(seed, 2) * 0.55) * (0.75 + P.splatterIntensity * 0.25);
+      const age = Math.min(maxAge * 0.85, pt.age + 0.05 + rand() * 0.2);
+      const vx = vax * 0.12 + Math.cos(ang) * sp, vy0 = vay * 0.12 + Math.sin(ang) * sp;
+      out.push({ x: pt.x + vx * age, y: pt.y + vy0 * age + 0.5 * GRAVITY * SCALE * age * age, vx, vy: vy0 + GRAVITY * SCALE * age, age, maxAge, radius: (1 + jitterHash(seed, 3) * 2.6) * SCALE * 0.8, seed, kind: 'splatter' });
+    }
+  }
+  return out;
+}
+function breakupTail(P, points, rand) {
+  // Only India, Neon and Acid shatter; the oldest stretch of ink goes first.
+  if (P.palette === 'blood') return { kept: points, drops: [] };
+  const cut = Math.round(points.length * P.viscosity * 0.42);
+  const detached = points.slice(0, cut), kept = points.slice(cut);
+  const stride = 3 + Math.round(P.splatterIntensity * 2), drops = [];
+  for (let i = 0; i < detached.length; i += stride) {
+    const pt = detached[i], age = Math.min(1.2, (cut - i) / 60 * 1.6 + rand() * 0.1);
+    const maxAge = 1.5 * (0.7 + jitterHash(pt.jitterSeed, 9) * 0.6) * (0.48 + (1 - P.splatterIntensity) * 0.18);
+    if (age >= maxAge) continue;
+    const vx = (jitterHash(pt.jitterSeed, 8) - 0.5) * DROPLET_DRIFT_PX * 2 * SCALE;
+    drops.push({ x: pt.x + vx * age, y: pt.y + 0.5 * GRAVITY * SCALE * age * age, vx, vy: GRAVITY * SCALE * age, age, maxAge, radius: (2 + jitterHash(pt.jitterSeed, 10) * 4) * SCALE * 0.5, seed: pt.jitterSeed, kind: 'breakup' });
+  }
+  return { kept, drops };
+}
+
+function draw(ctx, p, rand) {
+  const P = resolveParams(p), pal = P.pal;
+  const darkStage = !pal.emissive && isDark(pal.edge);
+  ground(ctx, darkStage ? [0.3, 0.29, 0.33] : [0.03, 0.03, 0.045]);
+  if (darkStage) blob(ctx, 360, 120, 380, 220, [0.66, 0.64, 0.7], 0.8);
+  else if (pal.emissive) blob(ctx, 330, 140, 360, 170, hexToRgb(pal.pigment), 0.12 + 0.1 * P.intensity);
+  else blob(ctx, 330, 140, 360, 170, hexToRgb(pal.pigment), 0.05);
+
+  const all = recordStroke(P, rand);
+  const { kept: points, drops: breakDrops } = breakupTail(P, all, rand);
+  const ribbon = buildRibbon(points, P, !pal.emissive);
+
+  // The renderer draws ink on its own transparent layer so grain can clip to it and bristles can cut it.
+  const layer = document.createElement('canvas'); layer.width = W; layer.height = H; const L = layer.getContext('2d');
+  const A = P.peakAlpha;
+  if (pal.emissive) {
+    ribbonPass(L, ribbon, pal.edge, 1.04, A * 0.12, 'lighter', { noiseChannel: 39, chunkSize: 6 });
+    ribbonPass(L, ribbon, pal.pigment, 0.68, A * 0.74, 'lighter', { noiseChannel: 41, chunkSize: 5 });
+    segmentedPass(L, ribbon, mixWithWhite(pal.edge, 0.55), 0.32, A * 0.72, 'lighter', 43);
+  } else {
+    const edge = darkStage ? mixWithWhite(pal.edge, 0.22) : pal.edge, pig = darkStage ? mixWithWhite(pal.pigment, 0.22) : pal.pigment;
+    ribbonPass(L, ribbon, edge, 1.02, A * (darkStage ? 0.06 : 0.05), 'source-over', { noiseChannel: 45, chunkSize: 7 });
+    ribbonPass(L, ribbon, pig, 0.72, A * 0.82, 'source-over', { noiseChannel: 47, chunkSize: 6 });
+    segmentedPass(L, ribbon, pal.pigment, 0.52, A * 0.5, 'source-over', 49);
+    ribbonPass(L, ribbon, mixWithWhite(pal.edge, darkStage ? 0.8 : 0.62), 0.16, A * (darkStage ? 0.72 : 0.58), 'screen', { offsetFactor: 0.18, noiseChannel: 51, breakThreshold: 0.12, chunkSize: 3, wetOnly: true });
+  }
+  drawGranulation(L, P, points, makeStamp(pal, P.intensity));
+  drawBristles(L, P, points);
+  drawDroplets(L, P, [...breakDrops, ...droplets(P, points, rand)]);
+  if (pal.emissive) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.filter = 'blur(14px)'; ctx.globalAlpha = 0.55; ctx.drawImage(layer, 0, 0); ctx.restore(); }
+  ctx.drawImage(layer, 0, 0);
+}
+
+const root = document.getElementById('root');
+for (const preset of PRESETS) {
+  const p = preset.patch;
+  const row = document.createElement('div'); row.className = 'card';
+  row.innerHTML = `<h3>${preset.name} <small>${p.palette} · intensity ${p.intensity} · viscosity ${p.viscosity} · splatter ${p.splatterIntensity}</small></h3><div class="row"></div>`;
+  for (const cls of ['small', 'large']) {
+    const c = document.createElement('canvas'); c.width = W; c.height = H; c.className = cls;
+    draw(c.getContext('2d'), p, lcg(0x1a4b + preset.name.length * 733));
+    row.querySelector('.row').appendChild(c);
+  }
+  root.appendChild(row);
+}
+</script>
+</body></html>
