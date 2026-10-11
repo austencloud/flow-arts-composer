@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   assembleLayout,
   cellCenter,
+  type CellRect,
   CONSTRUCT_CHOICE_COUNT,
   CONSTRUCT_MAX_SLOTS,
   constructChoiceCells,
@@ -268,10 +269,57 @@ describe("Tunnel", () => {
 });
 
 describe("Assemble", () => {
-  it("centers the grid in any box", () => {
-    expect(assembleLayout(146, 48)).toEqual(at(49, 0, 48));
-    expect(assembleLayout(308, 96)).toEqual(at(106, 0, 96));
-    expect(assembleLayout(200, 200)).toEqual(at(0, 0, 200));
+  it("puts the beats beside the grid in a strip", () => {
+    expect(assembleLayout("strip", 146, 48)).toEqual({
+      grid: at(8, 0, 48),
+      beats: [at(62, 6, 36), at(101, 6, 36)],
+    });
+    expect(assembleLayout("roomy", 308, 96)).toEqual({
+      grid: at(26, 0, 96),
+      beats: [at(132, 12, 72), at(209, 12, 72)],
+    });
+  });
+
+  it("puts the beats under the grid in a square", () => {
+    expect(assembleLayout("square", 144, 144)).toEqual({
+      grid: at(29, 0, 85),
+      beats: [at(17, 92, 51), at(75, 92, 51)],
+    });
+    expect(assembleLayout("square", 200, 200)).toEqual({
+      grid: at(40, 0, 120),
+      beats: [at(24, 128, 72), at(104, 128, 72)],
+    });
+  });
+
+  it("keeps the grid and both beats apart and inside any box", () => {
+    const overlap = (a: CellRect, b: CellRect) =>
+      a.x < b.x + b.size &&
+      b.x < a.x + a.size &&
+      a.y < b.y + b.size &&
+      b.y < a.y + a.size;
+    for (const shape of ["strip", "roomy", "square"] as const) {
+      for (let width = 40; width <= 820; width += 13) {
+        for (let height = 30; height <= 420; height += 11) {
+          const layout = assembleLayout(shape, width, height);
+          if (!layout) continue;
+          const rects = [layout.grid, ...layout.beats];
+          expect(layout.beats).toHaveLength(2);
+          for (const rect of rects) {
+            expect(rect.size).toBeGreaterThan(0);
+            expect(rect.x).toBeGreaterThanOrEqual(0);
+            expect(rect.y).toBeGreaterThanOrEqual(0);
+            expect(rect.x + rect.size).toBeLessThanOrEqual(width);
+            expect(rect.y + rect.size).toBeLessThanOrEqual(height);
+          }
+          expect(layout.beats[0]!.size).toBeLessThan(layout.grid.size);
+          for (const [index, a] of rects.entries()) {
+            for (const b of rects.slice(index + 1)) {
+              expect(overlap(a, b)).toBe(false);
+            }
+          }
+        }
+      }
+    }
   });
 });
 
@@ -282,6 +330,6 @@ describe("an unsized box", () => {
     expect(shapeLayout("square", 0, 10)).toBeNull();
     expect(fuseLayout("strip", 0, 48)).toBeNull();
     expect(tunnelLayout("strip", 0, 48)).toBeNull();
-    expect(assembleLayout(0, 48)).toBeNull();
+    expect(assembleLayout("strip", 0, 48)).toBeNull();
   });
 });

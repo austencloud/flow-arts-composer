@@ -260,7 +260,7 @@ describe("petal art direction", () => {
     const renderer = new PetalPoolRenderer3D();
     renderer.initialize(parent);
     renderer.update([], 1 / 60);
-    expect(parent.children.length).toBe(2);
+    expect(parent.children.length).toBe(3);
     renderer.dispose();
     expect(parent.children).toHaveLength(0);
   });

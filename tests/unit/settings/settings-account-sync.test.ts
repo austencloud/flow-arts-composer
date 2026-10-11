@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { BackgroundType } from "@austencloud/backgrounds";
 
 type RemoteSettings = Record<string, unknown>;
@@ -69,6 +69,13 @@ async function loadSettingsService() {
 }
 
 describe("account settings synchronization", () => {
+  // The stub above did not take on CI on 2026-10-10: the real logger and
+  // posthog-js were still loading at teardown, and Vitest failed the run with
+  // every test green. Waiting for the same import settles it either way.
+  afterAll(async () => {
+    await import("#lib/shared/analytics/services/posthog-activity-logger.js");
+  });
+
   beforeEach(() => {
     localStorage.clear();
     auth.currentUser = { uid: "user-b" };

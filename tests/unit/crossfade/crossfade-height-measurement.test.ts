@@ -1,5 +1,5 @@
 import { flushSync, mount, unmount } from "svelte";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CrossfadeMeasureHarness from "./CrossfadeMeasureHarness.svelte";
 import { CrossfadeDom, heightKeyframes, layerAt } from "./crossfade-dom-fakes";
 
@@ -188,5 +188,32 @@ describe("Crossfade animateHeight: reflow while the box is still easing", () => 
 
     expect(box.style.height).toBe("80px");
     expect(dom.heightAnimationsOn(box)).toEqual([]);
+  });
+});
+
+describe("Crossfade animateHeight: fractional layer height", () => {
+  it("writes the layer's exact height, not offsetHeight's rounded one", () => {
+    // offsetHeight rounds 49.6px up to 50; writing that grew the box a
+    // fraction of a pixel after mount and shifted centred neighbours by one.
+    const realStyle = window.getComputedStyle.bind(window);
+    const spy = vi
+      .spyOn(window, "getComputedStyle")
+      .mockImplementation((element, pseudo) => {
+        const style = realStyle(element, pseudo);
+        if (!(element as HTMLElement).classList.contains("layer")) return style;
+        return Object.assign(Object.create(style), {
+          height: "49.6px",
+          boxSizing: "content-box",
+          paddingTop: "0px",
+          paddingBottom: "0px",
+          borderTopWidth: "0px",
+          borderBottomWidth: "0px",
+        });
+      });
+    cleanups.push(() => spy.mockRestore());
+
+    const { box } = mountHarness({});
+
+    expect(box.style.height).toBe("49.6px");
   });
 });

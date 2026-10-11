@@ -11,21 +11,23 @@
   import type { User } from "firebase/auth";
   import { authState } from "../../../auth/state/auth-state.svelte";
   import { toast } from "../../../toast/state/toast-state.svelte";
-  import { doc, getDoc } from "firebase/firestore";
-  import { getFirestoreInstance } from "../../../auth/firebase";
-  import { onMount, tick } from "svelte";
+  import { tick } from "svelte";
   import AccountValueRow from "./AccountValueRow.svelte";
 
   interface Props {
     user: User;
+    /** The saved username, as Account last read or saved it. */
+    username: string;
     hapticService: HapticFeedback | null;
     onUsernameChanged?: (username: string) => void;
   }
 
-  let { user, hapticService, onUsernameChanged }: Props = $props();
+  let { user, username, hapticService, onUsernameChanged }: Props = $props();
 
   // Local state
-  let currentUsername = $state("");
+  // The saved username comes from Account, which already reads the profile;
+  // a save shows here at once and Account catches up through the callback.
+  let currentUsername = $derived(username);
   let editedUsername = $state("");
   let isEditing = $state(false);
   let isSaving = $state(false);
@@ -37,20 +39,6 @@
   let checkTimeoutId: ReturnType<typeof setTimeout> | null = null;
   let usernameInput = $state<HTMLInputElement | null>(null);
   let editButton = $state<HTMLButtonElement | null>(null);
-
-  // Load current username from Firestore on mount
-  onMount(async () => {
-    try {
-      const firestore = await getFirestoreInstance();
-      const userDocRef = doc(firestore, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-      if (userDoc.exists()) {
-        currentUsername = userDoc.data()?.username || "";
-      }
-    } catch (err) {
-      console.error("Failed to load username:", err);
-    }
-  });
 
   const isSaveDisabled = $derived(
     isSaving ||

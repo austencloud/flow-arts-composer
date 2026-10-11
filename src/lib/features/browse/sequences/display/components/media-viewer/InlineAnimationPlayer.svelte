@@ -8,7 +8,7 @@
 -->
 <script lang="ts">
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
-  import { onMount, onDestroy, untrack } from "svelte";
+  import { onMount, onDestroy, untrack, type Snippet } from "svelte";
   import type { ViewerCustomColorPair } from "#lib/shared/sequence-viewer/domain/viewer-custom-colors.js";
   import {
     createRenderActivityGate,
@@ -180,6 +180,7 @@
     cornerToggle = false,
     cornerToggleAtRest = false,
     showScrubberPlaybackControl = false,
+    scrubberTrailing = undefined,
     playbackAllowed = true,
     resumeWhenPlaybackAllowed = false,
     onTogglePlaybackRef = undefined,
@@ -371,6 +372,9 @@
     cornerToggleAtRest?: boolean;
     /** Keeps a persistent transport action adjacent to a minimal scrubber. */
     showScrubberPlaybackControl?: boolean;
+    /** A control at the far end of the scrubber row (scrubbable minimal
+     *  chrome), such as the Create preview's effect button. */
+    scrubberTrailing?: Snippet;
     /** Pause this player while its host is not visible. Returning to view does
      *  not resume motion unless autoplay has not happened yet. */
     playbackAllowed?: boolean;
@@ -1120,6 +1124,7 @@
         {cornerToggle}
         {cornerToggleAtRest}
         {showScrubberPlaybackControl}
+        progressTrailing={scrubberTrailing}
         onInitialized={onCanvasInitialized}
         onCanvasReady={(canvas) => (liveCanvas = canvas)}
         extraContextMenuItems={videoMenuItems}

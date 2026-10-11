@@ -6,26 +6,25 @@
 -->
 <script lang="ts">
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
-  import type { User } from "firebase/auth";
   import { authState } from "../../../auth/state/auth-state.svelte";
   import { toast } from "../../../toast/state/toast-state.svelte";
-  import { doc, getDoc } from "firebase/firestore";
-  import { getFirestoreInstance } from "../../../auth/firebase";
-  import { onMount, tick } from "svelte";
+  import { tick } from "svelte";
   import { t } from "../../../i18n/i18n.svelte.js";
   import FilterChipBase from "#lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
   import AccountValueRow from "./AccountValueRow.svelte";
 
   interface Props {
-    user: User;
+    /** The saved pronouns, as Account last read or saved them. */
+    pronouns: string;
     hapticService: HapticFeedback | null;
     onPronounsChanged?: (pronouns: string) => void;
   }
 
-  let { user, hapticService, onPronounsChanged }: Props = $props();
+  let { pronouns, hapticService, onPronounsChanged }: Props = $props();
 
   // Local state
-  let currentPronouns = $state("");
+  // The saved pronouns come from Account, which already reads the profile.
+  let currentPronouns = $derived(pronouns);
   let editedPronouns = $state("");
   let isEditing = $state(false);
   let isSaving = $state(false);
@@ -39,20 +38,6 @@
     { key: "she/her", label: t("pronoun_preset_she_her") },
     { key: "they/them", label: t("pronoun_preset_they_them") },
   ]);
-
-  // Load current pronouns from Firestore on mount
-  onMount(async () => {
-    try {
-      const firestore = await getFirestoreInstance();
-      const userDocRef = doc(firestore, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-      if (userDoc.exists()) {
-        currentPronouns = userDoc.data()?.pronouns || "";
-      }
-    } catch (err) {
-      console.error("Failed to load pronouns:", err);
-    }
-  });
 
   // Derived: can save if changed
   const isSaveDisabled = $derived(
