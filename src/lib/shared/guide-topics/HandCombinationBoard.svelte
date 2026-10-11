@@ -13,12 +13,22 @@
   sets the pictures' colors for a page with its own theme switch; left out,
   they follow the app theme. `printMode` draws them on the white print
   surface, as the Guide's own pictures are in light mode.
+
+  `cellProgress` plays a cell's move: a number from 0 to 1 glides its hands
+  from their start points and fades its arrows in, as LessonPictographStage
+  plays one; null draws the finished picture. `onCellPlay` reports a pointer
+  entering or clicking a found cell, so the host can replay it. Both are off
+  unless passed.
 -->
 <script lang="ts">
   import PictographContainer from "#lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { GridMode } from "#lib/shared/pictograph/grid/domain/enums/grid-enums.js";
   import { PropType } from "#lib/shared/pictograph/prop/domain/enums/prop-type.js";
   import { LETTER_TYPE_COLORS } from "#lib/shared/pictograph/shared/domain/constants/pictograph-constants.js";
+  import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/start-placement-deriver.js";
+  import type { StepData } from "#lib/shared/foundation/domain/models/step-data.js";
+  import { createStepData } from "#lib/shared/foundation/domain/factories/create-step-data.js";
+  import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import {
     HAND_COMBINATIONS,
     combinationPictographData,
@@ -34,6 +44,8 @@
     darkMode?: boolean;
     printMode?: boolean;
     label?: string;
+    cellProgress?: (id: HandCombinationId) => number | null;
+    onCellPlay?: (id: HandCombinationId) => void;
   }
 
   let {
@@ -44,13 +56,32 @@
     darkMode = undefined,
     printMode = false,
     label,
+    cellProgress = undefined,
+    onCellPlay = undefined,
   }: Props = $props();
 
-  const cells = HAND_COMBINATIONS.map((combination) => ({
-    combination,
-    data: combinationPictographData(combination),
-    tones: LETTER_TYPE_COLORS[combination.letterType],
-  }));
+  /** Where the example's hands start, for a cell that plays its move. */
+  function startPose(data: PictographData): PictographData | null {
+    try {
+      return startPlacementDeriver.deriveFromFirstStep(
+        data as unknown as StepData
+      ) as unknown as PictographData;
+    } catch {
+      return null;
+    }
+  }
+
+  const cells = HAND_COMBINATIONS.map((combination) => {
+    const data = combinationPictographData(combination);
+    return {
+      combination,
+      data,
+      start: startPose(data),
+      // The container plays a move only for a step.
+      step: createStepData({ ...data, id: data.id }),
+      tones: LETTER_TYPE_COLORS[combination.letterType],
+    };
+  });
 </script>
 
 <div class="board-frame">
@@ -60,8 +91,13 @@
     class:names-only-narrow={namesOnlyWhenNarrow}
     aria-label={label}
   >
-    {#each cells as { combination, data, tones } (combination.id)}
+    {#each cells as { combination, data, start, step, tones } (combination.id)}
       {@const isFound = found === null || found.has(combination.id)}
+      {@const progress = start
+        ? (cellProgress?.(combination.id) ?? null)
+        : null}
+      <!-- Replay is a pointer extra; every cell has already played on view. -->
+      <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
       <li
         class="cell"
         class:found={isFound}
@@ -69,6 +105,12 @@
         style:--tone-a={tones[0]}
         style:--tone-b={tones[1]}
         aria-hidden={isFound ? undefined : "true"}
+        onpointerenter={isFound && onCellPlay
+          ? () => onCellPlay(combination.id)
+          : undefined}
+        onclick={isFound && onCellPlay
+          ? () => onCellPlay(combination.id)
+          : undefined}
       >
         <div class="art" aria-hidden="true">
           <div class="picture">
@@ -86,6 +128,10 @@
               stepNumberOverride={false}
               {darkMode}
               {printMode}
+              motionStep={progress === null ? null : step}
+              motionStartData={progress === null ? null : start}
+              motionProgress={progress}
+              arrowOpacity={progress ?? 1}
             />
           </div>
         </div>

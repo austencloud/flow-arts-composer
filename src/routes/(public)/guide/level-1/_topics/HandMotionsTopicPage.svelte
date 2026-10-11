@@ -7,6 +7,7 @@
   Motions record the lesson also reads.
 -->
 <script lang="ts">
+  import { onMount } from "svelte";
   import { t } from "#lib/shared/i18n/i18n.svelte.js";
   import type { TranslationKey } from "#lib/shared/i18n/i18n-types.js";
   import LinkChip from "#lib/shared/ui/components/LinkChip.svelte";
@@ -20,11 +21,13 @@
   import type { PictographData } from "#lib/shared/pictograph/shared/domain/models/pictograph-data.js";
   import HandCombinationBoard from "#lib/shared/guide-topics/HandCombinationBoard.svelte";
   import {
+    HAND_COMBINATIONS,
     MOTION_MAP_HOME,
     MOTION_MAP_MOVES,
     handMotionsTopicText,
     motionMapArrowData,
     motionMapTargets,
+    type HandCombinationId,
     type HandMove,
   } from "#lib/shared/guide-topics/hand-motions-topic.js";
   import GuidePictograph from "../_components/GuidePictograph.svelte";
@@ -67,6 +70,73 @@
     dash: motionMapArrowData(MOTION_MAP_HOME, targets[2]!),
     static: staticData,
   };
+
+  /**
+   * The six examples play once when the board comes into view, left to
+   * right: the hands glide from their start points and the arrows fade in,
+   * as LessonPictographStage plays a move. Each then holds its finished
+   * picture, the book's view; a hover or tap replays it. Reduced motion and
+   * print keep the finished pictures.
+   */
+  const PLAY_MS = 1050;
+  const STAGGER_MS = 350;
+  let progress = $state<Partial<Record<HandCombinationId, number>>>({});
+  const startedAt = new Map<HandCombinationId, number>();
+  let frame: number | null = null;
+  let board: HTMLDivElement | undefined = $state();
+
+  function tick(now: number) {
+    for (const [id, start] of startedAt) {
+      const linear = Math.min(1, Math.max(0, (now - start) / PLAY_MS));
+      progress[id] = 1 - Math.pow(1 - linear, 3);
+      if (linear >= 1) startedAt.delete(id);
+    }
+    frame = startedAt.size > 0 ? requestAnimationFrame(tick) : null;
+  }
+
+  function play(ids: readonly HandCombinationId[]) {
+    const now = performance.now();
+    ids.forEach((id, index) => {
+      startedAt.set(id, now + index * STAGGER_MS);
+      progress[id] = 0;
+    });
+    frame ??= requestAnimationFrame(tick);
+  }
+
+  function replay(id: HandCombinationId) {
+    if (progress[id] === 1) play([id]);
+  }
+
+  function settle() {
+    startedAt.clear();
+    if (frame !== null) cancelAnimationFrame(frame);
+    frame = null;
+    progress = {};
+  }
+
+  onMount(() => {
+    if (!board || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const ids = HAND_COMBINATIONS.map((combination) => combination.id);
+    // The examples wait at their start points until the board is in view.
+    for (const id of ids) progress[id] = 0;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        play(ids);
+      },
+      { threshold: 0.35 }
+    );
+    observer.observe(board);
+    window.addEventListener("beforeprint", settle);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("beforeprint", settle);
+      settle();
+    };
+  });
 </script>
 
 <article class="hand-motions-topic">
@@ -103,11 +173,13 @@
     <p id="hand-combinations-lead" class="lead">
       {handMotionsTopicText("combinationsLead")}
     </p>
-    <div class="board" class:dark={darkMode}>
+    <div class="board" class:dark={darkMode} bind:this={board}>
       <HandCombinationBoard
         showDescriptions
         {darkMode}
         printMode={!darkMode}
+        cellProgress={(id) => progress[id] ?? null}
+        onCellPlay={replay}
         label={handMotionsTopicText("combinationsLead")}
       />
     </div>
