@@ -26,3 +26,26 @@ Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
 
 Do not kill another task's process to satisfy the budget. Prefer focused checks
 and stop after the evidence required by `AGENTS.md` passes.
+
+## Heavy Checks Run on d2
+
+On d1, send a full Vitest suite, full build, `check:full`, or a `verify:*` gate
+to d2, the office desktop, instead of running it locally. Commit first: only
+committed content runs there.
+
+```powershell
+pwsh scripts/d2-run.ps1 "pnpm vitest run"
+pwsh scripts/d2-run.ps1 -Ref <sha> -Name build "pnpm run build"
+pwsh scripts/d2-run.ps1 -NoWait "pnpm run check:full"   # prints a job id
+pwsh scripts/d2-run.ps1 -Job <id>                      # waits, then log tail
+```
+
+It pushes the commit to d2, installs it in a scratch worktree there, runs the
+command detached, and exits with the command's exit code. d2 has 12 threads to
+d1's 32, so expect about twice the run time. Focused checks, the `wt:finish`
+gate, and browser verification stay on d1. If d2 is unreachable, say so and
+run the check on d1 under the rules above.
+
+The script needs this rule in `.claude/settings.local.json` (Austen adds it):
+`"PowerShell(pwsh scripts/d2-run.ps1 *)"`. Don't replace the script with raw
+`ssh` or `scp` calls.
