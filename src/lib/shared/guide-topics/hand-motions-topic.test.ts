@@ -40,7 +40,9 @@ describe("Hand Motions topic record", () => {
   });
 
   it("carries the approved motion map prompt", () => {
-    expect(handMotionsTopicText("mapPrompt")).toBe("Drag the hand to a point.");
+    expect(handMotionsTopicText("mapPrompt")).toBe(
+      "Pick a point to move the hand."
+    );
   });
 
   it("lists the three moves in the book's order", () => {

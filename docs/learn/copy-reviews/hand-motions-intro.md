@@ -39,7 +39,7 @@ additional explanation of how to perform these motions is approved.
 The three stages share the heading “Hand Motions” (the Guide page title). Each
 stage's line under it:
 
-> Drag the hand to a point.
+> Pick a point to move the hand.
 
 > Move the blue hand, then the red hand. Find all six.
 
@@ -228,6 +228,11 @@ the lesson does not repeat Water, Earth, Sun, Fire, Air, or Moon as headings.
   blue hand, then the red hand. Find all six.” It replaces “Drag both hands.
   Find all six.” German: “Bewege erst die blaue Hand, dann die rote. Finde
   alle sechs.”
+- 2026-10-11 — The hand grids now take a click or tap on any point, with
+  Assemble's point rings. Austen chose the motion map prompt “Pick a point to
+  move the hand.” over “Tap or drag the hand to a point.” and keeping “Drag
+  the hand to a point.”, which it replaces. German: “Wähle einen Punkt, um die
+  Hand zu bewegen.”
 
 ## Shared-path Refinement Verification — 2026-09-04
 

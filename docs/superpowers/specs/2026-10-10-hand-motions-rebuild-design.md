@@ -193,7 +193,8 @@ teaching explanation is added.
 Austen approved the three new lesson prompts as written on 2026-10-11 (copy
 gate in `docs/learn/copy-reviews/hand-motions-intro.md`):
 
-- Stage 1: "Drag the hand to a point."
+- Stage 1: "Pick a point to move the hand." (was "Drag the hand to a
+  point." until clicking a point moved the hand, 2026-10-11)
 - Stage 2: "Move the blue hand, then the red hand. Find all six." (was
   "Drag both hands. Find all six." until the 2026-10-11 two-grid redesign)
 - Mirror pair: "Same pair, hands swapped."
