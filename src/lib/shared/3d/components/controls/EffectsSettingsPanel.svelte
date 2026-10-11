@@ -500,6 +500,7 @@
         <EffectPresetsSection
           presetGroup={activeRegistration.presetGroup}
           {activePresetId}
+          propType={trackingPropType}
           onSelectPreset={selectPreset}
           effectLabel={activeRegistration.meta.label}
           accentColor={activeRegistration.meta.color}
@@ -573,6 +574,7 @@
                 effectType={effectId}
                 preset={look.preset}
                 legacyModel={look.model}
+                propType={trackingPropType}
                 active={activeEffectKey === effectId}
               />
             {/if}
@@ -645,6 +647,7 @@
         <EffectPresetsSection
           presetGroup={activeRegistration.presetGroup}
           {activePresetId}
+          propType={trackingPropType}
           onSelectPreset={selectPreset}
           effectLabel={activeRegistration.meta.label}
           accentColor={activeRegistration.meta.color}

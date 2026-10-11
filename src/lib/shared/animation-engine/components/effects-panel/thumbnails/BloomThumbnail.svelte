@@ -1,6 +1,7 @@
 <script lang="ts">
   import { DEFAULT_EFFECTS_CONFIG } from "#lib/shared/effects/domain/defaults.js";
   import type { EffectPreset } from "../presets/types";
+  import { withAlpha } from "./tile-paint";
 
   interface Props {
     preset: EffectPreset<"bloom">;
@@ -33,9 +34,15 @@
       case "prop-matched":
         return [BLUE, RED];
       case "palette":
-        return intent.palette.length ? intent.palette.slice(0, 3) : [intent.color];
+        return intent.palette.length
+          ? intent.palette.slice(0, 3)
+          : [intent.color];
       case "rainbow":
-        return ["hsl(350, 85%, 62%)", "hsl(45, 90%, 60%)", "hsl(195, 85%, 60%)"];
+        return [
+          "hsl(350, 85%, 62%)",
+          "hsl(45, 90%, 60%)",
+          "hsl(195, 85%, 60%)",
+        ];
       case "solid":
       default:
         return [intent.color];
@@ -50,18 +57,6 @@
   /** Presets live roughly in 20-90; map that onto the tile generously. */
   function normRadius(radius: number): number {
     return Math.min(1, Math.max(0, (radius - 20) / 70));
-  }
-
-  function withAlpha(color: string, alpha: number): string {
-    const a = Math.min(1, Math.max(0, alpha));
-    if (color.startsWith("#")) {
-      let h = color.slice(1);
-      if (h.length === 3) h = h.split("").map((c) => c + c).join("");
-      const n = parseInt(h, 16);
-      return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
-    }
-    if (color.startsWith("hsl(")) return `hsla${color.slice(3, -1)}, ${a})`;
-    return color;
   }
 
   function drawHalo(
@@ -179,16 +174,29 @@
     ctx.globalCompositeOperation = "lighter";
 
     colors.forEach((color, i) => {
-      const offset = colors.length === 1 ? 0 : (i - (colors.length - 1) / 2) * spread;
+      const offset =
+        colors.length === 1 ? 0 : (i - (colors.length - 1) / 2) * spread;
       const x = WIDTH / 2 + offset;
       if (reach > 0.02) drawSmear(ctx, x, cy, r, color, alpha, reach);
       drawHalo(ctx, x, cy, r, color, alpha, intent.falloff);
       if (intent.coreStrength > 0) {
-        drawCore(ctx, x, cy, r * (0.12 + 0.2 * intent.coreStrength), alpha * (0.4 + 0.6 * intent.coreStrength));
+        drawCore(
+          ctx,
+          x,
+          cy,
+          r * (0.12 + 0.2 * intent.coreStrength),
+          alpha * (0.4 + 0.6 * intent.coreStrength)
+        );
       }
       if (intent.spikes > 0) {
         const len = Math.min(HEIGHT * 0.46, r * (0.9 + 1.7 * intent.spikes));
-        drawSpikes(ctx, x, cy, len, alpha * Math.min(1, 0.45 + intent.spikes * 0.55));
+        drawSpikes(
+          ctx,
+          x,
+          cy,
+          len,
+          alpha * Math.min(1, 0.45 + intent.spikes * 0.55)
+        );
       }
     });
 
