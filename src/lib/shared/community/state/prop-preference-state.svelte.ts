@@ -22,24 +22,50 @@ function catdogStillSelected(
   props: readonly PropType[]
 ): CatdogCombo | null {
   if (!combo) return null;
-  return props.includes(combo.leftPropType) && props.includes(combo.rightPropType)
+  return props.includes(combo.leftPropType) &&
+    props.includes(combo.rightPropType)
     ? combo
     : null;
 }
 
+// The last preferences each account loaded or saved this session. A view
+// that mounts again draws them at once and refreshes quietly, instead of
+// showing "Loading" and then pushing its layout around when the values land.
+const lastKnownPreferences = new Map<string, PropPreferences>();
+
+/**
+ * Loads an account's preferences and remembers them, so the first prop
+ * preference view for that account draws them without a loading pass. The
+ * app shell uses this for the props it already reads at sign-in.
+ */
+export async function loadAndRememberPropPreferences(
+  userId: string
+): Promise<PropPreferences> {
+  const prefs = await loadPropPreferences(userId);
+  lastKnownPreferences.set(userId, clonePreferences(prefs));
+  return prefs;
+}
+
 export function createPropPreferenceState(userId: string) {
-  let propsISpinWith = $state<PropType[]>([]);
-  let favoriteProp = $state<PropType | null>(null);
-  let favoriteCatdog = $state<CatdogCombo | null>(null);
-  let loading = $state(true);
+  const known = lastKnownPreferences.get(userId);
+  let propsISpinWith = $state<PropType[]>(
+    known ? [...known.propsISpinWith] : []
+  );
+  let favoriteProp = $state<PropType | null>(known?.favoriteProp ?? null);
+  let favoriteCatdog = $state<CatdogCombo | null>(
+    known?.favoriteCatdog ? { ...known.favoriteCatdog } : null
+  );
+  let loading = $state(!known);
   let saving = $state(false);
   let error = $state<string | null>(null);
 
-  let confirmedPreferences: PropPreferences = {
-    propsISpinWith: [],
-    favoriteProp: null,
-    favoriteCatdog: null,
-  };
+  let confirmedPreferences: PropPreferences = known
+    ? clonePreferences(known)
+    : {
+        propsISpinWith: [],
+        favoriteProp: null,
+        favoriteCatdog: null,
+      };
   let writeQueue: Promise<void> = Promise.resolve();
   let pendingWrites = 0;
   let latestWriteId = 0;
@@ -59,10 +85,12 @@ export function createPropPreferenceState(userId: string) {
   }
 
   async function load() {
-    loading = true;
+    if (!lastKnownPreferences.has(userId)) loading = true;
     error = null;
     try {
-      const prefs = clonePreferences(await loadPropPreferences(userId));
+      const prefs = clonePreferences(
+        await loadAndRememberPropPreferences(userId)
+      );
       confirmedPreferences = prefs;
       applyPreferences(prefs);
     } catch (loadError) {
@@ -100,6 +128,7 @@ export function createPropPreferenceState(userId: string) {
     try {
       await operation;
       confirmedPreferences = clonePreferences(optimistic);
+      lastKnownPreferences.set(userId, clonePreferences(optimistic));
     } catch (saveError) {
       if (writeId === latestWriteId) {
         applyPreferences(confirmedPreferences);

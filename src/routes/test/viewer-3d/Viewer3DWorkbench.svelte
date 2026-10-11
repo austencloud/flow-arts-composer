@@ -8,7 +8,9 @@
   import midflank from "#lib/shared/3d/environments/domain/models/scene-configs/ember-midflank-r5.json";
   import { SCENE_FEATURES } from "#lib/shared/3d/scene-features/domain/scene-feature-registry.js";
   import { goto } from "$app/navigation";
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
+  import { createEffectsConfigState } from "#lib/shared/effects/state/effects-config-state.svelte.js";
+  import { readReviewEffect } from "./effect-review.js";
 
   import Viewer3DFullscreen from "#lib/shared/3d/components/Viewer3DFullscreen.svelte";
   import { setViewer3DContext } from "#lib/shared/3d/context/viewer-3d-context.js";
@@ -37,6 +39,14 @@
     BackgroundType.VOID,
   ]);
   const STREAMED_SCENE_FEATURES = ["environment"] as const;
+  const reviewEffect =
+    typeof window !== "undefined"
+      ? readReviewEffect(new URLSearchParams(window.location.search))
+      : undefined;
+  const reviewEffects = reviewEffect
+    ? createEffectsConfigState(undefined, { persist: false })
+    : undefined;
+  if (reviewEffect) reviewEffects?.setActiveEffect(reviewEffect);
   const workerReview =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("renderer") === "worker";
@@ -151,6 +161,14 @@
   });
   const currentStep = $derived(currentStepBase + playback.progress);
 
+  onMount(() => {
+    if (reviewEffect) {
+      // Persisted isPlaying does not itself schedule an animation frame.
+      playback.pause();
+      playback.play();
+    }
+  });
+
   $effect(() => {
     playback.speed = bpm / 60;
   });
@@ -180,6 +198,7 @@
 
 <div class="workbench" data-viewer-3d-workbench>
   <Viewer3DFullscreen
+    effectsConfig={reviewEffects}
     sequenceData={sequence}
     {currentStep}
     isPlaying={playback.isPlaying}

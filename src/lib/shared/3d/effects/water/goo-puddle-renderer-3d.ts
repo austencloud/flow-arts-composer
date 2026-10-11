@@ -354,7 +354,8 @@ export class GooPuddleRenderer3D {
       vertexStart += columns * rows;
     }
     this.geometry.setDrawRange(0, indexCount);
-    index.count = indexCount;
+    // three's types mark count readonly; at runtime it is a plain field.
+    (index as { count: number }).count = indexCount;
     index.needsUpdate = true;
     this.geometry.getAttribute("position").needsUpdate = true;
     this.geometry.getAttribute("color").needsUpdate = true;

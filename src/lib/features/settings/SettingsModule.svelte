@@ -433,6 +433,70 @@
     view-transition-name: tab-content;
   }
 
+  /* Every tab sits on the same dark surface, so the surface gets its own
+     name: it reshapes from one tab's panel to the next while only its
+     contents crossfade. Fading two dark panels out and in let the
+     background flash through between them. Each tab renders at most one. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.tab-slide-left)
+      .panel
+      :global(
+        :is(
+          .account-workspace,
+          .preferences-workspace,
+          .notification-workspace,
+          .props-workspace,
+          .theme-workspace
+        )
+      ),
+    :global(html.tab-slide-right)
+      .panel
+      :global(
+        :is(
+          .account-workspace,
+          .preferences-workspace,
+          .notification-workspace,
+          .props-workspace,
+          .theme-workspace
+        )
+      ) {
+      view-transition-name: settings-surface;
+    }
+
+    /* The morphing box is the panel itself: it carries the surface fill,
+       border and shadow while it reshapes, and clips both snapshots to its
+       rounded corners. Tabs differ in height far more than in width, so the
+       snapshots keep their own height and only the box grows or shrinks
+       around them; stretching them to fit made the outgoing tab swell or
+       shrink as it faded. */
+    :global(html:has(.settings-module))::view-transition-group(
+      settings-surface
+    ) {
+      overflow: clip;
+      border-radius: 1.25em;
+      outline: 1px solid var(--theme-stroke-strong, var(--theme-stroke));
+      outline-offset: -1px;
+      background: color-mix(
+        in srgb,
+        var(--theme-panel-bg, rgba(0, 0, 0, 0.88)) 14%,
+        #070b10 86%
+      );
+      box-shadow: var(--theme-panel-shadow, 0 1rem 3rem rgba(0, 0, 0, 0.35));
+      animation-duration: var(--duration-emphasis);
+      animation-timing-function: var(--ease-out);
+    }
+
+    :global(
+        html[data-theme-luminance="bright"]:has(.settings-module)
+      )::view-transition-group(settings-surface) {
+      background: color-mix(
+        in srgb,
+        var(--theme-panel-bg, rgba(255, 255, 255, 0.88)) 14%,
+        #f6f7f9 86%
+      );
+    }
+  }
+
   /* Settings' own take on the shared tab slide: the outgoing tab drifts away
      and fades fast, the incoming one rises from the side of the tab that was
      picked (later tabs from below, earlier from above) with a little depth,
@@ -440,27 +504,27 @@
      modules keep the shared slide once this stylesheet has loaded. */
   @media (prefers-reduced-motion: no-preference) {
     :global(html.tab-slide-left:has(.settings-module))::view-transition-old(
-        tab-content
-      ) {
+      tab-content
+    ) {
       animation: var(--duration-fast) var(--ease-in) both settings-tab-out-up;
     }
 
     :global(html.tab-slide-left:has(.settings-module))::view-transition-new(
-        tab-content
-      ) {
+      tab-content
+    ) {
       animation: var(--duration-emphasis) var(--ease-out)
         calc(var(--duration-fast) / 2) both settings-tab-in-up;
     }
 
     :global(html.tab-slide-right:has(.settings-module))::view-transition-old(
-        tab-content
-      ) {
+      tab-content
+    ) {
       animation: var(--duration-fast) var(--ease-in) both settings-tab-out-down;
     }
 
     :global(html.tab-slide-right:has(.settings-module))::view-transition-new(
-        tab-content
-      ) {
+      tab-content
+    ) {
       animation: var(--duration-emphasis) var(--ease-out)
         calc(var(--duration-fast) / 2) both settings-tab-in-down;
     }

@@ -44,6 +44,7 @@
   import type { FuseSide } from "#lib/features/fuse/state/fuse-shuffle-pool.svelte.js";
   import MethodPreviewPictograph from "./MethodPreviewPictograph.svelte";
   import { fuseLayout } from "./method-preview-compositions";
+  import { handGlides } from "./method-preview-glide";
   import { DEMO_SEQUENCE } from "./method-preview-demo";
   import {
     FIRST_FUSE_SWAP,
@@ -236,9 +237,6 @@
     stageUpcoming();
   }
 
-  /** The layers of one hand that the fused letter can lay out differently. */
-  const GLIDING_LAYERS = ["arrow", "prop"] as const;
-
   /**
    * Over the slide, each half's arrow and prop glide from where the hand
    * alone puts them to where its fused cell draws them. Both pictographs
@@ -251,15 +249,13 @@
   ): void {
     for (const { source, piece } of halves) {
       const cell = fused.querySelector(`.cell[data-step="${source.step}"]`);
-      for (const layer of GLIDING_LAYERS) {
-        const selector = `.${source.hand}-${layer}-svg`;
-        const from = piece.querySelector(selector);
-        const to = cell?.querySelector(selector);
-        if (!from || !to) continue;
-        const start = getComputedStyle(from).transform;
-        const end = getComputedStyle(to).transform;
-        if (start === end) continue;
-        track(from, [{ transform: start }, { transform: end }], {
+      if (!cell) continue;
+      for (const { element, keyframes } of handGlides(
+        piece,
+        cell,
+        source.hand
+      )) {
+        track(element, keyframes, {
           duration: FUSE_PREVIEW_TIMING.slideMs,
           easing: EASE,
           fill: "forwards",

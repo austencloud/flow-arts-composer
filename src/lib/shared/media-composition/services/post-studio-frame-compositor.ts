@@ -798,7 +798,7 @@ function drawArrangementCanvases(
   // surface should fail visibly instead of silently exporting a blank slot.
   const cellCanvases = cells.map((cell) => {
     const canvases = Array.from(
-      cell.querySelectorAll(".canvas-wrapper canvas")
+      cell.querySelectorAll<HTMLCanvasElement>(".canvas-wrapper canvas")
     );
     if (
       !canvases.length ||
@@ -849,7 +849,7 @@ function drawArrangementCanvases(
         wrapperRect.height
       );
     }
-    for (const canvas of cellCanvases[index]) {
+    for (const canvas of cellCanvases[index] ?? []) {
       const canvasRect = rect(canvas);
       if (canvasRect.width > 0 && canvasRect.height > 0) {
         context.drawImage(
