@@ -4,7 +4,7 @@ import {
   resolveTakeTiming,
   type TakeTiming,
 } from "$lib/shared/media-composition/domain/take-timing";
-import { adjacentStepSeconds } from "$lib/shared/share/components/post-studio/editor/post-crop-steps";
+import { adjacentStepSeconds } from "@austencloud/video-editor/ui";
 import { clipSteps } from "$lib/shared/post-studio-plugin/ui/tka-crop-steps";
 import { video } from "./post-project-fixtures";
 

@@ -20,7 +20,7 @@ import {
   animationAppearanceForItem,
   tunnelHidesMandala,
 } from "$lib/shared/post-studio-plugin/ui/post-item-render-options";
-import { coreToolRow } from "$lib/shared/share/components/post-studio/editor/post-editor-tools";
+import { coreToolRow } from "@austencloud/video-editor/ui";
 import { tkaRow, tkaRowFacts } from "$lib/shared/post-studio-plugin/ui/tka-row";
 import { NOW, overlay, project, video } from "./post-project-fixtures";
 

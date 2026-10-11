@@ -24,7 +24,7 @@
   } from "./state/post-module-state.svelte";
   import { setPostModuleContext } from "./context/post-module-context";
   import { canAccessPostStudio } from "$lib/shared/sequence-viewer/services/post-studio-access";
-  import { providePostEditorHeader } from "$lib/shared/share/components/post-studio/editor/post-editor-header.svelte";
+  import { providePostEditorHeader } from "@austencloud/video-editor/ui";
 
   interface Props {
     visible?: boolean;

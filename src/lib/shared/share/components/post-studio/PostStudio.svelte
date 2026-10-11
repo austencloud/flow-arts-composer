@@ -27,7 +27,7 @@
     seedFromPsSlice,
     type PsSlicePayload,
   } from "$lib/shared/sequence-viewer/services/viewer-url-slices/ps-slice";
-  import type { PostStudioShareExport } from "./post-studio-share-export";
+  import type { PostStudioShareExport } from "@austencloud/video-editor/ui";
   import { withPostStudioPropType } from "$lib/shared/post-studio-plugin/ui/post-studio-prop-render-options";
   import { provideStrings } from "@austencloud/video-editor/strings";
   import "@austencloud/video-editor/css/video-editor-tokens.css";

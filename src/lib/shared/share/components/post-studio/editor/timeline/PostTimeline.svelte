@@ -37,20 +37,10 @@
     channelValueText,
     itemIcon,
     translateKey,
-  } from "../post-editor-labels";
-  import PostTimelineItem from "./PostTimelineItem.svelte";
-  import PostTimelineKeyLane from "./PostTimelineKeyLane.svelte";
-  import PostTimelineKeyLaneHeader from "./PostTimelineKeyLaneHeader.svelte";
-  import PostTimelineMusicLane from "./PostTimelineMusicLane.svelte";
-  import PostTimelineTrackHeader from "./PostTimelineTrackHeader.svelte";
-  import PostTimelineZoomControls from "./PostTimelineZoomControls.svelte";
-  import {
     selectTimelineItem,
     timelineGroupOf,
     timelineItemOrder,
     type TimelineSelection,
-  } from "./post-timeline-selection";
-  import {
     POST_TIMELINE_DEFAULT_PIXELS_PER_SECOND,
     autoScrollForPlayhead,
     clampPixelsPerSecond,
@@ -67,7 +57,13 @@
     snapToTargets,
     type KeyLanesBand,
     type OverlayRowHit,
-  } from "./post-timeline-geometry";
+  } from "@austencloud/video-editor/ui";
+  import PostTimelineItem from "./PostTimelineItem.svelte";
+  import PostTimelineKeyLane from "./PostTimelineKeyLane.svelte";
+  import PostTimelineKeyLaneHeader from "./PostTimelineKeyLaneHeader.svelte";
+  import PostTimelineMusicLane from "./PostTimelineMusicLane.svelte";
+  import PostTimelineTrackHeader from "./PostTimelineTrackHeader.svelte";
+  import PostTimelineZoomControls from "./PostTimelineZoomControls.svelte";
   import { Icon, faPlus, faRightLeft } from "@austencloud/video-editor/icons";
 
   const ARROW = String.fromCharCode(8594);

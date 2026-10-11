@@ -3,7 +3,7 @@
   import type {
   PostKeyframeChannel,
 } from "@austencloud/video-editor/core";
-  import { channelIcon, channelLabel } from "../post-editor-labels";
+  import { channelIcon, channelLabel } from "@austencloud/video-editor/ui";
   import { Icon, faDiamond } from "@austencloud/video-editor/icons";
 
   const t = useStrings();

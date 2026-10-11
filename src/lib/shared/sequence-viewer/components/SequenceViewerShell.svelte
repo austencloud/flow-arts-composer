@@ -54,7 +54,7 @@
   import VideoPreviewPanel from "./VideoPreviewPanel.svelte";
   import PracticeBar from "./PracticeBar.svelte";
   import PostStudioPane from "./PostStudioPane.svelte";
-  import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
+  import type { ShareExport } from "@austencloud/video-editor/ui";
   import { POST_STUDIO_STAGE_MIN_WIDTH } from "../services/viewer-shell-model";
   import { resolveSequenceIdentityTitle } from "../services/viewer-title";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
@@ -574,7 +574,7 @@
     }
   }
 
-  let postStudioShareExport: PostStudioShareExport | null = null;
+  let postStudioShareExport: ShareExport | null = null;
   function adoptPostStudioRender(blob: Blob): void {
     if (postStudioVideoUrl) URL.revokeObjectURL(postStudioVideoUrl);
     postStudioVideoUrl = URL.createObjectURL(blob);

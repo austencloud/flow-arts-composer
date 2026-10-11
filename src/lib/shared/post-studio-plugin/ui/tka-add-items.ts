@@ -11,10 +11,7 @@ import {
   faTableCells,
   faXmark,
 } from "@austencloud/video-editor/icons";
-import {
-  newItemStart,
-  overlayAt,
-} from "$lib/shared/share/components/post-studio/editor/post-editor-add";
+import { newItemStart, overlayAt } from "@austencloud/video-editor/ui";
 import { tkaEditorOf } from "./tka-editor-context";
 import { TKA_KIND_UI } from "./tka-kind-ui";
 

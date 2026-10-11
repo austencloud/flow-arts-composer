@@ -3,7 +3,7 @@
   import type { VideoEditorState } from "@austencloud/video-editor";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { formatPostClock } from "./post-format";
+  import { formatPostClock } from "@austencloud/video-editor/ui";
   import {
     Icon,
     faDownload,

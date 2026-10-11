@@ -25,7 +25,7 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ValueSlider from "$lib/shared/ui/components/ValueSlider.svelte";
-  import { easingPresetLabel } from "$lib/shared/share/components/post-studio/editor/post-editor-labels";
+  import { easingPresetLabel } from "@austencloud/video-editor/ui";
   import { tkaEditorTranslate } from "$lib/shared/media-composition/state/editor-strings";
   import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
   import PostCurveEditor from "$lib/shared/share/components/post-studio/editor/PostCurveEditor.svelte";

@@ -72,9 +72,33 @@
     createLayoutMotion,
   } from "$lib/shared/transitions/layout-flip";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import type { PostStudioShareExport } from "../post-studio-share-export";
+  import type { PostStudioShareExport } from "@austencloud/video-editor/ui";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import { formatTakeClock } from "./post-format";
+  import {
+    formatTakeClock,
+    getPostEditorHeader,
+    clampPixelsPerSecond,
+    channelLabel,
+    itemDisplayLabel,
+    readVideoFile,
+    videoFileError,
+    createCropSession,
+    type CropShapeKind,
+    adjacentStepSeconds,
+    type ClipStep,
+    CROP_STAGE_MARGIN_PX,
+    cropStageRatio,
+    type CropSize,
+    availablePanels,
+    isPanelTool,
+    keyframeChannelFor,
+    shownPanel,
+    toolRow,
+    type PostPanelToolId,
+    type PostToolId,
+    type PostToolSelection,
+    loadPostProjectFonts,
+  } from "@austencloud/video-editor/ui";
   import PostEditorCanvas from "./PostEditorCanvas.svelte";
   import EditHistoryKeys from "./EditHistoryKeys.svelte";
   import {
@@ -89,7 +113,6 @@
   import PostEditorTopBar from "./PostEditorTopBar.svelte";
   import PostEditorActions from "./PostEditorActions.svelte";
   import PostSaveButton from "./PostSaveButton.svelte";
-  import { getPostEditorHeader } from "./post-editor-header.svelte";
   import PostEditorTransport from "./PostEditorTransport.svelte";
   import PostCropTimeline from "./PostCropTimeline.svelte";
   import PostToolRow from "./PostToolRow.svelte";
@@ -106,33 +129,9 @@
   import PostRatioPicker from "./PostRatioPicker.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import PostTimeline from "./timeline/PostTimeline.svelte";
-  import { clampPixelsPerSecond } from "./timeline/post-timeline-geometry";
-  import { channelLabel, itemDisplayLabel } from "./post-editor-labels";
-  import { readVideoFile, videoFileError } from "./post-editor-files";
-  import { loadPostProjectFonts } from "$lib/shared/media-composition/services/inshot-recovery-package";
-  import {
-    createCropSession,
-    type CropShapeKind,
-  } from "./post-crop-session.svelte";
   import { downloadBlobToDisk } from "$lib/shared/foundation/services/file-downloader";
   import PostDraftStatus from "./PostDraftStatus.svelte";
   import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
-  import { adjacentStepSeconds, type ClipStep } from "./post-crop-steps";
-  import {
-    CROP_STAGE_MARGIN_PX,
-    cropStageRatio,
-    type CropSize,
-  } from "./post-crop-geometry";
-  import {
-    availablePanels,
-    isPanelTool,
-    keyframeChannelFor,
-    shownPanel,
-    toolRow,
-    type PostPanelToolId,
-    type PostToolId,
-    type PostToolSelection,
-  } from "./post-editor-tools";
   import { Icon, faCheck, faDiamond } from "@austencloud/video-editor/icons";
 
   const ARROW = String.fromCharCode(8594);

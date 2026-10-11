@@ -12,14 +12,14 @@
     easingPresetOf,
   } from "@austencloud/video-editor/core";
   import { useStrings } from "@austencloud/video-editor/strings";
-  import { formatPostClock } from "../post-format";
   import {
+    formatPostClock,
     channelLabel,
     channelValueMeasure,
     channelValueText,
     easingPresetLabel,
-  } from "../post-editor-labels";
-  import { secondsToPixels } from "./post-timeline-geometry";
+    secondsToPixels,
+  } from "@austencloud/video-editor/ui";
 
   const ARROW = String.fromCharCode(8594);
 

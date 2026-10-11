@@ -51,7 +51,7 @@
     PostMovesItem,
   } from "$lib/shared/post-studio-plugin";
   import { layerTimingParts } from "$lib/shared/share/components/post-studio/builder/post-timing-animation";
-  import { itemDisplayLabel } from "$lib/shared/share/components/post-studio/editor/post-editor-labels";
+  import { itemDisplayLabel } from "@austencloud/video-editor/ui";
   import { tkaEditorTranslate } from "$lib/shared/media-composition/state/editor-strings";
   import { updateItem } from "@austencloud/video-editor/core";
   import type { PostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";

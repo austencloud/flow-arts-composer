@@ -13,13 +13,13 @@
     type MusicPlacement,
     POST_MUSIC_MIN_SECONDS,
   } from "@austencloud/video-editor/core";
-  import { formatPostClock } from "../post-format";
-  import type { PostMusic } from "@austencloud/video-editor/core";
   import {
+    formatPostClock,
     placeDraggedMusic,
     roundToFrameSeconds,
     snapToTargets,
-  } from "./post-timeline-geometry";
+  } from "@austencloud/video-editor/ui";
+  import type { PostMusic } from "@austencloud/video-editor/core";
   import {
     Icon,
     faMusic,

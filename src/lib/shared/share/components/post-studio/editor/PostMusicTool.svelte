@@ -16,7 +16,7 @@
     POST_MUSIC_MIN_SECONDS,
     type MusicPatch,
   } from "@austencloud/video-editor/core";
-  import { formatTakeClock, parseClock } from "./post-format";
+  import { formatTakeClock, parseClock } from "@austencloud/video-editor/ui";
   import {
     Icon,
     faArrowRightFromBracket,

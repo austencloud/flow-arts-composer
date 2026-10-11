@@ -6,8 +6,11 @@
     VideoEditorState,
   } from "@austencloud/video-editor";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { formatPostClock } from "./post-format";
-  import { readVideoFile, videoFileError } from "./post-editor-files";
+  import {
+    formatPostClock,
+    readVideoFile,
+    videoFileError,
+  } from "@austencloud/video-editor/ui";
   import {
     Icon,
     faDrum,

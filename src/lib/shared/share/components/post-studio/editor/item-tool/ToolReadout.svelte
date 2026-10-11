@@ -2,7 +2,7 @@
   import { useStrings } from "@austencloud/video-editor/strings";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
-  import { parseClock } from "../post-format";
+  import { parseClock } from "@austencloud/video-editor/ui";
   import { Icon, type IconDefinition } from "@austencloud/video-editor/icons";
 
   const t = useStrings();

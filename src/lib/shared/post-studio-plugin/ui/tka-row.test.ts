@@ -5,7 +5,7 @@ import {
   defaultPanel,
   isPanelTool,
   shownPanel,
-} from "$lib/shared/share/components/post-studio/editor/post-editor-tools";
+} from "@austencloud/video-editor/ui";
 import { NO_FACTS, tkaRow, type TkaRowFacts } from "./tka-row";
 import { tkaAddOrder } from "./tka-add-items";
 import { TKA_TOOLS } from "./tka-tools";

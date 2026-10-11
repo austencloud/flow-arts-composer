@@ -25,12 +25,12 @@
   } from "@austencloud/video-editor/core";
   import type { VideoEditorState } from "@austencloud/video-editor";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
-  import { formatTakeClock, parseClock } from "./post-format";
-  import { channelLabel } from "./post-editor-labels";
-  import { adjacentStepSeconds, type ClipStep } from "./post-crop-steps";
-  import PostTimelineKeyLane from "./timeline/PostTimelineKeyLane.svelte";
-  import PostTimelineZoomControls from "./timeline/PostTimelineZoomControls.svelte";
   import {
+    formatTakeClock,
+    parseClock,
+    channelLabel,
+    adjacentStepSeconds,
+    type ClipStep,
     autoScrollForPlayhead,
     clampPixelsPerSecond,
     fitPixelsPerSecond,
@@ -41,7 +41,9 @@
     scrollLeftForStableAnchor,
     secondsToPixels,
     snapToTargets,
-  } from "./timeline/post-timeline-geometry";
+  } from "@austencloud/video-editor/ui";
+  import PostTimelineKeyLane from "./timeline/PostTimelineKeyLane.svelte";
+  import PostTimelineZoomControls from "./timeline/PostTimelineZoomControls.svelte";
   import {
     Icon,
     faBackwardFast,

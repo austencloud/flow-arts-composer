@@ -5,8 +5,7 @@
 } from "@austencloud/video-editor/core";
   import type { VideoEditorState } from "@austencloud/video-editor";
   import TypeableValue from "$lib/shared/ui/components/TypeableValue.svelte";
-  import { formatTakeClock, parseClock } from "./post-format";
-  import { roundToFrameSeconds } from "./timeline/post-timeline-geometry";
+  import { formatTakeClock, parseClock, roundToFrameSeconds } from "@austencloud/video-editor/ui";
   import {
     Icon,
     faBackwardStep,

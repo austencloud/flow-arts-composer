@@ -8,7 +8,10 @@
     faVolumeXmark,
     type IconDefinition,
   } from "@austencloud/video-editor/icons";
-  import { formatPostClock, formatPostSpeed } from "../post-format";
+  import {
+    formatPostClock,
+    formatPostSpeed,
+  } from "@austencloud/video-editor/ui";
   import { useStrings } from "@austencloud/video-editor/strings";
 
   const t = useStrings();

@@ -4,7 +4,7 @@
   import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
   import PostStudio from "$lib/shared/share/components/post-studio/PostStudio.svelte";
-  import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
+  import type { ShareExport } from "@austencloud/video-editor/ui";
   import type {
   PostProject,
 } from "@austencloud/video-editor/core";
@@ -30,7 +30,7 @@
     /** Opens the shell's share sheet on the render just handed over. */
     onSharePost: () => void;
     previewTarget?: HTMLElement | null;
-    onRegisterShareExport?: (controls: PostStudioShareExport | null) => void;
+    onRegisterShareExport?: (controls: ShareExport | null) => void;
     /** The shell's share panel is open beside or under the studio. */
     sharing?: boolean;
   }

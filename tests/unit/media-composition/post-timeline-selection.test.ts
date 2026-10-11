@@ -13,7 +13,7 @@ import {
   timelineGroupOf,
   timelineItemOrder,
   type TimelineSelection,
-} from "$lib/shared/share/components/post-studio/editor/timeline/post-timeline-selection";
+} from "@austencloud/video-editor/ui";
 import { tkaTimelineJoin } from "$lib/shared/post-studio-plugin/ui/tka-timeline-join";
 import { overlay, project, text, video } from "./post-project-fixtures";
 

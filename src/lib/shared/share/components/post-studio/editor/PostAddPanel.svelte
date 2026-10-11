@@ -13,13 +13,14 @@
   } from "@austencloud/video-editor";
   import { Icon, faCloud } from "@austencloud/video-editor/icons";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { formatPostClock } from "./post-format";
   import {
+    formatPostClock,
     ITEM_KIND_ICON,
     itemKindLabel,
     translateKey,
-  } from "./post-editor-labels";
-  import { newItemStart, overlayAt } from "./post-editor-add";
+    newItemStart,
+    overlayAt,
+  } from "@austencloud/video-editor/ui";
 
   const t = useStrings();
 

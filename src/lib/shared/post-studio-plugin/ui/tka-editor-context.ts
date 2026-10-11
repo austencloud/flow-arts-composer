@@ -12,7 +12,7 @@ import type { SequenceExportOptions } from "$lib/shared/render/domain/models/seq
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import type { PostTimingSession } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
-import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
+import type { PostStudioShareExport } from "@austencloud/video-editor/ui";
 import type { TimingUi } from "./tka-timing-ui.svelte";
 
 /** What tka's plugin functions need beyond the generic state. */

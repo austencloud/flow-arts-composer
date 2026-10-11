@@ -3,8 +3,8 @@
   import type { PluginTool } from "@austencloud/video-editor";
   import { useStrings } from "@austencloud/video-editor/strings";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import type { PostPanelToolId } from "./post-editor-tools";
-  import { toolIcon, toolLabel } from "./post-editor-labels";
+  import type { PostPanelToolId } from "@austencloud/video-editor/ui";
+  import { toolIcon, toolLabel } from "@austencloud/video-editor/ui";
   import { Icon, faCheck } from "@austencloud/video-editor/icons";
 
   const t = useStrings();

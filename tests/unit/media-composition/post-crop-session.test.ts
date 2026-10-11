@@ -6,8 +6,7 @@ import type {
 import { editItemKeyframes, setKeyframe } from "@austencloud/video-editor/core";
 import { englishString } from "@austencloud/video-editor/strings";
 import { createPostEditorState } from "$lib/shared/media-composition/state/post-editor-state.svelte";
-import { isCovered } from "$lib/shared/share/components/post-studio/editor/post-crop-geometry";
-import { createCropSession } from "$lib/shared/share/components/post-studio/editor/post-crop-session.svelte";
+import { isCovered, createCropSession } from "@austencloud/video-editor/ui";
 
 function sequence(): SequenceData {
   return {

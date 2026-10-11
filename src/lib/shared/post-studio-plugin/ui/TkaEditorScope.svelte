@@ -30,7 +30,7 @@
     isSavedFeatureExport,
     type SavedFeatureExport,
   } from "$lib/shared/media-composition/domain/feature-video-export";
-  import type { PostStudioShareExport } from "$lib/shared/share/components/post-studio/post-studio-share-export";
+  import type { PostStudioShareExport } from "@austencloud/video-editor/ui";
   import { createPostTimingSession } from "$lib/shared/share/components/post-studio/builder/post-timing-session.svelte";
   import VisualSequenceSaveContextMenuHost from "$lib/shared/library/components/VisualSequenceSaveContextMenuHost.svelte";
   import { qrPayloadForImage } from "./post-qr-image-appearance";

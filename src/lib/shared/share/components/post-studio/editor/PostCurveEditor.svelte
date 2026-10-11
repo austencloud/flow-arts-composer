@@ -34,7 +34,7 @@
     plotToDataY,
     plotWidth,
     type CurvePlotGeometry,
-  } from "./post-curve-plot";
+  } from "@austencloud/video-editor/ui";
 
   const t = useStrings();
 

@@ -1,8 +1,6 @@
 import type { PluginBackup } from "@austencloud/video-editor";
-import {
-  readInShotRecoveryPackage,
-  loadPostProjectFonts,
-} from "$lib/shared/media-composition/services/inshot-recovery-package";
+import { readInShotRecoveryPackage } from "$lib/shared/media-composition/services/inshot-recovery-package";
+import { loadPostProjectFonts } from "@austencloud/video-editor/ui";
 import {
   parsePostStudioBackup,
   serializePostStudioBackup,

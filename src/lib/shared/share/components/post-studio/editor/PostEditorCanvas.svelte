@@ -55,12 +55,9 @@
     framingAt,
     updateItemAt,
   } from "@austencloud/video-editor/core";
-  import { dragSourceCrop, type SourceCropHandle } from "./post-source-crop";
-  import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
-  import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
-  import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
-  import PostMusicPreview from "./PostMusicPreview.svelte";
   import {
+    dragSourceCrop,
+    type SourceCropHandle,
     BOX_CORNERS,
     BOX_NUDGE,
     BOX_SIDES,
@@ -75,20 +72,16 @@
     turnHandleSide,
     type BoxGuides,
     type BoxHandle,
-  } from "./post-box-drag";
-  import { keepsShape, keptBox, shownBox } from "./post-item-rect";
-  import {
+    keepsShape,
+    keptBox,
+    shownBox,
     dragSourceGeometry,
     scaleSourceGeometry,
-  } from "./post-source-geometry";
-  import {
     PICTURE_NUDGE,
     dragPicturePan,
     nudgePicturePan,
     stepPicturePinch,
     zoomFromWheelDelta,
-  } from "./post-picture-pan-drag";
-  import {
     CROP_CORNERS,
     CROP_SIDES,
     cameraDisplayScale,
@@ -103,8 +96,6 @@
     type CropPoint,
     type CropPose,
     type CropSize,
-  } from "./post-crop-geometry";
-  import {
     boxPicture,
     frameGlideStart,
     glideStart,
@@ -113,8 +104,12 @@
     transformPicture,
     type StageFrame,
     type StageTransform,
-  } from "./post-crop-glide";
-  import type { CropSession } from "./post-crop-session.svelte";
+  } from "@austencloud/video-editor/ui";
+  import PostStudioBackdrop from "../PostStudioBackdrop.svelte";
+  import PostStudioMediaLayer from "../PostStudioMediaLayer.svelte";
+  import PostStudioPaintedLayer from "../PostStudioPaintedLayer.svelte";
+  import PostMusicPreview from "./PostMusicPreview.svelte";
+  import type { CropSession } from "@austencloud/video-editor/ui";
   import { Icon, faFilm, faRotate } from "@austencloud/video-editor/icons";
 
   const DEGREE = String.fromCharCode(176);

@@ -5,8 +5,9 @@
     isPanelTool,
     type PostPanelToolId,
     type PostToolId,
-  } from "./post-editor-tools";
-  import { toolIcon, toolLabel } from "./post-editor-labels";
+    toolIcon,
+    toolLabel,
+  } from "@austencloud/video-editor/ui";
   import { Icon } from "@austencloud/video-editor/icons";
 
   const t = useStrings();
