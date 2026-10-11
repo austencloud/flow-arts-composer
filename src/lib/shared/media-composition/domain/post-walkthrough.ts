@@ -27,6 +27,7 @@ import {
   MOVE_SECONDS,
   cameraKeyframes,
   cameraSampler,
+  needsFocus,
   planShots,
   rectToOutput,
   scheduleMoves,
@@ -268,7 +269,9 @@ export function buildWalkthrough(
     }
   }
 
-  // Every click in the span is a beat; lines can add their own.
+  // Every click in the span is a beat; lines can add their own. The camera
+  // moves in only to pick out a small control a line talks about, or when
+  // the line asks; any other click just has to be in view.
   const wideAfter = script.wideAfter ?? [];
   const inRange = capture.events.filter(
     (event) => event.time >= rangeStart && event.time <= rangeEnd
@@ -291,7 +294,14 @@ export function buildWalkthrough(
       beats.push({ kind: "wide", time: event.time, startAt: event.time });
       continue;
     }
-    beats.push({ kind: "close", time: event.time, region, newShot });
+    const focus =
+      own.some((entry) => entry.line.shot === "close") ||
+      (own.length > 0 && needsFocus(region));
+    beats.push(
+      focus
+        ? { kind: "close", time: event.time, region, newShot }
+        : { kind: "see", time: event.time, region }
+    );
     if (pulls) {
       beats.push({
         kind: "wide",
@@ -312,14 +322,12 @@ export function buildWalkthrough(
         due: entry.time - WIDE_LINE_LEAD_OUT,
       });
     } else {
-      beats.push({
-        kind: "close",
-        time: entry.time,
-        region: unionRect(
-          eventRegion(entry.event),
-          line.include ? share(line.include) : eventRegion(entry.event)
-        ),
-      });
+      const region = unionRect(
+        eventRegion(entry.event),
+        line.include ? share(line.include) : eventRegion(entry.event)
+      );
+      const focus = line.shot === "close" || needsFocus(region);
+      beats.push({ kind: focus ? "close" : "see", time: entry.time, region });
     }
   }
 

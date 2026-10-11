@@ -400,3 +400,24 @@ the evidence set before the fourth batch merges.
   `effects-grid.png`, and `kit-before-*` / `kit-after-*` for Fire, Coal and
   Bloom taken from main (port 5173) and this branch (port 5198) at the same
   viewport.
+
+## Batch 2 notes (2026-10-11)
+
+- Goo, Bubbles, Petals and Smoke are verbatim ports of the approved reference
+  pages with the pages' inline palette tables replaced by the renderers' own
+  resolvers (`resolveWaterPalette`, `resolveBubblePalette`,
+  `resolvePetalPalette`, `resolveSmokePalette`). The smoke palettes' lifetime,
+  curl and rise biases matched the page table, so no hint constant was added.
+- Goo's threshold recipe draws through two scratch canvases with a CSS
+  `filter`; node-canvas ignores `filter`, so its test proves lit pixels and
+  determinism, not the snapped edge. In Chrome a full Goo paint takes 8-19 ms
+  (five runs on the tuner page); the portrait cache makes that a one-time cost
+  per preset.
+- `tile-registry.test.ts` iterated every top-level config key, including
+  `tipEffectMap` and `activePresets`; it now iterates `activePresets`, which
+  has exactly one key per effect. It stays red on Ink until batch 3.
+- The seven tile tests cast each preset patch to `Partial<<Effect>Intent>`;
+  the preset group's `patch` is a loose union and the spread did not narrow.
+- Evidence in `2026-10-11-effect-tile-portraits/evidence/`: `goo.png`,
+  `bubbles.png`, `petals.png`, `smoke.png`, the tuner's Looks panel on this
+  branch (port 5199) at 800x1100.
