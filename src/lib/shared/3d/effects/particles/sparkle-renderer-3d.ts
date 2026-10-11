@@ -15,7 +15,7 @@ import {
 } from "./sparkle-texture-atlas-3d";
 
 const CAPACITY = 2048;
-const BASE_SPAWN_RATE = 15;
+const BASE_SPAWN_RATE = 24;
 const TAU = Math.PI * 2;
 
 export class SparkleRenderer3D {
@@ -143,7 +143,7 @@ export class SparkleRenderer3D {
       write.right = this.color.right;
       write.green = this.color.green;
       write.left = this.color.left;
-      write.alpha = envelope * (isHero ? 0.65 : 0.5) * twinkle;
+      write.alpha = envelope * (isHero ? 1.1 : 0.8) * twinkle;
       const uv = SPARKLE_UV[isHero ? this.diagonal[index]! : 2]!;
       write.uvX = uv[0];
       write.uvY = uv[1];
@@ -154,7 +154,7 @@ export class SparkleRenderer3D {
         write.right = 1;
         write.green = 1;
         write.left = 1;
-        write.alpha = envelope * Math.max(0, (twinkle - 0.4) * 1.35);
+        write.alpha = envelope * Math.max(0, (twinkle - 0.35) * 2);
         write.uvX = SPARKLE_UV[3][0];
         write.uvY = SPARKLE_UV[3][1];
         this.cores.write(write);

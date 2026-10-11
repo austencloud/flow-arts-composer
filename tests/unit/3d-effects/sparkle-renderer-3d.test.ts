@@ -42,24 +42,28 @@ describe("SparkleRenderer3D", () => {
     const parent = new Object3D();
     renderer.initialize(parent);
     renderer.update([source(0)], 1 / 30);
-    renderer.update([source(0.2)], 1 / 30);
     const glints = parent.children[0] as InstancedMesh;
     const cores = parent.children[1] as InstancedMesh;
+    const firstCount = glints.count;
+    renderer.update([source(0.2)], 1 / 30);
     expect(parent.children).toHaveLength(2);
-    expect(glints.count).toBe(60);
+    expect(firstCount).toBeGreaterThan(0);
+    expect(glints.count).toBe(firstCount * 2);
     expect(cores.count).toBe(0);
     const centers = glints.geometry.getAttribute(
       "aCenter"
     ) as InstancedBufferAttribute;
-    const movingXs = Array.from({ length: 30 }, (_, i) => centers.getX(i + 30));
+    const movingXs = Array.from({ length: firstCount }, (_, i) =>
+      centers.getX(i + firstCount)
+    );
     expect(Math.min(...movingXs)).toBeGreaterThan(0);
     expect(Math.min(...movingXs)).toBeLessThan(0.05);
     expect(Math.max(...movingXs)).toBeCloseTo(0.2);
     const colors = glints.geometry.getAttribute(
       "aColor"
     ) as InstancedBufferAttribute;
-    expect(colors.getX(30)).toBeCloseTo(0);
-    expect(colors.getY(30)).toBeCloseTo(1);
+    expect(colors.getX(firstCount)).toBeCloseTo(0);
+    expect(colors.getY(firstCount)).toBeCloseTo(1);
     renderer.clear();
     expect(glints.count).toBe(0);
     expect(cores.count).toBe(0);
