@@ -1019,6 +1019,9 @@
         var constrained =
           window.__tkaIsLanding && connection && connection.saveData;
         window.__tkaLandingConstrained = Boolean(constrained);
+        if (constrained) {
+          document.documentElement.setAttribute("data-icon-font", "off");
+        }
 
         if (!window.__tkaIsLanding) {
           loadFontAwesome();
@@ -1104,6 +1107,27 @@
       select,
       textarea {
         font: inherit;
+      }
+
+      /* Font Awesome's stylesheet arrives after first paint on public routes
+         (see its loader above). Until then each icon takes the box Font
+         Awesome will give it, so arrows and chevrons fill space already held
+         for them instead of pushing their neighbours aside. Zero specificity:
+         any component's own icon size still wins. Data-saver visits never
+         load the font, so they hold no empty boxes. */
+      :where(html:not([data-icon-font="off"]))
+        :where(
+          .fa,
+          .fas,
+          .far,
+          .fab,
+          .fa-solid,
+          .fa-regular,
+          .fa-brands,
+          .fa-classic
+        ) {
+        display: var(--fa-display, inline-block);
+        width: var(--fa-width, 1.25em);
       }
     </style>
 
