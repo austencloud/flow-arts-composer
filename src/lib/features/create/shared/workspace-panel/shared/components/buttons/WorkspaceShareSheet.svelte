@@ -134,7 +134,7 @@
       await Promise.all([
         import("#lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte.js"),
         import("#lib/shared/animation-engine/state/animation-panel-state.svelte.js"),
-        import("#lib/features/compose/services/animation-playback-controller-factory.js"),
+        import("#lib/shared/animation-engine/services/animation-playback-controller-factory.js"),
       ]);
     workspaceVideoExporter ??= new exporterModule.SequenceModalExporter();
     workspaceVideoState ??= panelStateModule.createAnimationPanelState({

@@ -28,6 +28,14 @@ timeline on every screen. CapCut and InShot are the models.
 - `post-editor-tools.ts` already gives each selection its own tool row, and a
   phone already opens one tool's panel in place of the row. That model stays;
   this design changes where the row and panels sit at each size.
+- (2026-10-11, project "ΩΛ-XJ", 412 by 915) The track header column (eye
+  and lock, no names) is 111 of the 412 pixels on every row. The main track
+  is 65 tall and each other layer 52, so four rows fill the timeline area.
+  Short text clips read "A N" and "A I".
+- (2026-10-11, same project, 2560 by 1350) The portrait preview is 462 by
+  821 inside a 1246-wide area, so about 780 pixels beside it are empty. Its
+  size is bound by height: under it sit the transport, a 64-tall tool row
+  and a 280-tall timeline.
 
 ## 1. Layout tiers
 
@@ -119,11 +127,24 @@ selection has more than six. Each group stacks the existing panels it holds.
 
 ## 4. Timeline
 
-- Track headers (name, visibility, lock) stay on the left; phone shrinks them
-  to icons.
+- Desktop and medium keep the track headers (name, visibility, lock) in a
+  fixed column on the left.
+- Phone has no fixed header column (Austen, 2026-10-11). Each track's header
+  (name, hide, lock) sits in the empty space before 0:00 that the centered
+  playhead leaves, and scrolls away with the clips once the playhead moves
+  into the video (CapCut). Clips get the full width while editing.
+- Phone row heights: the main track is 64 tall with its thumbnail strip;
+  every other layer is a 40-tall row (Austen, 2026-10-11). Four tracks take
+  about 190 instead of 300, and the space goes to the preview. More tracks
+  scroll inside the timeline.
 - Main-track clips show a thumbnail strip with the name over it. A clip too
   narrow for its name shows the thumbnail alone and its full name when
   selected or hovered, never a one-letter stub.
+- A layer clip (text, animation, card) too short for its name lets the name
+  run past its end in secondary text when the track is empty up to the next
+  clip, and shows only its kind icon when another clip is in the way
+  (Austen, 2026-10-11). The selected clip's full name also shows in the
+  toolbar or details header. Never a one-letter stub.
 - Phone and medium keep the playhead fixed at the center; the timeline
   slides under it while playing or dragging. Pinch zooms. Holding a clip
   picks it up; the main track shrinks to tiles while it moves (CapCut), and
@@ -131,6 +152,13 @@ selection has more than six. Each group stacks the existing panels it holds.
   main track opens the Videos tab.
 - Desktop keeps a free playhead: click the ruler to seek, drag clips with the
   mouse, zoom controls at the right of the tool row.
+- Desktop and medium give height to the preview first (Austen,
+  2026-10-11). The timeline opens just tall enough for its tracks (ruler
+  plus rows; about 210 for a four-track project), and the tool row joins
+  the timeline's top edge as a 40-tall strip. On a 2560 by 1350 window a
+  portrait preview grows from 821 to about 925 tall; at 1920 by 1080 from
+  about 550 to 655. Dragging the timeline's top edge gives it more room,
+  and Studio remembers that height on the device.
 - A video clip whose landings are tapped shows tick marks at each landing.
 
 ## 5. Sync moves screen

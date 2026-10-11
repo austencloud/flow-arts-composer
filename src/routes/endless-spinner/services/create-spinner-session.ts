@@ -18,7 +18,7 @@ import { startPlacementDeriver } from "#lib/shared/pictograph/shared/services/st
 import { InfiniteSequenceGenerator } from "#lib/features/landing/services/infinite-sequence-generator.js";
 import { SpinnerMetricsRepository } from "#lib/features/landing/services/spinner-metrics-repository.js";
 import { orientationCycleExtender } from "#lib/features/create/generate/circular/services/orientation-cycle-extender.js";
-import { createAnimationPlaybackController } from "#lib/features/compose/services/animation-playback-controller-factory.js";
+import { createAnimationPlaybackController } from "#lib/shared/animation-engine/services/animation-playback-controller-factory.js";
 import {
   createEndlessPlayback,
   type EndlessPlaybackState,

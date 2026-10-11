@@ -21,10 +21,10 @@ import { getVideoExporter } from "../animation-engine/get-video-exporter";
 import { getCompositeVideoRenderer } from "../animation-engine/get-composite-video-renderer";
 import { getExportGlyphPrerenderer } from "../animation-engine/get-export-glyph-prerenderer";
 import { getBackgroundVideoEncoder } from "../animation-engine/get-background-video-encoder";
-import { VideoExportOrchestrator } from "#lib/features/compose/services/video-export-orchestrator.js";
+import { VideoExportOrchestrator } from "#lib/shared/video-export/services/video-export-orchestrator.js";
 
 import { registerAnimationOverlayPainterFactory } from "../media-composition/services/animation-overlay-painter-registry";
-import { PostAnimationOverlayPainter } from "#lib/features/compose/services/post-animation-overlay-painter.js";
+import { PostAnimationOverlayPainter } from "#lib/shared/media-composition/services/post-animation-overlay-painter.js";
 
 import { getQRCodeGenerator } from "../qr/get-qr-code-generator";
 import { getImageComposer } from "../render/get-image-composer";

@@ -234,6 +234,41 @@ export function createDirector(page, cdp, root, options = {}) {
     await press();
   }
 
+  /**
+   * Clicks the `index`th on-screen text field matching `selector`, types
+   * `text` into it a key at a time, `perKeyMs` apart, so the letters appear
+   * as a person would type them, and presses Enter when `enter` is set.
+   */
+  async function type(
+    selector,
+    text,
+    { index = 0, perKeyMs = 140, enter = false } = {}
+  ) {
+    await pick(selector, index);
+    for (const key of String(text)) {
+      await cdp.send("Input.dispatchKeyEvent", {
+        type: "keyDown",
+        key,
+        text: key,
+      });
+      await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key });
+      await wait(perKeyMs);
+    }
+    events.push({
+      label: `${selector} #${index}`,
+      action: "type",
+      value: String(text),
+      time: (Date.now() - started) / 1000,
+      ...pointer,
+      hover: true,
+    });
+    if (!enter) return;
+    const enterKey = { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 };
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", ...enterKey });
+    await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", ...enterKey });
+    await wait(200);
+  }
+
   async function mountPointer() {
     await cdp.send("Runtime.evaluate", {
       expression:
@@ -328,5 +363,16 @@ export function createDirector(page, cdp, root, options = {}) {
       events: events.map(({ label, time, hover }) => ({ label, time, hover })),
     };
   }
-  return { wait, move, click, fill, cell, pick, canvas, mountPointer, shot };
+  return {
+    wait,
+    move,
+    click,
+    fill,
+    cell,
+    pick,
+    type,
+    canvas,
+    mountPointer,
+    shot,
+  };
 }

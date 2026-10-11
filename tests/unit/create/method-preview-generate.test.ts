@@ -17,9 +17,13 @@ import {
   generateCellDelayMs,
   generateRevealMs,
   nextRoll,
+  rollPoseBefore,
   rollStep,
 } from "#lib/features/create/shared/components/method-previews/method-preview-generate.js";
-import { SCENE_TAP } from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
+import {
+  PREVIEW_MOVE_MS,
+  SCENE_TAP,
+} from "#lib/features/create/shared/components/method-previews/method-preview-run.js";
 import { METHOD_PREVIEW_TIMING } from "#lib/features/create/shared/state/method-preview-turns.svelte.js";
 
 /** A four-step roll cut from the demo sequence, standing in for a fresh draw. */
@@ -42,6 +46,23 @@ describe("Generate rolls", () => {
   it("shows nothing for an empty sequence", () => {
     const empty: SequenceData = { ...DEMO_SEQUENCE, steps: [] };
     expect(rollStep({ sequence: empty, offset: 0 }, 0)).toBeNull();
+    expect(rollPoseBefore({ sequence: empty, offset: 0 }, 0)).toBeNull();
+  });
+
+  it("moves each cell from the pose before it", () => {
+    expect(rollPoseBefore(FIRST_ROLL, 0)).toBe(DEMO_SEQUENCE.steps[7]);
+    expect(rollPoseBefore(FIRST_ROLL, 2)).toBe(DEMO_SEQUENCE.steps[9]);
+  });
+
+  it("moves a sequence's first step from its start position", () => {
+    const start =
+      DEMO_SEQUENCE.startPlacement ?? DEMO_SEQUENCE.startingPlacement;
+    expect(start).toBeTruthy();
+    const roll = { sequence: fresh, offset: 0 };
+    expect(rollPoseBefore(roll, 0)).toBe(start);
+    expect(rollPoseBefore(roll, 1)).toBe(fresh.steps[0]);
+    // A short roll wraps back to its first step, and its start.
+    expect(rollPoseBefore(roll, 4)).toBe(start);
   });
 
   it("shows a fresh roll from its first step", () => {
@@ -105,6 +126,29 @@ describe("two rolls a turn", () => {
     expect(GENERATE_ROLLS_PER_TURN).toBe(2);
     expect(GENERATE_ROLLS_PER_TURN * roll + looks).toBeLessThanOrEqual(
       METHOD_PREVIEW_TIMING.turnMs - GENERATE_READY_WAIT_MS
+    );
+  });
+
+  it("let the first roll's moves land before the next tap clears them", () => {
+    // From a cell's entrance, the next clear waits for the rest of the wave,
+    // the look, and the tap; the last cell's move must land by then.
+    const untilClear =
+      DEFAULT_ANIMATION_TIMING.entranceDuration +
+      GENERATE_LOOK_MS +
+      SCENE_TAP.considerMs +
+      SCENE_TAP.pressMs;
+    expect(PREVIEW_MOVE_MS).toBeLessThanOrEqual(untilClear);
+  });
+
+  it("let the last roll's moves land inside the turn", () => {
+    const wave = Math.max(generateRevealMs(4, 5), generateRevealMs(8, 3));
+    const roll =
+      SCENE_TAP.considerMs + SCENE_TAP.pressMs + GENERATE_CLEAR_MS + wave;
+    const looks = (GENERATE_ROLLS_PER_TURN - 1) * GENERATE_LOOK_MS;
+    // The last move starts with the last cell and outlasts its entrance.
+    const tail = PREVIEW_MOVE_MS - DEFAULT_ANIMATION_TIMING.entranceDuration;
+    expect(GENERATE_ROLLS_PER_TURN * roll + looks + tail).toBeLessThanOrEqual(
+      METHOD_PREVIEW_TIMING.turnMs
     );
   });
 });

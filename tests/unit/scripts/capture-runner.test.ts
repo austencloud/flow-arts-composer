@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import path from "node:path";
 import {
   cliFailure,
   outputSize,
@@ -31,6 +32,22 @@ describe("parseCaptureArgs", () => {
       origin: "http://localhost:4000",
       cliUrl: "http://localhost:4000",
     });
+  });
+  it("takes an absolute profile folder and refuses a relative one", () => {
+    const folder = path.resolve("capture-profile");
+    expect(
+      parseCaptureArgs([
+        "--feature",
+        "p",
+        "--capture",
+        "b",
+        "--profile",
+        folder,
+      ])
+    ).toMatchObject({ profile: folder });
+    expect(() =>
+      parseCaptureArgs(["--feature", "p", "--capture", "b", "--profile", "x"])
+    ).toThrow(/absolute/);
   });
   it("refuses an origin that is not this computer", () => {
     expect(() =>
