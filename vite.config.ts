@@ -1010,67 +1010,20 @@ function withoutSplatCoveredPrerenders(base: Adapter): Adapter {
   };
 }
 
-// The exports maps of svelte and zod, read from this app's installed copies,
-// so the TypeScript pin in svelteKitOptions covers every subpath
-// (svelte/store, zod/mini, ...) and not only the bare specifier.
-const pinnedPackages = ["svelte", "zod"].map((name) => ({
-  name,
-  manifest: JSON.parse(
-    fs.readFileSync(
-      path.resolve(dirname, "node_modules", name, "package.json"),
-      "utf8"
-    )
-  ) as { exports: Record<string, unknown> },
-}));
-
 // SvelteKit options. Before SvelteKit 3 these lived in svelte.config.js.
 const svelteKitOptions: Parameters<typeof sveltekit>[0] = {
   ...svelteOptions,
 
   alias: {
     // @austencloud/video-editor dev loop (extraction steps 0 to 3): resolve
-    // the package from the shared-packages worktree's build output. Step 4
+    // the package from the shared-packages worktree build output. Step 4
     // replaces these with the published dependency. The css entry sits first
-    // because Vite takes the first matching alias prefix.
+    // because Vite takes the first matching alias prefix. TypeScript reads
+    // the same paths, and its svelte and zod pins, from tsconfig.json.
     "@austencloud/video-editor/css":
       "E:/worktrees/shared-packages/video-editor/packages/video-editor/css",
     "@austencloud/video-editor":
       "E:/worktrees/shared-packages/video-editor/packages/video-editor/dist",
-  },
-
-  // While @austencloud/video-editor is aliased to a path outside
-  // node_modules (extraction steps 0 to 3), its declarations would resolve a
-  // second copy of svelte and zod from the shared-packages worktree. Two
-  // copies of svelte's ambient types make every Snippet prop mismatch, and
-  // zod's types carry its version, so package schemas would not be
-  // assignable to this app's zod types. Pin TypeScript's svelte and zod to
-  // this app's copies. Vite already dedupes both at runtime. Remove it and
-  // pinnedPackages with the aliases in step 4.
-  typescript: {
-    config(tsconfig) {
-      for (const { name, manifest } of pinnedPackages) {
-        for (const [subpath, entry] of Object.entries(manifest.exports)) {
-          if (
-            !entry ||
-            typeof entry !== "object" ||
-            typeof (entry as { types?: unknown }).types !== "string"
-          )
-            continue;
-          // Absolute: SvelteKit 3 writes this config inside node_modules/$app.
-          tsconfig.compilerOptions.paths[name + subpath.slice(1)] = [
-            path
-              .resolve(
-                dirname,
-                "node_modules",
-                name,
-                (entry as { types: string }).types
-              )
-              .replaceAll("\\", "/"),
-          ];
-        }
-      }
-      return tsconfig;
-    },
   },
 
   adapter: withoutSplatCoveredPrerenders(
