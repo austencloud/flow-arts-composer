@@ -33,6 +33,19 @@ function catdogStillSelected(
 // showing "Loading" and then pushing its layout around when the values land.
 const lastKnownPreferences = new Map<string, PropPreferences>();
 
+/**
+ * Loads an account's preferences and remembers them, so the first prop
+ * preference view for that account draws them without a loading pass. The
+ * app shell uses this for the props it already reads at sign-in.
+ */
+export async function loadAndRememberPropPreferences(
+  userId: string
+): Promise<PropPreferences> {
+  const prefs = await loadPropPreferences(userId);
+  lastKnownPreferences.set(userId, clonePreferences(prefs));
+  return prefs;
+}
+
 export function createPropPreferenceState(userId: string) {
   const known = lastKnownPreferences.get(userId);
   let propsISpinWith = $state<PropType[]>(
@@ -75,9 +88,10 @@ export function createPropPreferenceState(userId: string) {
     if (!lastKnownPreferences.has(userId)) loading = true;
     error = null;
     try {
-      const prefs = clonePreferences(await loadPropPreferences(userId));
+      const prefs = clonePreferences(
+        await loadAndRememberPropPreferences(userId)
+      );
       confirmedPreferences = prefs;
-      lastKnownPreferences.set(userId, clonePreferences(prefs));
       applyPreferences(prefs);
     } catch (loadError) {
       console.warn(
